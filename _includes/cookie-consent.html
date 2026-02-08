@@ -1,0 +1,110 @@
+<!-- Cookie Consent Banner -->
+<div id="cookieConsent" class="cookie-consent" role="region" aria-label="Cookie consent notice">
+  <div class="cookie-consent-content">
+    <div class="cookie-consent-text">
+      <h3>We Value Your Privacy</h3>
+      <p>
+        We use cookies to improve your experience on our site, analyze traffic, and enable
+        certain features. By clicking "Accept All", you consent to our use of cookies for
+        analytics and marketing purposes. You can manage your preferences or decline
+        non-essential cookies.
+      </p>
+      <div class="cookie-consent-links">
+        <a href="{{ site.baseurl }}/privacy-policy/">Privacy Policy</a>
+        <a href="{{ site.baseurl }}/cookie-policy/">Cookie Policy</a>
+      </div>
+    </div>
+    <div class="cookie-consent-buttons">
+      <button id="cookieRejectAll" class="btn btn-secondary">Decline All</button>
+      <button id="cookieCustomize" class="btn btn-secondary">Customize</button>
+      <button id="cookieAcceptAll" class="btn btn-primary">Accept All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cookie Preferences Modal -->
+<div
+  id="cookiePreferences"
+  class="cookie-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cookie-preferences-title"
+>
+  <div class="cookie-modal-content">
+    <button
+      class="cookie-modal-close"
+      id="cookieModalClose"
+      aria-label="Close cookie preferences"
+    >
+      &times;
+    </button>
+    <h2 id="cookie-preferences-title">Cookie Preferences</h2>
+    <p class="cookie-modal-description">
+      We use cookies to enhance your browsing experience and analyze our traffic. You can choose
+      which types of cookies you allow.
+    </p>
+
+    <div class="cookie-preference-item">
+      <div class="cookie-preference-header">
+        <h3>Necessary Cookies</h3>
+        <span class="cookie-preference-status">Always Active</span>
+      </div>
+      <p>
+        These cookies are essential for the website to function properly. They enable basic
+        features like page navigation and access to secure areas. The website cannot function
+        properly without these cookies.
+      </p>
+    </div>
+
+    <div class="cookie-preference-item">
+      <div class="cookie-preference-header">
+        <h3>Functional Cookies</h3>
+        <span class="cookie-preference-status">Always Active</span>
+      </div>
+      <p>
+        These cookies enable enhanced functionality and features that are essential for our core
+        services. This includes our donation processing and application form systems which
+        require cookies to function properly.
+      </p>
+      <p class="cookie-preference-services">
+        Services: Zeffy (Donation Processing), Microsoft Forms (Application Forms - may include
+        HubSpot analytics)
+      </p>
+    </div>
+
+    <div class="cookie-preference-item">
+      <div class="cookie-preference-header">
+        <h3>Analytics Cookies</h3>
+        <label class="cookie-toggle">
+          <input type="checkbox" id="cookieAnalytics" aria-label="Enable analytics cookies" />
+          <span class="cookie-toggle-slider"></span>
+        </label>
+      </div>
+      <p>
+        These cookies help us understand how visitors interact with our website by collecting
+        and reporting information anonymously. We use Google Analytics and Microsoft Clarity.
+      </p>
+      <p class="cookie-preference-services">Services: Google Analytics, Microsoft Clarity</p>
+    </div>
+
+    <div class="cookie-preference-item">
+      <div class="cookie-preference-header">
+        <h3>Marketing Cookies</h3>
+        <label class="cookie-toggle">
+          <input type="checkbox" id="cookieMarketing" aria-label="Enable marketing cookies" />
+          <span class="cookie-toggle-slider"></span>
+        </label>
+      </div>
+      <p>
+        These cookies are used to track visitors across websites. The intention is to display
+        ads that are relevant and engaging for the individual user.
+      </p>
+      <p class="cookie-preference-services">Services: Meta Pixel (Facebook)</p>
+    </div>
+
+    <div class="cookie-modal-buttons">
+      <button id="cookieSavePreferences" class="btn btn-primary">Save Preferences</button>
+      <button id="cookieCancelPreferences" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>

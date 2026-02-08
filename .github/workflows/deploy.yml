@@ -1,0 +1,123 @@
+name: Deploy to GitHub Pages
+
+on:
+  # Runs after Test and CodeQL workflows complete successfully on push to main
+  # NOTE: Workflow names must match the names in test.yml and codeql.yml
+  # If workflow names change, update these references accordingly
+  workflow_run:
+    workflows: ["Test & Visual Regression", "CodeQL Advanced"]
+    types:
+      - completed
+    branches: ['main']
+
+  # Allows manual deployment from Actions tab (bypasses checks)
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  # Verify that BOTH required workflows (Test and CodeQL) have succeeded
+  # This job uses GitHub API to check the status of both workflows before allowing deployment
+  verify-workflows:
+    name: Verify All Workflows Passed
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'
+    outputs:
+      all_passed: ${{ steps.check.outputs.all_passed }}
+    
+    steps:
+      - name: Check workflow statuses
+        id: check
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const ref = context.payload.workflow_run.head_sha;
+            const requiredWorkflows = ['CodeQL Advanced'];
+            
+            // Get all workflow runs for this commit
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: ref,
+              per_page: 100
+            });
+            
+            // Check if all required workflows succeeded
+            const workflowStatuses = {};
+            for (const run of runs.workflow_runs) {
+              if (requiredWorkflows.includes(run.name)) {
+                workflowStatuses[run.name] = run.conclusion;
+              }
+            }
+            
+            console.log('Workflow statuses:', workflowStatuses);
+            
+            // Verify all required workflows succeeded
+            const allPassed = requiredWorkflows.every(name => 
+              workflowStatuses[name] === 'success'
+            );
+            
+            core.setOutput('all_passed', allPassed);
+            
+            if (!allPassed) {
+              core.setFailed('Not all required workflows have passed');
+            }
+    
+  build:
+    name: Build Jekyll Site for GitHub Pages
+    runs-on: ubuntu-latest
+    needs: verify-workflows
+    # Only run if all workflows passed or if manually triggered
+    if: github.event_name == 'workflow_dispatch' || needs.verify-workflows.outputs.all_passed == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true  # Runs 'bundle install' and caches gems
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          static_site_generator: jekyll
+
+      - name: Build Jekyll site
+        run: bundle exec jekyll build
+        env:
+          JEKYLL_ENV: production
+
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          # Deploy the Jekyll-built site from _site directory
+          # Jekyll processes markdown, layouts, and includes to generate static HTML
+          # The CNAME file is included in the build output
+          path: ./_site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

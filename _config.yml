@@ -1,0 +1,101 @@
+# Site settings
+title: Free For Charity
+description: >-
+  Free For Charity connects students, professionals, and businesses with nonprofits 
+  to reduce costs and increase revenues—putting more resources back into their missions.
+url: "https://freeforcharity.github.io"
+baseurl: "/FFC-IN-Single_Page_Template_Jekell"
+
+# Organization details
+organization:
+  name: Free For Charity
+  ein: "46-2471893"
+  type: "501(c)(3) nonprofit organization"
+  email: clarkemoyer@freeforcharity.org
+  contact: Clarke Moyer
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - package.json
+  - package-lock.json
+  - playwright.config.ts
+  - tests
+  - lighthouserc.js
+  - html-site
+  - docs-backup
+  - assets-backup
+  - .github
+  - ADOPTERS.md
+  - BROKEN_LINKS_REPORT.md
+  - CHANGELOG.md
+  - CITATION.cff
+  - CLOUDFLARE_SETUP.md
+  - CODE_OF_CONDUCT.md
+  - COMMUNITY_HEALTH_FILES.md
+  - CONTRIBUTING.md
+  - CONTRIBUTORS.md
+  - COOKIE_COMPARISON.md
+  - COOKIE_IMPLEMENTATION.md
+  - DEPLOYMENT.md
+  - EXTERNAL_DEPENDENCIES.md
+  - FACEBOOK_EVENTS_REQUIREMENTS.md
+  - FACEBOOK_EVENTS_SETUP.md
+  - FACEBOOK_EVENTS_SUMMARY.md
+  - GOVERNANCE.md
+  - HTML_CONVERSION_ASSESSMENT.md
+  - HTML_CONVERSION_SUMMARY.md
+  - HTML_CONVERSION_VERIFICATION.md
+  - LICENSE
+  - MAINTAINERS.md
+  - MICROSOFT_FORM_SETUP.md
+  - MOBILE_RESPONSIVE_ANALYSIS.md
+  - README.md
+  - RESPONSIVE_DIFFERENCES_SUMMARY.md
+  - SECURITY.md
+  - SUPPORT.md
+  - THREAT-MODEL.md
+  - JEKYLL_CONVERSION.md
+
+# Default front matter
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+
+# SEO settings
+twitter:
+  card: summary_large_image
+
+logo: /FFC-IN-Single_Page_Template_Jekell/assets/images/logo.webp
+
+social:
+  name: Free For Charity
+  links:
+    - https://github.com/FreeForCharity
+
+# Sass/CSS settings
+sass:
+  style: compressed
+
+# Permalink structure  
+permalink: pretty

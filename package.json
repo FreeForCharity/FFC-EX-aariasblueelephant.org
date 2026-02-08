@@ -1,0 +1,26 @@
+{
+  "name": "free-for-charity-html",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free For Charity HTML static website with Playwright E2E tests",
+  "scripts": {
+    "preview": "npx serve -s html-site -l 8000",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:a11y": "playwright test accessibility.spec.ts",
+    "lighthouse": "lhci autorun",
+    "links": "linkinator http://localhost:8000 --recurse --skip 'mailto:' --skip 'tel:' --skip 'https://fonts.googleapis.com' --skip 'https://www.googletagmanager.com'"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@lhci/cli": "^0.15.0",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.3",
+    "linkinator": "^7.5.3",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "qs": "^6.14.1"
+  }
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    {% seo %}
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ site.baseurl }}/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ site.baseurl }}/icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ site.baseurl }}/apple-icon.png" />
+    <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest" />
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
+    <link rel="preconnect" href="https://ffcsites.org" />
+    <link rel="preconnect" href="https://www.zeffy.com" />
+    <link rel="preconnect" href="https://widgets.guidestar.org" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="dns-prefetch" href="https://ffcsites.org" />
+    <link rel="dns-prefetch" href="https://www.zeffy.com" />
+    <link rel="dns-prefetch" href="https://www.idealist.org" />
+
+    <!-- Preload critical image -->
+    <link
+      rel="preload"
+      as="image"
+      href="{{ site.baseurl }}/assets/images/logo.webp"
+      fetchpriority="high"
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Lato:wght@400;700&family=Raleway:wght@400;500;600;700&family=Faustina:wght@400;500;600;700&family=Cantata+One&family=Fauna+One&family=Montserrat:wght@400;500;600;700&family=Cinzel:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/styles.css" />
+    
+    {% feed_meta %}
+
+    <!-- Google Tag Manager (Disabled - Replace GTM-XXXXXXX with actual ID to enable) -->
+    <!-- GTM Script Disabled
+    <script>
+      ;(function (w, d, s, l, i) {
+        w[l] = w[l] || []
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : ''
+        j.async = true
+        j.src = 'https://www.googletagmanager.com/gtag/js?id=' + i + dl
+        f.parentNode.insertBefore(j, f)
+      })(window, document, 'script', 'dataLayer', 'GTM-XXXXXXX')
+    </script>
+    -->
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) (Disabled - Replace GTM-XXXXXXX with actual ID to enable) -->
+    <!-- GTM Noscript Disabled
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    -->
+
+    {% include header.html %}
+
+    <main>
+      {{ content }}
+    </main>
+
+    {% include footer.html %}
+    {% include cookie-consent.html %}
+
+    <!-- JavaScript -->
+    <script src="{{ site.baseurl }}/assets/js/main.js"></script>
+  </body>
+</html>
