@@ -311,58 +311,130 @@
     <!-- Footer -->
     <footer class="bg-brand-card border-t border-slate-800 pt-12 pb-8">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
-                <div class="col-span-1 md:col-span-2">
-                    <h3 class="text-lg font-bold text-white mb-4">Aaria's Blue Elephant</h3>
-                    <p class="text-slate-400 max-w-md text-sm leading-relaxed mb-6">
-                        Fostering inclusive playgroups for neurodivergent and neurotypical kids.
-                        Through weekly classes and events, we promote equality, compassion, and community in California
-                        and beyond.
-                    </p>
-                    <div class="flex items-center space-x-4 text-slate-400 text-sm">
-                        <span class="flex items-center gap-2">
-                            <i data-lucide="map-pin" class="h-4 w-4 text-brand-cyan"></i> Tracy, CA 95391
-                        </span>
+            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <!-- Column 1: Endorsements -->
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4">Endorsements</h3>
+                    <div class="space-y-4">
+                        <a href="https://www.guidestar.org/profile/46-2471893" aria-label="View Free For Charity GuideStar Profile">
+                            <img src="/assets/svgs/footerImage.svg" alt="GuideStar Platinum Seal of Transparency" class="max-w-[200px]" />
+                        </a>
+                        <a href="https://www.guidestar.org/profile/shared/bbbe173a-87b9-4af9-a8a2-cae255a95742" 
+                           class="group relative my-4 flex w-full max-w-[230px] items-center justify-between border-2 border-brand-cyan bg-transparent px-5 py-2.5 text-brand-cyan transition-all duration-300 hover:bg-brand-cyan/10">
+                            <span class="text-sm font-medium transition-transform duration-300 group-hover:-translate-x-1">
+                                Direct GuideStar Profile Link
+                            </span>
+                            <i data-lucide="arrow-right" class="h-5 w-5 translate-x-2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"></i>
+                        </a>
+                        <p class="text-white font-medium text-sm">Free For Charity EIN: 46-2471893</p>
                     </div>
                 </div>
 
+                <!-- Column 2: Quick Links & Policy -->
                 <div>
-                    <h3 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Organization</h3>
-                    <ul class="space-y-3">
-                        <li><a href="#" class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">About
-                                Us</a></li>
-                        <li><a href="#"
-                                class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">Events</a></li>
-                        <li><a href="#"
-                                class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">Volunteer</a>
-                        </li>
-                        <li><a href="#"
-                                class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">Donate</a></li>
+                    <h3 class="text-lg font-bold text-white mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-sm mb-6">
+                        <li><a href="/#hero" class="text-slate-400 hover:text-brand-cyan transition-colors">Home</a></li>
+                        <li><a href="/#mission" class="text-slate-400 hover:text-brand-cyan transition-colors">Mission</a></li>
+                        <li><a href="/#programs" class="text-slate-400 hover:text-brand-cyan transition-colors">Programs</a></li>
+                        <li><a href="/#events" class="text-slate-400 hover:text-brand-cyan transition-colors">Events</a></li>
+                        <li><a href="/#donate" class="text-slate-400 hover:text-brand-cyan transition-colors">Donate</a></li>
+                        <li><a href="/#volunteer" class="text-slate-400 hover:text-brand-cyan transition-colors">Volunteer</a></li>
+                        <li><a href="/#faq" class="text-slate-400 hover:text-brand-cyan transition-colors">FAQ</a></li>
+                        <li><a href="/#team" class="text-slate-400 hover:text-brand-cyan transition-colors">Team</a></li>
+                        <li><a href="https://freeforcharity.org/hub/" target="_blank" class="text-slate-400 hover:text-brand-cyan transition-colors">Supported Charity Login</a></li>
+                    </ul>
+
+                    <h4 class="text-lg font-bold text-white mb-4 mt-6">Free For Charity Policy</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/free-for-charity-donation-policy/" class="text-slate-400 hover:text-brand-cyan transition-colors">Free For Charity Donation Policy</a></li>
+                        <li><a href="/donation-policy/" class="text-slate-400 hover:text-brand-cyan transition-colors">Donation Policy</a></li>
+                        <li><a href="/privacy-policy/" class="text-slate-400 hover:text-brand-cyan transition-colors">Privacy Policy</a></li>
+                        <li><a href="/cookie-policy/" class="text-slate-400 hover:text-brand-cyan transition-colors">Cookie Policy</a></li>
+                        <li><a href="/terms-of-service/" class="text-slate-400 hover:text-brand-cyan transition-colors">Terms of Service</a></li>
+                        <li><a href="/vulnerability-disclosure-policy/" class="text-slate-400 hover:text-brand-cyan transition-colors">Vulnerability Disclosure Policy</a></li>
+                        <li><a href="/security-acknowledgements/" class="text-slate-400 hover:text-brand-cyan transition-colors">Security Acknowledgements</a></li>
                     </ul>
                 </div>
 
+                <!-- Column 3: Contact Us -->
                 <div>
-                    <h3 class="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Legal</h3>
-                    <ul class="space-y-3">
-                        <li><span class="text-slate-400 text-sm">Nonprofit Corp #B20250299015</span></li>
-                        <li><span class="text-slate-400 text-sm">501(c)(3) Status</span></li>
-                        <li><a href="#" class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">Privacy
-                                Policy</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-brand-cyan text-sm transition-colors">Terms of
-                                Service</a></li>
-                    </ul>
+                    <h3 class="text-lg font-bold text-white mb-4">Contact Us</h3>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="mail" class="w-5 h-5 text-brand-amber flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-white">E-mail</p>
+                                <a href="mailto:clarkemoyer@freeforcharity.org" class="text-slate-400 hover:text-brand-cyan transition-colors break-all">
+                                    clarkemoyer@freeforcharity.org
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="phone" class="w-5 h-5 text-brand-amber flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-white">Call Us Today</p>
+                                <a href="tel:5202228104" class="text-slate-400 hover:text-brand-cyan transition-colors">
+                                    (520) 222-8104
+                                </a>
+                            </div>
+                        </div>
+
+                        <a href="https://www.google.com/maps/search/?api=1&query=4030+Wake+Forrest+Road+Suite+349+Raleigh+NC+27609" 
+                           target="_blank" rel="noopener noreferrer" aria-label="Open main address in Google Maps"
+                           class="flex items-start gap-3 hover:opacity-80 transition-opacity">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-brand-amber flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-white">Main Address</p>
+                                <p class="text-slate-400">
+                                    4030 Wake Forrest Road<br />
+                                    Suite 349 Raleigh North<br />
+                                    Carolina 27609
+                                </p>
+                            </div>
+                        </a>
+
+                        <a href="https://www.google.com/maps/place/Free+For+Charity/@40.7768455,-77.8963305,17z/data=!3m1!4b1!4m6!3m5!1s0x89cea944b44a2e01:0x6fc2d6bf09e00a0f!8m2!3d40.7768415!4d-77.8937556!16s%2Fg%2F11vzvbl2d7?entry=ttu&g_ep=EgoyMDI1MTEyMy4xIKXMDSoASAFQAw%3D%3D"
+                           target="_blank" rel="noopener noreferrer" aria-label="Open PA office address in Google Maps"
+                           class="flex items-start gap-3 hover:opacity-80 transition-opacity">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-brand-amber flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-white">PA Office Address</p>
+                                <p class="text-slate-400">
+                                    301 Science Park Road Suite<br />
+                                    119 State College PA 16803
+                                </p>
+                            </div>
+                        </a>
+
+                        <div class="flex gap-3 pt-4">
+                            <a href="https://www.facebook.com/freeforcharity" target="_blank" rel="noopener noreferrer" 
+                               aria-label="Facebook" class="bg-brand-amber p-2 rounded-full hover:bg-brand-amber/80 transition-colors">
+                                <span class="text-white text-sm font-bold">f</span>
+                            </a>
+                            <a href="https://x.com/freeforcharity1" target="_blank" rel="noopener noreferrer" 
+                               aria-label="X (Twitter)" class="bg-brand-amber p-2 rounded-full hover:bg-brand-amber/80 transition-colors">
+                                <span class="text-white text-sm font-bold">𝕏</span>
+                            </a>
+                            <a href="https://www.linkedin.com/company/freeforcharity/" target="_blank" rel="noopener noreferrer" 
+                               aria-label="LinkedIn" class="bg-brand-amber p-2 rounded-full hover:bg-brand-amber/80 transition-colors">
+                                <span class="text-white text-sm font-bold">in</span>
+                            </a>
+                            <a href="https://github.com/FreeForCharity/FFC-EX-aariasblueelephant.org" target="_blank" rel="noopener noreferrer" 
+                               aria-label="GitHub" class="bg-brand-amber p-2 rounded-full hover:bg-brand-amber/80 transition-colors">
+                                <span class="text-white text-sm font-bold">GH</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-12 border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-slate-400 text-sm text-center md:text-left">
-                    &copy; 2025 Aaria's Blue Elephant. All rights reserved.
+            <div class="mt-12 border-t border-slate-800 pt-8 text-center">
+                <p class="text-slate-400 text-sm">
+                    &copy; <span id="currentYear">2025</span> All Rights Are Reserved by Free For Charity a US 501c3 Non Profit | 
+                    A project of <a href="https://freeforcharity.org" class="text-brand-cyan hover:underline">https://freeforcharity.org</a>
                 </p>
-                <div class="flex space-x-6 mt-4 md:mt-0">
-                    <p class="text-slate-500 text-xs flex items-center gap-1">
-                        Designed with <i data-lucide="heart" class="h-3 w-3 text-brand-pink"></i> in California
-                    </p>
-                </div>
             </div>
         </div>
     </footer>
@@ -378,6 +450,9 @@
         btn.addEventListener('click', () => {
             menu.classList.toggle('hidden');
         });
+
+        // Update current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
 </body>
 
