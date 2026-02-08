@@ -55,7 +55,7 @@ This directory contains the CI/CD workflows for the Free For Charity HTML Static
 **What it does:**
 1. Waits for both Test and CodeQL workflows to succeed
 2. Uploads the `html-site/` directory as a Pages artifact
-3. Deploys the artifact to GitHub Pages at https://ffcworkingsite2.org/
+3. Deploys the artifact to GitHub Pages at https://aariasblueelephant.org/
 
 **Duration:** ~30 seconds
 
@@ -96,7 +96,7 @@ The workflows execute in the following **parallel then sequential** order to pro
 │  Only runs if BOTH workflows succeeded      │
 │  ├─ Uploads html-site/ directory            │
 │  ├─ Deploys to GitHub Pages                 │
-│  └─ Site live at ffcworkingsite2.org        │
+│  └─ Site live at aariasblueelephant.org     │
 └─────────────────────────────────────────────┘
            │
            ▼
