@@ -167,12 +167,12 @@ If you want to use a custom domain:
    Both files should contain:
 
    ```
-   ffcworkingsite2.org
+   aariasblueelephant.org
    ```
 
 2. **Configure DNS records** at your domain provider:
 
-   For apex domain (ffcworkingsite2.org):
+   For apex domain (aariasblueelephant.org):
    - **Type**: A or ALIAS (depending on DNS provider)
    - **Name**: @ (root domain)
    - **Value**: GitHub Pages IP addresses:
@@ -188,7 +188,7 @@ If you want to use a custom domain:
 
 3. **GitHub Pages Settings**:
    - Navigate to repository Settings → Pages
-   - Custom domain should show: `ffcworkingsite2.org`
+   - Custom domain should show: `aariasblueelephant.org`
    - HTTPS should be automatically enabled
 
 4. **Important Notes**:
