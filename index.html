@@ -152,7 +152,8 @@
     <main class="flex-grow">
         <div class="flex flex-col min-h-screen">
             <!-- Hero Section -->
-<section class="relative overflow-hidden py-20 lg:py-32">
+
+            <section class="relative overflow-hidden py-12 lg:py-32">
     <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-brand-purple/20 blur-3xl"></div>
         <div class="absolute top-20 -left-20 w-72 h-72 rounded-full bg-brand-cyan/20 blur-3xl"></div>
@@ -161,65 +162,66 @@
 
     <div class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         
-        <div class="flex justify-center mb-16">
-            <div class="inline-flex items-center gap-12 bg-white/5 backdrop-blur-lg p-6 px-12 rounded-full border border-white/10 shadow-2xl">
+        <div class="flex justify-center mb-16 sm:mb-20">
+            <div class="flex flex-wrap items-center justify-center gap-8 lg:gap-20 bg-white/5 backdrop-blur-xl p-6 lg:p-10 px-8 lg:px-20 rounded-[2rem] lg:rounded-full border border-white/10 shadow-2xl">
                 
-                <div class="flex flex-col items-center min-w-[100px]">
-                    <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" class="flex flex-col items-center transition-all hover:opacity-80"> 
-                        <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" class="h-16 w-auto mb-3" />
+                <div class="flex flex-col items-center min-w-[120px] lg:min-w-[180px]">
+                    <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" class="flex flex-col items-center transition-all hover:scale-105"> 
+                        <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" class="h-16 lg:h-24 w-auto mb-4" />
                         <div class="text-center leading-tight">
-                            <span class="text-[12px] font-bold text-brand-cyan uppercase tracking-widest">Verified</span>
-                            <p class="text-[10px] text-slate-400 uppercase mt-1">Nonprofit</p>
+                            <span class="text-[12px] lg:text-[14px] font-bold text-brand-cyan uppercase tracking-[0.2em]">Verified</span>
+                            <p class="text-[10px] lg:text-[12px] text-slate-400 uppercase mt-1">Nonprofit Org</p>
                         </div>
                     </a>
                 </div>
 
-                <span class="h-14 w-px bg-white/20"></span>
+                <span class="hidden lg:block h-24 w-px bg-white/20"></span>
 
-                <div class="flex flex-col items-center min-w-[100px]">
-                    <img src="/zeffy_donation-qr-code.png" alt="Scan to Donate" class="h-16 w-16 rounded-lg bg-white p-1.5 mb-3" />
+                <div class="flex flex-col items-center min-w-[120px] lg:min-w-[180px]">
+                    <img src="/zeffy_donation-qr-code.png" alt="Scan to Donate" class="h-16 w-16 lg:h-24 lg:w-24 rounded-xl bg-white p-2 mb-4 shadow-lg shadow-white/10" />
                     <div class="text-center leading-tight">
-                        <span class="text-[12px] font-bold text-slate-300 uppercase tracking-wide">Scan</span>
-                        <p class="text-[10px] text-slate-400 uppercase mt-1">to Give</p>
+                        <span class="text-[12px] lg:text-[14px] font-bold text-slate-200 uppercase tracking-widest">Scan</span>
+                        <p class="text-[10px] lg:text-[12px] text-slate-400 uppercase mt-1">To Give Now</p>
                     </div>
                 </div>
 
-                <span class="h-14 w-px bg-white/20"></span>
+                <span class="hidden lg:block h-24 w-px bg-white/20"></span>
 
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" 
                    target="_blank"
-                   class="inline-flex items-center justify-center rounded-full bg-brand-cyan px-12 py-5 text-lg font-extrabold text-brand-dark hover:bg-white transition-all transform hover:scale-105 active:scale-95 shadow-xl">
+                   class="inline-flex items-center justify-center rounded-full bg-brand-cyan px-10 lg:px-16 py-4 lg:py-7 text-lg lg:text-2xl font-black text-brand-dark hover:bg-white transition-all transform hover:scale-105 active:scale-95 shadow-2xl w-full lg:w-auto">
                     Donate Now
-                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-3 lg:ml-4 h-6 w-6 lg:h-8 lg:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                 </a>
             </div>
         </div>
 
-        <h1 class="text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl mb-6">
+        <h1 class="text-5xl lg:text-8xl font-black tracking-tighter text-white mb-8">
             Play Without <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple">Barriers</span>
         </h1>
 
-        <p class="mx-auto max-w-2xl text-lg text-slate-300 mb-10 leading-relaxed">
+        <p class="mx-auto max-w-3xl text-lg lg:text-xl text-slate-300 mb-12 leading-relaxed font-medium">
             Aaria's Blue Elephant is a safe haven where neurodivergent and neurotypical children grow together.
             We believe in early intervention, inclusive play, and building a compassionate community.
         </p>
 
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="#">
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan bg-brand-cyan text-brand-dark hover:bg-brand-cyan/90 h-11 px-8 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row justify-center gap-6">
+            <a href="#" class="w-full sm:w-auto">
+                <button class="inline-flex items-center justify-center rounded-xl text-base font-bold transition-all bg-brand-cyan text-brand-dark hover:bg-brand-cyan/90 h-14 px-10 w-full shadow-lg shadow-brand-cyan/20">
                     Find a Playgroup <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                 </button>
             </a>
-            <a href="#">
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan bg-slate-800 text-slate-200 hover:bg-slate-700 h-11 px-8 w-full sm:w-auto">
+            <a href="#" class="w-full sm:w-auto">
+                <button class="inline-flex items-center justify-center rounded-xl text-base font-bold transition-all border-2 border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 h-14 px-10 w-full">
                     Our Story
                 </button>
             </a>
         </div>
     </div>
 </section>
+
             <!--
             <section class="relative overflow-hidden py-20 lg:py-32">
                 <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
