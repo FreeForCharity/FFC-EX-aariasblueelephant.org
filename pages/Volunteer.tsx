@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, CheckCircle, Send, ArrowRight } from 'lucide-react';
+import { Heart, CheckCircle, Send, ArrowRight, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import { useData } from '../context/DataContext';
@@ -93,6 +93,25 @@ const Volunteer: React.FC = () => {
         </div>
         <Link to="/dashboard">
           <Button variant="outline">Check Status in Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center max-w-xl mx-auto">
+        <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/20 flex items-center justify-center mb-6">
+          <Users className="h-8 w-8 text-sky-600 dark:text-sky-400" />
+        </div>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Want to Collaborate?</h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+          To submit a volunteer application and get involved with our playgroups and events, please sign in or create an account first. This helps us stay connected!
+        </p>
+        <Link to="/auth">
+          <Button size="lg" className="flex items-center gap-2 shadow-lg shadow-sky-500/25">
+            Sign In to Volunteer <ArrowRight className="h-4 w-4" />
+          </Button>
         </Link>
       </div>
     );

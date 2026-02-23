@@ -292,7 +292,7 @@ const Events: React.FC = () => {
         <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6">
           We are always looking for volunteers and venues to expand our reach in Tracy and Mountain House.
         </p>
-        <Button variant="outline">Contact Us</Button>
+        <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>Contact Us</Button>
       </div>
     </div>
   );

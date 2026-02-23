@@ -42,23 +42,27 @@ const About: React.FC = () => {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Leadership Team</h2>
 
             <div className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                LC
-              </div>
+              <img
+                src="/liji_chalatil.png"
+                alt="Liji Chalatil"
+                className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-400 flex-shrink-0"
+              />
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Liji Chalatil</h3>
-                <p className="text-sky-600 dark:text-sky-400 text-sm">Founder, CEO & CFO</p>
+                <p className="text-sky-600 dark:text-sky-400 text-sm font-medium">Founder, President &amp; CEO</p>
                 <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Visionary leader advocating for neurodiversity.</p>
               </div>
             </div>
 
             <div className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-sky-500 to-sky-700 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                AC
-              </div>
+              <img
+                src="/ajith_chandran.png"
+                alt="Ajith Chandran"
+                className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-500 flex-shrink-0"
+              />
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ajith Chandran</h3>
-                <p className="text-sky-600 dark:text-sky-400 text-sm">Secretary</p>
+                <p className="text-sky-600 dark:text-sky-400 text-sm font-medium">Secretary &amp; CTO</p>
                 <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Dedicated to operational excellence and community outreach.</p>
               </div>
             </div>

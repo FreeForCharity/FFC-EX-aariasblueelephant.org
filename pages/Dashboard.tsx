@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 import {
     LayoutDashboard,
     Calendar,
     Users,
-    Activity,
+
     DollarSign,
     FileText,
     MessageSquare,
@@ -26,17 +26,8 @@ import {
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import Button from '../components/Button';
 
-const chartData = [
-    { name: 'Jan', value: 400 },
-    { name: 'Feb', value: 300 },
-    { name: 'Mar', value: 600 },
-    { name: 'Apr', value: 800 },
-    { name: 'May', value: 500 },
-    { name: 'Jun', value: 900 },
-    { name: 'Jul', value: 1200 },
-];
 
-type ViewState = 'overview' | 'events' | 'volunteers' | 'analytics' | 'history' | 'receipts' | 'my-events' | 'testimonial';
+type ViewState = 'overview' | 'events' | 'volunteers' | 'history' | 'receipts' | 'my-events' | 'testimonial';
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
@@ -161,7 +152,7 @@ const Dashboard: React.FC = () => {
             { id: 'events', label: 'Manage Events', icon: Calendar },
             { id: 'volunteers', label: 'Volunteers', icon: Users },
             { id: 'manage-testimonials', label: 'Testimonials', icon: MessageSquare },
-            { id: 'analytics', label: 'Analytics', icon: Activity },
+
         ] : []),
         // Donor Items
         ...(isDonor ? [
@@ -495,31 +486,6 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderAnalyticsSection = () => (
-        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg h-[500px] flex flex-col">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Growth Analytics</h2>
-            <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                        <defs>
-                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                        <XAxis dataKey="name" stroke="#94a3b8" axisLine={false} tickLine={false} dy={10} />
-                        <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} dx={-10} />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', color: '#fff', borderRadius: '8px' }}
-                            cursor={{ stroke: '#475569', strokeWidth: 2 }}
-                        />
-                        <Area type="monotone" dataKey="value" stroke="#06B6D4" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                    </AreaChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
 
     const renderHistorySection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
@@ -718,7 +684,7 @@ const Dashboard: React.FC = () => {
             case 'events': return renderEventsSection();
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
-            case 'analytics': return renderAnalyticsSection();
+
             case 'history': return renderHistorySection();
             case 'receipts': return renderReceiptsSection();
             case 'my-events': return renderMyEventsSection();
