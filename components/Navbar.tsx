@@ -194,24 +194,30 @@ const Navbar: React.FC = () => {
                 </a>
 
                 {user ? (
-                  <div className="relative group z-50 shrink-0">
-                    <button className="flex items-center gap-2 rounded-full bg-slate-200 dark:bg-slate-800 py-1 px-3 text-sm text-slate-700 dark:text-slate-200 hover:ring-2 hover:ring-sky-500 transition-all">
-                      <div className="h-8 w-8 rounded-full bg-sky-600 flex items-center justify-center text-xs overflow-hidden text-white shrink-0">
-                        {user.avatar ? (
-                          <img src={user.avatar} referrerPolicy="no-referrer" alt={user.name} className="h-full w-full object-cover" />
-                        ) : (
-                          user.name.charAt(0)
-                        )}
-                      </div>
-                      <span className="max-w-[100px] truncate hidden md:block">{user.name}</span>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                      <Link to="/dashboard" className="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
-                        <LayoutDashboard className="mr-2 h-4 w-4" /> {isBoardMember ? 'Dashboard' : 'My Dashboard'}
-                      </Link>
-                      <button onClick={handleLogout} className="flex w-full items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
-                        <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  <div className="flex items-center gap-3">
+                    <Link to="/dashboard" className="hidden sm:flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-300 hover:text-sky-800 dark:hover:text-sky-200 transition-colors bg-sky-50 dark:bg-sky-900/30 px-3 py-1.5 rounded-full border border-sky-100 dark:border-sky-800/50">
+                      <LayoutDashboard className="h-4 w-4" />
+                      {isBoardMember ? 'Dashboard' : 'My Dashboard'}
+                    </Link>
+                    <div className="relative group z-50 shrink-0">
+                      <button className="flex items-center gap-2 rounded-full bg-slate-200 dark:bg-slate-800 py-1 px-3 text-sm text-slate-700 dark:text-slate-200 hover:ring-2 hover:ring-sky-500 transition-all">
+                        <div className="h-8 w-8 rounded-full bg-sky-600 flex items-center justify-center text-xs overflow-hidden text-white shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} referrerPolicy="no-referrer" alt={user.name} className="h-full w-full object-cover" />
+                          ) : (
+                            user.name.charAt(0)
+                          )}
+                        </div>
+                        <span className="max-w-[100px] truncate hidden md:block">{user.name}</span>
                       </button>
+                      <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-slate-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                        <Link to="/dashboard" className="sm:hidden flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                          <LayoutDashboard className="mr-2 h-4 w-4" /> {isBoardMember ? 'Dashboard' : 'My Dashboard'}
+                        </Link>
+                        <button onClick={handleLogout} className="flex w-full items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                          <LogOut className="mr-2 h-4 w-4" /> Sign out
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
