@@ -1,0 +1,58 @@
+/* Base index.css to prevent 404 errors and provide a baseline for custom styles */
+:root {
+  --brand-primary: #0284c7;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom styles for Google Login Button visibility */
+.google-login-btn {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .google-login-btn {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Fingerprint scanner animation for Navbar QR Code */
+@keyframes scan {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes footer-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-footer-fade {
+  animation: footer-fade-in 1.2s ease-out forwards;
+}
