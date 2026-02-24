@@ -128,9 +128,12 @@ const Home: React.FC = () => {
                             </div>
 
                             {/* Heading */}
-                            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-slate-900 dark:text-white leading-[1.2] mb-6 tracking-tight">
-                                Building a New Inclusive World <br className="hidden lg:block" /><span className="text-sky-600 dark:text-sky-400">— Fun Without Barriers for Every Child</span>
+                            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black text-slate-900 dark:text-white leading-[1.1] mb-2 tracking-tight">
+                                Building a New Inclusive World
                             </h1>
+                            <h2 className="text-2xl sm:text-3xl lg:text-3xl font-bold text-sky-600 dark:text-sky-400 mb-6 tracking-tight">
+                                Fun Without Barriers for Every Child
+                            </h2>
 
                             {/* Subtitle */}
                             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
