@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     plugins: [react()],
+    base: './',
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
