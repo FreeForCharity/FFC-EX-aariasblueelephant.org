@@ -128,8 +128,8 @@ const Home: React.FC = () => {
                             </div>
 
                             {/* Heading */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-black text-slate-900 dark:text-white leading-[1.1] mb-6 tracking-tight">
-                                Play Without <br className="hidden lg:block" /><span className="text-sky-600 dark:text-sky-400">Barriers</span>
+                            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-slate-900 dark:text-white leading-[1.2] mb-6 tracking-tight">
+                                Building a New Inclusive World <br className="hidden lg:block" /><span className="text-sky-600 dark:text-sky-400">— Fun Without Barriers for Every Child</span>
                             </h1>
 
                             {/* Subtitle */}
