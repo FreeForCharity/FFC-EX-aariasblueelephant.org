@@ -43,7 +43,7 @@ const About: React.FC = () => {
 
             <div className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700">
               <img
-                src="/liji_chalatil.png"
+                src="./liji_chalatil.png"
                 alt="Liji Chalatil"
                 className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-400 flex-shrink-0"
               />
@@ -56,7 +56,7 @@ const About: React.FC = () => {
 
             <div className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700">
               <img
-                src="/ajith_chandran.png"
+                src="./ajith_chandran.png"
                 alt="Ajith Chandran"
                 className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-500 flex-shrink-0"
               />

@@ -143,7 +143,7 @@ const Navbar: React.FC = () => {
                 >
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
                   <div className="relative z-10 h-28 w-28 sm:h-36 sm:w-36 bg-white p-2 rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden">
-                    <img src="/qr-code-donate.png" alt="Signify Impact QR" className="w-full h-full object-contain relative z-20" />
+                    <img src="./qr-code-donate.png" alt="Signify Impact QR" className="w-full h-full object-contain relative z-20" />
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                   </div>
 

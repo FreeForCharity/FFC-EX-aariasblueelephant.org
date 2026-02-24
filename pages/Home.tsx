@@ -397,7 +397,7 @@ const Home: React.FC = () => {
                     <div className="mt-12 flex flex-col items-center">
                         <p className="text-sky-100 font-semibold mb-3 uppercase tracking-widest text-sm text-center">Scan to Signify Impact</p>
                         <div className="h-40 w-40 sm:h-48 sm:w-48 bg-white p-3 rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(14,165,233,0.3)] hover:scale-105 transition-all duration-300 ring-4 ring-white/10">
-                            <img src="/qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
+                            <img src="./qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
                         </div>
                     </div>
                 </div>
@@ -494,7 +494,7 @@ const Home: React.FC = () => {
 
                             <div className="flex flex-col items-center shrink-0">
                                 <div className="h-32 w-32 bg-white p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 ring-4 ring-white/50 dark:ring-slate-800/50">
-                                    <img src="/qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
+                                    <img src="./qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">Scan to Donate</span>
                             </div>
