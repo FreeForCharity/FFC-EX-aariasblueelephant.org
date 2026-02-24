@@ -15,7 +15,6 @@ import Volunteer from './pages/Volunteer';
 import PermissionDenied from './pages/PermissionDenied';
 import ProtectedRoute from './components/ProtectedRoute';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
 import Delight from './components/Delight';
 
 const App: React.FC = () => {
@@ -43,7 +42,6 @@ const App: React.FC = () => {
               <Route path="/donate" element={<Donate />} />
               <Route path="/volunteer" element={<Volunteer />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
             </Routes>
           </Layout>
           <Delight />

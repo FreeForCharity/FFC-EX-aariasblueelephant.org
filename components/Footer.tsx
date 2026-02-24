@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapPin, Mail, Phone, Heart } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Mail, Phone, Heart, ChevronDown, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import Logo from './Logo';
@@ -26,6 +26,8 @@ const CandidSeal: React.FC = () => {
 };
 
 const Footer: React.FC = () => {
+    const [policiesExpanded, setPoliciesExpanded] = useState(false);
+
     return (
         <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-sans transition-colors duration-500">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
@@ -59,8 +61,24 @@ const Footer: React.FC = () => {
                             <li><Link to="/events" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Events</Link></li>
                             <li><Link to="/volunteer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Get Involved</Link></li>
                             <li><a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Donate</a></li>
-                            <li className="pt-4 border-t border-slate-200 dark:border-slate-800/50"><Link to="/privacy-policy" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Privacy Policy</Link></li>
-                            <li><Link to="/terms-of-service" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Terms of Service</Link></li>
+                            <li className="pt-4 border-t border-slate-200 dark:border-slate-800/50">
+                                <button
+                                    onClick={() => setPoliciesExpanded(!policiesExpanded)}
+                                    className="w-full text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex justify-between items-center"
+                                >
+                                    <span>Policies & Legal</span>
+                                    {policiesExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                </button>
+                                <div className={`overflow-hidden transition-all duration-300 ${policiesExpanded ? 'max-h-96 mt-3 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                    <ul className="space-y-3 pl-2 border-l-2 border-slate-200 dark:border-slate-800">
+                                        <li><Link to="/privacy-policy#privacy-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Privacy Policy</Link></li>
+                                        <li><Link to="/privacy-policy#cookie-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Cookie Policy</Link></li>
+                                        <li><Link to="/privacy-policy#terms-of-service" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Terms of Service</Link></li>
+                                        <li><Link to="/privacy-policy#donation-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Donation Policy</Link></li>
+                                        <li><Link to="/privacy-policy#vulnerability-disclosure" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Vulnerability Disclosure</Link></li>
+                                    </ul>
+                                </div>
+                            </li>
                         </ul>
                     </div>
 
