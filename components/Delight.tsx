@@ -185,6 +185,12 @@ const Delight: React.FC = () => {
                 const rect = donateBtn.getBoundingClientRect();
                 window.triggerBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
+                // Make the button itself tilt
+                if (!donateBtn.classList.contains('animate-wiggle')) {
+                    donateBtn.classList.add('animate-wiggle');
+                    setTimeout(() => donateBtn.classList.remove('animate-wiggle'), 600);
+                }
+
                 // Trigger Mascot Wave remotely (Thank You)
                 const docMascot = document.getElementById('elephant-mascot');
                 if (docMascot && !docMascot.classList.contains('animate-trunk')) {
@@ -206,9 +212,19 @@ const Delight: React.FC = () => {
         75% { transform: scale(1.05) rotate(10deg); }
         100% { transform: scale(1) rotate(0deg); }
       }
+      @keyframes delight-wiggle {
+        0% { transform: scale(1) rotate(0deg); }
+        25% { transform: scale(1.02) rotate(3deg); }
+        50% { transform: scale(1.02) rotate(-3deg); }
+        75% { transform: scale(1.02) rotate(2deg); }
+        100% { transform: scale(1) rotate(0deg); }
+      }
       .animate-trunk {
         animation: trunk-wave 0.8s ease-in-out;
         transform-origin: bottom center;
+      }
+      .animate-wiggle {
+        animation: delight-wiggle 0.6s ease-in-out;
       }
     `;
         document.head.appendChild(style);
