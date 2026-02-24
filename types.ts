@@ -54,3 +54,13 @@ export interface VolunteerApplication {
   interest: string;
   status: 'Pending' | 'Approved';
 }
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  date: string;
+}

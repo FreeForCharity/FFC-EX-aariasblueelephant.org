@@ -27,11 +27,11 @@ import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../
 import Button from '../components/Button';
 
 
-type ViewState = 'overview' | 'events' | 'volunteers' | 'history' | 'receipts' | 'my-events' | 'testimonial';
+type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'history' | 'receipts' | 'my-events' | 'testimonial';
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
-    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial } = useData();
+    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, eventRegistrations, approveRegistration, deleteRegistration } = useData();
 
     const [activeView, setActiveView] = useState<ViewState>('overview');
     const [showEventForm, setShowEventForm] = useState(false);
@@ -150,6 +150,7 @@ const Dashboard: React.FC = () => {
         ...(isBoard ? [
             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
             { id: 'events', label: 'Manage Events', icon: Calendar },
+            { id: 'manage-registrations', label: 'Registrations', icon: CheckCircle },
             { id: 'volunteers', label: 'Volunteers', icon: Users },
             { id: 'manage-testimonials', label: 'Testimonials', icon: MessageSquare },
 
@@ -253,7 +254,7 @@ const Dashboard: React.FC = () => {
                         <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Registered Events</h3>
                         <Calendar className="h-5 w-5 text-brand-cyan" />
                     </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">2</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{eventRegistrations.filter(r => r.userId === user.email).length}</p>
                 </div>
             )}
         </div>
@@ -537,25 +538,99 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderMyEventsSection = () => (
+    const renderMyEventsSection = () => {
+        const myRegistrations = eventRegistrations.filter(r => r.userId === user.email);
+
+        return (
+            <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">My Registered Events</h2>
+                <div className="space-y-4">
+                    {myRegistrations.length === 0 ? (
+                        <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                            <Calendar className="h-10 w-10 text-slate-400 dark:text-slate-500 mx-auto mb-3 opacity-50" />
+                            <p className="text-slate-500 dark:text-slate-400">You haven't registered for any events yet.</p>
+                            <Link to="/events" className="mt-4 inline-block text-brand-cyan hover:underline text-sm">
+                                Explore Events
+                            </Link>
+                        </div>
+                    ) : (
+                        myRegistrations.map(reg => {
+                            const evt = events.find(e => e.id === reg.eventId);
+                            if (!evt) return null;
+                            return (
+                                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                                    <div className="flex items-center">
+                                        <div className="h-14 w-14 rounded-xl bg-brand-cyan/10 dark:bg-brand-cyan/20 flex flex-col items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20 flex-shrink-0">
+                                            <span className="text-xs uppercase">{new Date(evt.date).toLocaleString('default', { month: 'short' })}</span>
+                                            <span className="text-xl leading-none">{evt.date.split('-')[2]}</span>
+                                        </div>
+                                        <div className="ml-4">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <h4 className="text-slate-900 dark:text-white font-bold text-lg">{evt.title}</h4>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${reg.status === 'Pending'
+                                                    ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                                    : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                                    }`}>
+                                                    {reg.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-3 mt-1 text-slate-500 dark:text-slate-400 text-sm">
+                                                <span className="flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400" /> {evt.time}</span>
+                                                <span className="flex items-center"><MapPin className="h-3 w-3 mr-1 text-slate-400" /> {evt.location}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderManageRegistrationsSection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">My Registered Events</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Manage Event Registrations</h2>
             <div className="space-y-4">
-                {events.slice(0, 2).map(evt => (
-                    <div key={evt.id} className="flex items-center p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                        <div className="h-14 w-14 rounded-xl bg-brand-cyan/10 dark:bg-brand-cyan/20 flex flex-col items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20 flex-shrink-0">
-                            <span className="text-xs uppercase">{new Date(evt.date).toLocaleString('default', { month: 'short' })}</span>
-                            <span className="text-xl leading-none">{evt.date.split('-')[2]}</span>
-                        </div>
-                        <div className="ml-4">
-                            <h4 className="text-slate-900 dark:text-white font-bold text-lg">{evt.title}</h4>
-                            <div className="flex flex-wrap gap-3 mt-1 text-slate-500 dark:text-slate-400 text-sm">
-                                <span className="flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400" /> {evt.time}</span>
-                                <span className="flex items-center"><MapPin className="h-3 w-3 mr-1 text-slate-400" /> {evt.location}</span>
+                {eventRegistrations.length === 0 ? (
+                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No event registrations.</p>
+                ) : (
+                    eventRegistrations.map(reg => {
+                        const evt = events.find(e => e.id === reg.eventId);
+                        return (
+                            <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                                <div className="mb-4 sm:mb-0">
+                                    <div className="flex items-center gap-3">
+                                        <h4 className="text-slate-900 dark:text-white font-bold">{reg.userName}</h4>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${reg.status === 'Pending'
+                                            ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                            : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                            }`}>
+                                            {reg.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm mt-1">Event: <span className="text-brand-cyan">{evt?.title || 'Unknown Event'}</span></p>
+                                    <p className="text-slate-500 text-xs mt-1">{reg.userEmail} • {reg.date}</p>
+                                </div>
+                                <div className="flex gap-2 items-center">
+                                    {reg.status === 'Pending' && (
+                                        <Button size="sm" variant="outline" onClick={() => approveRegistration(reg.id)} className="shrink-0">
+                                            Approve
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0" onClick={() => {
+                                        if (window.confirm("Delete this registration?")) {
+                                            deleteRegistration(reg.id);
+                                        }
+                                    }}>
+                                        Delete
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                ))}
+                        );
+                    })
+                )}
             </div>
         </div>
     );
@@ -682,6 +757,7 @@ const Dashboard: React.FC = () => {
         switch (activeView) {
             case 'overview': return renderStatsCards();
             case 'events': return renderEventsSection();
+            case 'manage-registrations': return renderManageRegistrationsSection();
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
 

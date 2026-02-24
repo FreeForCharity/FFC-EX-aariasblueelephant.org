@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Event, Testimonial, VolunteerApplication } from '../types';
+import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { ALL_EVENTS } from '../constants';
 
 interface DataContextType {
@@ -14,6 +14,10 @@ interface DataContextType {
   deleteEvent: (id: string) => void;
   submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => void;
   approveVolunteer: (id: string) => void;
+  eventRegistrations: EventRegistration[];
+  registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => void;
+  approveRegistration: (id: string) => void;
+  deleteRegistration: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -43,6 +47,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [events, setEvents] = useState<Event[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
+  const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
 
   useEffect(() => {
     // Load from localStorage or fall back to constants
@@ -70,6 +75,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'v1', name: 'Emily Blunt', email: 'emily@example.com', interest: 'Art Class Helper', status: 'Pending'
       }]);
     }
+
+    const storedRegistrations = localStorage.getItem('abe_registrations');
+    if (storedRegistrations) {
+      setEventRegistrations(JSON.parse(storedRegistrations));
+    }
   }, []);
 
   // Persistence helpers
@@ -86,6 +96,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const saveApps = (newApps: VolunteerApplication[]) => {
     setVolunteerApplications(newApps);
     localStorage.setItem('abe_volunteers', JSON.stringify(newApps));
+  };
+
+  const saveRegistrations = (newRegs: EventRegistration[]) => {
+    setEventRegistrations(newRegs);
+    localStorage.setItem('abe_registrations', JSON.stringify(newRegs));
   };
 
   const addEvent = (eventData: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => {
@@ -148,6 +163,46 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveApps(updated);
   };
 
+  const registerForEvent = (data: Omit<EventRegistration, 'id' | 'date' | 'status'>) => {
+    const newReg: EventRegistration = {
+      ...data,
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      status: 'Pending'
+    };
+    saveRegistrations([newReg, ...eventRegistrations]);
+  };
+
+  const approveRegistration = (id: string) => {
+    const reg = eventRegistrations.find(r => r.id === id);
+    if (!reg || reg.status === 'Approved') return;
+
+    const updated = eventRegistrations.map(r =>
+      r.id === id ? { ...r, status: 'Approved' as const } : r
+    );
+    saveRegistrations(updated);
+
+    const evt = events.find(e => e.id === reg.eventId);
+    if (evt) {
+      updateEvent(evt.id, { registered: evt.registered + 1 });
+    }
+  };
+
+  const deleteRegistration = (id: string) => {
+    const reg = eventRegistrations.find(r => r.id === id);
+    if (!reg) return;
+
+    const updated = eventRegistrations.filter(r => r.id !== id);
+    saveRegistrations(updated);
+
+    if (reg.status === 'Approved') {
+      const evt = events.find(e => e.id === reg.eventId);
+      if (evt) {
+        updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
+      }
+    }
+  };
+
   return (
     <DataContext.Provider value={{
       events,
@@ -160,7 +215,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       approveTestimonial,
       deleteTestimonial,
       submitVolunteerApp,
-      approveVolunteer
+      approveVolunteer,
+      eventRegistrations,
+      registerForEvent,
+      approveRegistration,
+      deleteRegistration
     }}>
       {children}
     </DataContext.Provider>
