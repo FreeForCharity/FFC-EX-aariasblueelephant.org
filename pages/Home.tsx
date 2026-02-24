@@ -237,17 +237,20 @@ const Home: React.FC = () => {
             </section>
 
             {/* Free Events Guarantee Banner */}
-            <section className="bg-brand-cyan/10 dark:bg-sky-900/20 border-y border-brand-cyan/20 dark:border-sky-800/50 py-16 transition-colors">
-                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-                    <div className="h-16 w-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-md mb-6">
-                        <Heart className="h-8 w-8 text-brand-pink" />
+            <section className="bg-slate-50 dark:bg-slate-950 py-16 transition-colors">
+                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 sm:p-12 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group">
+                        <div className="h-20 w-20 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-8 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
+                            <HeartHandshake className="h-10 w-10 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300">
+                            100% Free. Fully Inclusive. All Are Welcome.
+                        </h2>
+                        <div className="w-24 h-1 bg-sky-200 dark:bg-sky-800 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
+                        <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl">
+                            For over two years, Aaria's Blue Elephant has proudly provided free programs to our community. While our events are thoughtfully designed with special needs children in mind, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. We firmly believe that financial constraints should never be a barrier to joy, growth, and connection. All materials are always provided at no cost, and while donations support our mission, they are never a requirement to participate.
+                        </p>
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-wide">
-                        100% Free Events. All Materials Provided.
-                    </h2>
-                    <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed font-medium">
-                        For over two years, we have proudly hosted completely free events for our community. We firmly believe that financial constraints should never be a barrier to participation. While donations help support our mission, they are absolutely never required to attend any of our programs.
-                    </p>
                 </div>
             </section>
 

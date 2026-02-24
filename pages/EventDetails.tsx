@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartHandshake } from 'lucide-react';
 import Button from '../components/Button';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 
@@ -237,10 +237,13 @@ const EventDetails: React.FC = () => {
                   )}
 
                   {/* Free Event Notice */}
-                  <div className="mt-4 p-4 bg-brand-cyan/5 dark:bg-sky-900/20 rounded-xl border border-brand-cyan/20 dark:border-sky-800/40">
-                    <p className="text-xs text-center text-slate-700 dark:text-slate-300">
-                      <strong className="block text-slate-900 dark:text-white mb-1">100% Free to attend. All materials provided.</strong>
-                      We firmly believe financial constraints should never be a barrier. No donation is required.
+                  <div className="mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700 transition-colors duration-300 shadow-sm group">
+                    <div className="flex items-center gap-3 mb-2 justify-center">
+                      <HeartHandshake className="h-5 w-5 text-sky-600 dark:text-sky-400 group-hover:text-sky-500 transition-colors" />
+                      <strong className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors uppercase tracking-wide">100% Free & Inclusive</strong>
+                    </div>
+                    <p className="text-xs text-center text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                      Children of all abilities are welcome to play and learn side-by-side. All materials are provided at no cost. Donations are never required.
                     </p>
                   </div>
                 </div>

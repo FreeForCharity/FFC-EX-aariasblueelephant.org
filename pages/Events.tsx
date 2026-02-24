@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, Info } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, Info, HeartHandshake } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -122,13 +122,16 @@ const Events: React.FC = () => {
       </div>
 
       {/* Free Events Guarantee Banner */}
-      <div className="bg-brand-cyan/10 dark:bg-sky-900/20 border border-brand-cyan/20 dark:border-sky-800/50 rounded-2xl p-6 md:p-8 mb-12 text-center shadow-sm">
-        <Heart className="h-8 w-8 text-brand-pink mx-auto mb-3" />
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-3 tracking-wide">
-          100% Free Events. All Materials Provided.
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 mb-12 text-center shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col items-center">
+        <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-4 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
+          <HeartHandshake className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-4 tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 uppercase">
+          100% Free. Fully Inclusive. All Are Welcome.
         </h2>
-        <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base max-w-3xl mx-auto font-medium">
-          For over two years, we have proudly hosted completely free events for our community. We firmly believe that financial constraints should never be a barrier to participation. While donations help support our mission, they are absolutely never required to attend any of our programs.
+        <div className="w-16 h-1 bg-sky-200 dark:bg-sky-800 mb-5 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
+        <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base max-w-4xl mx-auto font-medium leading-relaxed">
+          For over two years, Aaria's Blue Elephant has proudly provided free programs to our community. While designed to support neurodivergent children, we foster a truly inclusive environment where children of all abilities play and learn side-by-side. We believe financial constraints should never be a barrier. All materials are provided at no cost, and donations are never required.
         </p>
       </div>
 
