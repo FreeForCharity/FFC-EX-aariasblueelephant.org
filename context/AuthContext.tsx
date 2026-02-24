@@ -85,10 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
+    let redirectUrl = window.location.origin;
+    if (window.location.hostname.includes('github.io')) {
+      redirectUrl += '/FFC-EX-aariasblueelephant.org/';
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: redirectUrl,
         queryParams: {
           prompt: 'select_account',
         },
