@@ -1,203 +1,296 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
-import { ALL_EVENTS } from '../constants';
+import { supabase } from '../lib/supabase';
 
 interface DataContextType {
   events: Event[];
   testimonials: Testimonial[];
   volunteerApplications: VolunteerApplication[];
-  addEvent: (event: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => void;
-  addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => void;
-  approveTestimonial: (id: string) => void;
-  deleteTestimonial: (id: string) => void;
-  updateEvent: (id: string, event: Partial<Event>) => void;
-  deleteEvent: (id: string) => void;
-  submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => void;
-  approveVolunteer: (id: string) => void;
   eventRegistrations: EventRegistration[];
-  registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => void;
-  approveRegistration: (id: string) => void;
-  deleteRegistration: (id: string) => void;
+  addEvent: (event: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => Promise<void>;
+  updateEvent: (id: string, event: Partial<Event>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+  addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => Promise<void>;
+  approveTestimonial: (id: string) => Promise<void>;
+  deleteTestimonial: (id: string) => Promise<void>;
+  submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<void>;
+  approveVolunteer: (id: string) => Promise<void>;
+  registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<void>;
+  approveRegistration: (id: string) => Promise<void>;
+  deleteRegistration: (id: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
-
-const INITIAL_TESTIMONIALS: Testimonial[] = [
-  {
-    id: 't1',
-    author: "Sarah Jenkins",
-    role: "Parent",
-    content: "Finding Aaria's Blue Elephant was a turning point for our family. My son finally has a place where he feels he belongs.",
-    date: "2023-10-15",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
-    status: 'Approved'
-  },
-  {
-    id: 't2',
-    author: "David Chen",
-    role: "Donor",
-    content: "I support this cause because I've seen the direct impact on the community. Transparency and heart are at the core here.",
-    date: "2023-09-22",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100",
-    status: 'Approved'
-  }
-];
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch initial data
   useEffect(() => {
-    // Load from localStorage or fall back to constants
-    const storedEvents = localStorage.getItem('abe_events');
-    const storedTestimonials = localStorage.getItem('abe_testimonials');
-    const storedApps = localStorage.getItem('abe_volunteers');
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [eventsRes, testsRes, volsRes, regsRes] = await Promise.all([
+          supabase.from('events').select('*').order('date', { ascending: true }),
+          supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+          supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false }),
+          supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
+        ]);
 
-    if (storedEvents) {
-      setEvents(JSON.parse(storedEvents));
-    } else {
-      setEvents(ALL_EVENTS);
-    }
+        if (eventsRes.data) {
+          setEvents(eventsRes.data.map((e: any) => ({
+            id: e.id,
+            title: e.title,
+            date: e.date,
+            time: e.time,
+            location: e.location,
+            description: e.description,
+            type: e.type,
+            capacity: e.capacity,
+            registered: e.registered || 0,
+            initialLikes: e.initial_likes || 0,
+            image: e.image
+          })));
+        }
 
-    if (storedTestimonials) {
-      setTestimonials(JSON.parse(storedTestimonials));
-    } else {
-      setTestimonials(INITIAL_TESTIMONIALS);
-    }
+        if (testsRes.data) {
+          setTestimonials(testsRes.data.map((t: any) => ({
+            id: t.id,
+            author: t.author,
+            role: t.role,
+            content: t.content,
+            date: t.date,
+            avatar: t.avatar,
+            status: t.status
+          })));
+        }
 
-    if (storedApps) {
-      setVolunteerApplications(JSON.parse(storedApps));
-    } else {
-      // Mock initial pending app
-      setVolunteerApplications([{
-        id: 'v1', name: 'Emily Blunt', email: 'emily@example.com', interest: 'Art Class Helper', status: 'Pending'
-      }]);
-    }
+        if (volsRes.data) {
+          setVolunteerApplications(volsRes.data.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            email: v.email,
+            interest: v.interest,
+            status: v.status
+          })));
+        }
 
-    const storedRegistrations = localStorage.getItem('abe_registrations');
-    if (storedRegistrations) {
-      setEventRegistrations(JSON.parse(storedRegistrations));
-    }
+        if (regsRes.data) {
+          setEventRegistrations(regsRes.data.map((r: any) => ({
+            id: r.id,
+            eventId: r.event_id,
+            userId: r.user_id,
+            userName: r.user_name,
+            userEmail: r.user_email,
+            status: r.status,
+            date: r.date
+          })));
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  // Persistence helpers
-  const saveEvents = (newEvents: Event[]) => {
-    setEvents(newEvents);
-    localStorage.setItem('abe_events', JSON.stringify(newEvents));
-  };
-
-  const saveTestimonials = (newTests: Testimonial[]) => {
-    setTestimonials(newTests);
-    localStorage.setItem('abe_testimonials', JSON.stringify(newTests));
-  };
-
-  const saveApps = (newApps: VolunteerApplication[]) => {
-    setVolunteerApplications(newApps);
-    localStorage.setItem('abe_volunteers', JSON.stringify(newApps));
-  };
-
-  const saveRegistrations = (newRegs: EventRegistration[]) => {
-    setEventRegistrations(newRegs);
-    localStorage.setItem('abe_registrations', JSON.stringify(newRegs));
-  };
-
-  const addEvent = (eventData: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => {
-    const newEvent: Event = {
-      ...eventData,
-      id: Date.now().toString(),
+  // Events
+  const addEvent = async (eventData: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => {
+    const { data, error } = await supabase.from('events').insert([{
+      title: eventData.title,
+      date: eventData.date,
+      time: eventData.time,
+      location: eventData.location,
+      description: eventData.description,
+      type: eventData.type,
+      capacity: eventData.capacity,
+      image: eventData.image,
       registered: 0,
-      initialLikes: 0
-    };
-    saveEvents([...events, newEvent]);
-  };
+      initial_likes: 0
+    }]).select().single();
 
-  const updateEvent = (id: string, eventData: Partial<Event>) => {
-    const updated = events.map(evt =>
-      evt.id === id ? { ...evt, ...eventData } : evt
-    );
-    saveEvents(updated);
-  };
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  const deleteEvent = (id: string) => {
-    const updated = events.filter(evt => evt.id !== id);
-    saveEvents(updated);
-  };
-
-  const addTestimonial = (data: Omit<Testimonial, 'id' | 'date' | 'status'>) => {
-    const newTestimonial: Testimonial = {
-      ...data,
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      status: 'Pending'
-    };
-    saveTestimonials([newTestimonial, ...testimonials]);
-  };
-
-  const approveTestimonial = (id: string) => {
-    const updated = testimonials.map(t =>
-      t.id === id ? { ...t, status: 'Approved' as const } : t
-    );
-    saveTestimonials(updated);
-  };
-
-  const deleteTestimonial = (id: string) => {
-    const updated = testimonials.filter(t => t.id !== id);
-    saveTestimonials(updated);
-  };
-
-  const submitVolunteerApp = (data: Omit<VolunteerApplication, 'id' | 'status'>) => {
-    const newApp: VolunteerApplication = {
-      ...data,
-      id: Date.now().toString(),
-      status: 'Pending'
-    };
-    saveApps([...volunteerApplications, newApp]);
-  };
-
-  const approveVolunteer = (id: string) => {
-    const updated = volunteerApplications.map(app =>
-      app.id === id ? { ...app, status: 'Approved' as const } : app
-    );
-    saveApps(updated);
-  };
-
-  const registerForEvent = (data: Omit<EventRegistration, 'id' | 'date' | 'status'>) => {
-    const newReg: EventRegistration = {
-      ...data,
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      status: 'Pending'
-    };
-    saveRegistrations([newReg, ...eventRegistrations]);
-
-    const evt = events.find(e => e.id === data.eventId);
-    if (evt) {
-      updateEvent(evt.id, { registered: evt.registered + 1 });
+    if (data) {
+      setEvents([...events, {
+        id: data.id,
+        title: data.title,
+        date: data.date,
+        time: data.time,
+        location: data.location,
+        description: data.description,
+        type: data.type,
+        capacity: data.capacity,
+        registered: data.registered,
+        initialLikes: data.initial_likes,
+        image: data.image
+      }]);
     }
   };
 
-  const approveRegistration = (id: string) => {
-    const reg = eventRegistrations.find(r => r.id === id);
-    if (!reg || reg.status === 'Approved') return;
+  const updateEvent = async (id: string, eventData: Partial<Event>) => {
+    const updatePayload: any = { ...eventData };
+    if (eventData.initialLikes !== undefined) updatePayload.initial_likes = eventData.initialLikes;
+    delete updatePayload.initialLikes;
 
-    const updated = eventRegistrations.map(r =>
-      r.id === id ? { ...r, status: 'Approved' as const } : r
-    );
-    saveRegistrations(updated);
+    const { error } = await supabase.from('events').update(updatePayload).eq('id', id);
+    if (!error) {
+      setEvents(events.map(evt => evt.id === id ? { ...evt, ...eventData } : evt));
+    } else {
+      console.error(error);
+    }
   };
 
-  const deleteRegistration = (id: string) => {
+  const deleteEvent = async (id: string) => {
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (!error) {
+      setEvents(events.filter(evt => evt.id !== id));
+    } else {
+      console.error(error);
+    }
+  };
+
+  // Testimonials
+  const addTestimonial = async (data: Omit<Testimonial, 'id' | 'date' | 'status'>) => {
+    const dateStr = new Date().toISOString().split('T')[0];
+    const { data: resData, error } = await supabase.from('testimonials').insert([{
+      author: data.author,
+      role: data.role,
+      content: data.content,
+      avatar: data.avatar,
+      date: dateStr,
+      status: 'Pending'
+    }]).select().single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (resData) {
+      setTestimonials([{
+        id: resData.id,
+        author: resData.author,
+        role: resData.role,
+        content: resData.content,
+        date: resData.date,
+        avatar: resData.avatar,
+        status: resData.status
+      }, ...testimonials]);
+    }
+  };
+
+  const approveTestimonial = async (id: string) => {
+    const { error } = await supabase.from('testimonials').update({ status: 'Approved' }).eq('id', id);
+    if (!error) {
+      setTestimonials(testimonials.map(t => t.id === id ? { ...t, status: 'Approved' } : t));
+    }
+  };
+
+  const deleteTestimonial = async (id: string) => {
+    const { error } = await supabase.from('testimonials').delete().eq('id', id);
+    if (!error) {
+      setTestimonials(testimonials.filter(t => t.id !== id));
+    }
+  };
+
+  // Volunteers
+  const submitVolunteerApp = async (data: Omit<VolunteerApplication, 'id' | 'status'>) => {
+    const { data: resData, error } = await supabase.from('volunteer_applications').insert([{
+      name: data.name,
+      email: data.email,
+      interest: data.interest,
+      status: 'Pending'
+    }]).select().single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (resData) {
+      setVolunteerApplications([{
+        id: resData.id,
+        name: resData.name,
+        email: resData.email,
+        interest: resData.interest,
+        status: resData.status
+      }, ...volunteerApplications]);
+    }
+  };
+
+  const approveVolunteer = async (id: string) => {
+    const { error } = await supabase.from('volunteer_applications').update({ status: 'Approved' }).eq('id', id);
+    if (!error) {
+      setVolunteerApplications(volunteerApplications.map(app => app.id === id ? { ...app, status: 'Approved' } : app));
+    }
+  };
+
+  // Registrations
+  const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>) => {
+    const dateStr = new Date().toISOString().split('T')[0];
+    const { data: resData, error } = await supabase.from('event_registrations').insert([{
+      event_id: data.eventId,
+      user_id: data.userId,
+      user_name: data.userName,
+      user_email: data.userEmail,
+      date: dateStr,
+      status: 'Pending'
+    }]).select().single();
+
+    if (error) {
+      console.error("Registration error:", error);
+      return;
+    }
+
+    if (resData) {
+      setEventRegistrations([{
+        id: resData.id,
+        eventId: resData.event_id,
+        userId: resData.user_id,
+        userName: resData.user_name,
+        userEmail: resData.user_email,
+        status: resData.status,
+        date: resData.date
+      }, ...eventRegistrations]);
+
+      // Find local event and optimistic update
+      const evt = events.find(e => e.id === data.eventId);
+      if (evt) {
+        updateEvent(evt.id, { registered: evt.registered + 1 });
+      }
+    }
+  };
+
+  const approveRegistration = async (id: string) => {
+    const { error } = await supabase.from('event_registrations').update({ status: 'Approved' }).eq('id', id);
+    if (!error) {
+      setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+    }
+  };
+
+  const deleteRegistration = async (id: string) => {
     const reg = eventRegistrations.find(r => r.id === id);
     if (!reg) return;
 
-    const updated = eventRegistrations.filter(r => r.id !== id);
-    saveRegistrations(updated);
+    const { error } = await supabase.from('event_registrations').delete().eq('id', id);
+    if (!error) {
+      setEventRegistrations(eventRegistrations.filter(r => r.id !== id));
 
-    const evt = events.find(e => e.id === reg.eventId);
-    if (evt) {
-      updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
+      const evt = events.find(e => e.id === reg.eventId);
+      if (evt) {
+        updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
+      }
     }
   };
 
@@ -206,6 +299,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       events,
       testimonials,
       volunteerApplications,
+      eventRegistrations,
       addEvent,
       updateEvent,
       deleteEvent,
@@ -214,10 +308,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteTestimonial,
       submitVolunteerApp,
       approveVolunteer,
-      eventRegistrations,
       registerForEvent,
       approveRegistration,
-      deleteRegistration
+      deleteRegistration,
+      isLoading
     }}>
       {children}
     </DataContext.Provider>
