@@ -171,6 +171,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'Pending'
     };
     saveRegistrations([newReg, ...eventRegistrations]);
+
+    const evt = events.find(e => e.id === data.eventId);
+    if (evt) {
+      updateEvent(evt.id, { registered: evt.registered + 1 });
+    }
   };
 
   const approveRegistration = (id: string) => {
@@ -181,11 +186,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       r.id === id ? { ...r, status: 'Approved' as const } : r
     );
     saveRegistrations(updated);
-
-    const evt = events.find(e => e.id === reg.eventId);
-    if (evt) {
-      updateEvent(evt.id, { registered: evt.registered + 1 });
-    }
   };
 
   const deleteRegistration = (id: string) => {
@@ -195,11 +195,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = eventRegistrations.filter(r => r.id !== id);
     saveRegistrations(updated);
 
-    if (reg.status === 'Approved') {
-      const evt = events.find(e => e.id === reg.eventId);
-      if (evt) {
-        updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
-      }
+    const evt = events.find(e => e.id === reg.eventId);
+    if (evt) {
+      updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
     }
   };
 

@@ -22,7 +22,6 @@ const EventDetails: React.FC = () => {
 
   const handleRegister = () => {
     if (!user) {
-      alert("Please log in to register for events.");
       navigate('/login');
       return;
     }
@@ -33,7 +32,7 @@ const EventDetails: React.FC = () => {
         userName: user.name,
         userEmail: user.email,
       });
-      alert("You have successfully registered! Your registration is pending approval.");
+      alert("You have successfully registered! Your registration is waiting for approval.");
     }
   };
 
@@ -212,10 +211,14 @@ const EventDetails: React.FC = () => {
                 </div>
 
                 <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
-                  {isRegistered ? (
+                  {!user ? (
+                    <Button fullWidth size="lg" className="shadow-xl shadow-brand-cyan/10" onClick={() => navigate('/login')}>
+                      Sign in to Register
+                    </Button>
+                  ) : isRegistered ? (
                     registrationStatus === 'Pending' ? (
                       <Button fullWidth size="lg" variant="secondary" disabled>
-                        Registration Pending
+                        Waiting for Approval
                       </Button>
                     ) : (
                       <Button fullWidth size="lg" variant="secondary" disabled>
@@ -228,12 +231,9 @@ const EventDetails: React.FC = () => {
                     </Button>
                   ) : (
                     <Button fullWidth size="lg" variant="secondary" disabled>
-                      Waitlist Only
+                      Event Full
                     </Button>
                   )}
-                  <p className="text-xs text-center text-slate-500 mt-4">
-                    Registration is free for members. Donations appreciated at door.
-                  </p>
                 </div>
               </div>
             </div>
