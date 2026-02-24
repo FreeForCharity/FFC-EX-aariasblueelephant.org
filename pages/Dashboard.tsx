@@ -280,6 +280,19 @@ const Dashboard: React.FC = () => {
                     <p className="text-3xl font-bold text-slate-900 dark:text-white">{eventRegistrations.filter(r => r.userId === user.email).length}</p>
                 </div>
             )}
+            {isBoard && (
+                <div className="bg-gradient-to-r from-sky-400 to-indigo-500 p-6 rounded-xl border border-sky-300 dark:border-sky-700 shadow-lg col-span-full mb-2 cursor-pointer hover:scale-[1.01] transition-all duration-300" onClick={() => window.triggerDrift && window.triggerDrift()}>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-white text-lg font-bold mb-1">Trigger Event Celebration</h3>
+                            <p className="text-sky-100 text-sm">Click here to manually trigger the seasonal celebration particles on the screen.</p>
+                        </div>
+                        <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <Heart className="h-6 w-6 text-white" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 

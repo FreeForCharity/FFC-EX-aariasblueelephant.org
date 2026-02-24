@@ -144,7 +144,7 @@ const Home: React.FC = () => {
                             {/* CTA Buttons */}
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
                                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-                                    <button className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgb(2,132,199,0.3)] hover:shadow-[0_8px_30px_rgb(2,132,199,0.5)] hover:-translate-y-0.5">
+                                    <button id="donate-button" className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgb(2,132,199,0.3)] hover:shadow-[0_8px_30px_rgb(2,132,199,0.5)] hover:-translate-y-0.5">
                                         Donate Now <HeartPulse className="h-5 w-5" />
                                     </button>
                                 </a>
@@ -507,7 +507,7 @@ const Home: React.FC = () => {
                                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-sm">Imprint your change and help us support more families.</p>
 
                                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="inline-block mt-4 w-full sm:w-auto">
-                                    <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2">
+                                    <button id="donate-button" className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2">
                                         Donate Now <HeartPulse className="h-4 w-4" />
                                     </button>
                                 </a>
