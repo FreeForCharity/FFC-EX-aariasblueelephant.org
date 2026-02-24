@@ -116,14 +116,14 @@ const Home: React.FC = () => {
         <div className="flex flex-col min-h-screen pt-0 bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
 
             {/* Combined Hero & Track Record Section */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-16 lg:py-24 transition-colors">
+            <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-8 lg:py-12 transition-colors">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
                         {/* Left Side: Play Without Barriers (Hero Text) */}
                         <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left">
                             {/* Social Media Links (Media Tag) */}
-                            <div className="mb-6 flex justify-center lg:justify-start">
+                            <div className="mb-4 flex justify-center lg:justify-start">
                                 <SocialLinks />
                             </div>
 
@@ -131,18 +131,18 @@ const Home: React.FC = () => {
                             <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black text-slate-900 dark:text-white leading-[1.1] mb-2 tracking-tight">
                                 Building a New Inclusive World
                             </h1>
-                            <h2 className="text-2xl sm:text-3xl lg:text-3xl font-bold text-sky-600 dark:text-sky-400 mb-6 tracking-tight">
+                            <h2 className="text-2xl sm:text-3xl lg:text-3xl font-bold text-sky-600 dark:text-sky-400 mb-4 tracking-tight">
                                 Fun Without Barriers for Every Child
                             </h2>
 
                             {/* Subtitle */}
-                            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
                                 A safe haven where neurodivergent and neurotypical children grow together.
                                 We believe in early intervention, inclusive play, and building a compassionate community.
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12">
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
                                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                                     <button className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgb(2,132,199,0.3)] hover:shadow-[0_8px_30px_rgb(2,132,199,0.5)] hover:-translate-y-0.5">
                                         Donate Now <HeartPulse className="h-5 w-5" />
@@ -240,7 +240,7 @@ const Home: React.FC = () => {
             </section>
 
             {/* Free Events Guarantee Banner */}
-            <section className="bg-slate-50 dark:bg-slate-950 py-16 transition-colors">
+            <section className="bg-slate-50 dark:bg-slate-950 py-8 transition-colors">
                 <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 sm:p-12 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group">
                         <div className="h-20 w-20 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-8 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
