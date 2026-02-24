@@ -1,17 +1,26 @@
-import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
 
 const Login: React.FC = () => {
   const { loginWithGoogle, user, isLoading } = useAuth();
+  const location = useLocation();
+  const returnTo = location.state?.returnTo;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (user) {
     return <Navigate to="/dashboard" />;
   }
 
   const handleGoogleAuth = async () => {
+    if (returnTo) {
+      localStorage.setItem('authReturnTo', returnTo);
+    }
     await loginWithGoogle();
   };
 

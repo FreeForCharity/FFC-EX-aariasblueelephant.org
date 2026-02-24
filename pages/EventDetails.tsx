@@ -22,7 +22,8 @@ const EventDetails: React.FC = () => {
 
   const handleRegister = () => {
     if (!user) {
-      navigate('/login');
+      window.scrollTo(0, 0);
+      navigate('/login', { state: { returnTo: `/events/${event?.id}` } });
       return;
     }
     if (event) {

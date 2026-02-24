@@ -46,6 +46,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
         avatar: avatarUrl
       });
+
+      const returnTo = localStorage.getItem('authReturnTo');
+      if (returnTo) {
+        localStorage.removeItem('authReturnTo');
+        setTimeout(() => {
+          window.location.hash = returnTo;
+        }, 100);
+      }
     } else {
       setUser(null);
     }

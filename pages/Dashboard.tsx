@@ -220,7 +220,11 @@ const Dashboard: React.FC = () => {
                             <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Approvals</h3>
                             <CheckCircle className="h-5 w-5 text-brand-amber" />
                         </div>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{volunteerApplications.filter(v => v.status === 'Pending').length}</p>
+                        <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                            {volunteerApplications.filter(v => v.status === 'Pending').length +
+                                testimonials.filter(t => t.status === 'Pending').length +
+                                eventRegistrations.filter(r => r.status === 'Pending').length}
+                        </p>
                     </div>
                     <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
