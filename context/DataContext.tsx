@@ -7,7 +7,7 @@ interface DataContextType {
   testimonials: Testimonial[];
   volunteerApplications: VolunteerApplication[];
   eventRegistrations: EventRegistration[];
-  addEvent: (event: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => Promise<void>;
+  addEvent: (event: Omit<Event, 'id' | 'initialLikes'>) => Promise<void>;
   updateEvent: (id: string, event: Partial<Event>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => Promise<void>;
@@ -102,7 +102,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Events
-  const addEvent = async (eventData: Omit<Event, 'id' | 'registered' | 'initialLikes'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'initialLikes'>) => {
     const { data, error } = await supabase.from('events').insert([{
       title: eventData.title,
       date: eventData.date,
@@ -112,7 +112,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       type: eventData.type,
       capacity: eventData.capacity,
       image: eventData.image,
-      registered: 0,
+      registered: eventData.registered !== undefined ? eventData.registered : 0,
       initial_likes: 0
     }]).select().single();
 

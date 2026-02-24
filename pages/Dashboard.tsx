@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
     const [activeView, setActiveView] = useState<ViewState>('overview');
     const [showEventForm, setShowEventForm] = useState(false);
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
-    const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20 });
+    const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
     const [showTestimonialForm, setShowTestimonialForm] = useState(false);
     const [testimonialContent, setTestimonialContent] = useState('');
     const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'StorySuccess' | 'VolunteerSuccess'>('Idle');
@@ -77,28 +77,45 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleAddEvent = (e: React.FormEvent) => {
+    const handleAddEvent = async (e: React.FormEvent) => {
         e.preventDefault();
-        const eventData = {
+        const baseEventData = {
             title: eventForm.title,
-            date: eventForm.date,
             time: eventForm.time,
             location: eventForm.location,
             description: eventForm.description,
             type: eventForm.type as any,
             image: eventForm.image || 'https://images.unsplash.com/photo-1502086223501-87db9e9cc358?auto=format&fit=crop&q=80&w=1000',
-            capacity: Number(eventForm.capacity)
+            capacity: Number(eventForm.capacity),
+            registered: Number(eventForm.registered) || 0
         };
 
         if (editingEventId) {
-            updateEvent(editingEventId, eventData);
+            await updateEvent(editingEventId, { ...baseEventData, date: eventForm.date });
         } else {
-            addEvent(eventData);
+            const datesToCreate = [eventForm.date];
+            if (eventForm.recurrence === 'weekly') {
+                for (let i = 1; i <= 3; i++) {
+                    const nextDate = new Date(eventForm.date);
+                    nextDate.setDate(nextDate.getDate() + (7 * i));
+                    datesToCreate.push(nextDate.toISOString().split('T')[0]);
+                }
+            } else if (eventForm.recurrence === 'monthly') {
+                for (let i = 1; i <= 3; i++) {
+                    const nextDate = new Date(eventForm.date);
+                    nextDate.setMonth(nextDate.getMonth() + i);
+                    datesToCreate.push(nextDate.toISOString().split('T')[0]);
+                }
+            }
+
+            for (const date of datesToCreate) {
+                await addEvent({ ...baseEventData, date });
+            }
         }
 
         setShowEventForm(false);
         setEditingEventId(null);
-        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20 });
+        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
     };
 
     const handleEditEvent = (id: string) => {
@@ -112,7 +129,9 @@ const Dashboard: React.FC = () => {
                 description: evt.description,
                 type: evt.type,
                 image: evt.image || '',
-                capacity: evt.capacity
+                capacity: evt.capacity,
+                registered: evt.registered || 0,
+                recurrence: 'none'
             });
             setEditingEventId(id);
             setShowEventForm(true);
@@ -272,7 +291,7 @@ const Dashboard: React.FC = () => {
                     if (showEventForm) {
                         setShowEventForm(false);
                         setEditingEventId(null);
-                        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20 });
+                        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
                     } else {
                         setShowEventForm(true);
                     }
@@ -288,10 +307,29 @@ const Dashboard: React.FC = () => {
                         {editingEventId ? 'Edit Event Details' : 'New Event Details'}
                     </h3>
                     <input type="text" placeholder="Event Title" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} required />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="date" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
                         <input type="time" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
-                        <input type="number" placeholder="Capacity" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.capacity} onChange={e => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} required />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Capacity</label>
+                            <input type="number" min="1" placeholder="Capacity" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.capacity} onChange={e => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} required />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Current Registered</label>
+                            <input type="number" min="0" placeholder="Registered" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.registered} onChange={e => setEventForm({ ...eventForm, registered: Number(e.target.value) })} required />
+                        </div>
+                        {!editingEventId && (
+                            <div>
+                                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Recurrence</label>
+                                <select className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent" value={eventForm.recurrence} onChange={e => setEventForm({ ...eventForm, recurrence: e.target.value })}>
+                                    <option value="none">Does not repeat</option>
+                                    <option value="weekly">Weekly (4 occurrences)</option>
+                                    <option value="monthly">Monthly (4 occurrences)</option>
+                                </select>
+                            </div>
+                        )}
                     </div>
                     <input type="text" placeholder="Location" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
 
