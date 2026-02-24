@@ -248,7 +248,7 @@ const Home: React.FC = () => {
                         </h2>
                         <div className="w-24 h-1 bg-sky-200 dark:bg-sky-800 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
                         <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl">
-                            For over two years, Aaria's Blue Elephant has proudly provided free programs to our community. While our events are thoughtfully designed with special needs children in mind, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. We firmly believe that financial constraints should never be a barrier to joy, growth, and connection. All materials are always provided at no cost, and while donations support our mission, they are never a requirement to participate.
+                            We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.
                         </p>
                     </div>
                 </div>
