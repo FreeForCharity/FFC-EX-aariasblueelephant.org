@@ -235,6 +235,14 @@ const EventDetails: React.FC = () => {
                       Event Full
                     </Button>
                   )}
+
+                  {/* Free Event Notice */}
+                  <div className="mt-4 p-4 bg-brand-cyan/5 dark:bg-sky-900/20 rounded-xl border border-brand-cyan/20 dark:border-sky-800/40">
+                    <p className="text-xs text-center text-slate-700 dark:text-slate-300">
+                      <strong className="block text-slate-900 dark:text-white mb-1">100% Free to attend. All materials provided.</strong>
+                      We firmly believe financial constraints should never be a barrier. No donation is required.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

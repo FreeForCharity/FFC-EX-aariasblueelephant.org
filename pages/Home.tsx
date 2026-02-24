@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart } from 'lucide-react';
 import Button from '../components/Button';
 import { useData } from '../context/DataContext';
 import SocialLinks from '../components/SocialLinks';
@@ -233,6 +233,21 @@ const Home: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* Free Events Guarantee Banner */}
+            <section className="bg-brand-cyan/10 dark:bg-sky-900/20 border-y border-brand-cyan/20 dark:border-sky-800/50 py-16 transition-colors">
+                <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+                    <div className="h-16 w-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-md mb-6">
+                        <Heart className="h-8 w-8 text-brand-pink" />
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-wide">
+                        100% Free Events. All Materials Provided.
+                    </h2>
+                    <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed font-medium">
+                        For over two years, we have proudly hosted completely free events for our community. We firmly believe that financial constraints should never be a barrier to participation. While donations help support our mission, they are absolutely never required to attend any of our programs.
+                    </p>
                 </div>
             </section>
 

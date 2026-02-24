@@ -121,6 +121,17 @@ const Events: React.FC = () => {
         </div>
       </div>
 
+      {/* Free Events Guarantee Banner */}
+      <div className="bg-brand-cyan/10 dark:bg-sky-900/20 border border-brand-cyan/20 dark:border-sky-800/50 rounded-2xl p-6 md:p-8 mb-12 text-center shadow-sm">
+        <Heart className="h-8 w-8 text-brand-pink mx-auto mb-3" />
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-3 tracking-wide">
+          100% Free Events. All Materials Provided.
+        </h2>
+        <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base max-w-3xl mx-auto font-medium">
+          For over two years, we have proudly hosted completely free events for our community. We firmly believe that financial constraints should never be a barrier to participation. While donations help support our mission, they are absolutely never required to attend any of our programs.
+        </p>
+      </div>
+
       {filteredEvents.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed">
           <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-400 dark:text-slate-600" />
