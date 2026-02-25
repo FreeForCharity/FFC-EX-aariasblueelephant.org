@@ -21,7 +21,10 @@ import {
     ChevronRight,
     ArrowRight,
     Image as ImageIcon,
-    X
+    X,
+    AlertCircle,
+    AlertTriangle,
+    Info
 } from 'lucide-react';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import Button from '../components/Button';
@@ -40,6 +43,10 @@ const Dashboard: React.FC = () => {
     const [showTestimonialForm, setShowTestimonialForm] = useState(false);
     const [testimonialContent, setTestimonialContent] = useState('');
     const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'StorySuccess' | 'VolunteerSuccess'>('Idle');
+    const [appError, setAppError] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
+    const [confirmDeleteTestimonialId, setConfirmDeleteTestimonialId] = useState<string | null>(null);
 
     if (!user) {
         return <Navigate to="/login" />;
@@ -91,7 +98,11 @@ const Dashboard: React.FC = () => {
         };
 
         if (editingEventId) {
-            await updateEvent(editingEventId, { ...baseEventData, date: eventForm.date });
+            const result = await updateEvent(editingEventId, { ...baseEventData, date: eventForm.date });
+            if (!result.success) {
+                setAppError(result.error || "Failed to update event");
+                return;
+            }
         } else {
             const datesToCreate = [eventForm.date];
             if (eventForm.recurrence === 'weekly') {
@@ -109,7 +120,11 @@ const Dashboard: React.FC = () => {
             }
 
             for (const date of datesToCreate) {
-                await addEvent({ ...baseEventData, date });
+                const result = await addEvent({ ...baseEventData, date });
+                if (!result.success) {
+                    setAppError(result.error || "Failed to create event");
+                    return;
+                }
             }
         }
 
@@ -138,24 +153,28 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleDeleteEvent = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
-            deleteEvent(id);
-        }
+    const handleDeleteEvent = async (id: string) => {
+        const result = await deleteEvent(id);
+        if (!result.success) setAppError(result.error || "Failed to delete event");
     };
 
-    const handleSubmitTestimonial = (e: React.FormEvent) => {
+    const handleSubmitTestimonial = async (e: React.FormEvent) => {
         e.preventDefault();
-        addTestimonial({
+        const result = await addTestimonial({
             author: user.name,
             authorEmail: user.email,
             role: user.role,
             content: testimonialContent,
             avatar: user.avatar
         });
-        setTestimonialContent('');
-        setShowTestimonialForm(false);
-        setSubmissionStatus('StorySuccess');
+
+        if (result.success) {
+            setSubmissionStatus('StorySuccess');
+            setTestimonialContent('');
+            setShowTestimonialForm(false);
+        } else {
+            setAppError(result.error || "Failed to submit story");
+        }
     };
 
     const handleDownloadTaxReceipt = (id: string) => {
@@ -429,6 +448,7 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="flex gap-2">
                                 <Button
+                                    type="button"
                                     size="sm"
                                     variant="ghost"
                                     className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -436,14 +456,40 @@ const Dashboard: React.FC = () => {
                                 >
                                     Edit
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                    onClick={() => handleDeleteEvent(evt.id)}
-                                >
-                                    Delete
-                                </Button>
+                                {confirmDeleteEventId === evt.id ? (
+                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                            onClick={() => {
+                                                handleDeleteEvent(evt.id);
+                                                setConfirmDeleteEventId(null);
+                                            }}
+                                        >
+                                            Confirm
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-slate-500 text-xs px-2"
+                                            onClick={() => setConfirmDeleteEventId(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                                        onClick={() => setConfirmDeleteEventId(evt.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -451,6 +497,8 @@ const Dashboard: React.FC = () => {
             </div>
         </div>
     );
+
+
 
     const renderVolunteersSection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
@@ -475,7 +523,16 @@ const Dashboard: React.FC = () => {
                                 <p className="text-slate-500 text-xs mt-1">{app.email}</p>
                             </div>
                             {app.status === 'Pending' && (
-                                <Button size="sm" variant="outline" onClick={() => approveVolunteer(app.id)} className="shrink-0">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                        const result = await approveVolunteer(app.id);
+                                        if (!result.success) setAppError(result.error || "Failed to approve volunteer application");
+                                    }}
+                                    className="shrink-0"
+                                >
                                     Approve Application
                                 </Button>
                             )}
@@ -523,17 +580,57 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="flex justify-end gap-3">
                                 {testimonial.status === 'Pending' && (
-                                    <Button size="sm" onClick={() => approveTestimonial(testimonial.id)}>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={async () => {
+                                            const result = await approveTestimonial(testimonial.id);
+                                            if (!result.success) setAppError(result.error || "Failed to approve testimonial");
+                                        }}
+                                    >
                                         Approve Testimonial
                                     </Button>
                                 )}
-                                <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10" onClick={() => {
-                                    if (window.confirm('Are you sure you want to permanently delete this testimonial?')) {
-                                        deleteTestimonial(testimonial.id);
-                                    }
-                                }}>
-                                    Delete
-                                </Button>
+
+                                {confirmDeleteTestimonialId === testimonial.id ? (
+                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                            onClick={async () => {
+                                                const result = await deleteTestimonial(testimonial.id);
+                                                if (result.success) {
+                                                    setConfirmDeleteTestimonialId(null);
+                                                } else {
+                                                    setAppError(result.error || "Failed to delete testimonial");
+                                                    setConfirmDeleteTestimonialId(null);
+                                                }
+                                            }}
+                                        >
+                                            Confirm
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-slate-500 text-xs px-2"
+                                            onClick={() => setConfirmDeleteTestimonialId(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                        onClick={() => setConfirmDeleteTestimonialId(testimonial.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ))
@@ -670,17 +767,59 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <div className="flex gap-2 items-center">
                                     {reg.status === 'Pending' && (
-                                        <Button size="sm" variant="outline" onClick={() => approveRegistration(reg.id)} className="shrink-0">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={async () => {
+                                                const result = await approveRegistration(reg.id);
+                                                if (!result.success) setAppError(result.error || "Failed to approve registration");
+                                            }}
+                                            className="shrink-0"
+                                        >
                                             Approve
                                         </Button>
                                     )}
-                                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0" onClick={() => {
-                                        if (window.confirm("Delete this registration?")) {
-                                            deleteRegistration(reg.id);
-                                        }
-                                    }}>
-                                        Delete
-                                    </Button>
+
+                                    {confirmDeleteId === reg.id ? (
+                                        <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                                onClick={async () => {
+                                                    const result = await deleteRegistration(reg.id);
+                                                    if (result.success) {
+                                                        setConfirmDeleteId(null);
+                                                    } else {
+                                                        setAppError(result.error || "Failed to delete registration");
+                                                        setConfirmDeleteId(null);
+                                                    }
+                                                }}
+                                            >
+                                                Confirm
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="text-slate-500 text-xs px-2"
+                                                onClick={() => setConfirmDeleteId(null)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                                            onClick={() => setConfirmDeleteId(reg.id)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -861,6 +1000,7 @@ const Dashboard: React.FC = () => {
                         const isActive = activeView === item.id;
                         return (
                             <button
+                                type="button"
                                 key={item.id}
                                 onClick={() => setActiveView(item.id as ViewState)}
                                 className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group ${isActive
@@ -883,6 +1023,7 @@ const Dashboard: React.FC = () => {
                         const isActive = activeView === item.id;
                         return (
                             <button
+                                type="button"
                                 key={item.id}
                                 onClick={() => setActiveView(item.id as ViewState)}
                                 className={`flex-shrink-0 flex items-center px-4 py-2 text-sm font-medium rounded-full transition-all ${isActive
@@ -901,6 +1042,26 @@ const Dashboard: React.FC = () => {
             {/* Main Content Area */}
             <div className="flex-1 p-4 sm:p-8 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/50 transition-colors duration-300">
                 <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
+
+                    {/* Persistent Error Banner */}
+                    {appError && (
+                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-4 duration-300">
+                            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="text-sm font-bold text-red-900 dark:text-red-300">Action Failed</h3>
+                                <p className="text-xs text-red-700 dark:text-red-400 mt-1 font-mono break-all">{appError}</p>
+                                <p className="text-[10px] text-red-500 mt-2">Please share the message above with support if this continues.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAppError(null)}
+                                className="text-red-400 hover:text-red-600 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                    )}
+
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors duration-300">
                             {navItems.find(i => i.id === activeView)?.label || 'Dashboard'}

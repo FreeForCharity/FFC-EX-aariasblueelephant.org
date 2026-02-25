@@ -2,22 +2,27 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { supabase } from '../lib/supabase';
 
+interface MutationResult {
+  success: boolean;
+  error?: string;
+}
+
 interface DataContextType {
   events: Event[];
   testimonials: Testimonial[];
   volunteerApplications: VolunteerApplication[];
   eventRegistrations: EventRegistration[];
-  addEvent: (event: Omit<Event, 'id' | 'initialLikes'>) => Promise<void>;
-  updateEvent: (id: string, event: Partial<Event>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
-  addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => Promise<void>;
-  approveTestimonial: (id: string) => Promise<void>;
-  deleteTestimonial: (id: string) => Promise<void>;
-  submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<void>;
-  approveVolunteer: (id: string) => Promise<void>;
-  registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<void>;
-  approveRegistration: (id: string) => Promise<void>;
-  deleteRegistration: (id: string) => Promise<void>;
+  addEvent: (event: Omit<Event, 'id' | 'initialLikes'>) => Promise<MutationResult>;
+  updateEvent: (id: string, event: Partial<Event>) => Promise<MutationResult>;
+  deleteEvent: (id: string) => Promise<MutationResult>;
+  addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
+  approveTestimonial: (id: string) => Promise<MutationResult>;
+  deleteTestimonial: (id: string) => Promise<MutationResult>;
+  submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<MutationResult>;
+  approveVolunteer: (id: string) => Promise<MutationResult>;
+  registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
+  approveRegistration: (id: string) => Promise<MutationResult>;
+  deleteRegistration: (id: string) => Promise<MutationResult>;
   isLoading: boolean;
 }
 
@@ -102,7 +107,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Events
-  const addEvent = async (eventData: Omit<Event, 'id' | 'initialLikes'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'initialLikes'>): Promise<MutationResult> => {
     const { data, error } = await supabase.from('events').insert([{
       title: eventData.title,
       date: eventData.date,
@@ -117,8 +122,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }]).select().single();
 
     if (error) {
-      console.error(error);
-      return;
+      console.error("Add event error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
 
     if (data) {
@@ -136,9 +141,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         image: data.image
       }]);
     }
+    return { success: true };
   };
 
-  const updateEvent = async (id: string, eventData: Partial<Event>) => {
+  const updateEvent = async (id: string, eventData: Partial<Event>): Promise<MutationResult> => {
     const updatePayload: any = { ...eventData };
     if (eventData.initialLikes !== undefined) updatePayload.initial_likes = eventData.initialLikes;
     delete updatePayload.initialLikes;
@@ -146,22 +152,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.from('events').update(updatePayload).eq('id', id);
     if (!error) {
       setEvents(events.map(evt => evt.id === id ? { ...evt, ...eventData } : evt));
+      return { success: true };
     } else {
       console.error("Update event error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
-  const deleteEvent = async (id: string) => {
+  const deleteEvent = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('events').delete().eq('id', id);
     if (!error) {
       setEvents(events.filter(evt => evt.id !== id));
+      return { success: true };
     } else {
       console.error("Delete event error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
   // Testimonials
-  const addTestimonial = async (data: Omit<Testimonial, 'id' | 'date' | 'status'>) => {
+  const addTestimonial = async (data: Omit<Testimonial, 'id' | 'date' | 'status'>): Promise<MutationResult> => {
     const dateStr = new Date().toISOString().split('T')[0];
     const { data: resData, error } = await supabase.from('testimonials').insert([{
       author: data.author,
@@ -174,7 +184,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       console.error("Add testimonial error:", error.message, error.details);
-      return;
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
 
     if (resData) {
@@ -188,28 +198,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: resData.status
       }, ...testimonials]);
     }
+    return { success: true };
   };
 
-  const approveTestimonial = async (id: string) => {
+  const approveTestimonial = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('testimonials').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setTestimonials(testimonials.map(t => t.id === id ? { ...t, status: 'Approved' } : t));
+      return { success: true };
     } else {
       console.error("Approve testimonial error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
-  const deleteTestimonial = async (id: string) => {
+  const deleteTestimonial = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('testimonials').delete().eq('id', id);
     if (!error) {
       setTestimonials(testimonials.filter(t => t.id !== id));
+      return { success: true };
     } else {
       console.error("Delete testimonial error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
   // Volunteers
-  const submitVolunteerApp = async (data: Omit<VolunteerApplication, 'id' | 'status'>) => {
+  const submitVolunteerApp = async (data: Omit<VolunteerApplication, 'id' | 'status'>): Promise<MutationResult> => {
     const { data: resData, error } = await supabase.from('volunteer_applications').insert([{
       name: data.name,
       email: data.email,
@@ -219,7 +234,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       console.error("Submit volunteer app error:", error.message, error.details);
-      return;
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
 
     if (resData) {
@@ -231,19 +246,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: resData.status
       }, ...volunteerApplications]);
     }
+    return { success: true };
   };
 
-  const approveVolunteer = async (id: string) => {
+  const approveVolunteer = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('volunteer_applications').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setVolunteerApplications(volunteerApplications.map(app => app.id === id ? { ...app, status: 'Approved' } : app));
+      return { success: true };
     } else {
       console.error("Approve volunteer error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
   // Registrations
-  const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>) => {
+  const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>): Promise<MutationResult> => {
     const dateStr = new Date().toISOString().split('T')[0];
     const { data: resData, error } = await supabase.from('event_registrations').insert([{
       event_id: data.eventId,
@@ -255,8 +273,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }]).select().single();
 
     if (error) {
-      console.error("Registration error:", error);
-      return;
+      console.error("Registration error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
 
     if (resData) {
@@ -276,20 +294,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateEvent(evt.id, { registered: evt.registered + 1 });
       }
     }
+    return { success: true };
   };
 
-  const approveRegistration = async (id: string) => {
+  const approveRegistration = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('event_registrations').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+      return { success: true };
     } else {
       console.error("Approve registration error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
-  const deleteRegistration = async (id: string) => {
+  const deleteRegistration = async (id: string): Promise<MutationResult> => {
     const reg = eventRegistrations.find(r => r.id === id);
-    if (!reg) return;
+    if (!reg) return { success: false, error: "Registration not found" };
 
     const { error } = await supabase.from('event_registrations').delete().eq('id', id);
     if (!error) {
@@ -299,8 +320,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (evt) {
         updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
       }
+      return { success: true };
     } else {
       console.error("Delete registration error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
     }
   };
 
