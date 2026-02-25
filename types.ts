@@ -41,10 +41,12 @@ export interface Testimonial {
   author: string;
   authorEmail?: string;
   role: string;
+  title?: string;
   content: string;
   date: string;
   avatar?: string;
   status: 'Pending' | 'Approved';
+  rank?: number;
 }
 
 export interface VolunteerApplication {

@@ -25,7 +25,9 @@ import {
     X,
     AlertCircle,
     AlertTriangle,
-    Info
+    Info,
+    Award,
+    Star
 } from 'lucide-react';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import Button from '../components/Button';
@@ -35,7 +37,7 @@ type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' |
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
-    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, eventRegistrations, approveRegistration, deleteRegistration } = useData();
+    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, updateTestimonial, eventRegistrations, approveRegistration, deleteRegistration } = useData();
 
     const [activeView, setActiveView] = useState<ViewState>('overview');
     const [showEventForm, setShowEventForm] = useState(false);
@@ -176,6 +178,14 @@ const Dashboard: React.FC = () => {
         } else {
             setAppError(result.error || "Failed to submit story");
         }
+    };
+
+    const updateTestimonialMetadata = async (id: string, data: Partial<any>) => { // Changed to 'any' for flexibility with title/rank
+        const result = await updateTestimonial(id, data);
+        if (!result.success) {
+            setAppError(result.error || "Failed to update testimonial metadata");
+        }
+        return result;
     };
 
     const handleDownloadTaxReceipt = (id: string) => {
@@ -564,18 +574,74 @@ const Dashboard: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div>
+                                    <div className="flex flex-col gap-2 min-w-[120px]">
                                         <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
-                                        <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">{testimonial.role} • {testimonial.date}</p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">{testimonial.role}</p>
+                                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{testimonial.date}</p>
+                                        </div>
+                                        {testimonial.title && (
+                                            <div className="flex items-center gap-1 text-[10px] font-bold text-brand-purple uppercase tracking-tight bg-brand-purple/10 px-2 py-0.5 rounded-full w-fit">
+                                                <Award className="h-3 w-3" /> {testimonial.title}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${testimonial.status === 'Pending'
-                                    ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
-                                    : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
-                                    }`}>
-                                    {testimonial.status}
-                                </span>
+                                <div className="flex flex-col items-end gap-2">
+                                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${testimonial.status === 'Pending'
+                                        ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                        : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                        }`}>
+                                        {testimonial.status}
+                                    </span>
+                                    {testimonial.rank !== undefined && (
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Rank: {testimonial.rank}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Admin Controls for Title and Rank */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Award className="h-3 w-3" /> Admin Title (e.g. Board Member)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Add custom designation..."
+                                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                        defaultValue={testimonial.title || ''}
+                                        onBlur={async (e) => {
+                                            if (e.target.value !== (testimonial.title || '')) {
+                                                const result = await updateTestimonialMetadata(testimonial.id, { title: e.target.value });
+                                                if (!result.success) setAppError(result.error);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Star className="h-3 w-3" /> Display Priority (Rank)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        placeholder="Set order (1, 2, 3...)"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                        defaultValue={testimonial.rank || ''}
+                                        onBlur={async (e) => {
+                                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                            if (val !== testimonial.rank) {
+                                                const result = await updateTestimonialMetadata(testimonial.id, { rank: val });
+                                                if (!result.success) setAppError(result.error);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-lg mb-4">
                                 <RichText content={testimonial.content} className="text-slate-600 dark:text-slate-300 text-sm italic" />
                             </div>
@@ -838,7 +904,9 @@ const Dashboard: React.FC = () => {
         return (
             <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg max-w-2xl">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Share Your Story</h2>
-                <p className="text-slate-500 dark:text-slate-400 mb-6">Your experience can inspire others to join our community.</p>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+                    Your perspective and experiences play a vital role in inspiring others to join our journey. We highly encourage including <strong>social media links (YouTube, Instagram, TikTok)</strong> or images that capture your story, helping us showcase the authentic impact of our community.
+                </p>
 
                 {pendingTestimonial ? (
                     <div className="text-center p-8 border border-amber-200 dark:border-amber-500/20 rounded-xl bg-amber-50/50 dark:bg-amber-500/5 animate-in fade-in slide-in-from-bottom-2">

@@ -18,6 +18,7 @@ interface DataContextType {
   addTestimonial: (testimonial: Omit<Testimonial, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
   approveTestimonial: (id: string) => Promise<MutationResult>;
   deleteTestimonial: (id: string) => Promise<MutationResult>;
+  updateTestimonial: (id: string, metadata: Partial<Testimonial>) => Promise<MutationResult>;
   submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<MutationResult>;
   approveVolunteer: (id: string) => Promise<MutationResult>;
   registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
@@ -42,7 +43,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const [eventsRes, testsRes, volsRes, regsRes] = await Promise.all([
           supabase.from('events').select('*').order('date', { ascending: true }),
-          supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+          supabase.from('testimonials').select('*').order('rank', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }),
           supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false }),
           supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
         ]);
@@ -68,10 +69,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: t.id,
             author: t.author,
             role: t.role,
+            title: t.title,
             content: t.content,
             date: t.date,
             avatar: t.avatar,
-            status: t.status
+            status: t.status,
+            rank: t.rank
           })));
         }
 
@@ -223,6 +226,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateTestimonial = async (id: string, metadata: Partial<Testimonial>): Promise<MutationResult> => {
+    const { error } = await supabase.from('testimonials').update(metadata).eq('id', id);
+    if (!error) {
+      setTestimonials(testimonials.map(t => t.id === id ? { ...t, ...metadata } : t));
+      return { success: true };
+    } else {
+      console.error("Update testimonial metadata error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
+    }
+  };
+
   // Volunteers
   const submitVolunteerApp = async (data: Omit<VolunteerApplication, 'id' | 'status'>): Promise<MutationResult> => {
     const { data: resData, error } = await supabase.from('volunteer_applications').insert([{
@@ -339,6 +353,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addTestimonial,
       approveTestimonial,
       deleteTestimonial,
+      updateTestimonial,
       submitVolunteerApp,
       approveVolunteer,
       registerForEvent,

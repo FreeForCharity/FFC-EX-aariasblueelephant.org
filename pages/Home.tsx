@@ -433,7 +433,7 @@ const Home: React.FC = () => {
                                                 </div>
                                                 <div>
                                                     <p className="text-slate-800 dark:text-white font-bold">{item.author}</p>
-                                                    <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.role}</p>
+                                                    <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.title || item.role}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -590,7 +590,7 @@ const Home: React.FC = () => {
                                 </div>
                                 <div className="pt-10 sm:pt-12">
                                     <h4 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">{selectedTestimonial.author}</h4>
-                                    <p className="text-sm sm:text-base text-sky-600 dark:text-sky-400 font-semibold tracking-wider uppercase">{selectedTestimonial.role}</p>
+                                    <p className="text-sm sm:text-base text-sky-600 dark:text-sky-400 font-semibold tracking-wider uppercase">{selectedTestimonial.title || selectedTestimonial.role}</p>
                                 </div>
                             </div>
 
