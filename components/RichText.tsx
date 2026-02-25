@@ -138,7 +138,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         src={embedUrl}
                                         title="YouTube video player"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                     ></iframe>
                                 </div>
@@ -205,7 +205,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                     scrolling="no"
                                     frameBorder="0"
                                     allowFullScreen={true}
-                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                    allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
                                 ></iframe>
                             </div>
                         );
