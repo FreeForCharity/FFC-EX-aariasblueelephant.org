@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen } from 'lucide-react';
+import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon } from 'lucide-react';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
 import { useData } from '../context/DataContext';
@@ -8,7 +8,7 @@ import SocialLinks from '../components/SocialLinks';
 import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
-import RichText from '../components/RichText';
+import RichText, { extractMedia } from '../components/RichText';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -376,20 +376,48 @@ const Home: React.FC = () => {
                                     const { isTruncated, text } = getTruncatedContent(item.content);
 
                                     return (
-                                        <div key={item.id} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500">
+                                        <div key={item.id} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500 group cursor-pointer hover:shadow-md" onClick={() => setSelectedTestimonial(item)}>
                                             <div>
                                                 <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900 mb-4" />
+
+                                                {/* Media Preview Thumbnail */}
+                                                {(() => {
+                                                    const media = extractMedia(item.content);
+                                                    if (!media || !media.thumbnail) return null;
+                                                    return (
+                                                        <div className="relative mb-6 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-inner group-hover:border-sky-500/50 transition-colors">
+                                                            <img
+                                                                src={media.thumbnail}
+                                                                alt={`Media from ${item.author}`}
+                                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                                                            />
+                                                            {media.type === 'youtube' && (
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <div className="h-12 w-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                                        <Youtube className="h-6 w-6" />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {media.type === 'image' && (
+                                                                <div className="absolute top-2 right-2">
+                                                                    <div className="p-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white shadow-sm">
+                                                                        <ImageIcon className="h-4 w-4" />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+
                                                 <div className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
-                                                    <RichText content={text} className="inline" />
+                                                    <RichText content={text} className="inline italic" />
                                                     {isTruncated && (
-                                                        <button
-                                                            onClick={() => setSelectedTestimonial(item)}
-                                                            className="ml-2 font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 focus:outline-none focus:underline inline-flex items-center group"
-                                                            aria-label={`Read more of ${item.author}'s story`}
+                                                        <span
+                                                            className="ml-2 font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 inline-flex items-center group/more"
                                                         >
                                                             ... Read More
-                                                            <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                                        </button>
+                                                            <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-2 group-hover/more:opacity-100 group-hover/more:translate-x-0 transition-all" />
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>

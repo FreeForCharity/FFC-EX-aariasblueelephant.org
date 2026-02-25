@@ -6,6 +6,43 @@ interface RichTextProps {
     className?: string;
 }
 
+export const extractMedia = (content: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = content.match(urlRegex) || [];
+
+    for (const url of urls) {
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            let videoId = '';
+            if (url.includes('v=')) {
+                videoId = url.split('v=')[1].split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0];
+            } else if (url.includes('shorts/')) {
+                videoId = url.split('shorts/')[1].split('?')[0];
+            } else if (url.includes('embed/')) {
+                videoId = url.split('embed/')[1].split('?')[0];
+            }
+            if (videoId) {
+                return {
+                    url,
+                    type: 'youtube' as const,
+                    thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+            }
+        }
+        if (url.includes('instagram.com')) {
+            return { url, type: 'instagram' as const };
+        }
+        if (url.includes('tiktok.com')) {
+            return { url, type: 'tiktok' as const };
+        }
+        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
+            return { url, type: 'image' as const, thumbnail: url };
+        }
+    }
+    return null;
+};
+
 const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
     // Regular expression to find URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
