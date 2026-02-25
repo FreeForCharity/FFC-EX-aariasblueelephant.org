@@ -38,7 +38,7 @@ const Logo: React.FC<LogoProps> = ({ className = "h-10 w-10", variant = 'default
 
   return (
     <img
-      src="./logo.png"
+      src="./logo_v2.png"
       id="elephant-mascot"
       alt={alt}
       className={`${className} object-contain`}

@@ -564,9 +564,22 @@ const Home: React.FC = () => {
                             <X className="w-5 h-5" />
                         </button>
 
-                        {/* Header Area */}
-                        <div className="h-12 bg-slate-50 dark:bg-slate-950 flex justify-center items-center relative overflow-hidden shrink-0 border-b border-slate-200 dark:border-slate-800/50">
-                            {/* Gradient fade out at bottom */}
+                        {/* Header Branding Area (Matches Hero Style) */}
+                        <div className="bg-slate-50 dark:bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-slate-800/50 relative overflow-hidden shrink-0">
+                            <div className="flex items-center gap-4 relative z-10">
+                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
+                                    <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
+                                </div>
+                                <div className="flex flex-col items-start min-w-0">
+                                    <h2 className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 leading-tight whitespace-nowrap overflow-visible">
+                                        Aaria's Blue Elephant
+                                    </h2>
+                                    <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest -mt-0.5">
+                                        Building a New Inclusive World
+                                    </p>
+                                </div>
+                            </div>
+                            {/* Subtitle transition gradient */}
                             <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white dark:from-slate-900/95 to-transparent"></div>
                         </div>
 
