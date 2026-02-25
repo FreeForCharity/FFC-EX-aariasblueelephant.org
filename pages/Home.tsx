@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon } from 'lucide-react';
+import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon, Instagram, Facebook } from 'lucide-react';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
 import { useData } from '../context/DataContext';
@@ -383,21 +383,44 @@ const Home: React.FC = () => {
                                                 {/* Media Preview Thumbnail */}
                                                 {(() => {
                                                     const media = extractMedia(item.content);
-                                                    if (!media || !media.thumbnail) return null;
+                                                    if (!media) return null;
+
+                                                    const getPlatformDetails = () => {
+                                                        switch (media.type) {
+                                                            case 'youtube': return { icon: <Youtube className="h-6 w-6" />, color: 'bg-red-600', label: 'YouTube' };
+                                                            case 'instagram': return { icon: <Instagram className="h-6 w-6" />, color: 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600', label: 'Instagram' };
+                                                            case 'tiktok': return { icon: <img src="https://www.tiktok.com/favicon.ico" className="h-6 w-6 invert" alt="TikTok" />, color: 'bg-black', label: 'TikTok' };
+                                                            case 'facebook': return { icon: <Facebook className="h-6 w-6" />, color: 'bg-blue-600', label: 'Facebook' };
+                                                            case 'google-photos': return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-sky-500', label: 'G-Photos' };
+                                                            default: return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-slate-500', label: 'Media' };
+                                                        }
+                                                    };
+
+                                                    const details = getPlatformDetails();
+
                                                     return (
                                                         <div className="relative mb-6 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-inner group-hover:border-sky-500/50 transition-colors">
-                                                            <img
-                                                                src={media.thumbnail}
-                                                                alt={`Media from ${item.author}`}
-                                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                                            />
-                                                            {media.type === 'youtube' && (
-                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <div className="h-12 w-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                                        <Youtube className="h-6 w-6" />
+                                                            {media.thumbnail ? (
+                                                                <img
+                                                                    src={media.thumbnail}
+                                                                    alt={`Media from ${item.author}`}
+                                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                                                                />
+                                                            ) : (
+                                                                <div className={`w-full h-full flex flex-col items-center justify-center ${details.color} opacity-40 group-hover:opacity-60 transition-opacity`}>
+                                                                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2">
+                                                                        {details.icon}
                                                                     </div>
+                                                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{details.label}</span>
                                                                 </div>
                                                             )}
+
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                <div className={`h-12 w-12 rounded-full ${details.color} text-white flex items-center justify-center shadow-lg scale-90 group-hover:scale-100 transition-transform`}>
+                                                                    {details.icon}
+                                                                </div>
+                                                            </div>
+
                                                             {media.type === 'image' && (
                                                                 <div className="absolute top-2 right-2">
                                                                     <div className="p-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white shadow-sm">
