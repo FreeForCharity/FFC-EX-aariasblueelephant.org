@@ -139,12 +139,17 @@ const Navbar: React.FC = () => {
                   <div className="relative">
                     <button
                       onClick={() => setIsProfileOpen(!isProfileOpen)}
-                      className="flex items-center gap-2 rounded-full ring-2 ring-sky-500/20 hover:ring-sky-500/50 p-1 transition-all"
+                      className="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-sky-500/20 hover:ring-sky-500/50 transition-all overflow-hidden bg-slate-100 dark:bg-slate-800"
                     >
                       {user.avatar ? (
-                        <img src={user.avatar} alt="" className="h-8 w-8 rounded-full shadow-sm" />
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
                       ) : (
-                        <UserCircle className="h-8 w-8 text-slate-400" />
+                        <UserCircle className="h-6 w-6 text-slate-400" />
                       )}
                     </button>
 
@@ -175,7 +180,7 @@ const Navbar: React.FC = () => {
 
               <div className="flex flex-col items-center gap-2 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
-                  <span className="px-6 py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2">
+                  <span className="px-6 py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
                     Donate for the Cause <HeartPulse className="h-4 w-4" />
                   </span>
                 </a>

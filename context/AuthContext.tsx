@@ -29,9 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const avatarUrl =
         session.user.user_metadata?.avatar_url ||
         session.user.user_metadata?.picture ||
-        session.user.user_metadata?.custom_claims?.picture ||
         session.user.identities?.[0]?.identity_data?.avatar_url ||
-        session.user.identities?.[0]?.identity_data?.picture;
+        session.user.identities?.[0]?.identity_data?.picture ||
+        session.user.user_metadata?.custom_claims?.picture;
 
       let role: Role = 'User';
       if (email === 'admin@aariasblueelephant.org') {
