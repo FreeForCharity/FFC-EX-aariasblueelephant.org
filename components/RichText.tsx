@@ -61,6 +61,7 @@ export const extractMedia = (content: string) => {
 };
 
 const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
+    const [playingTikToks, setPlayingTikToks] = React.useState<Record<number, boolean>>({});
     // Regular expression to find URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
@@ -176,9 +177,24 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                     if (isTikTok(part)) {
                         const embedUrl = getTikTokEmbedUrl(part);
+                        const isPlaying = playingTikToks[index];
+
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-black max-w-[325px] mx-auto min-h-[580px]">
+                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-black max-w-[325px] mx-auto min-h-[580px] relative group">
+                                    {!isPlaying ? (
+                                        <div
+                                            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm cursor-pointer hover:bg-slate-900/40 transition-all"
+                                            onClick={() => setPlayingTikToks({ ...playingTikToks, [index]: true })}
+                                        >
+                                            <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform shadow-2xl">
+                                                <div className="h-16 w-16 rounded-full bg-sky-500 flex items-center justify-center shadow-inner">
+                                                    <Youtube className="h-8 w-8 text-white fill-current" />
+                                                </div>
+                                            </div>
+                                            <p className="mt-4 text-white font-bold tracking-wide uppercase text-xs">Click to Play Community Story</p>
+                                        </div>
+                                    ) : null}
                                     <iframe
                                         src={embedUrl}
                                         width="100%"
@@ -186,7 +202,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         frameBorder="0"
                                         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
-                                        className="w-full"
+                                        className={`w-full ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
                             );
@@ -213,22 +229,37 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                     if (part.includes('photos.google.com') || part.includes('photos.app.goo.gl')) {
                         return (
-                            <a
-                                key={index}
-                                href={part}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-4 my-4 p-4 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl hover:border-sky-500 dark:hover:border-sky-500 transition-all group no-underline"
-                            >
-                                <div className="h-12 w-12 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                                    <ImageIcon className="h-6 w-6" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">View Shared Photo Album</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Opening Google Photos in a new tab</p>
-                                </div>
-                                <ExternalLink className="h-5 w-5 text-slate-300 group-hover:text-sky-500 transition-colors" />
-                            </a>
+                            <div key={index} className="my-6">
+                                <a
+                                    href={part}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl hover:border-sky-500 dark:hover:border-sky-500 transition-all shadow-md hover:shadow-xl group no-underline"
+                                >
+                                    <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 mb-2">
+                                        {/* Stack of photos simulation */}
+                                        <div className="absolute inset-0 flex items-center justify-center p-8">
+                                            <div className="relative w-full h-full">
+                                                <div className="absolute top-2 left-6 right-2 bottom-6 bg-slate-200 dark:bg-slate-700 rounded-xl transform rotate-3 shadow-md opacity-30"></div>
+                                                <div className="absolute top-4 left-2 right-6 bottom-4 bg-slate-300 dark:bg-slate-600 rounded-xl transform -rotate-2 shadow-md opacity-50"></div>
+                                                <div className="absolute inset-0 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-4">
+                                                    <div className="h-16 w-16 rounded-2xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                                                        <ImageIcon className="h-8 w-8" />
+                                                    </div>
+                                                    <div className="text-center px-4">
+                                                        <p className="font-black text-slate-900 dark:text-white uppercase tracking-wider text-sm">Open Shared Photo Album</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">Click to view all {part.includes('album') ? 'album' : 'event'} photos</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-sky-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                                            <ExternalLink className="h-5 w-5" />
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
                         );
                     }
 

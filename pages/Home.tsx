@@ -391,7 +391,7 @@ const Home: React.FC = () => {
                                                             case 'instagram': return { icon: <Instagram className="h-6 w-6" />, color: 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600', label: 'Instagram' };
                                                             case 'tiktok': return { icon: <img src="https://www.tiktok.com/favicon.ico" className="h-6 w-6 invert" alt="TikTok" />, color: 'bg-black', label: 'TikTok' };
                                                             case 'facebook': return { icon: <Facebook className="h-6 w-6" />, color: 'bg-blue-600', label: 'Facebook' };
-                                                            case 'google-photos': return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-sky-500', label: 'G-Photos' };
+                                                            case 'google-photos': return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-sky-500', label: 'Photo Album' };
                                                             default: return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-slate-500', label: 'Media' };
                                                         }
                                                     };
@@ -408,9 +408,19 @@ const Home: React.FC = () => {
                                                                 />
                                                             ) : (
                                                                 <div className={`w-full h-full flex flex-col items-center justify-center ${details.color} opacity-40 group-hover:opacity-60 transition-opacity`}>
-                                                                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2">
-                                                                        {details.icon}
-                                                                    </div>
+                                                                    {media.type === 'google-photos' ? (
+                                                                        <div className="relative w-16 h-12 mb-2">
+                                                                            <div className="absolute top-1 left-2 w-full h-full bg-white/20 rounded shadow-sm rotate-3"></div>
+                                                                            <div className="absolute top-2 left-1 w-full h-full bg-white/30 rounded shadow-sm -rotate-2"></div>
+                                                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-md rounded flex items-center justify-center text-white border border-white/20">
+                                                                                {details.icon}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2">
+                                                                            {details.icon}
+                                                                        </div>
+                                                                    )}
                                                                     <span className="text-[10px] font-bold text-white uppercase tracking-widest">{details.label}</span>
                                                                 </div>
                                                             )}
