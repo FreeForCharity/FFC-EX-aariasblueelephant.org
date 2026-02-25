@@ -160,7 +160,7 @@ const Home: React.FC = () => {
                                         <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start">
-                                        <h1 className="text-3xl sm:text-5xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap">
+                                        <h1 className="text-2xl sm:text-4xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight">
                                             Aaria's Blue Elephant
                                         </h1>
                                         <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left">

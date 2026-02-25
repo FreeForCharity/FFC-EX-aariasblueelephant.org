@@ -823,8 +823,8 @@ const Dashboard: React.FC = () => {
     const renderHistorySection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Donation History</h2>
-            <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-                <table className="min-w-full text-left text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <table className="min-w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-slate-50 dark:bg-slate-800/50">
                         <tr className="text-slate-500 dark:text-slate-400">
                             <th className="py-3 px-4 font-medium">Campaign</th>

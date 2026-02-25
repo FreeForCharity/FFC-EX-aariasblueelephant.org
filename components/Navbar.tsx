@@ -55,10 +55,10 @@ const Navbar: React.FC = () => {
       </div>
 
       <nav className="w-full border-b border-sky-800/10 dark:border-sky-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-colors">
-        <div className="w-full px-4 sm:px-6 lg:px-10">
-          <div className="flex h-[200px] items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
+          <div className="flex min-h-[80px] lg:h-32 items-center justify-between py-4 lg:py-0">
             {/* Zone 1: Identity (Logo & QR) */}
-            <div className="flex items-center gap-6 flex-1 justify-start relative">
+            <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
               <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10">
                 <div className="relative">
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
@@ -83,19 +83,19 @@ const Navbar: React.FC = () => {
                       <path d="M 75 20 C 130 20, 160 20, 260 20" stroke="url(#iridescent-flow)" strokeWidth="1" strokeOpacity="0.55" strokeLinecap="round" className="opacity-45 xl:opacity-65 group-hover:opacity-100 transition-opacity duration-700 delay-100 stroke-dasharray-[160] stroke-dashoffset-0 group-hover:animate-[dash_2s_linear]" filter="url(#subtle-glow)" />
                     </svg>
                   </div>
-                  <div className="relative z-10 h-28 w-28 sm:h-36 sm:w-36 rounded-2xl bg-white p-2 flex items-center justify-center shadow-lg border border-slate-200 dark:border-none group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                  <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white p-2 flex items-center justify-center shadow-lg border border-slate-200 dark:border-none group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                     <Logo className="h-full w-full relative z-10" alt="Organization Logo" />
                   </div>
                 </div>
-                <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight whitespace-nowrap z-10 relative mt-2 text-center sm:text-left">Aaria's Blue Elephant</span>
+                <span className="font-bold text-slate-800 dark:text-white text-xs sm:text-sm lg:text-base tracking-tight whitespace-nowrap z-10 relative mt-1.5 text-center sm:text-left hidden xs:block">Aaria's Blue Elephant</span>
               </Link>
 
               {/* Navbar QR Code CTA */}
-              <div className="flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="hidden sm:flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="group relative shrink-0" title="Make a Donation">
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
-                  <div className="relative z-10 h-28 w-28 sm:h-36 sm:w-36 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
-                    <div className="transform scale-[0.44] sm:scale-[0.55] relative z-20 origin-center">
+                  <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
+                    <div className="transform scale-[0.35] sm:scale-[0.45] lg:scale-[0.55] relative z-20 origin-center">
                       <DonationQR as="div" />
                     </div>
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30"></div>
@@ -108,11 +108,11 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 1 */}
-            <div className="hidden lg:block w-px h-32 bg-slate-200 dark:bg-white/10 mx-6"></div>
+            <div className="hidden xl:block w-px h-16 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 2: Navigation Links */}
-            <div className="hidden lg:flex flex-1 justify-center shrink-0">
-              <div className="flex items-center space-x-6 lg:space-x-10">
+            <div className="hidden lg:flex flex-1 justify-center shrink-0 min-w-0">
+              <div className="flex items-center space-x-4 xl:space-x-8 px-2">
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -129,7 +129,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 2 */}
-            <div className="hidden lg:block w-px h-32 bg-slate-200 dark:bg-white/10 mx-6"></div>
+            <div className="hidden xl:block w-px h-16 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 3: Utilities & Donate Tagline */}
             <div className="hidden lg:flex flex-1 justify-end items-center gap-4 xl:gap-8">
@@ -178,13 +178,13 @@ const Navbar: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-col items-center gap-2 shrink-0">
+              <div className="flex flex-col items-center lg:items-end gap-1 shrink-0 max-w-[200px] xl:max-w-none">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
-                  <span className="px-6 py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
-                    Donate for the Cause <HeartPulse className="h-4 w-4" />
+                  <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
+                    Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap uppercase">100% Free. Fully Inclusive. All Are Welcome</span>
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal xl:whitespace-nowrap uppercase text-center lg:text-right leading-tight">100% Free. Fully Inclusive. All Welcome</span>
               </div>
             </div>
 
