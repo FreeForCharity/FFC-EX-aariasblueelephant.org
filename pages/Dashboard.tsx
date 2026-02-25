@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import RichText from '../components/RichText';
+import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 
 import {
     LayoutDashboard,
@@ -50,6 +51,7 @@ const Dashboard: React.FC = () => {
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
     const [confirmDeleteTestimonialId, setConfirmDeleteTestimonialId] = useState<string | null>(null);
+    const [editingTestimonials, setEditingTestimonials] = useState<Record<string, Partial<Testimonial>>>({});
 
     if (!user) {
         return <Navigate to="/login" />;
@@ -610,9 +612,45 @@ const Dashboard: React.FC = () => {
 
                             {/* Curation Controls: Author Name, System Role, Rank, Custom Title */}
                             <div className="mb-4 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Star className="h-4 w-4 text-brand-amber" />
-                                    <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Curation Tools</h5>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Star className="h-4 w-4 text-brand-amber" />
+                                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Curation Tools</h5>
+                                    </div>
+                                    {editingTestimonials[testimonial.id] && (
+                                        <div className="flex gap-2 animate-in fade-in zoom-in-95">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 text-[10px] text-slate-500 hover:text-slate-600"
+                                                onClick={() => {
+                                                    const newEditing = { ...editingTestimonials };
+                                                    delete newEditing[testimonial.id];
+                                                    setEditingTestimonials(newEditing);
+                                                }}
+                                            >
+                                                Discard
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="h-7 text-[10px] px-3"
+                                                disabled={
+                                                    editingTestimonials[testimonial.id].rank !== undefined &&
+                                                    (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length)
+                                                }
+                                                onClick={async () => {
+                                                    const result = await updateTestimonialMetadata(testimonial.id, editingTestimonials[testimonial.id]);
+                                                    if (result.success) {
+                                                        const newEditing = { ...editingTestimonials };
+                                                        delete newEditing[testimonial.id];
+                                                        setEditingTestimonials(newEditing);
+                                                    }
+                                                }}
+                                            >
+                                                Save Changes
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -622,24 +660,28 @@ const Dashboard: React.FC = () => {
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Display Name</label>
                                             <input
                                                 type="text"
-                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                                defaultValue={testimonial.author}
-                                                onBlur={async (e) => {
-                                                    if (e.target.value !== testimonial.author && e.target.value.trim() !== '') {
-                                                        const result = await updateTestimonialMetadata(testimonial.id, { author: e.target.value });
-                                                        if (!result.success) setAppError(result.error);
-                                                    }
+                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.author !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
+                                                    }`}
+                                                value={editingTestimonials[testimonial.id]?.author !== undefined ? editingTestimonials[testimonial.id].author : testimonial.author}
+                                                onChange={(e) => {
+                                                    setEditingTestimonials({
+                                                        ...editingTestimonials,
+                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], author: e.target.value }
+                                                    });
                                                 }}
                                             />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Role Tag</label>
                                             <select
-                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                                value={testimonial.role}
-                                                onChange={async (e) => {
-                                                    const result = await updateTestimonialMetadata(testimonial.id, { role: e.target.value });
-                                                    if (!result.success) setAppError(result.error);
+                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.role !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
+                                                    }`}
+                                                value={editingTestimonials[testimonial.id]?.role !== undefined ? editingTestimonials[testimonial.id].role : testimonial.role}
+                                                onChange={(e) => {
+                                                    setEditingTestimonials({
+                                                        ...editingTestimonials,
+                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], role: e.target.value }
+                                                    });
                                                 }}
                                             >
                                                 <option value="User">User</option>
@@ -657,31 +699,45 @@ const Dashboard: React.FC = () => {
                                             <input
                                                 type="text"
                                                 placeholder="e.g. Lead Volunteer"
-                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                                defaultValue={testimonial.title || ''}
-                                                onBlur={async (e) => {
-                                                    if (e.target.value !== (testimonial.title || '')) {
-                                                        const result = await updateTestimonialMetadata(testimonial.id, { title: e.target.value });
-                                                        if (!result.success) setAppError(result.error);
-                                                    }
+                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.title !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
+                                                    }`}
+                                                value={editingTestimonials[testimonial.id]?.title !== undefined ? editingTestimonials[testimonial.id].title : (testimonial.title || '')}
+                                                onChange={(e) => {
+                                                    setEditingTestimonials({
+                                                        ...editingTestimonials,
+                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], title: e.target.value }
+                                                    });
                                                 }}
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest underline decoration-brand-amber/30">Home Page Priority (Rank)</label>
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest underline decoration-brand-amber/30">Home Page Priority (Rank)</label>
+                                                <span className="text-[9px] text-slate-400">Range: 1-{testimonials.length}</span>
+                                            </div>
                                             <input
                                                 type="number"
-                                                placeholder="1 = Highest, 99 = Lowest"
-                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                                defaultValue={testimonial.rank || ''}
-                                                onBlur={async (e) => {
+                                                placeholder="1 = Highest"
+                                                min="1"
+                                                max={testimonials.length}
+                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 outline-none transition-colors ${editingTestimonials[testimonial.id]?.rank !== undefined
+                                                    ? (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length)
+                                                        ? 'border-red-500 ring-1 ring-red-500/20 focus:ring-red-500'
+                                                        : 'border-sky-500/50 ring-1 ring-sky-500/20 focus:ring-sky-500'
+                                                    : 'border-slate-200 dark:border-slate-700 focus:ring-sky-500'
+                                                    }`}
+                                                value={editingTestimonials[testimonial.id]?.rank !== undefined ? editingTestimonials[testimonial.id].rank : (testimonial.rank || '')}
+                                                onChange={(e) => {
                                                     const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                                                    if (val !== testimonial.rank) {
-                                                        const result = await updateTestimonialMetadata(testimonial.id, { rank: val });
-                                                        if (!result.success) setAppError(result.error);
-                                                    }
+                                                    setEditingTestimonials({
+                                                        ...editingTestimonials,
+                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], rank: val }
+                                                    });
                                                 }}
                                             />
+                                            {editingTestimonials[testimonial.id]?.rank !== undefined && (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length) && (
+                                                <p className="text-[9px] text-red-500 font-medium">Please enter a number between 1 and {testimonials.length}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
