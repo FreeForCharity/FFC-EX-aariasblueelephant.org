@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard } from 'lucide-react';
 import Button from './Button';
 import Logo from './Logo';
 import DonationQR from './DonationQR';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    setIsProfileOpen(false);
+    navigate('/');
+  };
 
   // Handle theme toggle
   useEffect(() => {
@@ -124,6 +133,46 @@ const Navbar: React.FC = () => {
 
             {/* Zone 3: Utilities & Donate Tagline */}
             <div className="hidden lg:flex flex-1 justify-end items-center gap-4 xl:gap-8">
+              {/* Auth Section - Only visible when signed in */}
+              <div className="flex items-center gap-4 mr-4">
+                {user && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsProfileOpen(!isProfileOpen)}
+                      className="flex items-center gap-2 rounded-full ring-2 ring-sky-500/20 hover:ring-sky-500/50 p-1 transition-all"
+                    >
+                      {user.avatar ? (
+                        <img src={user.avatar} alt="" className="h-8 w-8 rounded-full shadow-sm" />
+                      ) : (
+                        <UserCircle className="h-8 w-8 text-slate-400" />
+                      )}
+                    </button>
+
+                    {isProfileOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
+                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+                          <p className="font-bold text-slate-800 dark:text-white truncate">{user.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                        </div>
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors border-b border-slate-100 dark:border-slate-700"
+                        >
+                          <LayoutDashboard className="h-4 w-4" /> Dashboard
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                        >
+                          <LogOut className="h-4 w-4" /> Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="flex flex-col items-center gap-2 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
                   <span className="px-6 py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2">
@@ -181,6 +230,27 @@ const Navbar: React.FC = () => {
               >
                 Donate for the Cause
               </a>
+
+              {/* Mobile Auth Links */}
+              {user && (
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-4">
+                  <div className="space-y-1">
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <LayoutDashboard className="h-5 w-5" /> Dashboard
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <LogOut className="h-5 w-5" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
