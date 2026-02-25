@@ -90,9 +90,9 @@ const Footer: React.FC = () => {
                         </h3>
                         <ul className="space-y-4">
                             <li className="flex items-start gap-4 text-slate-500 dark:text-slate-400 group">
-                                <MapPin className="h-6 w-6 text-sky-600 dark:text-sky-500 shrink-0 group-hover:scale-110 transition-transform" />
-                                <a href="https://maps.google.com/?q=101+Felicia+Ave,+Mountain+House,+CA+95391" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
-                                    101 Felicia Ave,<br />Mountain House, CA 95391
+                                <MapPin className="h-6 w-6 text-sky-600 dark:text-sky-500 shrink-0 group-hover:scale-110 transition-transform mt-1" />
+                                <a href="https://maps.google.com/?q=101+Felicia+Ave,+Tracy,+CA+95391" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
+                                    101 Felicia Ave,<br />Tracy/Mountain House, CA 95391
                                 </a>
                             </li>
                             <li className="flex items-center gap-4 text-slate-500 dark:text-slate-400 group">
@@ -113,8 +113,11 @@ const Footer: React.FC = () => {
                                         <span className="block text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 font-bold mb-3">Legal Identity</span>
                                         <span className="text-slate-700 dark:text-slate-200 font-semibold text-sm block">501(c)(3) Nonprofit Organization</span>
                                         <span className="block text-xs text-sky-700 dark:text-sky-500/70 font-mono italic">EIN: 39-4799956</span>
+                                        <span className="block text-xs text-sky-700 dark:text-sky-500/70 font-mono italic">Entity No: B20250299015</span>
                                     </div>
-                                    <CandidSeal />
+                                    <div className="hidden sm:block">
+                                        <CandidSeal />
+                                    </div>
                                 </div>
                             </li>
                         </ul>

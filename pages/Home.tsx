@@ -1,18 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart } from 'lucide-react';
+import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen } from 'lucide-react';
 import Button from '../components/Button';
+import Logo from '../components/Logo';
 import { useData } from '../context/DataContext';
 import SocialLinks from '../components/SocialLinks';
 import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
 
+// Move static data outside to allow random initialization
+const pastEvents = [
+    {
+        id: 4,
+        title: 'Advocacy efforts',
+        date: 'Ongoing Initiative',
+        image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=800&h=500',
+        description: 'Advocacy efforts to partner with cities and organizations on large-scale inclusion.'
+    },
+    {
+        id: 1,
+        title: 'Weekly Play Group',
+        date: 'Weekly Initiative',
+        image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=80&w=800&h=500',
+        description: 'A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.'
+    },
+    {
+        id: 2,
+        title: 'Monthly Art and Craft Meetup',
+        date: 'Monthly Session',
+        image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800&h=500',
+        description: 'Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.'
+    },
+    {
+        id: 3,
+        title: 'Outreach Workshop',
+        date: 'Community Centers',
+        image: '/outreach_workshop_photo.png',
+        description: 'Educational programs for parents and educators on early intervention strategies and building inclusive spaces.'
+    }
+];
+
 const Home: React.FC = () => {
     const { testimonials } = useData();
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
-    const [currentEventIndex, setCurrentEventIndex] = useState(0);
+    // Randomize initial event on load
+    const [currentEventIndex, setCurrentEventIndex] = useState(() => Math.floor(Math.random() * pastEvents.length));
     const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
     const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
     const modalRef = useRef<HTMLDivElement>(null);
@@ -61,37 +95,7 @@ const Home: React.FC = () => {
         return { isTruncated: true, text: truncated };
     };
 
-    // Mock Past Events Data
-    const pastEvents = [
-        {
-            id: 4,
-            title: 'Advocacy efforts',
-            date: 'Ongoing Initiative',
-            image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=800&h=500',
-            description: 'Advocacy efforts to partner with cities and organizations on large-scale inclusion.'
-        },
-        {
-            id: 1,
-            title: 'Weekly Play Group',
-            date: 'Weekly Initiative',
-            image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=80&w=800&h=500',
-            description: 'A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.'
-        },
-        {
-            id: 2,
-            title: 'Monthly Art and Craft Meetup',
-            date: 'Monthly Session',
-            image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800&h=500',
-            description: 'Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.'
-        },
-        {
-            id: 3,
-            title: 'Outreach Workshop',
-            date: 'Community Centers',
-            image: '/outreach_workshop_photo.png',
-            description: 'Educational programs for parents and educators on early intervention strategies and building inclusive spaces.'
-        }
-    ];
+
 
     const nextEvent = () => {
         setCurrentEventIndex((prevIndex) => (prevIndex + 1) % pastEvents.length);
@@ -128,13 +132,42 @@ const Home: React.FC = () => {
                                 <SocialLinks />
                             </div>
 
-                            {/* Heading */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black text-slate-900 dark:text-white leading-[1.1] mb-2 tracking-tight">
-                                Building a New Inclusive World
-                            </h1>
-                            <h2 className="text-2xl sm:text-3xl lg:text-3xl font-bold text-sky-600 dark:text-sky-400 mb-4 tracking-tight">
-                                Fun Without Barriers for Every Child
-                            </h2>
+                            {/* Heading with Infinity Band and Logo */}
+                            <div className="relative mb-6 mt-4 inline-flex items-center justify-center lg:justify-start w-full lg:w-auto">
+                                {/* Infinity Band SVG Background - Centered */}
+                                <svg className="absolute w-[140%] h-[180%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-40 dark:opacity-30 pointer-events-none hidden sm:block" viewBox="0 0 400 100" preserveAspectRatio="none">
+                                    <path
+                                        d="M 120 50 C 120 20, 180 20, 200 50 C 220 80, 280 80, 280 50 C 280 20, 220 20, 200 50 C 180 80, 120 80, 120 50 Z"
+                                        fill="none"
+                                        stroke="url(#hero-rainbow)"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                    />
+                                    <defs>
+                                        <linearGradient id="hero-rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor="#0ea5e9" />
+                                            <stop offset="25%" stopColor="#8b5cf6" />
+                                            <stop offset="50%" stopColor="#ec4899" />
+                                            <stop offset="75%" stopColor="#f59e0b" />
+                                            <stop offset="100%" stopColor="#10b981" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+
+                                <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-4">
+                                    <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
+                                        <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <h1 className="text-3xl sm:text-5xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap">
+                                            Aaria's Blue Elephant
+                                        </h1>
+                                        <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left">
+                                            Building a New Inclusive World
+                                        </h2>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Subtitle */}
                             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
@@ -143,15 +176,20 @@ const Home: React.FC = () => {
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
-                                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-                                    <button id="donate-button" className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 px-8 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgb(2,132,199,0.3)] hover:shadow-[0_8px_30px_rgb(2,132,199,0.5)] hover:-translate-y-0.5">
-                                        Donate Now <HeartPulse className="h-5 w-5" />
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-8 w-full">
+                                <Link to="/events" className="w-full sm:flex-1">
+                                    <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-transform flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 text-base sm:text-lg whitespace-nowrap">
+                                        Join Now <Users className="h-5 w-5 shrink-0" />
+                                    </button>
+                                </Link>
+                                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:flex-1">
+                                    <button className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-sky-700 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-colors flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-sky-500/20 text-base sm:text-lg whitespace-nowrap">
+                                        Donate <HeartPulse className="h-5 w-5 shrink-0" />
                                     </button>
                                 </a>
-                                <Link to="/about" className="w-full sm:w-auto">
-                                    <button className="w-full sm:w-auto bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-600 dark:hover:border-sky-400 text-sky-700 dark:text-white font-bold py-4 px-8 rounded-full transition-all flex items-center justify-center shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-sky-500/20">
-                                        Our Mission
+                                <Link to="/about" className="w-full sm:flex-1">
+                                    <button className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-sky-700 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-colors flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-sky-500/20 text-base sm:text-lg whitespace-nowrap">
+                                        Our Story <BookOpen className="h-5 w-5 shrink-0" />
                                     </button>
                                 </Link>
                             </div>
@@ -178,9 +216,10 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* QR Code (Right side inline on desktop) */}
-                            <div className="hidden xl:block transform scale-[0.55] origin-left mt-[-30px] mb-[-60px] relative z-20">
-                                <DonationQR />
+                            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full sm:w-auto text-center lg:text-left">
+                                <p className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
+                                    <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> playgroups hosted <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> children embraced in 2025–2026
+                                </p>
                             </div>
                         </div>
 
@@ -388,9 +427,30 @@ const Home: React.FC = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <Quote className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                            <p className="text-slate-500 dark:text-slate-400">Our community is sharing their voices soon. Check back later!</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {[
+                                { author: "Sarah M.", role: "Tracy Parent", content: "Aaria's Blue Elephant has been a lighthouse for our family. The playgroups are organized beautifully and provide a safe space where my child can finally just be themselves." },
+                                { author: "David T.", role: "Mountain House Parent", content: "Before finding this community, weekends were isolating. Now we have friends, resources, and genuine support. The compassion here is unmatched." },
+                                { author: "Elena R.", role: "Early Intervention Specialist", content: "The inclusive environment this organization builds is exactly what children need for healthy social development. It's an extraordinary initiative that truly changes lives." }
+                            ].map((item, idx) => (
+                                <div key={idx} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors">
+                                    <div>
+                                        <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900 mb-4" />
+                                        <p className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
+                                            "{item.content}"
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
+                                        <div className="h-12 w-12 rounded-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/50 dark:text-sky-300 shadow-sm shrink-0">
+                                            {item.author.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-800 dark:text-white font-bold">{item.author}</p>
+                                            <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.role}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -409,8 +469,8 @@ const Home: React.FC = () => {
 
                     <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
                         <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer">
-                            <button className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full sm:w-auto">
-                                Make a Donation
+                            <button className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
+                                Donate for the Cause <HeartPulse className="h-4 w-4" />
                             </button>
                         </a>
                         <Link to="/signup">
@@ -420,11 +480,18 @@ const Home: React.FC = () => {
                         </Link>
                     </div>
 
-                    {/* Join Herd QR Code */}
-                    <div className="mt-12 flex flex-col items-center">
-                        <p className="text-sky-100 font-semibold mb-3 uppercase tracking-widest text-sm text-center">Scan to Signify Impact</p>
-                        <div className="rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] transition-all duration-300 ring-4 ring-white/10 overflow-hidden transform scale-[0.7] sm:scale-[0.8] origin-top">
-                            <DonationQR />
+                    {/* Trust Elements & QR */}
+                    <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-8 lg:gap-16">
+                        {/* Candid Seal */}
+                        <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 bg-white/10 backdrop-blur rounded-2xl p-4 shadow-lg border border-white/20">
+                            <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" className="h-20 sm:h-24 w-auto drop-shadow-lg" />
+                        </a>
+
+                        {/* Join Herd QR Code */}
+                        <div className="flex flex-col items-center">
+                            <div className="h-[250px] w-[250px] rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] transition-all duration-300 ring-4 ring-white/10 overflow-hidden relative">
+                                <DonationQR />
+                            </div>
                         </div>
                     </div>
                 </div>

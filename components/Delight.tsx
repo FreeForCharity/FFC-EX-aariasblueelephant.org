@@ -38,7 +38,7 @@ const Delight: React.FC = () => {
         canvas.style.height = '100%';
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = '9999';
-        canvas.style.opacity = '0.6';
+        canvas.style.opacity = '1.0';
 
         document.body.insertBefore(canvas, document.body.firstChild);
         const ctx = canvas.getContext('2d');
@@ -70,11 +70,11 @@ const Delight: React.FC = () => {
                 size: Math.random() * 6 + 4,
                 color: colors[Math.floor(Math.random() * colors.length)],
                 shape: shape,
-                opacity: 0.4,
+                opacity: 0.7,
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.05,
                 life: 1.0,
-                decay: isBurst ? 0.015 : (Math.random() * 0.002 + 0.001)
+                decay: isBurst ? 0.015 : (Math.random() * 0.0015 + 0.0005) // Slower decay for drift
             };
         }
 
@@ -134,18 +134,18 @@ const Delight: React.FC = () => {
             if (reducedMotion || isDrifting) return;
             isDrifting = true;
 
-            // Spawn 30-40 particles slowly over 3 seconds
+            // Spawn ~55 particles slowly over 5 seconds
             let count = 0;
             let spawnInterval = setInterval(() => {
                 particles.push(createParticle());
                 if (!isEngineRunning) animate();
                 count++;
-                if (count >= 35) clearInterval(spawnInterval);
+                if (count >= 58) clearInterval(spawnInterval);
             }, 85);
 
             setTimeout(() => {
                 isDrifting = false;
-            }, 3000);
+            }, 5000);
         };
 
         window.triggerBurst = (x: number, y: number) => {

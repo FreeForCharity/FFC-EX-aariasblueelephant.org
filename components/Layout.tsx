@@ -8,9 +8,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans transition-colors selection:bg-brand-cyan selection:text-white">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans transition-colors selection:bg-brand-cyan selection:text-white">
       <Navbar />
-      <main className="flex-grow">
+      <main id="main-content" className="flex-grow outline-none" tabIndex={-1}>
         {children}
       </main>
       <Footer />
