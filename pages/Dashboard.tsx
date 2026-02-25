@@ -33,7 +33,7 @@ import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../
 import Button from '../components/Button';
 
 
-type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'history' | 'receipts' | 'my-events' | 'testimonial';
+type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial';
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
         return <Navigate to="/login" />;
     }
 
-    const isBoard = user.role === 'BoardMember.Owner';
+    const isBoard = user.role === 'BoardMember' || user.role === 'BoardMember.Owner';
     const isDonor = user.role === 'Donor';
     const isUser = user.role === 'User';
 
@@ -575,7 +575,12 @@ const Dashboard: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="flex flex-col gap-2 min-w-[120px]">
-                                        <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono uppercase tracking-tighter border border-slate-200 dark:border-slate-700">
+                                                ID: {testimonial.id.slice(0, 5)}
+                                            </span>
+                                        </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">{testimonial.role}</p>
                                             <span className="text-slate-300 dark:text-slate-600">•</span>
@@ -603,42 +608,82 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Admin Controls for Title and Rank */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                                        <Award className="h-3 w-3" /> Admin Title (e.g. Board Member)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Add custom designation..."
-                                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                        defaultValue={testimonial.title || ''}
-                                        onBlur={async (e) => {
-                                            if (e.target.value !== (testimonial.title || '')) {
-                                                const result = await updateTestimonialMetadata(testimonial.id, { title: e.target.value });
-                                                if (!result.success) setAppError(result.error);
-                                            }
-                                        }}
-                                    />
+                            {/* Curation Controls: Author Name, System Role, Rank, Custom Title */}
+                            <div className="mb-4 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Star className="h-4 w-4 text-brand-amber" />
+                                    <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Curation Tools</h5>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                                        <Star className="h-3 w-3" /> Display Priority (Rank)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        placeholder="Set order (1, 2, 3...)"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
-                                        defaultValue={testimonial.rank || ''}
-                                        onBlur={async (e) => {
-                                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                                            if (val !== testimonial.rank) {
-                                                const result = await updateTestimonialMetadata(testimonial.id, { rank: val });
-                                                if (!result.success) setAppError(result.error);
-                                            }
-                                        }}
-                                    />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Author & Role */}
+                                    <div className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Display Name</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                                defaultValue={testimonial.author}
+                                                onBlur={async (e) => {
+                                                    if (e.target.value !== testimonial.author && e.target.value.trim() !== '') {
+                                                        const result = await updateTestimonialMetadata(testimonial.id, { author: e.target.value });
+                                                        if (!result.success) setAppError(result.error);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Role Tag</label>
+                                            <select
+                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                                value={testimonial.role}
+                                                onChange={async (e) => {
+                                                    const result = await updateTestimonialMetadata(testimonial.id, { role: e.target.value });
+                                                    if (!result.success) setAppError(result.error);
+                                                }}
+                                            >
+                                                <option value="User">User</option>
+                                                <option value="Donor">Donor</option>
+                                                <option value="BoardMember">Board Member</option>
+                                                <option value="BoardMember.Owner">Owner</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Title & Rank */}
+                                    <div className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Custom designation (Admin Title)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Lead Volunteer"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                                defaultValue={testimonial.title || ''}
+                                                onBlur={async (e) => {
+                                                    if (e.target.value !== (testimonial.title || '')) {
+                                                        const result = await updateTestimonialMetadata(testimonial.id, { title: e.target.value });
+                                                        if (!result.success) setAppError(result.error);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest underline decoration-brand-amber/30">Home Page Priority (Rank)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="1 = Highest, 99 = Lowest"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"
+                                                defaultValue={testimonial.rank || ''}
+                                                onBlur={async (e) => {
+                                                    const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                                    if (val !== testimonial.rank) {
+                                                        const result = await updateTestimonialMetadata(testimonial.id, { rank: val });
+                                                        if (!result.success) setAppError(result.error);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
