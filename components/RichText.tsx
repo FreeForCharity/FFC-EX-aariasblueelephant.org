@@ -1,5 +1,5 @@
 import React from 'react';
-import { Youtube, Instagram, Link as LinkIcon, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Youtube, Instagram, Facebook, Link as LinkIcon, ExternalLink, Image as ImageIcon, Play, Check, Share2 } from 'lucide-react';
 
 interface RichTextProps {
     content: string;
@@ -9,6 +9,9 @@ interface RichTextProps {
 export const extractMedia = (content: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const urls = content.match(urlRegex) || [];
+
+    // First, look for an image that can serve as a cover for a Google Photos album
+    const findImage = urls.find(url => /\.(jpg|jpeg|png|gif|webp)$/i.test(url));
 
     for (const url of urls) {
         if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -51,7 +54,11 @@ export const extractMedia = (content: string) => {
             return { url, type: 'facebook' as const };
         }
         if (url.includes('photos.google.com') || url.includes('photos.app.goo.gl')) {
-            return { url, type: 'google-photos' as const };
+            return {
+                url,
+                type: 'google-photos' as const,
+                thumbnail: findImage // Use the found image as a cover if available
+            };
         }
         if (/\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
             return { url, type: 'image' as const, thumbnail: url };
@@ -61,7 +68,7 @@ export const extractMedia = (content: string) => {
 };
 
 const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
-    const [playingTikToks, setPlayingTikToks] = React.useState<Record<number, boolean>>({});
+    const [playingMedia, setPlayingMedia] = React.useState<Record<number, boolean>>({});
     // Regular expression to find URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
@@ -130,17 +137,30 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                     // It's a URL
                     if (isYouTube(part)) {
                         const embedUrl = getYouTubeEmbedUrl(part);
+                        const isPlaying = playingMedia[index];
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 aspect-video">
+                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 aspect-video relative group">
+                                    {!isPlaying ? (
+                                        <div
+                                            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm cursor-pointer hover:bg-slate-900/20 transition-all"
+                                            onClick={() => setPlayingMedia({ ...playingMedia, [index]: true })}
+                                        >
+                                            <div className="h-16 w-16 rounded-full bg-red-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
+                                                <Youtube className="h-8 w-8 fill-current" />
+                                            </div>
+                                            <p className="mt-3 text-white font-bold tracking-wide uppercase text-[10px] bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">Click to Watch Community Story</p>
+                                        </div>
+                                    ) : null}
                                     <iframe
                                         width="100%"
                                         height="100%"
-                                        src={embedUrl}
+                                        src={isPlaying ? `${embedUrl}?autoplay=1` : embedUrl}
                                         title="YouTube video player"
                                         frameBorder="0"
-                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
+                                        className={!isPlaying ? 'pointer-events-none' : ''}
                                     ></iframe>
                                 </div>
                             );
@@ -157,9 +177,21 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                     if (isInstagram(part)) {
                         const embedUrl = getInstagramEmbedUrl(part);
+                        const isPlaying = playingMedia[index];
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto min-h-[450px]">
+                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto min-h-[450px] relative group">
+                                    {!isPlaying ? (
+                                        <div
+                                            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-purple-900/20 backdrop-blur-[2px] cursor-pointer hover:bg-purple-900/10 transition-all"
+                                            onClick={() => setPlayingMedia({ ...playingMedia, [index]: true })}
+                                        >
+                                            <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
+                                                <Instagram className="h-8 w-8" />
+                                            </div>
+                                            <p className="mt-3 text-white font-black tracking-widest uppercase text-[10px] bg-black/60 px-4 py-1.5 rounded-full backdrop-blur-xl">Open Instagram Context</p>
+                                        </div>
+                                    ) : null}
                                     <iframe
                                         src={embedUrl}
                                         width="100%"
@@ -168,7 +200,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         scrolling="no"
                                         allowTransparency={true}
                                         allow="encrypted-media"
-                                        className="min-h-[450px]"
+                                        className={`min-h-[450px] ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
                             );
@@ -177,7 +209,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                     if (isTikTok(part)) {
                         const embedUrl = getTikTokEmbedUrl(part);
-                        const isPlaying = playingTikToks[index];
+                        const isPlaying = playingMedia[index];
 
                         if (embedUrl) {
                             return (
@@ -185,11 +217,11 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                     {!isPlaying ? (
                                         <div
                                             className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm cursor-pointer hover:bg-slate-900/40 transition-all"
-                                            onClick={() => setPlayingTikToks({ ...playingTikToks, [index]: true })}
+                                            onClick={() => setPlayingMedia({ ...playingMedia, [index]: true })}
                                         >
                                             <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform shadow-2xl">
-                                                <div className="h-16 w-16 rounded-full bg-sky-500 flex items-center justify-center shadow-inner">
-                                                    <Youtube className="h-8 w-8 text-white fill-current" />
+                                                <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center shadow-inner">
+                                                    <img src="https://www.tiktok.com/favicon.ico" className="h-8 w-8 invert" alt="TikTok" />
                                                 </div>
                                             </div>
                                             <p className="mt-4 text-white font-bold tracking-wide uppercase text-xs">Click to Play Community Story</p>
@@ -211,8 +243,20 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                     if (part.includes('facebook.com') || part.includes('fb.watch')) {
                         const embedUrl = getFacebookEmbedUrl(part);
+                        const isPlaying = playingMedia[index];
                         return (
-                            <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto overflow-x-auto min-h-[300px]">
+                            <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto overflow-x-auto min-h-[300px] relative group">
+                                {!isPlaying ? (
+                                    <div
+                                        className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-blue-900/10 backdrop-blur-[1px] cursor-pointer hover:bg-blue-900/5 transition-all"
+                                        onClick={() => setPlayingMedia({ ...playingMedia, [index]: true })}
+                                    >
+                                        <div className="h-16 w-16 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
+                                            <Facebook className="h-8 w-8" />
+                                        </div>
+                                        <p className="mt-3 text-white font-bold tracking-wide uppercase text-[10px] bg-blue-900/80 px-4 py-1.5 rounded-full shadow-lg">Load Community Post</p>
+                                    </div>
+                                ) : null}
                                 <iframe
                                     src={embedUrl}
                                     width="500"
@@ -222,6 +266,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                     frameBorder="0"
                                     allowFullScreen={true}
                                     allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                    className={!isPlaying ? 'pointer-events-none' : ''}
                                 ></iframe>
                             </div>
                         );
