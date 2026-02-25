@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 interface LogoProps {
+  id?: string;
   className?: string;
   variant?: 'default' | 'white';
   alt?: string;
@@ -8,6 +9,7 @@ interface LogoProps {
 }
 
 const Logo: React.FC<LogoProps> = ({
+  id = "elephant-mascot",
   className = "h-10 w-10",
   variant = 'default',
   alt = "Aaria's Blue Elephant Logo",
@@ -45,7 +47,7 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <img
       src={src}
-      id="elephant-mascot"
+      id={id}
       alt={alt}
       className={`${className} object-contain`}
       onError={() => setImgError(true)}
