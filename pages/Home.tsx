@@ -137,7 +137,7 @@ const Home: React.FC = () => {
                             <div className="relative mb-6 mt-4 inline-flex items-center justify-center lg:justify-start w-full lg:w-auto">
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-6">
-                                    <div className="h-24 w-24 sm:h-32 sm:w-32 lg:h-48 lg:w-48 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none hover:scale-105 transition-transform duration-300 shrink-0">
+                                    <div className="h-20 w-20 sm:h-28 sm:w-28 lg:h-40 lg:w-40 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none hover:scale-105 transition-transform duration-300 shrink-0">
                                         <Logo src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
