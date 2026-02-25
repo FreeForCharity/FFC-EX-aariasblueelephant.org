@@ -108,10 +108,10 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 1 */}
-            <div className="hidden xl:block w-px h-16 bg-slate-200 dark:bg-white/10 mx-4"></div>
+            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-10"></div>
 
             {/* Zone 2: Navigation Links */}
-            <div className="hidden lg:flex flex-1 justify-center shrink-0 min-w-0">
+            <div className="hidden lg:flex flex-none justify-center shrink-0 min-w-0 mx-auto">
               <div className="flex items-center space-x-4 xl:space-x-8 px-2">
                 {navLinks.map((link) => (
                   <Link
@@ -129,7 +129,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 2 */}
-            <div className="hidden xl:block w-px h-16 bg-slate-200 dark:bg-white/10 mx-4"></div>
+            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-10"></div>
 
             {/* Zone 3: Utilities & Donate Tagline */}
             <div className="hidden lg:flex flex-1 justify-end items-center gap-4 xl:gap-8">
