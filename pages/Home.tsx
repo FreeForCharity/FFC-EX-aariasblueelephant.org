@@ -138,7 +138,7 @@ const Home: React.FC = () => {
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-4">
                                     <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
-                                        <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
+                                        <Logo src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
                                         <h1 className="text-[22px] xs:text-2xl sm:text-4xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible">
