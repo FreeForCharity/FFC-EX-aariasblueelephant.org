@@ -8,7 +8,7 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { events, eventRegistrations, registerForEvent } = useData();
+  const { events, eventRegistrations, registerForEvent, isLoading } = useData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
@@ -38,6 +38,15 @@ const EventDetails: React.FC = () => {
       window.scrollTo(0, 0);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 dark:text-slate-400">Loading event details...</p>
+      </div>
+    );
+  }
 
   if (!event) {
     return (

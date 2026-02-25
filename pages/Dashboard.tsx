@@ -38,7 +38,7 @@ type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' |
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
-    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, updateTestimonial, eventRegistrations, approveRegistration, deleteRegistration } = useData();
+    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, updateTestimonial, eventRegistrations, approveRegistration, deleteRegistration, isLoading } = useData();
 
     const [activeView, setActiveView] = useState<ViewState>('overview');
     const [showEventForm, setShowEventForm] = useState(false);
@@ -55,6 +55,15 @@ const Dashboard: React.FC = () => {
 
     if (!user) {
         return <Navigate to="/login" />;
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+                <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 dark:text-slate-400">Loading your dashboard...</p>
+            </div>
+        );
     }
 
     const isBoard = user.role === 'BoardMember' || user.role === 'BoardMember.Owner';
@@ -617,7 +626,7 @@ const Dashboard: React.FC = () => {
                                         <Star className="h-4 w-4 text-brand-amber" />
                                         <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Curation Tools</h5>
                                     </div>
-                                    {editingTestimonials[testimonial.id] && (
+                                    {editingTestimonials[testimonial.id] && Object.keys(editingTestimonials[testimonial.id]).length > 0 && (
                                         <div className="flex gap-2 animate-in fade-in zoom-in-95">
                                             <Button
                                                 size="sm"
@@ -633,7 +642,7 @@ const Dashboard: React.FC = () => {
                                             </Button>
                                             <Button
                                                 size="sm"
-                                                className="h-7 text-[10px] px-3"
+                                                className="h-7 text-[10px] px-3 font-bold bg-sky-600 hover:bg-sky-700 text-white border-none"
                                                 disabled={
                                                     editingTestimonials[testimonial.id].rank !== undefined &&
                                                     (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length)
@@ -728,14 +737,17 @@ const Dashboard: React.FC = () => {
                                                     }`}
                                                 value={editingTestimonials[testimonial.id]?.rank !== undefined ? editingTestimonials[testimonial.id].rank : (testimonial.rank || '')}
                                                 onChange={(e) => {
-                                                    const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                                    let val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                                    if (val !== undefined) {
+                                                        val = Math.max(1, Math.min(val, testimonials.length));
+                                                    }
                                                     setEditingTestimonials({
                                                         ...editingTestimonials,
                                                         [testimonial.id]: { ...editingTestimonials[testimonial.id], rank: val }
                                                     });
                                                 }}
                                             />
-                                            {editingTestimonials[testimonial.id]?.rank !== undefined && (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length) && (
+                                            {editingTestimonials[testimonial.id]?.rank !== undefined && (editingTestimonials[testimonial.id]?.rank! < 1 || editingTestimonials[testimonial.id]?.rank! > testimonials.length) && (
                                                 <p className="text-[9px] text-red-500 font-medium">Please enter a number between 1 and {testimonials.length}</p>
                                             )}
                                         </div>
