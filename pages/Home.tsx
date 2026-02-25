@@ -140,8 +140,8 @@ const Home: React.FC = () => {
                                     <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
                                         <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
-                                    <div className="flex flex-col items-start">
-                                        <h1 className="text-[22px] xs:text-2xl sm:text-4xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap">
+                                    <div className="flex flex-col items-start min-w-0">
+                                        <h1 className="text-[22px] xs:text-2xl sm:text-4xl lg:text-[52px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible">
                                             Aaria's Blue Elephant
                                         </h1>
                                         <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left">
@@ -268,7 +268,7 @@ const Home: React.FC = () => {
 
             {/* Free Events Guarantee Banner */}
             <section className="bg-slate-50 dark:bg-slate-950 py-8 transition-colors">
-                <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 sm:p-12 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group">
                         <div className="h-20 w-20 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-8 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
                             <HeartHandshake className="h-10 w-10 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
@@ -564,28 +564,10 @@ const Home: React.FC = () => {
                             <X className="w-5 h-5" />
                         </button>
 
-                        {/* Rainbow Infinity Band Header */}
-                        <div className="h-28 sm:h-32 bg-slate-50 dark:bg-slate-950 flex justify-center items-center relative overflow-hidden shrink-0 border-b border-slate-200 dark:border-slate-800/50">
-                            <svg className="absolute w-[150%] h-[150%] opacity-60 dark:opacity-40" viewBox="0 0 400 100" preserveAspectRatio="none">
-                                <path
-                                    d="M 120 50 C 120 20, 180 20, 200 50 C 220 80, 280 80, 280 50 C 280 20, 220 20, 200 50 C 180 80, 120 80, 120 50 Z"
-                                    fill="none"
-                                    stroke="url(#modal-rainbow)"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                />
-                                <defs>
-                                    <linearGradient id="modal-rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stopColor="#0ea5e9" />    {/* Sky 500 */}
-                                        <stop offset="25%" stopColor="#8b5cf6" />   {/* Violet 500 */}
-                                        <stop offset="50%" stopColor="#ec4899" />   {/* Pink 500 */}
-                                        <stop offset="75%" stopColor="#f59e0b" />   {/* Amber 500 */}
-                                        <stop offset="100%" stopColor="#10b981" />  {/* Emerald 500 */}
-                                    </linearGradient>
-                                </defs>
-                            </svg>
+                        {/* Header Area */}
+                        <div className="h-12 bg-slate-50 dark:bg-slate-950 flex justify-center items-center relative overflow-hidden shrink-0 border-b border-slate-200 dark:border-slate-800/50">
                             {/* Gradient fade out at bottom */}
-                            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white dark:from-slate-900/95 to-transparent"></div>
+                            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white dark:from-slate-900/95 to-transparent"></div>
                         </div>
 
                         {/* Content Scrollable Area */}
