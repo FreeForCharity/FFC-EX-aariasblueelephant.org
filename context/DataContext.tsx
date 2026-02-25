@@ -147,7 +147,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!error) {
       setEvents(events.map(evt => evt.id === id ? { ...evt, ...eventData } : evt));
     } else {
-      console.error(error);
+      console.error("Update event error:", error.message, error.details);
     }
   };
 
@@ -156,7 +156,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!error) {
       setEvents(events.filter(evt => evt.id !== id));
     } else {
-      console.error(error);
+      console.error("Delete event error:", error.message, error.details);
     }
   };
 
@@ -173,7 +173,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }]).select().single();
 
     if (error) {
-      console.error(error);
+      console.error("Add testimonial error:", error.message, error.details);
       return;
     }
 
@@ -194,6 +194,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.from('testimonials').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setTestimonials(testimonials.map(t => t.id === id ? { ...t, status: 'Approved' } : t));
+    } else {
+      console.error("Approve testimonial error:", error.message, error.details);
     }
   };
 
@@ -201,6 +203,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.from('testimonials').delete().eq('id', id);
     if (!error) {
       setTestimonials(testimonials.filter(t => t.id !== id));
+    } else {
+      console.error("Delete testimonial error:", error.message, error.details);
     }
   };
 
@@ -214,7 +218,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }]).select().single();
 
     if (error) {
-      console.error(error);
+      console.error("Submit volunteer app error:", error.message, error.details);
       return;
     }
 
@@ -233,6 +237,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.from('volunteer_applications').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setVolunteerApplications(volunteerApplications.map(app => app.id === id ? { ...app, status: 'Approved' } : app));
+    } else {
+      console.error("Approve volunteer error:", error.message, error.details);
     }
   };
 
@@ -276,6 +282,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.from('event_registrations').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
       setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+    } else {
+      console.error("Approve registration error:", error.message, error.details);
     }
   };
 
@@ -291,6 +299,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (evt) {
         updateEvent(evt.id, { registered: Math.max(0, evt.registered - 1) });
       }
+    } else {
+      console.error("Delete registration error:", error.message, error.details);
     }
   };
 
