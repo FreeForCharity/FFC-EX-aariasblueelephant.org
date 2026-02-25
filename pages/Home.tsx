@@ -8,6 +8,7 @@ import SocialLinks from '../components/SocialLinks';
 import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
+import RichText from '../components/RichText';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -378,8 +379,8 @@ const Home: React.FC = () => {
                                         <div key={item.id} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500">
                                             <div>
                                                 <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900 mb-4" />
-                                                <p className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
-                                                    "{text}"
+                                                <div className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
+                                                    <RichText content={text} className="inline" />
                                                     {isTruncated && (
                                                         <button
                                                             onClick={() => setSelectedTestimonial(item)}
@@ -390,7 +391,7 @@ const Home: React.FC = () => {
                                                             <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                                                         </button>
                                                     )}
-                                                </p>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
                                                 <div className="h-12 w-12 rounded-full bg-sky-100 overflow-hidden shadow-sm flex-shrink-0">
@@ -567,9 +568,10 @@ const Home: React.FC = () => {
 
                             <div className="relative">
                                 <Quote className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 h-12 w-12 sm:h-16 sm:w-16 text-slate-100 dark:text-slate-800 -z-10" />
-                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-base sm:text-lg whitespace-pre-wrap font-medium pb-4">
-                                    {selectedTestimonial.content}
-                                </p>
+                                <RichText
+                                    content={selectedTestimonial.content}
+                                    className="text-slate-700 dark:text-slate-300 text-base sm:text-lg font-medium pb-4"
+                                />
                             </div>
                         </div>
 

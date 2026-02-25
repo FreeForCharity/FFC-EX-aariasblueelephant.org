@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import RichText from '../components/RichText';
 
 import {
     LayoutDashboard,
@@ -576,7 +577,7 @@ const Dashboard: React.FC = () => {
                                 </span>
                             </div>
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-lg mb-4">
-                                <p className="text-slate-600 dark:text-slate-300 text-sm italic">"{testimonial.content}"</p>
+                                <RichText content={testimonial.content} className="text-slate-600 dark:text-slate-300 text-sm italic" />
                             </div>
                             <div className="flex justify-end gap-3">
                                 {testimonial.status === 'Pending' && (
