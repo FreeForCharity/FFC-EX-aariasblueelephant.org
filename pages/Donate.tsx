@@ -1,6 +1,6 @@
 import React from 'react';
-import Button from '../components/Button';
 import { Heart } from 'lucide-react';
+import DonationQR from '../components/DonationQR';
 
 const Donate: React.FC = () => {
   return (
@@ -20,14 +20,17 @@ const Donate: React.FC = () => {
           We use Zeffy, a 100% free fundraising platform for nonprofits, so that 100% of your donation goes directly to our mission.
         </p>
 
-        <a
-          href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block w-full sm:w-auto bg-sky-700 hover:bg-sky-800 text-white font-bold py-4 px-12 rounded-lg text-lg transition-transform hover:-translate-y-1 shadow-lg"
-        >
-          Proceed to Secure Donation
-        </a>
+        <div className="flex flex-col items-center justify-center gap-6">
+          <DonationQR />
+          <a
+            href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full sm:w-auto bg-sky-700 hover:bg-sky-800 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:-translate-y-1 shadow-lg"
+          >
+            Or Click Here to Donate
+          </a>
+        </div>
 
         <p className="mt-8 text-center text-xs text-slate-600 dark:text-slate-400">
           Aaria's Blue Elephant is a registered 501(c)(3) nonprofit organization. Contributions are tax-deductible to the extent allowed by law.

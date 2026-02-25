@@ -4,6 +4,7 @@ import { Menu, X, LogOut, LayoutDashboard, ExternalLink, Phone, Mail, Sun, Moon 
 import { useAuth } from '../context/AuthContext';
 import Button from './Button';
 import Logo from './Logo';
+import DonationQR from './DonationQR';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -136,15 +137,18 @@ const Navbar: React.FC = () => {
               {/* Navbar QR Code CTA */}
               <div className="flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
                 <a
-                  href="/#join-herd"
-                  onClick={handleJoinHerdClick}
+                  href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group relative shrink-0"
-                  title="Ready to Join Our Herd"
+                  title="Make a Donation"
                 >
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
-                  <div className="relative z-10 h-28 w-28 sm:h-36 sm:w-36 bg-white p-2 rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden">
-                    <img src="./qr-code-donate.png" alt="Signify Impact QR" className="w-full h-full object-contain relative z-20" />
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                  <div className="relative z-10 h-28 w-28 sm:h-36 sm:w-36 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
+                    <div className="transform scale-[0.44] sm:scale-[0.55] relative z-20 origin-center">
+                      <DonationQR as="div" />
+                    </div>
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30"></div>
                   </div>
 
                   {/* UX Tooltip */}
@@ -153,9 +157,14 @@ const Navbar: React.FC = () => {
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
                   </span>
                 </a>
-                <div className="flex flex-col items-center select-none cursor-pointer mt-1" onClick={handleJoinHerdClick}>
+                <a
+                  href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center select-none cursor-pointer mt-1"
+                >
                   <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight whitespace-nowrap hover:text-sky-600 dark:hover:text-sky-400 transition-colors">Signify Impact</span>
-                </div>
+                </a>
               </div>
             </div>
 

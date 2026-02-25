@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext';
 import SocialLinks from '../components/SocialLinks';
 import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
+import DonationQR from '../components/DonationQR';
 
 const Home: React.FC = () => {
     const { testimonials } = useData();
@@ -175,6 +176,11 @@ const Home: React.FC = () => {
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Built by and for our community.</p>
                                 </div>
+                            </div>
+
+                            {/* QR Code (Right side inline on desktop) */}
+                            <div className="hidden xl:block transform scale-[0.55] origin-left mt-[-30px] mb-[-60px] relative z-20">
+                                <DonationQR />
                             </div>
                         </div>
 
@@ -417,8 +423,8 @@ const Home: React.FC = () => {
                     {/* Join Herd QR Code */}
                     <div className="mt-12 flex flex-col items-center">
                         <p className="text-sky-100 font-semibold mb-3 uppercase tracking-widest text-sm text-center">Scan to Signify Impact</p>
-                        <div className="h-40 w-40 sm:h-48 sm:w-48 bg-white p-3 rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(14,165,233,0.3)] hover:scale-105 transition-all duration-300 ring-4 ring-white/10">
-                            <img src="./qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
+                        <div className="rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] transition-all duration-300 ring-4 ring-white/10 overflow-hidden transform scale-[0.7] sm:scale-[0.8] origin-top">
+                            <DonationQR />
                         </div>
                     </div>
                 </div>
