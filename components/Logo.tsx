@@ -4,9 +4,15 @@ interface LogoProps {
   className?: string;
   variant?: 'default' | 'white';
   alt?: string;
+  src?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ className = "h-10 w-10", variant = 'default', alt = "Aaria's Blue Elephant Logo" }) => {
+const Logo: React.FC<LogoProps> = ({
+  className = "h-10 w-10",
+  variant = 'default',
+  alt = "Aaria's Blue Elephant Logo",
+  src = "./qr-logo.png"
+}) => {
   const [imgError, setImgError] = useState(false);
 
   // If the uploaded image fails to load, we render this fallback SVG
@@ -38,7 +44,7 @@ const Logo: React.FC<LogoProps> = ({ className = "h-10 w-10", variant = 'default
 
   return (
     <img
-      src="./qr-logo.png"
+      src={src}
       id="elephant-mascot"
       alt={alt}
       className={`${className} object-contain`}

@@ -61,8 +61,30 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
               <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10">
                 <div className="relative">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" fill="none">
+                      <defs>
+                        <linearGradient id="iridescent-flow" x1="0%" y1="0%" x2="200%" y2="0%">
+                          <stop offset="0%" stopColor="#10b981" />
+                          <stop offset="25%" stopColor="#14b8a6" />
+                          <stop offset="50%" stopColor="#8b5cf6" />
+                          <stop offset="75%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#10b981" />
+                          <animate attributeName="x1" values="0%;-100%" dur="3s" repeatCount="indefinite" />
+                          <animate attributeName="x2" values="200%;100%" dur="3s" repeatCount="indefinite" />
+                        </linearGradient>
+                        <filter id="subtle-glow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur stdDeviation="1" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                      </defs>
+                      <path d="M 25 20 C 10 20, 10 35, 25 35 C 40 35, 50 20, 50 20 C 50 20, 60 5, 75 5 C 90 5, 90 20, 75 20 C 60 20, 50 35, 50 35 C 50 35, 40 20, 25 20 Z" stroke="url(#iridescent-flow)" strokeOpacity="0.25" strokeWidth="1" strokeLinecap="round" filter="url(#subtle-glow)" className="transition-all duration-700 group-hover:strokeOpacity-45" />
+                      <path d="M 25 35 C 40 35, 50 20, 50 20 C 50 20, 60 20, 75 20" stroke="url(#iridescent-flow)" strokeOpacity="0.55" strokeWidth="1.5" strokeLinecap="round" filter="url(#subtle-glow)" className="group-hover:strokeOpacity-85 transition-opacity duration-700" />
+                      <path d="M 75 20 C 130 20, 160 20, 260 20" stroke="url(#iridescent-flow)" strokeWidth="1" strokeOpacity="0.55" strokeLinecap="round" className="opacity-45 xl:opacity-65 group-hover:opacity-100 transition-opacity duration-700 delay-100 stroke-dasharray-[160] stroke-dashoffset-0 group-hover:animate-[dash_2s_linear]" filter="url(#subtle-glow)" />
+                    </svg>
+                  </div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white p-2 flex items-center justify-center shadow-lg border border-slate-200 dark:border-none group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                    <Logo className="h-full w-full relative z-10" alt="Organization Logo" />
+                    <Logo src="./logo.png" className="h-full w-full relative z-10" alt="Organization Logo" />
                   </div>
                 </div>
                 <span className="font-bold text-slate-800 dark:text-white text-xs sm:text-sm lg:text-base tracking-tight whitespace-nowrap z-10 relative mt-1.5 text-center sm:text-left hidden xs:block">Aaria's Blue Elephant</span>
