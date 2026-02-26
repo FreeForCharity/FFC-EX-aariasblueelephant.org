@@ -170,9 +170,6 @@ const PrivacyPolicy: React.FC = () => {
                                 <strong className="text-slate-900 dark:text-white w-32">Tax Status:</strong> 501(c)(3) (Pending)
                             </li>
                             <li className="flex items-center gap-3">
-                                <strong className="text-slate-900 dark:text-white w-32">Address:</strong> 101 Felicia Ave, Tracy (Mountain House), CA 95391
-                            </li>
-                            <li className="flex items-center gap-3">
                                 <strong className="text-slate-900 dark:text-white w-32">Email Contact:</strong> <a href="mailto:info@aariasblueelephant.org" className="text-sky-600 dark:text-sky-400 hover:underline">info@aariasblueelephant.org</a>
                             </li>
                         </ul>

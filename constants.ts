@@ -17,7 +17,7 @@ export const ALL_EVENTS: Event[] = [
     title: 'Sensory-Friendly Art Class',
     date: '2025-11-15',
     time: '10:00 AM',
-    location: '101 Felicia Avenue, Tracy, CA',
+    location: 'Tracy/Mountain House, CA',
     description: 'A creative session designed for sensory seekers and avoiders alike. All materials provided. We focus on texture, color, and self-expression in a calm environment.',
     capacity: 15,
     registered: 8,
