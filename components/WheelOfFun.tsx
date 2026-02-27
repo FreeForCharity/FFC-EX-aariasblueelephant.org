@@ -27,10 +27,14 @@ const WheelOfFun: React.FC = () => {
     // Audio Refs
     const spinAudio = useRef<HTMLAudioElement | null>(null);
     const winAudio = useRef<HTMLAudioElement | null>(null);
+    const popAudio = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
         if (winAudio.current) winAudio.current.volume = 0.5;
+
+        popAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3');
+        if (popAudio.current) popAudio.current.volume = 0.4;
     }, []);
 
     const handleSpin = () => {
@@ -70,6 +74,12 @@ const WheelOfFun: React.FC = () => {
             if (window.triggerFunSpinBurst && wheelRef.current) {
                 const rect = wheelRef.current.getBoundingClientRect();
                 window.triggerFunSpinBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+                // Add POP sound for realism
+                if (popAudio.current) {
+                    popAudio.current.currentTime = 0;
+                    popAudio.current.play().catch(e => console.log("Pop suppressed", e));
+                }
 
                 const mascot = document.getElementById('elephant-mascot');
                 if (mascot) {
