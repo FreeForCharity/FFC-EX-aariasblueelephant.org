@@ -169,8 +169,17 @@ const Navbar: React.FC = () => {
                 )}
               </div>
 
+              <div className="flex flex-col items-center lg:items-end gap-1 shrink-0 max-w-[200px] xl:max-w-none">
+                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
+                  <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
+                    Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
+                  </span>
+                </a>
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal xl:whitespace-nowrap uppercase text-center lg:text-right leading-tight">100% Free. Fully Inclusive. All Welcome</span>
+              </div>
+
               {/* Theme Toggle Slider - Desktop */}
-              <div className="flex items-center px-1">
+              <div className="flex items-center pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
                 <button
                   onClick={toggleTheme}
                   className="group relative inline-flex h-9 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-full p-1 transition-all duration-500 ease-in-out bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-inner overflow-hidden shrink-0"
@@ -189,15 +198,6 @@ const Navbar: React.FC = () => {
                     )}
                   </div>
                 </button>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-end gap-1 shrink-0 max-w-[200px] xl:max-w-none">
-                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
-                  <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
-                    Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
-                  </span>
-                </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal xl:whitespace-nowrap uppercase text-center lg:text-right leading-tight">100% Free. Fully Inclusive. All Welcome</span>
               </div>
             </div>
 
