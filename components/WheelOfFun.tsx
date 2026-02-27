@@ -152,11 +152,16 @@ const WheelOfFun: React.FC = () => {
                     </svg>
                 </div>
 
-                {/* Center Hub - 3D Glass */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-32 sm:h-32 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full border-2 border-white/50 z-30 flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2),_inset_0_2px_10px_rgba(255,255,255,0.8)]">
-                    <div className="relative">
-                        <Logo className={`h-20 w-20 sm:h-24 sm:w-24 drop-shadow-2xl transition-transform ${isSpinning ? 'scale-110' : 'scale-100'}`} />
-                        {isSpinning && <div className="absolute inset-0 bg-brand-cyan/20 blur-xl rounded-full animate-ping" />}
+                {/* Center Hub - 3D Embossed Bulge */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-36 sm:h-36 z-30">
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-white via-slate-50 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-[0_15px_35px_rgba(0,0,0,0.3),_inset_0_2px_5px_rgba(255,255,255,0.8),_inset_0_-5px_15px_rgba(0,0,0,0.2)] flex items-center justify-center relative overflow-hidden ring-4 ring-slate-800/10 dark:ring-white/5">
+                        {/* Shading to create bulge */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_60%)] pointer-events-none" />
+
+                        <div className="relative z-10 flex items-center justify-center w-full h-full p-2">
+                            <Logo className={`h-22 w-22 sm:h-26 sm:w-26 aspect-square transition-all duration-500 ${isSpinning ? 'scale-110' : 'scale-100'}`} />
+                            {isSpinning && <div className="absolute inset-0 bg-brand-cyan/20 blur-3xl rounded-full animate-pulse" />}
+                        </div>
                     </div>
                 </div>
             </div>
