@@ -93,28 +93,6 @@ const Navbar: React.FC = () => {
                       decoding="async"
                     />
 
-                    {/* Centered Logo (scaled for banner scannability) */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                      <div className="bg-white p-0.5 rounded-md shadow-sm transform scale-[0.4] sm:scale-[0.5] lg:scale-[0.6]">
-                        <img
-                          src="/qr-logo.png"
-                          alt="Aaria's Blue Elephant"
-                          className="w-8 h-8 object-contain"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Glassmorphism Overlay (scaled for banner) */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none z-40 pointer-events-none">
-                      <div className="bg-white/80 px-2 py-0.5 rounded-md shadow-sm">
-                        <span className="font-sans font-bold uppercase text-slate-900 tracking-tighter text-[7px] sm:text-[9px] lg:text-[10px] whitespace-nowrap">
-                          Click or Scan
-                        </span>
-                      </div>
-                    </div>
-
                     {/* Scanning Animation */}
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"></div>
                   </div>
