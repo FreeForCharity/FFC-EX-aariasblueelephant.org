@@ -107,7 +107,7 @@ const Navbar: React.FC = () => {
                     </div>
 
                     {/* Glassmorphism Overlay (scaled for banner) */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none z-40">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none z-40 pointer-events-none">
                       <div className="bg-white/80 px-2 py-0.5 rounded-md shadow-sm">
                         <span className="font-sans font-bold uppercase text-slate-900 tracking-tighter text-[7px] sm:text-[9px] lg:text-[10px] whitespace-nowrap">
                           Click or Scan
