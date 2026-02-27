@@ -12,6 +12,12 @@ const SEGMENTS = [
     { color: '#FF69B4', name: 'Hot Pink' }
 ];
 
+const SPIN_SOUNDS = [
+    'https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3', // Soft whir
+    'https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3', // Chime whir
+    'https://assets.mixkit.co/active_storage/sfx/707/707-preview.mp3'    // Mechanical whir
+];
+
 const WheelOfFun: React.FC = () => {
     const [isSpinning, setIsSpinning] = useState(false);
     const [rotation, setRotation] = useState(0);
@@ -23,14 +29,8 @@ const WheelOfFun: React.FC = () => {
     const winAudio = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        // Initialize audio (using royalty-free preview URLs for now)
-        spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3');
         winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-
-        if (spinAudio.current) {
-            spinAudio.current.loop = true;
-            spinAudio.current.volume = 0.4;
-        }
+        if (winAudio.current) winAudio.current.volume = 0.5;
     }, []);
 
     const handleSpin = () => {
@@ -39,39 +39,38 @@ const WheelOfFun: React.FC = () => {
         setIsSpinning(true);
         setWinner(null);
 
-        // Random spin: 5-10 full rotations + random segment offset
-        const extraDegrees = Math.floor(Math.random() * 360);
-        const totalRotation = rotation + (360 * (5 + Math.floor(Math.random() * 5))) + extraDegrees;
-
-        setRotation(totalRotation);
-
+        // Random spin sound
+        const randomSound = SPIN_SOUNDS[Math.floor(Math.random() * SPIN_SOUNDS.length)];
+        spinAudio.current = new Audio(randomSound);
         if (spinAudio.current) {
-            spinAudio.current.currentTime = 0;
+            spinAudio.current.loop = true;
+            spinAudio.current.volume = 0.3;
             spinAudio.current.play().catch(e => console.log("Audio play blocked", e));
         }
 
-        // Standard spin duration: 4s
+        const extraDegrees = Math.floor(Math.random() * 360);
+        const totalRotation = rotation + (360 * (6 + Math.floor(Math.random() * 4))) + extraDegrees;
+
+        setRotation(totalRotation);
+
         setTimeout(() => {
             setIsSpinning(false);
 
-            if (spinAudio.current) spinAudio.current.pause();
+            if (spinAudio.current) {
+                spinAudio.current.pause();
+                spinAudio.current = null;
+            }
             if (winAudio.current) winAudio.current.play().catch(e => console.log("Audio play blocked", e));
 
-            // Calculate winner
             const actualDegrees = totalRotation % 360;
-            // Wheel segments: 360 / 7 = ~51.42 each
-            // The needle is at the top (270 degrees in SVG space or just 0 offset)
-            // We'll simplify: index = floor((360 - actualDegrees) / (360 / 7))
             const segmentSize = 360 / SEGMENTS.length;
             const winnerIndex = Math.floor(((360 - (actualDegrees % 360)) % 360) / segmentSize);
             setWinner(winnerIndex);
 
-            // Trigger Celebration
             if (window.triggerFunSpinBurst && wheelRef.current) {
                 const rect = wheelRef.current.getBoundingClientRect();
                 window.triggerFunSpinBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
-                // Trigger Mascot if present
                 const mascot = document.getElementById('elephant-mascot');
                 if (mascot) {
                     mascot.classList.add('animate-trunk');
@@ -82,28 +81,40 @@ const WheelOfFun: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-900 rounded-3xl border-4 border-sky-500/20 shadow-2xl relative overflow-hidden group">
-            {/* Decorative Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-purple-500/5 pointer-events-none" />
+        <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-[3rem] border-8 border-sky-500/10 shadow-[0_20px_50px_rgba(0,0,0,0.1)] relative overflow-hidden group max-w-xl mx-auto">
+            {/* Premium Glassmorphism Overlays */}
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-white/30 to-transparent blur-sm" />
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-purple-500/5 pointer-events-none" />
 
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-8 flex items-center gap-3">
-                <RotateCw className={`h-8 w-8 text-brand-cyan ${isSpinning ? 'animate-spin' : ''}`} />
-                Aaria's Wheel of Fun
-            </h2>
+            <div className="text-center mb-10 relative">
+                <h2 className="text-4xl font-black text-slate-800 dark:text-white flex items-center justify-center gap-4 tracking-tighter uppercase italic">
+                    <RotateCw className={`h-10 w-10 text-brand-cyan ${isSpinning ? 'animate-spin brightness-125' : ''}`} />
+                    Aaria's Wheel of Fun
+                </h2>
+                <div className="h-1 w-24 bg-brand-cyan mx-auto mt-2 rounded-full opacity-50" />
+            </div>
 
-            <div className="relative w-80 h-80 sm:w-96 sm:h-96" ref={wheelRef}>
-                {/* Needle */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-40 transition-transform duration-100">
-                    <div className="w-6 h-10 bg-slate-800 dark:bg-white rounded-full shadow-lg flex items-center justify-center">
-                        <div className="w-2 h-6 bg-red-500 rounded-full" />
+            <div className="relative w-80 h-80 sm:w-96 sm:h-96 perspective-1000" ref={wheelRef}>
+                {/* Needle - 3D Modernized */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-50">
+                    <div className="w-8 h-12 bg-slate-900 dark:bg-white rounded-t-full rounded-b-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] flex items-center justify-center border-b-4 border-slate-700 dark:border-slate-300">
+                        <div className="w-2 h-8 bg-brand-pink rounded-full animate-pulse" />
                     </div>
                 </div>
 
-                {/* The Wheel */}
+                {/* The Wheel - 3D Depth */}
                 <div
-                    className="w-full h-full rounded-full border-8 border-slate-800 dark:border-slate-700 shadow-[0_0_50px_rgba(14,165,233,0.3)] transition-transform duration-[4000ms] ease-out overflow-hidden"
+                    className={`
+                    w-full h-full rounded-full border-[12px] border-slate-800 dark:border-slate-700 
+                    shadow-[0_0_80px_rgba(14,165,233,0.3),_inset_0_0_40px_rgba(0,0,0,0.4)] 
+                    transition-all duration-[4000ms] ease-[cubic-bezier(0.15,0,0.15,1)] overflow-hidden relative
+                    ${isSpinning ? 'hue-rotate-15 saturate-150 brightness-110' : ''}
+                  `}
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
+                    {/* Metallic Rim Glow */}
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20 pointer-events-none z-10" />
+
                     <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                         {SEGMENTS.map((seg, i) => {
                             const startAngle = (i * 360) / SEGMENTS.length;
@@ -117,46 +128,79 @@ const WheelOfFun: React.FC = () => {
                             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`;
 
                             return (
-                                <path
-                                    key={i}
-                                    d={pathData}
-                                    fill={seg.color}
-                                    className="stroke-slate-800 dark:stroke-slate-700 stroke-1"
-                                />
+                                <g key={i}>
+                                    <path
+                                        d={pathData}
+                                        fill={seg.color}
+                                        className="stroke-slate-900/10 stroke-[0.5]"
+                                    />
+                                    {/* Internal Shading for 3D */}
+                                    <path
+                                        d={pathData}
+                                        fill="url(#segmentGradient)"
+                                        opacity="0.2"
+                                    />
+                                </g>
                             );
                         })}
+                        <defs>
+                            <radialGradient id="segmentGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stopColor="white" stopOpacity="0" />
+                                <stop offset="100%" stopColor="black" stopOpacity="0.5" />
+                            </radialGradient>
+                        </defs>
                     </svg>
                 </div>
 
-                {/* Center Hub with Logo */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-full border-4 border-slate-800 dark:border-slate-700 z-30 flex items-center justify-center shadow-xl">
-                    <Logo className="h-16 w-16 sm:h-20 sm:w-20 animate-wiggle" />
+                {/* Center Hub - 3D Glass */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-32 sm:h-32 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full border-2 border-white/50 z-30 flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2),_inset_0_2px_10px_rgba(255,255,255,0.8)]">
+                    <div className="relative">
+                        <Logo className={`h-20 w-20 sm:h-24 sm:w-24 drop-shadow-2xl transition-transform ${isSpinning ? 'scale-110' : 'scale-100'}`} />
+                        {isSpinning && <div className="absolute inset-0 bg-brand-cyan/20 blur-xl rounded-full animate-ping" />}
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-10 flex flex-col items-center gap-4">
+            <div className="mt-12 flex flex-col items-center gap-6 w-full">
                 <button
                     onClick={handleSpin}
                     disabled={isSpinning}
                     className={`
-            flex items-center gap-3 px-10 py-5 rounded-full text-2xl font-black uppercase tracking-tighter transition-all shadow-xl
-            ${isSpinning
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed scale-95'
-                            : 'bg-gradient-to-r from-sky-400 to-indigo-500 text-white hover:scale-110 active:scale-95 hover:shadow-sky-500/50'
+                    relative flex items-center justify-center gap-3 px-12 py-6 rounded-2xl text-3xl font-black uppercase tracking-tighter transition-all shadow-2xl overflow-hidden
+                    ${isSpinning
+                            ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-b-0 translate-y-2'
+                            : 'bg-brand-cyan text-slate-900 hover:-translate-y-1 active:translate-y-1 hover:shadow-brand-cyan/40 border-b-8 border-sky-600'
                         }
-          `}
+                  `}
                 >
-                    {isSpinning ? 'Good Luck...' : <>Spin for Fun <Play className="fill-current" /></>}
+                    {isSpinning ? 'Spinning...' : <>Take a Spin <Play className="fill-current h-8 w-8" /></>}
+                    {!isSpinning && <div className="absolute inset-0 bg-white/10 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700" />}
                 </button>
 
-                {winner !== null && !isSpinning && (
-                    <div className="animate-bounce">
-                        <p className="text-xl font-bold bg-slate-100 dark:bg-slate-800 px-6 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
-                            Land color: <span style={{ color: SEGMENTS[winner].color }}>{SEGMENTS[winner].name}</span>! 🎉
+                <div className="h-12 flex items-center justify-center">
+                    {winner !== null && !isSpinning ? (
+                        <div className="animate-in zoom-in-50 duration-500">
+                            <p className="text-2xl font-black text-white px-8 py-3 rounded-2xl shadow-xl transition-colors" style={{ backgroundColor: SEGMENTS[winner].color }}>
+                                LANDED ON {SEGMENTS[winner].name}! 🐘
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-sm animate-pulse">
+                            Click to signify fun and impact
                         </p>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
+
+            {/* Embedded Style for Blinking Colors */}
+            <style>{`
+                @keyframes huePulse {
+                  0% { filter: hue-rotate(0deg); }
+                  50% { filter: hue-rotate(30deg) brightness(1.2); }
+                  100% { filter: hue-rotate(0deg); }
+                }
+                .perspective-1000 { perspective: 1000px; }
+            `}</style>
         </div>
     );
 };

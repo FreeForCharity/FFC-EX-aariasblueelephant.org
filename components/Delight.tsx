@@ -63,6 +63,8 @@ const Delight: React.FC = () => {
             if (month >= 3 && month <= 5) shape = 'leaf'; // Spring
             else if (month === 1 || month === 2 || month === 12) shape = 'petal'; // Winter
 
+            if (isBurst === 'fun-spin' && Math.random() > 0.7) shape = 'brand-elephant';
+
             const saturation = isBurst ? (isBurst === 'fun-spin' ? 1.0 : 0.8) : 0.7;
 
             return {
@@ -79,7 +81,7 @@ const Delight: React.FC = () => {
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.05,
                 life: 1.0,
-                decay: isBurst ? (isBurst === 'fun-spin' ? 0.01 : 0.015) : (Math.random() * 0.0015 + 0.0005) // Slower decay for fun spin
+                decay: isBurst ? (isBurst === 'fun-spin' ? 0.006 : 0.015) : (Math.random() * 0.0015 + 0.0005) // 0.006 allows for ~10 seconds of visibility
             };
         }
 
@@ -98,6 +100,20 @@ const Delight: React.FC = () => {
                 ctx.moveTo(0, 0);
                 ctx.bezierCurveTo(p.size / 2, -p.size / 2, p.size, p.size / 3, 0, p.size);
                 ctx.bezierCurveTo(-p.size, p.size / 3, -p.size / 2, -p.size / 2, 0, 0);
+            } else if (p.shape === 'brand-elephant') {
+                // Simplified elephant silhouette (circle for body, arc for trunk)
+                ctx.beginPath();
+                ctx.arc(0, 0, p.size, 0, Math.PI * 2); // Body
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(-p.size * 0.8, 0, p.size * 0.6, Math.PI, Math.PI * 2.5); // Trunk
+                ctx.lineWidth = p.size * 0.3;
+                ctx.strokeStyle = p.color;
+                ctx.stroke();
+                // Ear
+                ctx.beginPath();
+                ctx.ellipse(p.size * 0.5, -p.size * 0.2, p.size * 0.5, p.size * 0.7, 0.2, 0, Math.PI * 2);
+                ctx.fill();
             } else {
                 ctx.arc(0, 0, p.size, 0, Math.PI * 2);
             }
@@ -163,11 +179,19 @@ const Delight: React.FC = () => {
 
         window.triggerFunSpinBurst = (x: number, y: number) => {
             if (reducedMotion) return;
-            // Crowded burst: 50% more particles and brighter colors
-            for (let i = 0; i < 45; i++) { // Increased from 15 to 45 (actually 3x density for "wow" factor)
-                particles.push(createParticle(x, y, 'fun-spin' as any));
-            }
-            if (!isEngineRunning) animate();
+            // Pronounced splash: 3 waves of particles for 10+ seconds coverage
+            const triggerWave = (delay: number) => {
+                setTimeout(() => {
+                    for (let i = 0; i < 35; i++) {
+                        particles.push(createParticle(x, y, 'fun-spin'));
+                    }
+                    if (!isEngineRunning) animate();
+                }, delay);
+            };
+
+            triggerWave(0);
+            triggerWave(400);
+            triggerWave(800);
         };
 
         // 5. DOM Initialization Events (Delegated Listener for dynamic React apps)
