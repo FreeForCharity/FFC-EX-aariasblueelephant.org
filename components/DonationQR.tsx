@@ -22,15 +22,19 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
                 src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.zeffy.com/en-US/donation-form/aariasblueelephant&margin=2"
                 alt="Zeffy Donation QR Code"
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
             />
 
             {/* The Centered Logo (20% size = 50px out of 250px) */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-white p-1 rounded-md shadow-sm">
                     <img
-                        src="/qr-logo.png"
+                        src="/logo_v2.png"
                         alt="Aaria's Blue Elephant"
                         className="w-[42px] h-[42px] object-contain"
+                        loading="lazy"
+                        decoding="async"
                     />
                 </div>
             </div>

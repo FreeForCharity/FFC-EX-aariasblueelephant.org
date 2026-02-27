@@ -84,7 +84,7 @@ const Navbar: React.FC = () => {
                     </svg>
                   </div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white p-2 flex items-center justify-center shadow-lg border border-slate-200 dark:border-none group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                    <Logo src="./logo.png" className="h-full w-full relative z-10" alt="Organization Logo" />
+                    <Logo src="./logo_v2.png" className="h-full w-full relative z-10" alt="Organization Logo" />
                   </div>
                 </div>
                 <span className="font-bold text-slate-800 dark:text-white text-xs sm:text-sm lg:text-base tracking-tight whitespace-nowrap z-10 relative mt-1.5 text-center sm:text-left hidden xs:block">Aaria's Blue Elephant</span>
@@ -147,6 +147,8 @@ const Navbar: React.FC = () => {
                           alt={user.name}
                           className="h-full w-full object-cover"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <UserCircle className="h-6 w-6 text-slate-400" />

@@ -83,6 +83,8 @@ const EventDetails: React.FC = () => {
           src={event.image || DEFAULT_EVENT_IMAGE}
           alt={event.title}
           className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             if (target.src === DEFAULT_EVENT_IMAGE) {

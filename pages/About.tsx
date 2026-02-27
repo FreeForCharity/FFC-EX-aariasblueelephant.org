@@ -46,6 +46,8 @@ const About: React.FC = () => {
                 src="./liji_chalatil.png"
                 alt="Liji Chalatil"
                 className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-400 flex-shrink-0"
+                loading="lazy"
+                decoding="async"
               />
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Liji Chalatil</h3>
@@ -59,6 +61,8 @@ const About: React.FC = () => {
                 src="./ajith_chandran.png"
                 alt="Ajith Chandran"
                 className="h-20 w-20 rounded-full object-cover shadow-md border-2 border-sky-500 flex-shrink-0"
+                loading="lazy"
+                decoding="async"
               />
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ajith Chandran</h3>
