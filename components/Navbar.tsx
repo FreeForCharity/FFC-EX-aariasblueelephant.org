@@ -93,9 +93,9 @@ const Navbar: React.FC = () => {
                       decoding="async"
                     />
 
-                    {/* Centered Logo (scaled for banner) */}
+                    {/* Centered Logo (scaled for banner scannability) */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                      <div className="bg-white p-0.5 rounded-md shadow-sm transform scale-[0.6] sm:scale-[0.8]">
+                      <div className="bg-white p-0.5 rounded-md shadow-sm transform scale-[0.4] sm:scale-[0.5] lg:scale-[0.6]">
                         <img
                           src="/qr-logo.png"
                           alt="Aaria's Blue Elephant"
