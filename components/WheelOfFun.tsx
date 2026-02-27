@@ -77,7 +77,7 @@ const WheelOfFun: React.FC = () => {
                     setTimeout(() => mascot.classList.remove('animate-trunk'), 1500);
                 }
             }
-        }, 4000);
+        }, 6000);
     };
 
     return (
@@ -107,7 +107,7 @@ const WheelOfFun: React.FC = () => {
                     className={`
                     w-full h-full rounded-full border-[12px] border-slate-800 dark:border-slate-700 
                     shadow-[0_0_80px_rgba(14,165,233,0.3),_inset_0_0_40px_rgba(0,0,0,0.4)] 
-                    transition-all duration-[4000ms] ease-[cubic-bezier(0.15,0,0.15,1)] overflow-hidden relative
+                    transition-all duration-[6000ms] ease-[cubic-bezier(0.15,0,0.15,1)] overflow-hidden relative
                     ${isSpinning ? 'hue-rotate-15 saturate-150 brightness-110' : ''}
                   `}
                     style={{ transform: `rotate(${rotation}deg)` }}

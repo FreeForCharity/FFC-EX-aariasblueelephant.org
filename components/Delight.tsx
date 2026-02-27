@@ -70,9 +70,9 @@ const Delight: React.FC = () => {
             return {
                 x: x !== undefined ? x : Math.random() * width,
                 y: y !== undefined ? y : -20,
-                vx: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? 10 : 6) - (isBurst === 'fun-spin' ? 5 : 3)) : (Math.random() * 1 - 0.5),
-                vy: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? -8 : -4) - (isBurst === 'fun-spin' ? 4 : 2)) : (Math.random() * 0.5 + 0.5),
-                size: Math.random() * (isBurst === 'fun-spin' ? 10 : 6) + 4,
+                vx: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? 8 : 6) - (isBurst === 'fun-spin' ? 4 : 3)) : (Math.random() * 1 - 0.5),
+                vy: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? -6 : -4) - (isBurst === 'fun-spin' ? 2 : 2)) : (Math.random() * 0.5 + 0.5),
+                size: Math.random() * (isBurst === 'fun-spin' ? 12 : 6) + 4,
                 color: isBurst === 'fun-spin'
                     ? ['#00BFFF', '#FFD700', '#FF1493', '#00FF7F', '#9370DB', '#FFA500', '#FF69B4'][Math.floor(Math.random() * 7)]
                     : colors[Math.floor(Math.random() * colors.length)],
@@ -101,7 +101,14 @@ const Delight: React.FC = () => {
                 ctx.bezierCurveTo(p.size / 2, -p.size / 2, p.size, p.size / 3, 0, p.size);
                 ctx.bezierCurveTo(-p.size, p.size / 3, -p.size / 2, -p.size / 2, 0, 0);
             } else if (p.shape === 'brand-elephant') {
-                // Simplified elephant silhouette (circle for body, arc for trunk)
+                // Simplified elephant silhouette with SHIMMER
+                const shimmer = Math.sin(Date.now() / 200 + p.x) * 0.2 + 0.8;
+                ctx.save();
+                ctx.globalAlpha = p.opacity * p.life * shimmer;
+                if (shimmer > 0.9) {
+                    ctx.shadowColor = 'white';
+                    ctx.shadowBlur = 15;
+                }
                 ctx.beginPath();
                 ctx.arc(0, 0, p.size, 0, Math.PI * 2); // Body
                 ctx.fill();
@@ -114,6 +121,7 @@ const Delight: React.FC = () => {
                 ctx.beginPath();
                 ctx.ellipse(p.size * 0.5, -p.size * 0.2, p.size * 0.5, p.size * 0.7, 0.2, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             } else {
                 ctx.arc(0, 0, p.size, 0, Math.PI * 2);
             }
@@ -135,7 +143,8 @@ const Delight: React.FC = () => {
 
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.vy += 0.015; // Gravity
+                // SLOW FALL: Fun spin particles fall at 40% speed
+                p.vy += p.decay < 0.007 ? 0.006 : 0.015;
                 p.x += p.vx;
                 p.y += p.vy;
                 p.rotation += p.rotationSpeed;
