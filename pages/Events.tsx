@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, Info, HeartHandshake } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, Info, HeartHandshake, ArrowRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -121,19 +121,6 @@ const Events: React.FC = () => {
         </div>
       </div>
 
-      {/* Free Events Guarantee Banner */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 mb-12 text-center shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col items-center">
-        <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-4 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
-          <HeartHandshake className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-4 tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 uppercase">
-          100% Free. Fully Inclusive. All Are Welcome.
-        </h2>
-        <div className="w-16 h-1 bg-sky-200 dark:bg-sky-800 mb-5 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
-        <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base max-w-4xl mx-auto font-medium leading-relaxed">
-          We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.
-        </p>
-      </div>
 
       {filteredEvents.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed">
@@ -301,12 +288,31 @@ const Events: React.FC = () => {
       )}
 
       {/* Host CTA */}
-      <div className="mt-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-8 text-center border border-slate-300 dark:border-slate-700 shadow-lg">
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Host a Playgroup?</h3>
-        <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6">
-          We are always looking for volunteers and venues to expand our reach in Tracy and Mountain House.
+      <div className="mt-16 bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-slate-800/50 dark:to-slate-900/50 rounded-2xl p-10 text-center border border-sky-100 dark:border-slate-700 shadow-xl relative overflow-hidden group transition-all hover:shadow-sky-500/10 hover:border-sky-300 dark:hover:border-sky-800">
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+          <Users className="h-24 w-24 text-sky-600" />
+        </div>
+        <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">Become a Playgroup Host</h3>
+        <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 text-lg leading-relaxed font-medium">
+          Interested in facilitating inclusive play in your neighborhood? We are actively seeking volunteers and community venues to expand our reach across Tracy and Mountain House. We provide all necessary materials, sensory tools, and structured guidance to ensure your playgroup is a successful, barrier-free experience for every child.
         </p>
-        <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>Contact Us</Button>
+        <Button size="lg" className="px-10 shadow-lg shadow-sky-500/20" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+          Inquire to Host <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Free Events Guarantee Banner - Moved to bottom */}
+      <div className="mt-12 bg-white dark:bg-slate-800 border-2 border-dashed border-sky-100 dark:border-slate-700 rounded-2xl p-8 md:p-12 text-center shadow-sm hover:shadow-lg transition-all duration-500 group flex flex-col items-center">
+        <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
+          <HeartHandshake className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 uppercase">
+          100% Free. Fully Inclusive. All Are Welcome.
+        </h2>
+        <div className="w-24 h-1 bg-sky-200 dark:bg-sky-800 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
+        <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl max-w-4xl mx-auto font-medium leading-relaxed">
+          We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.
+        </p>
       </div>
     </div>
   );
