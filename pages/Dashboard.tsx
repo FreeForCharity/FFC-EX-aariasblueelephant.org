@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import RichText from '../components/RichText';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
+import WheelOfFun from '../components/WheelOfFun';
 
 import {
     LayoutDashboard,
@@ -34,7 +35,7 @@ import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../
 import Button from '../components/Button';
 
 
-type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial';
+type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel';
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
@@ -213,6 +214,7 @@ const Dashboard: React.FC = () => {
             { id: 'manage-registrations', label: 'Registrations', icon: CheckCircle },
             { id: 'volunteers', label: 'Volunteers', icon: Users },
             { id: 'manage-testimonials', label: 'Testimonials', icon: MessageSquare },
+            { id: 'wheel', label: 'Wheel of Fun', icon: Star },
 
         ] : []),
         // Donor Items
@@ -1129,6 +1131,12 @@ const Dashboard: React.FC = () => {
         );
     };
 
+    const renderWheelSection = () => (
+        <div className="flex justify-center py-8">
+            <WheelOfFun />
+        </div>
+    );
+
     const renderContent = () => {
         switch (activeView) {
             case 'overview': return renderStatsCards();
@@ -1136,6 +1144,7 @@ const Dashboard: React.FC = () => {
             case 'manage-registrations': return renderManageRegistrationsSection();
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
+            case 'wheel': return renderWheelSection();
 
             case 'history': return renderHistorySection();
             case 'receipts': return renderReceiptsSection();

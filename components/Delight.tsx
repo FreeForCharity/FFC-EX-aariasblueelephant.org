@@ -5,6 +5,7 @@ declare global {
     interface Window {
         triggerDrift: () => void;
         triggerBurst: (x: number, y: number) => void;
+        triggerFunSpinBurst: (x: number, y: number) => void;
     }
 }
 
@@ -56,25 +57,29 @@ const Delight: React.FC = () => {
         let isDrifting = false; // "One-at-a-time" logic lock
         const colors = ['#FFB6C1', '#FFE066', '#C3AED6', '#A8E6CF']; // Neurodiversity pastels
 
-        function createParticle(x?: number, y?: number, isBurst = false) {
+        function createParticle(x?: number, y?: number, isBurst: boolean | string = false) {
             const month = new Date().getMonth() + 1;
             let shape = 'circle'; // Summer/Default
             if (month >= 3 && month <= 5) shape = 'leaf'; // Spring
             else if (month === 1 || month === 2 || month === 12) shape = 'petal'; // Winter
 
+            const saturation = isBurst ? (isBurst === 'fun-spin' ? 1.0 : 0.8) : 0.7;
+
             return {
                 x: x !== undefined ? x : Math.random() * width,
                 y: y !== undefined ? y : -20,
-                vx: isBurst ? (Math.random() * 6 - 3) : (Math.random() * 1 - 0.5),
-                vy: isBurst ? (Math.random() * -4 - 2) : (Math.random() * 0.5 + 0.5),
-                size: Math.random() * 6 + 4,
-                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? 10 : 6) - (isBurst === 'fun-spin' ? 5 : 3)) : (Math.random() * 1 - 0.5),
+                vy: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? -8 : -4) - (isBurst === 'fun-spin' ? 4 : 2)) : (Math.random() * 0.5 + 0.5),
+                size: Math.random() * (isBurst === 'fun-spin' ? 10 : 6) + 4,
+                color: isBurst === 'fun-spin'
+                    ? ['#00BFFF', '#FFD700', '#FF1493', '#00FF7F', '#9370DB', '#FFA500', '#FF69B4'][Math.floor(Math.random() * 7)]
+                    : colors[Math.floor(Math.random() * colors.length)],
                 shape: shape,
-                opacity: 0.7,
+                opacity: isBurst === 'fun-spin' ? 1.0 : 0.7,
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.05,
                 life: 1.0,
-                decay: isBurst ? 0.015 : (Math.random() * 0.0015 + 0.0005) // Slower decay for drift
+                decay: isBurst ? (isBurst === 'fun-spin' ? 0.01 : 0.015) : (Math.random() * 0.0015 + 0.0005) // Slower decay for fun spin
             };
         }
 
@@ -152,6 +157,15 @@ const Delight: React.FC = () => {
             if (reducedMotion) return;
             for (let i = 0; i < 15; i++) {
                 particles.push(createParticle(x, y, true));
+            }
+            if (!isEngineRunning) animate();
+        };
+
+        window.triggerFunSpinBurst = (x: number, y: number) => {
+            if (reducedMotion) return;
+            // Crowded burst: 50% more particles and brighter colors
+            for (let i = 0; i < 45; i++) { // Increased from 15 to 45 (actually 3x density for "wow" factor)
+                particles.push(createParticle(x, y, 'fun-spin' as any));
             }
             if (!isEngineRunning) animate();
         };
