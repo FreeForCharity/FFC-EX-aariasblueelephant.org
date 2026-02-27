@@ -97,7 +97,7 @@ const Navbar: React.FC = () => {
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"></div>
 
                     {/* Restored Frosted Glass Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/25 dark:bg-slate-900/25 backdrop-blur-xl transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/10">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/10">
                       <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg shadow-xl border border-slate-200/40 dark:border-slate-700/40 transform transition-transform group-hover:scale-90 flex flex-col items-center">
                         <span className="font-sans font-black uppercase text-slate-900 dark:text-sky-400 tracking-tighter text-[10px] sm:text-xs italic leading-none mb-0.5">
                           Click
@@ -144,46 +144,48 @@ const Navbar: React.FC = () => {
               {/* Auth Section - Only visible when signed in */}
               <div className="flex items-center gap-4 mr-4">
                 {user && (
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsProfileOpen(!isProfileOpen)}
-                      className="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-sky-500/20 hover:ring-sky-500/50 transition-all overflow-hidden bg-slate-100 dark:bg-slate-800"
-                    >
-                      {user.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="h-full w-full object-cover"
-                          referrerPolicy="no-referrer"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <UserCircle className="h-6 w-6 text-slate-400" />
-                      )}
-                    </button>
+                  <div className="flex flex-col items-center gap-1.5 min-w-0">
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                        className="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-sky-500/20 hover:ring-sky-500/50 transition-all overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0"
+                      >
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                            referrerPolicy="no-referrer"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <UserCircle className="h-6 w-6 text-slate-400" />
+                        )}
+                      </button>
 
-                    {isProfileOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
-                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
-                          <p className="font-bold text-slate-800 dark:text-white truncate">{user.name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                      {isProfileOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
+                          <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+                            <p className="font-bold text-slate-800 dark:text-white truncate">{user.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                          </div>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                          >
+                            <LogOut className="h-4 w-4" /> Sign Out
+                          </button>
                         </div>
-                        <Link
-                          to="/dashboard"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors border-b border-slate-100 dark:border-slate-700"
-                        >
-                          <LayoutDashboard className="h-4 w-4" /> Dashboard
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-                        >
-                          <LogOut className="h-4 w-4" /> Sign Out
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                    {/* Always Visible Dashboard Link */}
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-1 text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors uppercase tracking-tight"
+                    >
+                      <LayoutDashboard className="h-3 w-3" /> Dashboard
+                    </Link>
                   </div>
                 )}
               </div>
@@ -194,9 +196,14 @@ const Navbar: React.FC = () => {
                     Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase text-center leading-tight">
-                  100% Free. Fully Inclusive. All Welcome
-                </span>
+                <div className="flex flex-col items-center leading-tight">
+                  <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase">
+                    100% Free. Fully Inclusive.
+                  </span>
+                  <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase">
+                    All Welcome
+                  </span>
+                </div>
               </div>
 
               {/* Theme Toggle Slider - Desktop */}
