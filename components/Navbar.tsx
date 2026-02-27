@@ -97,8 +97,8 @@ const Navbar: React.FC = () => {
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"></div>
 
                     {/* Restored Frosted Glass Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/20">
-                      <div className="bg-white/95 dark:bg-slate-800/95 px-3 py-1.5 rounded-lg shadow-xl border border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-90 flex flex-col items-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-md transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/10">
+                      <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg shadow-xl border border-slate-200/40 dark:border-slate-700/40 transform transition-transform group-hover:scale-90 flex flex-col items-center">
                         <span className="font-sans font-black uppercase text-slate-900 dark:text-sky-400 tracking-tighter text-[10px] sm:text-xs italic leading-none mb-0.5">
                           Click
                         </span>
@@ -188,14 +188,14 @@ const Navbar: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-col items-center lg:items-end gap-1 shrink-0 max-w-[200px] xl:max-w-none">
+              <div className="flex flex-col items-center gap-1 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
                   <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
                     Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal uppercase text-center leading-tight">
-                  100% Free. Fully Inclusive.<br />All Welcome
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase text-center leading-tight">
+                  100% Free. Fully Inclusive. All Welcome
                 </span>
               </div>
 
