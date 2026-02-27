@@ -84,9 +84,13 @@ const Navbar: React.FC = () => {
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="group relative shrink-0" title="Make a Donation">
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
-                    <div className="transform scale-[0.35] sm:scale-[0.45] lg:scale-[0.55] relative z-20 origin-center">
-                      <DonationQR as="div" />
-                    </div>
+                    <img
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.zeffy.com/en-US/donation-form/aariasblueelephant&margin=2"
+                      alt="Signify Impact QR"
+                      className="w-full h-full object-contain relative z-20"
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30"></div>
                   </div>
                 </a>
