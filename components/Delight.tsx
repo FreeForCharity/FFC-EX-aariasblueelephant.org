@@ -71,7 +71,7 @@ const Delight: React.FC = () => {
                 x: x !== undefined ? x : Math.random() * width,
                 y: y !== undefined ? y : -20,
                 vx: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? 8 : 6) - (isBurst === 'fun-spin' ? 4 : 3)) : (Math.random() * 1 - 0.5),
-                vy: isBurst ? (Math.random() * (isBurst === 'fun-spin' ? 5 : -4) - (isBurst === 'fun-spin' ? -1 : 2)) : (Math.random() * 0.5 + 0.5), // More downward bias for fun-spin
+                vy: isBurst ? (isBurst === 'fun-spin' ? (Math.random() * -10 - 5) : (Math.random() * -8 - 4)) : (Math.random() * 0.5 + 0.5),
                 size: Math.random() * (isBurst === 'fun-spin' ? 14 : 6) + 4,
                 color: isBurst === 'fun-spin'
                     ? ['#00BFFF', '#FFD700', '#FF1493', '#00FF7F', '#9370DB', '#FFA500', '#FF69B4'][Math.floor(Math.random() * 7)]
@@ -81,7 +81,7 @@ const Delight: React.FC = () => {
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.05,
                 life: 1.0,
-                decay: isBurst ? (isBurst === 'fun-spin' ? 0.006 : 0.015) : (Math.random() * 0.0015 + 0.0005) // 0.006 allows for ~10 seconds of visibility
+                decay: isBurst ? (isBurst === 'fun-spin' ? 0.004 : 0.015) : (Math.random() * 0.0015 + 0.0005) // 0.004 allows for ~15+ seconds of visibility
             };
         }
 
@@ -144,8 +144,8 @@ const Delight: React.FC = () => {
 
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                // GRAVITY: Ensure it always falls downward relative to top
-                p.vy += p.decay < 0.007 ? 0.08 : 0.2; // Much stronger gravity to counteract any upward pop
+                // GRAVITY: Restore upward pop then SLOW drift to bottom
+                p.vy += p.decay < 0.005 ? 0.08 : 0.15; // Balanced gravity for slow descent
                 p.x += p.vx;
                 p.y += p.vy;
                 p.rotation += p.rotationSpeed;
