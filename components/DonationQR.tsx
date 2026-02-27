@@ -30,7 +30,7 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-white p-1 rounded-md shadow-sm">
                     <img
-                        src="/logo_v2.png"
+                        src="/qr-logo.png"
                         alt="Aaria's Blue Elephant"
                         className="w-[42px] h-[42px] object-contain"
                         loading="lazy"
