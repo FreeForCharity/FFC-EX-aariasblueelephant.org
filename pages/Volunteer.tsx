@@ -108,7 +108,7 @@ const Volunteer: React.FC = () => {
         <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
           To submit a volunteer application and get involved with our playgroups and events, please sign in or create an account first. This helps us stay connected!
         </p>
-        <Link to="/auth">
+        <Link to="/login" state={{ returnTo: '/volunteer' }}>
           <Button size="lg" className="flex items-center gap-2 shadow-lg shadow-sky-500/25">
             Sign In to Volunteer <ArrowRight className="h-4 w-4" />
           </Button>
