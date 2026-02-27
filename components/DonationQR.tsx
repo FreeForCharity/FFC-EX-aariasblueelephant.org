@@ -40,8 +40,8 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
             </div>
 
             {/* The Glassmorphism Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-md transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none elevation-overlay z-40">
-                <div className="bg-white/90 dark:bg-slate-800/90 px-5 py-3 rounded-xl shadow-xl border border-slate-200/40 dark:border-slate-700/40 transform transition-transform group-hover:scale-95 flex flex-col items-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none elevation-overlay z-40">
+                <div className="bg-white/95 dark:bg-slate-800/95 px-5 py-3 rounded-xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-95 flex flex-col items-center">
                     <span className="font-sans font-black uppercase text-slate-900 dark:text-sky-400 tracking-tighter text-sm italic leading-none mb-1">
                         Click
                     </span>
