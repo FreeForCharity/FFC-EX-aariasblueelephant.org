@@ -175,7 +175,9 @@ const Navbar: React.FC = () => {
                     Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal xl:whitespace-nowrap uppercase text-center lg:text-right leading-tight">100% Free. Fully Inclusive. All Welcome</span>
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal uppercase text-center lg:text-right leading-tight">
+                  100% Free. Fully Inclusive.<br />All Welcome
+                </span>
               </div>
 
               {/* Theme Toggle Slider - Desktop */}
