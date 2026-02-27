@@ -1,65 +1,73 @@
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+# gemini.md – LLM Orchestration Workflow
 
-## The 3-Layer Architecture
+## 1. Plan Node Default
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
+- If something goes sideways, STOP and re-plan immediately – don't keep pushing.
+- Use plan mode for verification steps, not just building.
+- Write detailed specs upfront to reduce ambiguity.
+- **Antigravity Principle**: Every change must reduce technical debt (weight), never increase it.
 
-**Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+## 2. Subagent Strategy
+- Use subagents liberally to keep main context window clean.
+- Offload complex research, exploration, and parallel analysis to subagents.
+- **JSON Summary Rule**: Subagents must provide a concise, structured summary of findings to the main agent to avoid context bloating.
 
-**Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+## 3. Self-Improvement Loop
+- After ANY correction from the user: update `tasks/lessons.md` with the pattern.
+- Write rules for yourself that prevent the same mistake.
+- Ruthlessly iterate on these lessons until mistake rate drops.
+- Review lessons at session start for relevant project.
 
-**Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work.
+## 4. Verification Before Done
+- Never mark a task complete without proving it works.
+- Diff behavior between main and your changes when relevant.
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness.
 
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+## 5. Demand Elegance (Balanced)
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution."
+- Skip this for simple, obvious fixes – don't over-engineer.
+- Challenge your own work before presenting it.
 
-## Operating Principles
+## 6. Autonomous Bug Fixing
+- When given a bug report: just fix it. Don't ask for hand-holding.
+- Point at logs, errors, failing tests – then resolve them.
+- Zero context switching required.
+- Go fix failing CI tests without being told how.
 
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+## Task Management
+- **Check Existing**: Before creating new task files, check if `tasks/todo.md` or similar already exists in the root.
+- **Plan First**: Write plan to `tasks/todo.md` with checkable items.
+- **Verify Plan**: Check in before starting implementation.
+- **Track Progress**: Mark items complete as you go.
+- **Explain Changes**: High-level review summary at each step.
+- **Document Results**: Add to `review/`.
+- **Capture Lessons**: Update `tasks/lessons.md` after corrections.
 
-**2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+## Core Principles
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
 
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+## Antigravity-Inspired 3-Layer Architecture Upgrade
 
-## Self-annealing loop
+**Layer 1: Directive (What to do)** - Living Markdown SOPs stored in `directives/`.
+- Define goals, inputs, preferred tools, expected outputs, edge cases, and accessibility rules.
 
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
+**Layer 2: Orchestration (This LLM's job)** - Read directives → create detailed plan → intelligently route to tools/scripts → handle errors → verify → update `directives/lessons.md`.
+- Prefer calling existing execution scripts over pure LLM reasoning when deterministic outcomes are needed.
 
-## File Organization
+**Layer 3: Execution (Deterministic heavy lifting)** - Prefer Python scripts in `execution/` folder for repeatable work (scraping, file processing, API calls).
+- Only write new code when no suitable script exists → then create one and document in directives.
 
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
+---
 
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
+## Nonprofit & Accessibility Priority Guardrail (Aaria's Blue Elephant)
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
-
-## Summary
-
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
+- **Inclusive UX**: Subtle animations only; user-initiated where possible; full `prefers-reduced-motion` support.
+- **WCAG Compliance**: High contrast, alt text on all images, no flashing, readable fonts.
+- **Palette**: Use soft, sensory-friendly blues (#00AEEF), yellows (#FFE066), purples (#C3AED6), greens (#A8E6CF), pinks (#FFB6C1).
+- **Mission Alignment**: Reinforce "fun without barriers," "inclusive play," and "compassionate community."
+- **Legal Transparency**: Include Entity No. B20250299015 (101 Felicia Ave, Tracy, CA 95391) and "501(c)(3) status pending" where relevant.
+- **Communications**: Warm, hopeful tone. LinkedIn posts 150–300 words. Always include: https://aariasblueelephant.org/.

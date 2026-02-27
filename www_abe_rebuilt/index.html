@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aaria's Blue Elephant: Play Without Barriers</title>
+    <meta name="description"
+        content="Aaria's Blue Elephant is a safe haven where neurodivergent and neurotypical children grow together. We believe in early intervention, inclusive play, and building a compassionate community.">
+    <link rel="icon" type="image/png" href="img/hoperise-logo-small.png">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900" rel="stylesheet">
+
+    <link href='https://fonts.googleapis.com/css?family=Oxygen:400,300,700' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/owl.carousel.min.css">
+    <link rel="stylesheet" href="css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom override for ABE specifics not captured by simple color replacer -->
+    <style>
+        .carosal-area {
+            background-color: #0369a1;
+            background-image: linear-gradient(105deg, #082f49, rgba(3, 105, 161, 0.4) 100%, transparent 100%), url(img/hoperise-slide5.png);
+        }
+
+        .our-objective {
+            background-color: #082f49;
+        }
+
+        ::selection {
+            background-color: #0369a1;
+            color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="fixed-top">
+        <section class="header-top" style="background-color: #082f49;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-sm-8 col-xs-12">
+                        <div class="contact d-md-block d-none">
+                            <p><i class="material-icons icon-phone">phone</i><a> <span><a href="#"> +1 (555) 555
+                                            5555</a></span> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                                    &nbsp; &nbsp; <i class="material-icons icon-email">email</i> <span><a href="#">
+                                            info@aariasblueelephant.org</a></span></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4">
+                        <div class="join-us" style="background-color: #0369a1;">
+                            <p><a href="#">JOIN US NOW</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="navigator">
+            <nav class="navbar navbar-expand-lg ">
+                <div class="container-fluid">
+
+                    <div class="navbar-brand"> <a href="#"> <img id="logo" class="navbar-brand__logo"
+                                src="img/hoperise-logo-small.png" alt="ABE logo"
+                                style="max-height: 50px; width: auto; background-color: white; border-radius: 8px; padding: 2px;"></a>
+                        <h1 id="title" class="navbar-brand__title" style="color: #082f49; font-weight: bold;">Aaria's
+                            Blue Elephant</h1>
+                    </div>
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas"
+                        data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar"
+                        aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar"
+                        aria-labelledby="offcanvasNavbarLabel">
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title text-light" id="offcanvasNavbarLabel">Aaria's Blue Elephant</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+
+                            <ul id="nav-list" class="navbar-nav">
+                                <li class="navbar-nav__item ">
+                                    <a id="navlink" class="navbar-nav__link" aria-current="page" href="/"
+                                        style="color: #0369a1;">Home</a>
+                                </li>
+                                <li class="navbar-nav__item"><a id="navlink" class="navbar-nav__link"
+                                        href="/about">About</a></li>
+                                <li class="navbar-nav__item"><a id="navlink" class="navbar-nav__link"
+                                        href="/events">Events</a></li>
+                                <li class="navbar-nav__item"><a id="navlink" class="navbar-nav__link"
+                                        href="/volunteer">Get Involved</a></li>
+                                <li class="navbar-nav__item">
+                                    <a id="navlink" class="navbar-nav__link" href="https://candid.org/profile/123456789"
+                                        target="_blank" style="display: flex; align-items: center; gap: 5px;">
+                                        Candid Profile <i class="material-icons"
+                                            style="font-size: 14px;">open_in_new</i>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <!-- Adding Sign In / Sign Up and Donate from ABE -->
+                            <div class="d-none d-lg-flex align-items-center ms-3" style="gap: 10px;">
+                                <a href="/donate" class="btn btn-outline-primary"
+                                    style="border-color: #0369a1; color: #0369a1;">Donate</a>
+                                <a href="/login" class="btn btn-primary"
+                                    style="background-color: #0369a1; border-color: #0369a1;">Sign In</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </section>
+
+    </header>
+    <main>
+        <section class="carosal-area justify-content-center">
+            <div class="container justify-content-center">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="client owl-carousel owl-theme">
+                            <div class="item">
+                                <div class="text">
+                                    <h5
+                                        style="background-color: rgba(3, 105, 161, 0.4); padding: 5px 15px; border-radius: 20px; border: 1px solid #38bdf8; display: inline-block; margin-top: 150px; font-size: 14px;">
+                                        <span
+                                            style="display:inline-block; height: 8px; width: 8px; border-radius: 50%; background-color: #38bdf8; margin-right: 8px;"></span>Now
+                                        accepting new families for Fall 2025
+                                    </h5>
+                                    <h3 style="margin-top: 20px; font-size: 50px;">Play Without <span
+                                            style="color: #38bdf8;">Barriers</span></h3>
+                                    <p style="font-size: 18px; max-width: 700px; margin: 20px auto;">Aaria's Blue
+                                        Elephant is a safe haven where neurodivergent and neurotypical children grow
+                                        together. We believe in early intervention, inclusive play, and building a
+                                        compassionate community.</p>
+                                    <h5 class="white-button" style="margin-top: 30px;"><a href="/events"
+                                            style="background-color: #0369a1; color: white; border-color: #0369a1;">Find
+                                            a Playgroup</a></h5>
+                                    <h5 style="margin-top: 30px;"><a href="/about">Our Story</a></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-focus">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="our-focus u-margin-top-big ">
+                            <h3 class="our-focus__header" style="color: #082f49;">Mission Highlights</h3>
+                            <hr class="u-margin-bottom-small" style="background-color: #0369a1;">
+                            <p class="our-focus__text u-margin-top-small">Fostering inclusive playgroups for
+                                neurodivergent and neurotypical kids. Through weekly classes and events, we promote
+                                equality, compassion, and community.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                </div>
+            </div>
+
+            <div class="focus-grid">
+                <div class="container-fluid">
+                    <div class="row row-cols-1 row-cols-sm-1 row-cols-md-3 row-cols-lg-3 g-5 justify-content-center">
+                        <div class="col">
+                            <div class="focus-grid__col"
+                                style="border-radius: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; padding: 30px; background-color: #f8fafc;">
+                                <div
+                                    style="height: 50px; width: 50px; border-radius: 10px; background-color: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                    <i class="material-icons focus-grid__icon"
+                                        style="color: #0369a1; margin: 0; position: relative;">group</i>
+                                </div>
+                                <h4 class="focus-grid__header" style="color: #082f49;">Inclusive Community</h4>
+                                <hr>
+                                <p class="focus-grid__text">Bridging the gap between neurodivergent and neurotypical
+                                    peers through shared experiences and understanding.</p>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="focus-grid__col"
+                                style="border-radius: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; padding: 30px; background-color: #f8fafc;">
+                                <div
+                                    style="height: 50px; width: 50px; border-radius: 10px; background-color: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                    <i class="material-icons focus-grid__icon"
+                                        style="color: #0369a1; margin: 0; position: relative;">star</i>
+                                </div>
+                                <h4 class="focus-grid__header" style="color: #082f49;">Early Intervention</h4>
+                                <hr>
+                                <p class="focus-grid__text">Raising awareness about the critical importance of early
+                                    therapy and developmental support for holistic growth.</p>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="focus-grid__col"
+                                style="border-radius: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; padding: 30px; background-color: #f8fafc;">
+                                <div
+                                    style="height: 50px; width: 50px; border-radius: 10px; background-color: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                    <i class="material-icons focus-grid__icon"
+                                        style="color: #0369a1; margin: 0; position: relative;">favorite</i>
+                                </div>
+                                <h4 class="focus-grid__header" style="color: #082f49;">Compassionate Care</h4>
+                                <hr>
+                                <p class="focus-grid__text">Creating safe, non-judgmental spaces where every child is
+                                    celebrated for exactly who they are.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABE specific "Voices of our community" section replacing "Our Aims" / Team -->
+        <section class="section-focus" style="margin-top: 60px;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="our-focus u-margin-top-big ">
+                            <h3 class="our-focus__header" style="color: #082f49;">Voices of our Community</h3>
+                            <hr class="u-margin-bottom-small" style="background-color: #0369a1;">
+                            <p class="our-focus__text u-margin-top-small">Hear from the families and supporters who make
+                                us who we are.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                </div>
+            </div>
+
+            <div class="container-fluid" style="padding-bottom: 60px;">
+                <div class="row row-cols-1 row-cols-md-2 g-5 justify-content-center">
+
+                    <div class="col-md-5">
+                        <div
+                            style="background-color: #082f49; padding: 30px; border-radius: 20px; color: white; position: relative;">
+                            <i class="material-icons"
+                                style="position: absolute; top: 20px; right: 20px; font-size: 40px; color: rgba(255,255,255,0.1);">format_quote</i>
+                            <p style="font-style: italic; margin-bottom: 30px; font-size: 16px;">"Finding Aaria's Blue
+                                Elephant was a turning point for our family. My son finally has a place where he feels
+                                he belongs."</p>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div
+                                    style="width: 50px; height: 50px; background-color: #0369a1; border-radius: 50%; overflow: hidden;">
+                                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div>
+                                    <h5 style="margin: 0; font-weight: bold; font-family: 'Inter', sans-serif;">Sarah
+                                        Jenkins</h5>
+                                    <p style="margin: 0; color: #38bdf8; font-size: 14px;">Parent</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div
+                            style="background-color: #082f49; padding: 30px; border-radius: 20px; color: white; position: relative;">
+                            <i class="material-icons"
+                                style="position: absolute; top: 20px; right: 20px; font-size: 40px; color: rgba(255,255,255,0.1);">format_quote</i>
+                            <p style="font-style: italic; margin-bottom: 30px; font-size: 16px;">"I support this cause
+                                because I've seen the direct impact on the community. Transparency and heart are at the
+                                core here."</p>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div
+                                    style="width: 50px; height: 50px; background-color: #0369a1; border-radius: 50%; overflow: hidden;">
+                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div>
+                                    <h5 style="margin: 0; font-weight: bold; font-family: 'Inter', sans-serif;">David
+                                        Chen</h5>
+                                    <p style="margin: 0; color: #38bdf8; font-size: 14px;">Donor</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section class="donors-page" style="margin-top: 20px;">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="donors_input" style="background-color: #082f49;">
+                            <h2>Ready to Join Our Herd?</h2>
+                            <p
+                                style="text-align: center; color: white; max-width: 600px; margin: 0 auto 30px auto; font-size: 16px;">
+                                Whether you're looking for support, want to volunteer, or can help us grow with a
+                                donation, there's a place for you at Aaria's Blue Elephant.</p>
+                            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                                <a href="/signup" class="btn"
+                                    style="background-color: #0369a1; color: white; padding: 12px 30px; border-radius: 5px; font-weight: bold;">Get
+                                    Started</a>
+                                <a href="/donate" class="btn"
+                                    style="border: 1px solid white; color: white; padding: 12px 30px; border-radius: 5px; font-weight: bold;">Make
+                                    a Donation</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer" style="padding-top: 40px;">
+        <div class="container justify-content-end">
+            <div class="row">
+                <div class="col-md-4 col-sm-12">
+                    <div class="footer-charity-text">
+                        <img src="img/hoperise-logo-small.png" alt="Footer logo" class="footer__logo"
+                            style="max-height: 80px; width: auto; background-color: white; border-radius: 8px; padding: 5px; margin-bottom: 20px;">
+                        <h2 style="color: #082f49;">Aaria's Blue Elephant</h2>
+                        <p class="footer__text" style="color: #64748b;">Fostering inclusive playgroups for
+                            neurodivergent and neurotypical kids. Through weekly classes and events, we promote
+                            equality, compassion, and community in California and beyond. </p>
+                        <hr>
+                        <p footer__social-icon>
+                            <a href="#"><i class="fa fa-facebook footer__social-icon" aria-hidden="true"
+                                    style="color: #0369a1;"></i></a>
+                            <a href="#"><i class="fa fa-twitter footer__social-icon" aria-hidden="true"
+                                    style="color: #0369a1;"></i></a>
+                            <a href="#"><i class="fa fa-instagram footer__social-icon" aria-hidden="true"
+                                    style="color: #0369a1;"></i></a>
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="row justify-content-end">
+                        <div class="col-md-4 col-sm-3">
+                            <div class="footer-text two">
+                                <h3 style="color: #082f49; font-size: 16px;">ORGANIZATION</h3>
+                                <ul>
+                                    <li><a href="/about" style="color: #64748b;">About Us</a></li>
+                                    <li><a href="/events" style="color: #64748b;">Events</a></li>
+                                    <li><a href="/volunteer" style="color: #64748b;">Volunteer</a></li>
+                                    <li><a href="/donate" style="color: #64748b;">Donate</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4">
+                            <div class="footer-text">
+                                <h3 style="color: #082f49; font-size: 16px;">LEGAL & CONTACT</h3>
+                                <ul style="list-style-type: none; margin-left: 0;">
+                                    <li><span class="footer-text__locate" style="color: #64748b;">Nonprofit Corp
+                                            #B20250299015</span></li>
+                                    <li><span class="footer-text__locate" style="color: #64748b;">501(c)(3)
+                                            Status</span></li>
+                                    <li><a href="/privacy" style="color: #64748b;">Privacy Policy</a></li>
+                                    <li style="margin-top: 15px;"><i class="material-icons footer-text__icon"
+                                            style="color: #0369a1;">location_on</i>&nbsp; &nbsp;<span
+                                            class="footer-text__locate" style="color: #64748b;">Tracy, CA 95391</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer_bottom" style="background-color: #082f49;">
+            <p> &copy; <span id="year"></span> Aaria's Blue Elephant. All Rights Reserved. &nbsp; &nbsp; <span
+                    style="font-size: 12px; color: #94a3b8;">Designed with <i class="material-icons"
+                        style="font-size: 12px; color: #f472b6;">favorite</i> in California</span></p>
+            <script>
+                document.getElementById("year").textContent = "2025";
+            </script>
+        </div>
+    </footer>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/owl.carousel.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/animationCounter.js"></script>
+    <script src="js/active.js"></script>
+</body>
+
+</html>
