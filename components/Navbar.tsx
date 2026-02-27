@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
               <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10">
                 <div className="relative">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-16 sm:w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
                     <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" fill="none">
                       <defs>
                         <linearGradient id="iridescent-flow" x1="0%" y1="0%" x2="200%" y2="0%">
@@ -80,7 +80,7 @@ const Navbar: React.FC = () => {
               </Link>
 
               {/* Navbar QR Code CTA */}
-              <div className="hidden sm:flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="group relative shrink-0" title="Make a Donation">
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
@@ -175,7 +175,7 @@ const Navbar: React.FC = () => {
                     Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal uppercase text-center lg:text-right leading-tight">
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-normal uppercase text-center leading-tight">
                   100% Free. Fully Inclusive.<br />All Welcome
                 </span>
               </div>
