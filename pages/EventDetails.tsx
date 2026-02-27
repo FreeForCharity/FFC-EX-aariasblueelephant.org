@@ -16,6 +16,7 @@ const EventDetails: React.FC = () => {
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
 
   const event = events.find((e) => e.id === id);
+  const isPastEvent = event ? new Date(event.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
 
   const userRegistration = user && event ? eventRegistrations.find(r => r.eventId === event.id && r.userId === user.email) : null;
   const isRegistered = !!userRegistration;
@@ -270,6 +271,20 @@ const EventDetails: React.FC = () => {
                           Already Registered
                         </Button>
                       )
+                    ) : isPastEvent ? (
+                      <div className="space-y-4">
+                        <Button fullWidth size="lg" variant="secondary" disabled>
+                          Event Concluded
+                        </Button>
+                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
+                          <p className="text-amber-800 dark:text-amber-400 font-medium">
+                            Missed the event? No worries!
+                          </p>
+                          <Link to="/events" className="text-sm text-amber-600 dark:text-amber-300 hover:underline mt-1 inline-block">
+                            Check out our upcoming events here →
+                          </Link>
+                        </div>
+                      </div>
                     ) : event.registered < event.capacity ? (
                       <Button fullWidth size="lg" className="shadow-xl shadow-brand-cyan/10" onClick={handleRegister}>
                         Register Now
