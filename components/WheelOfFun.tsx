@@ -33,8 +33,8 @@ const WheelOfFun: React.FC = () => {
         winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
         if (winAudio.current) winAudio.current.volume = 0.5;
 
-        // FIXED: Confetti "Bar" Pop Sound (Party Popper) - DO NOT RANDOMIZE
-        popAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2730/2730-preview.mp3');
+        // FIXED: Simple, crisp "pop" sound - removes motorcycle-like low frequencies
+        popAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3');
         if (popAudio.current) popAudio.current.volume = 0.6;
     }, []);
 
