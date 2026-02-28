@@ -320,9 +320,6 @@ const PrivacyPolicy: React.FC = () => {
                                 <strong className="text-slate-900 dark:text-white w-32">Entity No:</strong> B20250299015
                             </li>
                             <li className="flex items-center gap-3">
-                                <strong className="text-slate-900 dark:text-white w-32">Address:</strong> 101 Felicia Ave, Tracy, CA 95391
-                            </li>
-                            <li className="flex items-center gap-3">
                                 <strong className="text-slate-900 dark:text-white w-32">Tax Status:</strong> 501(c)(3) Pending
                             </li>
                             <li className="flex items-center gap-3">
