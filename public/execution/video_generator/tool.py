@@ -36,7 +36,10 @@ class VideoGenerator:
         self.output_dir = output_dir
         self.event_name = event_name
         self.mode = mode
+        # Dual cascades for better coverage (frontal + side profile)
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
+        self.audio_path = os.path.join(os.path.dirname(__file__), "background_music.mp3")
         
     def process_image(self, img_path: str) -> Optional[np.ndarray]:
         """Detect faces and blur or filter based on mode."""
@@ -46,19 +49,31 @@ class VideoGenerator:
             return None
         
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = self.face_cascade.detectMultiScale(gray, 1.1, 4)
         
-        if len(faces) > 0:
+        # Detect frontal faces
+        faces = list(self.face_cascade.detectMultiScale(gray, 1.1, 4))
+        # Detect profiles
+        profiles = list(self.profile_cascade.detectMultiScale(gray, 1.1, 4))
+        
+        all_faces = faces + profiles
+        
+        if len(all_faces) > 0:
             if self.mode == 'select_no_faces':
                 logger.info(f"Skipping image with faces: {img_path}")
                 return None
             elif self.mode == 'blur':
-                for (x, y, w, h) in faces:
-                    face_roi = img[y:y+h, x:x+w]
-                    # Apply strong Gaussian Blur
-                    face_roi = cv2.GaussianBlur(face_roi, (99, 99), 30)
-                    img[y:y+h, x:x+w] = face_roi
-                logger.info(f"Blurred faces in: {img_path}")
+                for (x, y, w, h) in all_faces:
+                    # Expand ROI slightly to ensure hair/chin are included
+                    pad_w = int(w * 0.1)
+                    pad_h = int(h * 0.1)
+                    y1, y2 = max(0, y-pad_h), min(img.shape[0], y+h+pad_h)
+                    x1, x2 = max(0, x-pad_w), min(img.shape[1], x+w+pad_w)
+                    
+                    face_roi = img[y1:y2, x1:x2]
+                    # Apply EXTREMELY strong Gaussian Blur for privacy
+                    face_roi = cv2.GaussianBlur(face_roi, (151, 151), 50)
+                    img[y1:y2, x1:x2] = face_roi
+                logger.info(f"Blurred {len(all_faces)} detected face regions in: {img_path}")
         
         # Convert to RGB for MoviePy/PIL
         return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -126,26 +141,31 @@ class VideoGenerator:
         for i, path in enumerate(photo_paths):
             if processed_count >= 10: break
             
-            # Map photo processing to 5-70% range
             current_pct = 5 + int((i / total) * 65)
             if progress_callback: progress_callback(current_pct, f"Processing photo {i + 1} of {total}...")
             
             img_np = self.process_image(path)
             if img_np is not None:
-                clip = ImageClip(img_np).with_duration(4.0).with_effects([vfx.FadeIn(1), vfx.FadeOut(1)])
+                # Create base clip
+                clip = ImageClip(img_np).with_duration(5.0).with_effects([vfx.FadeIn(1), vfx.FadeOut(1)])
                 
-                # Resize keeping aspect ratio
+                # Ken Burns Effect (Slow Zoom)
+                # We use a zoom function: 1.0 at start, 1.15 at end
+                clip = clip.resized(lambda t: 1 + 0.03 * t)
+                
+                # Ensure it fits in 1080p
                 clip = clip.resized(height=1080)
                 if clip.w > 1920:
                     clip = clip.resized(width=1920)
 
-                bg = ColorClip(size=(1920, 1080), color=PALETTE['dark_blue']).with_duration(4.0)
+                bg = ColorClip(size=(1920, 1080), color=PALETTE['dark_blue']).with_duration(5.0)
                 final_clip = CompositeVideoClip([bg, clip.with_position("center")])
                 
                 if processed_count % 2 == 0:
                     quote = QUOTES[min(processed_count // 2, len(QUOTES)-1)]
-                    quote_slide = self.create_text_clip(quote, 2.0, (0, 0, 0, 0))
-                    final_clip = CompositeVideoClip([final_clip, quote_slide.with_duration(2.0).with_position(('center', 'bottom'))])
+                    # More elegant quote overlay at bottom
+                    quote_slide = self.create_text_clip(quote, 2.5, (0, 0, 0, 0), font_size=50)
+                    final_clip = CompositeVideoClip([final_clip, quote_slide.with_duration(2.5).with_position(('center', 850))])
                 
                 clips.append(final_clip)
                 processed_count += 1
@@ -157,6 +177,21 @@ class VideoGenerator:
         # 4. Final Assembly
         final_video = concatenate_videoclips(clips, method="compose")
         
+        # Add Background Music if available
+        try:
+            if not os.path.exists(self.audio_path):
+                logger.info("Downloading background music...")
+                # Download a royalty-free track
+                music_url = "https://www.chosic.com/wp-content/uploads/2021/05/Inspiring-Story.mp3"
+                subprocess.run(['curl', '-L', music_url, '-o', self.audio_path], check=True)
+            
+            audio = AudioFileClip(self.audio_path)
+            # Loop audio to match video duration and fade out
+            final_audio = audio.with_duration(final_video.duration).with_fadeout(2)
+            final_video = final_video.with_audio(final_audio)
+        except Exception as e:
+            logger.warning(f"Could not add audio: {e}")
+
         output_name = f"{self.event_name.replace(' ', '_')}_Inspiration.mp4"
         output_path = os.path.join(self.output_dir, output_name)
         
