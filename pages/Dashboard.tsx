@@ -44,13 +44,16 @@ const VideoGenSection: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [genStatus, setGenStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
     const [serverRunning, setServerRunning] = useState<boolean | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
+
 
     // Check if server is running on load
     React.useEffect(() => {
         const checkServer = async () => {
             try {
-                const res = await fetch('http://localhost:8000/docs'); // Simple health check
-                setServerRunning(res.ok);
+                // Check if server is reachable
+                const res = await fetch('http://127.0.0.1:8000/docs', { mode: 'no-cors' });
+                setServerRunning(true);
             } catch {
                 setServerRunning(false);
             }
@@ -59,6 +62,17 @@ const VideoGenSection: React.FC = () => {
         const interval = setInterval(checkServer, 5000); // Check every 5s
         return () => clearInterval(interval);
     }, []);
+
+    const handlePickFolder = async () => {
+        try {
+            const res = await fetch('http://127.0.0.1:8000/pick-folder');
+            const data = await res.json();
+            if (data.folder) setFolderPath(data.folder);
+        } catch (err) {
+            setGenStatus({ type: 'error', message: 'Browse failed. Ensure Backend is Online.' });
+        }
+    };
+
 
     const handleStartGeneration = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,14 +147,25 @@ const VideoGenSection: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Local Photos Path</label>
-                        <input
-                            type="text"
-                            placeholder="/Users/username/Pictures/Event_Folder"
-                            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                            value={folderPath}
-                            onChange={e => setFolderPath(e.target.value)}
-                            required
-                        />
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="/Users/username/Pictures/Event_Folder"
+                                className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                                value={folderPath}
+                                onChange={e => setFolderPath(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={handlePickFolder}
+                                className="px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm font-bold text-xs gap-2"
+                                title="Open Native Folder Picker"
+                            >
+                                <Plus className="h-4 w-4" /> Browse
+                            </button>
+                        </div>
+
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Event / Album Name</label>
@@ -211,11 +236,52 @@ const VideoGenSection: React.FC = () => {
                         : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
                         <div className="flex items-center gap-3">
                             {genStatus.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
-                            <p className="text-sm font-medium leading-relaxed">{genStatus.message}</p>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium leading-relaxed">{genStatus.message}</p>
+                                {genStatus.type === 'error' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowHelp(!showHelp)}
+                                        className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-600 hover:underline flex items-center gap-1"
+                                    >
+                                        <Info className="h-2 w-2" /> Connection Troubleshooting
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
             </form>
+
+            {showHelp && (
+                <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2 mb-4">
+                        <AlertCircle className="h-4 w-4 text-brand-purple" />
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Connection Help Guide</h4>
+                    </div>
+                    <div className="space-y-4 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="flex gap-3">
+                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">1</div>
+                            <p><strong>Run the Launcher:</strong> Open your project folder and double-click <code>launch_generator.command</code>. A terminal window must stay open.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">2</div>
+                            <p><strong>Allow insecure localhost connections:</strong> Because this site is HTTPS, it may block "mixed content" from <code>http://127.0.0.1</code>. If clicking "Browse' does nothing, click the <strong>Shield Icon</strong> or <strong>Not Secure</strong> badge in your browser address bar and choose <strong>"Load unsafe scripts"</strong> or <strong>"Allow"</strong>.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">3</div>
+                            <p><strong>Python Check:</strong> Ensure you have Python installed. If the tool won't start, run <code>pip install -r requirements.txt</code> in the tool directory manually.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowHelp(false)}
+                        className="mt-6 w-full py-2 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+                    >
+                        Hide Help
+                    </button>
+                </div>
+            )}
+
         </div>
     );
 };

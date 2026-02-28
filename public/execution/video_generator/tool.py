@@ -7,6 +7,9 @@ import argparse
 import logging
 from typing import List, Optional
 import sys
+import tkinter as tk
+from tkinter import filedialog
+
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -153,11 +156,12 @@ app = FastAPI()
 # Enable CORS for the cloud dashboard access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for local tool, can be restricted to site domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class VideoRequest(BaseModel):
     folder: str
@@ -178,6 +182,17 @@ def trigger_generation(req: VideoRequest, background_tasks: BackgroundTasks):
     
     return {"status": "success", "message": "Video generation started in background."}
 
+@app.get("/pick-folder")
+def pick_folder():
+    """Opens a native folder picker and returns the selected path."""
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    root.attributes("-topmost", True)  # Bring to front
+    folder_path = filedialog.askdirectory()
+    root.destroy()
+    return {"folder": folder_path}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aaria's Blue Elephant Video Generator")
     parser.add_argument("--folder", type=str, help="Path to photos folder")
@@ -189,7 +204,8 @@ if __name__ == "__main__":
     
     if args.server:
         import uvicorn
-        uvicorn.run(app, host="127.0.0.1", port=8000)
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+
     elif args.folder and args.event:
         photo_exts = ('.jpg', '.jpeg', '.png')
         photos = [os.path.join(args.folder, f) for f in os.listdir(args.folder) if f.lower().endswith(photo_exts)]
