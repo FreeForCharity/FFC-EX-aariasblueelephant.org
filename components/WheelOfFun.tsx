@@ -3,58 +3,79 @@ import { Play, RotateCw } from 'lucide-react';
 import Logo from './Logo';
 
 const SEGMENTS = [
-    { color: '#00BFFF', name: 'Sky Blue' },
-    { color: '#FFD700', name: 'Yellow' },
-    { color: '#FF1493', name: 'Deep Pink' },
-    { color: '#00FF7F', name: 'Spring Green' },
-    { color: '#9370DB', name: 'Medium Purple' },
-    { color: '#FFA500', name: 'Orange' },
-    { color: '#FF69B4', name: 'Hot Pink' }
-];
-
-const SPIN_SOUNDS = [
-    'https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3', // Soft whir
-    'https://assets.mixkit.co/active_storage/sfx/1344/1344-preview.mp3', // Chime whir
-    'https://assets.mixkit.co/active_storage/sfx/707/707-preview.mp3'    // Mechanical whir
+    { color: '#00AEEF', name: 'Blue' },   // The Big Winner
+    { color: '#FFE066', name: 'Yellow' },
+    { color: '#FFB6C1', name: 'Pink' },
+    { color: '#A8E6CF', name: 'Green' }
 ];
 
 const WheelOfFun: React.FC = () => {
     const [isSpinning, setIsSpinning] = useState(false);
     const [rotation, setRotation] = useState(0);
     const [winner, setWinner] = useState<number | null>(null);
+    const [spinCount, setSpinCount] = useState(() => {
+        const saved = localStorage.getItem('abe_wheel_spins');
+        return saved ? parseInt(saved, 10) : 0;
+    });
     const wheelRef = useRef<HTMLDivElement>(null);
 
-    // Audio Refs
+    // Audio Refs - Streamlined to Spin and Pop only
     const spinAudio = useRef<HTMLAudioElement | null>(null);
-    const winAudio = useRef<HTMLAudioElement | null>(null);
     const popAudio = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-        if (winAudio.current) winAudio.current.volume = 0.5;
+        localStorage.setItem('abe_wheel_spins', spinCount.toString());
+    }, [spinCount]);
 
-        // FIXED: Simple, crisp "pop" sound - removes motorcycle-like low frequencies
-        popAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3');
-        if (popAudio.current) popAudio.current.volume = 0.6;
+    useEffect(() => {
+        // Initialize local audio assets
+        spinAudio.current = new Audio('/sounds/spin.mp3');
+        if (spinAudio.current) {
+            spinAudio.current.loop = true;
+            spinAudio.current.volume = 0.4;
+        }
+
+        popAudio.current = new Audio('/sounds/pop.mp3');
+        if (popAudio.current) {
+            popAudio.current.volume = 0.6;
+        }
+
+        return () => {
+            if (spinAudio.current) {
+                spinAudio.current.pause();
+                spinAudio.current = null;
+            }
+        };
     }, []);
 
     const handleSpin = () => {
         if (isSpinning) return;
 
+        const nextSpinCount = spinCount + 1;
+        setSpinCount(nextSpinCount);
         setIsSpinning(true);
         setWinner(null);
 
-        // Random spin sound
-        const randomSound = SPIN_SOUNDS[Math.floor(Math.random() * SPIN_SOUNDS.length)];
-        spinAudio.current = new Audio(randomSound);
         if (spinAudio.current) {
-            spinAudio.current.loop = true;
-            spinAudio.current.volume = 0.3;
-            spinAudio.current.play().catch(e => console.log("Audio play blocked", e));
+            spinAudio.current.currentTime = 0;
+            spinAudio.current.play().catch(e => console.log("Spin sound blocked", e));
         }
 
-        const extraDegrees = Math.floor(Math.random() * 360);
-        const totalRotation = rotation + (360 * (6 + Math.floor(Math.random() * 4))) + extraDegrees;
+        const segmentSize = 360 / SEGMENTS.length;
+        let targetDegrees: number;
+
+        // Winning Logic: Blue (index 0) on 11th, 22nd, 33rd...
+        if (nextSpinCount % 11 === 0) {
+            // Target the center of the Blue segment (index 0)
+            targetDegrees = 0;
+        } else {
+            // Normal random spin, targeting segments 1-3
+            const randomSegment = Math.floor(Math.random() * (SEGMENTS.length - 1)) + 1;
+            targetDegrees = (360 - (randomSegment * segmentSize + segmentSize / 2)) % 360;
+        }
+
+        const fullSpins = 10 + Math.floor(Math.random() * 5);
+        const totalRotation = rotation + (360 * fullSpins) + (targetDegrees - (rotation % 360) + 360) % 360;
 
         setRotation(totalRotation);
 
@@ -63,20 +84,16 @@ const WheelOfFun: React.FC = () => {
 
             if (spinAudio.current) {
                 spinAudio.current.pause();
-                spinAudio.current = null;
             }
-            if (winAudio.current) winAudio.current.play().catch(e => console.log("Audio play blocked", e));
 
             const actualDegrees = totalRotation % 360;
-            const segmentSize = 360 / SEGMENTS.length;
-            const winnerIndex = Math.floor(((360 - (actualDegrees % 360)) % 360) / segmentSize);
+            const winnerIndex = Math.floor(((360 - (actualDegrees % 360)) % 360) / segmentSize) % SEGMENTS.length;
             setWinner(winnerIndex);
 
             if (window.triggerFunSpinBurst && wheelRef.current) {
                 const rect = wheelRef.current.getBoundingClientRect();
                 window.triggerFunSpinBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
-                // Add POP sound for realism
                 if (popAudio.current) {
                     popAudio.current.currentTime = 0;
                     popAudio.current.play().catch(e => console.log("Pop suppressed", e));
@@ -97,12 +114,15 @@ const WheelOfFun: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-white/30 to-transparent blur-sm" />
             <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-purple-500/5 pointer-events-none" />
 
-            <div className="text-center mb-10 relative">
+            <div className="text-center mb-6 relative">
                 <h2 className="text-4xl font-black text-slate-800 dark:text-white flex items-center justify-center gap-4 tracking-tighter uppercase italic">
                     <RotateCw className={`h-10 w-10 text-brand-cyan ${isSpinning ? 'animate-spin brightness-125' : ''}`} />
                     Aaria's Wheel of Fun
                 </h2>
                 <div className="h-1 w-24 bg-brand-cyan mx-auto mt-2 rounded-full opacity-50" />
+                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Total Spins: <span className="text-brand-cyan">{spinCount}</span>
+                </p>
             </div>
 
             <div className="relative w-80 h-80 sm:w-96 sm:h-96 perspective-1000" ref={wheelRef}>
@@ -145,7 +165,6 @@ const WheelOfFun: React.FC = () => {
                                         fill={seg.color}
                                         className="stroke-slate-900/10 stroke-[0.5]"
                                     />
-                                    {/* Internal Shading for 3D */}
                                     <path
                                         d={pathData}
                                         fill="url(#segmentGradient)"
@@ -166,9 +185,7 @@ const WheelOfFun: React.FC = () => {
                 {/* Center Hub - 3D Embossed Bulge */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-36 sm:h-36 z-30">
                     <div className="w-full h-full rounded-full bg-gradient-to-br from-white via-slate-50 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-[0_15px_35px_rgba(0,0,0,0.3),_inset_0_2px_5px_rgba(255,255,255,0.8),_inset_0_-5px_15px_rgba(0,0,0,0.2)] flex items-center justify-center relative overflow-hidden ring-4 ring-slate-800/10 dark:ring-white/5">
-                        {/* Shading to create bulge */}
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_60%)] pointer-events-none" />
-
                         <div className="relative z-10 flex items-center justify-center w-full h-full p-2">
                             <Logo className={`h-22 w-22 sm:h-26 sm:w-26 aspect-square transition-all duration-500 ${isSpinning ? 'scale-110' : 'scale-100'}`} />
                             {isSpinning && <div className="absolute inset-0 bg-brand-cyan/20 blur-3xl rounded-full animate-pulse" />}
@@ -208,13 +225,7 @@ const WheelOfFun: React.FC = () => {
                 </div>
             </div>
 
-            {/* Embedded Style for Blinking Colors */}
             <style>{`
-                @keyframes huePulse {
-                  0% { filter: hue-rotate(0deg); }
-                  50% { filter: hue-rotate(30deg) brightness(1.2); }
-                  100% { filter: hue-rotate(0deg); }
-                }
                 .perspective-1000 { perspective: 1000px; }
             `}</style>
         </div>

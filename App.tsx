@@ -17,6 +17,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Donate = lazy(() => import('./pages/Donate'));
 const Volunteer = lazy(() => import('./pages/Volunteer'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const WheelPage = lazy(() => import('./pages/WheelPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -51,6 +52,7 @@ const App: React.FC = () => {
                 <Route path="/donate" element={<Donate />} />
                 <Route path="/volunteer" element={<Volunteer />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/wheel" element={<WheelPage />} />
               </Routes>
             </Suspense>
           </Layout>
