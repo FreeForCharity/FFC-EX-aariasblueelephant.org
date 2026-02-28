@@ -77,3 +77,19 @@ body {
 .animate-footer-fade {
   animation: footer-fade-in 1.2s ease-out forwards;
 }
+
+/* Kid-Friendly Sticker Effects */
+.sticker-border {
+  filter: drop-shadow(2px 0 0 white) 
+          drop-shadow(-2px 0 0 white) 
+          drop-shadow(0 2px 0 white) 
+          drop-shadow(0 -2px 0 white);
+}
+
+.sticker-shadow {
+  filter: drop-shadow(4px 4px 0px rgba(0, 174, 239, 0.2));
+}
+
+.sticker-shadow-purple {
+  filter: drop-shadow(4px 4px 0px rgba(195, 174, 214, 0.3));
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen } from 'lucide-react';
+import StickerIcon from './StickerIcon';
 import Button from './Button';
 import Logo from './Logo';
 import DonationQR from './DonationQR';
@@ -8,7 +9,19 @@ import { useAuth } from '../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode
+  // Handle theme initialization and toggle
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // 1. Check localStorage for saved preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+
+    // 2. Fallback to time-based default (7 PM - 7 AM is dark)
+    const hour = new Date().getHours();
+    return hour >= 19 || hour < 7;
+  });
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -20,22 +33,24 @@ const Navbar: React.FC = () => {
     navigate('/');
   };
 
-  // Handle theme toggle
+  // Handle theme application and persistence
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Our Story', path: '/about' },
-    { name: 'Playgroups', path: '/events' },
-    { name: 'Get Involved', path: '/volunteer' },
+    { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
+    { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
+    { name: 'Playgroups', path: '/events', icon: Users, color: '#8b5cf6' },
+    { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -45,7 +60,7 @@ const Navbar: React.FC = () => {
 
       <nav className="w-full border-b border-sky-800/10 dark:border-sky-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-colors">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
-          <div className="flex min-h-[80px] lg:h-32 items-center justify-between py-4 lg:py-0">
+          <div className="flex min-h-[90px] lg:h-36 items-center justify-between py-4 lg:py-0">
             {/* Zone 1: Identity (Logo & QR) */}
             <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
               <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10">
@@ -123,12 +138,18 @@ const Navbar: React.FC = () => {
                   <Link
                     key={link.name}
                     to={link.path}
-                    className={`rounded-md px-3 py-2 text-base font-bold whitespace-nowrap transition-colors ${isActive(link.path)
+                    className={`group/nav rounded-2xl px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
                       ? 'text-sky-600 dark:text-sky-400'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
-                    {link.name}
+                    <StickerIcon
+                      icon={link.icon}
+                      size={24}
+                      color={isActive(link.path) ? link.color : '#94a3b8'}
+                      className="transition-all"
+                    />
+                    <span className="text-[10px] xl:text-[11px] font-black uppercase tracking-[0.15em]">{link.name}</span>
                   </Link>
                 ))}
               </div>
@@ -279,12 +300,18 @@ const Navbar: React.FC = () => {
                   key={link.name}
                   to={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`block rounded-md px-3 py-2 text-base font-medium ${isActive(link.path)
-                    ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-400'
+                  className={`flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-bold mb-2 transition-all ${isActive(link.path)
+                    ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-400 shadow-inner'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
                     }`}
                 >
-                  {link.name}
+                  <StickerIcon
+                    icon={link.icon}
+                    size={24}
+                    color={link.color}
+                    className="shadow-md scale-90"
+                  />
+                  <span className="uppercase tracking-widest text-sm">{link.name}</span>
                 </Link>
               ))}
               <a

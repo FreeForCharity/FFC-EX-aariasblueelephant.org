@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon, Instagram, Facebook } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon, Instagram, Facebook, Star, Cloud, Smile, Gift, Palette, Music } from 'lucide-react';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
 import { useData } from '../context/DataContext';
@@ -9,6 +10,9 @@ import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
 import RichText, { extractMedia } from '../components/RichText';
+// import StagedFadeIn removed as it's no longer used in this file
+import StickerIcon from '../components/StickerIcon';
+
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -47,10 +51,16 @@ const Home: React.FC = () => {
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
     // Randomize initial event on load
-    const [currentEventIndex, setCurrentEventIndex] = useState(() => Math.floor(Math.random() * pastEvents.length));
+    const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
     const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
+    const [isHydrated, setIsHydrated] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setIsHydrated(true);
+        setCurrentEventIndex(Math.floor(Math.random() * pastEvents.length));
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,8 +106,6 @@ const Home: React.FC = () => {
         return { isTruncated: true, text: truncated };
     };
 
-
-
     const nextEvent = () => {
         setCurrentEventIndex((prevIndex) => (prevIndex + 1) % pastEvents.length);
     };
@@ -129,19 +137,21 @@ const Home: React.FC = () => {
                         {/* Left Side: Play Without Barriers (Hero Text) */}
                         <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left">
                             {/* Social Media Links (Media Tag) */}
-                            <div className="mb-4 flex justify-center lg:justify-start">
-                                <SocialLinks />
+                            <div className="animate-in fade-in slide-in-from-top duration-700 delay-100">
+                                <div className="mb-4 flex justify-center lg:justify-start">
+                                    <SocialLinks />
+                                </div>
                             </div>
 
                             {/* Heading with Infinity Band and Logo */}
                             <div className="relative mb-6 mt-4 inline-flex items-center justify-center lg:justify-start w-full lg:w-auto">
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-6">
-                                    <div className="h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0">
+                                    <div className="h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0 group transition-transform hover:rotate-3">
                                         <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
-                                        <h1 className="text-lg xs:text-xl sm:text-[30px] lg:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible">
+                                        <h1 className="text-lg xs:text-xl sm:text-[30px] lg:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm">
                                             Aaria's Blue Elephant
                                         </h1>
                                         <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left">
@@ -160,20 +170,15 @@ const Home: React.FC = () => {
                             {/* CTA Buttons */}
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-8 w-full">
                                 <Link to="/events" className="w-full sm:flex-1">
-                                    <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-transform flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 text-base sm:text-lg whitespace-nowrap">
-                                        Join Now <Users className="h-5 w-5 shrink-0" />
+                                    <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-transform flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:-translate-y-1 active:scale-95 text-base sm:text-lg whitespace-nowrap uppercase tracking-widest">
+                                        Join Now <Users className="h-5 w-5" />
                                     </button>
                                 </Link>
                                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:flex-1">
-                                    <button className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-sky-700 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-colors flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-sky-500/20 text-base sm:text-lg whitespace-nowrap">
-                                        Donate <HeartPulse className="h-5 w-5 shrink-0" />
+                                    <button className="w-full bg-white dark:bg-slate-800 border-2 border-sky-600 dark:border-slate-700 text-sky-600 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-all flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 hover:-translate-y-1 active:scale-95 text-base sm:text-lg whitespace-nowrap uppercase tracking-widest">
+                                        Donate <HeartPulse className="h-5 w-5 text-sky-600" />
                                     </button>
                                 </a>
-                                <Link to="/about" className="w-full sm:flex-1">
-                                    <button className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-sky-700 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-colors flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-sky-500/20 text-base sm:text-lg whitespace-nowrap">
-                                        Our Story <BookOpen className="h-5 w-5 shrink-0" />
-                                    </button>
-                                </Link>
                             </div>
 
                             {/* Social Proof */}
@@ -199,59 +204,60 @@ const Home: React.FC = () => {
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full sm:w-auto text-center lg:text-left">
-                                <p className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
+                                <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                                     <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> playgroups hosted <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> children embraced in 2025–2026
-                                </p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Right Side: Our Track Record */}
-                        <div className="w-full lg:w-1/2 relative mt-10 lg:mt-0 px-2 sm:px-0">
+                        <div className="w-full lg:w-1/2 relative mt-10 lg:mt-0 px-2 sm:px-0 animate-in fade-in slide-in-from-right duration-1000 delay-300">
                             {/* Decorative background shape */}
                             <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-2 scale-[1.02] -z-10 transition-transform"></div>
                             <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-2 scale-[1.02] -z-10 transition-transform"></div>
 
                             {/* Track Record Label top right */}
-                            <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-4 bg-white dark:bg-slate-800 shadow-lg px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 z-20">
-                                <p className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-amber-500" />
+                            <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-4 bg-white dark:bg-slate-800 shadow-lg px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 z-20 transition-transform hover:-rotate-3">
+                                <div className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <StickerIcon icon={Sparkles} size={14} color="#f59e0b" bgColor="bg-transparent shadow-none border-none p-0" />
                                     Our Track Record
-                                </p>
+                                </div>
                             </div>
 
-                            <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-square xl:aspect-[4/3] group border-[6px] border-white/50 dark:border-slate-800/50">
-                                <img
-                                    src={pastEvents[currentEventIndex]?.image || DEFAULT_EVENT_IMAGE}
-                                    alt={pastEvents[currentEventIndex]?.title || 'Event'}
-                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        if (target.src === DEFAULT_EVENT_IMAGE) {
-                                            target.src = DEFAULT_LOCAL_FALLBACK;
-                                        } else {
-                                            target.src = DEFAULT_EVENT_IMAGE;
-                                        }
-                                    }}
-                                />
+                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-square xl:aspect-[4/3] group border-[8px] border-white/80 dark:border-slate-800/80 sticker-shadow hover:sticker-shadow-purple transition-all duration-500">
+                                {pastEvents[currentEventIndex] && (
+                                    <img
+                                        src={pastEvents[currentEventIndex].image || DEFAULT_EVENT_IMAGE}
+                                        alt={pastEvents[currentEventIndex].title || 'Event'}
+                                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            const currentSrc: string = target.src;
+                                            if (currentSrc !== (DEFAULT_EVENT_IMAGE as string)) {
+                                                target.src = DEFAULT_EVENT_IMAGE;
+                                            } else if (currentSrc !== (DEFAULT_LOCAL_FALLBACK as string)) {
+                                                target.src = DEFAULT_LOCAL_FALLBACK;
+                                            }
+                                        }}
+                                    />
+                                )}
 
                                 {/* Floating Track Record Badge matching template */}
-                                <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-sky-600 flex items-center justify-center shrink-0 relative">
-                                            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                                            {/* Online/Active indicator dot */}
-                                            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900"></span>
-                                        </div>
-                                        <div className="flex-1 min-w-0 text-left">
-                                            <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
-                                                {pastEvents[currentEventIndex].title}
-                                            </p>
-                                            <p className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-0.5 truncate">
-                                                {pastEvents[currentEventIndex].date}
-                                            </p>
+                                {pastEvents[currentEventIndex] && (
+                                    <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <StickerIcon icon={Calendar} size={18} color="white" bgColor="bg-sky-600" className="shadow-none border-none" />
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                                                    {pastEvents[currentEventIndex].title}
+                                                </div>
+                                                <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-0.5 truncate">
+                                                    {pastEvents[currentEventIndex].date}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Navigation buttons on the sides */}
                                 <button onClick={prevEvent} aria-label="Previous event" className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 transition-all focus:outline-none z-20 flex items-center justify-center hover:scale-110 opacity-80 hover:opacity-100">
@@ -262,24 +268,65 @@ const Home: React.FC = () => {
                                 </button>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </section>
 
             {/* Free Events Guarantee Banner */}
             <section className="bg-slate-50 dark:bg-slate-950 py-8 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 sm:p-12 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group">
-                        <div className="h-20 w-20 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-8 group-hover:bg-sky-600 transition-colors duration-300 shadow-sm border border-sky-200 dark:border-sky-800">
-                            <HeartHandshake className="h-10 w-10 text-sky-600 dark:text-sky-400 group-hover:text-white transition-colors duration-300" />
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+                    {/* Decorative background icons for the section */}
+                    <div className="absolute -top-10 -left-6 opacity-20 sm:opacity-100 z-0">
+                        <motion.div
+                            animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                        >
+                            <StickerIcon icon={Cloud} size={56} color="#00AEEF" bgColor="bg-sky-50" />
+                        </motion.div>
+                    </div>
+                    <div className="absolute -bottom-10 -right-6 opacity-20 sm:opacity-100 z-0">
+                        <motion.div
+                            animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+                            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                        >
+                            <StickerIcon icon={Star} size={48} color="#f59e0b" bgColor="bg-amber-50" />
+                        </motion.div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 border-[3px] border-dashed border-sky-100 dark:border-slate-700 p-8 sm:p-12 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group sticker-shadow relative overflow-hidden animate-in fade-in duration-1000">
+                        {/* Inner decorative floating icons */}
+                        <div className="absolute top-4 right-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <motion.div
+                                animate={{ y: [0, -8, 0], rotate: [12, 20, 12] }}
+                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                            >
+                                <StickerIcon icon={Gift} size={24} color="#ec4899" bgColor="bg-pink-50" />
+                            </motion.div>
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300">
+                        <div className="absolute bottom-8 left-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <motion.div
+                                animate={{ y: [0, 8, 0], rotate: [-12, -20, -12] }}
+                                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+                            >
+                                <StickerIcon icon={Smile} size={24} color="#10b981" bgColor="bg-emerald-50" />
+                            </motion.div>
+                        </div>
+
+                        <div className="mb-8">
+                            <StickerIcon icon={HeartHandshake} size={40} color="#00AEEF" />
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 flex items-center justify-center gap-3 flex-wrap">
+                            <StickerIcon icon={Music} size={20} color="#8b5cf6" bgColor="bg-purple-50" className="hidden sm:flex" />
                             100% Free. Fully Inclusive. All Are Welcome.
-                        </h2>
-                        <div className="w-24 h-1 bg-sky-200 dark:bg-sky-800 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
-                        <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl">
+                            <StickerIcon icon={Palette} size={20} color="#f43f5e" bgColor="bg-rose-50" className="hidden sm:flex" />
+                        </div>
+                        <div className="w-24 h-1.5 bg-sky-100 dark:bg-sky-900 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
+                        <div className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl relative">
+                            <span className="absolute -left-6 -top-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
                             We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.
-                        </p>
+                            <span className="absolute -right-6 -bottom-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -289,10 +336,10 @@ const Home: React.FC = () => {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
                     <h3 className="text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4">Our Focus Areas</h3>
                     <div className="h-1 w-16 bg-sky-600 mb-8"></div>
-                    <p className="max-w-4xl text-slate-600 dark:text-slate-300 leading-relaxed text-lg">
+                    <div className="max-w-4xl text-slate-600 dark:text-slate-300 leading-relaxed text-lg">
                         Our commitment to compassion, inclusivity, and community drives us to make a positive impact on the lives of those we serve.
                         Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.
-                    </p>
+                    </div>
                 </div>
             </section>
 
@@ -301,39 +348,39 @@ const Home: React.FC = () => {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-sm shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group">
-                            <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6 group-hover:bg-sky-600 transition-colors duration-300">
-                                <Users className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white" />
+                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 animate-in fade-in slide-in-from-bottom duration-700 delay-75">
+                            <div className="mb-6">
+                                <Users className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Inclusive Community</h4>
-                            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-600 mb-4"></div>
+                            <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Bridging the gap between neurodivergent and neurotypical peers through shared experiences and understanding.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-sm shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group">
-                            <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6 group-hover:bg-sky-600 transition-colors duration-300">
-                                <HeartPulse className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white" />
+                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 animate-in fade-in slide-in-from-bottom duration-700 delay-150">
+                            <div className="mb-6">
+                                <HeartPulse className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Early Intervention</h4>
-                            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-600 mb-4"></div>
+                            <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Raising awareness about the critical importance of early therapy and developmental support for holistic growth.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-sm shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group">
-                            <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6 group-hover:bg-sky-600 transition-colors duration-300">
-                                <HeartHandshake className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white" />
+                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 animate-in fade-in slide-in-from-bottom duration-700 delay-225">
+                            <div className="mb-6">
+                                <HeartHandshake className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Compassionate Care</h4>
-                            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-600 mb-4"></div>
+                            <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-sm shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group">
-                            <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6 group-hover:bg-sky-600 transition-colors duration-300">
-                                <Sparkles className="h-8 w-8 text-sky-600 dark:text-sky-400 group-hover:text-white" />
+                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
+                            <div className="mb-6">
+                                <Sparkles className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Therapy Play</h4>
-                            <div className="w-12 h-0.5 bg-slate-200 dark:bg-slate-600 mb-4"></div>
+                            <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Utilizing structured, evidence-based play sessions to build critical life and social skills in an engaging environment.</p>
                         </div>
 
@@ -341,13 +388,14 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+
             {/* Voices of our Community */}
             <section className="py-20 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12 flex flex-col items-center">
                         <h3 className="text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4">Voices of our Community</h3>
-                        <div className="h-1 w-16 bg-sky-600 mb-4"></div>
-                        <p className="text-slate-600 dark:text-slate-400">Hear from the families and supporters who make us who we are.</p>
+                        <div className="h-1 w-16 bg-sky-600 mb-4 font-normal"></div>
+                        <div className="text-slate-600 dark:text-slate-400">Hear from the families and supporters who make us who we are.</div>
                     </div>
 
                     {approvedTestimonials.length > 0 ? (

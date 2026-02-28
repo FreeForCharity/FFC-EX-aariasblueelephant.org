@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import PermissionDenied from './pages/PermissionDenied';
 import ProtectedRoute from './components/ProtectedRoute';
 import Delight from './components/Delight';
+import ScrollToTop from './components/ScrollToTop';
 
 // Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -32,6 +33,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <DataProvider>
         <Router>
+          <ScrollToTop />
           <Layout>
             <Suspense fallback={<PageLoader />}>
               <Routes>
