@@ -91,7 +91,8 @@ class VideoGenerator:
             draw.text(((size[0]-sw)//2, (size[1]-sh)//2 + h + 20), sub_text, font=sub_font, fill=(255, 255, 255, 200))
 
         img_np = np.array(img)
-        return ImageClip(img_np).with_duration(duration).with_fadein(1).with_fadeout(1)
+        import moviepy.video.fx as vfx
+        return ImageClip(img_np).with_duration(duration).with_effects([vfx.FadeIn(1), vfx.FadeOut(1)])
 
     def generate(self, photo_paths: List[str], progress_callback=None):
         """Generate the full video."""
@@ -99,6 +100,7 @@ class VideoGenerator:
             logger.error("No photos provided.")
             return
 
+        import moviepy.video.fx as vfx
         total = len(photo_paths)
         clips = []
         
@@ -115,19 +117,12 @@ class VideoGenerator:
             
             img_np = self.process_image(path)
             if img_np is not None:
-                clip = ImageClip(img_np).with_duration(4.0).with_fadein(1).with_fadeout(1)
+                clip = ImageClip(img_np).with_duration(4.0).with_effects([vfx.FadeIn(1), vfx.FadeOut(1)])
                 
                 # Resize keeping aspect ratio
-                # Note: v2 handles resize in effects, but for simplicity we use Resize effect if needed
-                # For now let's hope .resized() or direct resize works or we use vfx
-                try:
-                    clip = clip.resized(height=1080)
-                    if clip.w > 1920:
-                        clip = clip.resized(width=1920)
-                except:
-                    # Fallback for some v2 edge cases
-                    import moviepy.video.fx.all as vfx
-                    clip = clip.with_effects([vfx.Resize(height=1080)])
+                clip = clip.resized(height=1080)
+                if clip.w > 1920:
+                    clip = clip.resized(width=1920)
 
                 bg = ColorClip(size=(1920, 1080), color=PALETTE['dark_blue']).with_duration(4.0)
                 final_clip = CompositeVideoClip([bg, clip.with_position("center")])
@@ -155,6 +150,7 @@ class VideoGenerator:
         final_video.write_videofile(output_path, fps=30, codec='libx264', audio_codec='aac')
         logger.info("Video generation complete.")
         return output_path
+
 
 
 
