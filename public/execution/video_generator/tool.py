@@ -224,10 +224,9 @@ def run_generation(gen, photos):
     global gen_status
     total = len(photos)
     
-    def on_progress(current, total_count, message):
+    def on_progress(pct, message):
         global gen_status
-        pct = int((current / total_count) * 100) if total_count > 0 else 0
-        gen_status = {"state": "processing", "message": message, "output": "", "progress": pct, "current": current, "total": total_count}
+        gen_status = {"state": "processing", "message": message, "output": "", "progress": pct, "current": 0, "total": 0}
     
     gen_status = {"state": "processing", "message": f"Starting with {total} photos...", "output": "", "progress": 0, "current": 0, "total": total}
     try:
