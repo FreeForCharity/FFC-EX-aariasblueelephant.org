@@ -18,8 +18,10 @@ import {
     Clock,
     Camera,
     Plus,
+    Play,
     Download,
     CheckCircle,
+
     MapPin,
     ChevronRight,
     ArrowRight,
