@@ -1,3 +1,4 @@
+// Main application entry point - Triggering redeploy 2
 import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
