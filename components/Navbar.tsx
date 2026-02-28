@@ -97,13 +97,11 @@ const Navbar: React.FC = () => {
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_12px_#0ea5e9,0_0_20px_#0ea5e9] animate-[scan_2.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"></div>
 
                     {/* Restored Frosted Glass Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/45 dark:bg-slate-900/45 backdrop-blur-xl transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/10">
-                      <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg shadow-xl border border-slate-200/40 dark:border-slate-700/40 transform transition-transform group-hover:scale-90 flex flex-col items-center">
-                        <span className="font-sans font-black uppercase text-slate-900 dark:text-sky-400 tracking-tighter text-[10px] sm:text-xs italic leading-none mb-0.5">
-                          Click
-                        </span>
-                        <span className="font-sans font-black uppercase text-sky-600 dark:text-white tracking-widest text-[10px] sm:text-xs leading-none">
-                          Or Scan
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/10 dark:bg-slate-900/10 backdrop-blur-md transition-all duration-500 group-hover:opacity-0 group-hover:backdrop-blur-none z-30 ring-inset ring-1 ring-white/5">
+                      {/* Horizontal Strip */}
+                      <div className="w-full bg-white/90 dark:bg-slate-800/90 py-1.5 shadow-lg border-y border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-95 flex flex-col items-center justify-center">
+                        <span className="font-sans font-black uppercase text-slate-900 dark:text-white tracking-[0.1em] text-[10px] leading-none">
+                          CLICK OR SCAN
                         </span>
                       </div>
                     </div>
