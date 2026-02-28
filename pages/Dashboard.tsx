@@ -50,16 +50,22 @@ const VideoGenSection: React.FC = () => {
     // Check if server is running on load
     React.useEffect(() => {
         const checkServer = async () => {
-            // Try localhost first, then 127.0.0.1
+            // Try both origins with the dedicated /health endpoint
             const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
             let found = false;
 
             for (const origin of origins) {
                 try {
-                    const res = await fetch(`${origin}/docs`, { mode: 'no-cors' });
-                    setServerRunning(true);
-                    found = true;
-                    break;
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 3000);
+                    const res = await fetch(`${origin}/health`, { signal: controller.signal });
+                    clearTimeout(timeout);
+                    const data = await res.json();
+                    if (data.status === 'ok') {
+                        setServerRunning(true);
+                        found = true;
+                        break;
+                    }
                 } catch (e) {
                     continue;
                 }
@@ -69,9 +75,10 @@ const VideoGenSection: React.FC = () => {
         };
 
         checkServer();
-        const interval = setInterval(checkServer, 8000); // Check every 8s
+        const interval = setInterval(checkServer, 6000);
         return () => clearInterval(interval);
     }, []);
+
 
     const handlePickFolder = async () => {
         const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
