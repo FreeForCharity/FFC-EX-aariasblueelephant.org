@@ -51,8 +51,8 @@ const VideoGenSection: React.FC = () => {
     React.useEffect(() => {
         const checkServer = async () => {
             try {
-                // Check if server is reachable
-                const res = await fetch('http://127.0.0.1:8000/docs', { mode: 'no-cors' });
+                // Check if server is reachable - use localhost specifically for browser security benefits
+                const res = await fetch('http://localhost:8000/docs', { mode: 'no-cors' });
                 setServerRunning(true);
             } catch {
                 setServerRunning(false);
@@ -65,7 +65,7 @@ const VideoGenSection: React.FC = () => {
 
     const handlePickFolder = async () => {
         try {
-            const res = await fetch('http://127.0.0.1:8000/pick-folder');
+            const res = await fetch('http://localhost:8000/pick-folder');
             const data = await res.json();
             if (data.folder) setFolderPath(data.folder);
         } catch (err) {
@@ -266,8 +266,19 @@ const VideoGenSection: React.FC = () => {
                         </div>
                         <div className="flex gap-3">
                             <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">2</div>
-                            <p><strong>Allow insecure localhost connections:</strong> Because this site is HTTPS, it may block "mixed content" from <code>http://127.0.0.1</code>. If clicking "Browse' does nothing, click the <strong>Shield Icon</strong> or <strong>Not Secure</strong> badge in your browser address bar and choose <strong>"Load unsafe scripts"</strong> or <strong>"Allow"</strong>.</p>
+                            <div>
+                                <p><strong>Authorize Local Connection:</strong> Browsers block HTTPS sites from talking to local HTTP servers. Click the button below to open the local server and "Allow" it if prompted.</p>
+                                <a
+                                    href="http://localhost:8000/docs"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-brand-purple text-white rounded text-[9px] font-bold uppercase tracking-wider hover:bg-brand-purple/90 transition-all shadow-sm"
+                                >
+                                    Authorize in New Tab <ArrowRight className="h-2 w-2" />
+                                </a>
+                            </div>
                         </div>
+
                         <div className="flex gap-3">
                             <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">3</div>
                             <p><strong>Python Check:</strong> Ensure you have Python installed. If the tool won't start, run <code>pip install -r requirements.txt</code> in the tool directory manually.</p>
