@@ -78,12 +78,16 @@ class VideoGenerator:
             sub_font = ImageFont.load_default()
 
         # Center Main Text
-        w, h = draw.textsize(text, font=font)
+        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+        w = right - left
+        h = bottom - top
         draw.text(((size[0]-w)//2, (size[1]-h)//2), text, font=font, fill=(255, 255, 255))
         
         # Add Subtext
         if sub_text:
-            sw, sh = draw.textsize(sub_text, font=sub_font)
+            sl, st, sr, sb = draw.textbbox((0, 0), sub_text, font=sub_font)
+            sw = sr - sl
+            sh = sb - st
             draw.text(((size[0]-sw)//2, (size[1]-sh)//2 + h + 20), sub_text, font=sub_font, fill=(255, 255, 255, 200))
 
         img_np = np.array(img)
