@@ -104,18 +104,15 @@ class VideoGenerator:
         from proglog import ProgressBarLogger
         
         class MoviePyLogger(ProgressBarLogger):
-            def __init__(self, callback):
+            def __init__(self, target_callback):
                 super().__init__()
-                self.callback = callback
-            def callback(self, **changes):
-                # This is called on every update
-                pass
+                self.target_callback = target_callback
             def bars_callback(self, bar, attr, value, total_value):
                 if bar == 't': # 't' is usually the time/frame bar in MoviePy
                     # Shift encoding progress to the 70%-100% range
                     pct = 70 + int((value / total_value) * 30) if total_value > 0 else 70
-                    if self.callback:
-                        self.callback(pct, f"Encoding video: {pct}%")
+                    if self.target_callback:
+                        self.target_callback(pct, f"Encoding video: {pct}%")
 
         total = len(photo_paths)
         clips = []
@@ -167,7 +164,7 @@ class VideoGenerator:
         logger.info(f"Writing video to {output_path} with 'ultrafast' preset...")
         
         # Create a proxy for the percentage callback
-        def encoding_callback(pct, msg):
+        def encoding_callback(pct, msg=None, **kwargs):
              if progress_callback: progress_callback(pct, msg)
              
         custom_logger = MoviePyLogger(encoding_callback)
