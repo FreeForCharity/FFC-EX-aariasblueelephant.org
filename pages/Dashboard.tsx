@@ -10,7 +10,7 @@ import {
     LayoutDashboard,
     Calendar,
     Users,
-
+    Camera,
     DollarSign,
     FileText,
     MessageSquare,
