@@ -89,60 +89,60 @@ class VideoGenerator:
         img_np = np.array(img)
         return ImageClip(img_np).set_duration(duration).fadein(1).fadeout(1)
 
-    def generate(self, photo_paths: List[str]):
+    def generate(self, photo_paths: List[str], progress_callback=None):
         """Generate the full video."""
         if not photo_paths:
             logger.error("No photos provided.")
             return
 
+        total = len(photo_paths)
         clips = []
         
         # 1. Title Slide
         clips.append(self.create_text_clip(self.event_name, 3.0, PALETTE['blue'], font_size=100, sub_text="Aaria's Blue Elephant"))
+        if progress_callback: progress_callback(0, total, "Creating title slide...")
         
         # 2. Process Photos
         processed_count = 0
         for i, path in enumerate(photo_paths):
             if processed_count >= 10: break
             
+            if progress_callback: progress_callback(i + 1, total, f"Processing photo {i + 1} of {total}...")
+            
             img_np = self.process_image(path)
             if img_np is not None:
-                # Create photo clip
                 clip = ImageClip(img_np).set_duration(4.0).fadein(1).fadeout(1)
-                
-                # Resize to 1080p while maintaining aspect ratio
                 clip = clip.resize(height=1080)
                 if clip.w > 1920:
                     clip = clip.resize(width=1920)
                 
-                # Center on 1080p background
                 bg = ColorClip(size=(1920, 1080), color=PALETTE['dark_blue']).set_duration(4.0)
                 final_clip = CompositeVideoClip([bg, clip.set_position("center")])
                 
-                # Overlay Quote every few photos
                 if processed_count % 2 == 0:
                     quote = QUOTES[min(processed_count // 2, len(QUOTES)-1)]
-                    quote_slide = self.create_text_clip(quote, 2.0, (0, 0, 0, 0)) # Transparent overlay? MoviePy handles better.
-                    # Simple quote overlay implementation
+                    quote_slide = self.create_text_clip(quote, 2.0, (0, 0, 0, 0))
                     final_clip = CompositeVideoClip([final_clip, quote_slide.set_duration(2.0).set_position(('center', 'bottom'))])
                 
                 clips.append(final_clip)
                 processed_count += 1
         
         # 3. Call to Action Slide
+        if progress_callback: progress_callback(total, total, "Assembling final video...")
         clips.append(self.create_text_clip("Join Aaria's Blue Elephant", 4.0, PALETTE['green'], font_size=80, sub_text="Foster Inclusion Today!"))
         
         # 4. Final Assembly
         final_video = concatenate_videoclips(clips, method="compose")
         
-        # 5. Handle Audio (Optional/Sample)
         output_name = f"{self.event_name.replace(' ', '_')}_Inspiration.mp4"
         output_path = os.path.join(self.output_dir, output_name)
         
+        if progress_callback: progress_callback(total, total, "Encoding video (this takes a moment)...")
         logger.info(f"Writing video to {output_path}...")
         final_video.write_videofile(output_path, fps=30, codec='libx264', audio_codec='aac')
         logger.info("Video generation complete.")
         return output_path
+
 
 # --- FastAPI Integration ---
 from fastapi import FastAPI, BackgroundTasks
@@ -166,13 +166,35 @@ def health_check():
     """Simple health check endpoint for the dashboard."""
     return {"status": "ok", "service": "abe-video-generator"}
 
+# Generation status tracking
+gen_status = {"state": "idle", "message": "", "output": ""}
+
 class VideoRequest(BaseModel):
     folder: str
     event: str
     mode: str = 'blur'
 
+def run_generation(gen, photos):
+    """Wrapper that updates gen_status as the video is generated."""
+    global gen_status
+    total = len(photos)
+    
+    def on_progress(current, total_count, message):
+        global gen_status
+        pct = int((current / total_count) * 100) if total_count > 0 else 0
+        gen_status = {"state": "processing", "message": message, "output": "", "progress": pct, "current": current, "total": total_count}
+    
+    gen_status = {"state": "processing", "message": f"Starting with {total} photos...", "output": "", "progress": 0, "current": 0, "total": total}
+    try:
+        output_path = gen.generate(photos, progress_callback=on_progress)
+        gen_status = {"state": "done", "message": "Video generation complete!", "output": output_path or "", "progress": 100, "current": total, "total": total}
+    except Exception as e:
+        gen_status = {"state": "error", "message": f"Generation failed: {str(e)}", "output": "", "progress": 0, "current": 0, "total": total}
+
+
 @app.post("/generate")
 def trigger_generation(req: VideoRequest, background_tasks: BackgroundTasks):
+    global gen_status
     # Search for photos in folder
     photo_exts = ('.jpg', '.jpeg', '.png')
     photos = [os.path.join(req.folder, f) for f in os.listdir(req.folder) if f.lower().endswith(photo_exts)]
@@ -181,9 +203,16 @@ def trigger_generation(req: VideoRequest, background_tasks: BackgroundTasks):
         return {"status": "error", "message": "No photos found in directory."}
     
     gen = VideoGenerator(req.folder, req.event, req.mode)
-    background_tasks.add_task(gen.generate, photos[:10])
+    gen_status = {"state": "starting", "message": "Initializing...", "output": ""}
+    background_tasks.add_task(run_generation, gen, photos[:10])
     
-    return {"status": "success", "message": "Video generation started in background."}
+    return {"status": "success", "message": f"Video generation started with {len(photos[:10])} photos."}
+
+@app.get("/status")
+def get_status():
+    """Returns the current generation status."""
+    return gen_status
+
 
 @app.get("/pick-folder")
 def pick_folder():

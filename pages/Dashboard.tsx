@@ -103,11 +103,43 @@ const VideoGenSection: React.FC = () => {
         }
     };
 
+    const [genProgress, setGenProgress] = useState<{ progress: number; message: string; state: string }>({ progress: 0, message: '', state: 'idle' });
+
+    const pollStatus = React.useCallback(() => {
+        const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
+        let intervalId: ReturnType<typeof setInterval>;
+
+        const check = async () => {
+            for (const origin of origins) {
+                try {
+                    const res = await fetch(`${origin}/status`);
+                    const data = await res.json();
+                    setGenProgress({ progress: data.progress || 0, message: data.message || '', state: data.state || 'idle' });
+
+                    if (data.state === 'done') {
+                        setIsGenerating(false);
+                        setGenStatus({ type: 'success', message: `✅ ${data.message} Output: ${data.output}` });
+                        clearInterval(intervalId);
+                    } else if (data.state === 'error') {
+                        setIsGenerating(false);
+                        setGenStatus({ type: 'error', message: data.message });
+                        clearInterval(intervalId);
+                    }
+                    return;
+                } catch { continue; }
+            }
+        };
+
+        intervalId = setInterval(check, 2000);
+        check(); // Immediate first check
+        return () => clearInterval(intervalId);
+    }, []);
 
     const handleStartGeneration = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsGenerating(true);
         setGenStatus({ type: 'idle', message: '' });
+        setGenProgress({ progress: 0, message: 'Starting...', state: 'starting' });
 
         try {
             const response = await fetch('http://localhost:8000/generate', {
@@ -122,16 +154,19 @@ const VideoGenSection: React.FC = () => {
 
             const data = await response.json();
             if (data.status === 'success') {
-                setGenStatus({ type: 'success', message: 'Video generation started! Check your folder for the output in a few moments.' });
+                setGenStatus({ type: 'success', message: data.message });
+                // Start polling for progress
+                pollStatus();
             } else {
                 setGenStatus({ type: 'error', message: data.message || 'Generation failed.' });
+                setIsGenerating(false);
             }
         } catch (err) {
-            setGenStatus({ type: 'error', message: 'Could not connect to the local generator service. Please ensure the Python tool is running in server mode.' });
-        } finally {
+            setGenStatus({ type: 'error', message: 'Could not connect to the local generator service.' });
             setIsGenerating(false);
         }
     };
+
 
     return (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm dark:shadow-lg max-w-2xl">
@@ -250,45 +285,64 @@ const VideoGenSection: React.FC = () => {
                 </div>
 
                 <div className="pt-4">
-                    <Button
-                        type="submit"
-                        className="w-full h-12 text-lg"
-                        disabled={isGenerating}
-                    >
-                        {isGenerating ? (
-                            <span className="flex items-center gap-2">
-                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                Processing Photos...
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-2">
-                                Generate Inspirational Video <ArrowRight className="h-5 w-5" />
-                            </span>
-                        )}
-                    </Button>
+                    {isGenerating || genProgress.state === 'processing' || genProgress.state === 'starting' ? (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex justify-between items-end mb-1">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-purple animate-pulse">Generation in Progress</p>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{genProgress.message || 'Initializing pipeline...'}</p>
+                                </div>
+                                <p className="text-2xl font-black text-brand-purple tabular-nums">{genProgress.progress}%</p>
+                            </div>
+                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 p-0.5 shadow-inner">
+                                <div
+                                    className="h-full bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-green rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(195,174,214,0.4)]"
+                                    style={{ width: `${genProgress.progress}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                <span>Start</span>
+                                <div className="flex gap-1">
+                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 25 ? 'bg-brand-cyan' : 'bg-slate-200'}`} />
+                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 50 ? 'bg-brand-purple' : 'bg-slate-200'}`} />
+                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 75 ? 'bg-brand-green' : 'bg-slate-200'}`} />
+                                </div>
+                                <span>Finish</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <Button
+                            type="submit"
+                            className="w-full bg-brand-cyan hover:bg-brand-cyan/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-cyan/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest flex items-center justify-center gap-2"
+                            disabled={!serverRunning || !folderPath || !eventName}
+                        >
+                            <Play className="h-5 w-5" /> Start Generating Video
+                        </Button>
+                    )}
                 </div>
 
                 {genStatus.type !== 'idle' && (
-                    <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${genStatus.type === 'success'
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
+                    <div className={`p-4 rounded-xl border animate-in border-l-4 fade-in slide-in-from-top-2 ${genStatus.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 border-l-green-500 text-green-700 dark:text-green-300'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 border-l-red-500 text-red-700 dark:text-red-300'}`}>
                         <div className="flex items-center gap-3">
-                            {genStatus.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
+                            {genStatus.type === 'success' ? <CheckCircle className="h-6 w-6 shrink-0 text-green-500" /> : <AlertCircle className="h-6 w-6 shrink-0 text-red-500" />}
                             <div className="flex-1">
-                                <p className="text-sm font-medium leading-relaxed">{genStatus.message}</p>
+                                <p className="text-sm font-bold leading-relaxed">{genStatus.message}</p>
                                 {genStatus.type === 'error' && (
                                     <button
                                         type="button"
                                         onClick={() => setShowHelp(!showHelp)}
-                                        className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-600 hover:underline flex items-center gap-1"
+                                        className="mt-2 text-[10px] font-black uppercase tracking-[0.1em] text-red-600 hover:text-red-700 hover:underline flex items-center gap-1.5"
                                     >
-                                        <Info className="h-2 w-2" /> Connection Troubleshooting
+                                        <Info className="h-3 w-3" /> Connection Troubleshooting
                                     </button>
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
+
             </form>
 
             {showHelp && (
