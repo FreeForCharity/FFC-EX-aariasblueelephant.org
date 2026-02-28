@@ -95,25 +95,43 @@ class VideoGenerator:
         return ImageClip(img_np).with_duration(duration).with_effects([vfx.FadeIn(1), vfx.FadeOut(1)])
 
     def generate(self, photo_paths: List[str], progress_callback=None):
-        """Generate the full video."""
+        """Generate the full video with progress tracking."""
         if not photo_paths:
             logger.error("No photos provided.")
             return
 
         import moviepy.video.fx as vfx
+        from proglog import ProgressBarLogger
+        
+        class MoviePyLogger(ProgressBarLogger):
+            def __init__(self, callback):
+                super().__init__()
+                self.callback = callback
+            def callback(self, **changes):
+                # This is called on every update
+                pass
+            def bars_callback(self, bar, attr, value, total_value):
+                if bar == 't': # 't' is usually the time/frame bar in MoviePy
+                    # Shift encoding progress to the 70%-100% range
+                    pct = 70 + int((value / total_value) * 30) if total_value > 0 else 70
+                    if self.callback:
+                        self.callback(pct, f"Encoding video: {pct}%")
+
         total = len(photo_paths)
         clips = []
         
-        # 1. Title Slide
+        # 1. Title Slide (0-5%)
+        if progress_callback: progress_callback(5, "Creating title slide...")
         clips.append(self.create_text_clip(self.event_name, 3.0, PALETTE['blue'], font_size=100, sub_text="Aaria's Blue Elephant"))
-        if progress_callback: progress_callback(0, total, "Creating title slide...")
         
-        # 2. Process Photos
+        # 2. Process Photos (5-70%)
         processed_count = 0
         for i, path in enumerate(photo_paths):
             if processed_count >= 10: break
             
-            if progress_callback: progress_callback(i + 1, total, f"Processing photo {i + 1} of {total}...")
+            # Map photo processing to 5-70% range
+            current_pct = 5 + int((i / total) * 65)
+            if progress_callback: progress_callback(current_pct, f"Processing photo {i + 1} of {total}...")
             
             img_np = self.process_image(path)
             if img_np is not None:
@@ -135,8 +153,8 @@ class VideoGenerator:
                 clips.append(final_clip)
                 processed_count += 1
         
-        # 3. Call to Action Slide
-        if progress_callback: progress_callback(total, total, "Assembling final video...")
+        # 3. Call to Action Slide (70%)
+        if progress_callback: progress_callback(70, "Finalizing structure...")
         clips.append(self.create_text_clip("Join Aaria's Blue Elephant", 4.0, PALETTE['green'], font_size=80, sub_text="Foster Inclusion Today!"))
         
         # 4. Final Assembly
@@ -145,9 +163,26 @@ class VideoGenerator:
         output_name = f"{self.event_name.replace(' ', '_')}_Inspiration.mp4"
         output_path = os.path.join(self.output_dir, output_name)
         
-        if progress_callback: progress_callback(total, total, "Encoding video (this takes a moment)...")
-        logger.info(f"Writing video to {output_path}...")
-        final_video.write_videofile(output_path, fps=30, codec='libx264', audio_codec='aac')
+        # 5. Encoding (70-100% via logger)
+        logger.info(f"Writing video to {output_path} with 'ultrafast' preset...")
+        
+        # Create a proxy for the percentage callback
+        def encoding_callback(pct, msg):
+             if progress_callback: progress_callback(pct, msg)
+             
+        custom_logger = MoviePyLogger(encoding_callback)
+        
+        # Use 'ultrafast' for speed as requested
+        final_video.write_videofile(
+            output_path, 
+            fps=24, 
+            codec='libx264', 
+            audio_codec='aac', 
+            preset='ultrafast',
+            logger=custom_logger
+        )
+        
+        if progress_callback: progress_callback(100, "Generation complete!")
         logger.info("Video generation complete.")
         return output_path
 
