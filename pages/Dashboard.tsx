@@ -37,6 +37,189 @@ import Button from '../components/Button';
 
 type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel' | 'video-gen';
 
+const VideoGenSection: React.FC = () => {
+    const [folderPath, setFolderPath] = useState('');
+    const [eventName, setEventName] = useState('');
+    const [genMode, setGenMode] = useState<'blur' | 'select_no_faces'>('blur');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [genStatus, setGenStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
+    const [serverRunning, setServerRunning] = useState<boolean | null>(null);
+
+    // Check if server is running on load
+    React.useEffect(() => {
+        const checkServer = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/docs'); // Simple health check
+                setServerRunning(res.ok);
+            } catch {
+                setServerRunning(false);
+            }
+        };
+        checkServer();
+        const interval = setInterval(checkServer, 5000); // Check every 5s
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleStartGeneration = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsGenerating(true);
+        setGenStatus({ type: 'idle', message: '' });
+
+        try {
+            const response = await fetch('http://localhost:8000/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folder: folderPath,
+                    event: eventName,
+                    mode: genMode
+                })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                setGenStatus({ type: 'success', message: 'Video generation started! Check your folder for the output in a few moments.' });
+            } else {
+                setGenStatus({ type: 'error', message: data.message || 'Generation failed.' });
+            }
+        } catch (err) {
+            setGenStatus({ type: 'error', message: 'Could not connect to the local generator service. Please ensure the Python tool is running in server mode.' });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm dark:shadow-lg max-w-2xl">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-brand-cyan/10 rounded-xl">
+                        <Camera className="h-6 w-6 text-brand-cyan" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Inspirational Video Generator</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Create inclusive playgroup videos from your local albums.</p>
+                    </div>
+                </div>
+                <div className="flex flex-col items-end gap-2 text-right">
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${serverRunning === true
+                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                        : serverRunning === false
+                            ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
+                            : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                        <div className={`h-1.5 w-1.5 rounded-full ${serverRunning === true ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : serverRunning === false ? 'bg-red-500' : 'bg-slate-300'}`}></div>
+                        {serverRunning === true ? 'Backend Online' : serverRunning === false ? 'Backend Offline' : 'Checking Status...'}
+                    </div>
+                    <a
+                        href="https://aariasblueelephant.org/execution/video_generator/tool.py"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[9px] text-brand-cyan hover:underline uppercase tracking-tighter flex items-center gap-1 font-bold"
+                    >
+                        <Download className="h-2 w-2" /> Provision Local Tool
+                    </a>
+                    {serverRunning === false && (
+                        <p className="text-[9px] text-slate-400 uppercase tracking-tighter">Please run launch_generator.command</p>
+                    )}
+                </div>
+            </div>
+
+            <div className="mb-8 p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/50 rounded-xl text-xs text-sky-800 dark:text-sky-300 leading-relaxed">
+                <p className="font-bold mb-1 uppercase tracking-wider">Privacy & Performance Note:</p>
+                <p>This tool runs <strong>locally on your machine</strong>. No photos are ever uploaded to our servers. The generator will process up to 10 photos and output a 1080p MP4 directly into your source folder.</p>
+            </div>
+
+            <form onSubmit={handleStartGeneration} className="space-y-6">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Local Photos Path</label>
+                        <input
+                            type="text"
+                            placeholder="/Users/username/Pictures/Event_Folder"
+                            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                            value={folderPath}
+                            onChange={e => setFolderPath(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Event / Album Name</label>
+                        <input
+                            type="text"
+                            placeholder="Summer Inclusion Playgroup"
+                            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                            value={eventName}
+                            onChange={e => setEventName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Privacy Handling</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setGenMode('blur')}
+                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'blur'
+                                    ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
+                                    : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                            >
+                                <div className={`p-2 rounded-full mb-3 ${genMode === 'blur' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                                    <AlertTriangle className="h-5 w-5" />
+                                </div>
+                                <span className="font-bold text-sm">Blur All Faces</span>
+                                <span className="text-[10px] mt-1 opacity-70">Recommended for all playgroups</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setGenMode('select_no_faces')}
+                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'select_no_faces'
+                                    ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
+                                    : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                            >
+                                <div className={`p-2 rounded-full mb-3 ${genMode === 'select_no_faces' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                                    <ImageIcon className="h-5 w-5" />
+                                </div>
+                                <span className="font-bold text-sm">Filter: Only Landscapes</span>
+                                <span className="text-[10px] mt-1 opacity-70">Avoids images with any faces</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-4">
+                    <Button
+                        type="submit"
+                        className="w-full h-12 text-lg"
+                        disabled={isGenerating}
+                    >
+                        {isGenerating ? (
+                            <span className="flex items-center gap-2">
+                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                Processing Photos...
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                Generate Inspirational Video <ArrowRight className="h-5 w-5" />
+                            </span>
+                        )}
+                    </Button>
+                </div>
+
+                {genStatus.type !== 'idle' && (
+                    <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${genStatus.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
+                        <div className="flex items-center gap-3">
+                            {genStatus.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
+                            <p className="text-sm font-medium leading-relaxed">{genStatus.message}</p>
+                        </div>
+                    </div>
+                )}
+            </form>
+        </div>
+    );
+};
+
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
     const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, updateTestimonial, eventRegistrations, approveRegistration, deleteRegistration, isLoading } = useData();
@@ -1148,188 +1331,7 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderVideoGenSection = () => {
-        const [folderPath, setFolderPath] = useState('');
-        const [eventName, setEventName] = useState('');
-        const [genMode, setGenMode] = useState<'blur' | 'select_no_faces'>('blur');
-        const [isGenerating, setIsGenerating] = useState(false);
-        const [genStatus, setGenStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
-        const [serverRunning, setServerRunning] = useState<boolean | null>(null);
-
-        // Check if server is running on load
-        React.useEffect(() => {
-            const checkServer = async () => {
-                try {
-                    const res = await fetch('http://localhost:8000/docs'); // Simple health check
-                    setServerRunning(res.ok);
-                } catch {
-                    setServerRunning(false);
-                }
-            };
-            checkServer();
-            const interval = setInterval(checkServer, 5000); // Check every 5s
-            return () => clearInterval(interval);
-        }, []);
-
-        const handleStartGeneration = async (e: React.FormEvent) => {
-            e.preventDefault();
-            setIsGenerating(true);
-            setGenStatus({ type: 'idle', message: '' });
-
-            try {
-                const response = await fetch('http://localhost:8000/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        folder: folderPath,
-                        event: eventName,
-                        mode: genMode
-                    })
-                });
-
-                const data = await response.json();
-                if (data.status === 'success') {
-                    setGenStatus({ type: 'success', message: 'Video generation started! Check your folder for the output in a few moments.' });
-                } else {
-                    setGenStatus({ type: 'error', message: data.message || 'Generation failed.' });
-                }
-            } catch (err) {
-                setGenStatus({ type: 'error', message: 'Could not connect to the local generator service. Please ensure the Python tool is running in server mode.' });
-            } finally {
-                setIsGenerating(false);
-            }
-        };
-
-        return (
-            <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm dark:shadow-lg max-w-2xl">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-brand-cyan/10 rounded-xl">
-                            <Camera className="h-6 w-6 text-brand-cyan" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Inspirational Video Generator</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Create inclusive playgroup videos from your local albums.</p>
-                        </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 text-right">
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${serverRunning === true
-                            ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                            : serverRunning === false
-                                ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
-                                : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                            <div className={`h-1.5 w-1.5 rounded-full ${serverRunning === true ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : serverRunning === false ? 'bg-red-500' : 'bg-slate-300'}`}></div>
-                            {serverRunning === true ? 'Backend Online' : serverRunning === false ? 'Backend Offline' : 'Checking Status...'}
-                        </div>
-                        <a
-                            href="https://aariasblueelephant.org/execution/video_generator/tool.py"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[9px] text-brand-cyan hover:underline uppercase tracking-tighter flex items-center gap-1 font-bold"
-                        >
-                            <Download className="h-2 w-2" /> Provision Local Tool
-                        </a>
-                        {serverRunning === false && (
-                            <p className="text-[9px] text-slate-400 uppercase tracking-tighter">Please run launch_generator.command</p>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mb-8 p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/50 rounded-xl text-xs text-sky-800 dark:text-sky-300 leading-relaxed">
-                    <p className="font-bold mb-1 uppercase tracking-wider">Privacy & Performance Note:</p>
-                    <p>This tool runs <strong>locally on your machine</strong>. No photos are ever uploaded to our servers. The generator will process up to 10 photos and output a 1080p MP4 directly into your source folder.</p>
-                </div>
-
-                <form onSubmit={handleStartGeneration} className="space-y-6">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Local Photos Path</label>
-                            <input
-                                type="text"
-                                placeholder="/Users/username/Pictures/Event_Folder"
-                                className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                                value={folderPath}
-                                onChange={e => setFolderPath(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Event / Album Name</label>
-                            <input
-                                type="text"
-                                placeholder="Summer Inclusion Playgroup"
-                                className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                                value={eventName}
-                                onChange={e => setEventName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Privacy Handling</label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setGenMode('blur')}
-                                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'blur'
-                                        ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
-                                        : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                                >
-                                    <div className={`p-2 rounded-full mb-3 ${genMode === 'blur' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                        <AlertTriangle className="h-5 w-5" />
-                                    </div>
-                                    <span className="font-bold text-sm">Blur All Faces</span>
-                                    <span className="text-[10px] mt-1 opacity-70">Recommended for all playgroups</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setGenMode('select_no_faces')}
-                                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'select_no_faces'
-                                        ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
-                                        : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                                >
-                                    <div className={`p-2 rounded-full mb-3 ${genMode === 'select_no_faces' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                        <ImageIcon className="h-5 w-5" />
-                                    </div>
-                                    <span className="font-bold text-sm">Filter: Only Landscapes</span>
-                                    <span className="text-[10px] mt-1 opacity-70">Avoids images with any faces</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-4">
-                        <Button
-                            type="submit"
-                            className="w-full h-12 text-lg"
-                            disabled={isGenerating}
-                        >
-                            {isGenerating ? (
-                                <span className="flex items-center gap-2">
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Processing Photos...
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-2">
-                                    Generate Inspirational Video <ArrowRight className="h-5 w-5" />
-                                </span>
-                            )}
-                        </Button>
-                    </div>
-
-                    {genStatus.type !== 'idle' && (
-                        <div className={`p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 ${genStatus.type === 'success'
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
-                            <div className="flex items-center gap-3">
-                                {genStatus.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
-                                <p className="text-sm font-medium leading-relaxed">{genStatus.message}</p>
-                            </div>
-                        </div>
-                    )}
-                </form>
-            </div>
-        );
-    };
+    const renderVideoGenSection = () => <VideoGenSection />;
     const renderContent = () => {
         switch (activeView) {
             case 'overview': return renderStatsCards();
