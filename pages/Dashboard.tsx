@@ -50,26 +50,49 @@ const VideoGenSection: React.FC = () => {
     // Check if server is running on load
     React.useEffect(() => {
         const checkServer = async () => {
-            try {
-                // Check if server is reachable - use localhost specifically for browser security benefits
-                const res = await fetch('http://localhost:8000/docs', { mode: 'no-cors' });
-                setServerRunning(true);
-            } catch {
-                setServerRunning(false);
+            // Try localhost first, then 127.0.0.1
+            const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
+            let found = false;
+
+            for (const origin of origins) {
+                try {
+                    const res = await fetch(`${origin}/docs`, { mode: 'no-cors' });
+                    setServerRunning(true);
+                    found = true;
+                    break;
+                } catch (e) {
+                    continue;
+                }
             }
+
+            if (!found) setServerRunning(false);
         };
+
         checkServer();
-        const interval = setInterval(checkServer, 5000); // Check every 5s
+        const interval = setInterval(checkServer, 8000); // Check every 8s
         return () => clearInterval(interval);
     }, []);
 
     const handlePickFolder = async () => {
-        try {
-            const res = await fetch('http://localhost:8000/pick-folder');
-            const data = await res.json();
-            if (data.folder) setFolderPath(data.folder);
-        } catch (err) {
-            setGenStatus({ type: 'error', message: 'Browse failed. Ensure Backend is Online.' });
+        const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
+        let success = false;
+
+        for (const origin of origins) {
+            try {
+                const res = await fetch(`${origin}/pick-folder`);
+                const data = await res.json();
+                if (data.folder) {
+                    setFolderPath(data.folder);
+                    success = true;
+                    break;
+                }
+            } catch (err) {
+                continue;
+            }
+        }
+
+        if (!success) {
+            setGenStatus({ type: 'error', message: 'Browse failed. Ensure Backend is Online and try the Authorize button below.' });
         }
     };
 
@@ -124,6 +147,14 @@ const VideoGenSection: React.FC = () => {
                         <div className={`h-1.5 w-1.5 rounded-full ${serverRunning === true ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : serverRunning === false ? 'bg-red-500' : 'bg-slate-300'}`}></div>
                         {serverRunning === true ? 'Backend Online' : serverRunning === false ? 'Backend Offline' : 'Checking Status...'}
                     </div>
+                    {serverRunning === false && (
+                        <button
+                            onClick={() => setShowHelp(true)}
+                            className="text-[9px] text-red-500 hover:underline uppercase tracking-tighter flex items-center gap-1 font-bold animate-bounce"
+                        >
+                            <AlertCircle className="h-2 w-2" /> Fix Connection Error
+                        </button>
+                    )}
                     <a
                         href="https://aariasblueelephant.org/execution/video_generator/tool.py"
                         target="_blank"
