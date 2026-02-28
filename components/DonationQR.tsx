@@ -40,7 +40,7 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
             </div>
 
             {/* The Glassmorphism Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-white/10 dark:bg-slate-900/10 backdrop-blur-md transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none elevation-overlay z-40">
+            <div className="absolute inset-0 flex items-center justify-center bg-transparent backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-0 group-hover:backdrop-blur-none elevation-overlay z-40">
                 {/* Horizontal Strip */}
                 <div className="w-full bg-white/90 dark:bg-slate-800/90 py-3 shadow-lg border-y border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-105 flex flex-col items-center justify-center">
                     <span className="font-sans font-black uppercase text-slate-900 dark:text-white tracking-[0.2em] text-sm leading-none">
