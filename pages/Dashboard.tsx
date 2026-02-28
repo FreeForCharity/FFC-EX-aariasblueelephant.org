@@ -16,7 +16,6 @@ import {
     MessageSquare,
     Heart,
     Clock,
-    Camera,
     Plus,
     Play,
     Download,
@@ -37,359 +36,8 @@ import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../
 import Button from '../components/Button';
 
 
-type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel' | 'video-gen';
+type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel';
 
-const VideoGenSection: React.FC = () => {
-    const [folderPath, setFolderPath] = useState('');
-    const [eventName, setEventName] = useState('');
-    const [genMode, setGenMode] = useState<'blur' | 'select_no_faces'>('blur');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [genStatus, setGenStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
-    const [serverRunning, setServerRunning] = useState<boolean | null>(null);
-    const [showHelp, setShowHelp] = useState(false);
-
-
-    // Check if server is running on load
-    React.useEffect(() => {
-        const checkServer = async () => {
-            // Try both origins with the dedicated /health endpoint
-            const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
-            let found = false;
-
-            for (const origin of origins) {
-                try {
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 3000);
-                    const res = await fetch(`${origin}/health`, { signal: controller.signal });
-                    clearTimeout(timeout);
-                    const data = await res.json();
-                    if (data.status === 'ok') {
-                        setServerRunning(true);
-                        found = true;
-                        break;
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-
-            if (!found) setServerRunning(false);
-        };
-
-        checkServer();
-        const interval = setInterval(checkServer, 6000);
-        return () => clearInterval(interval);
-    }, []);
-
-
-    const handlePickFolder = async () => {
-        const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
-        let success = false;
-
-        for (const origin of origins) {
-            try {
-                const res = await fetch(`${origin}/pick-folder`);
-                const data = await res.json();
-                if (data.folder) {
-                    setFolderPath(data.folder);
-                    success = true;
-                    break;
-                }
-            } catch (err) {
-                continue;
-            }
-        }
-
-        if (!success) {
-            setGenStatus({ type: 'error', message: 'Browse failed. Ensure Backend is Online and try the Authorize button below.' });
-        }
-    };
-
-    const [genProgress, setGenProgress] = useState<{ progress: number; message: string; state: string }>({ progress: 0, message: '', state: 'idle' });
-
-    const pollStatus = React.useCallback(() => {
-        const origins = ['http://localhost:8000', 'http://127.0.0.1:8000'];
-        let intervalId: ReturnType<typeof setInterval>;
-
-        const check = async () => {
-            for (const origin of origins) {
-                try {
-                    const res = await fetch(`${origin}/status`);
-                    const data = await res.json();
-                    setGenProgress({ progress: data.progress || 0, message: data.message || '', state: data.state || 'idle' });
-
-                    if (data.state === 'done') {
-                        setIsGenerating(false);
-                        setGenStatus({ type: 'success', message: `✅ ${data.message} Output: ${data.output}` });
-                        clearInterval(intervalId);
-                    } else if (data.state === 'error') {
-                        setIsGenerating(false);
-                        setGenStatus({ type: 'error', message: data.message });
-                        clearInterval(intervalId);
-                    }
-                    return;
-                } catch { continue; }
-            }
-        };
-
-        intervalId = setInterval(check, 2000);
-        check(); // Immediate first check
-        return () => clearInterval(intervalId);
-    }, []);
-
-    const handleStartGeneration = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsGenerating(true);
-        setGenStatus({ type: 'idle', message: '' });
-        setGenProgress({ progress: 0, message: 'Starting...', state: 'starting' });
-
-        try {
-            const response = await fetch('http://localhost:8000/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    folder: folderPath,
-                    event: eventName,
-                    mode: genMode
-                })
-            });
-
-            const data = await response.json();
-            if (data.status === 'success') {
-                setGenStatus({ type: 'success', message: data.message });
-                // Start polling for progress
-                pollStatus();
-            } else {
-                setGenStatus({ type: 'error', message: data.message || 'Generation failed.' });
-                setIsGenerating(false);
-            }
-        } catch (err) {
-            setGenStatus({ type: 'error', message: 'Could not connect to the local generator service.' });
-            setIsGenerating(false);
-        }
-    };
-
-
-    return (
-        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm dark:shadow-lg max-w-2xl">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-brand-cyan/10 rounded-xl">
-                        <Camera className="h-6 w-6 text-brand-cyan" />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Inspirational Video Generator</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Create inclusive playgroup videos from your local albums.</p>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end gap-2 text-right">
-                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${serverRunning === true
-                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                        : serverRunning === false
-                            ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
-                            : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                        <div className={`h-1.5 w-1.5 rounded-full ${serverRunning === true ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : serverRunning === false ? 'bg-red-500' : 'bg-slate-300'}`}></div>
-                        {serverRunning === true ? 'Backend Online' : serverRunning === false ? 'Backend Offline' : 'Checking Status...'}
-                    </div>
-                    {serverRunning === false && (
-                        <button
-                            onClick={() => setShowHelp(true)}
-                            className="text-[9px] text-red-500 hover:underline uppercase tracking-tighter flex items-center gap-1 font-bold animate-bounce"
-                        >
-                            <AlertCircle className="h-2 w-2" /> Fix Connection Error
-                        </button>
-                    )}
-                    <a
-                        href="https://aariasblueelephant.org/execution/video_generator/tool.py"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[9px] text-brand-cyan hover:underline uppercase tracking-tighter flex items-center gap-1 font-bold"
-                    >
-                        <Download className="h-2 w-2" /> Provision Local Tool
-                    </a>
-                    {serverRunning === false && (
-                        <p className="text-[9px] text-slate-400 uppercase tracking-tighter">Please run launch_generator.command</p>
-                    )}
-                </div>
-            </div>
-
-            <div className="mb-8 p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/50 rounded-xl text-xs text-sky-800 dark:text-sky-300 leading-relaxed">
-                <p className="font-bold mb-1 uppercase tracking-wider">Privacy & Performance Note:</p>
-                <p>This tool runs <strong>locally on your machine</strong>. No photos are ever uploaded to our servers. The generator will process up to 10 photos and output a 1080p MP4 directly into your source folder.</p>
-            </div>
-
-            <form onSubmit={handleStartGeneration} className="space-y-6">
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Local Photos Path</label>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="/Users/username/Pictures/Event_Folder"
-                                className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                                value={folderPath}
-                                onChange={e => setFolderPath(e.target.value)}
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={handlePickFolder}
-                                className="px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm font-bold text-xs gap-2"
-                                title="Open Native Folder Picker"
-                            >
-                                <Plus className="h-4 w-4" /> Browse
-                            </button>
-                        </div>
-
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Event / Album Name</label>
-                        <input
-                            type="text"
-                            placeholder="Summer Inclusion Playgroup"
-                            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                            value={eventName}
-                            onChange={e => setEventName(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Privacy Handling</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setGenMode('blur')}
-                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'blur'
-                                    ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
-                                    : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                            >
-                                <div className={`p-2 rounded-full mb-3 ${genMode === 'blur' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                    <AlertTriangle className="h-5 w-5" />
-                                </div>
-                                <span className="font-bold text-sm">Blur All Faces</span>
-                                <span className="text-[10px] mt-1 opacity-70">Recommended for all playgroups</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setGenMode('select_no_faces')}
-                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center ${genMode === 'select_no_faces'
-                                    ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan shadow-md'
-                                    : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                            >
-                                <div className={`p-2 rounded-full mb-3 ${genMode === 'select_no_faces' ? 'bg-brand-cyan/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                    <ImageIcon className="h-5 w-5" />
-                                </div>
-                                <span className="font-bold text-sm">Filter: Only Landscapes</span>
-                                <span className="text-[10px] mt-1 opacity-70">Avoids images with any faces</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="pt-4">
-                    {isGenerating || genProgress.state === 'processing' || genProgress.state === 'starting' ? (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <div className="flex justify-between items-end mb-1">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-purple animate-pulse">Generation in Progress</p>
-                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{genProgress.message || 'Initializing pipeline...'}</p>
-                                </div>
-                                <p className="text-2xl font-black text-brand-purple tabular-nums">{genProgress.progress}%</p>
-                            </div>
-                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 p-0.5 shadow-inner">
-                                <div
-                                    className="h-full bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-green rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(195,174,214,0.4)]"
-                                    style={{ width: `${genProgress.progress}%` }}
-                                />
-                            </div>
-                            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
-                                <span>Start</span>
-                                <div className="flex gap-1">
-                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 25 ? 'bg-brand-cyan' : 'bg-slate-200'}`} />
-                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 50 ? 'bg-brand-purple' : 'bg-slate-200'}`} />
-                                    <div className={`h-1 w-1 rounded-full ${genProgress.progress > 75 ? 'bg-brand-green' : 'bg-slate-200'}`} />
-                                </div>
-                                <span>Finish</span>
-                            </div>
-                        </div>
-                    ) : (
-                        <Button
-                            type="submit"
-                            className="w-full bg-brand-cyan hover:bg-brand-cyan/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-cyan/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest flex items-center justify-center gap-2"
-                            disabled={!serverRunning || !folderPath || !eventName}
-                        >
-                            <Play className="h-5 w-5" /> Start Generating Video
-                        </Button>
-                    )}
-                </div>
-
-                {genStatus.type !== 'idle' && (
-                    <div className={`p-4 rounded-xl border animate-in border-l-4 fade-in slide-in-from-top-2 ${genStatus.type === 'success'
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 border-l-green-500 text-green-700 dark:text-green-300'
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 border-l-red-500 text-red-700 dark:text-red-300'}`}>
-                        <div className="flex items-center gap-3">
-                            {genStatus.type === 'success' ? <CheckCircle className="h-6 w-6 shrink-0 text-green-500" /> : <AlertCircle className="h-6 w-6 shrink-0 text-red-500" />}
-                            <div className="flex-1">
-                                <p className="text-sm font-bold leading-relaxed">{genStatus.message}</p>
-                                {genStatus.type === 'error' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowHelp(!showHelp)}
-                                        className="mt-2 text-[10px] font-black uppercase tracking-[0.1em] text-red-600 hover:text-red-700 hover:underline flex items-center gap-1.5"
-                                    >
-                                        <Info className="h-3 w-3" /> Connection Troubleshooting
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-            </form>
-
-            {showHelp && (
-                <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner animate-in fade-in slide-in-from-bottom-2">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertCircle className="h-4 w-4 text-brand-purple" />
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Connection Help Guide</h4>
-                    </div>
-                    <div className="space-y-4 text-xs text-slate-600 dark:text-slate-400">
-                        <div className="flex gap-3">
-                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">1</div>
-                            <p><strong>Run the Launcher:</strong> Open your project folder and double-click <code>launch_generator.command</code>. A terminal window must stay open.</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">2</div>
-                            <div>
-                                <p><strong>Authorize Local Connection:</strong> Browsers block HTTPS sites from talking to local HTTP servers. Click the button below to open the local server and "Allow" it if prompted.</p>
-                                <a
-                                    href="http://localhost:8000/docs"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-brand-purple text-white rounded text-[9px] font-bold uppercase tracking-wider hover:bg-brand-purple/90 transition-all shadow-sm"
-                                >
-                                    Authorize in New Tab <ArrowRight className="h-2 w-2" />
-                                </a>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <div className="h-5 w-5 bg-brand-purple/10 text-brand-purple rounded-full flex items-center justify-center shrink-0 font-bold italic">3</div>
-                            <p><strong>Python Check:</strong> Ensure you have Python installed. If the tool won't start, run <code>pip install -r requirements.txt</code> in the tool directory manually.</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setShowHelp(false)}
-                        className="mt-6 w-full py-2 text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
-                    >
-                        Hide Help
-                    </button>
-                </div>
-            )}
-
-        </div>
-    );
-};
 
 const Dashboard: React.FC = () => {
     const { user, updateProfile, totalMembers } = useAuth();
@@ -568,7 +216,7 @@ const Dashboard: React.FC = () => {
             { id: 'manage-registrations', label: 'Registrations', icon: CheckCircle },
             { id: 'volunteers', label: 'Volunteers', icon: Users },
             { id: 'manage-testimonials', label: 'Testimonials', icon: MessageSquare },
-            { id: 'video-gen', label: 'Video Generator', icon: Camera },
+
             { id: 'wheel', label: 'Wheel of Fun', icon: Star },
 
         ] : []),
@@ -657,16 +305,7 @@ const Dashboard: React.FC = () => {
                         </div>
                         <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalMembers}</p>
                     </div>
-                    <div className="bg-gradient-to-br from-brand-cyan/10 to-brand-purple/10 p-6 rounded-xl border border-brand-cyan/20 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300 cursor-pointer" onClick={() => setActiveView('video-gen')}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-brand-cyan font-bold text-sm">Video Generator</h3>
-                            <Camera className="h-5 w-5 text-brand-cyan" />
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">Create inspirational videos from local playgroup photos.</p>
-                        <div className="mt-4 flex items-center text-[10px] font-bold text-brand-cyan uppercase tracking-wider gap-1">
-                            Launch Tool <ArrowRight className="h-3 w-3" />
-                        </div>
-                    </div>
+
                 </>
             )}
             {isDonor && (
@@ -1502,7 +1141,7 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderVideoGenSection = () => <VideoGenSection />;
+
     const renderContent = () => {
         switch (activeView) {
             case 'overview': return renderStatsCards();
@@ -1517,7 +1156,7 @@ const Dashboard: React.FC = () => {
             case 'my-events': return renderMyEventsSection();
             case 'my-volunteering': return renderMyVolunteeringSection();
             case 'testimonial': return renderTestimonialSection();
-            case 'video-gen': return renderVideoGenSection();
+
             default: return renderStatsCards();
         }
     };
