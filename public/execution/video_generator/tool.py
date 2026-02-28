@@ -7,9 +7,7 @@ import argparse
 import logging
 from typing import List, Optional
 import sys
-import tkinter as tk
-from tkinter import filedialog
-
+import subprocess
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -157,11 +155,16 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # Must be False when allow_origins is "*"
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
+@app.get("/health")
+def health_check():
+    """Simple health check endpoint for the dashboard."""
+    return {"status": "ok", "service": "abe-video-generator"}
 
 class VideoRequest(BaseModel):
     folder: str
@@ -184,13 +187,20 @@ def trigger_generation(req: VideoRequest, background_tasks: BackgroundTasks):
 
 @app.get("/pick-folder")
 def pick_folder():
-    """Opens a native folder picker and returns the selected path."""
-    root = tk.Tk()
-    root.withdraw()  # Hide the main tkinter window
-    root.attributes("-topmost", True)  # Bring to front
-    folder_path = filedialog.askdirectory()
-    root.destroy()
-    return {"folder": folder_path}
+    """Opens a native macOS folder picker using osascript (thread-safe)."""
+    try:
+        result = subprocess.run(
+            ['osascript', '-e', 'POSIX path of (choose folder with prompt "Select your photos folder")'],
+            capture_output=True, text=True, timeout=60
+        )
+        folder_path = result.stdout.strip()
+        if folder_path:
+            return {"folder": folder_path}
+        return {"folder": ""}
+    except subprocess.TimeoutExpired:
+        return {"folder": "", "error": "Folder selection timed out."}
+    except Exception as e:
+        return {"folder": "", "error": str(e)}
 
 
 if __name__ == "__main__":
