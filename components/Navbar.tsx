@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
           <div className="flex min-h-[90px] lg:h-36 items-center justify-between py-4 lg:py-0">
             {/* Zone 1: Identity (Logo & QR) */}
             <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
-              <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10">
+              <Link to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10 -mt-1.5">
                 <div className="relative">
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-16 sm:w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
                     <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" fill="none">
