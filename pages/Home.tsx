@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon, Instagram, Facebook, Star, Cloud, Smile, Gift, Palette, Music } from 'lucide-react';
@@ -51,7 +51,12 @@ const Home: React.FC = () => {
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
     // Animations only play on the FIRST visit per session
-    const isFirstVisit = !sessionStorage.getItem('abe_home_visited');
+    // We use useMemo to capture the state ONCE and keep it stable through re-renders
+    const isFirstVisit = useMemo(() => {
+        if (typeof window === 'undefined') return true; // Default for SSR
+        return !sessionStorage.getItem('abe_home_visited');
+    }, []);
+
     const a = (cls: string) => isFirstVisit ? cls : '';
 
     // Randomize initial event on load
