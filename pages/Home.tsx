@@ -46,17 +46,19 @@ const pastEvents = [
     }
 ];
 
+// Track initial app load to allow animations on refresh but skip on internal navigation
+// Track initial app load to allow random initialization on refresh but skip on internal navigation
+let isAppInitialLoad = true;
+
 const Home: React.FC = () => {
     const { testimonials } = useData();
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
-    // Use a ref to capture the visit status ONCE during the initial component creation
-    // This is more resilient than useMemo if the component remounts quickly
-    const isFirstVisit = useRef<boolean>(
-        typeof window !== 'undefined' ? !sessionStorage.getItem('abe_home_visited') : true
-    ).current;
+    // Animations play on full refresh (isAppInitialLoad is true)
+    // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
+    const shouldAnimate = useRef(isAppInitialLoad).current;
 
-    const a = (cls: string) => isFirstVisit ? cls : '';
+    const a = (cls: string) => shouldAnimate ? cls : '';
 
     // Randomize initial event on load
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
@@ -69,13 +71,10 @@ const Home: React.FC = () => {
         setIsHydrated(true);
         setCurrentEventIndex(Math.floor(Math.random() * pastEvents.length));
 
-        // Mark as visited after a delay to ensure animations have time to finish
-        // and to prevent hydration re-renders from stripping the classes prematurely
-        const timer = setTimeout(() => {
-            sessionStorage.setItem('abe_home_visited', '1');
-        }, 2500);
+        // Mark as loaded so subsequent internal navigation skips animations
+        isAppInitialLoad = false;
 
-        return () => clearTimeout(timer);
+        return () => { };
     }, []);
 
     useEffect(() => {
