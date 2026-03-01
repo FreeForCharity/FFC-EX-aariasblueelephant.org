@@ -50,6 +50,10 @@ const Home: React.FC = () => {
     const { testimonials } = useData();
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
+    // Animations only play on the FIRST visit per session
+    const isFirstVisit = !sessionStorage.getItem('abe_home_visited');
+    const a = (cls: string) => isFirstVisit ? cls : '';
+
     // Randomize initial event on load
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
@@ -60,6 +64,8 @@ const Home: React.FC = () => {
     useEffect(() => {
         setIsHydrated(true);
         setCurrentEventIndex(Math.floor(Math.random() * pastEvents.length));
+        // Mark as visited after first render
+        sessionStorage.setItem('abe_home_visited', '1');
     }, []);
 
     useEffect(() => {
@@ -137,24 +143,24 @@ const Home: React.FC = () => {
                         {/* Left Side: Play Without Barriers (Hero Text) */}
                         <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left">
                             {/* Social Media Links (Media Tag) */}
-                            <div className="anim-bounce-left anim-delay-100">
+                            <div className={a("anim-bounce-left anim-delay-100")}>
                                 <div className="mb-4 flex justify-center lg:justify-start">
                                     <SocialLinks />
                                 </div>
                             </div>
 
                             {/* Heading with Infinity Band and Logo */}
-                            <div className="relative mb-6 mt-4 inline-flex items-center justify-center lg:justify-start w-full lg:w-auto anim-bounce-left anim-delay-200">
+                            <div className={`relative mb-6 mt-4 inline-flex items-center justify-center lg:justify-start w-full lg:w-auto ${a("anim-bounce-left anim-delay-200")}`}>
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-6">
-                                    <div className="h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0 group transition-transform hover:rotate-3 anim-rubber-pop anim-delay-300">
+                                    <div className={`h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0 group transition-transform hover:rotate-3 ${a("anim-rubber-pop anim-delay-300")}`}>
                                         <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
-                                        <h1 className="text-lg xs:text-xl sm:text-[30px] lg:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm anim-bounce-right anim-delay-400">
+                                        <h1 className={`text-lg xs:text-xl sm:text-[30px] lg:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm ${a("anim-bounce-right anim-delay-400")}`}>
                                             Aaria's Blue Elephant
                                         </h1>
-                                        <h2 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left anim-bounce-left anim-delay-500">
+                                        <h2 className={`text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left ${a("anim-bounce-left anim-delay-500")}`}>
                                             Building a New Inclusive World
                                         </h2>
                                     </div>
@@ -162,13 +168,13 @@ const Home: React.FC = () => {
                             </div>
 
                             {/* Subtitle */}
-                            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium anim-wobble-in anim-delay-600">
+                            <p className={`text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium ${a("anim-wobble-in anim-delay-600")}`}>
                                 A safe haven where neurodivergent and neurotypical children grow together.
                                 We believe in early intervention, inclusive play, and building a compassionate community.
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-8 w-full anim-bounce-up anim-delay-700">
+                            <div className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-8 w-full ${a("anim-bounce-up anim-delay-700")}`}>
                                 <Link to="/events" className="w-full sm:flex-1">
                                     <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-transform flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:-translate-y-1 active:scale-95 text-base sm:text-lg whitespace-nowrap uppercase tracking-widest">
                                         Join Now <Users className="h-5 w-5" />
@@ -182,7 +188,7 @@ const Home: React.FC = () => {
                             </div>
 
                             {/* Social Proof */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 anim-bounce-right anim-delay-800">
+                            <div className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 ${a("anim-bounce-right anim-delay-800")}`}>
                                 <div className="flex -space-x-4">
                                     <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64" alt="Supporter" />
                                     <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64" alt="Supporter" />
@@ -203,7 +209,7 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full sm:w-auto text-center lg:text-left anim-bounce-left anim-delay-900">
+                            <div className={`mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full sm:w-auto text-center lg:text-left ${a("anim-bounce-left anim-delay-900")}`}>
                                 <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                                     <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> playgroups hosted <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> children embraced in 2025–2026
                                 </div>
@@ -211,7 +217,7 @@ const Home: React.FC = () => {
                         </div>
 
                         {/* Right Side: Our Track Record */}
-                        <div className="w-full lg:w-1/2 relative mt-10 lg:mt-0 px-2 sm:px-0 anim-spring-right anim-delay-500">
+                        <div className={`w-full lg:w-1/2 relative mt-10 lg:mt-0 px-2 sm:px-0 ${a("anim-spring-right anim-delay-500")}`}>
                             {/* Decorative background shape */}
                             <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-2 scale-[1.02] -z-10 transition-transform"></div>
                             <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-2 scale-[1.02] -z-10 transition-transform"></div>
@@ -294,7 +300,7 @@ const Home: React.FC = () => {
                         </motion.div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-800 border-[3px] border-dashed border-sky-100 dark:border-slate-700 p-8 sm:p-12 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group sticker-shadow relative overflow-hidden anim-bounce-up anim-delay-300">
+                    <div className={`bg-white dark:bg-slate-800 border-[3px] border-dashed border-sky-100 dark:border-slate-700 p-8 sm:p-12 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group sticker-shadow relative overflow-hidden ${a("anim-bounce-up anim-delay-300")}`}>
                         {/* Inner decorative floating icons */}
                         <div className="absolute top-4 right-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <motion.div
@@ -313,7 +319,7 @@ const Home: React.FC = () => {
                             </motion.div>
                         </div>
 
-                        <div className="mb-8 anim-rubber-pop anim-delay-500">
+                        <div className={`mb-8 ${a("anim-rubber-pop anim-delay-500")}`}>
                             <StickerIcon icon={HeartHandshake} size={40} color="#00AEEF" />
                         </div>
                         <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 flex items-center justify-center gap-3 flex-wrap">
@@ -334,7 +340,7 @@ const Home: React.FC = () => {
             {/* Intro Text */}
             <section className="py-16 bg-white dark:bg-slate-900 transition-colors border-t border-slate-200 dark:border-slate-800">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-                    <h3 className="text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 anim-drop-bounce anim-delay-100">Our Focus Areas</h3>
+                    <h3 className={`text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 ${a("anim-drop-bounce anim-delay-100")}`}>Our Focus Areas</h3>
                     <div className="h-1 w-16 bg-sky-600 mb-8"></div>
                     <div className="max-w-4xl text-slate-600 dark:text-slate-300 leading-relaxed text-lg">
                         Our commitment to compassion, inclusivity, and community drives us to make a positive impact on the lives of those we serve.
@@ -348,8 +354,8 @@ const Home: React.FC = () => {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 anim-bounce-left anim-delay-200">
-                            <div className="mb-6 anim-rubber-pop anim-delay-400">
+                        <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-left anim-delay-200")}`}>
+                            <div className={`mb-6 ${a("anim-rubber-pop anim-delay-400")}`}>
                                 <Users className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Inclusive Community</h4>
@@ -357,8 +363,8 @@ const Home: React.FC = () => {
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Bridging the gap between neurodivergent and neurotypical peers through shared experiences and understanding.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 anim-bounce-right anim-delay-400">
-                            <div className="mb-6 anim-rubber-pop anim-delay-600">
+                        <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-right anim-delay-400")}`}>
+                            <div className={`mb-6 ${a("anim-rubber-pop anim-delay-600")}`}>
                                 <HeartPulse className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Early Intervention</h4>
@@ -366,8 +372,8 @@ const Home: React.FC = () => {
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Raising awareness about the critical importance of early therapy and developmental support for holistic growth.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 anim-bounce-left anim-delay-600">
-                            <div className="mb-6 anim-rubber-pop anim-delay-800">
+                        <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-left anim-delay-600")}`}>
+                            <div className={`mb-6 ${a("anim-rubber-pop anim-delay-800")}`}>
                                 <HeartHandshake className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Compassionate Care</h4>
@@ -375,8 +381,8 @@ const Home: React.FC = () => {
                             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.</p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 anim-bounce-right anim-delay-800">
-                            <div className="mb-6 anim-rubber-pop anim-delay-1000">
+                        <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-right anim-delay-800")}`}>
+                            <div className={`mb-6 ${a("anim-rubber-pop anim-delay-1000")}`}>
                                 <Sparkles className="h-8 w-8 text-sky-500" />
                             </div>
                             <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Therapy Play</h4>
@@ -393,7 +399,7 @@ const Home: React.FC = () => {
             <section className="py-20 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12 flex flex-col items-center">
-                        <h3 className="text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 anim-drop-bounce anim-delay-100">Voices of our Community</h3>
+                        <h3 className={`text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 ${a("anim-drop-bounce anim-delay-100")}`}>Voices of our Community</h3>
                         <div className="h-1 w-16 bg-sky-600 mb-4 font-normal"></div>
                         <div className="text-slate-600 dark:text-slate-400">Hear from the families and supporters who make us who we are.</div>
                     </div>
