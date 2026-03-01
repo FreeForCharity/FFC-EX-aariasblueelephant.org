@@ -9,6 +9,132 @@ import StickerIcon from '../components/StickerIcon';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
+interface CardContentProps {
+  activeEvent: any;
+  activeTab: Tab;
+  likedEvents: Record<string, boolean>;
+  likeCounts: Record<string, number>;
+  toggleLike: (e: React.MouseEvent, id: string) => void;
+  handleShare: (e: React.MouseEvent, id: string) => void;
+  copiedId: string | null;
+  isPast: boolean;
+  navigate: (path: string) => void;
+}
+
+const CardContent: React.FC<CardContentProps> = ({
+  activeEvent,
+  activeTab,
+  likedEvents,
+  likeCounts,
+  toggleLike,
+  handleShare,
+  copiedId,
+  isPast,
+  navigate
+}) => {
+  return (
+    <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2">
+        <div className="relative h-64 lg:h-auto overflow-hidden">
+          <img
+            src={activeEvent.image || DEFAULT_EVENT_IMAGE}
+            alt={activeEvent.title}
+            className={`w-full h-full object-cover transition-transform duration-700 ${!isPast ? 'group-hover:scale-105' : ''} ${isPast ? 'grayscale-[50%]' : ''}`}
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = DEFAULT_LOCAL_FALLBACK;
+            }}
+          />
+          <div className="absolute top-4 left-4 z-20">
+            <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
+              ${activeEvent.type === 'Class' ? 'bg-blue-500 text-white' :
+                activeEvent.type === 'Fundraiser' ? 'bg-green-500 text-white' : 'bg-brand-purple text-white'}`}>
+              {activeEvent.type}
+            </span>
+            {isPast && (
+              <span className="ml-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md bg-slate-600 text-white">
+                Past
+              </span>
+            )}
+          </div>
+          {!isPast && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 hidden lg:flex items-center justify-center">
+              <span className="flex items-center bg-sky-600 text-white font-bold px-6 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                View Details <ChevronRight className="ml-2 h-4 w-4" />
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="p-8 flex flex-col justify-between h-full bg-white dark:bg-slate-900 relative z-30">
+          <div>
+            <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
+            <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
+
+            <div className="space-y-6 mb-8">
+              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
+                <span>{new Date(activeEvent.date).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
+                <span>{activeEvent.time}</span>
+              </div>
+              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                <StickerIcon icon={MapPin} size={18} color="#00AEEF" className="mr-4" />
+                <span>{activeEvent.location}</span>
+              </div>
+              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                <StickerIcon icon={Users} size={18} color="#00AEEF" className="mr-4" />
+                <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+            {!isPast ? (
+              <Button fullWidth size="lg" onClick={(e) => {
+                e.preventDefault();
+                navigate(`/events/${activeEvent.id}`);
+              }}>
+                View Details
+              </Button>
+            ) : (
+              <Button fullWidth size="lg" variant="secondary" disabled>Event Concluded</Button>
+            )}
+
+            <div className="flex w-full sm:w-auto gap-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleLike(e, activeEvent.id);
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <Heart className={`h-5 w-5 ${likedEvents[activeEvent.id] ? 'fill-brand-pink text-brand-pink' : 'text-slate-400'}`} />
+                <span className="text-sm font-medium">{likeCounts[activeEvent.id] || 0}</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleShare(e, activeEvent.id);
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                {copiedId === activeEvent.id ? <Check className="h-5 w-5 text-green-400" /> : <Share2 className="h-5 w-5 text-slate-400" />}
+                <span className="text-sm font-medium">{copiedId === activeEvent.id ? 'Copied' : 'Share'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Events: React.FC = () => {
   const { events } = useData();
   const navigate = useNavigate();
@@ -141,89 +267,38 @@ const Events: React.FC = () => {
             onMouseLeave={() => setIsPaused(false)}
           >
             {/* Main Card */}
-            <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  <div className="relative h-64 lg:h-auto overflow-hidden">
-                    <img
-                      src={activeEvent.image || DEFAULT_EVENT_IMAGE}
-                      alt={activeEvent.title}
-                      className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${activeTab === 'past' ? 'grayscale-[50%]' : ''}`}
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = DEFAULT_LOCAL_FALLBACK;
-                      }}
-                    />
-                    <div className="absolute top-4 left-4 z-20">
-                      <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
-                        ${activeEvent.type === 'Class' ? 'bg-blue-500 text-white' :
-                          activeEvent.type === 'Fundraiser' ? 'bg-green-500 text-white' : 'bg-brand-purple text-white'}`}>
-                        {activeEvent.type}
-                      </span>
-                    </div>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 hidden lg:flex items-center justify-center">
-                      <span className="flex items-center bg-sky-600 text-white font-bold px-6 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                        View Details <ChevronRight className="ml-2 h-4 w-4" />
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-8 flex flex-col justify-between h-full bg-white dark:bg-slate-900 relative z-30">
-                    <div>
-                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-sky-600 transition-colors">{activeEvent.title}</h2>
-                      <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
-
-                      <div className="space-y-6 mb-8">
-                        <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                          <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
-                          <span>{new Date(activeEvent.date).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                          <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
-                          <span>{activeEvent.time}</span>
-                        </div>
-                        <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                          <StickerIcon icon={MapPin} size={18} color="#00AEEF" className="mr-4" />
-                          <span>{activeEvent.location}</span>
-                        </div>
-                        <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                          <StickerIcon icon={Users} size={18} color="#00AEEF" className="mr-4" />
-                          <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
-                      {activeTab !== 'past' ? (
-                        <Button fullWidth size="lg" onClick={(e) => {
-                          e.preventDefault();
-                          navigate(`/events/${activeEvent.id}`);
-                        }}>
-                          View Details
-                        </Button>
-                      ) : (
-                        <Button fullWidth size="lg" variant="secondary" disabled>Event Concluded</Button>
-                      )}
-
-                      <div className="flex w-full sm:w-auto gap-2">
-                        <button onClick={(e) => toggleLike(e, activeEvent.id)} className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
-                          <Heart className={`h-5 w-5 ${likedEvents[activeEvent.id] ? 'fill-brand-pink text-brand-pink' : 'text-slate-400'}`} />
-                          <span className="text-sm font-medium">{likeCounts[activeEvent.id] || 0}</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, activeEvent.id)} className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
-                          {copiedId === activeEvent.id ? <Check className="h-5 w-5 text-green-400" /> : <Share2 className="h-5 w-5 text-slate-400" />}
-                          <span className="text-sm font-medium">{copiedId === activeEvent.id ? 'Copied' : 'Share'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            {new Date(activeEvent.date) < new Date(new Date().setHours(0, 0, 0, 0)) ? (
+              <div className="block group">
+                <CardContent
+                  activeEvent={activeEvent}
+                  activeTab={activeTab}
+                  likedEvents={likedEvents}
+                  likeCounts={likeCounts}
+                  toggleLike={toggleLike}
+                  handleShare={handleShare}
+                  copiedId={copiedId}
+                  isPast={true}
+                  navigate={navigate}
+                />
               </div>
-            </Link>
+            ) : (
+              <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
+                <CardContent
+                  activeEvent={activeEvent}
+                  activeTab={activeTab}
+                  likedEvents={likedEvents}
+                  likeCounts={likeCounts}
+                  toggleLike={toggleLike}
+                  handleShare={handleShare}
+                  copiedId={copiedId}
+                  isPast={false}
+                  navigate={navigate}
+                />
+              </Link>
+            )}
 
-            <button onClick={prevSlide} className="absolute top-1/2 -left-4 lg:-left-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10"><ChevronLeft className="h-6 w-6" /></button>
-            <button onClick={nextSlide} className="absolute top-1/2 -right-4 lg:-right-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10"><ChevronRight className="h-6 w-6" /></button>
+            <button onClick={prevSlide} className="absolute top-1/2 -left-4 lg:-left-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronLeft className="h-6 w-6" /></button>
+            <button onClick={nextSlide} className="absolute top-1/2 -right-4 lg:-right-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronRight className="h-6 w-6" /></button>
 
             <div className="flex justify-center gap-2 mt-6">
               {filteredEvents.map((_, idx) => (
