@@ -50,12 +50,11 @@ const Home: React.FC = () => {
     const { testimonials } = useData();
     const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
-    // Animations only play on the FIRST visit per session
-    // We use useMemo to capture the state ONCE and keep it stable through re-renders
-    const isFirstVisit = useMemo(() => {
-        if (typeof window === 'undefined') return true; // Default for SSR
-        return !sessionStorage.getItem('abe_home_visited');
-    }, []);
+    // Use a ref to capture the visit status ONCE during the initial component creation
+    // This is more resilient than useMemo if the component remounts quickly
+    const isFirstVisit = useRef<boolean>(
+        typeof window !== 'undefined' ? !sessionStorage.getItem('abe_home_visited') : true
+    ).current;
 
     const a = (cls: string) => isFirstVisit ? cls : '';
 
@@ -69,8 +68,14 @@ const Home: React.FC = () => {
     useEffect(() => {
         setIsHydrated(true);
         setCurrentEventIndex(Math.floor(Math.random() * pastEvents.length));
-        // Mark as visited after first render
-        sessionStorage.setItem('abe_home_visited', '1');
+
+        // Mark as visited after a delay to ensure animations have time to finish
+        // and to prevent hydration re-renders from stripping the classes prematurely
+        const timer = setTimeout(() => {
+            sessionStorage.setItem('abe_home_visited', '1');
+        }, 2500);
+
+        return () => clearTimeout(timer);
     }, []);
 
     useEffect(() => {
