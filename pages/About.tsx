@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, FileText } from 'lucide-react';
+import { CheckCircle, FileText, Users } from 'lucide-react';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 
 const About: React.FC = () => {
@@ -70,6 +70,58 @@ const About: React.FC = () => {
                 <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Dedicated to operational excellence and community outreach.</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Board Members Section */}
+        <div className="mb-20">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Board of Directors</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                name: "Anoop Nair",
+                description: "Committed to building inclusive environments where every child belongs.",
+                hasPhoto: false
+              },
+              {
+                name: "Naveed Shaik",
+                description: "Passionate about community outreach and fostering equality.",
+                hasPhoto: true
+              },
+              {
+                name: "Prasanth Thomas",
+                description: "Dedicated to making a difference through compassion and community support.",
+                hasPhoto: false
+              },
+              {
+                name: "Gopal Valsan",
+                description: "Advocating for neurodiversity and building bridges in our community.",
+                hasPhoto: false
+              }
+            ].map((member, idx) => (
+              <div key={idx} className="group p-6 rounded-2xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 hover:shadow-md">
+                <div className="relative mb-4">
+                  {member.hasPhoto ? (
+                    <img
+                      src="/board_member_placeholder_naveed.jpg"
+                      alt={member.name}
+                      className="h-24 w-24 rounded-full object-cover shadow-md border-2 border-sky-400 mx-auto"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="h-24 w-24 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 mx-auto flex items-center justify-center">
+                      <Users className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{member.name}</h3>
+                  <p className="text-sky-600 dark:text-sky-400 text-xs font-bold uppercase tracking-widest mt-1 mb-3">Board Member</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm border-t border-slate-100 dark:border-slate-700/50 pt-3">{member.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
