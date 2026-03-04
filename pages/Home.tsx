@@ -349,7 +349,7 @@ const Home: React.FC = () => {
 
                     <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
                         <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer">
-                            <button className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
+                            <button id="donate-button" className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
                                 Donate for the Cause <HeartPulse className="h-4 w-4" />
                             </button>
                         </a>
