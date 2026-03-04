@@ -72,8 +72,8 @@ const CardContent: React.FC<CardContentProps> = ({
           )}
         </div>
 
-        <div className="p-8 flex flex-col justify-between h-full bg-white dark:bg-slate-900 relative z-30">
-          <div>
+        <div className="p-8 flex flex-col justify-between h-full lg:h-[600px] bg-white dark:bg-slate-900 relative z-30">
+          <div className="overflow-y-auto pr-2 pb-4 slim-scrollbar">
             <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
             <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
 
@@ -106,7 +106,7 @@ const CardContent: React.FC<CardContentProps> = ({
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0 mt-auto">
             {!isPast ? (
               <Button fullWidth size="lg" onClick={(e) => {
                 e.preventDefault();
