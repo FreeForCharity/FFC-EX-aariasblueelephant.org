@@ -46,6 +46,16 @@ const Navbar: React.FC = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
+  // When clicking a link to the current page, React Router doesn't trigger a navigation event
+  // that would normally fire ScrollToTop. This ensures we scroll up if already there.
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    if (isActive(path)) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsOpen(false);
+    }
+  };
+
   const navLinks = [
     { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
     { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
@@ -63,7 +73,7 @@ const Navbar: React.FC = () => {
           <div className="flex min-h-[90px] lg:h-36 items-center justify-between py-4 lg:py-0">
             {/* Zone 1: Identity (Logo & QR) */}
             <div className="flex items-center gap-4 sm:gap-6 flex-1 justify-start relative">
-              <Link id="elephant-mascot" to="/" className="flex flex-col items-center gap-2 shrink-0 group relative z-10 -mt-1.5">
+              <Link id="elephant-mascot" to="/" onClick={(e) => handleNavClick('/', e)} className="flex flex-col items-center gap-2 shrink-0 group relative z-10 -mt-1.5">
                 <div className="relative">
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-16 sm:w-48 sm:w-56 h-24 pointer-events-none z-30 overflow-visible transition-transform duration-500 group-hover:scale-105">
                     <svg className="w-full h-full overflow-visible" viewBox="0 0 100 40" fill="none">
@@ -138,6 +148,7 @@ const Navbar: React.FC = () => {
                   <Link
                     key={link.name}
                     to={link.path}
+                    onClick={(e) => handleNavClick(link.path, e)}
                     className={`group/nav rounded-2xl px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
                       ? 'text-sky-600 dark:text-sky-400'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -299,7 +310,10 @@ const Navbar: React.FC = () => {
                 <Link
                   key={link.name}
                   to={link.path}
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    handleNavClick(link.path, e);
+                    setIsOpen(false);
+                  }}
                   className={`flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-bold mb-2 transition-all ${isActive(link.path)
                     ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-400 shadow-inner'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
