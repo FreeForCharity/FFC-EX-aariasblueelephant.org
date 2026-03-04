@@ -73,7 +73,7 @@ const CardContent: React.FC<CardContentProps> = ({
         </div>
 
         <div className="p-8 flex flex-col justify-between h-full lg:h-[600px] bg-white dark:bg-slate-900 relative z-30">
-          <div className="overflow-y-auto pr-2 pb-4 slim-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 pb-4 slim-scrollbar">
             <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
             <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
 
