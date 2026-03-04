@@ -46,7 +46,7 @@ const Dashboard: React.FC = () => {
     const [activeView, setActiveView] = useState<ViewState>('overview');
     const [showEventForm, setShowEventForm] = useState(false);
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
-    const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
+    const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
     const [showTestimonialForm, setShowTestimonialForm] = useState(false);
     const [testimonialContent, setTestimonialContent] = useState('');
     const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'StorySuccess' | 'VolunteerSuccess'>('Idle');
@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
 
         setShowEventForm(false);
         setEditingEventId(null);
-        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
+        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
     };
 
     const handleEditEvent = (id: string) => {
@@ -161,6 +161,7 @@ const Dashboard: React.FC = () => {
                 description: evt.description,
                 type: evt.type,
                 image: evt.image || '',
+                mediaLink: evt.mediaLink || '',
                 capacity: evt.capacity,
                 registered: evt.registered || 0,
                 recurrence: 'none'
@@ -351,7 +352,7 @@ const Dashboard: React.FC = () => {
                     if (showEventForm) {
                         setShowEventForm(false);
                         setEditingEventId(null);
-                        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', capacity: 20, registered: 0, recurrence: 'none' });
+                        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
                     } else {
                         setShowEventForm(true);
                     }
@@ -392,6 +393,11 @@ const Dashboard: React.FC = () => {
                         )}
                     </div>
                     <input type="text" placeholder="Location" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
+
+                    <div>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Additional Media Link (Rich Text/Video/Image URL)</label>
+                        <input type="url" placeholder="e.g. https://youtube.com/watch?v=..." className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.mediaLink} onChange={e => setEventForm({ ...eventForm, mediaLink: e.target.value })} />
+                    </div>
 
                     {/* Event Image Upload */}
                     <div>

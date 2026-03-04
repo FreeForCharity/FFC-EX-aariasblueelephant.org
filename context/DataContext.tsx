@@ -60,7 +60,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             capacity: e.capacity,
             registered: e.registered || 0,
             initialLikes: e.initial_likes || 0,
-            image: e.image
+            image: e.image,
+            mediaLink: e.media_link
           })));
         }
 
@@ -121,7 +122,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       capacity: eventData.capacity,
       image: eventData.image,
       registered: eventData.registered !== undefined ? eventData.registered : 0,
-      initial_likes: 0
+      initial_likes: 0,
+      media_link: eventData.mediaLink
     }]).select().single();
 
     if (error) {
@@ -141,7 +143,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         capacity: data.capacity,
         registered: data.registered,
         initialLikes: data.initial_likes,
-        image: data.image
+        image: data.image,
+        mediaLink: data.media_link
       }]);
     }
     return { success: true };
@@ -150,7 +153,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateEvent = async (id: string, eventData: Partial<Event>): Promise<MutationResult> => {
     const updatePayload: any = { ...eventData };
     if (eventData.initialLikes !== undefined) updatePayload.initial_likes = eventData.initialLikes;
+    if (eventData.mediaLink !== undefined) updatePayload.media_link = eventData.mediaLink;
     delete updatePayload.initialLikes;
+    delete updatePayload.mediaLink;
 
     const { error } = await supabase.from('events').update(updatePayload).eq('id', id);
     if (!error) {

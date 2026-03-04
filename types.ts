@@ -19,6 +19,7 @@ export interface Event {
   type: 'Class' | 'Event' | 'Fundraiser';
   image: string;
   initialLikes: number;
+  mediaLink?: string;
 }
 
 export interface Stat {

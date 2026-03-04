@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartHandshake, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
+import RichText from '../components/RichText';
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -174,6 +175,15 @@ const EventDetails: React.FC = () => {
                 <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-300 mb-8 whitespace-pre-line">
                   {event.description}
                 </p>
+
+                {event.mediaLink && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Event Media</h3>
+                    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
+                      <RichText content={event.mediaLink} className="text-slate-600 dark:text-slate-300" />
+                    </div>
+                  </div>
+                )}
 
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">What to expect</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400 mb-8">
