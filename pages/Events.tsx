@@ -36,8 +36,8 @@ const CardContent: React.FC<CardContentProps> = ({
 }) => {
   return (
     <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
-      <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="relative h-64 lg:h-auto overflow-hidden">
+      <div className={`grid grid-cols-1 ${activeEvent.mediaLink ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+        <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1">
           <img
             src={activeEvent.image || DEFAULT_EVENT_IMAGE}
             alt={activeEvent.title}
@@ -72,35 +72,39 @@ const CardContent: React.FC<CardContentProps> = ({
           )}
         </div>
 
-        <div className="p-8 flex flex-col justify-between h-full lg:h-[600px] bg-white dark:bg-slate-900 relative z-30">
-          <div className="flex-1 min-h-0 overflow-y-auto pr-2 pb-4 slim-scrollbar">
-            <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
-            <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
+        <div className={`p-8 flex flex-col justify-between h-full lg:h-[600px] bg-white dark:bg-slate-900 relative z-30 ${activeEvent.mediaLink ? 'lg:col-span-2' : ''}`}>
+          <div className={`flex-1 min-h-0 overflow-y-auto pr-2 pb-4 slim-scrollbar ${activeEvent.mediaLink ? 'lg:flex lg:gap-8' : ''}`}>
+            <div className={activeEvent.mediaLink ? 'flex-1 lg:max-w-1/2' : ''}>
+              <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
+              <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
 
-            <div className="space-y-6 mb-8">
-              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
-                <span>{new Date(activeEvent.date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
-                <span>{activeEvent.time}</span>
-              </div>
-              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                <StickerIcon icon={MapPin} size={18} color="#00AEEF" className="mr-4" />
-                <span>{activeEvent.location}</span>
-              </div>
-              <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
-                <StickerIcon icon={Users} size={18} color="#00AEEF" className="mr-4" />
-                <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
+              <div className="space-y-6 mb-8">
+                <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                  <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
+                  <span>{new Date(activeEvent.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                  <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
+                  <span>{activeEvent.time}</span>
+                </div>
+                <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                  <StickerIcon icon={MapPin} size={18} color="#00AEEF" className="mr-4" />
+                  <span>{activeEvent.location}</span>
+                </div>
+                <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
+                  <StickerIcon icon={Users} size={18} color="#00AEEF" className="mr-4" />
+                  <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
+                </div>
               </div>
             </div>
 
             {activeEvent.mediaLink && (
-              <div className="mb-8">
+              <div className="flex-1 mb-8 lg:mb-0 lg:max-w-1/2 h-full flex flex-col">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Event Media</h3>
-                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-hidden">
-                  <RichText content={activeEvent.mediaLink} className="text-slate-600 dark:text-slate-300" />
+                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-y-auto slim-scrollbar flex-1 relative">
+                  <div className="absolute inset-0 p-3">
+                    <RichText content={activeEvent.mediaLink} className="text-slate-600 dark:text-slate-300 transform scale-90 origin-top" />
+                  </div>
                 </div>
               </div>
             )}
@@ -285,7 +289,7 @@ const Events: React.FC = () => {
         /* Carousel Container */
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div
-            className="relative w-full max-w-5xl mx-auto"
+            className={`relative w-full ${activeEvent.mediaLink ? 'max-w-7xl' : 'max-w-5xl'} mx-auto transition-all duration-500`}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
