@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Quote, HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ArrowRight, ChevronLeft, ChevronRight, X, Heart, BookOpen, Youtube, Image as ImageIcon, Instagram, Facebook, Star, Cloud, Smile, Gift, Palette, Music } from 'lucide-react';
-import Button from '../components/Button';
+import { HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ChevronLeft, ChevronRight, Cloud, Smile, Gift, Palette, Music, Star } from 'lucide-react';
 import Logo from '../components/Logo';
-import { useData } from '../context/DataContext';
 import SocialLinks from '../components/SocialLinks';
-import { Testimonial } from '../types';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
-import RichText, { extractMedia } from '../components/RichText';
-// import StagedFadeIn removed as it's no longer used in this file
 import StickerIcon from '../components/StickerIcon';
 
 
@@ -51,9 +46,6 @@ const pastEvents = [
 let isAppInitialLoad = true;
 
 const Home: React.FC = () => {
-    const { testimonials } = useData();
-    const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
-
     // Animations play on full refresh (isAppInitialLoad is true)
     // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
     const shouldAnimate = useRef(isAppInitialLoad).current;
@@ -62,10 +54,7 @@ const Home: React.FC = () => {
 
     // Randomize initial event on load
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
-    const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
-    const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
-    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsHydrated(true);
@@ -76,69 +65,12 @@ const Home: React.FC = () => {
 
         return () => { };
     }, []);
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && selectedTestimonial) {
-                setSelectedTestimonial(null);
-            }
-        };
-
-        if (selectedTestimonial) {
-            document.addEventListener('keydown', handleKeyDown);
-            // Accessibility focus shift
-            setTimeout(() => {
-                modalRef.current?.focus();
-            }, 100);
-
-            // Prevent body scroll
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = '';
-        };
-    }, [selectedTestimonial]);
-
-    // Smart Truncation Function
-    const getTruncatedContent = (text: string, maxLimit = 120) => {
-        if (text.length <= maxLimit) return { isTruncated: false, text };
-
-        let truncated = text.slice(0, maxLimit);
-        const lastPunct = Math.max(truncated.lastIndexOf('.'), truncated.lastIndexOf('!'), truncated.lastIndexOf('?'));
-
-        if (lastPunct > 50) {
-            truncated = truncated.slice(0, lastPunct + 1);
-        } else {
-            const lastSpace = truncated.lastIndexOf(' ');
-            if (lastSpace > 50) {
-                truncated = truncated.slice(0, lastSpace);
-            }
-        }
-        return { isTruncated: true, text: truncated };
-    };
-
     const nextEvent = () => {
         setCurrentEventIndex((prevIndex) => (prevIndex + 1) % pastEvents.length);
     };
 
     const prevEvent = () => {
         setCurrentEventIndex((prevIndex) => (prevIndex - 1 + pastEvents.length) % pastEvents.length);
-    };
-
-    const nextTestimonialPage = () => {
-        setCurrentTestimonialIndex((prevIndex) =>
-            (prevIndex + 3 >= approvedTestimonials.length) ? 0 : prevIndex + 3
-        );
-    };
-
-    const prevTestimonialPage = () => {
-        setCurrentTestimonialIndex((prevIndex) =>
-            (prevIndex - 3 < 0) ? Math.max(0, approvedTestimonials.length - 3) : prevIndex - 3
-        );
     };
 
     return (
@@ -404,165 +336,7 @@ const Home: React.FC = () => {
             </section>
 
 
-            {/* Voices of our Community */}
-            <section className="py-20 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12 flex flex-col items-center">
-                        <h3 className={`text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 ${a("anim-drop-bounce anim-delay-100")}`}>Voices of our Community</h3>
-                        <div className="h-1 w-16 bg-sky-600 mb-4 font-normal"></div>
-                        <div className="text-slate-600 dark:text-slate-400">Hear from the families and supporters who make us who we are.</div>
-                    </div>
-
-                    {approvedTestimonials.length > 0 ? (
-                        <div className="relative">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {approvedTestimonials.slice(currentTestimonialIndex, currentTestimonialIndex + 3).map((item) => {
-                                    const { isTruncated, text } = getTruncatedContent(item.content);
-
-                                    return (
-                                        <div key={item.id} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500 group cursor-pointer hover:shadow-md" onClick={() => setSelectedTestimonial(item)}>
-                                            <div>
-                                                <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900 mb-4" />
-
-                                                {/* Media Preview Thumbnail */}
-                                                {(() => {
-                                                    const media = extractMedia(item.content);
-                                                    if (!media) return null;
-
-                                                    const getPlatformDetails = () => {
-                                                        switch (media.type) {
-                                                            case 'youtube': return { icon: <Youtube className="h-6 w-6" />, color: 'bg-red-600', label: 'YouTube' };
-                                                            case 'instagram': return { icon: <Instagram className="h-6 w-6" />, color: 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600', label: 'Instagram' };
-                                                            case 'tiktok': return { icon: <img src="https://www.tiktok.com/favicon.ico" className="h-6 w-6 invert" alt="TikTok" />, color: 'bg-black', label: 'TikTok' };
-                                                            case 'facebook': return { icon: <Facebook className="h-6 w-6" />, color: 'bg-blue-600', label: 'Facebook' };
-                                                            case 'google-photos': return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-sky-500', label: 'Photo Album' };
-                                                            default: return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-slate-500', label: 'Media' };
-                                                        }
-                                                    };
-
-                                                    const details = getPlatformDetails();
-
-                                                    return (
-                                                        <div className="relative mb-6 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-inner group-hover:border-sky-500/50 transition-colors">
-                                                            {media.thumbnail ? (
-                                                                <img
-                                                                    src={media.thumbnail}
-                                                                    alt={`Media from ${item.author}`}
-                                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                                                />
-                                                            ) : (
-                                                                <div className={`w-full h-full flex flex-col items-center justify-center ${details.color} opacity-40 group-hover:opacity-60 transition-opacity`}>
-                                                                    {media.type === 'google-photos' ? (
-                                                                        <div className="relative w-16 h-12 mb-2">
-                                                                            <div className="absolute top-1 left-2 w-full h-full bg-white/20 rounded shadow-sm rotate-3"></div>
-                                                                            <div className="absolute top-2 left-1 w-full h-full bg-white/30 rounded shadow-sm -rotate-2"></div>
-                                                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-md rounded flex items-center justify-center text-white border border-white/20">
-                                                                                {details.icon}
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2">
-                                                                            {details.icon}
-                                                                        </div>
-                                                                    )}
-                                                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{details.label}</span>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                                                <div className={`h-12 w-12 rounded-full ${details.color} text-white flex items-center justify-center shadow-lg scale-90 group-hover:scale-100 transition-transform`}>
-                                                                    {details.icon}
-                                                                </div>
-                                                            </div>
-
-                                                            {media.type === 'image' && (
-                                                                <div className="absolute top-2 right-2">
-                                                                    <div className="p-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white shadow-sm">
-                                                                        <ImageIcon className="h-4 w-4" />
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()}
-
-                                                <div className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
-                                                    <RichText content={text} className="inline italic" />
-                                                    {isTruncated && (
-                                                        <span
-                                                            className="ml-2 font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 inline-flex items-center group/more"
-                                                        >
-                                                            ... Read More
-                                                            <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-2 group-hover/more:opacity-100 group-hover/more:translate-x-0 transition-all" />
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
-                                                <div className="h-12 w-12 rounded-full bg-sky-100 overflow-hidden shadow-sm flex-shrink-0">
-                                                    {item.avatar ? (
-                                                        <img src={item.avatar} alt={item.author} className="h-full w-full object-cover" />
-                                                    ) : (
-                                                        <div className="h-full w-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/50 dark:text-sky-300">
-                                                            {item.author.charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="text-slate-800 dark:text-white font-bold">{item.author}</p>
-                                                    <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.title || item.role}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {approvedTestimonials.length > 3 && (
-                                <div className="flex justify-center items-center gap-4 mt-12">
-                                    <button onClick={prevTestimonialPage} aria-label="Previous testimonials" className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 transition-all focus:outline-none hover:scale-110">
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                                        Showing {currentTestimonialIndex + 1}-{Math.min(currentTestimonialIndex + 3, approvedTestimonials.length)} of {approvedTestimonials.length}
-                                    </span>
-                                    <button onClick={nextTestimonialPage} aria-label="Next testimonials" className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 transition-all focus:outline-none hover:scale-110">
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {[
-                                { author: "Sarah M.", role: "Tracy Parent", content: "Aaria's Blue Elephant has been a lighthouse for our family. The playgroups are organized beautifully and provide a safe space where my child can finally just be themselves." },
-                                { author: "David T.", role: "Mountain House Parent", content: "Before finding this community, weekends were isolating. Now we have friends, resources, and genuine support. The compassion here is unmatched." },
-                                { author: "Elena R.", role: "Early Intervention Specialist", content: "The inclusive environment this organization builds is exactly what children need for healthy social development. It's an extraordinary initiative that truly changes lives." }
-                            ].map((item, idx) => (
-                                <div key={idx} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 shadow-sm p-8 relative flex flex-col justify-between transition-colors">
-                                    <div>
-                                        <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900 mb-4" />
-                                        <p className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
-                                            "{item.content}"
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
-                                        <div className="h-12 w-12 rounded-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/50 dark:text-sky-300 shadow-sm shrink-0">
-                                            {item.author.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-800 dark:text-white font-bold">{item.author}</p>
-                                            <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.role}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* Donation CTA Banner */}
+            {/* Join Herd QR Code */}
             <section id="join-herd" className="relative py-24 bg-sky-900 border-t-8 border-sky-500 overflow-hidden">
                 <div className="absolute inset-0 bg-black/40 mix-blend-multiply z-0"></div>
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 z-0"></div>
@@ -602,102 +376,6 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </section>
-
-            {/* Full Story Modal */}
-            {selectedTestimonial && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
-                    onClick={() => setSelectedTestimonial(null)}
-                >
-                    <div
-                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900/95 dark:backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col max-h-[90vh]"
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="modal-title"
-                        tabIndex={-1}
-                        ref={modalRef}
-                    >
-                        {/* Close button */}
-                        <button
-                            onClick={() => setSelectedTestimonial(null)}
-                            className="absolute top-4 right-4 z-20 p-2 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 rounded-full backdrop-blur-sm transition-colors text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white shadow-sm"
-                            aria-label="Close modal"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        {/* Header Branding Area (Matches Hero Style) */}
-                        <div className="bg-slate-50 dark:bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-slate-800/50 relative overflow-hidden shrink-0">
-                            <div className="flex items-center gap-4 relative z-10">
-                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
-                                    <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
-                                </div>
-                                <div className="flex flex-col items-start min-w-0">
-                                    <h2 className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 leading-tight whitespace-nowrap overflow-visible">
-                                        Aaria's Blue Elephant
-                                    </h2>
-                                    <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest -mt-0.5">
-                                        Building a New Inclusive World
-                                    </p>
-                                </div>
-                            </div>
-                            {/* Subtitle transition gradient */}
-                            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white dark:from-slate-900/95 to-transparent"></div>
-                        </div>
-
-                        {/* Content Scrollable Area */}
-                        <div className="p-6 sm:p-8 pt-0 overflow-y-auto flex-1 custom-scrollbar">
-                            <div className="flex items-center gap-4 mb-6 sm:mb-8 -mt-10 sm:-mt-12 relative z-10">
-                                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white dark:bg-slate-900 p-1.5 shadow-xl shrink-0">
-                                    <div className="h-full w-full rounded-full bg-sky-100 overflow-hidden relative border border-slate-100 dark:border-slate-800">
-                                        {selectedTestimonial.avatar ? (
-                                            <img src={selectedTestimonial.avatar} alt={selectedTestimonial.author} className="h-full w-full object-cover" />
-                                        ) : (
-                                            <div className="h-full w-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/60 dark:text-sky-300 text-3xl">
-                                                {selectedTestimonial.author.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="pt-10 sm:pt-12">
-                                    <h4 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">{selectedTestimonial.author}</h4>
-                                    <p className="text-sm sm:text-base text-sky-600 dark:text-sky-400 font-semibold tracking-wider uppercase">{selectedTestimonial.title || selectedTestimonial.role}</p>
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <Quote className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 h-12 w-12 sm:h-16 sm:w-16 text-slate-100 dark:text-slate-800 -z-10" />
-                                <RichText
-                                    content={selectedTestimonial.content}
-                                    className="text-slate-700 dark:text-slate-300 text-base sm:text-lg font-medium pb-4"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Footer with QR Code */}
-                        <div className="p-6 sm:p-8 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
-                            <div className="text-center sm:text-left flex-1">
-                                <h5 className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl">Inspired by this story?</h5>
-                                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-sm">Imprint your change and help us support more families.</p>
-
-                                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="inline-block mt-4 w-full sm:w-auto">
-                                    <button id="donate-button" className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2">
-                                        Donate Now <HeartPulse className="h-4 w-4" />
-                                    </button>
-                                </a>
-                            </div>
-
-                            <div className="flex flex-col items-center shrink-0">
-                                <div className="h-32 w-32 bg-white p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 ring-4 ring-white/50 dark:ring-slate-800/50">
-                                    <img src="./qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">Scan to Donate</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
