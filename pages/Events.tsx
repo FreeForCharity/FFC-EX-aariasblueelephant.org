@@ -7,6 +7,7 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import StagedFadeIn from '../components/StagedFadeIn';
 import StickerIcon from '../components/StickerIcon';
 import EventCalendarModal from '../components/EventCalendarModal';
+import RichText from '../components/RichText';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
@@ -91,6 +92,15 @@ const CardContent: React.FC<CardContentProps> = ({
                 <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
               </div>
             </div>
+
+            {activeEvent.mediaLink && (
+              <div className="mb-8">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Event Media</h3>
+                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-hidden">
+                  <RichText content={activeEvent.mediaLink} className="text-slate-600 dark:text-slate-300" />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
