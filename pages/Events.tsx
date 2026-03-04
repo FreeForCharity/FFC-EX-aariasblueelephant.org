@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import StagedFadeIn from '../components/StagedFadeIn';
 import StickerIcon from '../components/StickerIcon';
+import EventCalendarModal from '../components/EventCalendarModal';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
@@ -144,6 +145,7 @@ const Events: React.FC = () => {
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Filter events based on active tab
   const filteredEvents = events.filter(event => {
@@ -245,6 +247,14 @@ const Events: React.FC = () => {
                 {tab} Events
               </button>
             ))}
+            <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 self-center mx-1"></div>
+            <button
+              onClick={() => setIsCalendarOpen(true)}
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-sky-100/50 hover:bg-sky-200 dark:bg-sky-900/30 dark:hover:bg-sky-800/50 text-sky-700 dark:text-sky-300 flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Calendar</span>
+            </button>
           </div>
         </div>
       </StagedFadeIn>
@@ -337,6 +347,12 @@ const Events: React.FC = () => {
           <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl max-w-4xl mx-auto font-medium">We believe financial constraints should never be a barrier to joy, growth, and connection.</p>
         </div>
       </StagedFadeIn>
+
+      <EventCalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        events={events}
+      />
     </div>
   );
 };
