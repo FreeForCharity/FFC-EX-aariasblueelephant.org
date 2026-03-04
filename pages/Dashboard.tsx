@@ -110,6 +110,7 @@ const Dashboard: React.FC = () => {
             description: eventForm.description,
             type: eventForm.type as any,
             image: eventForm.image || 'https://images.unsplash.com/photo-1502086223501-87db9e9cc358?auto=format&fit=crop&q=80&w=1000',
+            mediaLink: eventForm.mediaLink,
             capacity: Number(eventForm.capacity),
             registered: Number(eventForm.registered) || 0
         };
