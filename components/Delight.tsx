@@ -15,8 +15,25 @@ const Delight: React.FC = () => {
         const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         let reducedMotion = mediaQuery.matches;
 
-        // Check if canvas already exists (React Strict Mode guard)
-        if (document.getElementById('easter-canvas')) return;
+        // 2. Canvas Setup (Handle SSG Hydration gracefully)
+        let canvas = document.getElementById('easter-canvas') as HTMLCanvasElement | null;
+
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'easter-canvas';
+            // Style applied directly matching CSS spec
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '9999';
+            canvas.style.opacity = '1.0';
+            document.body.insertBefore(canvas, document.body.firstChild);
+        }
+
+        const ctx = canvas.getContext('2d');
 
         let particles: any[] = [];
 
@@ -28,24 +45,9 @@ const Delight: React.FC = () => {
             }
         });
 
-        // 2. Canvas Setup
-        const canvas = document.createElement('canvas');
-        canvas.id = 'easter-canvas';
-        // Style applied directly matching CSS spec
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.zIndex = '9999';
-        canvas.style.opacity = '1.0';
-
-        document.body.insertBefore(canvas, document.body.firstChild);
-        const ctx = canvas.getContext('2d');
-
         let width: number, height: number;
         function resize() {
+            if (!canvas) return;
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
         }
