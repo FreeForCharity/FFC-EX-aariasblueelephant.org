@@ -144,7 +144,10 @@ const EventDetails: React.FC = () => {
                   <div className="mb-3 flex items-center gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
                       ${event.type === 'Class' ? 'bg-blue-500/20 text-blue-400' :
-                        event.type === 'Fundraiser' ? 'bg-green-500/20 text-green-400' : 'bg-brand-purple/20 text-brand-purple'}`}>
+                        event.type === 'Fundraiser' ? 'bg-green-500/20 text-green-400' :
+                          event.type === 'Outreach' ? 'bg-orange-500/20 text-orange-500 dark:text-orange-400' :
+                            event.type === 'Advocacy' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+                              'bg-brand-purple/20 text-brand-purple'}`}>
                       {event.type}
                     </span>
                   </div>

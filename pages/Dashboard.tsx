@@ -369,9 +369,16 @@ const Dashboard: React.FC = () => {
                         {editingEventId ? 'Edit Event Details' : 'New Event Details'}
                     </h3>
                     <input type="text" placeholder="Event Title" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} required />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <input type="date" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
                         <input type="time" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
+                        <select className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.type} onChange={e => setEventForm({ ...eventForm, type: e.target.value })} required>
+                            <option value="Event">Event</option>
+                            <option value="Class">Class</option>
+                            <option value="Fundraiser">Fundraiser</option>
+                            <option value="Outreach">Outreach</option>
+                            <option value="Advocacy">Advocacy</option>
+                        </select>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>

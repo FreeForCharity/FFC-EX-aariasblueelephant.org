@@ -50,8 +50,11 @@ const CardContent: React.FC<CardContentProps> = ({
           />
           <div className="absolute top-4 left-4 z-20">
             <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
-              ${activeEvent.type === 'Class' ? 'bg-blue-500 text-white' :
-                activeEvent.type === 'Fundraiser' ? 'bg-green-500 text-white' : 'bg-brand-purple text-white'}`}>
+                ${activeEvent.type === 'Class' ? 'bg-blue-500 text-white' :
+                activeEvent.type === 'Fundraiser' ? 'bg-green-500 text-white' :
+                  activeEvent.type === 'Outreach' ? 'bg-orange-500 text-white' :
+                    activeEvent.type === 'Advocacy' ? 'bg-emerald-600 text-white' :
+                      'bg-brand-purple text-white'}`}>
               {activeEvent.type}
             </span>
             {isPast && (

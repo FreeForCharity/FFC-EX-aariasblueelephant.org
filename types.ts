@@ -16,7 +16,7 @@ export interface Event {
   description: string;
   capacity: number;
   registered: number;
-  type: 'Class' | 'Event' | 'Fundraiser';
+  type: 'Class' | 'Event' | 'Fundraiser' | 'Outreach' | 'Advocacy';
   image: string;
   initialLikes: number;
   mediaLink?: string;

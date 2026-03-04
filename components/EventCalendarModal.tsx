@@ -66,6 +66,8 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
         switch (type) {
             case 'Class': return 'bg-blue-500';
             case 'Fundraiser': return 'bg-green-500';
+            case 'Outreach': return 'bg-orange-500';
+            case 'Advocacy': return 'bg-emerald-600';
             default: return 'bg-brand-purple';
         }
     };
