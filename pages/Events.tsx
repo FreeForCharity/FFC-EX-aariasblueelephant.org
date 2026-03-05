@@ -154,7 +154,7 @@ const CardContent: React.FC<CardContentProps> = ({
 };
 
 const Events: React.FC = () => {
-  const { events } = useData();
+  const { events, loading } = useData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -276,7 +276,12 @@ const Events: React.FC = () => {
         </div>
       </StagedFadeIn>
 
-      {filteredEvents.length === 0 ? (
+      {loading ? (
+        <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed animate-pulse">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-cyan border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">Loading events...</h2>
+        </div>
+      ) : filteredEvents.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed">
           <StickerIcon icon={Calendar} size={32} color="#94a3b8" />
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">No events found</h2>

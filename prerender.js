@@ -14,7 +14,6 @@ const distPath = path.resolve(__dirname, 'dist');
 const routesToPrerender = [
     '/',
     '/about',
-    '/events',
     '/volunteer',
     '/privacy-policy',
     '/donate',
