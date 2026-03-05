@@ -103,7 +103,7 @@ const CardContent: React.FC<CardContentProps> = ({
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Event Media</h3>
                 <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-y-auto slim-scrollbar flex-1 relative">
                   <div className="absolute inset-0 p-3">
-                    <RichText content={activeEvent.mediaLink} className="text-slate-600 dark:text-slate-300 transform scale-90 origin-top" />
+                    <RichText content={activeEvent.mediaLink} className="w-full text-slate-600 dark:text-slate-300" />
                   </div>
                 </div>
               </div>

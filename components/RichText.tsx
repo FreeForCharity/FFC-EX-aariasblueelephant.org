@@ -140,7 +140,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                         const isPlaying = playingMedia[index];
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 aspect-video relative group">
+                                <div key={index} className="w-full my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 aspect-video relative group">
                                     {!isPlaying ? (
                                         <div
                                             className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm cursor-pointer hover:bg-slate-900/20 transition-all"
