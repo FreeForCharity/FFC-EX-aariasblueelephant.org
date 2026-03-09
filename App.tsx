@@ -1,4 +1,4 @@
-// Main application entry point - Triggering redeploy 2
+// Main application entry point - Triggering redeploy 3 (Cache bust)
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
