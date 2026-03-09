@@ -15,7 +15,7 @@ const EventDetails: React.FC = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
-  const [needsAccommodation, setNeedsAccommodation] = useState(false);
+  const [needsAccommodation, setNeedsAccommodation] = useState<boolean | null>(null);
 
   const event = events.find((e) => e.id === id);
   const isPastEvent = event ? new Date(event.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
@@ -36,7 +36,7 @@ const EventDetails: React.FC = () => {
         userId: user.email,
         userName: user.name,
         userEmail: user.email,
-        specialNeeds: needsAccommodation,
+        specialNeeds: needsAccommodation === true,
       });
       setRegistrationSubmitted(true);
       window.scrollTo(0, 0);
@@ -304,27 +304,44 @@ const EventDetails: React.FC = () => {
                       </div>
                     ) : event.registered < event.capacity ? (
                       <div className="space-y-4">
-                        <div className="flex items-start gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                          <div className="flex items-center h-5 mt-0.5">
-                            <input
-                              id="specialNeeds"
-                              type="checkbox"
-                              checked={needsAccommodation}
-                              onChange={(e) => setNeedsAccommodation(e.target.checked)}
-                              className="h-4 w-4 bg-slate-50 border-slate-300 dark:border-slate-600 rounded text-brand-cyan focus:ring-brand-cyan dark:bg-slate-700"
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <label htmlFor="specialNeeds" className="text-sm font-medium text-slate-900 dark:text-white cursor-pointer">
-                              Accommodation Needs
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <label className="text-sm font-bold text-slate-900 dark:text-white block mb-1">
+                            Accommodation Needs
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                            Does anyone in your family require special accommodations or have specific needs we should be aware of?
+                          </p>
+                          <div className="flex gap-4">
+                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
+                              <input
+                                type="radio"
+                                name="accommodations"
+                                className="hidden"
+                                checked={needsAccommodation === true}
+                                onChange={() => setNeedsAccommodation(true)}
+                              />
+                              <span className="font-medium text-sm text-center">Yes</span>
                             </label>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 cursor-pointer">
-                              Does anyone in your family require special accommodations or have specific needs we should be aware of?
-                            </p>
+                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
+                              <input
+                                type="radio"
+                                name="accommodations"
+                                className="hidden"
+                                checked={needsAccommodation === false}
+                                onChange={() => setNeedsAccommodation(false)}
+                              />
+                              <span className="font-medium text-sm text-center">No</span>
+                            </label>
                           </div>
                         </div>
-                        <Button fullWidth size="lg" className="shadow-xl shadow-brand-cyan/10" onClick={handleRegister}>
-                          Register Now
+                        <Button
+                          fullWidth
+                          size="lg"
+                          className="shadow-xl shadow-brand-cyan/10"
+                          onClick={handleRegister}
+                          disabled={needsAccommodation === null}
+                        >
+                          {needsAccommodation === null ? 'Please Select Accommodations' : 'Register Now'}
                         </Button>
                       </div>
                     ) : (
