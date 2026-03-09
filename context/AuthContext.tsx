@@ -51,7 +51,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (returnTo) {
         localStorage.removeItem('authReturnTo');
         setTimeout(() => {
-          window.location.hash = returnTo;
+          let redirectPath = returnTo;
+          if (window.location.hostname.includes('github.io') && !redirectPath.startsWith('/FFC-EX-aariasblueelephant.org')) {
+            redirectPath = '/FFC-EX-aariasblueelephant.org' + redirectPath;
+          }
+          window.location.href = redirectPath;
         }, 100);
       }
     } else {
