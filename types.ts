@@ -64,6 +64,7 @@ export interface EventRegistration {
   userId: string;
   userName: string;
   userEmail: string;
+  specialNeeds?: boolean;
   status: 'Pending' | 'Approved' | 'Rejected';
   date: string;
 }

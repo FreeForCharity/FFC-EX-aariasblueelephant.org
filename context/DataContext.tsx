@@ -96,6 +96,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userId: r.user_id,
             userName: r.user_name,
             userEmail: r.user_email,
+            specialNeeds: r.special_needs,
             status: r.status,
             date: r.date
           })));
@@ -287,6 +288,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_id: data.userId,
       user_name: data.userName,
       user_email: data.userEmail,
+      special_needs: data.specialNeeds || false,
       date: dateStr,
       status: 'Pending'
     }]).select().single();
@@ -303,6 +305,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: resData.user_id,
         userName: resData.user_name,
         userEmail: resData.user_email,
+        specialNeeds: resData.special_needs,
         status: resData.status,
         date: resData.date
       }, ...eventRegistrations]);

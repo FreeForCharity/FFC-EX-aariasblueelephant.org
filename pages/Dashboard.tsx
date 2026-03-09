@@ -55,6 +55,7 @@ const Dashboard: React.FC = () => {
     const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
     const [confirmDeleteTestimonialId, setConfirmDeleteTestimonialId] = useState<string | null>(null);
     const [editingTestimonials, setEditingTestimonials] = useState<Record<string, Partial<Testimonial>>>({});
+    const [filterSpecialNeeds, setFilterSpecialNeeds] = useState<boolean | null>(null);
 
     if (!user) {
         return <Navigate to="/login" />;
@@ -941,93 +942,111 @@ const Dashboard: React.FC = () => {
         );
     };
 
-    const renderManageRegistrationsSection = () => (
-        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Manage Event Registrations</h2>
-            <div className="space-y-4">
-                {eventRegistrations.length === 0 ? (
-                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No event registrations.</p>
-                ) : (
-                    eventRegistrations.map(reg => {
-                        const evt = events.find(e => e.id === reg.eventId);
-                        return (
-                            <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                                <div className="mb-4 sm:mb-0">
-                                    <div className="flex items-center gap-3">
-                                        <h4 className="text-slate-900 dark:text-white font-bold">{reg.userName}</h4>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${reg.status === 'Pending'
-                                            ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
-                                            : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
-                                            }`}>
-                                            {reg.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-slate-600 dark:text-slate-300 text-sm mt-1">Event: <span className="text-brand-cyan">{evt?.title || 'Unknown Event'}</span></p>
-                                    <p className="text-slate-500 text-xs mt-1">{reg.userEmail} • {reg.date}</p>
-                                </div>
-                                <div className="flex gap-2 items-center">
-                                    {reg.status === 'Pending' && (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={async () => {
-                                                const result = await approveRegistration(reg.id);
-                                                if (!result.success) setAppError(result.error || "Failed to approve registration");
-                                            }}
-                                            className="shrink-0"
-                                        >
-                                            Approve
-                                        </Button>
-                                    )}
+    const renderManageRegistrationsSection = () => {
+        const filteredRegistrations = filterSpecialNeeds === null
+            ? eventRegistrations
+            : eventRegistrations.filter(r => !!r.specialNeeds === filterSpecialNeeds);
 
-                                    {confirmDeleteId === reg.id ? (
-                                        <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+        return (
+            <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Manage Event Registrations</h2>
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                        <button onClick={() => setFilterSpecialNeeds(null)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === null ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>All</button>
+                        <button onClick={() => setFilterSpecialNeeds(true)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === true ? 'bg-white dark:bg-slate-600 shadow-sm text-brand-purple dark:text-brand-purple' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Accommodations</button>
+                        <button onClick={() => setFilterSpecialNeeds(false)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === false ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Standard</button>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    {filteredRegistrations.length === 0 ? (
+                        <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No event registrations found.</p>
+                    ) : (
+                        filteredRegistrations.map(reg => {
+                            const evt = events.find(e => e.id === reg.eventId);
+                            return (
+                                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                                    <div className="mb-4 sm:mb-0">
+                                        <div className="flex items-center gap-3">
+                                            <h4 className="text-slate-900 dark:text-white font-bold">{reg.userName}</h4>
+                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${reg.status === 'Pending'
+                                                ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                                : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                                }`}>
+                                                {reg.status}
+                                            </span>
+                                        </div>
+                                        <p className="text-slate-600 dark:text-slate-300 text-sm mt-1">Event: <span className="text-brand-cyan">{evt?.title || 'Unknown Event'}</span></p>
+                                        <p className="text-slate-500 text-xs mt-1">{reg.userEmail} • {reg.date}</p>
+                                        {reg.specialNeeds && (
+                                            <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-brand-purple/10 text-brand-purple dark:text-brand-purple text-[10px] font-bold uppercase tracking-wider">
+                                                <Heart className="h-3 w-3" /> Special Accommodations Requested
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        {reg.status === 'Pending' && (
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                                variant="outline"
                                                 onClick={async () => {
-                                                    const result = await deleteRegistration(reg.id);
-                                                    if (result.success) {
-                                                        setConfirmDeleteId(null);
-                                                    } else {
-                                                        setAppError(result.error || "Failed to delete registration");
-                                                        setConfirmDeleteId(null);
-                                                    }
+                                                    const result = await approveRegistration(reg.id);
+                                                    if (!result.success) setAppError(result.error || "Failed to approve registration");
                                                 }}
+                                                className="shrink-0"
                                             >
-                                                Confirm
+                                                Approve
                                             </Button>
+                                        )}
+
+                                        {confirmDeleteId === reg.id ? (
+                                            <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                                    onClick={async () => {
+                                                        const result = await deleteRegistration(reg.id);
+                                                        if (result.success) {
+                                                            setConfirmDeleteId(null);
+                                                        } else {
+                                                            setAppError(result.error || "Failed to delete registration");
+                                                            setConfirmDeleteId(null);
+                                                        }
+                                                    }}
+                                                >
+                                                    Confirm
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-slate-500 text-xs px-2"
+                                                    onClick={() => setConfirmDeleteId(null)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ) : (
                                             <Button
                                                 type="button"
                                                 size="sm"
                                                 variant="ghost"
-                                                className="text-slate-500 text-xs px-2"
-                                                onClick={() => setConfirmDeleteId(null)}
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                                                onClick={() => setConfirmDeleteId(reg.id)}
                                             >
-                                                <X className="h-4 w-4" />
+                                                Delete
                                             </Button>
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
-                                            onClick={() => setConfirmDeleteId(reg.id)}
-                                        >
-                                            Delete
-                                        </Button>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })
-                )}
+                            );
+                        })
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderTestimonialSection = () => {
         const pendingTestimonial = testimonials.find(t => t.authorEmail === user.email && t.status === 'Pending');
