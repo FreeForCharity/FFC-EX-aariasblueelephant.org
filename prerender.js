@@ -17,7 +17,11 @@ const routesToPrerender = [
     '/volunteer',
     '/privacy-policy',
     '/donate',
-    '/wheel'
+    '/wheel',
+    '/resources',
+    '/resources/understanding',
+    '/resources/interventions',
+    '/resources/screening'
 ];
 
 async function prerender() {

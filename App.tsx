@@ -20,6 +20,10 @@ const Donate = lazy(() => import('./pages/Donate'));
 const Volunteer = lazy(() => import('./pages/Volunteer'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const WheelPage = lazy(() => import('./pages/WheelPage'));
+const Resources = lazy(() => import('./pages/Resources'));
+const UnderstandingAutism = lazy(() => import('./pages/UnderstandingAutism'));
+const Interventions = lazy(() => import('./pages/Interventions'));
+const Screening = lazy(() => import('./pages/Screening'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -56,6 +60,10 @@ const App: React.FC = () => {
                 <Route path="/volunteer" element={<Volunteer />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/wheel" element={<WheelPage />} />
+                <Route path="/resources" element={<Resources />} />
+                <Route path="/resources/understanding" element={<UnderstandingAutism />} />
+                <Route path="/resources/interventions" element={<Interventions />} />
+                <Route path="/resources/screening" element={<Screening />} />
               </Routes>
             </Suspense>
           </Layout>

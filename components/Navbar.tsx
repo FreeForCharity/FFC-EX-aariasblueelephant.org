@@ -61,6 +61,7 @@ const Navbar: React.FC = () => {
     { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
     { name: 'Playgroups', path: '/events', icon: Users, color: '#8b5cf6' },
     { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
+    { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
