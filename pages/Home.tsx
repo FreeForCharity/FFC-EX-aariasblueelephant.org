@@ -16,21 +16,21 @@ const pastEvents = [
         id: 4,
         title: 'Advocacy efforts',
         date: 'Ongoing Initiative',
-        image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=600&h=400',
+        image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=60&w=400&h=300',
         description: 'Advocacy efforts to partner with cities and organizations on large-scale inclusion.'
     },
     {
         id: 1,
         title: 'Weekly Play Group',
         date: 'Weekly Initiative',
-        image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=80&w=600&h=400',
+        image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=60&w=400&h=300',
         description: 'A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.'
     },
     {
         id: 2,
         title: 'Monthly Art and Craft Meetup',
         date: 'Monthly Session',
-        image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600&h=400',
+        image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=60&w=400&h=300',
         description: 'Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.'
     },
     {
@@ -40,6 +40,14 @@ const pastEvents = [
         image: '/outreach_workshop_photo.png',
         description: 'Educational programs for parents and educators on early intervention strategies and building inclusive spaces.'
     }
+];
+
+// Pre-define images to preload
+const imagesToPreload = [
+    ...pastEvents.map(e => e.image),
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64',
+    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64'
 ];
 
 // Track initial app load to allow animations on refresh but skip on internal navigation
@@ -97,7 +105,7 @@ const Home: React.FC = () => {
                     <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
                         {/* Left Side: Play Without Barriers (Hero Text) */}
-                        <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left">
+                        <div className="w-full lg:w-[45%] xl:w-[42%] flex flex-col justify-center text-center lg:text-left">
                             {/* Social Media Links (Media Tag) */}
                             <div className={a("anim-bounce-left anim-delay-100")}>
                                 <div className="mb-4 flex justify-center lg:justify-start">
@@ -173,10 +181,10 @@ const Home: React.FC = () => {
                         </div>
 
                         {/* Right Side: Our Track Record */}
-                        <div className={`w-full lg:w-1/2 relative mt-10 lg:mt-0 px-2 sm:px-0 ${a("anim-spring-right anim-delay-500")}`}>
+                        <div className={`w-full lg:w-[55%] xl:w-[58%] relative mt-12 lg:mt-0 px-2 sm:px-0 lg:pl-8 ${a("anim-spring-right anim-delay-500")}`}>
                             {/* Decorative background shape */}
-                            <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-2 scale-[1.02] -z-10 transition-transform"></div>
-                            <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-2 scale-[1.02] -z-10 transition-transform"></div>
+                            <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-2 -z-10 transition-transform"></div>
+                            <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-2 -z-10 transition-transform"></div>
 
                             {/* Track Record Label top right */}
                             <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-4 bg-white dark:bg-slate-800 shadow-lg px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 z-20 transition-transform hover:-rotate-3">
@@ -186,14 +194,10 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] xl:aspect-[16/10] group border-[8px] border-white/80 dark:border-slate-800/80 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900">
-                                {(isLoading && dbEvents.length === 0) ? (
-                                    <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse flex flex-col items-center justify-center gap-4">
-                                        <Calendar className="w-12 h-12 text-slate-400 dark:text-slate-600 opacity-50" />
-                                        <div className="h-4 w-32 bg-slate-300 dark:bg-slate-700 rounded-full opacity-50"></div>
-                                    </div>
-                                ) : (
-                                    <CardStack initialCards={
+                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[1.1] xl:aspect-[5/4] group border-[10px] border-white/90 dark:border-slate-800/90 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900">
+                                <CardStack 
+                                    isSkeleton={isLoading && dbEvents.length === 0}
+                                    initialCards={
                                         allEvents.map((evt) => ({
                                             id: evt.id,
                                             src: evt.image || DEFAULT_EVENT_IMAGE,
@@ -202,8 +206,8 @@ const Home: React.FC = () => {
                                             description: `${evt.isRealEvent ? 'Upcoming: ' : ''}${evt.date}`,
                                             isRealEvent: evt.isRealEvent
                                         }))
-                                    } />
-                                )}
+                                    } 
+                                />
                             </div>
                         </div>
 

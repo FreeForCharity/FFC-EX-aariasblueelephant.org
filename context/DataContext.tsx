@@ -39,12 +39,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      // Try to load from cache first for instant UI
+      const cachedEvents = localStorage.getItem('abe_cache_events');
+      if (cachedEvents) {
+          try {
+              setEvents(JSON.parse(cachedEvents));
+              setIsLoading(false); // Set loading false if we have cache
+          } catch (e) {
+              console.error("Cache parse error:", e);
+          }
+      }
+
+      // If no cache, we definitely show loading
+      if (!cachedEvents) setIsLoading(true);
+      
       try {
         const fetchEvents = supabase.from('events').select('*').order('date', { ascending: true })
           .then(({ data, error }) => {
             if (data) {
-              setEvents(data.map((e: any) => ({
+              const mappedEvents = data.map((e: any) => ({
                 id: e.id,
                 title: e.title,
                 date: e.date,
@@ -57,7 +70,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 initialLikes: e.initial_likes || 0,
                 image: e.image,
                 mediaLink: e.media_link
-              })));
+              }));
+              setEvents(mappedEvents);
+              
+              // Only cache essential metadata to avoid QuotaExceededError from large images
+              try {
+                const cacheEvents = mappedEvents.map(evt => ({ ...evt, image: evt.image?.startsWith('data:') ? null : evt.image }));
+                localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
+              } catch (e) {
+                console.warn("Could not save events to cache:", e);
+              }
             }
           });
 

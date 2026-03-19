@@ -14,10 +14,12 @@ export interface Card {
 
 interface CardStackProps {
   initialCards: Card[];
+  isSkeleton?: boolean;
 }
 
 export default function CardStack({ 
-    initialCards: propCards
+    initialCards: propCards,
+    isSkeleton
 }: CardStackProps) {
   const [cards, setCards] = useState<Card[]>(propCards);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -72,6 +74,24 @@ export default function CardStack({
     dragY.set(0);
   };
 
+  if (isSkeleton) {
+    return (
+      <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-3 lg:p-4">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="absolute w-full h-full rounded-3xl bg-slate-200 dark:bg-slate-800 animate-pulse border-[6px] border-white dark:border-slate-800 shadow-xl"
+            style={{
+              zIndex: 30 - i,
+              transform: `translateY(${i * 12}px) scale(${1 - i * 0.04})`,
+              rotate: i === 1 ? '1deg' : i === 2 ? '-1deg' : '0deg'
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
   if (!cards || cards.length === 0) return null;
 
   return (
@@ -94,7 +114,7 @@ export default function CardStack({
         </>
       )}
 
-      <div className="relative w-full h-full flex items-center justify-center p-3 sm:p-5 lg:p-7">
+      <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-3 lg:p-4">
         <AnimatePresence>
             {cards.slice(0, 3).map((card, i) => {
                 const isFront = i === 0;
