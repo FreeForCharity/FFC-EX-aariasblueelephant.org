@@ -8,7 +8,7 @@ import SocialLinks from '../components/SocialLinks';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
 import StickerIcon from '../components/StickerIcon';
-
+import CardStack from '../components/ui/card-stack';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -16,21 +16,21 @@ const pastEvents = [
         id: 4,
         title: 'Advocacy efforts',
         date: 'Ongoing Initiative',
-        image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=800&h=500',
+        image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=600&h=400',
         description: 'Advocacy efforts to partner with cities and organizations on large-scale inclusion.'
     },
     {
         id: 1,
         title: 'Weekly Play Group',
         date: 'Weekly Initiative',
-        image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=80&w=800&h=500',
+        image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=80&w=600&h=400',
         description: 'A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.'
     },
     {
         id: 2,
         title: 'Monthly Art and Craft Meetup',
         date: 'Monthly Session',
-        image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800&h=500',
+        image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600&h=400',
         description: 'Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.'
     },
     {
@@ -70,25 +70,23 @@ const Home: React.FC = () => {
 
     const a = (cls: string) => shouldAnimate ? cls : '';
 
-    const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [isHydrated, setIsHydrated] = useState(false);
 
     useEffect(() => {
         setIsHydrated(true);
-        setCurrentEventIndex(0); // Start at 0 to show upcoming events first
 
         // Mark as loaded so subsequent internal navigation skips animations
         isAppInitialLoad = false;
 
+        // Preload images for the card stack
+        const imagesToPreload = allEvents.map(e => e.image);
+        imagesToPreload.forEach(src => {
+            const img = new Image();
+            img.src = src;
+        });
+
         return () => { };
     }, []);
-    const nextEvent = () => {
-        setCurrentEventIndex((prevIndex) => (prevIndex + 1) % allEvents.length);
-    };
-
-    const prevEvent = () => {
-        setCurrentEventIndex((prevIndex) => (prevIndex - 1 + allEvents.length) % allEvents.length);
-    };
 
     return (
         <div className="flex flex-col min-h-screen pt-0 bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
@@ -188,65 +186,23 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-square xl:aspect-[4/3] group border-[8px] border-white/80 dark:border-slate-800/80 sticker-shadow hover:sticker-shadow-purple transition-all duration-500">
+                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] xl:aspect-[16/10] group border-[8px] border-white/80 dark:border-slate-800/80 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900">
                                 {(isLoading && dbEvents.length === 0) ? (
                                     <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse flex flex-col items-center justify-center gap-4">
                                         <Calendar className="w-12 h-12 text-slate-400 dark:text-slate-600 opacity-50" />
                                         <div className="h-4 w-32 bg-slate-300 dark:bg-slate-700 rounded-full opacity-50"></div>
                                     </div>
                                 ) : (
-                                    <>
-                                        {allEvents[currentEventIndex] && (
-                                            <img
-                                                src={allEvents[currentEventIndex].image || DEFAULT_EVENT_IMAGE}
-                                                alt={allEvents[currentEventIndex].title || 'Event'}
-                                                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    const currentSrc: string = target.src;
-                                                    if (currentSrc !== (DEFAULT_EVENT_IMAGE as string)) {
-                                                        target.src = DEFAULT_EVENT_IMAGE;
-                                                    } else if (currentSrc !== (DEFAULT_LOCAL_FALLBACK as string)) {
-                                                        target.src = DEFAULT_LOCAL_FALLBACK;
-                                                    }
-                                                }}
-                                            />
-                                        )}
-
-                                        {/* Floating Track Record Badge matching template */}
-                                        {allEvents[currentEventIndex] && (
-                                            <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-between gap-4">
-                                                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                                                    <StickerIcon icon={Calendar} size={18} color="white" bgColor="bg-sky-600" className="shadow-none border-none" />
-                                                    <div className="flex-1 min-w-0 text-left">
-                                                        <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
-                                                            {allEvents[currentEventIndex].title}
-                                                        </div>
-                                                        <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-0.5 truncate">
-                                                            {allEvents[currentEventIndex].isRealEvent ? <span className="text-brand-purple">Upcoming: </span> : ''}{allEvents[currentEventIndex].date}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        {/* Invisible Link Overlay for routing to event details using the entire card */}
-                                        {allEvents[currentEventIndex] && allEvents[currentEventIndex].isRealEvent && (
-                                            <Link to={`/events/${allEvents[currentEventIndex].id}`} className="absolute inset-0 z-10" aria-label={`View the event: ${allEvents[currentEventIndex].title}`} />
-                                        )}
-
-                                        {/* Navigation buttons on the sides */}
-                                        {allEvents.length > 1 && (
-                                            <>
-                                                <button onClick={prevEvent} aria-label="Previous event" className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 transition-all focus:outline-none z-20 flex items-center justify-center hover:scale-110 opacity-80 hover:opacity-100">
-                                                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-                                                </button>
-                                                <button onClick={nextEvent} aria-label="Next event" className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 transition-all focus:outline-none z-20 flex items-center justify-center hover:scale-110 opacity-80 hover:opacity-100">
-                                                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-                                                </button>
-                                            </>
-                                        )}
-                                    </>
+                                    <CardStack initialCards={
+                                        allEvents.map((evt) => ({
+                                            id: evt.id,
+                                            src: evt.image || DEFAULT_EVENT_IMAGE,
+                                            alt: evt.title || 'Event',
+                                            title: evt.title,
+                                            description: `${evt.isRealEvent ? 'Upcoming: ' : ''}${evt.date}`,
+                                            isRealEvent: evt.isRealEvent
+                                        }))
+                                    } />
                                 )}
                             </div>
                         </div>
