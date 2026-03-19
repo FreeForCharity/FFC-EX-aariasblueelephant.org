@@ -7,7 +7,7 @@ export const MOCK_USERS: User[] = [
   { email: "user1@example.com", role: "User", name: "Mike Smith" }
 ];
 
-export const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1000';
+export const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=1000';
 export const DEFAULT_LOCAL_FALLBACK = '/outreach_workshop.png';
 
 export const ALL_EVENTS: Event[] = [

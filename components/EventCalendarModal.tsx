@@ -4,6 +4,7 @@ import { Event } from '../types';
 import { Link } from 'react-router-dom';
 import StickerIcon from './StickerIcon';
 import StagedFadeIn from './StagedFadeIn';
+import { parseDateLocal } from '../lib/utils';
 
 interface EventCalendarModalProps {
     isOpen: boolean;
@@ -55,12 +56,15 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
         const checkDate = new Date(currentYear, currentMonth, day);
         return events.filter(event => {
             // Need to parse event date safely handling timezone/time string
-            const evDate = new Date(event.date);
-            return isSameDay(evDate, checkDate);
+            const evDate = parseDateLocal(event.date);
+            return evDate && isSameDay(evDate, checkDate);
         });
     };
 
-    const selectedEvents = selectedDate ? events.filter(event => isSameDay(new Date(event.date), selectedDate)) : [];
+    const selectedEvents = selectedDate ? events.filter(event => {
+        const evDate = parseDateLocal(event.date);
+        return evDate && isSameDay(evDate, selectedDate);
+    }) : [];
 
     const getEventDotColor = (type: string) => {
         switch (type) {

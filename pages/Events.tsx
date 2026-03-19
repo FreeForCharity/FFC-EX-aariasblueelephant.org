@@ -9,6 +9,7 @@ import StagedFadeIn from '../components/StagedFadeIn';
 import StickerIcon from '../components/StickerIcon';
 import EventCalendarModal from '../components/EventCalendarModal';
 import RichText from '../components/RichText';
+import { parseDateLocal, formatDateLocal, formatShortDateLocal } from '../lib/utils';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
@@ -114,7 +115,7 @@ const CardContent: React.FC<CardContentProps> = ({
               <div className="space-y-6 mb-8">
                 <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
                   <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
-                  <span>{new Date(activeEvent.date).toLocaleDateString()}</span>
+                  <span>{formatDateLocal(activeEvent.date)}</span>
                 </div>
                 <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
                   <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
@@ -241,16 +242,17 @@ const Events: React.FC = () => {
 
   // Filter events based on active tab
   const filteredEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
+    const eventDate = parseDateLocal(event.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    if (!eventDate) return activeTab === 'all'; // Default for non-date strings
     if (activeTab === 'upcoming') return eventDate >= today;
     if (activeTab === 'past') return eventDate < today;
     return true;
   }).sort((a, b) => {
-    const dateA = new Date(a.date).getTime();
-    const dateB = new Date(b.date).getTime();
+    const dateA = parseDateLocal(a.date)?.getTime() || 0;
+    const dateB = parseDateLocal(b.date)?.getTime() || 0;
     return activeTab === 'past' ? dateB - dateA : dateA - dateB;
   });
 
@@ -304,7 +306,7 @@ const Events: React.FC = () => {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
-    const shareText = `Check out this event at Aaria's Blue Elephant: ${event.title} on ${event.date}!`;
+    const shareText = `Check out this event at Aaria's Blue Elephant: ${event.title} on ${formatDateLocal(event.date)}!`;
 
     try {
       await navigator.clipboard.writeText(shareText);
@@ -374,35 +376,39 @@ const Events: React.FC = () => {
             onMouseLeave={() => setIsPaused(false)}
           >
             {/* Main Card */}
-            {new Date(activeEvent.date) < new Date(new Date().setHours(0, 0, 0, 0)) ? (
-              <div className="block group">
-                <CardContent
-                  activeEvent={activeEvent}
-                  activeTab={activeTab}
-                  likedEvents={likedEvents}
-                  likeCounts={likeCounts}
-                  toggleLike={toggleLike}
-                  handleShare={handleShare}
-                  copiedId={copiedId}
-                  isPast={true}
-                  navigate={navigate}
-                />
-              </div>
-            ) : (
-              <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
-                <CardContent
-                  activeEvent={activeEvent}
-                  activeTab={activeTab}
-                  likedEvents={likedEvents}
-                  likeCounts={likeCounts}
-                  toggleLike={toggleLike}
-                  handleShare={handleShare}
-                  copiedId={copiedId}
-                  isPast={false}
-                  navigate={navigate}
-                />
-              </Link>
-            )}
+            {(() => {
+              const evDate = parseDateLocal(activeEvent.date);
+              const isPastEvent = evDate && evDate < new Date(new Date().setHours(0, 0, 0, 0));
+              return isPastEvent ? (
+                <div className="block group">
+                  <CardContent
+                    activeEvent={activeEvent}
+                    activeTab={activeTab}
+                    likedEvents={likedEvents}
+                    likeCounts={likeCounts}
+                    toggleLike={toggleLike}
+                    handleShare={handleShare}
+                    copiedId={copiedId}
+                    isPast={true}
+                    navigate={navigate}
+                  />
+                </div>
+              ) : (
+                <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
+                  <CardContent
+                    activeEvent={activeEvent}
+                    activeTab={activeTab}
+                    likedEvents={likedEvents}
+                    likeCounts={likeCounts}
+                    toggleLike={toggleLike}
+                    handleShare={handleShare}
+                    copiedId={copiedId}
+                    isPast={false}
+                    navigate={navigate}
+                  />
+                </Link>
+              );
+            })()}
 
             <button onClick={prevSlide} className="absolute top-1/2 -left-4 lg:-left-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronLeft className="h-6 w-6" /></button>
             <button onClick={nextSlide} className="absolute top-1/2 -right-4 lg:-right-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronRight className="h-6 w-6" /></button>

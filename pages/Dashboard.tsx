@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import Button from '../components/Button';
+import { formatShortDateLocal } from '../lib/utils';
 
 
 type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel';
@@ -479,7 +480,7 @@ const Dashboard: React.FC = () => {
                             <div className="ml-4">
                                 <h4 className="text-slate-900 dark:text-white font-bold">{evt.title}</h4>
                                 <div className="flex items-center text-slate-500 dark:text-slate-400 text-xs mt-1 gap-3">
-                                    <span className="flex items-center"><Calendar className="h-3 w-3 mr-1 text-slate-400" /> {evt.date}</span>
+                                    <span className="flex items-center"><Calendar className="h-3 w-3 mr-1 text-slate-400" /> {formatShortDateLocal(evt.date)}</span>
                                     <span className="flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400" /> {evt.time}</span>
                                 </div>
                             </div>

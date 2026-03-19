@@ -9,6 +9,7 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
 import StickerIcon from '../components/StickerIcon';
 import CardStack from '../components/ui/card-stack';
+import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -62,13 +63,20 @@ const Home: React.FC = () => {
     const navigate = useNavigate();
 
     const upcomingEvents = dbEvents
-        .filter((e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .filter((e) => {
+            const evDate = parseDateLocal(e.date);
+            return evDate && evDate >= new Date(new Date().setHours(0, 0, 0, 0));
+        })
+        .sort((a, b) => {
+            const dateA = parseDateLocal(a.date);
+            const dateB = parseDateLocal(b.date);
+            return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+        })
         .slice(0, 2)
         .map(e => ({
             id: e.id,
             title: e.title,
-            date: new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            date: formatShortDateLocal(e.date),
             image: e.image || DEFAULT_EVENT_IMAGE,
             description: e.description,
             isRealEvent: true
@@ -101,11 +109,11 @@ const Home: React.FC = () => {
 
             {/* Combined Hero & Track Record Section */}
             <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-8 lg:py-12 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+                <div className="max-w-[1600px] px-4 sm:px-6 lg:px-12 xl:pl-24 xl:pr-12">
+                    <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16 xl:gap-24">
 
                         {/* Left Side: Play Without Barriers (Hero Text) */}
-                        <div className="w-full lg:w-[45%] xl:w-[42%] flex flex-col justify-center text-center lg:text-left">
+                        <div className="w-full lg:w-[48%] xl:w-[45%] flex flex-col justify-center text-center lg:text-left shrink-0">
                             {/* Social Media Links (Media Tag) */}
                             <div className={a("anim-bounce-left anim-delay-100")}>
                                 <div className="mb-4 flex justify-center lg:justify-start">
@@ -121,7 +129,7 @@ const Home: React.FC = () => {
                                         <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
-                                        <h1 className={`text-lg xs:text-xl sm:text-[30px] lg:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm ${a("anim-bounce-right anim-delay-400")}`}>
+                                        <h1 className={`text-lg xs:text-xl sm:text-[30px] lg:text-[38px] xl:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm ${a("anim-bounce-right anim-delay-400")}`}>
                                             Aaria's Blue Elephant
                                         </h1>
                                         <h2 className={`text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left ${a("anim-bounce-left anim-delay-500")}`}>
@@ -173,7 +181,7 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className={`mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full sm:w-auto text-center lg:text-left ${a("anim-bounce-left anim-delay-900")}`}>
+                            <div className={`mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full lg:w-fit text-center lg:text-left ${a("anim-bounce-left anim-delay-900")}`}>
                                 <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                                     <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> playgroups hosted <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> children embraced in 2025–2026
                                 </div>
@@ -181,10 +189,10 @@ const Home: React.FC = () => {
                         </div>
 
                         {/* Right Side: Our Track Record */}
-                        <div className={`w-full lg:w-[55%] xl:w-[58%] relative mt-12 lg:mt-0 px-2 sm:px-0 lg:pl-8 ${a("anim-spring-right anim-delay-500")}`}>
-                            {/* Decorative background shape */}
-                            <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-2 -z-10 transition-transform"></div>
-                            <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-2 -z-10 transition-transform"></div>
+                        <div className={`w-full lg:w-[52%] xl:w-[55%] relative mt-12 lg:mt-0 px-2 sm:px-0 lg:pl-4 flex justify-center lg:justify-end ${a("anim-spring-right anim-delay-500")}`}>
+                            {/* Decorative background shape - tighter rotation */}
+                            <div className="absolute inset-0 bg-sky-600/10 dark:bg-sky-900/40 rounded-3xl transform rotate-1 -z-10 transition-transform"></div>
+                            <div className="absolute inset-0 bg-sky-100 dark:bg-sky-900/20 rounded-3xl transform -rotate-1 -z-10 transition-transform"></div>
 
                             {/* Track Record Label top right */}
                             <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-4 bg-white dark:bg-slate-800 shadow-lg px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 z-20 transition-transform hover:-rotate-3">
@@ -194,7 +202,7 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[1.1] xl:aspect-[5/4] group border-[10px] border-white/90 dark:border-slate-800/90 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900">
+                            <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[1.2] xl:aspect-[1.1] group border-4 border-white/90 dark:border-slate-800/90 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900 w-full lg:max-w-[500px] xl:max-w-[650px]">
                                 <CardStack 
                                     isSkeleton={isLoading && dbEvents.length === 0}
                                     initialCards={
@@ -203,7 +211,7 @@ const Home: React.FC = () => {
                                             src: evt.image || DEFAULT_EVENT_IMAGE,
                                             alt: evt.title || 'Event',
                                             title: evt.title,
-                                            description: `${evt.isRealEvent ? 'Upcoming: ' : ''}${evt.date}`,
+                                            description: `${evt.isRealEvent ? 'Upcoming: ' : ''}${formatShortDateLocal(evt.date)}`,
                                             isRealEvent: evt.isRealEvent
                                         }))
                                     } 
@@ -336,36 +344,38 @@ const Home: React.FC = () => {
                 <div className="absolute inset-0 bg-black/40 mix-blend-multiply z-0"></div>
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 z-0"></div>
 
-                <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center bg-white/10 backdrop-blur-md p-10 rounded-xl border border-white/20 shadow-2xl">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-wider">Ready to Join Our Herd?</h2>
-                    <p className="text-sky-50 mb-10 text-lg max-w-2xl mx-auto">
+                <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 xl:pl-24">
+                    <div className="bg-white/10 backdrop-blur-md p-10 rounded-xl border border-white/20 shadow-2xl max-w-4xl lg:ml-0 lg:text-left text-center">
+                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-wider">Ready to Join Our Herd?</h2>
+                        <p className="text-sky-50 mb-10 text-lg max-w-2xl mx-auto lg:mx-0">
                         Whether you're looking for support, want to volunteer, or can help us grow with a donation, there's a place for you at <strong>Aaria's Blue Elephant</strong>. To support your records, your donations are <strong>100% tax-deductible</strong>; we ensure financial transparency by issuing official tax receipts and progress statements on a quarterly basis.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-                        <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer">
-                            <button id="donate-button" className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
-                                Donate for the Cause <HeartPulse className="h-4 w-4" />
-                            </button>
-                        </a>
-                        <Link to="/signup">
-                            <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-sky-900 font-bold py-4 px-10 rounded uppercase tracking-widest text-sm transition-colors w-full sm:w-auto">
-                                Get Started
-                            </button>
-                        </Link>
-                    </div>
+                        <div className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-6">
+                            <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                                <button id="donate-button" className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full flex items-center justify-center gap-2">
+                                    Donate <HeartPulse className="h-4 w-4" />
+                                </button>
+                            </a>
+                            <Link to="/signup" className="w-full sm:w-auto">
+                                <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-sky-900 font-bold py-4 px-10 rounded uppercase tracking-widest text-sm transition-colors w-full">
+                                    Get Started
+                                </button>
+                            </Link>
+                        </div>
 
-                    {/* Trust Elements & QR */}
-                    <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-8 lg:gap-16">
-                        {/* Candid Seal */}
-                        <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 bg-white/10 backdrop-blur rounded-2xl p-4 shadow-lg border border-white/20">
-                            <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" className="h-20 sm:h-24 w-auto drop-shadow-lg" />
-                        </a>
+                        {/* Trust Elements & QR */}
+                        <div className="mt-12 flex flex-col md:flex-row items-center justify-center lg:justify-start gap-8 lg:gap-16">
+                            {/* Candid Seal */}
+                            <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 bg-white/10 backdrop-blur rounded-2xl p-4 shadow-lg border border-white/20">
+                                <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" className="h-20 sm:h-24 w-auto drop-shadow-lg" />
+                            </a>
 
-                        {/* Join Herd QR Code */}
-                        <div className="flex flex-col items-center">
-                            <div className="h-[250px] w-[250px] rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] transition-all duration-300 ring-4 ring-white/10 overflow-hidden relative">
-                                <DonationQR />
+                            {/* Join Herd QR Code */}
+                            <div className="flex flex-col items-center">
+                                <div className="h-[250px] w-[250px] rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.1)] transition-all duration-300 ring-4 ring-white/10 overflow-hidden relative">
+                                    <DonationQR />
+                                </div>
                             </div>
                         </div>
                     </div>

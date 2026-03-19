@@ -80,13 +80,20 @@ export default function CardStack({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="absolute w-full h-full rounded-3xl bg-slate-200 dark:bg-slate-800 animate-pulse border-[6px] border-white dark:border-slate-800 shadow-xl"
+            className="absolute w-full h-full rounded-3xl overflow-hidden border-2 border-white/30 dark:border-slate-800/30 shadow-xl bg-slate-100 dark:bg-slate-900"
             style={{
               zIndex: 30 - i,
-              transform: `translateY(${i * 12}px) scale(${1 - i * 0.04})`,
+              transform: `translateY(${i * 8}px) scale(${1 - i * 0.03})`,
               rotate: i === 1 ? '1deg' : i === 2 ? '-1deg' : '0deg'
             }}
-          />
+          >
+            <img 
+              src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=1000" 
+              className="w-full h-full object-cover opacity-20 dark:opacity-10 grayscale filter blur-[1px]" 
+              alt="Loading advocacy imagery"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200/20 to-transparent dark:from-slate-800/20 dark:to-transparent animate-pulse" />
+          </div>
         ))}
       </div>
     );
@@ -114,7 +121,7 @@ export default function CardStack({
         </>
       )}
 
-      <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-3 lg:p-4">
+      <div className="relative w-full h-full flex items-center justify-center p-0">
         <AnimatePresence>
             {cards.slice(0, 3).map((card, i) => {
                 const isFront = i === 0;
@@ -129,9 +136,9 @@ export default function CardStack({
                             transformPerspective: 1000,
                         }}
                         animate={{
-                            y: i * 12, // Offset each card downwards behind the front card
-                            scale: 1 - i * 0.04, // Slightly scale down
-                            rotateZ: i === 1 ? 1 : i === 2 ? -1 : 0, // Very subtle fan effect
+                            y: i * 8, // Tighter offset
+                            scale: 1 - i * 0.03, // Tighter scale
+                            rotateZ: i === 1 ? 1 : i === 2 ? -1 : 0,
                             opacity: dragDirection && isFront ? 0 : 1
                         }}
                         transition={{
@@ -146,8 +153,8 @@ export default function CardStack({
                         onHoverStart={() => isFront && setShowInfo(true)}
                         onHoverEnd={() => setShowInfo(false)}
                     >
-                        {/* Wrapper for the actual card to apply border and shadow */}
-                        <div className={`w-full h-full relative rounded-3xl overflow-hidden border-[6px] border-white dark:border-slate-800 shadow-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-transform duration-300 ${isFront && 'hover:scale-[1.02]'}`}>
+                        {/* Wrapper for the actual card - thinner border, no extra shadows to avoid double shadow */}
+                        <div className={`w-full h-full relative rounded-3xl overflow-hidden border-2 border-white/50 dark:border-slate-800/50 cursor-grab active:cursor-grabbing transition-transform duration-300 ${isFront && 'hover:scale-[1.01]'}`}>
                             {isFront && card.isRealEvent ? (
                                 <Link to={`/events/${card.id}`} className="block w-full h-full">
                                     <CardImage card={card} showInfo={showInfo} priority={isFront} />

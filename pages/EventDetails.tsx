@@ -6,6 +6,7 @@ import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartH
 import Button from '../components/Button';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import RichText from '../components/RichText';
+import { formatDateLocal } from '../lib/utils';
 
 const EventDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -324,7 +325,7 @@ const EventDetails: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Date</p>
                       <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        {formatDateLocal(event.date)}
                       </p>
                     </div>
                   </div>
