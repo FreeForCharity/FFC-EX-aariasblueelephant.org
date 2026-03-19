@@ -41,66 +41,73 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [eventsRes, testsRes, volsRes, regsRes] = await Promise.all([
-          supabase.from('events').select('*').order('date', { ascending: true }),
-          supabase.from('testimonials').select('*').order('rank', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }),
-          supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false }),
-          supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
-        ]);
+        const fetchEvents = supabase.from('events').select('*').order('date', { ascending: true })
+          .then(({ data, error }) => {
+            if (data) {
+              setEvents(data.map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                date: e.date,
+                time: e.time,
+                location: e.location,
+                description: e.description,
+                type: e.type,
+                capacity: e.capacity,
+                registered: e.registered || 0,
+                initialLikes: e.initial_likes || 0,
+                image: e.image,
+                mediaLink: e.media_link
+              })));
+            }
+          });
 
-        if (eventsRes.data) {
-          setEvents(eventsRes.data.map((e: any) => ({
-            id: e.id,
-            title: e.title,
-            date: e.date,
-            time: e.time,
-            location: e.location,
-            description: e.description,
-            type: e.type,
-            capacity: e.capacity,
-            registered: e.registered || 0,
-            initialLikes: e.initial_likes || 0,
-            image: e.image,
-            mediaLink: e.media_link
-          })));
-        }
+        const fetchTestimonials = supabase.from('testimonials').select('*').order('rank', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) {
+              setTestimonials(data.map((t: any) => ({
+                id: t.id,
+                author: t.author,
+                role: t.role,
+                title: t.title,
+                content: t.content,
+                date: t.date,
+                avatar: t.avatar,
+                status: t.status,
+                rank: t.rank
+              })));
+            }
+          });
 
-        if (testsRes.data) {
-          setTestimonials(testsRes.data.map((t: any) => ({
-            id: t.id,
-            author: t.author,
-            role: t.role,
-            title: t.title,
-            content: t.content,
-            date: t.date,
-            avatar: t.avatar,
-            status: t.status,
-            rank: t.rank
-          })));
-        }
+        const fetchApplications = supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) {
+              setVolunteerApplications(data.map((v: any) => ({
+                id: v.id,
+                name: v.name,
+                email: v.email,
+                interest: v.interest,
+                status: v.status
+              })));
+            }
+          });
 
-        if (volsRes.data) {
-          setVolunteerApplications(volsRes.data.map((v: any) => ({
-            id: v.id,
-            name: v.name,
-            email: v.email,
-            interest: v.interest,
-            status: v.status
-          })));
-        }
+        const fetchRegistrations = supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) {
+              setEventRegistrations(data.map((r: any) => ({
+                id: r.id,
+                eventId: r.event_id,
+                userId: r.user_id,
+                userName: r.user_name,
+                userEmail: r.user_email,
+                specialNeeds: r.special_needs,
+                status: r.status,
+                date: r.date
+              })));
+            }
+          });
 
-        if (regsRes.data) {
-          setEventRegistrations(regsRes.data.map((r: any) => ({
-            id: r.id,
-            eventId: r.event_id,
-            userId: r.user_id,
-            userName: r.user_name,
-            userEmail: r.user_email,
-            specialNeeds: r.special_needs,
-            status: r.status,
-            date: r.date
-          })));
-        }
+        await Promise.all([fetchEvents, fetchTestimonials, fetchApplications, fetchRegistrations]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
