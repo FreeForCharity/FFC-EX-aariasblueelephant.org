@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,10 @@ const EventDetails: React.FC = () => {
 
   const handleRegister = () => {
     if (!user) {
+      if (needsAccommodation !== null) {
+        localStorage.setItem('pendingEventId', event!.id);
+        localStorage.setItem('pendingAccommodation', String(needsAccommodation));
+      }
       window.scrollTo(0, 0);
       navigate('/login', { state: { returnTo: `/events/${event?.id}` } });
       return;
@@ -42,6 +46,29 @@ const EventDetails: React.FC = () => {
       window.scrollTo(0, 0);
     }
   };
+
+  useEffect(() => {
+    if (user && event && !isLoading && !isRegistered) {
+      const pendingEventId = localStorage.getItem('pendingEventId');
+      const pendingAccommodation = localStorage.getItem('pendingAccommodation');
+      
+      if (pendingEventId === event.id && pendingAccommodation !== null) {
+        // Clear pending items
+        localStorage.removeItem('pendingEventId');
+        localStorage.removeItem('pendingAccommodation');
+        
+        // Auto-register
+        registerForEvent({
+          eventId: event.id,
+          userId: user.email,
+          userName: user.name,
+          userEmail: user.email,
+          specialNeeds: pendingAccommodation === 'true',
+        });
+        setRegistrationSubmitted(true);
+      }
+    }
+  }, [user, event, isLoading, isRegistered, registerForEvent]);
 
   if (isLoading) {
     return (
@@ -175,7 +202,7 @@ const EventDetails: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3">
               {/* Left Column: Details */}
-              <div className="col-span-2 p-6 sm:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700">
+              <div className="col-span-2 p-6 sm:p-10 border-t lg:border-t-0 lg:border-r border-slate-200 dark:border-slate-700 order-last lg:order-none">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">About this Event</h2>
                 <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-300 mb-8 whitespace-pre-line">
                   {event.description}
@@ -208,8 +235,88 @@ const EventDetails: React.FC = () => {
               </div>
 
               {/* Right Column: Logistics sidebar */}
-              <div className="bg-slate-50 dark:bg-slate-800/30 p-6 sm:p-10">
+              <div className="bg-slate-50 dark:bg-slate-800/30 p-6 sm:p-10 order-first lg:order-none border-b lg:border-b-0 border-slate-200 dark:border-slate-700 shadow-inner lg:shadow-none">
                 <div className="space-y-6">
+
+                  {/* Registration Action Block - Moved to Top */}
+                  <div className="pb-6 mb-6 border-b border-slate-200 dark:border-slate-700">
+                    {isRegistered ? (
+                      registrationStatus === 'Pending' ? (
+                        <Button fullWidth size="lg" variant="secondary" disabled>
+                          Waiting for Approval
+                        </Button>
+                      ) : (
+                        <Button fullWidth size="lg" variant="secondary" disabled>
+                          Already Registered
+                        </Button>
+                      )
+                    ) : isPastEvent ? (
+                      <div className="space-y-4">
+                        <Button fullWidth size="lg" variant="secondary" disabled>
+                          Event Concluded
+                        </Button>
+                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
+                          <p className="text-amber-800 dark:text-amber-400 font-medium">
+                            Missed the event? No worries!
+                          </p>
+                          <Link to="/events" className="text-sm text-amber-600 dark:text-amber-300 hover:underline mt-1 inline-block">
+                            Check out our upcoming events here →
+                          </Link>
+                        </div>
+                      </div>
+                    ) : event.registered < event.capacity ? (
+                      <div className="space-y-4">
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <label className="text-sm font-bold text-slate-900 dark:text-white block mb-1">
+                            Accommodation Needs
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                            Does anyone in your family require special accommodations or have specific needs we should be aware of?
+                          </p>
+                          <div className="flex gap-4">
+                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
+                              <input
+                                type="radio"
+                                name="accommodations"
+                                className="hidden"
+                                checked={needsAccommodation === true}
+                                onChange={() => setNeedsAccommodation(true)}
+                              />
+                              <span className="font-medium text-sm text-center">Yes</span>
+                            </label>
+                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
+                              <input
+                                type="radio"
+                                name="accommodations"
+                                className="hidden"
+                                checked={needsAccommodation === false}
+                                onChange={() => setNeedsAccommodation(false)}
+                              />
+                              <span className="font-medium text-sm text-center">No</span>
+                            </label>
+                          </div>
+                        </div>
+                        <Button
+                          fullWidth
+                          size="lg"
+                          className="shadow-xl shadow-brand-cyan/20 transform transition hover:-translate-y-1"
+                          onClick={handleRegister}
+                          disabled={needsAccommodation === null}
+                        >
+                          {needsAccommodation === null 
+                            ? 'Please Select Accommodations' 
+                            : user 
+                              ? 'Register Now' 
+                              : 'Sign in to Complete Registration'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button fullWidth size="lg" variant="secondary" disabled>
+                        Event Full
+                      </Button>
+                    )}
+                  </div>
+
                   <div className="flex items-start gap-4">
                     <div className="rounded-lg bg-slate-200 dark:bg-slate-700 p-2">
                       <Calendar className="h-6 w-6 text-brand-cyan" />
@@ -268,98 +375,15 @@ const EventDetails: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
-                    {!user ? (
-                      <Button
-                        fullWidth
-                        size="lg"
-                        className="shadow-xl shadow-brand-cyan/10"
-                        onClick={() => navigate('/login', { state: { returnTo: `/events/${event.id}` } })}
-                      >
-                        Sign in to Register
-                      </Button>
-                    ) : isRegistered ? (
-                      registrationStatus === 'Pending' ? (
-                        <Button fullWidth size="lg" variant="secondary" disabled>
-                          Waiting for Approval
-                        </Button>
-                      ) : (
-                        <Button fullWidth size="lg" variant="secondary" disabled>
-                          Already Registered
-                        </Button>
-                      )
-                    ) : isPastEvent ? (
-                      <div className="space-y-4">
-                        <Button fullWidth size="lg" variant="secondary" disabled>
-                          Event Concluded
-                        </Button>
-                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
-                          <p className="text-amber-800 dark:text-amber-400 font-medium">
-                            Missed the event? No worries!
-                          </p>
-                          <Link to="/events" className="text-sm text-amber-600 dark:text-amber-300 hover:underline mt-1 inline-block">
-                            Check out our upcoming events here →
-                          </Link>
-                        </div>
-                      </div>
-                    ) : event.registered < event.capacity ? (
-                      <div className="space-y-4">
-                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                          <label className="text-sm font-bold text-slate-900 dark:text-white block mb-1">
-                            Accommodation Needs
-                          </label>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                            Does anyone in your family require special accommodations or have specific needs we should be aware of?
-                          </p>
-                          <div className="flex gap-4">
-                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
-                              <input
-                                type="radio"
-                                name="accommodations"
-                                className="hidden"
-                                checked={needsAccommodation === true}
-                                onChange={() => setNeedsAccommodation(true)}
-                              />
-                              <span className="font-medium text-sm text-center">Yes</span>
-                            </label>
-                            <label className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'}`}>
-                              <input
-                                type="radio"
-                                name="accommodations"
-                                className="hidden"
-                                checked={needsAccommodation === false}
-                                onChange={() => setNeedsAccommodation(false)}
-                              />
-                              <span className="font-medium text-sm text-center">No</span>
-                            </label>
-                          </div>
-                        </div>
-                        <Button
-                          fullWidth
-                          size="lg"
-                          className="shadow-xl shadow-brand-cyan/10"
-                          onClick={handleRegister}
-                          disabled={needsAccommodation === null}
-                        >
-                          {needsAccommodation === null ? 'Please Select Accommodations' : 'Register Now'}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button fullWidth size="lg" variant="secondary" disabled>
-                        Event Full
-                      </Button>
-                    )}
-
-                    {/* Free Event Notice */}
-                    <div className="mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700 transition-colors duration-300 shadow-sm group">
-                      <div className="flex items-center gap-3 mb-2 justify-center">
-                        <HeartHandshake className="h-5 w-5 text-sky-600 dark:text-sky-400 group-hover:text-sky-500 transition-colors" />
-                        <strong className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors uppercase tracking-wide">100% Free & Inclusive</strong>
-                      </div>
-                      <p className="text-xs text-center text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                        Children of all abilities are welcome to play and learn side-by-side. All materials are provided at no cost. Donations are never required.
-                      </p>
+                  {/* Free Event Notice */}
+                  <div className="mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700 transition-colors duration-300 shadow-sm group">
+                    <div className="flex items-center gap-3 mb-2 justify-center">
+                      <HeartHandshake className="h-5 w-5 text-sky-600 dark:text-sky-400 group-hover:text-sky-500 transition-colors" />
+                      <strong className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors uppercase tracking-wide">100% Free & Inclusive</strong>
                     </div>
+                    <p className="text-xs text-center text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                      Children of all abilities are welcome to play and learn side-by-side. All materials are provided at no cost. Donations are never required.
+                    </p>
                   </div>
                 </div>
               </div>
