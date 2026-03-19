@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useData } from '../context/DataContext';
 import { motion } from 'framer-motion';
 import { HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ChevronLeft, ChevronRight, Cloud, Smile, Gift, Palette, Music, Star } from 'lucide-react';
 import Logo from '../components/Logo';
@@ -49,16 +50,32 @@ const Home: React.FC = () => {
     // Animations play on full refresh (isAppInitialLoad is true)
     // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
     const shouldAnimate = useRef(isAppInitialLoad).current;
+    const { events: dbEvents, loading } = useData();
+    const navigate = useNavigate();
+
+    const upcomingEvents = dbEvents
+        .filter((e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, 2)
+        .map(e => ({
+            id: e.id,
+            title: e.title,
+            date: new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            image: e.image || DEFAULT_EVENT_IMAGE,
+            description: e.description,
+            isRealEvent: true
+        }));
+
+    const allEvents = [...upcomingEvents, ...pastEvents];
 
     const a = (cls: string) => shouldAnimate ? cls : '';
 
-    // Randomize initial event on load
     const [currentEventIndex, setCurrentEventIndex] = useState(0);
     const [isHydrated, setIsHydrated] = useState(false);
 
     useEffect(() => {
         setIsHydrated(true);
-        setCurrentEventIndex(Math.floor(Math.random() * pastEvents.length));
+        setCurrentEventIndex(0); // Start at 0 to show upcoming events first
 
         // Mark as loaded so subsequent internal navigation skips animations
         isAppInitialLoad = false;
@@ -66,11 +83,11 @@ const Home: React.FC = () => {
         return () => { };
     }, []);
     const nextEvent = () => {
-        setCurrentEventIndex((prevIndex) => (prevIndex + 1) % pastEvents.length);
+        setCurrentEventIndex((prevIndex) => (prevIndex + 1) % allEvents.length);
     };
 
     const prevEvent = () => {
-        setCurrentEventIndex((prevIndex) => (prevIndex - 1 + pastEvents.length) % pastEvents.length);
+        setCurrentEventIndex((prevIndex) => (prevIndex - 1 + allEvents.length) % allEvents.length);
     };
 
     return (
@@ -172,10 +189,10 @@ const Home: React.FC = () => {
                             </div>
 
                             <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-square xl:aspect-[4/3] group border-[8px] border-white/80 dark:border-slate-800/80 sticker-shadow hover:sticker-shadow-purple transition-all duration-500">
-                                {pastEvents[currentEventIndex] && (
+                                {allEvents[currentEventIndex] && (
                                     <img
-                                        src={pastEvents[currentEventIndex].image || DEFAULT_EVENT_IMAGE}
-                                        alt={pastEvents[currentEventIndex].title || 'Event'}
+                                        src={allEvents[currentEventIndex].image || DEFAULT_EVENT_IMAGE}
+                                        alt={allEvents[currentEventIndex].title || 'Event'}
                                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                                         onError={(e) => {
                                             const target = e.target as HTMLImageElement;
@@ -190,20 +207,25 @@ const Home: React.FC = () => {
                                 )}
 
                                 {/* Floating Track Record Badge matching template */}
-                                {pastEvents[currentEventIndex] && (
+                                {allEvents[currentEventIndex] && (
                                     <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                                             <StickerIcon icon={Calendar} size={18} color="white" bgColor="bg-sky-600" className="shadow-none border-none" />
                                             <div className="flex-1 min-w-0 text-left">
                                                 <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
-                                                    {pastEvents[currentEventIndex].title}
+                                                    {allEvents[currentEventIndex].title}
                                                 </div>
                                                 <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-0.5 truncate">
-                                                    {pastEvents[currentEventIndex].date}
+                                                    {allEvents[currentEventIndex].isRealEvent ? <span className="text-brand-purple">Upcoming: </span> : ''}{allEvents[currentEventIndex].date}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                )}
+                                
+                                {/* Invisible Link Overlay for routing to event details using the entire card */}
+                                {allEvents[currentEventIndex] && allEvents[currentEventIndex].isRealEvent && (
+                                    <Link to={`/events/${allEvents[currentEventIndex].id}`} className="absolute inset-0 z-10" aria-label={`View the event: ${allEvents[currentEventIndex].title}`} />
                                 )}
 
                                 {/* Navigation buttons on the sides */}

@@ -48,16 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       const returnTo = localStorage.getItem('authReturnTo');
-      if (returnTo) {
-        localStorage.removeItem('authReturnTo');
-        setTimeout(() => {
-          let redirectPath = returnTo;
-          if (window.location.hostname.includes('github.io') && !redirectPath.startsWith('/FFC-EX-aariasblueelephant.org')) {
-            redirectPath = '/FFC-EX-aariasblueelephant.org' + redirectPath;
-          }
-          window.location.href = redirectPath;
-        }, 100);
-      }
+      // We don't perform the manual redirect here anymore, because we pass the path directly to Supabase's redirectTo.
     } else {
       setUser(null);
     }
@@ -99,8 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     let redirectUrl = window.location.origin;
     if (window.location.hostname.includes('github.io')) {
-      redirectUrl += '/FFC-EX-aariasblueelephant.org/';
+      redirectUrl += '/FFC-EX-aariasblueelephant.org';
     }
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

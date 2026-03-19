@@ -8,6 +8,30 @@ import PermissionDenied from './pages/PermissionDenied';
 import ProtectedRoute from './components/ProtectedRoute';
 import Delight from './components/Delight';
 import ScrollToTop from './components/ScrollToTop';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+
+// Internal component to handle post-login redirects cleanly through React Router
+const AuthRedirector = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) {
+      const returnTo = localStorage.getItem('authReturnTo');
+      if (returnTo) {
+        localStorage.removeItem('authReturnTo');
+        let redirectPath = returnTo;
+        if (window.location.hostname.includes('github.io') && !redirectPath.startsWith('/FFC-EX-aariasblueelephant.org')) {
+          redirectPath = '/FFC-EX-aariasblueelephant.org' + redirectPath;
+        }
+        navigate(redirectPath, { replace: true });
+      }
+    }
+  }, [user, navigate]);
+
+  return null;
+};
 
 // Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -40,6 +64,7 @@ const App: React.FC = () => {
           <ScrollToTop />
           <Layout>
             <Suspense fallback={<PageLoader />}>
+              <AuthRedirector />
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />

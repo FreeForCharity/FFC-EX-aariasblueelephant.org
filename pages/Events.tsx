@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
@@ -34,6 +35,38 @@ const CardContent: React.FC<CardContentProps> = ({
   isPast,
   navigate
 }) => {
+  const { user } = useAuth();
+  const { eventRegistrations, registerForEvent } = useData();
+  const [needsAccommodation, setNeedsAccommodation] = useState<boolean | null>(null);
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+
+  const userRegistration = user && activeEvent ? eventRegistrations.find(r => r.eventId === activeEvent.id && r.userId === user.email) : null;
+  const isRegistered = !!userRegistration;
+  const registrationStatus = userRegistration?.status;
+
+  const handleRegister = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      if (needsAccommodation !== null) {
+        localStorage.setItem('pendingEventId', activeEvent.id);
+        localStorage.setItem('pendingAccommodation', String(needsAccommodation));
+      }
+      navigate('/login', { state: { returnTo: `/events/${activeEvent.id}` } });
+      return;
+    }
+    if (activeEvent) {
+      registerForEvent({
+        eventId: activeEvent.id,
+        userId: user.email,
+        userName: user.name,
+        userEmail: user.email,
+        specialNeeds: needsAccommodation === true,
+      });
+      setRegistrationSubmitted(true);
+    }
+  };
+
   return (
     <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
       <div className={`grid grid-cols-1 ${activeEvent.mediaLink ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
@@ -110,19 +143,61 @@ const CardContent: React.FC<CardContentProps> = ({
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0 mt-auto">
-            {!isPast ? (
-              <Button fullWidth size="lg" onClick={(e) => {
-                e.preventDefault();
-                navigate(`/events/${activeEvent.id}`);
-              }}>
-                View Details
-              </Button>
-            ) : (
-              <Button fullWidth size="lg" variant="secondary" disabled>Event Concluded</Button>
+          <div className="flex flex-col items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-800 shrink-0 mt-auto">
+            {!isPast && (
+              <div className="w-full">
+                {registrationSubmitted ? (
+                  <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-xl border border-green-200 dark:border-green-800 text-center text-sm font-bold flex flex-col gap-2">
+                    <Check className="h-6 w-6 mx-auto mb-1 animate-bounce" />
+                    Registration Submitted!
+                    <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/events/${activeEvent.id}`); }}>View Details</Button>
+                  </div>
+                ) : isRegistered ? (
+                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/events/${activeEvent.id}`); }}>
+                    {registrationStatus === 'Pending' ? 'Waiting for Approval' : 'Already Registered'}
+                  </Button>
+                ) : activeEvent.registered < activeEvent.capacity ? (
+                  <div className="space-y-4 w-full">
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <label className="text-sm font-bold text-slate-900 dark:text-white block mb-2 text-center">
+                        Need Accommodations?
+                      </label>
+                      <div className="flex gap-2">
+                        <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
+                          <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === true} onChange={() => setNeedsAccommodation(true)} />
+                          <span className="font-medium text-xs text-center">Yes</span>
+                        </label>
+                        <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
+                          <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === false} onChange={() => setNeedsAccommodation(false)} />
+                          <span className="font-medium text-xs text-center">No</span>
+                        </label>
+                      </div>
+                    </div>
+                    <Button fullWidth size="lg" className="shadow-lg shadow-brand-cyan/20" onClick={handleRegister} disabled={needsAccommodation === null}>
+                      {needsAccommodation === null ? 'Select Accommodations' : user ? 'Register Now' : 'Sign in to Register'}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Event Full</Button>
+                )}
+              </div>
             )}
 
-            <div className="flex w-full sm:w-auto gap-2">
+            {isPast && (
+              <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Event Concluded</Button>
+            )}
+
+            <div className="flex w-full gap-2 mt-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/events/${activeEvent.id}`);
+                }}
+                className="flex-[2] px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sky-600 dark:text-sky-400 font-bold"
+              >
+                View Details
+              </button>
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -130,9 +205,9 @@ const CardContent: React.FC<CardContentProps> = ({
                   toggleLike(e, activeEvent.id);
                 }}
                 className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Like"
               >
                 <Heart className={`h-5 w-5 ${likedEvents[activeEvent.id] ? 'fill-brand-pink text-brand-pink' : 'text-slate-400'}`} />
-                <span className="text-sm font-medium">{likeCounts[activeEvent.id] || 0}</span>
               </button>
               <button
                 onClick={(e) => {
@@ -141,9 +216,9 @@ const CardContent: React.FC<CardContentProps> = ({
                   handleShare(e, activeEvent.id);
                 }}
                 className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Share"
               >
                 {copiedId === activeEvent.id ? <Check className="h-5 w-5 text-green-400" /> : <Share2 className="h-5 w-5 text-slate-400" />}
-                <span className="text-sm font-medium">{copiedId === activeEvent.id ? 'Copied' : 'Share'}</span>
               </button>
             </div>
           </div>
@@ -245,7 +320,7 @@ const Events: React.FC = () => {
 
   return (
     <div className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[80vh] flex flex-col">
-      <StagedFadeIn direction="down">
+      <StagedFadeIn direction="down" trigger="mount">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Playgroups & Classes</h1>
