@@ -153,17 +153,17 @@ jobs:
               "",
               "_This issue was automatically created by the deploy workflow._"
             );
-            const body = bodyLines.join("\\n");
+            const body = bodyLines.join("\n");
 
             let openIssues = [];
             try {
-              const resp = await github.rest.issues.listForRepo({
+              const allItems = await github.paginate(github.rest.issues.listForRepo, {
                 owner,
                 repo,
                 state: "open",
                 per_page: 100,
               });
-              openIssues = (resp.data || []).filter((item) => !item.pull_request);
+              openIssues = (allItems || []).filter((item) => !item.pull_request);
             } catch (e) {
               core.warning(`Could not list existing issues for dedupe: ${e && e.message ? e.message : e}`);
             }
@@ -184,7 +184,7 @@ jobs:
                   "Another deployment failure was detected:",
                   "",
                   body,
-                ].join("\\n"),
+                ].join("\n"),
               });
               return;
             }
