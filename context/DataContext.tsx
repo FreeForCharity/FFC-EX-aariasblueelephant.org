@@ -43,6 +43,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const invokeEmailFunction = async (record: any, type: string) => {
+    try {
+      await supabase.functions.invoke('send-registration-email', {
+        body: { record, type }
+      });
+    } catch (e) {
+      console.error("Failed to trigger email function:", e);
+    }
+  };
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -428,16 +438,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 0;
   };
 
-
-  const invokeEmailFunction = async (record: any, type: string) => {
-    try {
-      await supabase.functions.invoke('send-registration-email', {
-        body: { record, type }
-      });
-    } catch (e) {
-      console.error("Failed to trigger email function:", e);
-    }
-  };
 
 
   return (
