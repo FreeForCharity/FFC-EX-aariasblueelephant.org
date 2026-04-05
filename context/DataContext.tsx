@@ -367,6 +367,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const evt = events.find(e => e.id === data.eventId);
       if (evt) {
         updateEvent(evt.id, { registered: evt.registered + 1 });
+        // Trigger Registration Received Email
+        invokeEmailFunction({ ...resData, event_title: evt.title }, 'REGISTRATION_RECEIVED');
       }
     }
     return { success: true };
@@ -375,7 +377,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const approveRegistration = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('event_registrations').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
+      const reg = eventRegistrations.find(r => r.id === id);
       setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+      
+      // Trigger Registration Approved Email
+      if (reg) {
+        const evt = events.find(e => e.id === reg.eventId);
+        invokeEmailFunction({ ...reg, status: 'Approved', event_title: evt?.title }, 'REGISTRATION_APPROVED');
+      }
+      
       return { success: true };
     } else {
       console.error("Approve registration error:", error.message, error.details);
@@ -416,6 +426,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (email.endsWith('@blueelephant.org')) return 1250;
 
     return 0;
+  };
+
+
+  const invokeEmailFunction = async (record: any, type: string) => {
+    try {
+      await supabase.functions.invoke('send-registration-email', {
+        body: { record, type }
+      });
+    } catch (e) {
+      console.error("Failed to trigger email function:", e);
+    }
   };
 
 
