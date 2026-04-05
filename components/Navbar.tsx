@@ -33,18 +33,20 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     // Check if we should show the dashboard prompt
-    if (user && localStorage.getItem('showDashboardPrompt') === 'true' && location.pathname !== '/dashboard') {
+    // User requested to show it on every refresh, not just first sign-in
+    if (user && location.pathname !== '/dashboard') {
       const timer = setTimeout(() => setShowDashboardPrompt(true), 1500); // Wait 1.5s for page to settle
       
       const hideTimer = setTimeout(() => {
         setShowDashboardPrompt(false);
-        localStorage.removeItem('showDashboardPrompt');
       }, 10000); // Show for 10s
       
       return () => {
         clearTimeout(timer);
         clearTimeout(hideTimer);
       };
+    } else {
+      setShowDashboardPrompt(false);
     }
   }, [user, location.pathname]);
 

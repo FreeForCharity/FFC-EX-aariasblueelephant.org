@@ -36,6 +36,17 @@ export default function CardStack({
     }
   }, [propCards]);
 
+  // Auto-rotate every 5 seconds
+  useEffect(() => {
+    if (cards.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      moveToEnd();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [cards.length]);
+
   const moveToEnd = () => {
     setCards(prev => {
         if (prev.length <= 1) return prev;

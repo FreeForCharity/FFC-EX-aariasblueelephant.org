@@ -65,7 +65,10 @@ const Home: React.FC = () => {
     const upcomingEvents = dbEvents
         .filter((e) => {
             const evDate = parseDateLocal(e.date);
-            return evDate && evDate >= new Date(new Date().setHours(0, 0, 0, 0));
+            // Hide events happened today or in the past (only show from tomorrow onwards)
+            const tomorrow = new Date();
+            tomorrow.setHours(23, 59, 59, 999);
+            return evDate && evDate > tomorrow;
         })
         .sort((a, b) => {
             const dateA = parseDateLocal(a.date);
