@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
         { id: 'my-volunteering', label: 'Volunteering', icon: Heart, role: 'user' },
         { id: 'testimonial', label: 'Share Story', icon: MessageSquare, role: 'user' },
         { id: 'history', label: 'Donations', icon: TrendingUp, role: 'donor' },
-        { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor_board' }, 
+        { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor' }, 
         
         // Always Visible (at the end)
         { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
@@ -209,13 +209,13 @@ const Dashboard: React.FC = () => {
         // For Board members: only show management tools and designated donor paths
         if (isBoard) {
             // Admin only needs these, they don't need 'user' items
-            return item.role === 'board' || item.role === 'donor_board' || (item.role === 'donor' && isDonor);
+            // Remove 'donor' items from board sidebar to keep it clean as requested
+            return item.role === 'board';
         }
         
         // For non-board members (regular users)
         if (item.role === 'user') return true;
         if (item.role === 'donor') return isDonor;
-        if (item.role === 'donor_board') return isDonor;
         return false;
     });
 

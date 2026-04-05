@@ -43,10 +43,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = 'User';
-      if (normalizedEmail === 'admin@aariasblueelephant.org' || normalizedEmail === 'aariasblueelephant@gmail.com') {
-        role = 'BoardMember.Owner';
-      } else if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
-        role = 'BoardMember';
+      
+      if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
+        role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
 
       setUser({
