@@ -52,6 +52,7 @@ export interface Testimonial {
   date: string;
   avatar?: string;
   status: 'Pending' | 'Approved';
+  rating?: number;
   rank?: number;
   userId?: string;
 }

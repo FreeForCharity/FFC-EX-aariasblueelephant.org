@@ -4,7 +4,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL'); // User needs to set this secret
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+}
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     // Initialize Supabase Client with service role key to bypass RLS
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -21,11 +31,11 @@ serve(async (req) => {
     if (fetchError) throw fetchError;
 
     if (!pendingRegs || pendingRegs.length === 0) {
-      return new Response('No pending registrations to notify about', { status: 200 });
+      return new Response('No pending registrations to notify about', { status: 200, headers: corsHeaders });
     }
 
     // 2. Format the registration list for the email
-    const regRows = pendingRegs.map(reg => `
+    const regRows = pendingRegs.map((reg: any) => `
       <tr style="border-bottom: 1px solid #edf2f7;">
         <td style="padding: 12px; color: #2d3748;">${reg.user_name}</td>
         <td style="padding: 12px; color: #4a5568;">${reg.events?.title || 'Unknown Event'}</td>
@@ -73,9 +83,9 @@ serve(async (req) => {
     });
 
     const emailResult = await res.json();
-    return new Response(JSON.stringify({ success: true, count: pendingRegs.length, emailResult }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, count: pendingRegs.length, emailResult }), { status: 200, headers: corsHeaders });
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
 });

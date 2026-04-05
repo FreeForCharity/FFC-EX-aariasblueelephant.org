@@ -823,8 +823,17 @@ const Dashboard: React.FC = () => {
                                             {testimonial.author.charAt(0)}
                                         </div>
                                         <div>
-                                            <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
-                                            <p className="text-slate-500 text-xs">{testimonial.authorEmail} • {testimonial.date}</p>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
+                                                {testimonial.rating && (
+                                                    <div className="flex gap-0.5 ml-1">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <Star key={i} className={`h-3 w-3 ${i < (testimonial.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{testimonial.authorEmail || 'No Email'} • {testimonial.date}</p>
                                         </div>
                                     </div>
                                     <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest border shadow-sm ${testimonial.status === 'Pending'

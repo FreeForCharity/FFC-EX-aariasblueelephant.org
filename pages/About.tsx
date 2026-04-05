@@ -1,18 +1,63 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse, Star, Send, Share, Link as LinkIcon, ClipboardCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 import { useData } from '../context/DataContext';
 import { Testimonial } from '../types';
 import RichText, { extractMedia } from '../components/RichText';
 import Logo from '../components/Logo';
 import DonationQR from '../components/DonationQR';
+import Button from '../components/Button';
 const About: React.FC = () => {
-  const { testimonials } = useData();
+  const { testimonials, addTestimonial } = useData();
+  const { user, loginWithGoogle } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
+  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'Submitting' | 'Success' | 'Error'>('Idle');
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  
+  // Form State
+  const [newStory, setNewStory] = useState({
+      author: user?.name || '',
+      role: '',
+      content: '',
+      rating: 5
+  });
+
+  // Pre-fill author when user logs in
+  useEffect(() => {
+      if (user && !newStory.author) {
+          setNewStory(prev => ({ ...prev, author: user.name }));
+      }
+  }, [user]);
+
+  // Deep-linking: check for share=story
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('share') === 'story') {
+        setIsSubmittingStory(true);
+        // Clean up URL parameter without page reload
+        navigate('/about', { replace: true });
+    }
+    
+    // Check for anchors
+    if (location.hash) {
+        const id = location.hash.slice(1);
+        const element = document.getElementById(id);
+        if (element) {
+            setTimeout(() => element.scrollIntoView({ behavior: 'smooth' }), 500);
+        }
+    }
+  }, [location.search, location.hash, navigate]);
+
   const modalRef = useRef<HTMLDivElement>(null);
+  const submissionModalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -21,10 +66,11 @@ const About: React.FC = () => {
       }
     };
 
-    if (selectedTestimonial) {
+    if (selectedTestimonial || isSubmittingStory) {
       document.addEventListener('keydown', handleKeyDown);
       setTimeout(() => {
-        modalRef.current?.focus();
+        if (selectedTestimonial) modalRef.current?.focus();
+        else if (isSubmittingStory) submissionModalRef.current?.focus();
       }, 100);
       document.body.style.overflow = 'hidden';
     } else {
@@ -35,7 +81,42 @@ const About: React.FC = () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [selectedTestimonial]);
+  }, [selectedTestimonial, isSubmittingStory]);
+
+  const handleSubmitStory = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user) return;
+
+      setSubmissionStatus('Submitting');
+      
+      const result = await addTestimonial({
+          author: newStory.author,
+          role: newStory.role || 'Community Member',
+          content: newStory.content,
+          rating: newStory.rating,
+          authorEmail: user.email
+      });
+
+      if (result.success) {
+          setSubmissionStatus('Success');
+          setNewStory({ author: user.name, role: '', content: '', rating: 5 });
+          setTimeout(() => {
+              setIsSubmittingStory(false);
+              setSubmissionStatus('Idle');
+          }, 3000);
+      } else {
+          setSubmissionStatus('Error');
+      }
+  };
+
+  const copyShareLink = (id?: string) => {
+    const baseUrl = window.location.origin + '/about';
+    const finalUrl = id ? `${baseUrl}#${id}` : `${baseUrl}?share=story`;
+    
+    navigator.clipboard.writeText(finalUrl);
+    setShowCopyFeedback(true);
+    setTimeout(() => setShowCopyFeedback(false), 2000);
+  };
 
   const getTruncatedContent = (text: string, maxLimit = 120) => {
     if (text.length <= maxLimit) return { isTruncated: false, text };
@@ -188,11 +269,20 @@ const About: React.FC = () => {
           </div>
         </div>
 
-        {/* Voices of our Community */}
-        <div className="mb-20">
-          <div className="flex items-center gap-3 mb-8">
-            <Quote className="h-8 w-8 text-sky-500" />
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Voices of our Community</h2>
+        <div id="voices" className="mb-20">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <Quote className="h-8 w-8 text-sky-500" />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Voices of our Community</h2>
+            </div>
+            <Button 
+                onClick={() => setIsSubmittingStory(true)}
+                variant="primary" 
+                size="sm"
+                className="group/btn"
+            >
+                Share Your Story <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            </Button>
           </div>
 
           {approvedTestimonials.length > 0 ? (
@@ -202,9 +292,35 @@ const About: React.FC = () => {
                   const { isTruncated, text } = getTruncatedContent(item.content);
 
                   return (
-                    <div key={item.id} className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 rounded-xl shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500 group cursor-pointer hover:shadow-md border border-slate-200 dark:border-slate-700" onClick={() => setSelectedTestimonial(item)}>
+                    <div 
+                        key={item.id} 
+                        id={item.id}
+                        className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 rounded-xl shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500 group cursor-pointer hover:shadow-md border border-slate-200 dark:border-slate-700" 
+                        onClick={() => setSelectedTestimonial(item)}
+                    >
                       <div>
-                        <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900/50 mb-4" />
+                        <div className="flex justify-between items-start mb-4">
+                            <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900/50" />
+                            <div className="flex flex-col items-end gap-2">
+                                {item.rating && (
+                                    <div className="flex gap-0.5">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} className={`h-3.5 w-3.5 ${i < (item.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                                        ))}
+                                    </div>
+                                )}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyShareLink(item.id);
+                                    }}
+                                    className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-all text-slate-400 hover:text-sky-500"
+                                    title="Copy link to this story"
+                                >
+                                    <LinkIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
 
                         {(() => {
                           const media = extractMedia(item.content);
@@ -396,9 +512,20 @@ const About: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="pt-10 sm:pt-12">
-                  <h4 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">{selectedTestimonial.author}</h4>
-                  <p className="text-sm sm:text-base text-sky-600 dark:text-sky-400 font-semibold tracking-wider uppercase">{selectedTestimonial.title || selectedTestimonial.role}</p>
+                <div className="pt-10 sm:pt-12 flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                        <h4 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">{selectedTestimonial.author}</h4>
+                        <p className="text-sm sm:text-base text-sky-600 dark:text-sky-400 font-semibold tracking-wider uppercase">{selectedTestimonial.title || selectedTestimonial.role}</p>
+                    </div>
+                    {selectedTestimonial.rating && (
+                        <div className="flex gap-1 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`h-4 w-4 ${i < (selectedTestimonial.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                            ))}
+                        </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -432,6 +559,160 @@ const About: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Success/Link Copy Notification Popup */}
+      {showCopyFeedback && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
+              <div className="bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
+                  <ClipboardCheck className="h-5 w-5 text-brand-cyan" />
+                  <span className="text-sm font-bold uppercase tracking-widest whitespace-nowrap">Link Copied to Clipboard!</span>
+              </div>
+          </div>
+      )}
+
+      {/* Story Submission Modal */}
+      {isSubmittingStory && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => submissionStatus !== 'Submitting' && setIsSubmittingStory(false)}
+          >
+              <div 
+                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-300"
+                onClick={(e) => e.stopPropagation()}
+                ref={submissionModalRef}
+                tabIndex={-1}
+              >
+                  {submissionStatus === 'Success' ? (
+                      <div className="p-12 text-center flex flex-col items-center">
+                          <div className="h-20 w-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                              <CheckCircle className="h-10 w-10" />
+                          </div>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Story Received!</h3>
+                          <p className="text-slate-600 dark:text-slate-400">Thank you for sharing your experience. We will review and publish it shortly.</p>
+                      </div>
+                  ) : !user ? (
+                      <div className="p-12 text-center flex flex-col items-center">
+                          <div className="h-16 w-16 bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center mb-6">
+                              <Quote className="h-8 w-8" />
+                          </div>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Sign in to Share</h3>
+                          <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-xs">Please sign in with Google to share your story with our community.</p>
+                          
+                          <Button 
+                            onClick={() => {
+                                localStorage.setItem('authReturnTo', '/about?share=story');
+                                loginWithGoogle();
+                            }}
+                            className="w-full h-12 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3"
+                          >
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pjax-loader.gif" alt="" className="hidden" />
+                            Continue with Google
+                          </Button>
+                          <button 
+                            onClick={() => setIsSubmittingStory(false)}
+                            className="mt-6 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                          >
+                            Maybe later
+                          </button>
+                      </div>
+                  ) : (
+                      <>
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Share Your Story</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mt-0.5">Voices of our community</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => copyShareLink()}
+                                    className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-sky-500"
+                                    title="Copy share link for this form"
+                                >
+                                    <Share className="h-5 w-5" />
+                                </button>
+                                <button 
+                                    onClick={() => setIsSubmittingStory(false)}
+                                    className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                                >
+                                    <X className="h-5 w-5 text-slate-400" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSubmitStory} className="p-6 space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Name</label>
+                                    <input 
+                                        required
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm"
+                                        placeholder="e.g. Jane Doe"
+                                        value={newStory.author}
+                                        onChange={e => setNewStory({...newStory, author: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Role</label>
+                                    <input 
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm"
+                                        placeholder="e.g. Parent, Donor"
+                                        value={newStory.role}
+                                        onChange={e => setNewStory({...newStory, role: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Story</label>
+                                <textarea 
+                                    required
+                                    rows={4}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm resize-none"
+                                    placeholder="Tell us about your experience..."
+                                    value={newStory.content}
+                                    onChange={e => setNewStory({...newStory, content: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="space-y-3 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                                <label className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest block text-center">Your Rating</label>
+                                <div className="flex justify-center gap-1.5">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setNewStory({...newStory, rating: star})}
+                                            className="transition-transform active:scale-90 hover:scale-110"
+                                        >
+                                            <Star 
+                                                className={`h-8 w-8 transition-colors ${
+                                                    star <= newStory.rating 
+                                                        ? 'fill-amber-400 text-amber-400' 
+                                                        : 'text-slate-200 dark:text-slate-700'
+                                                }`} 
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Button 
+                                type="submit" 
+                                className="w-full h-12 text-sm font-black uppercase tracking-widest"
+                                disabled={submissionStatus === 'Submitting'}
+                            >
+                                {submissionStatus === 'Submitting' ? 'Sending...' : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        Submit Story <Send className="h-4 w-4" />
+                                    </span>
+                                )}
+                            </Button>
+                        </form>
+                      </>
+                  )}
+              </div>
+          </div>
       )}
     </div>
   );
