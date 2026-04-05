@@ -72,7 +72,6 @@ const Home: React.FC = () => {
             const dateB = parseDateLocal(b.date);
             return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
         })
-        .slice(0, 2)
         .map(e => ({
             id: e.id,
             title: e.title,
