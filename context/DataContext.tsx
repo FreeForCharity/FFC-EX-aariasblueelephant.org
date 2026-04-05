@@ -1,6 +1,10 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { supabase } from '../lib/supabase';
+import { MOCK_DONATIONS } from '../constants';
+
 
 interface MutationResult {
   success: boolean;
@@ -21,9 +25,12 @@ interface DataContextType {
   updateTestimonial: (id: string, metadata: Partial<Testimonial>) => Promise<MutationResult>;
   submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<MutationResult>;
   approveVolunteer: (id: string) => Promise<MutationResult>;
+  deleteVolunteer: (id: string) => Promise<MutationResult>;
   registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
   approveRegistration: (id: string) => Promise<MutationResult>;
   deleteRegistration: (id: string) => Promise<MutationResult>;
+  updateUserDonation: (email: string, amount: number) => Promise<MutationResult>;
+  getUserDonation: (email: string) => number;
   isLoading: boolean;
 }
 
@@ -69,7 +76,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 registered: e.registered || 0,
                 initialLikes: e.initial_likes || 0,
                 image: e.image,
-                mediaLink: e.media_link
+                mediaLink: e.media_link,
+                hours: e.hours || 0
               }));
               setEvents(mappedEvents);
               
@@ -153,7 +161,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       image: eventData.image,
       registered: eventData.registered !== undefined ? eventData.registered : 0,
       initial_likes: 0,
-      media_link: eventData.mediaLink
+      media_link: eventData.mediaLink,
+      hours: eventData.hours || 0
     }]).select().single();
 
     if (error) {
@@ -174,7 +183,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registered: data.registered,
         initialLikes: data.initial_likes,
         image: data.image,
-        mediaLink: data.media_link
+        mediaLink: data.media_link,
+        hours: data.hours
       }]);
     }
     return { success: true };
@@ -309,6 +319,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteVolunteer = async (id: string): Promise<MutationResult> => {
+    const { error } = await supabase.from('volunteer_applications').delete().eq('id', id);
+    if (!error) {
+      setVolunteerApplications(volunteerApplications.filter(app => app.id !== id));
+      return { success: true };
+    } else {
+      console.error("Delete volunteer error:", error.message, error.details);
+      return { success: false, error: `${error.message}: ${error.details || ''}` };
+    }
+  };
+
   // Registrations
   const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>): Promise<MutationResult> => {
     const dateStr = new Date().toISOString().split('T')[0];
@@ -378,6 +399,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserDonation = async (email: string, amount: number): Promise<MutationResult> => {
+      // For now, this is a local stub since we don't have a donations table yet or it's managed via mock
+      console.log(`Updating donation for ${email} to ${amount}`);
+      return { success: true };
+  };
+
+  const getUserDonation = (email: string) => {
+    // Mike Smith has some mock donations
+    if (email === 'user1@example.com') return 350;
+    
+    // Board members might have some too
+    if (email.endsWith('@blueelephant.org')) return 1250;
+
+    return 0;
+  };
+
+
   return (
     <DataContext.Provider value={{
       events,
@@ -393,9 +431,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateTestimonial,
       submitVolunteerApp,
       approveVolunteer,
+      deleteVolunteer,
       registerForEvent,
       approveRegistration,
       deleteRegistration,
+      updateUserDonation,
+      getUserDonation,
       isLoading
     }}>
       {children}

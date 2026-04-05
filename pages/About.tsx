@@ -82,7 +82,7 @@ const About: React.FC = () => {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Our Purpose</h2>
             <div className="prose prose-slate dark:prose-invert">
               <p className="text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">
-                The specific purpose of this corporation is to foster inclusive playgroups for neurodivergent and neurotypical kids. Through weekly classes and events, we promote equality, compassion, and community in California and beyond.
+                The specific purpose of this corporation is to foster inclusive events for neurodivergent and neurotypical kids. Through weekly classes and events, we promote equality, compassion, and community in California and beyond.
               </p>
               <p className="text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">
                 We aim to raise public awareness about the importance of early intervention and therapy to support the developmental needs of these children, while creating inclusive spaces where specially-abled individuals are embraced and integrated into society.

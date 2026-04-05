@@ -56,7 +56,7 @@ const Volunteer: React.FC = () => {
         <div className="w-full bg-sky-50 dark:bg-sky-900/20 rounded-2xl p-8 mb-8 border border-sky-100 dark:border-sky-800/50">
           <h3 className="text-sky-900 dark:text-sky-300 font-bold mb-3">While you wait...</h3>
           <p className="text-sky-700 dark:text-sky-400 mb-6">
-            Help us fund the very programs you'll be supporting. Every donation directly creates more inclusive spaces for children through our playgroups.
+            Help us fund the very programs you'll be supporting. Every donation directly creates more inclusive spaces for children through our events.
           </p>
           <Link
             to="/#join-herd"
@@ -106,7 +106,7 @@ const Volunteer: React.FC = () => {
         </div>
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Want to Collaborate?</h2>
         <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
-          To submit a volunteer application and get involved with our playgroups and events, please sign in or create an account first. This helps us stay connected!
+          To submit a volunteer application and get involved with our events and events, please sign in or create an account first. This helps us stay connected!
         </p>
         <Link to="/login" state={{ returnTo: '/volunteer' }}>
           <Button size="lg" className="flex items-center gap-2 shadow-lg shadow-sky-500/25">
@@ -125,7 +125,7 @@ const Volunteer: React.FC = () => {
         </div>
         <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Volunteer With Us</h1>
         <p className="text-xl text-slate-600 dark:text-slate-300">
-          Help us create inclusive spaces. We need compassionate individuals for playgroups, events, and administrative support.
+          Help us create inclusive spaces. We need compassionate individuals for events, events, and administrative support.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ const Volunteer: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, interest: e.target.value })}
               >
                 <option>Event Support</option>
-                <option>Playgroup Facilitator</option>
+                <option>Event Facilitator</option>
                 <option>Administrative Help</option>
                 <option>Fundraising</option>
                 <option>Professional Services (Therapy/Legal)</option>

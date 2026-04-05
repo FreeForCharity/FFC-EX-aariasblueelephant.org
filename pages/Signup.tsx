@@ -5,14 +5,14 @@ import Button from '../components/Button';
 import Logo from '../components/Logo';
 
 const Signup: React.FC = () => {
-  const { signupWithGoogle, user, isLoading } = useAuth();
+  const { loginWithGoogle, user, isLoading } = useAuth();
 
   if (user) {
     return <Navigate to="/dashboard" />;
   }
 
   const handleGoogleAuth = async () => {
-    await signupWithGoogle();
+    await loginWithGoogle();
   };
 
   return (
@@ -29,7 +29,7 @@ const Signup: React.FC = () => {
             Join the Family
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Create an account to register for inclusive playgroups and events.
+            Create an account to register for inclusive events and events.
           </p>
         </div>
 

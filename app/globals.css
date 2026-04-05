@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", "sans-serif";
+  --color-brand-primary: #0284c7;
+  --color-brand-hover: #0369a1;
+  --color-brand-surface: #f0f9ff;
+  --color-brand-dark: #0f172a;
+  --color-brand-card: #1e293b;
+
+  --breakpoint-xs: 480px;
+  
+  --shadow-sticker: 0 8px 0 0 rgba(0, 0, 0, 0.05);
+  --shadow-sticker-hover: 0 12px 0 0 rgba(0, 174, 239, 0.2);
+}
+
+/* Accessibility: Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Fingerprint scanner animation for Navbar QR Code */
+@keyframes scan {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes footer-fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-footer-fade {
+  animation: footer-fade-in 1.2s ease-out forwards;
+}
+
+/* === Playful Page Load Animations === */
+
+@keyframes bounceInLeft {
+  0% { opacity: 0; transform: translateX(-120px) rotate(-8deg); }
+  50% { opacity: 1; transform: translateX(20px) rotate(2deg); }
+  70% { transform: translateX(-10px) rotate(-1deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes bounceInRight {
+  0% { opacity: 0; transform: translateX(120px) rotate(8deg); }
+  50% { opacity: 1; transform: translateX(-20px) rotate(-2deg); }
+  70% { transform: translateX(10px) rotate(1deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes bounceUp {
+  0% { opacity: 0; transform: translateY(60px) scale(0.9); }
+  50% { opacity: 1; transform: translateY(-15px) scale(1.02); }
+  70% { transform: translateY(8px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rubberPop {
+  0% { opacity: 0; transform: scale(0.3) rotate(-12deg); }
+  40% { opacity: 1; transform: scale(1.15) rotate(4deg); }
+  60% { transform: scale(0.9) rotate(-2deg); }
+  80% { transform: scale(1.05) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes wobbleIn {
+  0% { opacity: 0; transform: translateY(40px) rotate(-5deg); }
+  30% { opacity: 1; transform: translateY(-10px) rotate(3deg); }
+  50% { transform: translateY(5px) rotate(-2deg); }
+  70% { transform: translateY(-3px) rotate(1deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes springSlideRight {
+  0% { opacity: 0; transform: translateX(200px) scale(0.8); }
+  40% { opacity: 1; transform: translateX(-30px) scale(1.03); }
+  60% { transform: translateX(15px) scale(0.98); }
+  80% { transform: translateX(-5px) scale(1.01); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes dropBounce {
+  0% { opacity: 0; transform: translateY(-80px) scale(0.7); }
+  45% { opacity: 1; transform: translateY(12px) scale(1.05); }
+  65% { transform: translateY(-6px) scale(0.97); }
+  85% { transform: translateY(3px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Utility classes */
+.anim-bounce-left { opacity: 0; animation: bounceInLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-bounce-right { opacity: 0; animation: bounceInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-bounce-up { opacity: 0; animation: bounceUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-rubber-pop { opacity: 0; animation: rubberPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-wobble-in { opacity: 0; animation: wobbleIn 0.8s ease-out forwards; }
+.anim-spring-right { opacity: 0; animation: springSlideRight 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-drop-bounce { opacity: 0; animation: dropBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-fade-up { opacity: 0; animation: fadeIn 0.6s ease-out forwards; }
+
+.anim-delay-100 { animation-delay: 100ms; }
+.anim-delay-200 { animation-delay: 200ms; }
+.anim-delay-300 { animation-delay: 300ms; }
+.anim-delay-400 { animation-delay: 400ms; }
+.anim-delay-500 { animation-delay: 500ms; }
+.anim-delay-600 { animation-delay: 600ms; }
+.anim-delay-700 { animation-delay: 700ms; }
+.anim-delay-800 { animation-delay: 800ms; }
+.anim-delay-900 { animation-delay: 900ms; }
+.anim-delay-1000 { animation-delay: 1000ms; }
+.anim-delay-1200 { animation-delay: 1200ms; }
+.anim-delay-1400 { animation-delay: 1400ms; }
+
+/* Custom Scrollbar Styles */
+.slim-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+.slim-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.slim-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 8px; }
+.slim-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(148, 163, 184, 0.4); border-radius: 8px; }
+.slim-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(148, 163, 184, 0.6); }
+
+/* Kid-Friendly Sticker Effects */
+.sticker-border {
+  filter: drop-shadow(2px 0 0 white) drop-shadow(-2px 0 0 white) drop-shadow(0 2px 0 white) drop-shadow(0 -2px 0 white);
+}
+
+.sticker-shadow {
+  filter: drop-shadow(4px 4px 0px rgba(0, 174, 239, 0.2));
+}
+
+.sticker-shadow-purple {
+  filter: drop-shadow(4px 4px 0px rgba(195, 174, 214, 0.3));
+}

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '../types';
 import { supabase } from '../lib/supabase';
@@ -7,7 +9,10 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => void;
+  updateAvatar: (avatarUrl: string) => void;
   isLoading: boolean;
+  isBoard: boolean;
+  isDonor: boolean;
   totalMembers: number;
 }
 
@@ -18,6 +23,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   const [totalMembers, setTotalMembers] = useState<number>(42); // Default fallback
+
+  const isBoard = user?.role?.startsWith('BoardMember') || false;
+  const isDonor = user?.role === 'Donor' || false;
 
   // Derive User and RBAC state directly from Supabase session
   const handleSession = async (session: any) => {
@@ -41,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser({
+        id: session.user.id,
         email,
         name,
         role,
@@ -120,8 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser({ ...user, ...updates });
   };
 
+  const updateAvatar = (avatarUrl: string) => {
+    updateProfile({ avatar: avatarUrl });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, isLoading, totalMembers }}>
+    <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
       {children}
     </AuthContext.Provider>
   );

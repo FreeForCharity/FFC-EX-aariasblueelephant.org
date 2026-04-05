@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { MapPin, Mail, Phone, Heart, ChevronDown, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -43,7 +45,7 @@ const Footer: React.FC = () => {
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm text-sm mb-8">
                             We envision a world where neurodivergent and neurotypical children grow together.
-                            Our mission is to foster inclusive playgroups, promote early intervention, and
+                            Our mission is to foster inclusive events, promote early intervention, and
                             build a compassionate community through shared experiences.
                         </p>
                         <SocialLinks />

@@ -1,10 +1,10 @@
 import { User, Event, Donation } from './types';
 
 export const MOCK_USERS: User[] = [
-  { email: "liji@blueelephant.org", role: "BoardMember.Owner", name: "Liji Chalatil" },
-  { email: "ajith@blueelephant.org", role: "BoardMember.Owner", name: "Ajith Chandran" },
-  { email: "donor1@example.com", role: "Donor", name: "Sarah Doe" },
-  { email: "user1@example.com", role: "User", name: "Mike Smith" }
+  { id: "1", email: "liji@blueelephant.org", role: "BoardMember.Owner", name: "Liji Chalatil" },
+  { id: "2", email: "ajith@blueelephant.org", role: "BoardMember.Owner", name: "Ajith Chandran" },
+  { id: "3", email: "donor1@example.com", role: "Donor", name: "Sarah Doe" },
+  { id: "4", email: "user1@example.com", role: "User", name: "Mike Smith" }
 ];
 
 export const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=1000';
@@ -15,7 +15,7 @@ export const ALL_EVENTS: Event[] = [
   {
     id: '1',
     title: 'Sensory-Friendly Art Class',
-    date: '2025-11-15',
+    date: '2035-11-15',
     time: '10:00 AM',
     location: 'Tracy/Mountain House, CA',
     description: 'A creative session designed for sensory seekers and avoiders alike. All materials provided. We focus on texture, color, and self-expression in a calm environment.',
@@ -23,12 +23,13 @@ export const ALL_EVENTS: Event[] = [
     registered: 8,
     type: 'Class',
     image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=1000',
-    initialLikes: 42
+    initialLikes: 42,
+    hours: 2
   },
   {
     id: '2',
-    title: 'Inclusive Weekend Playgroup',
-    date: '2025-12-18',
+    title: 'Inclusive Weekend Event',
+    date: '2035-12-18',
     time: '02:00 PM',
     location: 'Mountain House Community Park',
     description: 'Open play for neurodivergent and neurotypical kids to foster friendship and understanding. Guided activities included to help children connect.',
@@ -36,12 +37,13 @@ export const ALL_EVENTS: Event[] = [
     registered: 22,
     type: 'Event',
     image: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=1000',
-    initialLikes: 89
+    initialLikes: 89,
+    hours: 3
   },
   {
     id: '3',
     title: 'Parent Support Circle',
-    date: '2026-01-20',
+    date: '2036-01-20',
     time: '06:00 PM',
     location: 'Online (Zoom)',
     description: 'A safe space for parents to share experiences and resources regarding early intervention. Led by a certified family therapist.',
@@ -49,7 +51,8 @@ export const ALL_EVENTS: Event[] = [
     registered: 45,
     type: 'Event',
     image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1000',
-    initialLikes: 156
+    initialLikes: 156,
+    hours: 1
   },
   // Past Events
   {
@@ -63,7 +66,8 @@ export const ALL_EVENTS: Event[] = [
     registered: 38,
     type: 'Event',
     image: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1000',
-    initialLikes: 124
+    initialLikes: 124,
+    hours: 4
   },
   {
     id: '5',
@@ -76,7 +80,8 @@ export const ALL_EVENTS: Event[] = [
     registered: 100,
     type: 'Fundraiser',
     image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=1000',
-    initialLikes: 210
+    initialLikes: 210,
+    hours: 5
   }
 ];
 
@@ -88,7 +93,7 @@ export const MOCK_DONATIONS: Donation[] = [
 
 export const BYLAWS_HIGHLIGHTS = [
   "Organized exclusively for charitable purposes under Section 501(c)(3).",
-  "Specific purpose: Foster inclusive playgroups for neurodivergent & neurotypical kids.",
+  "Specific purpose: Foster inclusive events for neurodivergent & neurotypical kids.",
   "Board members serve without compensation (volunteer-based).",
   "Non-discrimination policy on race, religion, disability, or gender."
 ];

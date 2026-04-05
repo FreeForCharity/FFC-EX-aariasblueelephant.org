@@ -6,9 +6,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     server: {
-      port: 3000,
+      port: 4000,
       host: '0.0.0.0',
     },
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     plugins: [react()],
     base: './',
     define: {

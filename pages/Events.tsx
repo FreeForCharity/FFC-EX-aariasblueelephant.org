@@ -1,20 +1,24 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+
+import { useNavigate } from 'react-router-dom';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import StagedFadeIn from '../components/StagedFadeIn';
 import StickerIcon from '../components/StickerIcon';
 import EventCalendarModal from '../components/EventCalendarModal';
 import RichText from '../components/RichText';
-import { parseDateLocal, formatDateLocal, formatShortDateLocal } from '../lib/utils';
+import { parseDateLocal, formatDateLocal } from '../lib/utils';
+import { Event } from '../types';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
 interface CardContentProps {
-  activeEvent: any;
+  activeEvent: Event;
   activeTab: Tab;
   likedEvents: Record<string, boolean>;
   likeCounts: Record<string, number>;
@@ -22,24 +26,206 @@ interface CardContentProps {
   handleShare: (e: React.MouseEvent, id: string) => void;
   copiedId: string | null;
   isPast: boolean;
-  navigate: (path: string) => void;
+  onNavigate: (path: string) => void;
 }
+
+const EventCardShort: React.FC<{ 
+  event: Event; 
+  onNavigate: (id: string) => void;
+  priority?: boolean;
+}> = ({ 
+  event, 
+  onNavigate,
+  priority = false 
+}) => {
+  const { user } = useAuth();
+  const { eventRegistrations, registerForEvent } = useData();
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  const showAccommodationQuestion = event.type === 'Event' || event.type === 'Class';
+  const userRegistration = user ? eventRegistrations.find(r => r.eventId === event.id && r.userId === user.email) : null;
+  const isRegistered = !!userRegistration;
+
+
+  const handleRegister = (e: React.MouseEvent, pref: boolean) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      localStorage.setItem('pendingEventId', event.id);
+      localStorage.setItem('pendingAccommodation', String(pref));
+      onNavigate(`/login?returnTo=/events/${event.id}`);
+      return;
+    }
+    
+    registerForEvent({
+      eventId: event.id,
+      userId: user.email,
+      userName: user.name,
+      userEmail: user.email,
+      specialNeeds: pref,
+    });
+    setRegistrationSubmitted(true);
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/events/${event.id}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
+  return (
+    <div 
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-sky-500/50 transition-all duration-300 flex flex-col md:flex-row relative group mb-4 min-h-[140px]"
+    >
+      {/* Copy Toast - Center Floating */}
+      {showToast && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black py-2 px-6 rounded-full shadow-2xl flex items-center gap-2 border border-sky-500/30 animate-in fade-in zoom-in duration-300">
+          <Check className="w-3 h-3 text-sky-400 dark:text-sky-600" />
+          LINK COPIED!
+        </div>
+      )}
+
+      {/* Left: Image */}
+      <div 
+        onClick={() => onNavigate(`/events/${event.id}`)}
+        className="relative h-40 md:h-auto md:w-56 overflow-hidden shrink-0 cursor-pointer"
+      >
+        <img
+          src={event.image || DEFAULT_EVENT_IMAGE}
+          alt={event.title}
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+        <div className="absolute top-3 left-3 z-10">
+          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-md
+            ${event.type === 'Class' ? 'bg-blue-500 text-white' :
+              event.type === 'Fundraiser' ? 'bg-green-500 text-white' :
+                event.type === 'Outreach' ? 'bg-orange-500 text-white' :
+                  event.type === 'Advocacy' ? 'bg-emerald-600 text-white' :
+                    'bg-brand-purple text-white'}`}>
+            {event.type}
+          </span>
+        </div>
+      </div>
+
+      {/* Center: Details */}
+      <div className="p-6 flex flex-col flex-grow md:justify-center">
+        <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-[9px] mb-2 uppercase tracking-widest opacity-80">
+          <Calendar className="w-3 h-3" />
+          <span>{formatDateLocal(event.date)}</span>
+          <span className="text-slate-200 dark:text-slate-700 mx-1">•</span>
+          <Clock className="w-3 h-3" />
+          <span>{event.time}</span>
+        </div>
+        
+        <h3 
+          onClick={() => onNavigate(`/events/${event.id}`)}
+          className="text-lg font-black text-slate-900 dark:text-white mb-2 cursor-pointer hover:text-sky-600 transition-colors leading-tight tracking-tight capitalize"
+        >
+          {event.title}
+        </h3>
+        
+        <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-1 max-w-xl opacity-90">
+          {event.description}
+        </p>
+      </div>
+
+      {/* Right: Actions Area (The 'Tab' end) */}
+      <div className="p-4 md:px-6 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 flex flex-col justify-center items-center md:items-end gap-3 shrink-0 min-w-[240px] bg-slate-50/30 dark:bg-slate-800/10">
+        
+        {!isRegistered && !registrationSubmitted && showAccommodationQuestion && (
+          <div className="w-full flex flex-col gap-2 mb-1">
+            <span className="text-[11px] font-[900] text-brand-purple dark:text-brand-purple uppercase tracking-tight flex items-center justify-center md:justify-end gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span>
+              SUPPORT SELECTION REQUIRED TO SIGN UP
+            </span>
+            
+            <div className="flex flex-col gap-2 w-full">
+              <button 
+                onClick={(e) => handleRegister(e, false)}
+                className="w-full py-3 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-cyan hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+              >
+                SIGN UP (NO SUPPORT)
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={(e) => handleRegister(e, true)}
+                className="w-full py-3 px-4 bg-white dark:bg-slate-800 border-2 border-brand-purple text-brand-purple rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-purple hover:text-white transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+              >
+                SIGN UP (WITH SUPPORT)
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isRegistered && !registrationSubmitted && !showAccommodationQuestion && (
+           <div className="flex w-full gap-2 items-stretch">
+             <button 
+              onClick={(e) => handleRegister(e, false)}
+              className="flex-grow py-3 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-[10px] shadow-lg transition-all uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-sky-600 dark:hover:bg-sky-400"
+            >
+              SIGN UP NOW
+              <ChevronRight className="h-4 w-4" />
+            </button>
+           </div>
+        )}
+
+        {(isRegistered || registrationSubmitted) && (
+          <div className="flex w-full gap-2 items-stretch">
+            {isRegistered ? (
+              <button 
+                onClick={() => onNavigate(`/events/${event.id}`)}
+                className="flex-grow bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+              >
+                <Check className="h-3.5 w-3.5" /> JOINED
+              </button>
+            ) : (
+              <div className="flex-grow bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-center animate-pulse">
+                SUCCESS!
+              </div>
+            )}
+          </div>
+        )}
+
+        <button 
+          onClick={handleShare}
+          className="w-full py-2 flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 hover:text-sky-500 transition-colors"
+        >
+          <Share2 className="h-3.5 w-3.5" /> SHARE EVENT
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
 
 const CardContent: React.FC<CardContentProps> = ({
   activeEvent,
-  activeTab,
   likedEvents,
-  likeCounts,
   toggleLike,
   handleShare,
   copiedId,
   isPast,
-  navigate
+  onNavigate
 }) => {
   const { user } = useAuth();
   const { eventRegistrations, registerForEvent } = useData();
   const [needsAccommodation, setNeedsAccommodation] = useState<boolean | null>(null);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+
+  // Only ask for accommodations for Events and Classes
+  const showAccommodationQuestion = activeEvent.type === 'Event' || activeEvent.type === 'Class';
+
 
   const userRegistration = user && activeEvent ? eventRegistrations.find(r => r.eventId === activeEvent.id && r.userId === user.email) : null;
   const isRegistered = !!userRegistration;
@@ -53,7 +239,7 @@ const CardContent: React.FC<CardContentProps> = ({
         localStorage.setItem('pendingEventId', activeEvent.id);
         localStorage.setItem('pendingAccommodation', String(needsAccommodation));
       }
-      navigate('/login', { state: { returnTo: `/events/${activeEvent.id}` } });
+      onNavigate(`/login?returnTo=/events/${activeEvent.id}`);
       return;
     }
     if (activeEvent) {
@@ -75,12 +261,8 @@ const CardContent: React.FC<CardContentProps> = ({
           <img
             src={activeEvent.image || DEFAULT_EVENT_IMAGE}
             alt={activeEvent.title}
-            className={`w-full h-full object-cover transition-transform duration-700 ${!isPast ? 'group-hover:scale-105' : ''} ${isPast ? 'grayscale-[50%]' : ''}`}
+            className={`h-full w-full object-cover transition-transform duration-700 ${!isPast ? 'group-hover:scale-105' : ''} ${isPast ? 'grayscale-[50%]' : ''}`}
             loading="lazy"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = DEFAULT_LOCAL_FALLBACK;
-            }}
           />
           <div className="absolute top-4 left-4 z-20">
             <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
@@ -106,9 +288,9 @@ const CardContent: React.FC<CardContentProps> = ({
           )}
         </div>
 
-        <div className={`p-8 flex flex-col justify-between h-full lg:h-[600px] bg-white dark:bg-slate-900 relative z-30 ${activeEvent.mediaLink ? 'lg:col-span-2' : ''}`}>
+        <div className={`p-8 flex flex-col justify-between h-full lg:min-h-[600px] bg-white dark:bg-slate-900 relative z-30 ${activeEvent.mediaLink ? 'lg:col-span-2' : ''}`}>
           <div className={`flex-1 min-h-0 overflow-y-auto pr-2 pb-4 slim-scrollbar ${activeEvent.mediaLink ? 'lg:flex lg:gap-8' : ''}`}>
-            <div className={activeEvent.mediaLink ? 'flex-1 lg:max-w-1/2' : ''}>
+            <div className={activeEvent.mediaLink ? 'lg:flex-1 lg:max-w-[50%]' : ''}>
               <h2 className={`text-3xl font-bold text-slate-900 dark:text-white mb-4 transition-colors ${!isPast ? 'group-hover:text-sky-600' : ''}`}>{activeEvent.title}</h2>
               <p className="text-slate-600 dark:text-slate-300 text-lg mb-8 line-clamp-3">{activeEvent.description}</p>
 
@@ -133,9 +315,9 @@ const CardContent: React.FC<CardContentProps> = ({
             </div>
 
             {activeEvent.mediaLink && (
-              <div className="flex-1 mb-8 lg:mb-0 lg:max-w-1/2 h-full flex flex-col">
+              <div className="flex-1 mb-8 lg:mb-0 lg:max-w-[50%] h-full flex flex-col">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Event Media</h3>
-                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-y-auto slim-scrollbar flex-1 relative">
+                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-y-auto slim-scrollbar flex-1 relative min-h-[200px]">
                   <div className="absolute inset-0 p-3">
                     <RichText content={activeEvent.mediaLink} className="w-full text-slate-600 dark:text-slate-300" />
                   </div>
@@ -151,31 +333,34 @@ const CardContent: React.FC<CardContentProps> = ({
                   <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-xl border border-green-200 dark:border-green-800 text-center text-sm font-bold flex flex-col gap-2">
                     <Check className="h-6 w-6 mx-auto mb-1 animate-bounce" />
                     Registration Submitted!
-                    <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/events/${activeEvent.id}`); }}>View Details</Button>
+                    <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>View Details</Button>
                   </div>
                 ) : isRegistered ? (
-                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/events/${activeEvent.id}`); }}>
+                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>
                     {registrationStatus === 'Pending' ? 'Waiting for Approval' : 'Already Registered'}
                   </Button>
                 ) : activeEvent.registered < activeEvent.capacity ? (
                   <div className="space-y-4 w-full">
-                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <label className="text-sm font-bold text-slate-900 dark:text-white block mb-2 text-center">
-                        Need Accommodations?
-                      </label>
-                      <div className="flex gap-2">
-                        <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
-                          <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === true} onChange={() => setNeedsAccommodation(true)} />
-                          <span className="font-medium text-xs text-center">Yes</span>
+                    {showAccommodationQuestion && (
+                      <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <label className="text-sm font-black text-brand-purple dark:text-brand-purple block mb-2 text-center uppercase tracking-tight flex items-center justify-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span>
+                          Required: Support Needed? (Helps us Prepare)
                         </label>
-                        <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
-                          <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === false} onChange={() => setNeedsAccommodation(false)} />
-                          <span className="font-medium text-xs text-center">No</span>
-                        </label>
+                        <div className="flex gap-2">
+                          <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
+                            <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === true} onChange={() => setNeedsAccommodation(true)} />
+                            <span className="font-medium text-xs text-center">Yes</span>
+                          </label>
+                          <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
+                            <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === false} onChange={() => setNeedsAccommodation(false)} />
+                            <span className="font-medium text-xs text-center">No</span>
+                          </label>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <Button fullWidth size="lg" className="shadow-lg shadow-brand-cyan/20" onClick={handleRegister} disabled={needsAccommodation === null}>
-                      {needsAccommodation === null ? 'Select Accommodations' : user ? 'Register Now' : 'Sign in to Register'}
+                      {needsAccommodation === null ? 'Selection Required to Sign Up' : user ? 'Register Now' : 'Sign in to Register'}
                     </Button>
                   </div>
                 ) : (
@@ -193,7 +378,7 @@ const CardContent: React.FC<CardContentProps> = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  navigate(`/events/${activeEvent.id}`);
+                  onNavigate(`/events/${activeEvent.id}`);
                 }}
                 className="flex-[2] px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sky-600 dark:text-sky-400 font-bold"
               >
@@ -229,32 +414,35 @@ const CardContent: React.FC<CardContentProps> = ({
   );
 };
 
-const Events: React.FC = () => {
-  const { events, loading } = useData();
+
+export default function Events() {
+  const { events, isLoading } = useData();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [activeIndex, setActiveIndex] = useState(0);
   const [likedEvents, setLikedEvents] = useState<Record<string, boolean>>({});
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [, setLikeCounts] = useState<Record<string, number>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Filter events based on active tab
-  const filteredEvents = events.filter(event => {
-    const eventDate = parseDateLocal(event.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Filter and sort events based on active tab - memoized to prevent lag during carousel transitions
+  const filteredEvents = React.useMemo(() => {
+    return events.filter(event => {
+      const eventDate = parseDateLocal(event.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    if (!eventDate) return activeTab === 'all'; // Default for non-date strings
-    if (activeTab === 'upcoming') return eventDate >= today;
-    if (activeTab === 'past') return eventDate < today;
-    return true;
-  }).sort((a, b) => {
-    const dateA = parseDateLocal(a.date)?.getTime() || 0;
-    const dateB = parseDateLocal(b.date)?.getTime() || 0;
-    return activeTab === 'past' ? dateB - dateA : dateA - dateB;
-  });
+      if (!eventDate) return activeTab === 'all';
+      if (activeTab === 'upcoming') return eventDate >= today;
+      if (activeTab === 'past') return eventDate < today;
+      return true;
+    }).sort((a, b) => {
+      const dateA = parseDateLocal(a.date)?.getTime() || 0;
+      const dateB = parseDateLocal(b.date)?.getTime() || 0;
+      return activeTab === 'past' ? dateB - dateA : dateA - dateB;
+    });
+  }, [events, activeTab]);
 
   // Reset active index when tab changes
   useEffect(() => {
@@ -321,11 +509,11 @@ const Events: React.FC = () => {
   const activeEvent = filteredEvents[safeActiveIndex];
 
   return (
-    <div className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[80vh] flex flex-col">
-      <StagedFadeIn direction="down" trigger="mount">
+    <div className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[80vh] flex flex-col pt-32">
+      <StagedFadeIn>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Playgroups & Classes</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Upcoming Events & Classes</h1>
             <p className="text-slate-600 dark:text-slate-400">Join our inclusive sessions designed for all abilities.</p>
           </div>
           <div className="mt-4 md:mt-0 flex space-x-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
@@ -353,7 +541,7 @@ const Events: React.FC = () => {
         </div>
       </StagedFadeIn>
 
-      {loading ? (
+      {isLoading && events.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed animate-pulse">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-cyan border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">Loading events...</h2>
@@ -368,71 +556,85 @@ const Events: React.FC = () => {
           )}
         </div>
       ) : (
-        /* Carousel Container */
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div
-            className={`relative w-full ${activeEvent.mediaLink ? 'max-w-7xl' : 'max-w-5xl'} mx-auto transition-all duration-500`}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
-            {/* Main Card */}
-            {(() => {
-              const evDate = parseDateLocal(activeEvent.date);
-              const isPastEvent = evDate && evDate < new Date(new Date().setHours(0, 0, 0, 0));
-              return isPastEvent ? (
-                <div className="block group">
-                  <CardContent
-                    activeEvent={activeEvent}
-                    activeTab={activeTab}
-                    likedEvents={likedEvents}
-                    likeCounts={likeCounts}
-                    toggleLike={toggleLike}
-                    handleShare={handleShare}
-                    copiedId={copiedId}
-                    isPast={true}
-                    navigate={navigate}
-                  />
-                </div>
-              ) : (
-                <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
-                  <CardContent
-                    activeEvent={activeEvent}
-                    activeTab={activeTab}
-                    likedEvents={likedEvents}
-                    likeCounts={likeCounts}
-                    toggleLike={toggleLike}
-                    handleShare={handleShare}
-                    copiedId={copiedId}
-                    isPast={false}
-                    navigate={navigate}
-                  />
-                </Link>
-              );
-            })()}
-
-            <button onClick={prevSlide} className="absolute top-1/2 -left-4 lg:-left-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronLeft className="h-6 w-6" /></button>
-            <button onClick={nextSlide} className="absolute top-1/2 -right-4 lg:-right-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronRight className="h-6 w-6" /></button>
-
-            <div className="flex justify-center gap-2 mt-6">
-              {filteredEvents.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveIndex(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 ${idx === safeActiveIndex ? 'w-8 bg-brand-cyan' : 'w-2 bg-slate-700'}`}
+          {activeTab === 'upcoming' ? (
+            /* Upcoming Vertical List View */
+            <div className="flex flex-col gap-6 mb-12">
+              {filteredEvents.map((event, index) => (
+                <EventCardShort 
+                  key={event.id} 
+                  event={event} 
+                  onNavigate={(path) => navigate(path)}
+                  priority={index < 2} // Prioritize first two for LCP
                 />
               ))}
             </div>
-          </div>
+          ) : (
+            /* All / Past Carousel View */
+            <div
+              className={`relative w-full ${activeEvent.mediaLink ? 'max-w-7xl' : 'max-w-5xl'} mx-auto transition-all duration-500`}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+            >
+              {(() => {
+                const evDate = parseDateLocal(activeEvent.date);
+                const isPastEvent = evDate && evDate < new Date(new Date().setHours(0, 0, 0, 0));
+                return isPastEvent ? (
+                  <div className="block group">
+                    <CardContent
+                      activeEvent={activeEvent}
+                      activeTab={activeTab}
+                      likedEvents={likedEvents}
+                      likeCounts={{}}
+                      toggleLike={toggleLike}
+                      handleShare={handleShare}
+                      copiedId={copiedId}
+                      isPast={true}
+                      onNavigate={(p) => navigate(p)}
+                    />
+                  </div>
+                ) : (
+                  <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
+                    <CardContent
+                      activeEvent={activeEvent}
+                      activeTab={activeTab}
+                      likedEvents={likedEvents}
+                      likeCounts={{}}
+                      toggleLike={toggleLike}
+                      handleShare={handleShare}
+                      copiedId={copiedId}
+                      isPast={false}
+                      onNavigate={(p) => navigate(p)}
+                    />
+                  </Link>
+                );
+              })()}
+
+              <button onClick={prevSlide} className="absolute top-1/2 -left-4 lg:-left-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronLeft className="h-6 w-6" /></button>
+              <button onClick={nextSlide} className="absolute top-1/2 -right-4 lg:-right-12 -translate-y-1/2 bg-white/90 dark:bg-slate-800/90 p-3 rounded-full shadow-xl z-10 hover:bg-sky-50 dark:hover:bg-sky-600 transition-colors"><ChevronRight className="h-6 w-6" /></button>
+
+              <div className="flex justify-center gap-2 mt-6">
+                {filteredEvents.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveIndex(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 ${idx === safeActiveIndex ? 'w-8 bg-brand-cyan' : 'w-2 bg-slate-700'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+
       {/* Host CTA */}
-      <StagedFadeIn delay={0.3} direction="up">
+      <StagedFadeIn delay={0.3}>
         <div className="mt-16 bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-slate-800/50 dark:to-slate-900/50 rounded-2xl p-10 text-center border border-sky-100 dark:border-slate-700 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <Users className="h-24 w-24 text-sky-600" />
           </div>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">Become a Playgroup Host</h3>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">Become an Event Host</h3>
           <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 text-lg font-medium">Interested in facilitating inclusive play in your neighborhood? We provide all materials and guidance.</p>
           <Button size="lg" className="px-10" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
             Inquire to Host <ArrowRight className="ml-2 h-5 w-5" />
@@ -441,7 +643,7 @@ const Events: React.FC = () => {
       </StagedFadeIn>
 
       {/* Guarantee Banner */}
-      <StagedFadeIn delay={0.4} direction="up">
+      <StagedFadeIn delay={0.4}>
         <div className="mt-12 bg-white dark:bg-slate-800 border-2 border-dashed border-sky-100 dark:border-slate-700 rounded-2xl p-8 md:p-12 text-center flex flex-col items-center">
           <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6">
             <StickerIcon icon={HeartHandshake} size={32} color="#00AEEF" />
@@ -458,6 +660,4 @@ const Events: React.FC = () => {
       />
     </div>
   );
-};
-
-export default Events;
+}

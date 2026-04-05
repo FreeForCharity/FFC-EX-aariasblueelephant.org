@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen } from 'lucide-react';
@@ -59,7 +61,7 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
     { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: 'Playgroups', path: '/events', icon: Users, color: '#8b5cf6' },
+    { name: 'Events', path: '/events', icon: Users, color: '#8b5cf6' },
     { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
     { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
   ];

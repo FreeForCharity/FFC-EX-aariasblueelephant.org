@@ -1,541 +1,667 @@
-import React, { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { 
+    LayoutDashboard, 
+    Calendar, 
+    MessageSquare, 
+    Heart, 
+    Settings, 
+    LogOut, 
+    User, 
+    Bell, 
+    ChevronRight, 
+    Plus, 
+    Clock, 
+    CheckCircle2, 
+    AlertCircle,
+    Sticker,
+    Eye,
+    Trash2,
+    Edit,
+    ExternalLink,
+    Download,
+    FileText,
+    Users,
+    MapPin,
+    X,
+    TrendingUp,
+    Star,
+    Camera
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import RichText from '../components/RichText';
-import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
-import WheelOfFun from '../components/WheelOfFun';
-
-import {
-    LayoutDashboard,
-    Calendar,
-    Users,
-    Camera,
-    DollarSign,
-    FileText,
-    MessageSquare,
-    Heart,
-    Clock,
-    Plus,
-    Play,
-    Download,
-    CheckCircle,
-
-    MapPin,
-    ChevronRight,
-    ArrowRight,
-    Image as ImageIcon,
-    X,
-    AlertCircle,
-    AlertTriangle,
-    Info,
-    Award,
-    Star
-} from 'lucide-react';
-import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import Button from '../components/Button';
-import { formatShortDateLocal } from '../lib/utils';
+import RichText from '../components/RichText';
+import WheelOfFun from '../components/WheelOfFun';
+import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
+import { 
+  Event, 
+  VolunteerApplication, 
+  NewsletterSubscription, 
+  Testimonial as TestimonialType, 
+  EventRegistration 
+} from '../types';
 
-
-type ViewState = 'overview' | 'events' | 'manage-registrations' | 'volunteers' | 'manage-testimonials' | 'history' | 'receipts' | 'my-events' | 'testimonial' | 'wheel';
-
+type ViewState = 
+    | 'overview' 
+    | 'events' 
+    | 'manage-registrations' 
+    | 'volunteers' 
+    | 'manage-testimonials' 
+    | 'wheel' 
+    | 'history' 
+    | 'receipts' 
+    | 'my-events' 
+    | 'my-volunteering' 
+    | 'testimonial';
 
 const Dashboard: React.FC = () => {
-    const { user, updateProfile, totalMembers } = useAuth();
-    const { events, addEvent, updateEvent, deleteEvent, volunteerApplications, approveVolunteer, testimonials, addTestimonial, approveTestimonial, deleteTestimonial, updateTestimonial, eventRegistrations, approveRegistration, deleteRegistration, isLoading } = useData();
-
-    const [activeView, setActiveView] = useState<ViewState>('overview');
-    const [showEventForm, setShowEventForm] = useState(false);
+    const { user, isBoard, isDonor, updateAvatar } = useAuth();
+    const { 
+        events, 
+        eventRegistrations, 
+        volunteerApplications, 
+        testimonials,
+        approveTestimonial,
+        deleteTestimonial,
+        addTestimonial,
+        approveRegistration,
+        deleteRegistration,
+        approveVolunteer,
+        deleteVolunteer,
+        updateUserDonation,
+        getUserDonation,
+        updateEvent,
+        deleteEvent,
+        addEvent
+    } = useData();
+    
+    const navigate = useNavigate();
+    const [activeView, setActiveView] = useState<ViewState>(isBoard ? 'events' : 'overview');
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
-    const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
+    const [editFormData, setEditFormData] = useState<Partial<Event>>({});
+    const [isAddingEvent, setIsAddingEvent] = useState(false);
     const [showTestimonialForm, setShowTestimonialForm] = useState(false);
     const [testimonialContent, setTestimonialContent] = useState('');
-    const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'StorySuccess' | 'VolunteerSuccess'>('Idle');
-    const [appError, setAppError] = useState<string | null>(null);
-    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-    const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
-    const [confirmDeleteTestimonialId, setConfirmDeleteTestimonialId] = useState<string | null>(null);
-    const [editingTestimonials, setEditingTestimonials] = useState<Record<string, Partial<Testimonial>>>({});
+    const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'StorySuccess' | 'VolunteerSuccess' | 'RegSuccess'>('Idle');
     const [filterSpecialNeeds, setFilterSpecialNeeds] = useState<boolean | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmDeleteTestimonialId, setConfirmDeleteTestimonialId] = useState<string | null>(null);
+    const [confirmDeleteVolunteerId, setConfirmDeleteVolunteerId] = useState<string | null>(null);
+    const [appError, setAppError] = useState<string | null>(null);
+    const [regSortBy, setRegSortBy] = useState<'newest' | 'upcoming_event'>('newest');
+    const [editingDonationEmail, setEditingDonationEmail] = useState<string | null>(null);
+    const [newDonationAmount, setNewDonationAmount] = useState<string>('');
+    const [editingDurationId, setEditingDurationId] = useState<string | null>(null);
+    const [newDuration, setNewDuration] = useState<string>('');
 
-    if (!user) {
-        return <Navigate to="/login" />;
-    }
 
-    if (isLoading) {
-        return (
-            <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-                <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-500 dark:text-slate-400">Loading your dashboard...</p>
-            </div>
-        );
-    }
+    const userRegs = eventRegistrations.filter((r: EventRegistration) => r.userId === user?.id || r.userEmail === user?.email);
+    const userApps = volunteerApplications.filter((app: VolunteerApplication) => app.userId === user?.id || app.email === user?.email);
+    const userTestimonials = testimonials.filter((t: TestimonialType) => t.userId === user?.id || t.authorEmail === user?.email);
 
-    const isBoard = user.role === 'BoardMember' || user.role === 'BoardMember.Owner';
-    const isDonor = user.role === 'Donor';
-    const isUser = user.role === 'User';
+    const totalImpactHours = userRegs.reduce((sum, reg) => {
+        const event = events.find(e => e.id === reg.eventId);
+        return sum + (event?.hours || 0);
+    }, 0);
+    const donationTotal = getUserDonation(user?.email || '');
 
-    // --- Handlers ---
-
-    const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                    updateProfile({ avatar: reader.result });
-                }
-            };
-            reader.readAsDataURL(file);
+    // Protection happens in middleware or AuthContext, but double check here
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
         }
-    };
+    }, [user, navigate]);
 
-    const handleEventImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return null;
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                    setEventForm(prev => ({ ...prev, image: reader.result as string }));
-                }
+                updateAvatar(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleAddEvent = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const baseEventData = {
-            title: eventForm.title,
-            time: eventForm.time,
-            location: eventForm.location,
-            description: eventForm.description,
-            type: eventForm.type as any,
-            image: eventForm.image || 'https://images.unsplash.com/photo-1502086223501-87db9e9cc358?auto=format&fit=crop&q=80&w=1000',
-            mediaLink: eventForm.mediaLink,
-            capacity: Number(eventForm.capacity),
-            registered: Number(eventForm.registered) || 0
-        };
-
-        if (editingEventId) {
-            const result = await updateEvent(editingEventId, { ...baseEventData, date: eventForm.date });
-            if (!result.success) {
-                setAppError(result.error || "Failed to update event");
-                return;
-            }
-        } else {
-            const datesToCreate = [eventForm.date];
-            if (eventForm.recurrence === 'weekly') {
-                for (let i = 1; i <= 3; i++) {
-                    const nextDate = new Date(eventForm.date);
-                    nextDate.setDate(nextDate.getDate() + (7 * i));
-                    datesToCreate.push(nextDate.toISOString().split('T')[0]);
-                }
-            } else if (eventForm.recurrence === 'monthly') {
-                for (let i = 1; i <= 3; i++) {
-                    const nextDate = new Date(eventForm.date);
-                    nextDate.setMonth(nextDate.getMonth() + i);
-                    datesToCreate.push(nextDate.toISOString().split('T')[0]);
-                }
-            }
-
-            for (const date of datesToCreate) {
-                const result = await addEvent({ ...baseEventData, date });
-                if (!result.success) {
-                    setAppError(result.error || "Failed to create event");
-                    return;
-                }
-            }
-        }
-
-        setShowEventForm(false);
-        setEditingEventId(null);
-        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
+    const handleDownloadTaxReceipt = (id: string) => {
+        alert(`Generating PDF receipt for donation ${id}... In a production environment, this would generate and download a formal 501(c)(3) tax-compliant receipt.`);
     };
 
-    const handleEditEvent = (id: string) => {
-        const evt = events.find(e => e.id === id);
-        if (evt) {
-            setEventForm({
-                title: evt.title,
-                date: evt.date,
-                time: evt.time,
-                location: evt.location,
-                description: evt.description,
-                type: evt.type,
-                image: evt.image || '',
-                mediaLink: evt.mediaLink || '',
-                capacity: evt.capacity,
-                registered: evt.registered || 0,
-                recurrence: 'none'
-            });
-            setEditingEventId(id);
-            setShowEventForm(true);
-        }
-    };
+    const handleExportEmails = (eventId: string, eventTitle: string) => {
+        const eventRegs = eventRegistrations.filter(r => r.eventId === eventId);
+        
+        // Alphabetically sort the registrations by user name as requested for the registration desk check-in
+        eventRegs.sort((a, b) => a.userName.localeCompare(b.userName));
+        
+        // Even if zero, download a blank CSV as requested for testing
+        const rows = [
+            ["Name", "Email", "Registration Date", "Status", "Accommodations"],
+            ...eventRegs.map(r => [
+                r.userName,
+                r.userEmail,
+                r.date,
+                r.status,
+                r.specialNeeds ? "Yes" : "No"
+            ])
+        ];
 
-    const handleDeleteEvent = async (id: string) => {
-        const result = await deleteEvent(id);
-        if (!result.success) setAppError(result.error || "Failed to delete event");
+        const csvString = rows.map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `registrations_${eventTitle.replace(/\s+/g, '_').toLowerCase()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const handleSubmitTestimonial = async (e: React.FormEvent) => {
         e.preventDefault();
         const result = await addTestimonial({
-            author: user.name,
-            authorEmail: user.email,
-            role: user.role,
             content: testimonialContent,
-            avatar: user.avatar
-        });
-
+            author: user.name,
+            authorEmail: user.email
+        } as any);
         if (result.success) {
-            setSubmissionStatus('StorySuccess');
             setTestimonialContent('');
             setShowTestimonialForm(false);
+            setSubmissionStatus('StorySuccess');
+            setTimeout(() => setSubmissionStatus('Idle'), 5000);
         } else {
             setAppError(result.error || "Failed to submit story");
         }
     };
 
-    const updateTestimonialMetadata = async (id: string, data: Partial<any>) => { // Changed to 'any' for flexibility with title/rank
-        const result = await updateTestimonial(id, data);
-        if (!result.success) {
-            setAppError(result.error || "Failed to update testimonial metadata");
-        }
-        return result;
-    };
-
-    const handleDownloadTaxReceipt = (id: string) => {
-        alert(`Downloading Tax Receipt for donation #${id}... (Mock PDF Download)`);
-    };
-
-    // --- Navigation Configuration ---
-
+    // Nav Items Configuration
     const navItems = [
-        // Board Items
-        ...(isBoard ? [
-            { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-            { id: 'events', label: 'Manage Events', icon: Calendar },
-            { id: 'manage-registrations', label: 'Registrations', icon: CheckCircle },
-            { id: 'volunteers', label: 'Volunteers', icon: Users },
-            { id: 'manage-testimonials', label: 'Testimonials', icon: MessageSquare },
+        // Default View
+        { id: 'overview', label: 'Overview', icon: LayoutDashboard, role: 'all' },
+        
+        // Management View (Board Only)
+        { id: 'events', label: 'Manage Events', icon: Calendar, role: 'board' },
+        { id: 'manage-registrations', label: 'Manage Registrations', icon: Users, role: 'board' },
+        { id: 'volunteers', label: 'Review Volunteers', icon: Heart, role: 'board' },
+        { id: 'manage-testimonials', label: 'Manage Stories', icon: MessageSquare, role: 'board' },
+        
+        // User View (Standard)
+        { id: 'my-events', label: 'My Events', icon: Calendar, role: 'user' },
+        { id: 'my-volunteering', label: 'Volunteering', icon: Heart, role: 'user' },
+        { id: 'testimonial', label: 'Share Story', icon: MessageSquare, role: 'user' },
+        { id: 'history', label: 'Donations', icon: TrendingUp, role: 'donor' },
+        { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor_board' }, 
+        
+        // Always Visible (at the end)
+        { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
+    ].filter(item => {
+        // Special case for wheel - always show
+        if (item.id === 'wheel') return true;
+        
+        // For Board members: only show management tools and designated donor paths
+        if (isBoard) {
+            // Admin only needs these, they don't need 'user' items
+            return item.role === 'board' || item.role === 'donor_board' || (item.role === 'donor' && isDonor);
+        }
+        
+        // For non-board members (regular users)
+        if (item.role === 'user') return true;
+        if (item.role === 'donor') return isDonor;
+        if (item.role === 'donor_board') return isDonor;
+        return false;
+    });
 
-            { id: 'wheel', label: 'Wheel of Fun', icon: Star },
-
-        ] : []),
-        // Donor Items
-        ...(isDonor ? [
-            { id: 'overview', label: 'Impact Overview', icon: LayoutDashboard },
-            { id: 'history', label: 'Donation History', icon: Clock },
-            { id: 'receipts', label: 'Tax Receipts', icon: FileText },
-        ] : []),
-        // User Items
-        ...(isUser ? [
-            { id: 'overview', label: 'My Dashboard', icon: LayoutDashboard },
-            { id: 'my-events', label: 'My Events', icon: Calendar },
-            { id: 'my-volunteering', label: 'My Volunteering', icon: Users },
-            { id: 'testimonial', label: 'Share Story', icon: MessageSquare },
-        ] : []),
-    ];
-
-    // --- Render Sections ---
-
-    const renderSuccessView = (type: 'Story' | 'Volunteer') => (
-        <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center shadow-xl animate-in zoom-in-95 duration-500 max-w-2xl mx-auto my-10">
-            <div className="h-20 w-20 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="h-10 w-10 text-green-600 dark:text-green-400 animate-pulse" />
+    const renderSuccessView = (type: string) => (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
+            <div className="h-16 w-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-500" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                {type === 'Story' ? 'Thank You for Sharing Your Story!' : 'Thank You for Stepping Up!'}
-            </h2>
-            <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-8">
-                {type === 'Story'
-                    ? "Your journey inspires us. Our team will review your testimonial shortly. Once approved, it will be highlighted in our 'Voices of our Community' section to inspire others."
-                    : "We've received your application to join our volunteer force. A member of our team will reach out to you personally to discuss the next steps in signifying your impact."}
+            <h3 className="text-xl font-bold text-green-900 dark:text-green-400 mb-2">{type} Received!</h3>
+            <p className="text-green-700 dark:text-green-300/70 max-w-sm mx-auto">
+                Thank you for your submission. Our team will review it and get back to you shortly.
             </p>
-            <div className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-6 mb-8 border border-sky-100 dark:border-sky-800/50">
-                <p className="text-sky-800 dark:text-sky-300 font-medium mb-3">Want to amplify your impact right now?</p>
-                <p className="text-sky-600 dark:text-sky-400 text-sm mb-4">
-                    Your contribution directly funds the programs that build inclusive spaces for children like Aaria.
-                </p>
-                <a
-                    href="/#join-herd"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan text-white rounded-full font-bold hover:bg-sky-500 transition-all shadow-lg hover:shadow-sky-500/25"
-                    onClick={() => setSubmissionStatus('Idle')}
-                >
-                    Signify Impact with a Donation <ArrowRight className="h-4 w-4" />
-                </a>
-            </div>
-            <Button variant="ghost" onClick={() => setSubmissionStatus('Idle')} className="text-slate-500 dark:text-slate-400">
-                Back to Dashboard
-            </Button>
+            <Button variant="outline" className="mt-6 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800/30" onClick={() => setSubmissionStatus('Idle')}>Dismiss</Button>
         </div>
     );
 
-    const renderStatsCards = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-2">
-            {isBoard && (
-                <>
-                    <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Upcoming Classes</h3>
-                            <Calendar className="h-5 w-5 text-brand-cyan" />
+    const renderStatsCards = () => {
+        if (isBoard) {
+            // Management Stats for Board Members
+            const totalRegistrations = eventRegistrations.length;
+            const pendingApplications = volunteerApplications.filter(v => v.status === 'Pending').length;
+            const pendingStories = testimonials.filter(t => t.status === 'Pending').length;
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="h-12 w-12 rounded-xl bg-brand-cyan/10 flex items-center justify-center text-brand-cyan group-hover:scale-110 transition-transform">
+                                <Users className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">Total Registrations<br/>Across All Events</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalRegistrations} Signups</h3>
+                            </div>
                         </div>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{events.length}</p>
-                    </div>
-                    <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Approvals</h3>
-                            <CheckCircle className="h-5 w-5 text-brand-amber" />
-                        </div>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white">
-                            {volunteerApplications.filter(v => v.status === 'Pending').length +
-                                testimonials.filter(t => t.status === 'Pending').length +
-                                eventRegistrations.filter(r => r.status === 'Pending').length}
-                        </p>
-                    </div>
-                    <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Volunteers</h3>
-                            <Users className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
-                        </div>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{volunteerApplications.filter(v => v.status === 'Approved').length}</p>
-                    </div>
-                    <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Network</h3>
-                            <Users className="h-5 w-5 text-brand-pink" />
-                        </div>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalMembers}</p>
+                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-cyan hover:bg-brand-cyan/5" onClick={() => setActiveView('manage-registrations')}>
+                            Manage All <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
 
-                </>
-            )}
-            {isDonor && (
-                <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg col-span-full md:col-span-2 hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Your Total Contributions</h3>
-                        <Heart className="h-5 w-5 text-brand-pink" />
+                    <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="h-12 w-12 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green group-hover:scale-110 transition-transform">
+                                <Heart className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">Pending Volunteer<br/>Applications</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingApplications} Pending</h3>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-green hover:bg-brand-green/5" onClick={() => setActiveView('volunteers')}>
+                            Review Now <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
-                    <p className="text-4xl font-bold text-slate-900 dark:text-white">$850.00</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Thank you for making a difference.</p>
-                </div>
-            )}
-            {isUser && (
-                <div className="bg-white dark:bg-brand-card p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg col-span-full md:col-span-2 hover:scale-[1.02] hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Registered Events</h3>
-                        <Calendar className="h-5 w-5 text-brand-cyan" />
+
+                    <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="h-12 w-12 rounded-xl bg-brand-purple/10 flex items-center justify-center text-brand-purple group-hover:scale-110 transition-transform">
+                                <MessageSquare className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">Pending Community<br/>Stories</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingStories} New</h3>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-purple hover:bg-brand-purple/5" onClick={() => setActiveView('manage-testimonials')}>
+                            Verify Stories <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{eventRegistrations.filter(r => r.userId === user.email).length}</p>
                 </div>
-            )}
-            {isBoard && (
-                <div className="bg-gradient-to-r from-sky-400 to-indigo-500 p-6 rounded-xl border border-sky-300 dark:border-sky-700 shadow-lg col-span-full mb-2 cursor-pointer hover:scale-[1.01] transition-all duration-300" onClick={() => window.triggerDrift && window.triggerDrift()}>
-                    <div className="flex items-center justify-between">
+            );
+        }
+
+        // Standard Impact Stats for Regular Users
+        const userRegistrations = eventRegistrations.filter(r => r.userEmail === user.email);
+        const totalImpactHours = userRegistrations.reduce((sum, reg) => {
+            const evt = events.find(e => e.id === reg.eventId);
+            return sum + (evt?.hours || 0);
+        }, 0);
+        const donationTotal = (getUserDonation as any)?.(user.email) || 0;
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="h-12 w-12 rounded-xl bg-brand-cyan/10 flex items-center justify-center text-brand-cyan group-hover:scale-110 transition-transform">
+                            <Clock className="h-6 w-6" />
+                        </div>
                         <div>
-                            <h3 className="text-white text-lg font-bold mb-1">Trigger Event Celebration</h3>
-                            <p className="text-sky-100 text-sm">Click here to manually trigger the seasonal celebration particles on the screen.</p>
-                        </div>
-                        <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <Heart className="h-6 w-6 text-white" />
+                            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">Time Spent with <br/>Aaria's Blue Elephant</p>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalImpactHours} Hours</h3>
                         </div>
                     </div>
+                    <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-cyan hover:bg-brand-cyan/5" onClick={() => setActiveView('my-events')}>
+                        My Event History <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
                 </div>
-            )}
-        </div>
-    );
+
+                <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border-2 border-brand-green/20 dark:border-brand-green/30 shadow-xl hover:shadow-2xl transition-all group relative overflow-hidden">
+                    {/* Decorative Background */}
+                    <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-brand-green/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                    
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="h-12 w-12 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green group-hover:scale-110 transition-transform">
+                            <Heart className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Donation Impact</p>
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">${donationTotal.toLocaleString()}</h3>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-start gap-2">
+                            <AlertCircle className="h-3.5 w-3.5 text-slate-400 mt-0.5" />
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                                Note: It takes up to <span className="font-bold">2 business days</span> for the Donation Impact to be reflected after a contribution is made.
+                            </p>
+                        </div>
+                    </div>
+
+                    {(isDonor || isBoard) && !isBoard && (
+                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-green hover:bg-brand-green/5 mt-4" onClick={() => setActiveView('history')}>
+                            Tax Receipts <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const handleEditEvent = (event: Event) => {
+        setEditingEventId(event.id);
+        setEditFormData(event);
+    };
+
+    const handleSaveEvent = async (id: string) => {
+        const result = await updateEvent(id, editFormData);
+        if (result.success) {
+            setEditingEventId(null);
+            setEditFormData({});
+        } else {
+            setAppError(result.error || "Failed to update event");
+        }
+    };
+
+    const handleAddEventSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const result = await addEvent(editFormData as any);
+        if (result.success) {
+            setIsAddingEvent(false);
+            setEditFormData({});
+        } else {
+            setAppError(result.error || "Failed to add event");
+        }
+    };
 
     const renderEventsSection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Manage Events</h2>
-                <Button size="sm" onClick={() => {
-                    if (showEventForm) {
-                        setShowEventForm(false);
-                        setEditingEventId(null);
-                        setEventForm({ title: '', date: '', time: '', location: '', description: '', type: 'Event', image: '', mediaLink: '', capacity: 20, registered: 0, recurrence: 'none' });
-                    } else {
-                        setShowEventForm(true);
-                    }
-                }}>
-                    <Plus className={`h-4 w-4 mr-2 transition-transform duration-300 ${showEventForm ? 'rotate-45' : ''}`} />
-                    {showEventForm ? 'Cancel' : 'Add Event'}
-                </Button>
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Manage Events</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest leading-tight">Create, edit, and track event performance</p>
+                </div>
+                <div className="flex gap-3">
+                    <Button 
+                        size="sm" 
+                        variant={isAddingEvent ? "ghost" : "primary"}
+                        onClick={() => {
+                            setIsAddingEvent(!isAddingEvent);
+                            setEditingEventId(null);
+                            setEditFormData({});
+                        }}
+                    >
+                        {isAddingEvent ? "Cancel" : "Add New Event"}
+                    </Button>
+                    <Link to="/events">
+                        <Button size="sm" variant="outline">View Live Site</Button>
+                    </Link>
+                </div>
             </div>
 
-            {showEventForm && (
-                <form onSubmit={handleAddEvent} className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl mb-8 border border-slate-200 dark:border-slate-700 space-y-4 animate-in fade-in slide-in-from-top-4">
-                    <h3 className="text-slate-900 dark:text-white font-medium mb-2">
-                        {editingEventId ? 'Edit Event Details' : 'New Event Details'}
-                    </h3>
-                    <input type="text" placeholder="Event Title" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} required />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="date" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
-                        <input type="time" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
-                        <select className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.type} onChange={e => setEventForm({ ...eventForm, type: e.target.value })} required>
-                            <option value="Event">Event</option>
-                            <option value="Class">Class</option>
-                            <option value="Fundraiser">Fundraiser</option>
-                            <option value="Outreach">Outreach</option>
-                            <option value="Advocacy">Advocacy</option>
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Capacity</label>
-                            <input type="number" min="1" placeholder="Capacity" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.capacity} onChange={e => setEventForm({ ...eventForm, capacity: Number(e.target.value) })} required />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Current Registered</label>
-                            <input type="number" min="0" placeholder="Registered" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.registered} onChange={e => setEventForm({ ...eventForm, registered: Number(e.target.value) })} required />
-                        </div>
-                        {!editingEventId && (
+            {isAddingEvent && (
+                <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-brand-cyan/20 animate-in fade-in slide-in-from-top-4">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">Create New Event</h3>
+                    <form onSubmit={handleAddEventSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Recurrence</label>
-                                <select className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent" value={eventForm.recurrence} onChange={e => setEventForm({ ...eventForm, recurrence: e.target.value })}>
-                                    <option value="none">Does not repeat</option>
-                                    <option value="weekly">Weekly (4 occurrences)</option>
-                                    <option value="monthly">Monthly (4 occurrences)</option>
-                                </select>
-                            </div>
-                        )}
-                    </div>
-                    <input type="text" placeholder="Location" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
-
-                    <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Additional Media Link (Rich Text/Video/Image URL)</label>
-                        <input type="url" placeholder="e.g. https://youtube.com/watch?v=..." className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.mediaLink} onChange={e => setEventForm({ ...eventForm, mediaLink: e.target.value })} />
-                    </div>
-
-                    {/* Event Image Upload */}
-                    <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Event Image</label>
-                        <div className="mt-1 flex justify-center rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-6 py-10 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative group bg-slate-50 dark:bg-slate-900/30">
-                            <div className="text-center w-full">
-                                {eventForm.image ? (
-                                    <div className="relative h-48 w-full mx-auto rounded-lg overflow-hidden group-hover:opacity-90 transition-opacity">
-                                        <img
-                                            src={eventForm.image}
-                                            alt="Preview"
-                                            className="h-full w-full object-cover"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setEventForm({ ...eventForm, image: '' })}
-                                            className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white hover:bg-red-500 transition-colors backdrop-blur-sm"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                            <ImageIcon className="h-6 w-6 text-slate-400" aria-hidden="true" />
-                                        </div>
-                                        <div className="flex text-sm leading-6 text-slate-500 dark:text-slate-400 justify-center">
-                                            <label
-                                                htmlFor="event-image-upload"
-                                                className="relative cursor-pointer rounded-md font-semibold text-brand-cyan focus-within:outline-none hover:text-brand-cyan/80"
-                                            >
-                                                <span>Upload a file</span>
-                                                <input id="event-image-upload" name="event-image-upload" type="file" className="sr-only" accept="image/*" onChange={handleEventImageChange} />
-                                            </label>
-                                            <p className="pl-1">or drag and drop</p>
-                                        </div>
-                                        <p className="text-xs text-slate-400 dark:text-slate-500">PNG, JPG, GIF up to 5MB</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <textarea placeholder="Description" className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan focus:border-transparent min-h-[100px] placeholder-slate-400 dark:placeholder-slate-500" value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} required />
-                    <div className="flex justify-end pt-2">
-                        <Button type="submit">{editingEventId ? 'Save Changes' : 'Create Event'}</Button>
-                    </div>
-                </form>
-            )}
-
-            <div className="space-y-3">
-                {events.map(evt => (
-                    <div key={evt.id} className="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors group">
-                        <div className="flex items-center">
-                            <div className="h-12 w-12 rounded-xl overflow-hidden bg-brand-cyan/10 flex items-center justify-center text-brand-cyan font-bold text-sm flex-shrink-0 border border-brand-cyan/20">
-                                <img
-                                    src={evt.image || DEFAULT_EVENT_IMAGE}
-                                    alt={evt.title}
-                                    className="h-full w-full object-cover"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        if (target.src === DEFAULT_EVENT_IMAGE) {
-                                            target.src = DEFAULT_LOCAL_FALLBACK;
-                                        } else {
-                                            target.src = DEFAULT_EVENT_IMAGE;
-                                        }
-                                    }}
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Event Title</label>
+                                <input 
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-cyan outline-none"
+                                    placeholder="e.g. Inclusive Event"
+                                    required
+                                    value={editFormData.title || ''}
+                                    onChange={e => setEditFormData({...editFormData, title: e.target.value})}
                                 />
                             </div>
-                            <div className="ml-4">
-                                <h4 className="text-slate-900 dark:text-white font-bold">{evt.title}</h4>
-                                <div className="flex items-center text-slate-500 dark:text-slate-400 text-xs mt-1 gap-3">
-                                    <span className="flex items-center"><Calendar className="h-3 w-3 mr-1 text-slate-400" /> {formatShortDateLocal(evt.date)}</span>
-                                    <span className="flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400" /> {evt.time}</span>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Date</label>
+                                    <input 
+                                        type="date"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        required
+                                        value={editFormData.date || ''}
+                                        onChange={e => setEditFormData({...editFormData, date: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Time</label>
+                                    <input 
+                                        placeholder="e.g. 10:00 AM"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        required
+                                        value={editFormData.time || ''}
+                                        onChange={e => setEditFormData({...editFormData, time: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Location</label>
+                                <input 
+                                    placeholder="e.g. Central Park"
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                    required
+                                    value={editFormData.location || ''}
+                                    onChange={e => setEditFormData({...editFormData, location: e.target.value})}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Capacity</label>
+                                    <input 
+                                        type="number"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        required
+                                        value={editFormData.capacity || ''}
+                                        onChange={e => setEditFormData({...editFormData, capacity: parseInt(e.target.value) || 0})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1 font-bold text-brand-cyan">Duration (Hours)</label>
+                                    <input 
+                                        type="number"
+                                        step="0.5"
+                                        placeholder="e.g. 1.5"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        required
+                                        value={editFormData.hours || ''}
+                                        onChange={e => setEditFormData({...editFormData, hours: parseFloat(e.target.value) || 0})}
+                                    />
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-4 sm:mt-0 sm:ml-auto flex items-center gap-4">
-                            <div className="text-right mr-4">
-                                <span className="text-xs text-slate-500 uppercase font-bold">Capacity</span>
-                                <p className="text-slate-900 dark:text-white font-mono">{evt.registered} / {evt.capacity}</p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Description</label>
+                                <textarea 
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none min-h-[120px]"
+                                    placeholder="Tell people about the event..."
+                                    required
+                                    value={editFormData.description || ''}
+                                    onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+                                />
                             </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => handleEditEvent(evt.id)}
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Image URL</label>
+                                <input 
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                    placeholder="https://..."
+                                    value={editFormData.image || ''}
+                                    onChange={e => setEditFormData({...editFormData, image: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Type</label>
+                                <select 
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                    value={editFormData.type || 'Event'}
+                                    onChange={e => setEditFormData({...editFormData, type: e.target.value as any})}
                                 >
-                                    Edit
-                                </Button>
-                                {confirmDeleteEventId === evt.id ? (
-                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
-                                            onClick={() => {
-                                                handleDeleteEvent(evt.id);
-                                                setConfirmDeleteEventId(null);
-                                            }}
-                                        >
-                                            Confirm
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-slate-500 text-xs px-2"
-                                            onClick={() => setConfirmDeleteEventId(null)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
-                                        onClick={() => setConfirmDeleteEventId(evt.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                )}
+                                    <option value="Class">Class</option>
+                                    <option value="Event">Event</option>
+                                    <option value="Fundraiser">Fundraiser</option>
+                                    <option value="Outreach">Outreach</option>
+                                    <option value="Advocacy">Advocacy</option>
+                                </select>
                             </div>
                         </div>
+                        <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                            <Button type="submit" className="px-8">Create Event</Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            <div className="space-y-4">
+                {events.map((event: Event) => (
+                    <div key={event.id} className="p-1 px-1 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 overflow-hidden transition-all duration-300">
+                        {editingEventId === event.id ? (
+                            <div className="p-6 bg-white dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Event Title</label>
+                                            <input 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan"
+                                                value={editFormData.title || ''}
+                                                onChange={e => setEditFormData({...editFormData, title: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Date</label>
+                                                <input 
+                                                    type="date"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    value={editFormData.date || ''}
+                                                    onChange={e => setEditFormData({...editFormData, date: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Time</label>
+                                                <input 
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    value={editFormData.time || ''}
+                                                    onChange={e => setEditFormData({...editFormData, time: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Location</label>
+                                            <input 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                value={editFormData.location || ''}
+                                                onChange={e => setEditFormData({...editFormData, location: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Capacity</label>
+                                                <input 
+                                                    type="number"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    value={editFormData.capacity || 0}
+                                                    onChange={e => setEditFormData({...editFormData, capacity: parseInt(e.target.value) || 0})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1 text-brand-cyan">Duration (Hours)</label>
+                                                <input 
+                                                    type="number"
+                                                    step="0.5"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border-2 border-brand-cyan/30 focus:border-brand-cyan outline-none"
+                                                    value={editFormData.hours || 0}
+                                                    onChange={e => setEditFormData({...editFormData, hours: parseFloat(e.target.value) || 0})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Description</label>
+                                            <textarea 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none min-h-[120px]"
+                                                value={editFormData.description || ''}
+                                                onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Media Link (Social)</label>
+                                            <input 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                value={editFormData.mediaLink || ''}
+                                                onChange={e => setEditFormData({...editFormData, mediaLink: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+                                    <Button variant="outline" onClick={() => setEditingEventId(null)}>Cancel</Button>
+                                    <Button variant="primary" onClick={() => handleSaveEvent(event.id)}>Save Changes</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 group">
+                                <div className="flex items-center gap-6">
+                                    <div className="relative h-16 w-16 rounded-xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm">
+                                        <img src={event.image || DEFAULT_EVENT_IMAGE} alt="" className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-slate-900 dark:text-white font-black text-lg leading-tight">{event.title}</h4>
+                                        <div className="flex items-center gap-3 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                                            <span>{event.date}</span>
+                                            <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                                            <span>{event.location}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="px-2 py-0.5 rounded-lg bg-brand-cyan/10 text-brand-cyan font-bold text-[9px] uppercase tracking-wider">{event.type}</div>
+                                            <div className="px-2 py-0.5 rounded-lg bg-brand-purple/10 text-brand-purple font-bold text-[9px] uppercase tracking-wider">{event.hours || 0} Hours</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-row items-center gap-8 mt-4 sm:mt-0">
+                                    <div className="text-right hidden md:block">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registration Capacity</p>
+                                        <div className="flex items-center gap-2 justify-end">
+                                            <span className="text-slate-900 dark:text-white font-black text-sm">{event.registered} / {event.capacity}</span>
+                                            <div className="w-24 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                <div className="h-full bg-brand-cyan transition-all duration-1000" style={{ width: `${Math.min(100, (event.registered / event.capacity) * 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
+                                            onClick={() => handleEditEvent(event)}
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
+                                            onClick={() => handleExportEmails(event.id, event.title)}
+                                        >
+                                            <Download className="h-4 w-4" />
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-500 hover:text-red-500 transition-all"
+                                            onClick={async () => {
+                                                if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+                                                    await deleteEvent(event.id);
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
@@ -543,43 +669,71 @@ const Dashboard: React.FC = () => {
     );
 
 
-
     const renderVolunteersSection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Volunteer Applications</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Review Volunteer Applications</h2>
             <div className="space-y-4">
                 {volunteerApplications.length === 0 ? (
-                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No volunteer applications.</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm italic">No pending applications at this time.</p>
                 ) : (
-                    volunteerApplications.map(app => (
-                        <div key={app.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                            <div className="mb-4 sm:mb-0">
-                                <div className="flex items-center gap-3">
-                                    <h4 className="text-slate-900 dark:text-white font-bold">{app.name}</h4>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${app.status === 'Pending'
-                                        ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
-                                        : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
-                                        }`}>
-                                        {app.status}
-                                    </span>
+                    volunteerApplications.map((app: VolunteerApplication) => (
+                        <div key={app.id} className="p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <div className="flex items-center gap-3">
+                                        <h4 className="text-slate-900 dark:text-white font-bold text-lg">{app.name}</h4>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest border ${app.status === 'Pending'
+                                            ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500'
+                                            : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500'
+                                            }`}>
+                                            {app.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-brand-cyan text-sm font-medium mt-0.5 uppercase tracking-tighter italic">{app.interest}</p>
+                                    <p className="text-slate-500 text-xs mt-1">{app.email} • {app.phone}</p>
                                 </div>
-                                <p className="text-slate-600 dark:text-slate-300 text-sm mt-1">Interested in: <span className="text-brand-cyan">{app.interest}</span></p>
-                                <p className="text-slate-500 text-xs mt-1">{app.email}</p>
+                                <div className="flex gap-2">
+                                    {app.status === 'Pending' && (
+                                        <Button
+                                            size="sm"
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            onClick={async () => {
+                                                const res = await approveVolunteer(app.id);
+                                                if (!res.success) setAppError(res.error || "Approval failed");
+                                            }}
+                                        >
+                                            Approve
+                                        </Button>
+                                    )}
+                                    {confirmDeleteVolunteerId === app.id ? (
+                                        <div className="flex items-center gap-1 animate-in slide-in-from-right-2">
+                                            <Button
+                                                size="sm"
+                                                variant="primary"
+                                                className="text-xs"
+                                                onClick={async () => {
+                                                    const res = await deleteVolunteer(app.id);
+                                                    if (res.success) setConfirmDeleteVolunteerId(null);
+                                                    else setAppError(res.error || "Deletion failed");
+                                                }}
+                                            >Confirm</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteVolunteerId(null)}><X className="h-4 w-4" /></Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                            onClick={() => setConfirmDeleteVolunteerId(app.id)}
+                                        >
+                                            Remove
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                            {app.status === 'Pending' && (
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={async () => {
-                                        const result = await approveVolunteer(app.id);
-                                        if (!result.success) setAppError(result.error || "Failed to approve volunteer application");
-                                    }}
-                                    className="shrink-0"
-                                >
-                                    Approve Application
-                                </Button>
-                            )}
+                            <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <p className="text-slate-600 dark:text-slate-300 text-xs italic leading-relaxed">"{app.experience}"</p>
+                            </div>
                         </div>
                     ))
                 )}
@@ -589,213 +743,51 @@ const Dashboard: React.FC = () => {
 
     const renderManageTestimonialsSection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Manage Testimonials</h2>
-            <div className="space-y-4">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Review Stories & Testimonials</h2>
+            <div className="grid grid-cols-1 gap-6">
                 {testimonials.length === 0 ? (
-                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No testimonials submitted yet.</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">No stories submitted yet.</p>
                 ) : (
-                    testimonials.map(testimonial => (
-                        <div key={testimonial.id} className="flex flex-col p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
-                                        {testimonial.avatar ? (
-                                            <img src={testimonial.avatar} alt={testimonial.author} className="h-full w-full object-cover" />
-                                        ) : (
-                                            <div className="h-full w-full flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold">
-                                                {testimonial.author.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col gap-2 min-w-[120px]">
-                                        <div className="flex items-center gap-2">
+                    userTestimonials.map((testimonial: TestimonialType) => (
+                        <div key={testimonial.id} className="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex flex-col md:flex-row gap-6 group">
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-brand-cyan/10 flex items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20">
+                                            {testimonial.author.charAt(0)}
+                                        </div>
+                                        <div>
                                             <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono uppercase tracking-tighter border border-slate-200 dark:border-slate-700">
-                                                ID: {testimonial.id.slice(0, 5)}
-                                            </span>
+                                            <p className="text-slate-500 text-xs">{testimonial.authorEmail} • {testimonial.date}</p>
                                         </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">{testimonial.role}</p>
-                                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{testimonial.date}</p>
-                                        </div>
-                                        {testimonial.title && (
-                                            <div className="flex items-center gap-1 text-[10px] font-bold text-brand-purple uppercase tracking-tight bg-brand-purple/10 px-2 py-0.5 rounded-full w-fit">
-                                                <Award className="h-3 w-3" /> {testimonial.title}
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${testimonial.status === 'Pending'
-                                        ? 'bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
-                                        : 'bg-green-100 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest border shadow-sm ${testimonial.status === 'Pending'
+                                        ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                        : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
                                         }`}>
                                         {testimonial.status}
                                     </span>
-                                    {testimonial.rank !== undefined && (
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            Rank: {testimonial.rank}
-                                        </span>
-                                    )}
+                                </div>
+                                <div className="p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-sm leading-relaxed text-slate-700 dark:text-slate-300 transition-colors">
+                                    <RichText content={testimonial.content} className="max-h-[300px] overflow-y-auto" />
                                 </div>
                             </div>
-
-                            {/* Curation Controls: Author Name, System Role, Rank, Custom Title */}
-                            <div className="mb-4 p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Star className="h-4 w-4 text-brand-amber" />
-                                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Curation Tools</h5>
-                                    </div>
-                                    {editingTestimonials[testimonial.id] && Object.keys(editingTestimonials[testimonial.id]).length > 0 && (
-                                        <div className="flex gap-2 animate-in fade-in zoom-in-95">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-7 text-[10px] text-slate-500 hover:text-slate-600"
-                                                onClick={() => {
-                                                    const newEditing = { ...editingTestimonials };
-                                                    delete newEditing[testimonial.id];
-                                                    setEditingTestimonials(newEditing);
-                                                }}
-                                            >
-                                                Discard
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                className="h-7 text-[10px] px-3 font-bold bg-sky-600 hover:bg-sky-700 text-white border-none"
-                                                disabled={
-                                                    editingTestimonials[testimonial.id].rank !== undefined &&
-                                                    (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length)
-                                                }
-                                                onClick={async () => {
-                                                    const result = await updateTestimonialMetadata(testimonial.id, editingTestimonials[testimonial.id]);
-                                                    if (result.success) {
-                                                        const newEditing = { ...editingTestimonials };
-                                                        delete newEditing[testimonial.id];
-                                                        setEditingTestimonials(newEditing);
-                                                    }
-                                                }}
-                                            >
-                                                Save Changes
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* Author & Role */}
-                                    <div className="space-y-3">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Display Name</label>
-                                            <input
-                                                type="text"
-                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.author !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
-                                                    }`}
-                                                value={editingTestimonials[testimonial.id]?.author !== undefined ? editingTestimonials[testimonial.id].author : testimonial.author}
-                                                onChange={(e) => {
-                                                    setEditingTestimonials({
-                                                        ...editingTestimonials,
-                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], author: e.target.value }
-                                                    });
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Role Tag</label>
-                                            <select
-                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.role !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
-                                                    }`}
-                                                value={editingTestimonials[testimonial.id]?.role !== undefined ? editingTestimonials[testimonial.id].role : testimonial.role}
-                                                onChange={(e) => {
-                                                    setEditingTestimonials({
-                                                        ...editingTestimonials,
-                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], role: e.target.value }
-                                                    });
-                                                }}
-                                            >
-                                                <option value="User">User</option>
-                                                <option value="Donor">Donor</option>
-                                                <option value="BoardMember">Board Member</option>
-                                                <option value="BoardMember.Owner">Owner</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Title & Rank */}
-                                    <div className="space-y-3">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Custom designation (Admin Title)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Lead Volunteer"
-                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-500 outline-none transition-colors ${editingTestimonials[testimonial.id]?.title !== undefined ? 'border-sky-500/50 ring-1 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'
-                                                    }`}
-                                                value={editingTestimonials[testimonial.id]?.title !== undefined ? editingTestimonials[testimonial.id].title : (testimonial.title || '')}
-                                                onChange={(e) => {
-                                                    setEditingTestimonials({
-                                                        ...editingTestimonials,
-                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], title: e.target.value }
-                                                    });
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <div className="flex justify-between items-center">
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest underline decoration-brand-amber/30">Home Page Priority (Rank)</label>
-                                                <span className="text-[9px] text-slate-400">Range: 1-{testimonials.length}</span>
-                                            </div>
-                                            <input
-                                                type="number"
-                                                placeholder="1 = Highest"
-                                                min="1"
-                                                max={testimonials.length}
-                                                className={`w-full bg-slate-50 dark:bg-slate-800 text-xs px-3 py-2 rounded-lg border focus:ring-2 outline-none transition-colors ${editingTestimonials[testimonial.id]?.rank !== undefined
-                                                    ? (editingTestimonials[testimonial.id].rank! < 1 || editingTestimonials[testimonial.id].rank! > testimonials.length)
-                                                        ? 'border-red-500 ring-1 ring-red-500/20 focus:ring-red-500'
-                                                        : 'border-sky-500/50 ring-1 ring-sky-500/20 focus:ring-sky-500'
-                                                    : 'border-slate-200 dark:border-slate-700 focus:ring-sky-500'
-                                                    }`}
-                                                value={editingTestimonials[testimonial.id]?.rank !== undefined ? editingTestimonials[testimonial.id].rank : (testimonial.rank || '')}
-                                                onChange={(e) => {
-                                                    let val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                                                    if (val !== undefined) {
-                                                        val = Math.max(1, Math.min(val, testimonials.length));
-                                                    }
-                                                    setEditingTestimonials({
-                                                        ...editingTestimonials,
-                                                        [testimonial.id]: { ...editingTestimonials[testimonial.id], rank: val }
-                                                    });
-                                                }}
-                                            />
-                                            {editingTestimonials[testimonial.id]?.rank !== undefined && (editingTestimonials[testimonial.id]?.rank! < 1 || editingTestimonials[testimonial.id]?.rank! > testimonials.length) && (
-                                                <p className="text-[9px] text-red-500 font-medium">Please enter a number between 1 and {testimonials.length}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-lg mb-4">
-                                <RichText content={testimonial.content} className="text-slate-600 dark:text-slate-300 text-sm italic" />
-                            </div>
-                            <div className="flex justify-end gap-3">
+                            <div className="flex md:flex-col gap-2 justify-end min-w-[120px]">
                                 {testimonial.status === 'Pending' && (
                                     <Button
                                         type="button"
                                         size="sm"
+                                        className="w-full bg-brand-cyan hover:bg-brand-cyan-dark text-slate-900 shadow-md"
                                         onClick={async () => {
                                             const result = await approveTestimonial(testimonial.id);
                                             if (!result.success) setAppError(result.error || "Failed to approve testimonial");
                                         }}
                                     >
-                                        Approve Testimonial
+                                        Approve
                                     </Button>
                                 )}
-
                                 {confirmDeleteTestimonialId === testimonial.id ? (
-                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
+                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 w-full">
                                         <Button
                                             type="button"
                                             size="sm"
@@ -827,7 +819,7 @@ const Dashboard: React.FC = () => {
                                         type="button"
                                         size="sm"
                                         variant="ghost"
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                        className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                                         onClick={() => setConfirmDeleteTestimonialId(testimonial.id)}
                                     >
                                         Delete
@@ -908,8 +900,8 @@ const Dashboard: React.FC = () => {
                             </Link>
                         </div>
                     ) : (
-                        myRegistrations.map(reg => {
-                            const evt = events.find(e => e.id === reg.eventId);
+                        userRegs.map((reg: EventRegistration) => {
+                            const evt = events.find((e: Event) => e.id === reg.eventId);
                             if (!evt) return null;
                             return (
                                 <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
@@ -944,18 +936,35 @@ const Dashboard: React.FC = () => {
     };
 
     const renderManageRegistrationsSection = () => {
-        const filteredRegistrations = filterSpecialNeeds === null
-            ? eventRegistrations
-            : eventRegistrations.filter(r => !!r.specialNeeds === filterSpecialNeeds);
+        const sortedRegistrations = [...eventRegistrations]
+            .filter(r => filterSpecialNeeds === null ? true : !!r.specialNeeds === filterSpecialNeeds)
+            .sort((a, b) => {
+                if (regSortBy === 'upcoming_event') {
+                    const evtA = events.find(e => e.id === a.eventId);
+                    const evtB = events.find(e => e.id === b.eventId);
+                    if (!evtA || !evtB) return 0;
+                    return new Date(evtA.date).getTime() - new Date(evtB.date).getTime();
+                }
+                // Default: newest signups first
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+
+        const filteredRegistrations = sortedRegistrations;
 
         return (
             <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Manage Event Registrations</h2>
-                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
-                        <button onClick={() => setFilterSpecialNeeds(null)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === null ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>All</button>
-                        <button onClick={() => setFilterSpecialNeeds(true)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === true ? 'bg-white dark:bg-slate-600 shadow-sm text-brand-purple dark:text-brand-purple' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Accommodations</button>
-                        <button onClick={() => setFilterSpecialNeeds(false)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filterSpecialNeeds === false ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Standard</button>
+                    <div className="flex flex-wrap gap-2">
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                            <button onClick={() => setRegSortBy('newest')} className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-colors ${regSortBy === 'newest' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>Newest</button>
+                            <button onClick={() => setRegSortBy('upcoming_event')} className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-colors ${regSortBy === 'upcoming_event' ? 'bg-white dark:bg-slate-600 shadow-sm text-brand-cyan dark:text-brand-cyan' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>By Event</button>
+                        </div>
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                            <button onClick={() => setFilterSpecialNeeds(null)} className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-colors ${filterSpecialNeeds === null ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>All</button>
+                            <button onClick={() => setFilterSpecialNeeds(true)} className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-colors ${filterSpecialNeeds === true ? 'bg-white dark:bg-slate-600 shadow-sm text-brand-purple dark:text-brand-purple' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>Accommodations</button>
+                            <button onClick={() => setFilterSpecialNeeds(false)} className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-colors ${filterSpecialNeeds === false ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>Standard</button>
+                        </div>
                     </div>
                 </div>
                 <div className="space-y-4">
@@ -984,7 +993,60 @@ const Dashboard: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex gap-2 items-center">
+                                    <div className="flex flex-wrap gap-4 items-center justify-end w-full sm:w-auto">
+                                        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-700 pb-4 sm:pb-0 sm:pr-4">
+                                            {editingDonationEmail === reg.userEmail ? (
+                                                <div className="flex items-center gap-2 animate-in zoom-in-95 duration-200 w-full sm:w-auto justify-center sm:justify-start">
+                                                    <div className="relative flex-1 sm:flex-none">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                                                        <input 
+                                                            type="number"
+                                                            className="w-full sm:w-24 pl-6 pr-2 py-1.5 bg-white dark:bg-slate-900 border border-brand-cyan rounded-lg text-xs font-bold focus:ring-2 focus:ring-brand-cyan/20 outline-none"
+                                                            value={newDonationAmount}
+                                                            onChange={(e) => setNewDonationAmount(e.target.value)}
+                                                            autoFocus
+                                                            placeholder="0.00"
+                                                        />
+                                                    </div>
+                                                    <Button 
+                                                        size="sm" 
+                                                        className="h-8 px-3 bg-brand-cyan text-slate-900 text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform"
+                                                        onClick={() => {
+                                                            updateUserDonation(reg.userEmail, parseFloat(newDonationAmount) || 0);
+                                                            setEditingDonationEmail(null);
+                                                            setNewDonationAmount('');
+                                                        }}
+                                                    >
+                                                        Save
+                                                    </Button>
+                                                    <button 
+                                                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                                        onClick={() => setEditingDonationEmail(null)}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto">
+                                                    <div className="text-left sm:text-right">
+                                                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-tighter">Total Contributed</p>
+                                                        <p className="text-sm font-black text-brand-green">${getUserDonation(reg.userEmail).toLocaleString()}</p>
+                                                    </div>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-8 text-[10px] font-black uppercase tracking-widest border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan px-4"
+                                                        onClick={() => {
+                                                            setEditingDonationEmail(reg.userEmail);
+                                                            setNewDonationAmount(getUserDonation(reg.userEmail).toString());
+                                                        }}
+                                                    >
+                                                        Update Donation
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         {reg.status === 'Pending' && (
                                             <Button
                                                 type="button"
@@ -994,7 +1056,7 @@ const Dashboard: React.FC = () => {
                                                     const result = await approveRegistration(reg.id);
                                                     if (!result.success) setAppError(result.error || "Failed to approve registration");
                                                 }}
-                                                className="shrink-0"
+                                                className="shrink-0 h-8 text-[10px] font-black uppercase tracking-widest"
                                             >
                                                 Approve
                                             </Button>
@@ -1005,7 +1067,7 @@ const Dashboard: React.FC = () => {
                                                 <Button
                                                     type="button"
                                                     size="sm"
-                                                    className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                                    className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest h-8 px-3"
                                                     onClick={async () => {
                                                         const result = await deleteRegistration(reg.id);
                                                         if (result.success) {
@@ -1022,7 +1084,7 @@ const Dashboard: React.FC = () => {
                                                     type="button"
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="text-slate-500 text-xs px-2"
+                                                    className="text-slate-500 text-xs px-2 h-8"
                                                     onClick={() => setConfirmDeleteId(null)}
                                                 >
                                                     <X className="h-4 w-4" />
@@ -1033,7 +1095,7 @@ const Dashboard: React.FC = () => {
                                                 type="button"
                                                 size="sm"
                                                 variant="ghost"
-                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 h-8 text-[10px] font-black uppercase tracking-widest"
                                                 onClick={() => setConfirmDeleteId(reg.id)}
                                             >
                                                 Delete
@@ -1089,8 +1151,8 @@ const Dashboard: React.FC = () => {
                             </span>
                         </div>
                         <div className="flex gap-3">
-                            <Button type="submit">Submit Story</Button>
-                            <Button type="button" variant="ghost" className="text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800" onClick={() => setShowTestimonialForm(false)}>Cancel</Button>
+                            <Button type="submit" variant="primary">Submit Story</Button>
+                            <Button type="button" variant="ghost" onClick={() => setShowTestimonialForm(false)}>Cancel</Button>
                         </div>
                     </form>
                 ) : (
@@ -1098,7 +1160,7 @@ const Dashboard: React.FC = () => {
                         <MessageSquare className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
                         <h3 className="text-slate-900 dark:text-white font-medium mb-2">Write a Testimonial</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 max-w-md mx-auto">
-                            Share how our playgroups or events have helped your family.
+                            Share how our events or events have helped your family.
                         </p>
                         <Button variant="outline" onClick={() => setShowTestimonialForm(true)}>Start Writing</Button>
                     </div>
@@ -1203,9 +1265,9 @@ const Dashboard: React.FC = () => {
                 <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col items-center text-center transition-colors duration-300">
                     <div className="relative group mb-4">
                         <div className="h-24 w-24 rounded-full bg-brand-purple p-1 border-4 border-slate-100 dark:border-slate-800 shadow-xl transition-colors duration-300">
-                            <div className="h-full w-full rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 transition-colors duration-300">
+                            <div className="h-full w-full rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 transition-colors duration-300 relative">
                                 {user.avatar ? (
-                                    <img src={user.avatar} referrerPolicy="no-referrer" alt={user.name} className="h-full w-full object-cover" />
+                                    <img src={user.avatar} alt={user.name} className="object-cover" />
                                 ) : (
                                     <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-slate-600 dark:text-white transition-colors duration-300">
                                         {user.name.charAt(0)}
@@ -1225,7 +1287,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Nav Items Desktop (Vertical) */}
-                <nav className="flex-1 p-4 space-y-1 hidden lg:block overflow-y-auto">
+                <nav className="flex-1 p-4 space-y-1 hidden lg:block overflow-y-auto uppercase tracking-tighter font-bold">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = activeView === item.id;
@@ -1234,14 +1296,14 @@ const Dashboard: React.FC = () => {
                                 type="button"
                                 key={item.id}
                                 onClick={() => setActiveView(item.id as ViewState)}
-                                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group ${isActive
+                                className={`w-full flex items-center px-4 py-3 text-xs font-bold rounded-lg transition-all duration-200 group ${isActive
                                     ? 'bg-brand-cyan/10 text-brand-cyan shadow-sm dark:bg-brand-cyan/10 dark:text-brand-cyan'
                                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
                                     }`}
                             >
-                                <Icon className={`mr-3 h-5 w-5 transition-colors ${isActive ? 'text-brand-cyan' : 'text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-white'}`} />
+                                <Icon className={`mr-3 h-4 w-4 transition-colors ${isActive ? 'text-brand-cyan' : 'text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-white'}`} />
                                 {item.label}
-                                {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-50" />}
+                                {isActive && <ChevronRight className="ml-auto h-3 w-3 opacity-50" />}
                             </button>
                         );
                     })}
@@ -1257,12 +1319,12 @@ const Dashboard: React.FC = () => {
                                 type="button"
                                 key={item.id}
                                 onClick={() => setActiveView(item.id as ViewState)}
-                                className={`flex-shrink-0 flex items-center px-4 py-2 text-sm font-medium rounded-full transition-all ${isActive
+                                className={`flex-shrink-0 flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-all ${isActive
                                     ? 'bg-brand-cyan text-slate-900 bg-brand-cyan dark:text-slate-900'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                                     }`}
                             >
-                                <Icon className="mr-2 h-4 w-4" />
+                                <Icon className="mr-2 h-3 w-3" />
                                 {item.label}
                             </button>
                         );
@@ -1293,12 +1355,7 @@ const Dashboard: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white transition-colors duration-300">
-                            {navItems.find(i => i.id === activeView)?.label || 'Dashboard'}
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm transition-colors duration-300">Manage your activities and view your reports.</p>
-                    </div>
+                    <div className="mb-2"></div>
                     {renderContent()}
                 </div>
             </div>

@@ -59,7 +59,7 @@ const PrivacyPolicy: React.FC = () => {
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">How We Use Collected Information</h3>
                         <ul>
                             <li><strong>To improve user experiences:</strong> Using aggregated analytics to understand how our site is used.</li>
-                            <li><strong>To coordinate events:</strong> Managing sign-ups and accessibility requests to ensure safe, inclusive playgroups.</li>
+                            <li><strong>To coordinate events:</strong> Managing sign-ups and accessibility requests to ensure safe, inclusive events.</li>
                             <li><strong>To process donations:</strong> Facilitating secure and recognized transactions through our third-party donation platform (Zeffy).</li>
                             <li><strong>To authenticate users:</strong> Verifying the identity of board members, volunteers, and administrators who access our internal dashboard.</li>
                             <li><strong>To send periodic emails:</strong> Sending users information and updates pertaining to their involvement, when they have consented to receive such communications.</li>
@@ -132,13 +132,13 @@ const PrivacyPolicy: React.FC = () => {
                         <ul>
                             <li>You must be at least <strong>13 years of age</strong> to create an account or access our volunteer/admin dashboard.</li>
                             <li>By creating an account, you represent and warrant that you are 13 years of age or older.</li>
-                            <li>Accounts are intended for adult volunteers, donors, and board members — not the children who participate in our playgroups.</li>
+                            <li>Accounts are intended for adult volunteers, donors, and board members — not the children who participate in our events.</li>
                             <li>If we become aware that a user is under 13, we will immediately disable that account and delete all associated data.</li>
                         </ul>
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Children's Participation</h3>
                         <p>
-                            While our mission is to serve neurodivergent and neurotypical children at community playgroups, all <strong>data collection through our digital platform is the responsibility of the attending adult</strong> (parent or legal guardian). We do not collect personal data directly from children. Parents who share any information about their children in testimonials or event registrations do so on behalf of their child as legal guardians.
+                            While our mission is to serve neurodivergent and neurotypical children at community events, all <strong>data collection through our digital platform is the responsibility of the attending adult</strong> (parent or legal guardian). We do not collect personal data directly from children. Parents who share any information about their children in testimonials or event registrations do so on behalf of their child as legal guardians.
                         </p>
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Parental Consent</h3>

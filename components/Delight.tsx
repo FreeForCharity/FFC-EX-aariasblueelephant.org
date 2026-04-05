@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 
 // Extend Window interface to include our global triggers
