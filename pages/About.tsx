@@ -110,8 +110,8 @@ const About: React.FC = () => {
   };
 
   const copyShareLink = (id?: string) => {
-    const baseUrl = window.location.origin + '/about';
-    const finalUrl = id ? `${baseUrl}#${id}` : `${baseUrl}?share=story`;
+    const baseUrl = window.location.origin;
+    const finalUrl = id ? `${baseUrl}/about#${id}` : `${baseUrl}/story`;
     
     navigator.clipboard.writeText(finalUrl);
     setShowCopyFeedback(true);
