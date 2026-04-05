@@ -20,6 +20,11 @@
   <link rel="apple-touch-icon" href="/favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aaria's Blue Elephant</title>
+  
+  <!-- Preload critical assets for performance -->
+  <link rel="preload" as="image" href="/logo.png">
+  <link rel="preload" as="font" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_eeA.woff2" type="font/woff2" crossorigin>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,8 +99,61 @@
   <a href="#main-content"
     class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:p-4 focus:bg-white focus:text-sky-700 focus:font-bold focus:rounded-br-lg focus:shadow-md">Skip
     to content</a>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Inline splash screen that shows before React mounts -->
+    <style>
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8fafc;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      .dark #splash-screen {
+        background-color: #0f172a;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #0ea5e9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 24px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .splash-logo {
+        width: 120px;
+        height: auto;
+        opacity: 0.8;
+      }
+    </style>
+    <div id="splash-screen">
+      <img src="/logo.png" alt="Aaria's Blue Elephant" class="splash-logo" onerror="this.style.display='none'">
+      <div class="spinner"></div>
+      <p style="font-family: sans-serif; color: #64748b; font-size: 14px;">Loading our inclusive world...</p>
+    </div>
+  </div>
   <script type="module" src="/index.tsx"></script>
+  <script>
+    // Remove splash screen when React is ready
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splash-screen');
+      if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 500);
+      }
+    });
+  </script>
 </body>
 
 </html>

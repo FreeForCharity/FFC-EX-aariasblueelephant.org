@@ -82,6 +82,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!cachedEvents) setIsLoading(true);
       
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
         const fetchEvents = supabase.from('events').select('*').order('date', { ascending: true })
           .then(({ data, error }) => {
             if (data) {
@@ -102,19 +104,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }));
               setEvents(mappedEvents);
               
-              // Only cache essential metadata to avoid QuotaExceededError from large images
               try {
-                // Stripe data: URLs which are large, but keep regular URLs (CDN links) in cache
                 const cacheEvents = mappedEvents.map(evt => ({ 
                   ...evt, 
                   image: (evt.image?.startsWith('data:') && evt.image.length > 2000) ? null : evt.image 
                 }));
                 localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
-              } catch (e) {
-                console.warn("Could not save events to cache:", e);
-              }
+              } catch (e) {}
               
-              // Update loading state immediately when events are here to improve perceived speed
               if (isLoading) setIsLoading(false);
             }
           });
@@ -136,7 +133,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
 
-        const fetchApplications = supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false })
+        const fetchApplications = session ? supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false })
           .then(({ data }) => {
             if (data) {
               setVolunteerApplications(data.map((v: any) => ({
@@ -147,9 +144,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 status: v.status
               })));
             }
-          });
+          }) : Promise.resolve();
 
-        const fetchRegistrations = supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
+        const fetchRegistrations = session ? supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
           .then(({ data }) => {
             if (data) {
               setEventRegistrations(data.map((r: any) => ({
@@ -163,15 +160,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 date: r.date
               })));
             }
-          });
+          }) : Promise.resolve();
 
         await Promise.all([fetchEvents, fetchTestimonials, fetchApplications, fetchRegistrations]);
-        setIsLoading(false);
-        setHasInitialFetch(true);
       } catch (error) {
         console.error("Fetch data error:", error);
+      } finally {
         setIsLoading(false);
-        setHasInitialFetch(true); // Even on error, we've finished the attempt
+        setHasInitialFetch(true);
       }
     };
 

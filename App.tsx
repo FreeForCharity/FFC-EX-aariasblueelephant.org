@@ -51,8 +51,16 @@ const Screening = lazy(() => import('./pages/Screening'));
 
 // Loading fallback
 const PageLoader = () => (
-  <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-    <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
+  <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center bg-slate-50 dark:bg-brand-dark transition-colors duration-500">
+    <div className="relative mb-6">
+      <div className="h-20 w-20 border-4 border-slate-200 dark:border-slate-800 rounded-full"></div>
+      <div className="absolute top-0 left-0 h-20 w-20 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <img src="/logo.png" alt="ABE" className="h-10 w-10 opacity-70 animate-pulse" />
+      </div>
+    </div>
+    <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Creating an Inclusive World</h2>
+    <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto animate-pulse">Making sure everything is perfect for you...</p>
   </div>
 );
 
