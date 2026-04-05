@@ -129,6 +129,17 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    const handleEventImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setEditFormData({ ...editFormData, image: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleDownloadTaxReceipt = (id: string) => {
         alert(`Generating PDF receipt for donation ${id}... In a production environment, this would generate and download a formal 501(c)(3) tax-compliant receipt.`);
     };
@@ -447,6 +458,16 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Already Registered</label>
+                                    <input 
+                                        type="number"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        placeholder="0"
+                                        value={editFormData.registered || 0}
+                                        onChange={e => setEditFormData({...editFormData, registered: parseInt(e.target.value) || 0})}
+                                    />
+                                </div>
+                                <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Capacity</label>
                                     <input 
                                         type="number"
@@ -456,13 +477,15 @@ const Dashboard: React.FC = () => {
                                         onChange={e => setEditFormData({...editFormData, capacity: parseInt(e.target.value) || 0})}
                                     />
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1 font-bold text-brand-cyan">Duration (Hours)</label>
                                     <input 
                                         type="number"
                                         step="0.5"
                                         placeholder="1.0"
-                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border-2 border-brand-cyan/20 focus:border-brand-cyan outline-none"
                                         required
                                         value={editFormData.hours || 1}
                                         onChange={e => setEditFormData({...editFormData, hours: parseFloat(e.target.value) || 0})}
@@ -482,13 +505,26 @@ const Dashboard: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Image URL</label>
-                                <input 
-                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
-                                    placeholder="https://..."
-                                    value={editFormData.image || ''}
-                                    onChange={e => setEditFormData({...editFormData, image: e.target.value})}
-                                />
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Event Image</label>
+                                <div className="space-y-2">
+                                    <input 
+                                        type="file"
+                                        accept="image/*"
+                                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-brand-cyan/10 file:text-brand-cyan hover:file:bg-brand-cyan/20 cursor-pointer"
+                                        onChange={handleEventImageChange}
+                                    />
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OR</span>
+                                        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                    </div>
+                                    <input 
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        placeholder="Paste Image URL instead..."
+                                        value={editFormData.image || ''}
+                                        onChange={e => setEditFormData({...editFormData, image: e.target.value})}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Type</label>
@@ -556,6 +592,15 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Registered</label>
+                                                <input 
+                                                    type="number"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    value={editFormData.registered || 0}
+                                                    onChange={e => setEditFormData({...editFormData, registered: parseInt(e.target.value) || 0})}
+                                                />
+                                            </div>
+                                            <div>
                                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Capacity</label>
                                                 <input 
                                                     type="number"
@@ -564,6 +609,8 @@ const Dashboard: React.FC = () => {
                                                     onChange={e => setEditFormData({...editFormData, capacity: parseInt(e.target.value) || 0})}
                                                 />
                                             </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1 text-brand-cyan">Duration (Hours)</label>
                                                 <input 
@@ -586,7 +633,29 @@ const Dashboard: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Media Link (Social)</label>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Event Image</label>
+                                            <div className="space-y-4">
+                                                <input 
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-brand-cyan/10 file:text-brand-cyan hover:file:bg-brand-cyan/20 cursor-pointer"
+                                                    onChange={handleEventImageChange}
+                                                />
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OR</span>
+                                                    <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                                </div>
+                                                <input 
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    placeholder="Paste Image URL..."
+                                                    value={editFormData.image || ''}
+                                                    onChange={e => setEditFormData({...editFormData, image: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="pt-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Social Media Link</label>
                                             <input 
                                                 className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
                                                 value={editFormData.mediaLink || ''}
