@@ -16,6 +16,8 @@ const Login: React.FC = () => {
     if (user && !isLoading) {
       const returnTo = localStorage.getItem('authReturnTo') || '/dashboard';
       localStorage.removeItem('authReturnTo');
+      // Set flag to show dashboard prompt bubble on landing
+      localStorage.setItem('showDashboardPrompt', 'true');
       navigate(returnTo, { replace: true });
     }
   }, [user, isLoading, navigate]);

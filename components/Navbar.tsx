@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
 import Logo from './Logo';
@@ -25,9 +26,27 @@ const Navbar: React.FC = () => {
   });
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showDashboardPrompt, setShowDashboardPrompt] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if we should show the dashboard prompt
+    if (user && localStorage.getItem('showDashboardPrompt') === 'true' && location.pathname !== '/dashboard') {
+      const timer = setTimeout(() => setShowDashboardPrompt(true), 1500); // Wait 1.5s for page to settle
+      
+      const hideTimer = setTimeout(() => {
+        setShowDashboardPrompt(false);
+        localStorage.removeItem('showDashboardPrompt');
+      }, 10000); // Show for 10s
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, [user, location.pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -365,6 +384,60 @@ const Navbar: React.FC = () => {
           </div>
         )}
       </nav>
+
+      {/* Dashboard Prompt Bubble */}
+      <AnimatePresence>
+        {showDashboardPrompt && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            className="fixed bottom-6 right-6 lg:top-24 lg:right-10 lg:bottom-auto z-[60]"
+          >
+            <div className="bg-sky-500 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-sm border-2 border-white/20 backdrop-blur-sm relative group overflow-hidden">
+              {/* Animated background glow */}
+              <div className="absolute -inset-1 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="h-12 w-12 bg-white/10 rounded-full flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md">
+                <LayoutDashboard className="h-6 w-6 text-white" />
+              </div>
+              
+              <div className="flex-1 min-w-0 pr-4">
+                <p className="font-bold text-sm lg:text-base leading-tight">Welcome to the herd!</p>
+                <p className="text-[11px] lg:text-xs text-sky-50 font-medium mt-1 leading-relaxed">
+                  View your dashboard to manage your registrations and track your impact.
+                </p>
+                <button 
+                  onClick={() => {
+                    setShowDashboardPrompt(false);
+                    localStorage.removeItem('showDashboardPrompt');
+                    navigate('/dashboard');
+                  }}
+                  className="mt-2 bg-white text-sky-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-sky-50 transition-colors inline-block"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setShowDashboardPrompt(false);
+                  localStorage.removeItem('showDashboardPrompt');
+                }}
+                className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Connector arrow for desktop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="hidden lg:block absolute -top-2 right-12 w-4 h-4 bg-sky-500 rotate-45 border-t border-l border-white/20"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
