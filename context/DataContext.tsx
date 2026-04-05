@@ -194,8 +194,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatePayload: any = { ...eventData };
     if (eventData.initialLikes !== undefined) updatePayload.initial_likes = eventData.initialLikes;
     if (eventData.mediaLink !== undefined) updatePayload.media_link = eventData.mediaLink;
+    if (eventData.hours !== undefined) updatePayload.duration = eventData.hours;
+    
     delete updatePayload.initialLikes;
     delete updatePayload.mediaLink;
+    delete updatePayload.hours;
 
     const { error } = await supabase.from('events').update(updatePayload).eq('id', id);
     if (!error) {
