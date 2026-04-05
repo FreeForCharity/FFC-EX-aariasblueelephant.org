@@ -591,6 +591,20 @@ const About: React.FC = () => {
                           <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Story Received!</h3>
                           <p className="text-slate-600 dark:text-slate-400">Thank you for sharing your experience. We will review and publish it shortly.</p>
                       </div>
+                  ) : submissionStatus === 'Error' ? (
+                      <div className="p-12 text-center flex flex-col items-center">
+                          <div className="h-20 w-20 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-6">
+                              <X className="h-10 w-10" />
+                          </div>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Submission Failed</h3>
+                          <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-xs">We encountered an error while saving your story. This is likely because the database needs to be updated.</p>
+                          <Button 
+                              onClick={() => setSubmissionStatus('Idle')}
+                              className="w-full h-12 text-sm font-black uppercase tracking-widest"
+                          >
+                              Try Again
+                          </Button>
+                      </div>
                   ) : !user ? (
                       <div className="p-12 text-center flex flex-col items-center">
                           <div className="h-16 w-16 bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center mb-6">
