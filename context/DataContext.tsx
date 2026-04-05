@@ -46,12 +46,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
 
   const invokeEmailFunction = async (record: any, type: string) => {
+    // TEMPORARILY DISABLED BY USER REQUEST to stabilize registration flow
+    console.log(`Email function suppressed for type: ${type}`, record);
+    return;
+
     try {
-      await supabase.functions.invoke('send-registration-email', {
+      console.log("Invoking sending email edge function for:", type, record);
+      const { data, error } = await supabase.functions.invoke('send-registration-email', {
         body: { record, type }
       });
+      console.log("Email function response:", data);
+      if (error) {
+        console.error("Email function returned error:", error);
+      }
     } catch (e) {
-      console.error("Failed to trigger email function:", e);
+      console.error("Failed to trigger email function exception:", e);
     }
   };
 
@@ -95,11 +104,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               // Only cache essential metadata to avoid QuotaExceededError from large images
               try {
-                const cacheEvents = mappedEvents.map(evt => ({ ...evt, image: evt.image?.startsWith('data:') ? null : evt.image }));
+                // Stripe data: URLs which are large, but keep regular URLs (CDN links) in cache
+                const cacheEvents = mappedEvents.map(evt => ({ 
+                  ...evt, 
+                  image: (evt.image?.startsWith('data:') && evt.image.length > 2000) ? null : evt.image 
+                }));
                 localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
               } catch (e) {
                 console.warn("Could not save events to cache:", e);
               }
+              
+              // Update loading state immediately when events are here to improve perceived speed
+              if (isLoading) setIsLoading(false);
             }
           });
 
@@ -321,6 +337,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         interest: resData.interest,
         status: resData.status
       }, ...volunteerApplications]);
+
+      // Trigger Volunteer Received Email
+      invokeEmailFunction(resData, 'VOLUNTEER_RECEIVED');
     }
     return { success: true };
   };
@@ -328,7 +347,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const approveVolunteer = async (id: string): Promise<MutationResult> => {
     const { error } = await supabase.from('volunteer_applications').update({ status: 'Approved' }).eq('id', id);
     if (!error) {
+      const app = volunteerApplications.find(v => v.id === id);
       setVolunteerApplications(volunteerApplications.map(app => app.id === id ? { ...app, status: 'Approved' } : app));
+
+      // Trigger Volunteer Approved Email
+      if (app) {
+        invokeEmailFunction({ ...app, status: 'Approved' }, 'VOLUNTEER_APPROVED');
+      }
+
       return { success: true };
     } else {
       console.error("Approve volunteer error:", error.message, error.details);
@@ -381,9 +407,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const evt = events.find(e => e.id === data.eventId);
       if (evt) {
         updateEvent(evt.id, { registered: evt.registered + 1 });
-        // Trigger Registration Received Email
-        invokeEmailFunction({ ...resData, event_title: evt.title }, 'REGISTRATION_RECEIVED');
       }
+
+      // Trigger Registration Received Email (pass event title directly to avoid race conditions)
+      invokeEmailFunction({ ...resData, event_title: evt?.title || 'Upcoming Event' }, 'REGISTRATION_RECEIVED');
     }
     return { success: true };
   };
@@ -394,10 +421,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const reg = eventRegistrations.find(r => r.id === id);
       setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
       
-      // Trigger Registration Approved Email
+      // Trigger Registration Approved Email (pass event title directly if we have it)
       if (reg) {
         const evt = events.find(e => e.id === reg.eventId);
-        invokeEmailFunction({ ...reg, status: 'Approved', event_title: evt?.title }, 'REGISTRATION_APPROVED');
+        invokeEmailFunction({ ...reg, status: 'Approved', event_title: evt?.title || 'Upcoming Event' }, 'REGISTRATION_APPROVED');
       }
       
       return { success: true };

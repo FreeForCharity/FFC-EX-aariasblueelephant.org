@@ -43,13 +43,28 @@ const EventCardShort: React.FC<{
   const { eventRegistrations, registerForEvent } = useData();
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const showAccommodationQuestion = event.type === 'Event' || event.type === 'Class';
-  const userRegistration = user ? [...eventRegistrations].reverse().find(r => r.eventId === event.id && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null;
+  
+  // Memoized defensive lookup prioritizing UUID
+  const userRegistration = React.useMemo(() => {
+    if (!user || !eventRegistrations) return null;
+    return [...eventRegistrations].reverse().find(r => 
+      r.eventId === event.id && 
+      (
+        r.userId === user.id || 
+        r.userEmail === user.email ||
+        (r.userId && user.email && r.userId.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+        (r.userEmail && user.email && r.userEmail.toLowerCase().trim() === user.email.toLowerCase().trim())
+      )
+    );
+  }, [user, eventRegistrations, event.id]);
+  
   const isRegistered = !!userRegistration;
 
 
-  const handleRegister = (e: React.MouseEvent, pref: boolean) => {
+  const handleRegister = async (e: React.MouseEvent, pref: boolean) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
@@ -59,14 +74,24 @@ const EventCardShort: React.FC<{
       return;
     }
     
-    registerForEvent({
-      eventId: event.id,
-      userId: user.email,
-      userName: user.name,
-      userEmail: user.email,
-      specialNeeds: pref,
-    });
-    setRegistrationSubmitted(true);
+    try {
+      const result = await registerForEvent({
+        eventId: event.id,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        specialNeeds: pref,
+      });
+
+      if (result.success) {
+        setRegistrationSubmitted(true);
+      } else {
+        alert("Registration failed: " + result.error);
+      }
+    } catch (err) {
+      console.error("Registration crash prevented (Short Card):", err);
+      alert("A temporary error occurred during registration. Please try refreshing or contact support if this persists.");
+    }
   };
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -103,8 +128,13 @@ const EventCardShort: React.FC<{
         <img
           src={event.image || DEFAULT_EVENT_IMAGE}
           alt={event.title}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          loading={priority ? "eager" : "lazy"}
+          onLoad={() => setImageLoaded(true)}
+          className={`h-full w-full object-cover transition-all duration-1000 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+        )}
         <div className="absolute top-3 left-3 z-10">
           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-md
             ${event.type === 'Class' ? 'bg-blue-500 text-white' :
@@ -234,16 +264,17 @@ const CardContent: React.FC<CardContentProps> = ({
   userRegistration
 }) => {
   const { user } = useAuth();
-  const { registerForEvent } = useData();
+  const { registerForEvent, eventRegistrations } = useData();
   const [needsAccommodation, setNeedsAccommodation] = useState<boolean | null>(null);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Only ask for accommodations for Events and Classes
   const showAccommodationQuestion = activeEvent.type === 'Event' || activeEvent.type === 'Class';
   const isRegistered = !!userRegistration;
   const registrationStatus = userRegistration?.status;
 
-  const handleRegister = (e: React.MouseEvent) => {
+  const handleRegister = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
@@ -254,28 +285,42 @@ const CardContent: React.FC<CardContentProps> = ({
       onNavigate(`/login?returnTo=/events/${activeEvent.id}`);
       return;
     }
-    if (activeEvent) {
-      registerForEvent({
-        eventId: activeEvent.id,
-        userId: user.email,
-        userName: user.name,
-        userEmail: user.email,
-        specialNeeds: needsAccommodation === true,
-      });
-      setRegistrationSubmitted(true);
+    try {
+      if (activeEvent) {
+        const result = await registerForEvent({
+          eventId: activeEvent.id,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          specialNeeds: needsAccommodation === true,
+        });
+
+        if (result.success) {
+          setRegistrationSubmitted(true);
+        } else {
+          alert("Registration failed: " + result.error);
+        }
+      }
+    } catch (err) {
+      console.error("Registration crash prevented (Carousel):", err);
+      alert("A temporary error occurred during registration. Please try refreshing or contact support if this persists.");
     }
   };
 
   return (
     <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
       <div className={`grid grid-cols-1 ${activeEvent.mediaLink ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
-        <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1">
+        <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1 bg-slate-100 dark:bg-slate-800">
           <img
             src={activeEvent.image || DEFAULT_EVENT_IMAGE}
             alt={activeEvent.title}
-            className={`h-full w-full object-cover transition-transform duration-700 ${!isPast ? 'group-hover:scale-105' : ''} ${isPast ? 'grayscale-[50%]' : ''}`}
+            onLoad={() => setImageLoaded(true)}
+            className={`h-full w-full object-cover transition-all duration-1000 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'} ${!isPast ? 'group-hover:scale-105' : ''} ${isPast ? 'grayscale-[50%]' : ''}`}
             loading="lazy"
           />
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          )}
           <div className="absolute top-4 left-4 z-20">
             <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
                 ${activeEvent.type === 'Class' ? 'bg-blue-500 text-white' :
@@ -532,6 +577,19 @@ export default function Events() {
   const safeActiveIndex = activeIndex >= filteredEvents.length ? 0 : activeIndex;
   const activeEvent = filteredEvents[safeActiveIndex];
 
+  const activeEventRegistration = React.useMemo(() => {
+    if (!user || !eventRegistrations || !activeEvent) return null;
+    return [...eventRegistrations].reverse().find(r => 
+      r.eventId === activeEvent.id && 
+      (
+        r.userId === user.id || 
+        r.userEmail === user.email ||
+        (r.userId && user.email && r.userId.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+        (r.userEmail && user.email && r.userEmail.toLowerCase().trim() === user.email.toLowerCase().trim())
+      )
+    );
+  }, [user, eventRegistrations, activeEvent]);
+
   return (
     <div className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-[80vh] flex flex-col pt-32">
       <StagedFadeIn>
@@ -616,7 +674,7 @@ export default function Events() {
                       copiedId={copiedId}
                       isPast={!!isPastEvent}
                       onNavigate={(p) => navigate(p)}
-                      userRegistration={user ? [...eventRegistrations].reverse().find(r => r.eventId === activeEvent.id && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null}
+                      userRegistration={activeEventRegistration}
                     />
                   </Link>
                 );

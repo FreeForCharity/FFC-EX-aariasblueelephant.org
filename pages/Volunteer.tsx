@@ -30,14 +30,19 @@ const Volunteer: React.FC = () => {
     }
   }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    submitVolunteerApp({
+    const result = await submitVolunteerApp({
       name: formData.name,
       email: formData.email,
       interest: formData.interest,
     });
-    setSubmitted(true);
+
+    if (result.success) {
+      setSubmitted(true);
+    } else {
+      alert("Submission failed: " + result.error);
+    }
   };
 
   if (submitted) {

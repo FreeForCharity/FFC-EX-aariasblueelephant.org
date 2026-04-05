@@ -21,6 +21,7 @@ export default function EventDetails() {
   const [isLiked, setIsLiked] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   if (isLoading) {
     return (
@@ -30,7 +31,7 @@ export default function EventDetails() {
     );
   }
 
-  if (!event) {
+  if (!event && !registrationSubmitted) {
     if (!hasInitialFetch) {
        return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-brand-dark">
@@ -44,11 +45,23 @@ export default function EventDetails() {
   const eventDate = new Date(event.date.replace(/-/g, '/'));
   const isPastEvent = eventDate < new Date(new Date().setHours(0, 0, 0, 0));
   
-  const userRegistration = user ? [...eventRegistrations].reverse().find(r => r.eventId === (event?.id || id) && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null;
+  const userRegistration = React.useMemo(() => {
+    if (!user || !eventRegistrations) return null;
+    return [...eventRegistrations].reverse().find(r => 
+      r.eventId === (event?.id || id) && 
+      (
+        r.userId === user.id || 
+        r.userEmail === user.email ||
+        (r.userId && user.email && r.userId.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+        (r.userEmail && user.email && r.userEmail.toLowerCase().trim() === user.email.toLowerCase().trim())
+      )
+    );
+  }, [user, eventRegistrations, event?.id, id]);
+  
   const isRegistered = !!userRegistration;
   const registrationStatus = userRegistration?.status;
 
-  const handleRegister = (pref: boolean) => {
+  const handleRegister = async (pref: boolean) => {
     if (!user) {
       localStorage.setItem('pendingEventId', event.id);
       localStorage.setItem('pendingAccommodation', String(pref));
@@ -56,41 +69,60 @@ export default function EventDetails() {
       navigate(`/login?returnTo=/events/${event.id}`);
       return;
     }
-    if (event) {
-      registerForEvent({
+    
+    try {
+      const result = await registerForEvent({
         eventId: event.id,
-        userId: user.email,
+        userId: user.id,
         userName: user.name,
         userEmail: user.email,
         specialNeeds: pref,
       });
-      setRegistrationSubmitted(true);
-      window.scrollTo(0, 0);
+
+      if (result.success) {
+        setRegistrationSubmitted(true);
+        window.scrollTo(0, 0);
+      } else {
+        alert("Registration failed: " + result.error);
+      }
+    } catch (err) {
+      console.error("Registration crash prevented:", err);
+      alert("A temporary error occurred during registration. Please try refreshing or contact support if this persists.");
     }
   };
 
   const showAccommodationQuestion = event.type === 'Event' || event.type === 'Class';
 
   useEffect(() => {
-    if (user && event && !isLoading && !isRegistered) {
-      const pendingEventId = localStorage.getItem('pendingEventId');
-      const pendingAccommodation = localStorage.getItem('pendingAccommodation');
-      
-      if (pendingEventId === event.id && pendingAccommodation !== null) {
-        // Clear pending items
-        localStorage.removeItem('pendingEventId');
-        localStorage.removeItem('pendingAccommodation');
-        
-        // Auto-register
-        registerForEvent({
-          eventId: event.id,
-          userId: user.email,
-          userName: user.name,
-          userEmail: user.email,
-          specialNeeds: pendingAccommodation === 'true',
-        });
-        setRegistrationSubmitted(true);
+    const handleAutoRegister = async (pendingEventId: string, pendingAccommodation: string | null) => {
+      if (user && event && !isLoading && !isRegistered) {
+        if (pendingEventId === event.id && pendingAccommodation !== null) {
+          // Clear pending items
+          localStorage.removeItem('pendingEventId');
+          localStorage.removeItem('pendingAccommodation');
+          
+          // Auto-register
+          const result = await registerForEvent({
+            eventId: event.id,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            specialNeeds: pendingAccommodation === 'true',
+          });
+          
+          if (result.success) {
+            setRegistrationSubmitted(true);
+          } else {
+            console.error("Auto-registration failed:", result.error);
+          }
+        }
       }
+    };
+
+    const pendingEventId = localStorage.getItem('pendingEventId');
+    const pendingAccommodation = localStorage.getItem('pendingAccommodation');
+    if (pendingEventId) {
+      handleAutoRegister(pendingEventId, pendingAccommodation);
     }
   }, [user, event, isLoading, isRegistered, registerForEvent]);
 
@@ -114,7 +146,8 @@ export default function EventDetails() {
         <img
           src={event.image || DEFAULT_EVENT_IMAGE}
           alt={event.title}
-          className="h-full w-full object-cover"
+          onLoad={() => setImageLoaded(true)}
+          className={`h-full w-full object-cover transition-all duration-1000 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
           loading="lazy"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
