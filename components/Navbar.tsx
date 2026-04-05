@@ -409,16 +409,15 @@ const Navbar: React.FC = () => {
                 <p className="text-[11px] lg:text-xs text-sky-50 font-medium mt-1 leading-relaxed">
                   View your dashboard to manage your registrations and track your impact.
                 </p>
-                <button 
+                <Link 
+                  to="/dashboard"
                   onClick={() => {
                     setShowDashboardPrompt(false);
-                    localStorage.removeItem('showDashboardPrompt');
-                    navigate('/dashboard');
                   }}
                   className="mt-2 bg-white text-sky-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-sky-50 transition-colors inline-block"
                 >
                   Go to Dashboard
-                </button>
+                </Link>
               </div>
               
               <button 
