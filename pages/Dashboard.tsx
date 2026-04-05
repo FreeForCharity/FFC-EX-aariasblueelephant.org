@@ -745,7 +745,7 @@ const Dashboard: React.FC = () => {
                 {testimonials.length === 0 ? (
                     <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">No stories submitted yet.</p>
                 ) : (
-                    userTestimonials.map((testimonial: TestimonialType) => (
+                    testimonials.map((testimonial: TestimonialType) => (
                         <div key={testimonial.id} className="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex flex-col md:flex-row gap-6 group">
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-4">
