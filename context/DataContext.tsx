@@ -32,6 +32,7 @@ interface DataContextType {
   updateUserDonation: (email: string, amount: number) => Promise<MutationResult>;
   getUserDonation: (email: string) => number;
   isLoading: boolean;
+  hasInitialFetch: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -42,6 +43,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasInitialFetch, setHasInitialFetch] = useState(false);
 
   const invokeEmailFunction = async (record: any, type: string) => {
     try {
@@ -148,10 +150,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
         await Promise.all([fetchEvents, fetchTestimonials, fetchApplications, fetchRegistrations]);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
         setIsLoading(false);
+        setHasInitialFetch(true);
+      } catch (error) {
+        console.error("Fetch data error:", error);
+        setIsLoading(false);
+        setHasInitialFetch(true); // Even on error, we've finished the attempt
       }
     };
 
@@ -461,7 +465,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteRegistration,
       updateUserDonation,
       getUserDonation,
-      isLoading
+      isLoading,
+      hasInitialFetch
     }}>
       {children}
     </DataContext.Provider>

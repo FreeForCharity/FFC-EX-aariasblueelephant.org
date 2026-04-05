@@ -13,7 +13,7 @@ import { Event } from '../types';
 
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
-  const { events, eventRegistrations, registerForEvent, isLoading } = useData();
+  const { events, eventRegistrations, registerForEvent, isLoading, hasInitialFetch } = useData();
   
   const event = events.find(e => e.id === id);
   const { user } = useAuth();
@@ -21,15 +21,30 @@ export default function EventDetails() {
   const [isLiked, setIsLiked] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-brand-dark">
+        <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!event) {
+    if (!hasInitialFetch) {
+       return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-brand-dark">
+          <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    }
     return <Navigate to="/events" replace />;
   }
 
   const eventDate = new Date(event.date.replace(/-/g, '/'));
   const isPastEvent = eventDate < new Date(new Date().setHours(0, 0, 0, 0));
-
-  const userRegistration = user ? eventRegistrations.find(r => r.eventId === event.id && r.userId === user.email) : null;
+  
+  const userRegistration = user ? [...eventRegistrations].reverse().find(r => r.eventId === (event?.id || id) && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null;
   const isRegistered = !!userRegistration;
   const registrationStatus = userRegistration?.status;
 
@@ -222,12 +237,16 @@ export default function EventDetails() {
                   <div className="pb-6 mb-6 border-b border-slate-200 dark:border-slate-800">
                     {isRegistered ? (
                       registrationStatus === 'Pending' ? (
-                        <Button fullWidth size="lg" variant="secondary" disabled>
-                          Waiting for Approval
+                        <Button fullWidth size="lg" variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 shadow-sm" disabled>
+                          <div className="flex items-center gap-2 justify-center">
+                            <Clock className="h-5 w-5 animate-pulse" /> PENDING APPROVAL
+                          </div>
                         </Button>
                       ) : (
-                        <Button fullWidth size="lg" variant="secondary" disabled>
-                          Already Registered
+                        <Button fullWidth size="lg" variant="primary" className="bg-green-600 hover:bg-green-700 text-white border-none shadow-lg shadow-green-500/20" disabled>
+                          <div className="flex items-center gap-2 justify-center">
+                            <Check className="h-5 w-5" /> JOINED
+                          </div>
                         </Button>
                       )
                     ) : isPastEvent ? (

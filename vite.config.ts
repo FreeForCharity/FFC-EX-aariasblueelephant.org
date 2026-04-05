@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     },
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     plugins: [react()],
-    base: './',
+    base: '/',
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
     },

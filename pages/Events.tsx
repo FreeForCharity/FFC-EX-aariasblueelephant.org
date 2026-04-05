@@ -27,6 +27,7 @@ interface CardContentProps {
   copiedId: string | null;
   isPast: boolean;
   onNavigate: (path: string) => void;
+  userRegistration: any;
 }
 
 const EventCardShort: React.FC<{ 
@@ -44,7 +45,7 @@ const EventCardShort: React.FC<{
   const [showToast, setShowToast] = useState(false);
 
   const showAccommodationQuestion = event.type === 'Event' || event.type === 'Class';
-  const userRegistration = user ? eventRegistrations.find(r => r.eventId === event.id && r.userId === user.email) : null;
+  const userRegistration = user ? [...eventRegistrations].reverse().find(r => r.eventId === event.id && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null;
   const isRegistered = !!userRegistration;
 
 
@@ -71,7 +72,8 @@ const EventCardShort: React.FC<{
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
+    const basePath = window.location.pathname.replace(/\/events\/?$/, '');
+    const shareUrl = `${window.location.origin}${basePath}/events/${event.id}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setShowToast(true);
@@ -183,12 +185,24 @@ const EventCardShort: React.FC<{
             {isRegistered ? (
               <button 
                 onClick={() => onNavigate(`/events/${event.id}`)}
-                className="flex-grow bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                className={`flex-grow py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border shadow-sm ${
+                  userRegistration?.status === 'Approved' 
+                  ? "bg-green-500 text-white border-green-600 shadow-green-500/20" 
+                  : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 shadow-amber-500/10"
+                }`}
               >
-                <Check className="h-3.5 w-3.5" /> JOINED
+                {userRegistration?.status === 'Approved' ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> JOINED
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3.5 w-3.5 animate-pulse" /> PENDING APPROVAL
+                  </>
+                )}
               </button>
             ) : (
-              <div className="flex-grow bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-center animate-pulse">
+              <div className="flex-grow bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-center animate-pulse shadow-lg shadow-emerald-500/20">
                 SUCCESS!
               </div>
             )}
@@ -216,18 +230,16 @@ const CardContent: React.FC<CardContentProps> = ({
   handleShare,
   copiedId,
   isPast,
-  onNavigate
+  onNavigate,
+  userRegistration
 }) => {
   const { user } = useAuth();
-  const { eventRegistrations, registerForEvent } = useData();
+  const { registerForEvent } = useData();
   const [needsAccommodation, setNeedsAccommodation] = useState<boolean | null>(null);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
 
   // Only ask for accommodations for Events and Classes
   const showAccommodationQuestion = activeEvent.type === 'Event' || activeEvent.type === 'Class';
-
-
-  const userRegistration = user && activeEvent ? eventRegistrations.find(r => r.eventId === activeEvent.id && r.userId === user.email) : null;
   const isRegistered = !!userRegistration;
   const registrationStatus = userRegistration?.status;
 
@@ -336,8 +348,18 @@ const CardContent: React.FC<CardContentProps> = ({
                     <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>View Details</Button>
                   </div>
                 ) : isRegistered ? (
-                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>
-                    {registrationStatus === 'Pending' ? 'Waiting for Approval' : 'Already Registered'}
+                  <Button 
+                    fullWidth 
+                    size="lg" 
+                    variant={userRegistration?.status === 'Approved' ? "primary" : "secondary"}
+                    className={userRegistration?.status === 'Approved' ? "bg-green-600 hover:bg-green-700 border-none shadow-lg shadow-green-500/20" : "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50"}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}
+                  >
+                    {userRegistration?.status === 'Approved' ? (
+                      <span className="flex items-center gap-2 justify-center"><Check className="h-5 w-5" /> JOINED</span>
+                    ) : (
+                      <span className="flex items-center gap-2 justify-center"><Clock className="h-5 w-5 animate-pulse" /> PENDING APPROVAL</span>
+                    )}
                   </Button>
                 ) : activeEvent.registered < activeEvent.capacity ? (
                   <div className="space-y-4 w-full">
@@ -416,7 +438,8 @@ const CardContent: React.FC<CardContentProps> = ({
 
 
 export default function Events() {
-  const { events, isLoading } = useData();
+  const { events, isLoading, eventRegistrations } = useData();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -494,10 +517,11 @@ export default function Events() {
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
-    const shareText = `Check out this event at Aaria's Blue Elephant: ${event.title} on ${formatDateLocal(event.date)}!`;
+    const basePath = window.location.pathname.replace(/\/events\/?$/, '');
+    const shareUrl = `${window.location.origin}${basePath}/events/${event.id}`;
 
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(shareUrl);
       setCopiedId(eventId);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
@@ -577,23 +601,10 @@ export default function Events() {
               onMouseLeave={() => setIsPaused(false)}
             >
               {(() => {
-                const evDate = parseDateLocal(activeEvent.date);
+                const evDate = activeEvent ? parseDateLocal(activeEvent.date) : null;
                 const isPastEvent = evDate && evDate < new Date(new Date().setHours(0, 0, 0, 0));
-                return isPastEvent ? (
-                  <div className="block group">
-                    <CardContent
-                      activeEvent={activeEvent}
-                      activeTab={activeTab}
-                      likedEvents={likedEvents}
-                      likeCounts={{}}
-                      toggleLike={toggleLike}
-                      handleShare={handleShare}
-                      copiedId={copiedId}
-                      isPast={true}
-                      onNavigate={(p) => navigate(p)}
-                    />
-                  </div>
-                ) : (
+                
+                return (
                   <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">
                     <CardContent
                       activeEvent={activeEvent}
@@ -603,8 +614,9 @@ export default function Events() {
                       toggleLike={toggleLike}
                       handleShare={handleShare}
                       copiedId={copiedId}
-                      isPast={false}
+                      isPast={!!isPastEvent}
                       onNavigate={(p) => navigate(p)}
+                      userRegistration={user ? [...eventRegistrations].reverse().find(r => r.eventId === activeEvent.id && (r.userId?.toLowerCase().trim() === user.email.toLowerCase().trim() || r.userEmail?.toLowerCase().trim() === user.email.toLowerCase().trim())) : null}
                     />
                   </Link>
                 );

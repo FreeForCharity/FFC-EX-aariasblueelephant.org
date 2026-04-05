@@ -387,7 +387,7 @@ const Dashboard: React.FC = () => {
                         onClick={() => {
                             setIsAddingEvent(!isAddingEvent);
                             setEditingEventId(null);
-                            setEditFormData({});
+                            setEditFormData({ hours: 1 });
                         }}
                     >
                         {isAddingEvent ? "Cancel" : "Add New Event"}
@@ -461,10 +461,10 @@ const Dashboard: React.FC = () => {
                                     <input 
                                         type="number"
                                         step="0.5"
-                                        placeholder="e.g. 1.5"
+                                        placeholder="1.0"
                                         className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
                                         required
-                                        value={editFormData.hours || ''}
+                                        value={editFormData.hours || 1}
                                         onChange={e => setEditFormData({...editFormData, hours: parseFloat(e.target.value) || 0})}
                                     />
                                 </div>

@@ -41,10 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session.user.identities?.[0]?.identity_data?.picture ||
         session.user.user_metadata?.custom_claims?.picture;
 
+      const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = 'User';
-      if (email === 'admin@aariasblueelephant.org') {
+      if (normalizedEmail === 'admin@aariasblueelephant.org' || normalizedEmail === 'aariasblueelephant@gmail.com') {
         role = 'BoardMember.Owner';
-      } else if (email.endsWith('@aariasblueelephant.org')) {
+      } else if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
         role = 'BoardMember';
       }
 
