@@ -633,22 +633,25 @@ const Dashboard: React.FC = () => {
                                         <Button 
                                             size="sm" 
                                             variant="ghost" 
+                                            title="Edit Event"
                                             className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
                                             onClick={() => handleEditEvent(event)}
                                         >
-                                            <Edit className="h-4 w-4" />
+                                            <Edit className="h-4 w-4" strokeWidth={2.5} />
                                         </Button>
                                         <Button 
                                             size="sm" 
                                             variant="ghost" 
+                                            title="Download Registrations CSV"
                                             className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
                                             onClick={() => handleExportEmails(event.id, event.title)}
                                         >
-                                            <Download className="h-4 w-4" />
+                                            <Download className="h-4 w-4" strokeWidth={2.5} />
                                         </Button>
                                         <Button 
                                             size="sm" 
                                             variant="ghost" 
+                                            title="Delete Event"
                                             className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-500 hover:text-red-500 transition-all"
                                             onClick={async () => {
                                                 if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
@@ -656,7 +659,7 @@ const Dashboard: React.FC = () => {
                                                 }
                                             }}
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                                         </Button>
                                     </div>
                                 </div>

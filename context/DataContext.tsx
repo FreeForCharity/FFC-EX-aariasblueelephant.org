@@ -77,7 +77,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 initialLikes: e.initial_likes || 0,
                 image: e.image,
                 mediaLink: e.media_link,
-                hours: e.hours || 0
+                hours: e.duration || e.hours || 0
               }));
               setEvents(mappedEvents);
               
@@ -162,7 +162,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       registered: eventData.registered !== undefined ? eventData.registered : 0,
       initial_likes: 0,
       media_link: eventData.mediaLink,
-      hours: eventData.hours || 0
+      duration: eventData.hours || 0
     }]).select().single();
 
     if (error) {
@@ -184,7 +184,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initialLikes: data.initial_likes,
         image: data.image,
         mediaLink: data.media_link,
-        hours: data.hours
+        hours: data.duration
       }]);
     }
     return { success: true };
