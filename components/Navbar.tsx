@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
@@ -285,6 +285,17 @@ const Navbar: React.FC = () => {
 
             {/* Mobile Actions Container */}
             <div className="flex lg:hidden items-center gap-3">
+              {/* Dashboard Shortcut - Mobile */}
+              {user && (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 transition-all active:scale-95 shadow-sm"
+                  aria-label="Dashboard"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                </Link>
+              )}
               {/* Theme Toggle Slider - Mobile */}
               <button
                 onClick={toggleTheme}
@@ -330,6 +341,18 @@ const Navbar: React.FC = () => {
               </a>
             </div>
             <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
+              {/* Mobile Dashboard Shortcut - Top of Menu */}
+              {user && (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-black text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 mb-2 border border-sky-100 dark:border-sky-800/50"
+                >
+                  <LayoutDashboard className="h-6 w-6" />
+                  <span className="uppercase tracking-widest text-sm">Dashboard</span>
+                </Link>
+              )}
+
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
@@ -352,27 +375,22 @@ const Navbar: React.FC = () => {
                   <span className="uppercase tracking-widest text-sm">{link.name}</span>
                 </Link>
               ))}
+              
               <a
                 href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-md px-3 py-2 text-base font-bold text-sky-600 dark:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-800"
+                className="flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
               >
-                Donate for the Cause
+                <HeartPulse className="h-6 w-6 text-red-500" />
+                <span className="uppercase tracking-widest text-sm">Signify Impact</span>
               </a>
 
               {/* Mobile Auth Links */}
               {user && (
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-4">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-6">
                   <div className="space-y-1">
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-                    >
-                      <LayoutDashboard className="h-5 w-5" /> Dashboard
-                    </Link>
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -393,39 +411,41 @@ const Navbar: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className="fixed bottom-6 right-6 lg:top-24 lg:right-10 lg:bottom-auto z-[60]"
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.4 } }}
+            className="fixed bottom-8 right-6 lg:top-24 lg:right-10 lg:bottom-auto z-[70] pointer-events-auto"
           >
-            <div className="bg-sky-500 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-sm border-2 border-white/20 backdrop-blur-sm relative group overflow-hidden">
-              {/* Animated background glow */}
-              <div className="absolute -inset-1 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              
-              <div className="h-12 w-12 bg-white/10 rounded-full flex items-center justify-center shrink-0 border border-white/30 backdrop-blur-md">
-                <LayoutDashboard className="h-6 w-6 text-white" />
-              </div>
-              
-              <div className="flex-1 min-w-0 pr-4">
-                <p className="font-bold text-sm lg:text-base leading-tight">Welcome to the herd!</p>
-                <p className="text-[11px] lg:text-xs text-sky-50 font-medium mt-1 leading-relaxed">
-                  View your dashboard to manage your registrations and track your impact.
-                </p>
-                <Link 
-                  to="/dashboard"
-                  onClick={() => {
-                    setShowDashboardPrompt(false);
-                  }}
-                  className="mt-2 bg-white text-sky-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-sky-50 transition-colors inline-block"
-                >
-                  Go to Dashboard
-                </Link>
-              </div>
+            <div className="relative group">
+              <Link 
+                to="/dashboard"
+                className="flex items-center gap-4 bg-sky-500 text-white p-5 pr-10 rounded-2xl shadow-2xl border-2 border-white/20 backdrop-blur-md transition-all active:scale-95 group-hover:bg-sky-600 block min-w-[280px]"
+              >
+                {/* Animated background glow */}
+                <div className="absolute -inset-1 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/20 rounded-full flex items-center justify-center shrink-0 border border-white/30">
+                  <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-sm sm:text-base leading-tight uppercase tracking-wide">Welcome to the herd!</p>
+                  <p className="text-[10px] sm:text-[11px] text-sky-50 font-bold mt-1 opacity-90 leading-tight">
+                    Visit your dashboard to track your impact.
+                  </p>
+                  <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-sky-100 flex items-center gap-1">
+                    Tap to Enter <ChevronRight className="h-3 w-3" />
+                  </div>
+                </div>
+              </Link>
               
               <button 
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowDashboardPrompt(false);
-                  localStorage.removeItem('showDashboardPrompt');
+                  localStorage.setItem('showDashboardPrompt_dismissed', 'true');
                 }}
-                className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full transition-colors"
+                className="absolute -top-2 -right-2 h-8 w-8 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-slate-800 transition-all z-20 border-2 border-white active:scale-90"
+                aria-label="Dismiss"
               >
                 <X className="h-4 w-4" />
               </button>
