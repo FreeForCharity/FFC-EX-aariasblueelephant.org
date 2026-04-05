@@ -436,10 +436,10 @@ const Dashboard: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Time</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Time (with AM/PM)</label>
                                     <input 
-                                        placeholder="e.g. 10:00 AM"
-                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                        placeholder="e.g. 10:30 AM"
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan"
                                         required
                                         value={editFormData.time || ''}
                                         onChange={e => setEditFormData({...editFormData, time: e.target.value})}
@@ -574,9 +574,10 @@ const Dashboard: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Time</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Time (AM/PM)</label>
                                                 <input 
-                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan"
+                                                    placeholder="10:00 AM"
                                                     value={editFormData.time || ''}
                                                     onChange={e => setEditFormData({...editFormData, time: e.target.value})}
                                                 />
@@ -679,6 +680,8 @@ const Dashboard: React.FC = () => {
                                         <h4 className="text-slate-900 dark:text-white font-black text-lg leading-tight">{event.title}</h4>
                                         <div className="flex items-center gap-3 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
                                             <span>{event.date}</span>
+                                            <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                                            <span className="text-brand-purple">{event.time}</span>
                                             <span className="h-1 w-1 rounded-full bg-slate-300"></span>
                                             <span>{event.location}</span>
                                         </div>
