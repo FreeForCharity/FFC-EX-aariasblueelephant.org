@@ -630,29 +630,23 @@ const Dashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
+                                        <button 
                                             title="Edit Event"
-                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
+                                            className="h-9 w-9 p-0 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-brand-cyan hover:text-brand-cyan transition-all"
                                             onClick={() => handleEditEvent(event)}
                                         >
                                             <Edit className="h-4 w-4" strokeWidth={2.5} />
-                                        </Button>
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
+                                        </button>
+                                        <button 
                                             title="Download Registrations CSV"
-                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-cyan hover:text-brand-cyan transition-all"
+                                            className="h-9 w-9 p-0 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-brand-cyan hover:text-brand-cyan transition-all"
                                             onClick={() => handleExportEmails(event.id, event.title)}
                                         >
                                             <Download className="h-4 w-4" strokeWidth={2.5} />
-                                        </Button>
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
+                                        </button>
+                                        <button 
                                             title="Delete Event"
-                                            className="h-9 w-9 p-0 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-red-500 hover:text-red-500 transition-all"
+                                            className="h-9 w-9 p-0 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-red-500 hover:text-red-500 transition-all"
                                             onClick={async () => {
                                                 if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
                                                     await deleteEvent(event.id);
@@ -660,7 +654,7 @@ const Dashboard: React.FC = () => {
                                             }}
                                         >
                                             <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-                                        </Button>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
