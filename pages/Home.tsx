@@ -9,6 +9,7 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import DonationQR from '../components/DonationQR';
 import StickerIcon from '../components/StickerIcon';
 import CardStack from '../components/ui/card-stack';
+import TestimonialSection from '../components/TestimonialSection';
 import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
 
 // Move static data outside to allow random initialization
@@ -282,6 +283,9 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </section>
+            
+            {/* Voices of our Community - Testimonials */}
+            <TestimonialSection />
 
             {/* Intro Text */}
             <section className="py-16 bg-white dark:bg-slate-900 transition-colors border-t border-slate-200 dark:border-slate-800">

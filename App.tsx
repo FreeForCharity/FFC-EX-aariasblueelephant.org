@@ -124,7 +124,7 @@ const App: React.FC = () => {
                 <Route path="/resources/understanding" element={<UnderstandingAutism />} />
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
-                <Route path="/story" element={<Navigate to="/about?share=story" replace />} />
+                <Route path="/story" element={<Navigate to="/?share=story" replace />} />
               </Routes>
             </Suspense>
           </Layout>
