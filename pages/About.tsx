@@ -615,11 +615,11 @@ const About: React.FC = () => {
       {/* Story Submission Modal */}
       {isSubmittingStory && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() => submissionStatus !== 'Submitting' && setIsSubmittingStory(false)}
           >
               <div 
-                className="relative w-full max-w-lg max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-y-auto border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar"
+                className="relative w-full max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-500 custom-scrollbar"
                 onClick={(e) => e.stopPropagation()}
                 ref={submissionModalRef}
                 tabIndex={-1}
@@ -694,8 +694,9 @@ const About: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-
-                        <form onSubmit={handleSubmitStory} className="p-6 space-y-6">
+                        
+                        <div className="flex-1 overflow-y-auto overscroll-contain">
+                          <form onSubmit={handleSubmitStory} className="p-6 space-y-6 pb-20 sm:pb-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Name</label>
@@ -825,6 +826,7 @@ const About: React.FC = () => {
                                 )}
                             </Button>
                         </form>
+                        </div>
                       </>
                   )}
               </div>

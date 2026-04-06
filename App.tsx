@@ -11,6 +11,32 @@ import ScrollToTop from './components/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
+// Simple cache-buster to ensure mobile users get the latest scrolling fixes
+const VersionWatcher = () => {
+    React.useEffect(() => {
+        const checkVersion = async () => {
+            try {
+                // Fetch current version from public/version.json
+                const response = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+                const data = await response.json();
+                const remoteVersion = data.version;
+                const localVersion = localStorage.getItem('app_version');
+
+                if (remoteVersion && remoteVersion !== localVersion) {
+                    console.log('ABE: New version detected, refreshing cache...', remoteVersion);
+                    localStorage.setItem('app_version', remoteVersion);
+                    // Force a hard reload to clear stubborn mobile cache
+                    window.location.reload();
+                }
+            } catch (e) {
+                // Silent fail if version file is missing during dev
+            }
+        };
+        checkVersion();
+    }, []);
+    return null;
+};
+
 // Internal component to handle post-login redirects cleanly through React Router
 const AuthRedirector = () => {
   const { user } = useAuth();
@@ -69,6 +95,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <DataProvider>
         <Router>
+          <VersionWatcher />
           <ScrollToTop />
           <Layout>
             <Suspense fallback={<PageLoader />}>
