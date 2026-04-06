@@ -556,6 +556,17 @@ const About: React.FC = () => {
 
               <div className="relative">
                 <Quote className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 h-12 w-12 sm:h-16 sm:w-16 text-slate-100 dark:text-slate-800 -z-10" />
+                
+                {/* If the avatar field holds a media link (like YouTube), render it at the top of the modal content */}
+                {selectedTestimonial?.avatar && extractMedia(selectedTestimonial.avatar) && (
+                  <div className="mb-6">
+                    <RichText 
+                      content={selectedTestimonial.avatar}
+                      className="mb-0"
+                    />
+                  </div>
+                )}
+                
                 <RichText
                   content={selectedTestimonial.content}
                   className="text-slate-700 dark:text-slate-300 text-base sm:text-lg font-medium pb-4"
@@ -715,7 +726,7 @@ const About: React.FC = () => {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Add a Photo / Media Link</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Add a Photo / Media Link <span className="opacity-50 font-normal ml-1">(Optional)</span></label>
                                 <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-cyan/50 transition-all group">
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="relative group/file">
