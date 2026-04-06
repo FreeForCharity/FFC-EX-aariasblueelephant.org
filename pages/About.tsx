@@ -337,14 +337,15 @@ const About: React.FC = () => {
                         </div>
 
                         {(() => {
-                          let media = extractMedia(item.content);
+                          // Check for media in both the content AND the dedicated media/avatar field
+                          let media = extractMedia(item.content) || (item.avatar ? extractMedia(item.avatar) : null);
                           
-                          // If no media found in content, use the avatar as the main media if it exists
+                          // If still no rich media found but we have an avatar, treat it as a direct image
                           if (!media && item.avatar) {
                             media = {
+                              url: item.avatar,
                               type: 'image',
-                              thumbnail: item.avatar,
-                              original: item.avatar
+                              thumbnail: item.avatar
                             };
                           }
 

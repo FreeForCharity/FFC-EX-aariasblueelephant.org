@@ -26,7 +26,8 @@ import {
     X,
     TrendingUp,
     Star,
-    Camera
+    Camera,
+    Play
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -34,7 +35,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
-import RichText from '../components/RichText';
+import RichText, { extractMedia } from '../components/RichText';
 import WheelOfFun from '../components/WheelOfFun';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
 import { 
@@ -941,11 +942,25 @@ const Dashboard: React.FC = () => {
                                 </div>
                             ) : (
                                 <div className="flex flex-col md:flex-row gap-6 w-full">
-                                    {testimonial.avatar && (
-                                        <div className="w-full md:w-32 lg:w-48 aspect-video md:aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
-                                            <img src={testimonial.avatar} alt="Story Media" className="h-full w-full object-cover" />
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        const media = extractMedia(testimonial.content) || (testimonial.avatar ? extractMedia(testimonial.avatar) : null);
+                                        const previewUrl = media?.thumbnail || testimonial.avatar;
+                                        
+                                        if (!previewUrl) return null;
+                                        
+                                        return (
+                                            <div className="w-full md:w-32 lg:w-48 aspect-video md:aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex-shrink-0 relative group">
+                                                <img src={previewUrl} alt="Story Media" className="h-full w-full object-cover" />
+                                                {media?.type && media.type !== 'image' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                        <div className="p-2 rounded-full bg-white/90 shadow-lg text-slate-900">
+                                                            <Play className="h-4 w-4 fill-current" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-3">
