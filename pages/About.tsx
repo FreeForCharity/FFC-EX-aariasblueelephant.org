@@ -28,7 +28,8 @@ const About: React.FC = () => {
       role: '',
       content: '',
       rating: 5,
-      avatar: ''
+      avatar: user?.avatar || '',
+      media: ''
   });
 
   // Pre-fill author when user logs in
@@ -37,8 +38,7 @@ const About: React.FC = () => {
           setNewStory(prev => ({ 
               ...prev, 
               author: prev.author || user.name,
-              // Pre-fill Google avatar if no custom image is set yet
-              avatar: prev.avatar || user.avatar || ''
+              avatar: user.avatar || prev.avatar || ''
           }));
       }
   }, [user]);
@@ -100,6 +100,7 @@ const About: React.FC = () => {
           role: newStory.role || 'Community Member',
           content: newStory.content,
           avatar: newStory.avatar,
+          media: newStory.media,
           rating: newStory.rating,
           authorEmail: user.email,
           userId: user.id
@@ -107,7 +108,7 @@ const About: React.FC = () => {
 
       if (result.success) {
           setSubmissionStatus('Success');
-          setNewStory({ author: user.name, role: '', content: '', rating: 5, avatar: '' });
+          setNewStory({ author: user.name, role: '', content: '', rating: 5, avatar: user.avatar || '', media: '' });
           setTimeout(() => {
               setIsSubmittingStory(false);
               setSubmissionStatus('Idle');
@@ -148,7 +149,7 @@ const About: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewStory(prev => ({ ...prev, avatar: reader.result as string }));
+        setNewStory(prev => ({ ...prev, media: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -342,16 +343,17 @@ const About: React.FC = () => {
                         </div>
 
                         {(() => {
-                          // Check for media in both the content AND the dedicated media/avatar field
-                          let media = extractMedia(item.content) || (item.avatar ? extractMedia(item.avatar) : null);
+                          // 1. Prioritize the new dedicated media field
+                          let media = item.media ? extractMedia(item.media) : null;
                           
-                          // If still no rich media found but we have an avatar, treat it as a direct image
-                          if (!media && item.avatar) {
-                            media = {
-                              url: item.avatar,
-                              type: 'image',
-                              thumbnail: item.avatar
-                            };
+                          // 2. If it's a direct image URL (not a rich media link), wrap it
+                          if (!media && item.media) {
+                            media = { url: item.media, type: 'image', thumbnail: item.media };
+                          }
+
+                          // 3. Fallback to extracting from content (legacy support)
+                          if (!media) {
+                            media = extractMedia(item.content);
                           }
 
                           if (!media) return null;
@@ -564,11 +566,11 @@ const About: React.FC = () => {
               <div className="relative">
                 <Quote className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 h-12 w-12 sm:h-16 sm:w-16 text-slate-100 dark:text-slate-800 -z-10" />
                 
-                {/* If the avatar field holds a media link (like YouTube), render it at the top of the modal content */}
-                {selectedTestimonial?.avatar && extractMedia(selectedTestimonial.avatar) && (
-                  <div className="mb-6">
+                {/* Story Media (YouTube Player or Image) */}
+                {selectedTestimonial?.media && (
+                  <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                     <RichText 
-                      content={selectedTestimonial.avatar}
+                      content={selectedTestimonial.media}
                       className="mb-0"
                     />
                   </div>
@@ -744,64 +746,107 @@ const About: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Add a Photo / Media Link <span className="opacity-50 font-normal ml-1">(Optional)</span></label>
-                                <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-cyan/50 transition-all group">
-                                    <div className="flex flex-col sm:flex-row gap-4">
-                                        <div className="relative group/file">
-                                            <input 
-                                                type="file" 
-                                                id="testimonial-image"
-                                                accept="image/*"
-                                                onChange={handleImageChange}
-                                                className="hidden"
+                                
+                                <div className="space-y-4 p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 ring-4 ring-slate-50 dark:ring-slate-900/50">
+                                    {/* 1. Identity Preview (Small & Circular) */}
+                                    <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-brand-cyan/20 ring-2 ring-white animate-in zoom-in-50 duration-500">
+                                            <img 
+                                                src={newStory.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(newStory.author || 'U')}&background=0EA5E9&color=fff`} 
+                                                alt="Identity" 
+                                                className="h-full w-full object-cover" 
                                             />
-                                            <label 
-                                                htmlFor="testimonial-image"
-                                                className="flex flex-col items-center justify-center h-24 w-24 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-brand-cyan/5 dark:hover:bg-brand-cyan/10 transition-all relative overflow-hidden"
-                                            >
-                                                {newStory.avatar ? (
-                                                    <>
-                                                        <img src={newStory.avatar} alt="Preview" className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/file:opacity-100 transition-opacity">
-                                                            <ImageIcon className="h-6 w-6 text-white" />
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="flex flex-col items-center gap-1.5 p-2 text-center">
-                                                        <ImageIcon className="h-6 w-6 text-slate-400" />
-                                                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-tight uppercase tracking-wider">From Computer</span>
-                                                    </div>
-                                                )}
-                                            </label>
                                         </div>
-                                        
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                                                <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">OR PASTE URL</span>
-                                                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Your Identity</p>
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">{newStory.author || 'Anonymous'}</h4>
+                                        </div>
+                                        {user?.avatar && (
+                                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 dark:bg-sky-900/30 rounded-full border border-sky-100 dark:border-sky-800">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></div>
+                                                <span className="text-[8px] font-black text-sky-700 dark:text-sky-300 uppercase tracking-widest leading-none">Google Verified</span>
                                             </div>
-                                            <input 
-                                                type="url"
-                                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm"
-                                                placeholder="Paste Image/Media URL..."
-                                                value={newStory.avatar && !newStory.avatar.startsWith('data:') ? newStory.avatar : ''}
-                                                onChange={e => setNewStory({...newStory, avatar: e.target.value})}
-                                            />
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic leading-tight">Paste a link to any image or video thumbnail</p>
-                                        </div>
+                                        )}
                                     </div>
-                                    
-                                    {/* Google Profile Photo Indicator */}
-                                    {user?.avatar && newStory.avatar === user.avatar && (
-                                        <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-sky-50 dark:bg-sky-900/30 rounded-lg border border-sky-100 dark:border-sky-800/50">
-                                            <div className="h-5 w-5 rounded-full overflow-hidden border border-sky-200 dark:border-sky-700">
-                                                <img src={user.avatar} alt="Google Profile" className="h-full w-full object-cover" />
+
+                                    {/* 2. Media Upload / URL Paste */}
+                                    <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-cyan/50 transition-all group">
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <div className="relative group/file">
+                                                <input 
+                                                    type="file" 
+                                                    id="testimonial-image"
+                                                    accept="image/*"
+                                                    onChange={handleImageChange}
+                                                    className="hidden"
+                                                />
+                                                <label 
+                                                    htmlFor="testimonial-image"
+                                                    className="flex flex-col items-center justify-center h-24 w-24 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-brand-cyan/5 dark:hover:bg-brand-cyan/10 transition-all relative overflow-hidden"
+                                                >
+                                                    {newStory.media && !newStory.media.startsWith('http') ? (
+                                                        <>
+                                                            <img src={newStory.media} alt="Preview" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/file:opacity-100 transition-opacity">
+                                                                <ImageIcon className="h-6 w-6 text-white" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-1.5 p-2 text-center text-slate-400 group-hover:text-brand-cyan transition-colors">
+                                                            <ImageIcon className="h-6 w-6" />
+                                                            <span className="text-[9px] font-bold leading-tight uppercase tracking-wider">From Computer</span>
+                                                        </div>
+                                                    )}
+                                                </label>
                                             </div>
-                                            <span className="text-[9px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-widest leading-none">Using your Google profile photo</span>
+                                            
+                                            <div className="flex-1 space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                                    <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">OR PASTE URL</span>
+                                                    <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                                </div>
+                                                <input 
+                                                    type="url"
+                                                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm"
+                                                    placeholder="Paste Image/Media URL..."
+                                                    value={newStory.media && newStory.media.startsWith('http') ? newStory.media : ''}
+                                                    onChange={e => setNewStory({...newStory, media: e.target.value})}
+                                                />
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic leading-tight">Paste a link to any image or video thumbnail</p>
+                                            </div>
                                         </div>
-                                    )}
+
+                                        {/* Media Preview Box (Content specific) */}
+                                        {newStory.media && (
+                                            <div className="mt-3 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl animate-in zoom-in-95 duration-300">
+                                                <div className="flex items-center gap-3">
+                                                    {extractMedia(newStory.media) ? (
+                                                        <div className="h-10 w-10 rounded bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-500">
+                                                            <Youtube className="h-5 w-5" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-10 w-10 rounded bg-sky-100 dark:bg-sky-500/20 flex items-center justify-center text-sky-500 overflow-hidden">
+                                                            <img src={newStory.media} className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                                            <ImageIcon className="h-5 w-5" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Story Media Attached</p>
+                                                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate mt-0.5">{newStory.media.startsWith('data:') ? 'Image from computer' : newStory.media}</p>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => setNewStory({...newStory, media: ''})}
+                                                        className="p-1 px-2 text-[10px] font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors uppercase tracking-widest"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

@@ -54,6 +54,7 @@ export interface Testimonial {
   status: 'Pending' | 'Approved';
   rating?: number;
   rank?: number;
+  media?: string;
   userId?: string;
 }
 
