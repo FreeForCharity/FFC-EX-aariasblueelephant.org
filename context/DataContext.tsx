@@ -131,6 +131,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 status: t.status,
                 rating: t.rating,
                 rank: t.rank,
+                media: t.media,
                 userId: t.user_id
               })));
             }
