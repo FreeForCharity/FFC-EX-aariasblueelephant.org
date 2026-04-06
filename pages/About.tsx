@@ -337,7 +337,17 @@ const About: React.FC = () => {
                         </div>
 
                         {(() => {
-                          const media = extractMedia(item.content);
+                          let media = extractMedia(item.content);
+                          
+                          // If no media found in content, use the avatar as the main media if it exists
+                          if (!media && item.avatar) {
+                            media = {
+                              type: 'image',
+                              thumbnail: item.avatar,
+                              original: item.avatar
+                            };
+                          }
+
                           if (!media) return null;
 
                           const getPlatformDetails = () => {

@@ -941,6 +941,11 @@ const Dashboard: React.FC = () => {
                                 </div>
                             ) : (
                                 <div className="flex flex-col md:flex-row gap-6 w-full">
+                                    {testimonial.avatar && (
+                                        <div className="w-full md:w-32 lg:w-48 aspect-video md:aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex-shrink-0">
+                                            <img src={testimonial.avatar} alt="Story Media" className="h-full w-full object-cover" />
+                                        </div>
+                                    )}
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-3">
