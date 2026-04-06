@@ -33,8 +33,13 @@ const About: React.FC = () => {
 
   // Pre-fill author when user logs in
   useEffect(() => {
-      if (user && !newStory.author) {
-          setNewStory(prev => ({ ...prev, author: user.name }));
+      if (user) {
+          setNewStory(prev => ({ 
+              ...prev, 
+              author: prev.author || user.name,
+              // Pre-fill Google avatar if no custom image is set yet
+              avatar: prev.avatar || user.avatar || ''
+          }));
       }
   }, [user]);
 
@@ -614,7 +619,7 @@ const About: React.FC = () => {
             onClick={() => submissionStatus !== 'Submitting' && setIsSubmittingStory(false)}
           >
               <div 
-                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-300"
+                className="relative w-full max-w-lg max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-y-auto border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-300 custom-scrollbar"
                 onClick={(e) => e.stopPropagation()}
                 ref={submissionModalRef}
                 tabIndex={-1}
@@ -773,6 +778,16 @@ const About: React.FC = () => {
                                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic leading-tight">Paste a link to any image or video thumbnail</p>
                                         </div>
                                     </div>
+                                    
+                                    {/* Google Profile Photo Indicator */}
+                                    {user?.avatar && newStory.avatar === user.avatar && (
+                                        <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-sky-50 dark:bg-sky-900/30 rounded-lg border border-sky-100 dark:border-sky-800/50">
+                                            <div className="h-5 w-5 rounded-full overflow-hidden border border-sky-200 dark:border-sky-700">
+                                                <img src={user.avatar} alt="Google Profile" className="h-full w-full object-cover" />
+                                            </div>
+                                            <span className="text-[9px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-widest leading-none">Using your Google profile photo</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
