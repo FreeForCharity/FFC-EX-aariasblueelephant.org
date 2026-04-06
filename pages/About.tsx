@@ -515,7 +515,7 @@ const About: React.FC = () => {
             <div className="bg-slate-50 dark:bg-slate-950 px-6 py-6 border-b border-slate-200 dark:border-slate-800/50 relative overflow-hidden shrink-0">
               <div className="flex items-center gap-4 relative z-10">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white p-1.5 shadow-md border border-slate-100 dark:border-slate-800 shrink-0">
-                  <Logo className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
+                  <Logo src="/logo.png" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
                 </div>
                 <div className="flex flex-col items-start min-w-0">
                   <h2 className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 leading-tight whitespace-nowrap overflow-visible">
@@ -536,9 +536,11 @@ const About: React.FC = () => {
                     {selectedTestimonial.avatar ? (
                       <img src={selectedTestimonial.avatar} alt={selectedTestimonial.author} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/60 dark:text-sky-300 text-3xl">
-                        {selectedTestimonial.author.charAt(0)}
-                      </div>
+                      <img 
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTestimonial.author)}&background=0EA5E9&color=fff&size=128`} 
+                        alt={selectedTestimonial.author} 
+                        className="h-full w-full object-cover shadow-inner" 
+                      />
                     )}
                   </div>
                 </div>
@@ -584,7 +586,18 @@ const About: React.FC = () => {
                 <h5 className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl">Inspired by this story?</h5>
                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 max-w-sm">Imprint your change and help us support more families.</p>
 
-                <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="inline-block mt-4 w-full sm:w-auto">
+                <a 
+                  href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-block mt-4 w-full sm:w-auto"
+                  onClick={(e) => {
+                    // Safety check to ensure standard browser behavior
+                    if (!window.open('https://www.zeffy.com/en-US/donation-form/aariasblueelephant', '_blank')) {
+                        // fallback if blocked
+                    }
+                  }}
+                >
                   <button id="donate-button" className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full transition-all text-sm shadow-md flex items-center justify-center gap-2">
                     Donate Now <HeartPulse className="h-4 w-4" />
                   </button>
@@ -593,7 +606,7 @@ const About: React.FC = () => {
 
               <div className="flex flex-col items-center shrink-0">
                 <div className="h-32 w-32 bg-white p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 ring-4 ring-white/50 dark:ring-slate-800/50">
-                  <img src="./qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
+                  <img src="/qr-code-donate.png" alt="Donate QR Code" className="w-full h-full object-contain" />
                 </div>
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">Scan to Donate</span>
               </div>
