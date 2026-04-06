@@ -142,6 +142,7 @@ const TestimonialSection: React.FC = () => {
                 const isExpanded = expandedIndices.includes(globalIndex);
                 const { isTruncated, text } = getTruncatedContent(item.content, isExpanded ? 5000 : 120);
                 let media = item.media ? extractMedia(item.media) : null;
+                const isVertical = media?.type === 'tiktok' || (media?.type === 'instagram' && (item.media?.toLowerCase().includes('/reels/') || item.media?.toLowerCase().includes('/reel/')));
                 if (!media && item.media) media = { url: item.media, type: 'image', thumbnail: item.media };
                 const mediaDetails = media?.type === 'youtube' ? { icon: <Youtube />, color: 'bg-red-600' } :
                                    media?.type === 'instagram' ? { icon: <Instagram />, color: 'bg-pink-600' } :
@@ -156,7 +157,7 @@ const TestimonialSection: React.FC = () => {
                     className="relative flex flex-col transition-all duration-500 group perspective-1000" style={{ zIndex: 10 - localIndex }}>
                     <div className="glow-iridescent" /><div className="scroll-sparkle scroll-sparkle--1" /><div className="scroll-sparkle scroll-sparkle--2" /><div className="scroll-sparkle scroll-sparkle--3" /><div className="scroll-sparkle scroll-sparkle--4" /><div className="scroll-sparkle scroll-sparkle--5" /><div className="scroll-sparkle scroll-sparkle--6" />
                     <div className="scroll-rod h-5 w-full rounded-full relative z-20 scroll-rod-shadow" />
-                    <div className={`parchment-bg -mt-2 -mb-2 p-6 sm:p-8 flex flex-col transition-all duration-700 cursor-pointer relative overflow-hidden ${isExpanded ? 'min-h-[400px]' : 'max-h-[320px]'}`} onClick={() => toggleExpand(globalIndex)}>
+                    <div className={`parchment-bg -mt-2 -mb-2 p-6 sm:p-8 flex flex-col transition-all duration-700 cursor-pointer relative overflow-hidden ${isExpanded ? 'min-h-[500px] h-auto max-h-none pb-12' : 'max-h-[320px]'}`} onClick={() => toggleExpand(globalIndex)}>
                       <div className="glass-sheen" />
                       <div className="flex justify-between items-start mb-6 relative z-10">
                         <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-[0_4px_0_#e2e8f0] dark:shadow-[0_4px_0_#0f172a] border border-slate-200/50 transition-transform group-hover:scale-110">
@@ -171,8 +172,15 @@ const TestimonialSection: React.FC = () => {
                       </div>
                       {media && (
                         <div 
-                          className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? 'aspect-video' : 'h-24 opacity-60'}`}
-                          onClick={(e) => isExpanded && e.stopPropagation()}
+                          className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? (isVertical ? 'aspect-[9/16] min-h-[550px]' : 'aspect-video min-h-[300px]') : 'h-24 opacity-60'}`}
+                          onClick={(e) => {
+                            if (!isExpanded) {
+                              toggleExpand(globalIndex);
+                              e.stopPropagation();
+                            } else {
+                              e.stopPropagation();
+                            }
+                          }}
                         >
                           {isExpanded ? (
                             <RichText content={item.media || ''} className="w-full h-full" />

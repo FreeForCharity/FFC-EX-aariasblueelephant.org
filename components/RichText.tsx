@@ -156,7 +156,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                         const isPlaying = playingMedia[index];
                         if (embedUrl) {
                             return (
-                                <div key={index} className="w-full my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 aspect-video relative group">
+                                <div key={index} className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-900 relative group">
                                     {!isPlaying ? (
                                         <div
                                             className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm cursor-pointer hover:bg-slate-900/20 transition-all"
@@ -198,7 +198,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                         const isPlaying = playingMedia[index];
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto min-h-[450px] relative group">
+                                <div key={index} className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white mx-auto relative group">
                                     {!isPlaying ? (
                                         <div
                                             className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-purple-900/20 backdrop-blur-[2px] cursor-pointer hover:bg-purple-900/10 transition-all"
@@ -220,7 +220,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerPolicy="no-referrer-when-downgrade"
                                         sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                                        className={`min-h-[450px] ${!isPlaying ? 'pointer-events-none' : ''}`}
+                                        className={`w-full min-h-[inherit] ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
                             );
@@ -233,7 +233,7 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
                         if (embedUrl) {
                             return (
-                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-black max-w-[325px] mx-auto min-h-[580px] relative group">
+                                <div key={index} className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-black mx-auto relative group">
                                     {!isPlaying ? (
                                         <div
                                             className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm cursor-pointer hover:bg-slate-900/40 transition-all"
@@ -250,13 +250,13 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                     <iframe
                                         src={embedUrl}
                                         width="100%"
-                                        height="580px" // TikTok embeds are vertical
+                                        height="100%"
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                         referrerPolicy="no-referrer-when-downgrade"
                                         sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                                        className={`w-full ${!isPlaying ? 'pointer-events-none' : ''}`}
+                                        className={`w-full min-h-[inherit] ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
                             );
