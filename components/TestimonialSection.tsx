@@ -168,9 +168,22 @@ const TestimonialSection: React.FC = () => {
                         </div>
                       </div>
                       {media && (
-                        <div className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? 'aspect-video' : 'h-24 opacity-60'}`}>
-                          {media.thumbnail && <img src={media.thumbnail} alt="" className="w-full h-full object-cover" />}
-                          <div className="absolute inset-0 flex items-center justify-center"><div className={`h-10 w-10 rounded-full ${mediaDetails.color} text-white flex items-center justify-center shadow-lg`}>{mediaDetails.icon}</div></div>
+                        <div 
+                          className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? 'aspect-video' : 'h-24 opacity-60'}`}
+                          onClick={(e) => isExpanded && e.stopPropagation()}
+                        >
+                          {isExpanded ? (
+                            <RichText content={item.media || ''} className="w-full h-full" />
+                          ) : (
+                            <>
+                              {media.thumbnail && <img src={media.thumbnail} alt="" className="w-full h-full object-cover" />}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className={`h-10 w-10 rounded-full ${mediaDetails.color} text-white flex items-center justify-center shadow-lg`}>
+                                  {mediaDetails.icon}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                       <div className={`text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm transition-all duration-700 overflow-hidden ${isExpanded ? 'max-h-[1000px]' : 'max-h-20'}`}>
