@@ -1,7 +1,6 @@
 import React from 'react';
 import { Users, FileText, CheckCircle } from 'lucide-react';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
-import DonationQR from '../components/DonationQR';
 import Button from '../components/Button';
 
 const About: React.FC = () => {
@@ -143,10 +142,6 @@ const About: React.FC = () => {
           </div>
         </div>
 
-        {/* Final CTA / Donation Section */}
-        <div className="mt-20">
-          <DonationQR />
-        </div>
       </div>
     </div>
   );
