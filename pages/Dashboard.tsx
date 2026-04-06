@@ -1001,8 +1001,8 @@ const Dashboard: React.FC = () => {
                             ) : (
                                 <div className="flex flex-col md:flex-row gap-6 w-full">
                                     {(() => {
-                                        const media = extractMedia(testimonial.content) || (testimonial.avatar ? extractMedia(testimonial.avatar) : null);
-                                        const previewUrl = media?.thumbnail || testimonial.avatar;
+                                        const media = testimonial.media ? extractMedia(testimonial.media) : (extractMedia(testimonial.content) || (testimonial.avatar ? extractMedia(testimonial.avatar) : null));
+                                        const previewUrl = media?.thumbnail || (testimonial.media && !testimonial.media.startsWith('http') ? testimonial.media : testimonial.avatar);
                                         
                                         if (!previewUrl) return null;
                                         

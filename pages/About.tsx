@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse, Star, Send, Share, Link as LinkIcon, ClipboardCheck } from 'lucide-react';
+import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse, Star, Send, Share, Link as LinkIcon, ClipboardCheck, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 import { useData } from '../context/DataContext';
@@ -14,6 +14,7 @@ const About: React.FC = () => {
   const { user, loginWithGoogle } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const pendingTestimonial = testimonials.find(t => t.authorEmail === user?.email && t.status === 'Pending');
   const approvedTestimonials = testimonials.filter(t => t.status === 'Approved');
 
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
@@ -646,6 +647,26 @@ const About: React.FC = () => {
                           </div>
                           <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Story Received!</h3>
                           <p className="text-slate-600 dark:text-slate-400">Thank you for sharing your experience. We will review and publish it shortly.</p>
+                      </div>
+                  ) : pendingTestimonial ? (
+                      <div className="p-12 text-center flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                          <div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 rounded-full flex items-center justify-center mb-6 ring-8 ring-amber-50 dark:ring-amber-500/10">
+                              <MessageSquare className="h-10 w-10" />
+                          </div>
+                          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Review in Progress</h2>
+                          <p className="text-slate-600 dark:text-slate-400 max-w-sm mb-6">
+                              You currently have a story waiting for approval. We limit submissions to one pending story at a time to maintain high-quality community experiences.
+                          </p>
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 text-xs font-black uppercase tracking-widest border border-amber-200 dark:border-amber-500/20 shadow-sm">
+                             Status: Pending Approval
+                          </div>
+                          <Button 
+                              variant="ghost" 
+                              onClick={() => setIsSubmittingStory(false)}
+                              className="mt-8 text-slate-500 font-bold uppercase tracking-widest text-[10px]"
+                          >
+                              Close
+                          </Button>
                       </div>
                   ) : submissionStatus === 'Error' ? (
                       <div className="p-12 text-center flex flex-col items-center">
