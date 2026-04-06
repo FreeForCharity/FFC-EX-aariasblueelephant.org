@@ -211,7 +211,8 @@ const Dashboard: React.FC = () => {
             avatar: testimonialEditForm.avatar,
             rating: testimonialEditForm.rating,
             rank: testimonialEditForm.rank,
-            author_email: testimonialEditForm.authorEmail // Ensure sync between local camelCase and DB snake_case
+            author_email: testimonialEditForm.authorEmail, // Ensure sync between local camelCase and DB snake_case
+            media: testimonialEditForm.media
         };
 
         const result = await updateTestimonial(id, metadata);
@@ -980,6 +981,16 @@ const Dashboard: React.FC = () => {
                                                         placeholder="e.g. 1"
                                                         value={testimonialEditForm.rank || ''}
                                                         onChange={e => setTestimonialEditForm({...testimonialEditForm, rank: parseInt(e.target.value) || 0})}
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Media Link (Social or Image URL)</label>
+                                                    <input 
+                                                        type="text"
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none"
+                                                        placeholder="https://instagram.com/p/..."
+                                                        value={testimonialEditForm.media || ''}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, media: e.target.value})}
                                                     />
                                                 </div>
                                             </div>
