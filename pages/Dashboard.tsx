@@ -76,7 +76,8 @@ const Dashboard: React.FC = () => {
         getUserDonation,
         updateEvent,
         deleteEvent,
-        addEvent
+        addEvent,
+        updateTestimonial
     } = useData();
     
     const navigate = useNavigate();
@@ -97,6 +98,8 @@ const Dashboard: React.FC = () => {
     const [newDonationAmount, setNewDonationAmount] = useState<string>('');
     const [editingDurationId, setEditingDurationId] = useState<string | null>(null);
     const [newDuration, setNewDuration] = useState<string>('');
+    const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
+    const [testimonialEditForm, setTestimonialEditForm] = useState<Partial<TestimonialType>>({});
 
 
     const userRegs = eventRegistrations.filter((r: EventRegistration) => r.userId === user?.id || r.userEmail === user?.email);
@@ -140,8 +143,44 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    const handleTestimonialAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTestimonialEditForm({ ...testimonialEditForm, avatar: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleDownloadTaxReceipt = (id: string) => {
         alert(`Generating PDF receipt for donation ${id}... In a production environment, this would generate and download a formal 501(c)(3) tax-compliant receipt.`);
+    };
+
+    const handleEditTestimonial = (testimonial: TestimonialType) => {
+        setEditingTestimonialId(testimonial.id);
+        setTestimonialEditForm(testimonial);
+    };
+
+    const handleSaveTestimonial = async (id: string) => {
+        // Prepare metadata for update, matching the DB column names if necessary
+        const metadata: any = {
+            author: testimonialEditForm.author,
+            role: testimonialEditForm.role,
+            content: testimonialEditForm.content,
+            avatar: testimonialEditForm.avatar,
+            rating: testimonialEditForm.rating,
+            rank: testimonialEditForm.rank,
+            author_email: testimonialEditForm.authorEmail // Ensure sync between local camelCase and DB snake_case
+        };
+
+        const result = await updateTestimonial(id, metadata);
+        if (result.success) {
+            setEditingTestimonialId(null);
+        } else {
+            setAppError(result.error || "Failed to update testimonial");
+        }
     };
 
     const handleExportEmails = (eventId: string, eventTitle: string) => {
@@ -818,92 +857,193 @@ const Dashboard: React.FC = () => {
                     <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">No stories submitted yet.</p>
                 ) : (
                     testimonials.map((testimonial: TestimonialType) => (
-                        <div key={testimonial.id} className="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex flex-col md:flex-row gap-6 group">
-                            <div className="flex-1">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-full bg-brand-cyan/10 flex items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20">
-                                            {testimonial.author.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
-                                                {testimonial.rating && (
-                                                    <div className="flex gap-0.5 ml-1">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star key={i} className={`h-3 w-3 ${i < (testimonial.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
-                                                        ))}
+                        <div key={testimonial.id} className="p-6 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex flex-col gap-6 group">
+                            {editingTestimonialId === testimonial.id ? (
+                                <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-1 space-y-4">
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Author Image</label>
+                                                <div className="space-y-2">
+                                                    <div className="h-20 w-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                                                        <img src={testimonialEditForm.avatar || ''} alt="" className="h-full w-full object-cover" />
                                                     </div>
-                                                )}
+                                                    <input 
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="text-[10px] w-full text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:bg-slate-200 dark:file:bg-slate-700 cursor-pointer"
+                                                        onChange={handleTestimonialAvatarChange}
+                                                    />
+                                                    <input 
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-xs border border-slate-200 dark:border-slate-700 outline-none"
+                                                        placeholder="Or paste URL..."
+                                                        value={testimonialEditForm.avatar || ''}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, avatar: e.target.value})}
+                                                    />
+                                                </div>
                                             </div>
-                                            <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{testimonial.authorEmail || 'No Email'} • {testimonial.date}</p>
+                                        </div>
+                                        <div className="md:col-span-2 space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Name</label>
+                                                    <input 
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan"
+                                                        value={testimonialEditForm.author || ''}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, author: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Role</label>
+                                                    <input 
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none"
+                                                        value={testimonialEditForm.role || ''}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, role: e.target.value})}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Rating (1-5)</label>
+                                                    <select 
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none"
+                                                        value={testimonialEditForm.rating || 5}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, rating: parseInt(e.target.value)})}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} Stars</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Priority Rank (Lower = First)</label>
+                                                    <input 
+                                                        type="number"
+                                                        className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none"
+                                                        placeholder="e.g. 1"
+                                                        value={testimonialEditForm.rank || ''}
+                                                        onChange={e => setTestimonialEditForm({...testimonialEditForm, rank: parseInt(e.target.value) || 0})}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Testimonial Content</label>
+                                                <textarea 
+                                                    className="w-full bg-white dark:bg-slate-900 rounded-lg p-2 text-sm border border-slate-200 dark:border-slate-700 outline-none min-h-[100px]"
+                                                    value={testimonialEditForm.content || ''}
+                                                    onChange={e => setTestimonialEditForm({...testimonialEditForm, content: e.target.value})}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest border shadow-sm ${testimonial.status === 'Pending'
-                                        ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
-                                        : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
-                                        }`}>
-                                        {testimonial.status}
-                                    </span>
-                                </div>
-                                <div className="p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-sm leading-relaxed text-slate-700 dark:text-slate-300 transition-colors">
-                                    <RichText content={testimonial.content} className="max-h-[300px] overflow-y-auto" />
-                                </div>
-                            </div>
-                            <div className="flex md:flex-col gap-2 justify-end min-w-[120px]">
-                                {testimonial.status === 'Pending' && (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className="w-full bg-brand-cyan hover:bg-brand-cyan-dark text-slate-900 shadow-md"
-                                        onClick={async () => {
-                                            const result = await approveTestimonial(testimonial.id);
-                                            if (!result.success) setAppError(result.error || "Failed to approve testimonial");
-                                        }}
-                                    >
-                                        Approve
-                                    </Button>
-                                )}
-                                {confirmDeleteTestimonialId === testimonial.id ? (
-                                    <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 w-full">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
-                                            onClick={async () => {
-                                                const result = await deleteTestimonial(testimonial.id);
-                                                if (result.success) {
-                                                    setConfirmDeleteTestimonialId(null);
-                                                } else {
-                                                    setAppError(result.error || "Failed to delete testimonial");
-                                                    setConfirmDeleteTestimonialId(null);
-                                                }
-                                            }}
-                                        >
-                                            Confirm
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-slate-500 text-xs px-2"
-                                            onClick={() => setConfirmDeleteTestimonialId(null)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
+                                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <Button variant="ghost" size="sm" onClick={() => setEditingTestimonialId(null)}>Cancel</Button>
+                                        <Button variant="primary" size="sm" onClick={() => handleSaveTestimonial(testimonial.id)}>Save Testimonial</Button>
                                     </div>
-                                ) : (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-                                        onClick={() => setConfirmDeleteTestimonialId(testimonial.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col md:flex-row gap-6 w-full">
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-brand-cyan/10 flex items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20 overflow-hidden">
+                                                    {testimonial.avatar ? (
+                                                        <img src={testimonial.avatar} alt="" className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        testimonial.author.charAt(0)
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="text-slate-900 dark:text-white font-bold">{testimonial.author}</h4>
+                                                        {testimonial.rating && (
+                                                            <div className="flex gap-0.5 ml-1">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <Star key={i} className={`h-3 w-3 ${i < (testimonial.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {testimonial.rank !== undefined && (
+                                                            <span className="text-[9px] font-black bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500 uppercase tracking-tighter">Rank: {testimonial.rank}</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{testimonial.authorEmail || 'No Email'} • {testimonial.date} • {testimonial.role}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest border shadow-sm ${testimonial.status === 'Pending'
+                                                ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20'
+                                                : 'bg-green-50 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                                }`}>
+                                                {testimonial.status}
+                                            </span>
+                                        </div>
+                                        <div className="p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-sm leading-relaxed text-slate-700 dark:text-slate-300 transition-colors">
+                                            <RichText content={testimonial.content} className="max-h-[300px] overflow-y-auto" />
+                                        </div>
+                                    </div>
+                                    <div className="flex md:flex-col gap-2 justify-end min-w-[120px]">
+                                        {testimonial.status === 'Pending' && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                className="w-full bg-brand-cyan hover:bg-brand-cyan-dark text-slate-900 shadow-md"
+                                                onClick={async () => {
+                                                    const result = await approveTestimonial(testimonial.id);
+                                                    if (!result.success) setAppError(result.error || "Failed to approve testimonial");
+                                                }}
+                                            >
+                                                Approve
+                                            </Button>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-cyan hover:text-brand-cyan"
+                                            onClick={() => handleEditTestimonial(testimonial)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        {confirmDeleteTestimonialId === testimonial.id ? (
+                                            <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 w-full">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    className="bg-red-600 hover:bg-red-700 text-white text-xs px-3"
+                                                    onClick={async () => {
+                                                        const result = await deleteTestimonial(testimonial.id);
+                                                        if (result.success) {
+                                                            setConfirmDeleteTestimonialId(null);
+                                                        } else {
+                                                            setAppError(result.error || "Failed to delete testimonial");
+                                                            setConfirmDeleteTestimonialId(null);
+                                                        }
+                                                    }}
+                                                >
+                                                    Confirm
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-slate-500 text-xs px-2"
+                                                    onClick={() => setConfirmDeleteTestimonialId(null)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                                onClick={() => setConfirmDeleteTestimonialId(testimonial.id)}
+                                            >
+                                                Delete
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}

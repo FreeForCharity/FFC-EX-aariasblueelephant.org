@@ -27,7 +27,8 @@ const About: React.FC = () => {
       author: user?.name || '',
       role: '',
       content: '',
-      rating: 5
+      rating: 5,
+      avatar: ''
   });
 
   // Pre-fill author when user logs in
@@ -93,13 +94,14 @@ const About: React.FC = () => {
           author: newStory.author,
           role: newStory.role || 'Community Member',
           content: newStory.content,
+          avatar: newStory.avatar,
           rating: newStory.rating,
           authorEmail: user.email
       });
 
       if (result.success) {
           setSubmissionStatus('Success');
-          setNewStory({ author: user.name, role: '', content: '', rating: 5 });
+          setNewStory({ author: user.name, role: '', content: '', rating: 5, avatar: '' });
           setTimeout(() => {
               setIsSubmittingStory(false);
               setSubmissionStatus('Idle');
@@ -133,6 +135,17 @@ const About: React.FC = () => {
       }
     }
     return { isTruncated: true, text: truncated };
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewStory(prev => ({ ...prev, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const nextTestimonialPage = () => {
@@ -687,6 +700,57 @@ const About: React.FC = () => {
                                     value={newStory.content}
                                     onChange={e => setNewStory({...newStory, content: e.target.value})}
                                 />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Add a Photo / Media Link</label>
+                                <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-cyan/50 transition-all group">
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="relative group/file">
+                                            <input 
+                                                type="file" 
+                                                id="testimonial-image"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                className="hidden"
+                                            />
+                                            <label 
+                                                htmlFor="testimonial-image"
+                                                className="flex flex-col items-center justify-center h-24 w-24 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-brand-cyan/5 dark:hover:bg-brand-cyan/10 transition-all relative overflow-hidden"
+                                            >
+                                                {newStory.avatar ? (
+                                                    <>
+                                                        <img src={newStory.avatar} alt="Preview" className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/file:opacity-100 transition-opacity">
+                                                            <ImageIcon className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-1.5 p-2 text-center">
+                                                        <ImageIcon className="h-6 w-6 text-slate-400" />
+                                                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-tight uppercase tracking-wider">From Computer</span>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
+                                        
+                                        <div className="flex-1 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                                <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">OR PASTE URL</span>
+                                                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
+                                            </div>
+                                            <input 
+                                                type="url"
+                                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm"
+                                                placeholder="Paste Image/Media URL..."
+                                                value={newStory.avatar && !newStory.avatar.startsWith('data:') ? newStory.avatar : ''}
+                                                onChange={e => setNewStory({...newStory, avatar: e.target.value})}
+                                            />
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic leading-tight">Paste a link to any image or video thumbnail</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-3 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20">
