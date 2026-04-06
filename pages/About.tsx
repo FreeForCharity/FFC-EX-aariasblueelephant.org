@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse, Star, Send, Share, Link as LinkIcon, ClipboardCheck, MessageSquare } from 'lucide-react';
+import { CheckCircle, FileText, Users, Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, HeartPulse, Star, Send, Share, Link as LinkIcon, ClipboardCheck, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 import { useData } from '../context/DataContext';
@@ -22,6 +23,15 @@ const About: React.FC = () => {
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<'Idle' | 'Submitting' | 'Success' | 'Error'>('Idle');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  const [expandedIndices, setExpandedIndices] = useState<number[]>([]); // All closed by default
+
+  const toggleExpand = (index: number) => {
+    if (expandedIndices.includes(index)) {
+      setExpandedIndices(expandedIndices.filter(i => i !== index));
+    } else {
+      setExpandedIndices([...expandedIndices, index]);
+    }
+  };
   
   // Form State
   const [newStory, setNewStory] = useState({
@@ -309,24 +319,59 @@ const About: React.FC = () => {
           {approvedTestimonials.length > 0 ? (
             <div className="relative">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {approvedTestimonials.slice(currentTestimonialIndex, currentTestimonialIndex + 3).map((item) => {
-                  const { isTruncated, text } = getTruncatedContent(item.content);
+                {approvedTestimonials.slice(currentTestimonialIndex, currentTestimonialIndex + 3).map((item, localIndex) => {
+                  const globalIndex = currentTestimonialIndex + localIndex;
+                  const isExpanded = expandedIndices.includes(globalIndex);
+                  const { isTruncated, text } = getTruncatedContent(item.content, isExpanded ? 5000 : 120);
 
                   return (
-                    <div 
+                    <motion.div 
                         key={item.id} 
                         id={item.id}
-                        className="bg-white dark:bg-slate-800 border-t-4 border-sky-500 rounded-xl shadow-sm p-8 relative flex flex-col justify-between transition-colors animate-in fade-in duration-500 group cursor-pointer hover:shadow-md border border-slate-200 dark:border-slate-700" 
-                        onClick={() => setSelectedTestimonial(item)}
+                        initial={false}
+                        animate={{ 
+                          scale: isExpanded ? 1 : 0.98,
+                          y: isExpanded ? 0 : 5
+                        }}
+                        whileHover={{ 
+                          scale: isExpanded ? 1 : 1.02,
+                          y: isExpanded ? 0 : -5,
+                          rotateX: isExpanded ? 0 : 2,
+                          rotateY: isExpanded ? 0 : -2
+                        }}
+                        className={`relative flex flex-col transition-all duration-500 animate-in fade-in group perspective-1000`}
+                        style={{ zIndex: 10 - localIndex }}
                     >
-                      <div>
-                        <div className="flex justify-between items-start mb-4">
-                            <Quote className="h-8 w-8 text-sky-200 dark:text-sky-900/50" />
+                      {/* Iridescent Glow Background */}
+                      <div className="glow-iridescent" />
+
+                      {/* Sparkle Particles */}
+                      <div className="scroll-sparkle scroll-sparkle--1" />
+                      <div className="scroll-sparkle scroll-sparkle--2" />
+                      <div className="scroll-sparkle scroll-sparkle--3" />
+                      <div className="scroll-sparkle scroll-sparkle--4" />
+                      <div className="scroll-sparkle scroll-sparkle--5" />
+                      <div className="scroll-sparkle scroll-sparkle--6" />
+
+                      {/* Top Scroll Rod - 3D Cylinder */}
+                      <div className="scroll-rod h-5 w-full rounded-full relative z-20 scroll-rod-shadow" />
+
+                      {/* Scroll Paper */}
+                      <div 
+                        className={`parchment-bg -mt-2 -mb-2 p-6 sm:p-8 flex flex-col transition-all duration-700 cursor-pointer relative overflow-hidden ${isExpanded ? 'min-h-[400px]' : 'max-h-[320px]'}`}
+                        onClick={() => toggleExpand(globalIndex)}
+                      >
+                        {/* Glass Sheen Effect */}
+                        <div className="glass-sheen" />
+                        <div className="flex justify-between items-start mb-6 relative z-10">
+                            <div className="p-3 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-[0_4px_0_#e2e8f0] dark:shadow-[0_4px_0_#0f172a] border border-slate-200/50 dark:border-slate-700/50 transition-transform group-hover:scale-110">
+                                <Quote className="h-6 w-6 text-brand-cyan dark:text-brand-cyan shadow-sm" />
+                            </div>
                             <div className="flex flex-col items-end gap-2">
                                 {item.rating && (
-                                    <div className="flex gap-0.5">
+                                    <div className="flex gap-1 p-1.5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-lg border border-slate-200/30 dark:border-slate-700/30 shadow-inner">
                                         {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className={`h-3.5 w-3.5 ${i < (item.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                                            <Star key={i} className={`h-3 w-3 ${i < (item.rating || 0) ? 'fill-amber-400 text-amber-400 drop-shadow-sm' : 'text-slate-200 dark:text-slate-700'}`} />
                                         ))}
                                     </div>
                                 )}
@@ -344,105 +389,58 @@ const About: React.FC = () => {
                         </div>
 
                         {(() => {
-                          // 1. Prioritize the new dedicated media field
-                          let media = item.media ? extractMedia(item.media) : null;
-                          
-                          // 2. If it's a direct image URL (not a rich media link), wrap it
-                          if (!media && item.media) {
-                            media = { url: item.media, type: 'image', thumbnail: item.media };
-                          }
+                           let media = item.media ? extractMedia(item.media) : null;
+                           if (!media && item.media) media = { url: item.media, type: 'image', thumbnail: item.media };
+                           if (!media) media = extractMedia(item.content);
+                           if (!media) return null;
 
-                          // 3. Fallback to extracting from content (legacy support)
-                          if (!media) {
-                            media = extractMedia(item.content);
-                          }
+                           const details = media.type === 'youtube' ? { icon: <Youtube />, color: 'bg-red-600', label: 'YouTube' } :
+                                          media.type === 'instagram' ? { icon: <Instagram />, color: 'bg-pink-600', label: 'Instagram' } :
+                                          media.type === 'facebook' ? { icon: <Facebook />, color: 'bg-blue-600', label: 'Facebook' } :
+                                          { icon: <ImageIcon />, color: 'bg-brand-cyan', label: 'Media' };
 
-                          if (!media) return null;
-
-                          const getPlatformDetails = () => {
-                            switch (media.type) {
-                              case 'youtube': return { icon: <Youtube className="h-6 w-6" />, color: 'bg-red-600', label: 'YouTube' };
-                              case 'instagram': return { icon: <Instagram className="h-6 w-6" />, color: 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600', label: 'Instagram' };
-                              case 'facebook': return { icon: <Facebook className="h-6 w-6" />, color: 'bg-blue-600', label: 'Facebook' };
-                              case 'google-photos': return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-sky-500', label: 'Photo Album' };
-                              default: return { icon: <ImageIcon className="h-6 w-6" />, color: 'bg-slate-500', label: 'Media' };
-                            }
-                          };
-
-                          const details = getPlatformDetails();
-
-                          return (
-                            <div className="relative mb-6 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 shadow-inner group-hover:border-sky-500/50 transition-colors">
-                              {media.thumbnail ? (
-                                <img
-                                  src={media.thumbnail}
-                                  alt={`Media from ${item.author}`}
-                                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                />
-                              ) : (
-                                <div className={`w-full h-full flex flex-col items-center justify-center ${details.color} opacity-40 group-hover:opacity-60 transition-opacity`}>
-                                  {media.type === 'google-photos' ? (
-                                    <div className="relative w-16 h-12 mb-2">
-                                      <div className="absolute top-1 left-2 w-full h-full bg-white/20 rounded shadow-sm rotate-3"></div>
-                                      <div className="absolute top-2 left-1 w-full h-full bg-white/30 rounded shadow-sm -rotate-2"></div>
-                                      <div className="absolute inset-0 bg-white/40 backdrop-blur-md rounded flex items-center justify-center text-white border border-white/20">
-                                        {details.icon}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2">
-                                      {details.icon}
-                                    </div>
-                                  )}
-                                  <span className="text-[10px] font-bold text-white uppercase tracking-widest">{details.label}</span>
-                                </div>
-                              )}
-
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <div className={`h-12 w-12 rounded-full ${details.color} text-white flex items-center justify-center shadow-lg scale-90 group-hover:scale-100 transition-transform`}>
-                                  {details.icon}
-                                </div>
-                              </div>
-
-                              {media.type === 'image' && (
-                                <div className="absolute top-2 right-2">
-                                  <div className="p-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white shadow-sm">
-                                    <ImageIcon className="h-4 w-4" />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
+                           return (
+                             <div className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? 'aspect-video' : 'h-24 opacity-60'}`}>
+                               {media.thumbnail && <img src={media.thumbnail} alt="" className="w-full h-full object-cover" />}
+                               <div className="absolute inset-0 flex items-center justify-center">
+                                 <div className={`h-10 w-10 rounded-full ${details.color} text-white flex items-center justify-center shadow-lg`}>
+                                   {details.icon}
+                                 </div>
+                               </div>
+                             </div>
+                           );
                         })()}
 
-                        <div className="text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm text-balance">
+                        <div className={`text-slate-600 dark:text-slate-300 mb-6 italic leading-relaxed text-sm transition-all duration-700 overflow-hidden ${isExpanded ? 'max-h-[1000px]' : 'max-h-20'}`}>
                           <RichText content={text} className="inline italic" />
-                          {isTruncated && (
-                            <span
-                              className="ml-2 font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 inline-flex items-center group/more"
-                            >
-                              ... Read More
-                              <ArrowRight className="w-3 h-3 ml-1 opacity-0 -translate-x-2 group-hover/more:opacity-100 group-hover/more:translate-x-0 transition-all" />
-                            </span>
-                          )}
+                        </div>
+
+                        {isTruncated && (
+                          <div className="text-brand-cyan text-xs font-black uppercase tracking-widest flex items-center gap-1.5 mb-6 opacity-60 hover:opacity-100 transition-opacity">
+                            {isExpanded ? 'Click to Roll Back' : 'Click to Unroll'} {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/50 mt-auto relative z-10">
+                          <div className="h-10 w-10 rounded-full bg-white dark:bg-slate-800 overflow-hidden shadow-[0_3px_0_#e2e8f0] dark:shadow-[0_3px_0_#0f172a] flex-shrink-0 ring-2 ring-brand-cyan/20 transition-transform group-hover:scale-105">
+                            {item.avatar ? (
+                              <img src={item.avatar} alt={item.author} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-brand-cyan font-black bg-brand-cyan/5">
+                                {item.author.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-slate-800 dark:text-white font-bold truncate text-sm">{item.author}</p>
+                            <p className="text-brand-cyan dark:text-brand-cyan text-[9px] font-black uppercase tracking-[0.2em] truncate">{item.title || item.role}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700 mt-auto">
-                        <div className="h-12 w-12 rounded-full bg-sky-100 overflow-hidden shadow-sm flex-shrink-0">
-                          {item.avatar ? (
-                            <img src={item.avatar} alt={item.author} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-sky-700 font-bold bg-sky-100 dark:bg-sky-900/50 dark:text-sky-300">
-                              {item.author.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-slate-800 dark:text-white font-bold">{item.author}</p>
-                          <p className="text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">{item.title || item.role}</p>
-                        </div>
-                      </div>
-                    </div>
+
+                      {/* Bottom Scroll Rod - 3D Cylinder */}
+                      <div className="scroll-rod h-5 w-full rounded-full relative z-20 scroll-rod-shadow" />
+                    </motion.div>
                   );
                 })}
               </div>
