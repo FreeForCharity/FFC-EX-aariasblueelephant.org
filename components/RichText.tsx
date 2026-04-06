@@ -53,6 +53,11 @@ export const extractMedia = (content: string) => {
         if (url.includes('facebook.com') || url.includes('fb.watch')) {
             return { url, type: 'facebook' as const };
         }
+        if (url.includes('twitter.com') || url.includes('x.com')) {
+            let tweetId = '';
+            if (url.includes('/status/')) tweetId = url.split('/status/')[1].split('/')[0].split('?')[0];
+            return { url, type: 'twitter' as const, tweetId };
+        }
         if (url.includes('photos.google.com') || url.includes('photos.app.goo.gl')) {
             return {
                 url,
@@ -85,6 +90,10 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
 
     const isTikTok = (url: string) => {
         return url.includes('tiktok.com');
+    };
+
+    const isTwitter = (url: string) => {
+        return url.includes('twitter.com') || url.includes('x.com');
     };
 
     const isImage = (url: string) => {
@@ -127,7 +136,14 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
     };
 
     const getFacebookEmbedUrl = (url: string) => {
-        return `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=500`;
+        return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=500`;
+    };
+
+    const getTwitterEmbedUrl = (url: string) => {
+        let tweetId = '';
+        if (url.includes('/status/')) tweetId = url.split('/status/')[1].split('/')[0].split('?')[0];
+        if (tweetId) return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
+        return null;
     };
 
     return (
@@ -160,6 +176,8 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
                                         className={!isPlaying ? 'pointer-events-none' : ''}
                                     ></iframe>
                                 </div>
@@ -199,7 +217,9 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                         frameBorder="0"
                                         scrolling="no"
                                         allowTransparency={true}
-                                        allow="encrypted-media"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
                                         className={`min-h-[450px] ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
@@ -230,10 +250,12 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                     <iframe
                                         src={embedUrl}
                                         width="100%"
-                                        height="700px" // TikTok embeds are vertical
+                                        height="580px" // TikTok embeds are vertical
                                         frameBorder="0"
-                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
                                         className={`w-full ${!isPlaying ? 'pointer-events-none' : ''}`}
                                     ></iframe>
                                 </div>
@@ -259,17 +281,53 @@ const RichText: React.FC<RichTextProps> = ({ content, className = '' }) => {
                                 ) : null}
                                 <iframe
                                     src={embedUrl}
-                                    width="500"
+                                    width="100%"
                                     height="500"
                                     style={{ border: 'none', overflow: 'hidden' }}
                                     scrolling="no"
                                     frameBorder="0"
                                     allowFullScreen={true}
-                                    allow="clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
                                     className={!isPlaying ? 'pointer-events-none' : ''}
                                 ></iframe>
                             </div>
                         );
+                    }
+
+                    if (isTwitter(part)) {
+                        const embedUrl = getTwitterEmbedUrl(part);
+                        const isPlaying = playingMedia[index];
+                        if (embedUrl) {
+                            return (
+                                <div key={index} className="my-4 rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-white max-w-[500px] mx-auto min-h-[400px] relative group">
+                                    {!isPlaying ? (
+                                        <div
+                                            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/5 backdrop-blur-[1px] cursor-pointer hover:bg-slate-900/10 transition-all"
+                                            onClick={() => setPlayingMedia({ ...playingMedia, [index]: true })}
+                                        >
+                                            <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
+                                                <Share2 className="h-8 w-8" />
+                                            </div>
+                                            <p className="mt-3 text-slate-900 font-bold tracking-wide uppercase text-[10px] bg-white/80 px-4 py-1.5 rounded-full shadow-lg border border-slate-200">Load Conversation</p>
+                                        </div>
+                                    ) : null}
+                                    <iframe
+                                        src={embedUrl}
+                                        width="100%"
+                                        height="600"
+                                        frameBorder="0"
+                                        scrolling="no"
+                                        allowFullScreen={true}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+                                        className={!isPlaying ? 'pointer-events-none' : ''}
+                                    ></iframe>
+                                </div>
+                            );
+                        }
                     }
 
                     if (part.includes('photos.google.com') || part.includes('photos.app.goo.gl')) {

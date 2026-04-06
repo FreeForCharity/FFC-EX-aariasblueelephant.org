@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, Star, Send, Link as LinkIcon, ClipboardCheck, MessageSquare, ChevronDown, ChevronUp, HeartPulse } from 'lucide-react';
+import { Quote, ArrowRight, ChevronLeft, ChevronRight, X, Youtube, Image as ImageIcon, Instagram, Facebook, Star, Send, Link as LinkIcon, ClipboardCheck, MessageSquare, ChevronDown, ChevronUp, HeartPulse, Play, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -146,6 +146,8 @@ const TestimonialSection: React.FC = () => {
                 const mediaDetails = media?.type === 'youtube' ? { icon: <Youtube />, color: 'bg-red-600' } :
                                    media?.type === 'instagram' ? { icon: <Instagram />, color: 'bg-pink-600' } :
                                    media?.type === 'facebook' ? { icon: <Facebook />, color: 'bg-blue-600' } :
+                                   media?.type === 'tiktok' ? { icon: <Play />, color: 'bg-black' } :
+                                   media?.type === 'twitter' ? { icon: <Share2 />, color: 'bg-slate-900' } :
                                    { icon: <ImageIcon />, color: 'bg-sky-500' };
 
                 return (
