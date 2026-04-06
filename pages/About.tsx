@@ -96,7 +96,8 @@ const About: React.FC = () => {
           content: newStory.content,
           avatar: newStory.avatar,
           rating: newStory.rating,
-          authorEmail: user.email
+          authorEmail: user.email,
+          userId: user.id
       });
 
       if (result.success) {

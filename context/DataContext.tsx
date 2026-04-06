@@ -122,7 +122,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setTestimonials(data.map((t: any) => ({
                 id: t.id,
                 author: t.author,
-                authorEmail: t.author_email || t.authorEmail, // Handle both snake_case and camelCase
+                authorEmail: t.author_email || t.authorEmail,
                 role: t.role,
                 title: t.title,
                 content: t.content,
@@ -130,7 +130,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 avatar: t.avatar,
                 status: t.status,
                 rating: t.rating,
-                rank: t.rank
+                rank: t.rank,
+                userId: t.user_id
               })));
             }
           });
@@ -259,6 +260,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: data.avatar,
       rating: data.rating,
       author_email: data.authorEmail,
+      user_id: data.userId,
       date: dateStr,
       status: 'Pending'
     }]).select().single();
@@ -277,7 +279,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         date: resData.date,
         avatar: resData.avatar,
         status: resData.status,
-        rating: resData.rating
+        rating: resData.rating,
+        rank: resData.rank,
+        userId: resData.user_id
       }, ...testimonials]);
     }
     return { success: true };
