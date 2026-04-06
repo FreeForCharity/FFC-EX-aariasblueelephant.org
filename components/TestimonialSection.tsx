@@ -49,11 +49,35 @@ const TestimonialSection: React.FC = () => {
         setIsSubmittingStory(true);
         navigate('/', { replace: true });
     }
-    if (location.hash === '#voices') {
+    
+    const hash = location.hash.replace('#', '');
+    if (hash === 'voices') {
         const el = document.getElementById('voices');
         if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 500);
+    } else if (hash && approvedTestimonials.length > 0) {
+        const foundIndex = approvedTestimonials.findIndex(t => t.id === hash);
+        if (foundIndex !== -1) {
+            // Navigate to the correct "page" of stories (set of 3)
+            const pageIndex = Math.floor(foundIndex / 3) * 3;
+            setCurrentTestimonialIndex(pageIndex);
+            
+            // Automatically unroll/expand the story
+            setExpandedIndices(prev => prev.includes(foundIndex) ? prev : [...prev, foundIndex]);
+            
+            // Scroll into view
+            setTimeout(() => {
+                const voicesEl = document.getElementById('voices');
+                if (voicesEl) voicesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Secondary scroll to the specific story after a small delay to allow render
+                setTimeout(() => {
+                    const storyEl = document.getElementById(hash);
+                    if (storyEl) storyEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 600);
+            }, 500);
+        }
     }
-  }, [location.search, location.hash, navigate]);
+  }, [location.search, location.hash, navigate, approvedTestimonials.length]);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const submissionModalRef = useRef<HTMLDivElement>(null);
