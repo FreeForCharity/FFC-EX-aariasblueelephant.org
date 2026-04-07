@@ -28,11 +28,7 @@ import {
     Star,
     Camera,
     Play,
-    Youtube, 
-    Image as ImageIcon, 
-    Instagram, 
-    Facebook, 
-    Send, 
+    Send,
     Share, 
     Link as LinkIcon
 } from 'lucide-react';
