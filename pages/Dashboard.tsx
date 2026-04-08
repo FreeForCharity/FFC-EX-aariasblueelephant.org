@@ -149,12 +149,43 @@ const Dashboard: React.FC = () => {
 
     if (!user) return null;
 
+    const compressImage = (base64: string, maxWidth = 800, quality = 0.6): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxWidth) {
+                        width *= maxWidth / height;
+                        height = maxWidth;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+        });
+    };
+
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                updateAvatar(reader.result as string);
+            reader.onloadend = async () => {
+                const compressed = await compressImage(reader.result as string, 400, 0.7);
+                updateAvatar(compressed);
             };
             reader.readAsDataURL(file);
         }
@@ -164,8 +195,9 @@ const Dashboard: React.FC = () => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditFormData({ ...editFormData, image: reader.result as string });
+            reader.onloadend = async () => {
+                const compressed = await compressImage(reader.result as string, 1000, 0.6);
+                setEditFormData({ ...editFormData, image: compressed });
             };
             reader.readAsDataURL(file);
         }
@@ -175,8 +207,9 @@ const Dashboard: React.FC = () => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setTestimonialEditForm({ ...testimonialEditForm, avatar: reader.result as string });
+            reader.onloadend = async () => {
+                const compressed = await compressImage(reader.result as string, 400, 0.7);
+                setTestimonialEditForm({ ...testimonialEditForm, avatar: compressed });
             };
             reader.readAsDataURL(file);
         }
@@ -186,8 +219,9 @@ const Dashboard: React.FC = () => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setNewStory({ ...newStory, media: reader.result as string });
+            reader.onloadend = async () => {
+                const compressed = await compressImage(reader.result as string, 800, 0.6);
+                setNewStory({ ...newStory, media: compressed });
             };
             reader.readAsDataURL(file);
         }

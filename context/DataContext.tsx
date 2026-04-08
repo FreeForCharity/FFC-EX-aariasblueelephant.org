@@ -31,6 +31,11 @@ interface DataContextType {
   deleteRegistration: (id: string) => Promise<MutationResult>;
   updateUserDonation: (email: string, amount: number) => Promise<MutationResult>;
   getUserDonation: (email: string) => number;
+  fetchMoreEvents: () => Promise<void>;
+  fetchMoreTestimonials: () => Promise<void>;
+  fetchEventDetails: (id: string) => Promise<Event | null>;
+  hasMoreEvents: boolean;
+  hasMoreTestimonials: boolean;
   isLoading: boolean;
   hasInitialFetch: boolean;
 }
@@ -44,6 +49,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
+  const [hasMoreEvents, setHasMoreEvents] = useState(true);
+  const [hasMoreTestimonials, setHasMoreTestimonials] = useState(true);
+
+  const PAGE_SIZE = 6;
 
   const invokeEmailFunction = async (record: any, type: string) => {
     // TEMPORARILY DISABLED BY USER REQUEST to stabilize registration flow
@@ -64,6 +73,138 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchEventsData = async (rangeStart: number = 0) => {
+    const rangeEnd = rangeStart + PAGE_SIZE - 1;
+    
+    // For the list fetch, we might eventually want to exclude the heavy 'image' column 
+    // and fetch it only for the detail view to save egress.
+    // However, for now, pagination is the 80/20 win.
+    const { data, error, count } = await supabase.from('events')
+      .select('*', { count: 'exact' })
+      .order('date', { ascending: true })
+      .range(rangeStart, rangeEnd);
+
+    if (error) {
+      console.error("Fetch events error:", error);
+      return [];
+    }
+
+    if (data) {
+      const mapped = data.map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        date: e.date,
+        time: e.time,
+        location: e.location,
+        description: e.description,
+        type: e.type,
+        capacity: e.capacity,
+        registered: e.registered || 0,
+        initialLikes: e.initial_likes || 0,
+        image: e.image,
+        mediaLink: e.media_link,
+        hours: e.duration || e.hours || 0
+      }));
+
+      if (rangeStart === 0) {
+        setEvents(mapped);
+        // Cache management
+        try {
+          const cacheEvents = mapped.map(evt => ({ 
+            ...evt, 
+            image: (evt.image?.startsWith('data:') && evt.image.length > 2000) ? null : evt.image 
+          }));
+          localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
+        } catch (e) {}
+      } else {
+        setEvents(prev => [...prev, ...mapped]);
+      }
+
+      if (count !== null) {
+        setHasMoreEvents(rangeStart + mapped.length < count);
+      }
+      return mapped;
+    }
+    return [];
+  };
+
+  const fetchTestimonialsData = async (rangeStart: number = 0) => {
+    const rangeEnd = rangeStart + PAGE_SIZE - 1;
+    const { data, error, count } = await supabase.from('testimonials')
+      .select('*', { count: 'exact' })
+      .order('rank', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .range(rangeStart, rangeEnd);
+
+    if (error) {
+      console.error("Fetch testimonials error:", error);
+      return [];
+    }
+
+    if (data) {
+      const mapped = data.map((t: any) => ({
+        id: t.id,
+        author: t.author,
+        authorEmail: t.author_email || t.authorEmail,
+        role: t.role,
+        title: t.title,
+        content: t.content,
+        date: t.date,
+        avatar: t.avatar,
+        status: t.status,
+        rating: t.rating,
+        rank: t.rank,
+        media: t.media,
+        userId: t.user_id
+      }));
+
+      if (rangeStart === 0) {
+        setTestimonials(mapped);
+      } else {
+        setTestimonials(prev => [...prev, ...mapped]);
+      }
+
+      if (count !== null) {
+        setHasMoreTestimonials(rangeStart + mapped.length < count);
+      }
+      return mapped;
+    }
+    return [];
+  };
+
+  const fetchMoreEvents = async () => {
+    await fetchEventsData(events.length);
+  };
+
+  const fetchMoreTestimonials = async () => {
+    await fetchTestimonialsData(testimonials.length);
+  };
+
+  const fetchEventDetails = async (id: string): Promise<Event | null> => {
+    // Check local state first
+    const existing = events.find(e => e.id === id);
+    if (existing && existing.image) return existing;
+
+    const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    
+    return {
+      id: data.id,
+      title: data.title,
+      date: data.date,
+      time: data.time,
+      location: data.location,
+      description: data.description,
+      type: data.type,
+      capacity: data.capacity,
+      registered: data.registered || 0,
+      initialLikes: data.initial_likes || 0,
+      image: data.image,
+      mediaLink: data.media_link,
+      hours: data.duration || data.hours || 0
+    };
+  };
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -72,71 +213,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (cachedEvents) {
           try {
               setEvents(JSON.parse(cachedEvents));
-              setIsLoading(false); // Set loading false if we have cache
+              setIsLoading(false); 
           } catch (e) {
               console.error("Cache parse error:", e);
           }
       }
 
-      // If no cache, we definitely show loading
       if (!cachedEvents) setIsLoading(true);
       
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        const fetchEvents = supabase.from('events').select('*').order('date', { ascending: true })
-          .then(({ data, error }) => {
-            if (data) {
-              const mappedEvents = data.map((e: any) => ({
-                id: e.id,
-                title: e.title,
-                date: e.date,
-                time: e.time,
-                location: e.location,
-                description: e.description,
-                type: e.type,
-                capacity: e.capacity,
-                registered: e.registered || 0,
-                initialLikes: e.initial_likes || 0,
-                image: e.image,
-                mediaLink: e.media_link,
-                hours: e.duration || e.hours || 0
-              }));
-              setEvents(mappedEvents);
-              
-              try {
-                const cacheEvents = mappedEvents.map(evt => ({ 
-                  ...evt, 
-                  image: (evt.image?.startsWith('data:') && evt.image.length > 2000) ? null : evt.image 
-                }));
-                localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
-              } catch (e) {}
-              
-              if (isLoading) setIsLoading(false);
-            }
-          });
-
-        const fetchTestimonials = supabase.from('testimonials').select('*').order('rank', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) {
-              setTestimonials(data.map((t: any) => ({
-                id: t.id,
-                author: t.author,
-                authorEmail: t.author_email || t.authorEmail,
-                role: t.role,
-                title: t.title,
-                content: t.content,
-                date: t.date,
-                avatar: t.avatar,
-                status: t.status,
-                rating: t.rating,
-                rank: t.rank,
-                media: t.media,
-                userId: t.user_id
-              })));
-            }
-          });
-
         const fetchApplications = session ? supabase.from('volunteer_applications').select('*').order('created_at', { ascending: false })
           .then(({ data }) => {
             if (data) {
@@ -166,7 +253,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }) : Promise.resolve();
 
-        await Promise.all([fetchEvents, fetchTestimonials, fetchApplications, fetchRegistrations]);
+        await Promise.all([
+          fetchEventsData(0), 
+          fetchTestimonialsData(0), 
+          fetchApplications, 
+          fetchRegistrations
+        ]);
       } catch (error) {
         console.error("Fetch data error:", error);
       } finally {
@@ -500,6 +592,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteRegistration,
       updateUserDonation,
       getUserDonation,
+      fetchMoreEvents,
+      fetchMoreTestimonials,
+      fetchEventDetails,
+      hasMoreEvents,
+      hasMoreTestimonials,
       isLoading,
       hasInitialFetch
     }}>

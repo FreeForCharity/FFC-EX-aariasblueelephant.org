@@ -140,7 +140,38 @@ const TestimonialSection: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setNewStory(prev => ({ ...prev, media: reader.result as string }));
+      reader.onloadend = () => {
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.6 quality - massive reduction in Base64 size
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          setNewStory(prev => ({ ...prev, media: compressedBase64 }));
+        };
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -242,10 +273,22 @@ const TestimonialSection: React.FC = () => {
               })}
             </div>
             {approvedTestimonials.length > 3 && (
-              <div className="flex justify-center items-center gap-4 mt-12">
-                <button onClick={() => setCurrentTestimonialIndex(prev => Math.max(0, prev - 3))} className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 text-sky-600 transition-all hover:scale-110"><ChevronLeft className="w-5 h-5" /></button>
-                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest"> {currentTestimonialIndex + 1}-{Math.min(currentTestimonialIndex + 3, approvedTestimonials.length)} / {approvedTestimonials.length} </span>
-                <button onClick={() => setCurrentTestimonialIndex(prev => (prev + 3 >= approvedTestimonials.length ? 0 : prev + 3))} className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 text-sky-600 transition-all hover:scale-110"><ChevronRight className="w-5 h-5" /></button>
+              <div className="flex flex-col items-center gap-8 mt-12">
+                <div className="flex justify-center items-center gap-4">
+                  <button onClick={() => setCurrentTestimonialIndex(prev => Math.max(0, prev - 3))} className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 text-sky-600 transition-all hover:scale-110"><ChevronLeft className="w-5 h-5" /></button>
+                  <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest"> {currentTestimonialIndex + 1}-{Math.min(currentTestimonialIndex + 3, approvedTestimonials.length)} / {approvedTestimonials.length} </span>
+                  <button onClick={() => setCurrentTestimonialIndex(prev => (prev + 3 >= approvedTestimonials.length ? 0 : prev + 3))} className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 text-sky-600 transition-all hover:scale-110"><ChevronRight className="w-5 h-5" /></button>
+                </div>
+
+                {(useData().hasMoreTestimonials) && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => useData().fetchMoreTestimonials()}
+                    className="text-sky-600 dark:text-sky-400 border border-sky-400/20 hover:bg-sky-50 dark:hover:bg-sky-500/10 font-black uppercase tracking-widest text-[11px] px-8 py-3 rounded-full"
+                  >
+                    Load More Stories from Community
+                  </Button>
+                )}
               </div>
             )}
           </div>

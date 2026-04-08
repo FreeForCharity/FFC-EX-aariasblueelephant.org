@@ -654,7 +654,7 @@ export default function Events() {
           ) : (
             /* All / Past Carousel View */
             <div
-              className={`relative w-full ${activeEvent.mediaLink ? 'max-w-7xl' : 'max-w-5xl'} mx-auto transition-all duration-500`}
+              className={`relative w-full ${activeEvent.mediaLink ? 'max-w-7xl' : 'max-w-5xl'} mx-auto transition-all duration-500 mb-12`}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
@@ -692,6 +692,19 @@ export default function Events() {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {useData().hasMoreEvents && (
+            <div className="flex justify-center mb-12">
+              <Button 
+                variant="ghost" 
+                onClick={() => useData().fetchMoreEvents()}
+                className="text-sky-600 dark:text-sky-400 border border-sky-400/20 hover:bg-sky-50 dark:hover:bg-sky-500/10 font-black uppercase tracking-widest text-[11px] px-10 py-4 rounded-full shadow-sm"
+              >
+                Load More Events
+              </Button>
             </div>
           )}
         </div>
