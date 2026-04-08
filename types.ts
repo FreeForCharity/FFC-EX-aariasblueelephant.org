@@ -21,7 +21,7 @@ export interface Event {
   capacity: number;
   registered: number;
   type: 'Class' | 'Event' | 'Fundraiser' | 'Outreach' | 'Advocacy';
-  image: string;
+  image?: string;
   initialLikes: number;
   mediaLink?: string;
   hours?: number;

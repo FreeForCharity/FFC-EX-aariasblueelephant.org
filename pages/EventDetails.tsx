@@ -15,15 +15,48 @@ export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
   const { events, eventRegistrations, registerForEvent, isLoading, hasInitialFetch } = useData();
   
-  const event = events.find(e => e.id === id);
+  const eventFromContext = events.find(e => e.id === id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [fullEvent, setFullEvent] = useState<Event | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+
+  const { fetchEventDetails } = useData();
+
+  useEffect(() => {
+    const getDetails = async () => {
+      if (!id) return;
+      
+      // If we have the image already, no need to fetch
+      if (eventFromContext?.image) {
+        setFullEvent(eventFromContext);
+        return;
+      }
+
+      setIsFetchingDetails(true);
+      try {
+        const details = await fetchEventDetails(id);
+        if (details) {
+          setFullEvent(details);
+        }
+      } catch (err) {
+        console.error("Failed to fetch event details:", err);
+      } finally {
+        setIsFetchingDetails(false);
+      }
+    };
+
+    getDetails();
+  }, [id, eventFromContext, fetchEventDetails]);
+
+  // Use fullEvent if available, fallback to context version
+  const event = fullEvent || eventFromContext;
   
-  if (isLoading) {
+  if (isLoading || (isFetchingDetails && !event)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-brand-dark">
         <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin"></div>

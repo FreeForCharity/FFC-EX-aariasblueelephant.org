@@ -34,6 +34,7 @@ interface DataContextType {
   fetchMoreEvents: () => Promise<void>;
   fetchMoreTestimonials: () => Promise<void>;
   fetchEventDetails: (id: string) => Promise<Event | null>;
+  fetchTestimonialMedia: (id: string) => Promise<string | null>;
   hasMoreEvents: boolean;
   hasMoreTestimonials: boolean;
   isLoading: boolean;
@@ -80,7 +81,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // and fetch it only for the detail view to save egress.
     // However, for now, pagination is the 80/20 win.
     const { data, error, count } = await supabase.from('events')
-      .select('*', { count: 'exact' })
+      .select('id, title, date, time, location, description, type, capacity, registered, initial_likes, media_link, duration', { count: 'exact' })
       .order('date', { ascending: true })
       .range(rangeStart, rangeEnd);
 
@@ -101,7 +102,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         capacity: e.capacity,
         registered: e.registered || 0,
         initialLikes: e.initial_likes || 0,
-        image: e.image,
+        image: undefined, // Image fetched on demand
         mediaLink: e.media_link,
         hours: e.duration || e.hours || 0
       }));
@@ -131,7 +132,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchTestimonialsData = async (rangeStart: number = 0) => {
     const rangeEnd = rangeStart + PAGE_SIZE - 1;
     const { data, error, count } = await supabase.from('testimonials')
-      .select('*', { count: 'exact' })
+      .select('id, author, author_email, role, title, content, date, avatar, status, rating, rank, user_id', { count: 'exact' })
       .order('rank', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(rangeStart, rangeEnd);
@@ -154,7 +155,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: t.status,
         rating: t.rating,
         rank: t.rank,
-        media: t.media,
+        media: undefined, // Fetched on demand via LazySupabaseImage
         userId: t.user_id
       }));
 
@@ -203,6 +204,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mediaLink: data.media_link,
       hours: data.duration || data.hours || 0
     };
+  };
+
+  const fetchTestimonialMedia = async (id: string): Promise<string | null> => {
+    const { data, error } = await supabase.from('testimonials').select('media').eq('id', id).single();
+    if (error || !data) return null;
+    return data.media;
   };
 
   // Fetch initial data
@@ -595,6 +602,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetchMoreEvents,
       fetchMoreTestimonials,
       fetchEventDetails,
+      fetchTestimonialMedia,
       hasMoreEvents,
       hasMoreTestimonials,
       isLoading,

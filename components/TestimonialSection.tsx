@@ -7,9 +7,11 @@ import { useData } from '../context/DataContext';
 import RichText, { extractMedia } from './RichText';
 import Logo from './Logo';
 import Button from './Button';
+import { Testimonial } from '../types';
+import LazySupabaseImage from './LazySupabaseImage';
 
 const TestimonialSection: React.FC = () => {
-  const { testimonials, addTestimonial } = useData();
+  const { testimonials, addTestimonial, fetchTestimonialMedia } = useData();
   const { user, loginWithGoogle } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,7 +26,17 @@ const TestimonialSection: React.FC = () => {
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   const [expandedIndices, setExpandedIndices] = useState<number[]>([]); 
 
-  const toggleExpand = (index: number) => {
+  const toggleExpand = async (index: number) => {
+    const testimonial = approvedTestimonials[index];
+    
+    // If expanding and media is missing, fetch it
+    if (!expandedIndices.includes(index) && !testimonial.media) {
+      const mediaString = await fetchTestimonialMedia(testimonial.id);
+      if (mediaString) {
+        testimonial.media = mediaString; 
+      }
+    }
+    
     setExpandedIndices(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
   };
   
@@ -241,8 +253,15 @@ const TestimonialSection: React.FC = () => {
                             <RichText content={item.media || ''} className="w-full h-full" />
                           ) : (
                             <>
-                              {media.thumbnail && <img src={media.thumbnail} alt="" className="w-full h-full object-cover" />}
-                              <div className="absolute inset-0 flex items-center justify-center">
+                              {/* Use LazySupabaseImage for testimonial thumbnails to save egress */}
+                              <LazySupabaseImage
+                                id={item.id}
+                                table="testimonials"
+                                column="media"
+                                alt={item.author}
+                                className="w-full h-full"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className={`h-10 w-10 rounded-full ${mediaDetails.color} text-white flex items-center justify-center shadow-lg`}>
                                   {mediaDetails.icon}
                                 </div>
