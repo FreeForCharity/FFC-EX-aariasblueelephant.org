@@ -215,7 +215,12 @@ const Home: React.FC = () => {
                                             alt: evt.title || 'Event',
                                             title: evt.title,
                                             description: `${(evt as any).isRealEvent ? 'Upcoming: ' : ''}${formatShortDateLocal(evt.date)}`,
-                                            isRealEvent: (evt as any).isRealEvent
+                                            isRealEvent: (evt as any).isRealEvent,
+                                            dbCoords: (evt as any).isRealEvent ? {
+                                                id: String(evt.id),
+                                                table: 'events',
+                                                column: 'image'
+                                            } : undefined
                                         }))
                                     } 
                                 />

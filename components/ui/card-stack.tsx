@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LazySupabaseImage from '../LazySupabaseImage';
+
 
 export interface Card {
   id: string | number;
@@ -10,7 +12,13 @@ export interface Card {
   title: string;
   description: string;
   isRealEvent?: boolean;
+  dbCoords?: {
+    id: string;
+    table: 'events' | 'testimonials';
+    column: 'image' | 'media';
+  };
 }
+
 
 interface CardStackProps {
   initialCards: Card[];
@@ -193,13 +201,24 @@ export default function CardStack({
 function CardImage({ card, showInfo, priority }: { card: Card, showInfo: boolean, priority?: boolean }) {
     return (
         <>
-            <img
-                src={card.src}
-                alt={card.alt}
-                loading={priority ? "eager" : "lazy"}
-                className="w-full h-full object-cover pointer-events-none select-none"
-                draggable={false}
-            />
+            {card.dbCoords ? (
+                <LazySupabaseImage
+                    id={card.dbCoords.id}
+                    table={card.dbCoords.table}
+                    column={card.dbCoords.column}
+                    alt={card.alt}
+                    className="w-full h-full object-cover pointer-events-none select-none"
+                    fallbackImage={card.src}
+                />
+            ) : (
+                <img
+                    src={card.src}
+                    alt={card.alt}
+                    loading={priority ? "eager" : "lazy"}
+                    className="w-full h-full object-cover pointer-events-none select-none"
+                    draggable={false}
+                />
+            )}
             {/* Dark gradient overlay for text legibility */}
             <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${showInfo ? 'opacity-100' : 'opacity-0'}`} />
             

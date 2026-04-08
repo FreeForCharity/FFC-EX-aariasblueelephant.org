@@ -45,6 +45,8 @@ import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
 import WheelOfFun from '../components/WheelOfFun';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
+import LazySupabaseImage from '../components/LazySupabaseImage';
+
 import { 
   Event, 
   VolunteerApplication, 
@@ -807,7 +809,14 @@ const Dashboard: React.FC = () => {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 group">
                                 <div className="flex items-center gap-6">
                                     <div className="relative h-16 w-16 rounded-xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm">
-                                        <img src={event.image || DEFAULT_EVENT_IMAGE} alt="" className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        <LazySupabaseImage 
+                                            id={event.id}
+                                            table="events"
+                                            column="image"
+                                            alt={event.title}
+                                            className="h-full w-full"
+                                            fallbackImage={DEFAULT_EVENT_IMAGE}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-slate-900 dark:text-white font-black text-lg leading-tight">{event.title}</h4>
@@ -1053,7 +1062,13 @@ const Dashboard: React.FC = () => {
                                         
                                         return (
                                             <div className="w-full md:w-32 lg:w-48 aspect-video md:aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex-shrink-0 relative group">
-                                                <img src={previewUrl} alt="Story Media" className="h-full w-full object-cover" />
+                                                <LazySupabaseImage 
+                                                    id={testimonial.id}
+                                                    table="testimonials"
+                                                    column="media"
+                                                    alt="Story Media"
+                                                    className="h-full w-full"
+                                                />
                                                 {media?.type && media.type !== 'image' && (
                                                     <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                                                         <div className="p-2 rounded-full bg-white/90 shadow-lg text-slate-900">

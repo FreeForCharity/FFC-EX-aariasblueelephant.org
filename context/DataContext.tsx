@@ -5,7 +5,6 @@ import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../
 import { supabase } from '../lib/supabase';
 import { MOCK_DONATIONS } from '../constants';
 
-
 interface MutationResult {
   success: boolean;
   error?: string;
@@ -31,12 +30,8 @@ interface DataContextType {
   deleteRegistration: (id: string) => Promise<MutationResult>;
   updateUserDonation: (email: string, amount: number) => Promise<MutationResult>;
   getUserDonation: (email: string) => number;
-  fetchMoreEvents: () => Promise<void>;
-  fetchMoreTestimonials: () => Promise<void>;
   fetchEventDetails: (id: string) => Promise<Event | null>;
   fetchTestimonialMedia: (id: string) => Promise<string | null>;
-  hasMoreEvents: boolean;
-  hasMoreTestimonials: boolean;
   isLoading: boolean;
   hasInitialFetch: boolean;
 }
@@ -50,10 +45,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
-  const [hasMoreEvents, setHasMoreEvents] = useState(true);
-  const [hasMoreTestimonials, setHasMoreTestimonials] = useState(true);
-
-  const PAGE_SIZE = 6;
 
   const invokeEmailFunction = async (record: any, type: string) => {
     // TEMPORARILY DISABLED BY USER REQUEST to stabilize registration flow
@@ -74,16 +65,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchEventsData = async (rangeStart: number = 0) => {
-    const rangeEnd = rangeStart + PAGE_SIZE - 1;
-    
-    // For the list fetch, we might eventually want to exclude the heavy 'image' column 
-    // and fetch it only for the detail view to save egress.
-    // However, for now, pagination is the 80/20 win.
-    const { data, error, count } = await supabase.from('events')
-      .select('id, title, date, time, location, description, type, capacity, registered, initial_likes, media_link, duration', { count: 'exact' })
-      .order('date', { ascending: true })
-      .range(rangeStart, rangeEnd);
+  const fetchEventsData = async () => {
+    // We only fetch metadata here. The heavy 'image' column is deferred to LazySupabaseImage
+    // or the detail view to maintain low egress while ensuring all events are visible for filtering.
+    const { data, error } = await supabase.from('events')
+      .select('id, title, date, time, location, description, type, capacity, registered, initial_likes, media_link, duration')
+      .order('date', { ascending: true });
 
     if (error) {
       console.error("Fetch events error:", error);
@@ -102,40 +89,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         capacity: e.capacity,
         registered: e.registered || 0,
         initialLikes: e.initial_likes || 0,
-        image: undefined, // Image fetched on demand
+        image: undefined, // Image fetched on demand via LazySupabaseImage
         mediaLink: e.media_link,
         hours: e.duration || e.hours || 0
       }));
 
-      if (rangeStart === 0) {
-        setEvents(mapped);
-        // Cache management
-        try {
-          const cacheEvents = mapped.map(evt => ({ 
-            ...evt, 
-            image: (evt.image?.startsWith('data:') && evt.image.length > 2000) ? null : evt.image 
-          }));
-          localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
-        } catch (e) {}
-      } else {
-        setEvents(prev => [...prev, ...mapped]);
-      }
+      setEvents(mapped);
+      
+      // Cache management
+      try {
+        const cacheEvents = mapped.map(evt => ({ 
+          ...evt, 
+          image: null // Don't cache huge base64 strings
+        }));
+        localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
+      } catch (e) {}
 
-      if (count !== null) {
-        setHasMoreEvents(rangeStart + mapped.length < count);
-      }
       return mapped;
     }
     return [];
   };
 
-  const fetchTestimonialsData = async (rangeStart: number = 0) => {
-    const rangeEnd = rangeStart + PAGE_SIZE - 1;
-    const { data, error, count } = await supabase.from('testimonials')
-      .select('id, author, author_email, role, title, content, date, avatar, status, rating, rank, user_id', { count: 'exact' })
+  const fetchTestimonialsData = async () => {
+    const { data, error } = await supabase.from('testimonials')
+      .select('id, author, author_email, role, title, content, date, avatar, status, rating, rank, user_id')
       .order('rank', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .range(rangeStart, rangeEnd);
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Fetch testimonials error:", error);
@@ -159,26 +138,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: t.user_id
       }));
 
-      if (rangeStart === 0) {
-        setTestimonials(mapped);
-      } else {
-        setTestimonials(prev => [...prev, ...mapped]);
-      }
-
-      if (count !== null) {
-        setHasMoreTestimonials(rangeStart + mapped.length < count);
-      }
+      setTestimonials(mapped);
       return mapped;
     }
     return [];
-  };
-
-  const fetchMoreEvents = async () => {
-    await fetchEventsData(events.length);
-  };
-
-  const fetchMoreTestimonials = async () => {
-    await fetchTestimonialsData(testimonials.length);
   };
 
   const fetchEventDetails = async (id: string): Promise<Event | null> => {
@@ -261,8 +224,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }) : Promise.resolve();
 
         await Promise.all([
-          fetchEventsData(0), 
-          fetchTestimonialsData(0), 
+          fetchEventsData(), 
+          fetchTestimonialsData(), 
           fetchApplications, 
           fetchRegistrations
         ]);
@@ -576,8 +539,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 0;
   };
 
-
-
   return (
     <DataContext.Provider value={{
       events,
@@ -599,12 +560,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteRegistration,
       updateUserDonation,
       getUserDonation,
-      fetchMoreEvents,
-      fetchMoreTestimonials,
       fetchEventDetails,
       fetchTestimonialMedia,
-      hasMoreEvents,
-      hasMoreTestimonials,
       isLoading,
       hasInitialFetch
     }}>

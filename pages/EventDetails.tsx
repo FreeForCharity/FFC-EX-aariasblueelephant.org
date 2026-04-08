@@ -10,6 +10,8 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import RichText from '../components/RichText';
 import { formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
+import LazySupabaseImage from '../components/LazySupabaseImage';
+
 
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
@@ -176,16 +178,14 @@ export default function EventDetails() {
       {/* Hero Image with Overlay */}
       <div className="relative h-[40vh] w-full overflow-hidden lg:h-[50vh]">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white dark:via-brand-dark/50 dark:to-brand-dark z-10" />
-        <img
-          src={event.image || DEFAULT_EVENT_IMAGE}
+        <LazySupabaseImage
+          id={event.id}
+          table="events"
+          column="image"
           alt={event.title}
+          className="h-full w-full"
+          fallbackImage={DEFAULT_EVENT_IMAGE}
           onLoad={() => setImageLoaded(true)}
-          className={`h-full w-full object-cover transition-all duration-1000 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
-          loading="lazy"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = DEFAULT_LOCAL_FALLBACK;
-          }}
         />
         <div className="absolute top-4 left-4 z-20">
           <Link to="/events"
