@@ -10,6 +10,14 @@ export const MOCK_USERS: User[] = [
 export const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=1000';
 export const DEFAULT_LOCAL_FALLBACK = '/outreach_workshop.png';
 
+export const STOCK_INCLUSIVE_IMAGES = [
+  'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?auto=format&fit=crop&q=80&w=1000', // Kids play
+  'https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&q=80&w=1000', // Inclusive play
+  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1000', // Sensory
+  'https://images.unsplash.com/photo-1497911270199-1c552ee64aa4?auto=format&fit=crop&q=80&w=1000', // Calm blue
+  'https://images.unsplash.com/photo-1502086223501-7ea2970dcb46?auto=format&fit=crop&q=80&w=1000', // Group
+];
+
 export const ALL_EVENTS: Event[] = [
   // Upcoming Events
   {

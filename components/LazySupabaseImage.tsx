@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { STOCK_INCLUSIVE_IMAGES } from '../constants';
+
 
 interface LazySupabaseImageProps {
   id: string;
@@ -33,6 +35,15 @@ const LazySupabaseImage: React.FC<LazySupabaseImageProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
 
+  // Reset state when ID or coordinates change to prevent image persistence
+  useEffect(() => {
+    setSrc(null);
+    setLoading(false);
+    setError(false);
+    setIsVisible(false); // Re-trigger intersection if needed
+  }, [id, table, column]);
+
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -49,7 +60,8 @@ const LazySupabaseImage: React.FC<LazySupabaseImageProps> = ({
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [id, table, column]); // Re-observe when target change
+
 
   useEffect(() => {
     if (!isVisible || src || loading || error) return;
@@ -87,7 +99,15 @@ const LazySupabaseImage: React.FC<LazySupabaseImageProps> = ({
     fetchImage();
   }, [isVisible, id, table, column, src, loading, error, onLoad]);
 
-  const displaySrc = src || fallbackImage;
+  // Deterministic random fallback based on ID
+  const getStockFallback = (seedId: string) => {
+    if (!seedId) return STOCK_INCLUSIVE_IMAGES[0];
+    const hash = seedId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return STOCK_INCLUSIVE_IMAGES[hash % STOCK_INCLUSIVE_IMAGES.length];
+  };
+
+  const displaySrc = src || fallbackImage || getStockFallback(id);
+
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
