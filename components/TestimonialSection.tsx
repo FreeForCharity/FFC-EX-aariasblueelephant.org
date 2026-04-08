@@ -223,7 +223,10 @@ const TestimonialSection: React.FC = () => {
                     whileHover={{ scale: isExpanded ? 1 : 1.02, y: isExpanded ? 0 : -5, rotateX: isExpanded ? 0 : 2, rotateY: isExpanded ? 0 : -2 }}
                     className="relative flex flex-col transition-all duration-500 group perspective-1000" style={{ zIndex: 10 - localIndex }}>
                     <div className="glow-iridescent" /><div className="scroll-sparkle scroll-sparkle--1" /><div className="scroll-sparkle scroll-sparkle--2" /><div className="scroll-sparkle scroll-sparkle--3" /><div className="scroll-sparkle scroll-sparkle--4" /><div className="scroll-sparkle scroll-sparkle--5" /><div className="scroll-sparkle scroll-sparkle--6" />
-                    <div className="scroll-rod h-5 w-full rounded-full relative z-20 scroll-rod-shadow" />
+                    <div className="scroll-rod h-5 w-full rounded-full relative z-20 scroll-rod-shadow">
+                      <div className="absolute -left-2 -top-1 h-7 w-7 rounded-full rod-cap" />
+                      <div className="absolute -right-2 -top-1 h-7 w-7 rounded-full rod-cap" />
+                    </div>
                     <div className={`parchment-bg -mt-2 -mb-2 p-6 sm:p-8 flex flex-col transition-all duration-700 cursor-pointer relative overflow-hidden ${isExpanded ? 'min-h-[500px] h-auto max-h-none pb-12' : 'max-h-[320px]'}`} onClick={() => toggleExpand(globalIndex)}>
                       <div className="glass-sheen" />
                       <div className="flex justify-between items-start mb-6 relative z-10">

@@ -1,4 +1,4 @@
-import { User, Event, Donation } from './types';
+import { User, Event, Donation, Testimonial } from './types';
 
 export const MOCK_USERS: User[] = [
   { id: "1", email: "liji@blueelephant.org", role: "BoardMember.Owner", name: "Liji Chalatil" },
@@ -97,6 +97,59 @@ export const MOCK_DONATIONS: Donation[] = [
   { id: 'd1', amount: 500, date: '2023-10-01', campaign: 'Fall Fundraiser' },
   { id: 'd2', amount: 100, date: '2023-09-15', campaign: 'General Support' },
   { id: 'd3', amount: 250, date: '2023-08-20', campaign: 'Art Supplies Drive' },
+];
+
+export const MOCK_TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'mock-1',
+    author: 'Sarah Jenkins',
+    role: 'Parent of 2',
+    content: 'The sensory-friendly workshops have been a game-changer for my son. Finding a space where he is not just tolerated but celebrated is everything to our family. The patience of the volunteers is unmatched.',
+    date: '2024-03-15',
+    status: 'Approved',
+    rating: 5,
+    rank: 1
+  },
+  {
+    id: 'mock-2',
+    author: 'David Rivera',
+    role: 'Local Educator',
+    content: "Observing the 'Fun Without Barriers' events has shown me how inclusive play should actually look. They've built more than just a playground; they've built a blueprint for community empathy.",
+    date: '2024-02-28',
+    status: 'Approved',
+    rating: 5,
+    rank: 2
+  },
+  {
+    id: 'mock-3',
+    author: 'Elena Rossi',
+    role: 'Monthly Donor',
+    content: 'I support Aaria\'s Blue Elephant because every child deserves a childhood full of joy and connection. Seeing the direct impact of my donations through these smiles is incredibly rewarding.',
+    date: '2024-04-01',
+    status: 'Approved',
+    rating: 5,
+    rank: 3
+  },
+  {
+    id: 'mock-4',
+    author: 'Michael Thompson',
+    role: 'Community Volunteer',
+    content: 'Volunteering here has changed my perspective on accessibility. It is not just about ramps and rails; it is about the warmth of the community and the effort to make everyone feel seen.',
+    date: '2024-01-20',
+    status: 'Approved',
+    rating: 5,
+    rank: 4
+  },
+  {
+    id: 'mock-5',
+    author: 'Aria M.',
+    role: 'Youth Participant',
+    content: 'I love the art classes! I get to paint and make a mess, and no one tells me I am being too loud. It is my favorite place to visit every month.',
+    date: '2024-03-10',
+    status: 'Approved',
+    rating: 5,
+    rank: 5
+  }
 ];
 
 export const BYLAWS_HIGHLIGHTS = [

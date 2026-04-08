@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { supabase } from '../lib/supabase';
-import { MOCK_DONATIONS } from '../constants';
+import { MOCK_DONATIONS, MOCK_TESTIMONIALS } from '../constants';
 
 interface MutationResult {
   success: boolean;
@@ -116,13 +116,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .order('rank', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Fetch testimonials error:", error);
-      return [];
+    if (error || !data || data.length === 0) {
+      if (error) console.error("Fetch testimonials error, using mocks:", error);
+      else console.log("No testimonials in DB, using mocks");
+      
+      setTestimonials(MOCK_TESTIMONIALS);
+      return MOCK_TESTIMONIALS;
     }
 
-    if (data) {
-      const mapped = data.map((t: any) => ({
+    const mapped = data.map((t: any) => ({
         id: t.id,
         author: t.author,
         authorEmail: t.author_email || t.authorEmail,
@@ -140,8 +142,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setTestimonials(mapped);
       return mapped;
-    }
-    return [];
   };
 
   const fetchEventDetails = async (id: string): Promise<Event | null> => {
