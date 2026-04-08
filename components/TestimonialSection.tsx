@@ -298,16 +298,6 @@ const TestimonialSection: React.FC = () => {
                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest"> {currentTestimonialIndex + 1}-{Math.min(currentTestimonialIndex + 3, approvedTestimonials.length)} / {approvedTestimonials.length} </span>
                   <button onClick={() => setCurrentTestimonialIndex(prev => (prev + 3 >= approvedTestimonials.length ? 0 : prev + 3))} className="p-3 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-sky-50 text-sky-600 transition-all hover:scale-110"><ChevronRight className="w-5 h-5" /></button>
                 </div>
-
-                {(useData().hasMoreTestimonials) && (
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => useData().fetchMoreTestimonials()}
-                    className="text-sky-600 dark:text-sky-400 border border-sky-400/20 hover:bg-sky-50 dark:hover:bg-sky-500/10 font-black uppercase tracking-widest text-[11px] px-8 py-3 rounded-full"
-                  >
-                    Load More Stories from Community
-                  </Button>
-                )}
               </div>
             )}
           </div>
