@@ -85,9 +85,9 @@ const LazySupabaseImage: React.FC<LazySupabaseImageProps> = ({
         if (imageData) {
           setSrc(imageData);
           if (onLoad) onLoad();
-        } else {
-          setError(true);
         }
+        // If no imageData, we DON'T set error. 
+        // We just let the fallback image/stock image take over.
       } catch (err) {
         console.error("Lazy fetch catch:", err);
         setError(true);
