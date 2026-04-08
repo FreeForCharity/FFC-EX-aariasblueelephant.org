@@ -34,6 +34,7 @@ interface DataContextType {
   fetchTestimonialMedia: (id: string) => Promise<string | null>;
   isLoading: boolean;
   hasInitialFetch: boolean;
+  isNetworkBlocked: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -45,6 +46,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
+  const [isNetworkBlocked, setIsNetworkBlocked] = useState(false);
 
   const invokeEmailFunction = async (record: any, type: string) => {
     // TEMPORARILY DISABLED BY USER REQUEST to stabilize registration flow
@@ -65,6 +67,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const performNetworkDiagnostic = async () => {
+    // If the browser thinks it's offline, don't trigger the block warning
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
+    try {
+      // Try to reach a highly reliable external asset to confirm internet connectivity
+      // We use no-cors because we just want to know if the network request resolves
+      await fetch('https://www.google.com/favicon.ico', { 
+        mode: 'no-cors', 
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000) 
+      });
+      
+      // If we got here, internet is basically up, but Supabase is failing
+      console.warn("ABE Diagnostic: Internet is reachable, but Supabase connection is failing. Connection likely intercepted by local DNS/SSL filter.");
+      setIsNetworkBlocked(true);
+    } catch (e) {
+      // Internet check also failed, likely a general connection problem
+      console.log("ABE Diagnostic: Internet check also failed. Likely a general network outage.");
+    }
+  };
+
   const fetchEventsData = async () => {
     // We only fetch metadata here. The heavy 'image' column is deferred to LazySupabaseImage
     // or the detail view to maintain low egress while ensuring all events are visible for filtering.
@@ -74,6 +98,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       console.error("Fetch events error:", error);
+      performNetworkDiagnostic();
       return [];
     }
 
@@ -117,8 +142,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .order('created_at', { ascending: false });
 
     if (error || !data || data.length === 0) {
-      if (error) console.error("Fetch testimonials error, using mocks:", error);
-      else console.log("No testimonials in DB, using mocks");
+      if (error) {
+        console.error("Fetch testimonials error, using mocks:", error);
+        performNetworkDiagnostic();
+      } else {
+        console.log("No testimonials in DB, using mocks");
+      }
       
       setTestimonials(MOCK_TESTIMONIALS);
       return MOCK_TESTIMONIALS;
@@ -563,7 +592,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetchEventDetails,
       fetchTestimonialMedia,
       isLoading,
-      hasInitialFetch
+      hasInitialFetch,
+      isNetworkBlocked
     }}>
       {children}
     </DataContext.Provider>

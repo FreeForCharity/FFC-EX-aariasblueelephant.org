@@ -9,9 +9,10 @@ import Logo from './Logo';
 import Button from './Button';
 import { Testimonial } from '../types';
 import LazySupabaseImage from './LazySupabaseImage';
+import NetworkAlert from './NetworkAlert';
 
 const TestimonialSection: React.FC = () => {
-  const { testimonials, addTestimonial, fetchTestimonialMedia } = useData();
+  const { testimonials, addTestimonial, fetchTestimonialMedia, isNetworkBlocked } = useData();
   const { user, loginWithGoogle } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -200,6 +201,10 @@ const TestimonialSection: React.FC = () => {
             Share Your Story <ArrowRight className="ml-2 w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
           </Button>
         </div>
+        
+        <AnimatePresence>
+          {isNetworkBlocked && <NetworkAlert />}
+        </AnimatePresence>
 
         {approvedTestimonials.length > 0 ? (
           <div className="relative">
