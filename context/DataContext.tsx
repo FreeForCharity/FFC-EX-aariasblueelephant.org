@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { supabase } from '../lib/supabase';
-import { MOCK_DONATIONS, MOCK_TESTIMONIALS } from '../constants';
+import { MOCK_DONATIONS, MOCK_TESTIMONIALS, SUPABASE_OVERRIDE_EVENTS } from '../constants';
 
 interface MutationResult {
   success: boolean;
@@ -119,19 +119,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hours: e.duration || e.hours || 0
       }));
 
-      setEvents(mapped);
+
+      // Apply local overrides
+      const overrideMap = new Map(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
+      const finalEvents = mapped.map(evt => overrideMap.get(evt.id) || evt);
+      
+      // Add any overrides that aren't in the fetched list (e.g. if fetch failed or event is new/missing)
+      SUPABASE_OVERRIDE_EVENTS.forEach(override => {
+        if (!finalEvents.find(e => e.id === override.id)) {
+          finalEvents.push(override);
+        }
+      });
+
+      setEvents(finalEvents);
       
       // Cache management
       try {
-        const cacheEvents = mapped.map(evt => ({ 
+        const cacheEvents = finalEvents.map(evt => ({ 
           ...evt, 
           image: null // Don't cache huge base64 strings
         }));
         localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
       } catch (e) {}
 
-      return mapped;
+      return finalEvents;
     }
+
+    // Handle complete fetch failure but still apply overrides
+    if (SUPABASE_OVERRIDE_EVENTS.length > 0) {
+      setEvents(SUPABASE_OVERRIDE_EVENTS);
+      return SUPABASE_OVERRIDE_EVENTS;
+    }
+
     return [];
   };
 
@@ -177,6 +196,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check local state first
     const existing = events.find(e => e.id === id);
     if (existing && existing.image) return existing;
+
+    // Check overrides
+    const override = SUPABASE_OVERRIDE_EVENTS.find(e => e.id === id);
+    if (override) return override;
 
     const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
     if (error || !data) return null;

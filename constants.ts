@@ -93,6 +93,24 @@ export const ALL_EVENTS: Event[] = [
   }
 ];
 
+export const SUPABASE_OVERRIDE_EVENTS: Event[] = [
+  {
+    id: '232079db-b73c-4f01-abf9-bea162cae7c3',
+    title: 'Circle Of Friends - SUBMIT @ https://forms.gle/mCtYLoiJa3j1Ztqe9',
+    date: '2026-04-20',
+    time: '09:00 AM',
+    location: 'MH School',
+    description: '"Different, Yet Together" – Submit ideas in 50 words or less of how you want to see/engage inclusivity. Selection will be done by the Judging committee based on creativity. Grand Finale at MH School on April 27th!',
+    capacity: 100,
+    registered: 0,
+    type: 'Event',
+    initialLikes: 25,
+    hours: 2,
+    image: 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&q=80&w=1000'
+  }
+];
+
+
 export const MOCK_DONATIONS: Donation[] = [
   { id: 'd1', amount: 500, date: '2023-10-01', campaign: 'Fall Fundraiser' },
   { id: 'd2', amount: 100, date: '2023-09-15', campaign: 'General Support' },
