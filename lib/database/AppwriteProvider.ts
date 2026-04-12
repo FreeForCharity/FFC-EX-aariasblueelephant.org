@@ -58,19 +58,17 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    const projectId = APPWRITE_CONFIG.PROJECT_ID; // Use the actual ID from config: 69db08fb001174cd0d39
     let redirectUrl = window.location.origin;
     
     if (window.location.hostname.includes('github.io')) {
       redirectUrl += '/FFC-EX-aariasblueelephant.org';
     }
     
+    // Use the Landing Pad island to prevent URL stripping
     if (!redirectUrl.endsWith('/')) {
       redirectUrl += '/';
     }
-
-    // FINAL DIAGNOSTIC: Visual confirmation with the HEX ID
-    alert(`HANDSHAKE CHECK:\nProject ID: ${projectId}\nRedirect To: ${redirectUrl}\n\nIMPORTANT: Please ensure this HEX ID is used in your Google Console Redirect URI!`);
+    redirectUrl += 'auth.html';
 
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
