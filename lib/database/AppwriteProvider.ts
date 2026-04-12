@@ -67,6 +67,9 @@ export class AppwriteProvider implements IDatabaseProvider {
     if (!redirectUrl.endsWith('/')) {
       redirectUrl += '/';
     }
+    
+    // Diagnostic Probe: Determine if parameters can survive the trip
+    redirectUrl += '?handshake_probe=secure';
 
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
