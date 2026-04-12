@@ -19,19 +19,23 @@
             const secret = urlParams.get('secret');
             
             if (userId && secret) {
-                console.log("🚀 LANDING PAD: Keys Securely Captured!");
+                const msg = "🚀 LANDING PAD: Keys Captured and Secured!";
+                console.log(msg);
                 localStorage.setItem('auth_capture', JSON.stringify({ 
                     userId, 
                     secret, 
                     ts: new Date().toISOString(),
                     source: 'Landing Pad'
                 }));
+                alert(msg);
             } else {
                 console.log("LANDING PAD: No keys found, proceeding home...");
             }
             
-            // Go Home
-            window.location.href = '/';
+            // Go Home with a tiny safety delay to ensure storage commit
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
         })();
     </script>
 </body>
