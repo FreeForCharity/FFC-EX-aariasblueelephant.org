@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         boxShadow: '0 -2px 15px rgba(14, 165, 233, 0.8)',
         animation: 'pulse 2s infinite'
       }}>
-        [ ACTIVE SENTRY: DEBUG V2 ]
+        [ ACTIVE SENTRY: DEBUG V3 ]
         <style>{`@keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }`}</style>
       </div>
 
