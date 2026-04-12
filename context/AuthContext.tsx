@@ -169,19 +169,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
-      {/* BULLETPROOF DEBUG RIBBON - MOVED TO BOTTOM & PULSING */}
+      {/* BULLETPROOF DEBUG RIBBON - WITH TEXT */}
       <div style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        height: '10px',
+        height: '30px',
         backgroundColor: '#0ea5e9',
         zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        fontFamily: 'sans-serif',
+        letterSpacing: '1px',
         boxShadow: '0 -2px 15px rgba(14, 165, 233, 0.8)',
         animation: 'pulse 2s infinite'
-      }} title="SENTRY AUTH ACTIVE (DEBUG V2)">
-        <style>{`@keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }`}</style>
+      }}>
+        [ ACTIVE SENTRY: DEBUG V2 ]
+        <style>{`@keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }`}</style>
       </div>
 
       {/* VANILLA CSS DIAGNOSTIC OVERLAY */}
