@@ -81,10 +81,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check active sessions immediately on init
-    db.getSession().then((session) => {
+    // Check active sessions with a 'Patient Handshake' for OAuth reliability
+    const checkSession = async () => {
+      let session = await db.getSession();
+      
+      // If we land back from Google but no session is detected yet, 
+      // be patient (up to 1s) to allow cookies to settle.
+      const isLandingFromAuth = window.location.search.includes('userId') || window.location.search.includes('secret');
+      
+      if (!session && isLandingFromAuth) {
+        await new Promise(r => setTimeout(r, 1000)); // Wait for cookie crystallization
+        session = await db.getSession();
+      }
+      
       handleSession(session);
-    });
+    };
+
+    checkSession();
 
     // Fetch initial platform stats on load
     fetchTotalMembersCount();

@@ -41,8 +41,8 @@ export class AppwriteProvider implements IDatabaseProvider {
     // We'll simulate it by checking session.
     this.getSession().then(callback);
     
-    // For real-time updates, Appwrite uses client.subscribe.
-    const unsubscribe = this.client.subscribe('account', (response) => {
+    // For real-time updates and to catch OAuth arrivals, subscribe to multiple channels
+    const unsubscribe = this.client.subscribe(['account', 'sessions'], (response) => {
        this.getSession().then(callback);
     });
 
@@ -50,7 +50,10 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    let redirectUrl = window.location.href;
+    let redirectUrl = window.location.href.split('#')[0]; // Strip hashes
+    if (redirectUrl.endsWith('/')) {
+        redirectUrl = redirectUrl.slice(0, -1); // Sanitize trailing slashes
+    }
     
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
