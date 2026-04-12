@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Query, ID, OAuthProvider, ImageGravity } from 'appwrite';
+import { Client, Account, Databases, Storage, Query, ID, OAuthProvider, ImageGravity, ImageFormat } from 'appwrite';
 import { IDatabaseProvider } from './types';
 import { APPWRITE_CONFIG } from './config';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
@@ -306,7 +306,7 @@ export class AppwriteProvider implements IDatabaseProvider {
         1, // opacity
         0, // rotation
         '', // background
-        'webp' // output format (smaller & faster)
+        ImageFormat.Webp // output format (smaller & faster)
       );
       return result.toString();
     } catch (e) {
