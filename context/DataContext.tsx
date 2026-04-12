@@ -99,59 +99,48 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error("Fetch events error:", error);
       performNetworkDiagnostic();
-      return [];
+      // Even on error, we proceed to apply overrides to whatever data we have (or empty)
     }
 
-    if (data) {
-      const mapped = data.map((e: any) => ({
-        id: e.id,
-        title: e.title,
-        date: e.date,
-        time: e.time,
-        location: e.location,
-        description: e.description,
-        type: e.type,
-        capacity: e.capacity,
-        registered: e.registered || 0,
-        initialLikes: e.initial_likes || 0,
-        image: undefined, // Image fetched on demand via LazySupabaseImage
-        mediaLink: e.media_link,
-        hours: e.duration || e.hours || 0
+    const mapped = (data || []).map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      date: e.date,
+      time: e.time,
+      location: e.location,
+      description: e.description,
+      type: e.type,
+      capacity: e.capacity,
+      registered: e.registered || 0,
+      initialLikes: e.initial_likes || 0,
+      image: undefined, // Image fetched on demand via LazySupabaseImage
+      mediaLink: e.media_link,
+      hours: e.duration || e.hours || 0
+    }));
+
+    // Apply local overrides
+    const overrideMap = new Map(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
+    const finalEvents = mapped.map(evt => overrideMap.get(evt.id) || evt);
+    
+    // Add any overrides that aren't in the fetched list (e.g. if fetch failed or event is new/missing)
+    SUPABASE_OVERRIDE_EVENTS.forEach(override => {
+      if (!finalEvents.find(e => e.id === override.id)) {
+        finalEvents.push(override);
+      }
+    });
+
+    setEvents(finalEvents);
+    
+    // Cache management
+    try {
+      const cacheEvents = finalEvents.map(evt => ({ 
+        ...evt, 
+        image: null // Don't cache huge base64 strings
       }));
+      localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
+    } catch (e) {}
 
-
-      // Apply local overrides
-      const overrideMap = new Map(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
-      const finalEvents = mapped.map(evt => overrideMap.get(evt.id) || evt);
-      
-      // Add any overrides that aren't in the fetched list (e.g. if fetch failed or event is new/missing)
-      SUPABASE_OVERRIDE_EVENTS.forEach(override => {
-        if (!finalEvents.find(e => e.id === override.id)) {
-          finalEvents.push(override);
-        }
-      });
-
-      setEvents(finalEvents);
-      
-      // Cache management
-      try {
-        const cacheEvents = finalEvents.map(evt => ({ 
-          ...evt, 
-          image: null // Don't cache huge base64 strings
-        }));
-        localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
-      } catch (e) {}
-
-      return finalEvents;
-    }
-
-    // Handle complete fetch failure but still apply overrides
-    if (SUPABASE_OVERRIDE_EVENTS.length > 0) {
-      setEvents(SUPABASE_OVERRIDE_EVENTS);
-      return SUPABASE_OVERRIDE_EVENTS;
-    }
-
-    return [];
+    return finalEvents;
   };
 
   const fetchTestimonialsData = async () => {
