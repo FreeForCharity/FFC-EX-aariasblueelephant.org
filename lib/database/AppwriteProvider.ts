@@ -25,7 +25,7 @@ export class AppwriteProvider implements IDatabaseProvider {
     try {
       if (userId && secret) {
         // Manual Lock-In: Link the session using tokens captured from the URL
-        await this.account.updateSession(userId, secret);
+        await this.account.createSession(userId, secret);
       }
 
       const session = await this.account.getSession('current');
