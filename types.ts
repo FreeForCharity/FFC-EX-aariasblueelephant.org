@@ -1,4 +1,4 @@
-export type Role = 'BoardMember.Owner' | 'BoardMember' | 'Donor' | 'User';
+export type Role = 'BoardMember.Owner' | 'BoardMember' | 'Donor' | 'User' | 'Member';
 
 export interface User {
   id: string;

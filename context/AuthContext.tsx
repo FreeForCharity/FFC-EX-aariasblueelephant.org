@@ -14,58 +14,32 @@ interface AuthContextType {
   isBoard: boolean;
   isDonor: boolean;
   totalMembers: number;
+  authLogs: string[];
+  checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
+  const [authLogs, setAuthLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper to push logs safely
+  const log = (msg: string) => {
+    console.log(`[AUTH] ${msg}`);
+    setAuthLogs(prev => [...prev.slice(-19), msg]); // Keep last 20 logs
+  };
 
   const [totalMembers, setTotalMembers] = useState<number>(42); // Default fallback
 
   const isBoard = user?.role?.startsWith('BoardMember') || false;
   const isDonor = user?.role === 'Donor' || false;
 
-  // Derive User and RBAC state directly from Database session
   const handleSession = async (session: any) => {
     if (session) {
-      // Normalize user data from either Supabase (session.user) or Appwrite (session directly or separate user object)
-      const rawUser = session.user || session; 
-      const email = rawUser.email || '';
+      log(`Session Valid: ${session.user?.email || 'Authenticated'}`);
       
-      // User metadata mapping
-      const metadata = rawUser.user_metadata || rawUser.prefs || {};
-      
-      // Prioritize Appwrite's native name (populated by Google OAuth)
-      const name = rawUser.name || metadata.full_name || email.split('@')[0];
-
-      // Appwrite 1.5+ Identity Discovery (Deep hunt for Google Photo)
-      const googleIdentity = (rawUser.identities || []).find((id: any) => id.provider === 'google' || id.provider === 'oidc');
-      const googlePhoto = googleIdentity?.identityData?.picture || googleIdentity?.identityData?.avatar_url;
-
-      // Aggressively search for Google Avatar, now with direct Appwrite identity support
-      const avatarUrl =
-        googlePhoto ||
-        metadata.avatar_url ||
-        metadata.picture ||
-        rawUser.identities?.[0]?.identityData?.avatar_url ||
-        rawUser.identities?.[0]?.identityData?.picture ||
-        metadata.custom_claims?.picture || 
-        db.getUserAvatar(name);
-
-      const normalizedEmail = (email || '').toLowerCase().trim();
-      let role: Role = 'User';
-      
-      // Email-based auto-promotion
-      if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
-        role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
-      }
-      
-      // Metadata/Prefs-based override (Appwrite standard)
-      const explicitRole = rawUser.role || metadata.role || metadata.role_name;
-      if (explicitRole) role = explicitRole as Role;
-
       setUser({
         id: session.user?.$id,
         email: session.user?.email || '',
@@ -129,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Force debug mode for troubleshooting
     localStorage.setItem('auth_debug', 'true');
     log("App Initialized. Environment: " + window.location.hostname);
     
@@ -147,10 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<void> => {
     log("Login Triggered: Preparing flight path...");
-    // Always save the current page so we can return after OAuth
     const currentPath = window.location.pathname + window.location.search;
     if (!localStorage.getItem('authReturnTo')) {
-      // Strip the GitHub Pages base path for the router
       const cleanPath = currentPath.replace('/FFC-EX-aariasblueelephant.org', '') || '/';
       localStorage.setItem('authReturnTo', cleanPath);
       log(`Saved returnTo: ${cleanPath}`);
@@ -170,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     log(`Profile Update: ${Object.keys(updates).join(', ')}`);
 
     if (updates.name) {
-      await db.updateName(updates.name); // Corrected to use account.updateName
+      await db.updateUser({ full_name: updates.name });
     }
     setUser({ ...user, ...updates });
   };
