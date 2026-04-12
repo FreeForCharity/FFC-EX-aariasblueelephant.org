@@ -53,17 +53,23 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    // Explicitly define the base URL to match Appwrite Platfrom settings exactly
-    const isGitHubPages = window.location.hostname.includes('github.io');
-    let baseUrl = window.location.origin;
+    // Dynamically detect the current origin and path to ensure custom domains work
+    const currentOrigin = window.location.origin;
+    const currentPath = window.location.pathname;
     
-    if (isGitHubPages) {
-      // Ensure the exact path is included for GitHub Pages subfolder
-      baseUrl = 'https://freeforcharity.github.io/FFC-EX-aariasblueelephant.org';
+    // Construct the base URL. If we're in a subfolder (like on GitHub Pages), we need that path.
+    // However, if we're on a custom domain, we usually land at the root.
+    let redirectUrl = currentOrigin;
+    
+    if (window.location.hostname.includes('github.io')) {
+       // Only append the subfolder if we are actually on the github.io domain
+       redirectUrl += '/FFC-EX-aariasblueelephant.org';
     }
-    
-    // Force a trailing slash as it's the most common platform definition requirement
-    const redirectUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+
+    // Force trailing slash to match platform requirement
+    if (!redirectUrl.endsWith('/')) {
+      redirectUrl += '/';
+    }
     
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(

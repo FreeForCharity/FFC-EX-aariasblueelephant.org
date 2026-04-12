@@ -25,10 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authLogs, setAuthLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Helper to push logs safely
+  // Helper to push logs safely with timestamping
   const log = (msg: string) => {
-    console.log(`[AUTH] ${msg}`);
-    setAuthLogs(prev => [...prev.slice(-19), msg]); // Keep last 20 logs
+    const time = new Date().toLocaleTimeString();
+    const fullMsg = `[${time}] ${msg}`;
+    console.log(`[AUTH] ${fullMsg}`);
+    setAuthLogs(prev => [...prev.slice(-19), fullMsg]); // Keep last 20 logs
   };
 
   const [totalMembers, setTotalMembers] = useState<number>(42); // Default fallback
@@ -38,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSession = async (session: any) => {
     if (session) {
-      log(`Session Valid: ${session.user?.email || 'Authenticated'}`);
+      log(`STATUS: Active Session for ${session.user?.email || 'Authenticated User'}`);
       
       setUser({
         id: session.user?.$id,
@@ -48,46 +50,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: session.user?.prefs?.avatar || null
       });
     } else {
-      log("Session: NULL (User not authenticated)");
+      log("STATUS: Guest Mode (No session found)");
       setUser(null);
     }
     setIsLoading(false);
   };
 
   const checkSession = async () => {
-    log("Starting Session Handshake...");
+    log("INITIALIZING: Starting Session Handshake...");
     setIsLoading(true);
     
     // Check if we are landing from Auth
     const params = new URLSearchParams(window.location.search);
-    if (params.has('userId') || params.has('secret')) {
-      log(`Landed from OAuth: userId=${params.get('userId')?.substring(0, 5)}...`);
+    if (params.size > 0) {
+      log(`DETECTED PARAMS: ${window.location.search}`);
+    } else {
+      log("DETECTED PARAMS: NONE");
     }
 
     // Attempt 1: Immediate check
-    log("Check 1/3: Requesting session from Appwrite...");
+    log("CHECK 1/3: Requesting current session...");
     let session = await db.getSession();
     
     // Attempt 2: Quick retry (1s) if first one fails
     if (!session) {
-      log("Check 1/3: No session. Checking LS returnTo...");
+      log("CHECK 1/3: No session. Waiting 1s to allow cookie settlement...");
       await new Promise(r => setTimeout(r, 1000));
-      log("Check 2/3: Retrying after 1s delay...");
+      log("CHECK 2/3: Retrying session handshake...");
       session = await db.getSession();
     }
     
     // Attempt 3: Hardened handshake retry (2.5s) for slow cookie settlement
     if (!session) {
-      log("Check 2/3: Still no session. Final attempt coming...");
+      log("CHECK 2/3: Still no session. Waiting another 1.5s...");
       await new Promise(r => setTimeout(r, 1500));
-      log("Check 3/3: Running final 2.5s fallback check...");
+      log("CHECK 3/3: Running final session fallback check...");
       session = await db.getSession();
     }
 
     if (session) {
-      log("SUCCESS: Session Crystallized.");
+      log("RESULT: Session Crystallized successfully.");
     } else {
-      log("FAILED: No session found after 3 attempts.");
+      log("RESULT: All attempts failed tracking. Redirect URI or Domain mismatch likely.");
     }
     
     handleSession(session);

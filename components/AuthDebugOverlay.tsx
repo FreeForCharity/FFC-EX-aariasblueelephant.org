@@ -42,11 +42,10 @@ const AuthDebugOverlay: React.FC<AuthDebugOverlayProps> = ({ logs, isLoading, us
       <div className="max-h-32 overflow-y-auto bg-black/50 p-2 rounded border border-white/10">
         {logs.map((log, i) => (
           <div key={i} className="text-gray-300 border-l border-brand-cyan pl-2 mb-1">
-            <span className="text-brand-cyan/50 italic mr-2">[{new Date().toLocaleTimeString()}]</span>
             {log}
           </div>
         ))}
-        {logs.length === 0 && <div className="text-gray-600 italic italic">No auth logs captured yet...</div>}
+        {logs.length === 0 && <div className="text-gray-600 italic">No auth logs captured yet...</div>}
       </div>
       
       <div className="mt-2 text-[8px] text-gray-500 flex gap-2">
