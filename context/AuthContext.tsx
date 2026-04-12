@@ -40,12 +40,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Prioritize Appwrite's native name (populated by Google OAuth)
       const name = rawUser.name || metadata.full_name || email.split('@')[0];
 
-      // Aggressively search for Google Avatar, fallback to premium Appwrite Avatars Initials
+      // Appwrite 1.5+ Identity Discovery (Deep hunt for Google Photo)
+      const googleIdentity = (rawUser.identities || []).find((id: any) => id.provider === 'google' || id.provider === 'oidc');
+      const googlePhoto = googleIdentity?.identityData?.picture || googleIdentity?.identityData?.avatar_url;
+
+      // Aggressively search for Google Avatar, now with direct Appwrite identity support
       const avatarUrl =
+        googlePhoto ||
         metadata.avatar_url ||
         metadata.picture ||
-        rawUser.identities?.[0]?.identity_data?.avatar_url ||
-        rawUser.identities?.[0]?.identity_data?.picture ||
+        rawUser.identities?.[0]?.identityData?.avatar_url ||
+        rawUser.identities?.[0]?.identityData?.picture ||
         metadata.custom_claims?.picture || 
         db.getUserAvatar(name);
 

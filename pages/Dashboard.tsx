@@ -1759,9 +1759,93 @@ const Dashboard: React.FC = () => {
     );
 
 
+    const renderOverviewSection = () => (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* High-Impact Welcome */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-brand-purple/20 to-brand-cyan/20 dark:from-brand-purple/10 dark:to-brand-cyan/10 rounded-3xl p-8 border border-white/20 shadow-2xl backdrop-blur-sm">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Welcome Back, {user.name.split(' ')[0]}!</h2>
+                        <p className="text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                            {isBoard ? "Board Administration Dashboard" : "Your Humanitarian Impact Center"}
+                        </p>
+                    </div>
+                    {!isBoard && (
+                        <Link to="/events">
+                            <Button variant="primary" className="shadow-lg shadow-brand-cyan/20 group">
+                                Explore New Opportunities <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
+                    )}
+                </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 -transtale-y-1/2 translate-x-1/2 w-64 h-64 bg-brand-cyan/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 transtale-y-1/2 -translate-x-1/2 w-64 h-64 bg-brand-purple/10 rounded-full blur-3xl"></div>
+            </div>
+
+            {/* Recent Activity Context */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-brand-purple" /> My Upcoming Events
+                    </h3>
+                    {userRegs.length > 0 ? (
+                        <div className="space-y-3">
+                            {userRegs.slice(0, 3).map((reg: any) => {
+                                const event = events.find(e => e.id === reg.eventId);
+                                return (
+                                    <div key={reg.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                        <div className="h-10 w-10 rounded-lg bg-brand-purple/10 flex items-center justify-center text-brand-purple">
+                                            <Calendar className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-900 dark:text-white">{event?.title || 'Event Removed'}</h4>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{event?.date} at {event?.time}</p>
+                                        </div>
+                                        <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-500 italic py-4">No upcoming events registered yet.</p>
+                    )}
+                </div>
+
+                <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-brand-cyan" /> My Impact Stories
+                    </h3>
+                    {userTestimonials.length > 0 ? (
+                        <div className="space-y-3">
+                            {userTestimonials.slice(0, 3).map((t: any) => (
+                                <div key={t.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                    <div className="h-10 w-10 rounded-lg bg-brand-cyan/10 flex items-center justify-center text-brand-cyan">
+                                        <Star className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{t.title || 'Untitled Story'}</h4>
+                                        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{t.content}</p>
+                                    </div>
+                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                        t.status === 'Approved' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'
+                                    }`}>
+                                        {t.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-500 italic py-4">You haven't shared any stories yet.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     const renderContent = () => {
         switch (activeView) {
-            case 'overview': return renderStatsCards();
+            case 'overview': return renderOverviewSection();
             case 'events': return renderEventsSection();
             case 'manage-registrations': return renderManageRegistrationsSection();
             case 'volunteers': return renderVolunteersSection();
@@ -1774,7 +1858,7 @@ const Dashboard: React.FC = () => {
             case 'my-volunteering': return renderMyVolunteeringSection();
             case 'testimonial': return renderTestimonialSection();
 
-            default: return renderStatsCards();
+            default: return renderOverviewSection();
         }
     };
 
@@ -1876,7 +1960,9 @@ const Dashboard: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="mb-2"></div>
+                    <div className="mb-8 overflow-x-auto no-scrollbar">
+                        {renderStatsCards()}
+                    </div>
                     {renderContent()}
                 </div>
             </div>
