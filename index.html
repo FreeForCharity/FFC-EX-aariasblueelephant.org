@@ -10,6 +10,18 @@
     gtag('js', new Date());
 
     gtag('config', 'G-66RGGXFPWC');
+
+    // SUPER CAPTURE: Definitive OAuth landing test
+    (function() {
+      const search = window.location.search;
+      const hash = window.location.hash;
+      if (search.includes('userId') || hash.includes('userId')) {
+        const msg = "🚀 SUPER CAPTURE: Tokens found! Search: " + search + " Hash: " + hash;
+        console.log(msg);
+        alert(msg);
+        sessionStorage.setItem('auth_capture_hit', msg);
+      }
+    })();
   </script>
   <!-- Suppress Google Identity Services (GIS) automatic silent sign-in/One Tap -->
   <script>
