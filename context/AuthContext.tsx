@@ -83,33 +83,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const [isHandshaking, setIsHandshaking] = useState(false);
+  const [handshakeError, setHandshakeError] = useState<string | null>(null);
+
   useEffect(() => {
-    // [BEHIND THE SCENES] AUTH HANDOVER
-    // We check the early Landing Pad (index.html) to see if tokens were snared
+    // [BEHIND THE SCENES] FINAL SENTRY HANDOVER
     const arrivalFlag = sessionStorage.getItem('abe_auth_arrival') === 'true';
     const payloadJson = sessionStorage.getItem('abe_auth_payload');
     
     const checkSession = async () => {
-      console.info("[8:45:41 AM] AUTH: INITIALIZING HANDSHAKE...");
+      console.info("[8:45:41 AM] SENTRY: Handshake Starting...");
       
-      // 1. Natural Check (Cookies)
+      // 1. Natural Check
       let session = await db.getSession();
       
       if (!session && (arrivalFlag || payloadJson)) {
-        console.warn("[8:45:41 AM] AUTH: COOKIE BLOCKED. TRIGGERING FORCED RECOVERY (2.5s)...");
+        setIsHandshaking(true);
+        console.warn("[8:45:41 AM] SENTRY: Handshake Delayed. Crystallizing (3 Tries)...");
         
-        // Wait for background crystallization
-        await new Promise(r => setTimeout(r, 2500));
+        // Attempt 1 (1.5s)
+        await new Promise(r => setTimeout(r, 1500));
         session = await db.getSession();
         
-        if (session) {
-          console.info("[8:45:41 AM] AUTH: RECOVERY SUCCESSFUL.");
-        } else {
-          console.error("[8:45:41 AM] AUTH: RECOVERY FAILED. DOMAIN TRUST OR APPWRITE CONFIG LIKELY MISMATCHED.");
+        if (!session) {
+          console.warn("[8:45:41 AM] SENTRY: Handshake Retry 1 Failed. (3s Delay)...");
+          await new Promise(r => setTimeout(r, 3000));
+          session = await db.getSession();
         }
+        
+        if (!session) {
+          console.warn("[8:45:41 AM] SENTRY: Handshake Retry 2 Failed. (5s Delay)...");
+          await new Promise(r => setTimeout(r, 5000));
+          session = await db.getSession();
+        }
+        
+        if (!session) {
+          console.error("[8:45:41 AM] SENTRY: Handshake Terminal Failure.");
+          setHandshakeError("Browser rejected the session cookie. Please check if 3rd party cookies are blocked.");
+        } else {
+          console.info("[8:45:41 AM] SENTRY: Handshake Secured. Session Crystallized.");
+        }
+        
+        setIsHandshaking(false);
       }
       
-      // Cleanup the landing tokens to keep the blackboard clear for next navigation
+      // Cleanup
       sessionStorage.removeItem('abe_auth_arrival');
       sessionStorage.removeItem('abe_auth_payload');
       

@@ -15,24 +15,27 @@
   <script>
     window.google_identity_auto_select = false;
     
-    // [BEHIND THE SCENES] MEGA-CAPTURE LANDING PAD
-    // Snares OAuth tokens at the earliest possible millisecond
+    // [BEHIND THE SCENES] FINAL SENTRY LANDING PAD
+    // Snares OAuth tokens and logs the full arrival state
     (function() {
       try {
         const search = window.location.search;
         const hash = window.location.hash;
+        console.info("[8:45:41 AM] SENTRY: Arrival URL detected.", { search, hash });
+        
+        // Handle both standard query (?userId=...) and hash fragment (#?userId=...)
         const params = new URLSearchParams(search || (hash.includes('?') ? hash.substring(hash.indexOf('?')) : ''));
         
         const userId = params.get('userId');
         const secret = params.get('secret');
         
         if (userId && secret) {
-          console.info("[8:45:41 AM] LANDING PAD: Snared OAuth tokens. Stashing in Black Box...");
+          console.info("[8:45:41 AM] SENTRY: Tokens snared successfully.");
           sessionStorage.setItem('abe_auth_arrival', 'true');
           sessionStorage.setItem('abe_auth_payload', JSON.stringify({ userId, secret, ts: Date.now() }));
         }
       } catch (e) {
-        // Fail silently to not block page load
+        console.error("[8:45:41 AM] SENTRY: Landing Pad error.", e);
       }
     })();
   </script>
