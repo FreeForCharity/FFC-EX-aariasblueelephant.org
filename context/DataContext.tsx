@@ -21,7 +21,7 @@ interface DataContextType {
   updateTestimonial: (id: string, metadata: Partial<Testimonial>) => Promise<MutationResult>;
   submitVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status'>) => Promise<MutationResult>;
   approveVolunteer: (id: string) => Promise<MutationResult>;
-  deleteVolunteer: (id: string) => Promise<MutationResult>;
+  deleteVolunteerApplication: (id: string) => Promise<MutationResult>;
   registerForEvent: (registration: Omit<EventRegistration, 'id' | 'date' | 'status'>) => Promise<MutationResult>;
   approveRegistration: (id: string) => Promise<MutationResult>;
   deleteRegistration: (id: string) => Promise<MutationResult>;
@@ -216,9 +216,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const deleteVolunteer = async (id: string): Promise<MutationResult> => {
+  const deleteVolunteerApplication = async (id: string): Promise<MutationResult> => {
     try {
-      await db.deleteVolunteer(id);
+      await db.deleteVolunteerApplication(id);
       setVolunteerApplications(volunteerApplications.filter(app => app.id !== id));
       return { success: true };
     } catch (error: any) {
@@ -283,7 +283,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateTestimonial,
       submitVolunteerApp,
       approveVolunteer,
-      deleteVolunteer,
+      deleteVolunteerApplication,
       registerForEvent,
       approveRegistration,
       deleteRegistration,

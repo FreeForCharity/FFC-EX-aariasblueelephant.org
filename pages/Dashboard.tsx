@@ -81,7 +81,7 @@ const Dashboard: React.FC = () => {
         approveRegistration,
         deleteRegistration,
         approveVolunteer,
-        deleteVolunteer,
+        deleteVolunteerApplication,
         updateUserDonation,
         getUserDonation,
         updateEvent,
@@ -923,7 +923,7 @@ const Dashboard: React.FC = () => {
                                                 variant="primary"
                                                 className="text-xs"
                                                 onClick={async () => {
-                                                    const res = await deleteVolunteer(app.id);
+                                                    const res = await deleteVolunteerApplication(app.id);
                                                     if (res.success) setConfirmDeleteVolunteerId(null);
                                                     else setAppError(res.error || "Deletion failed");
                                                 }}

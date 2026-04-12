@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Query, ID } from 'appwrite';
+import { Client, Account, Databases, Storage, Query, ID, OAuthProvider, ImageGravity } from 'appwrite';
 import { IDatabaseProvider } from './types';
 import { APPWRITE_CONFIG } from './config';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
@@ -48,7 +48,7 @@ export class AppwriteProvider implements IDatabaseProvider {
     }
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
-      'google',
+      OAuthProvider.Google,
       redirectUrl,
       redirectUrl
     );
@@ -298,7 +298,7 @@ export class AppwriteProvider implements IDatabaseProvider {
         path, 
         width, 
         0, // height 0 to auto-scale
-        'center', // gravity
+        ImageGravity.Center, // gravity
         quality,
         0, // borderWidth
         '', // borderColor
