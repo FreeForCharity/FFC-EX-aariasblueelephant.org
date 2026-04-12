@@ -53,21 +53,19 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    // Dynamically detect the exact landing base to ensure custom domains work
-    // We use href split to strip any existing params/hashes safely
-    const currentBase = window.location.href.split('?')[0].split('#')[0];
+    // ALWAYS use the root origin for redirects to minimize Platform mismatches in Appwrite Console
+    let redirectUrl = window.location.origin;
     
-    // Construct the precise redirect URL
-    let redirectUrl = currentBase;
+    // Explicitly handle GitHub Pages subfolder
+    if (window.location.hostname.includes('github.io')) {
+      redirectUrl += '/FFC-EX-aariasblueelephant.org';
+    }
     
-    // Force trailing slash for platform compatibility
+    // Ensure trailing slash exists for platform requirement (Appwrite standard)
     if (!redirectUrl.endsWith('/')) {
       redirectUrl += '/';
     }
 
-    // CRITICAL DIAGNOSTIC: Show the user exactly where we are sending them
-    alert(`DEBUG: Telling Google to send you back to: ${redirectUrl}\n\nPlease ensure this domain is added as a 'Web Platform' in your Appwrite Console!`);
-    
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
       OAuthProvider.Google,
