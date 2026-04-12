@@ -53,18 +53,19 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    // ALWAYS use the root origin for redirects to minimize Platform mismatches in Appwrite Console
+    const projectId = 'ABE-Website-2024';
     let redirectUrl = window.location.origin;
     
-    // Explicitly handle GitHub Pages subfolder
     if (window.location.hostname.includes('github.io')) {
       redirectUrl += '/FFC-EX-aariasblueelephant.org';
     }
     
-    // Ensure trailing slash exists for platform requirement (Appwrite standard)
     if (!redirectUrl.endsWith('/')) {
       redirectUrl += '/';
     }
+
+    // FINAL DIAGNOSTIC: Visual confirmation before redirect
+    alert(`HANDSHAKE CHECK:\nProject ID: ${projectId}\nRedirect To: ${redirectUrl}\n\nIf your Project ID in Appwrite Console is LOWERCASE (abe-website-2024), please tell me!`);
 
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
