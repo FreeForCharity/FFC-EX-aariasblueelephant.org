@@ -118,6 +118,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('auth_debug', 'true');
     log("App Initialized. Environment: " + window.location.hostname);
     
+    // Quick Storage Health Check
+    try {
+      const testKey = 'auth_test_' + Date.now();
+      localStorage.setItem(testKey, 'working');
+      if (localStorage.getItem(testKey) === 'working') {
+        log("STORAGE: LocalStorage Access OK.");
+        localStorage.removeItem(testKey);
+      } else {
+        log("STORAGE: LocalStorage write failed (unrecognized error).");
+      }
+    } catch (e) {
+      log("STORAGE: LocalStorage BLOCKED (likely Private Mode or full).");
+    }
+    
     checkSession();
     fetchTotalMembersCount();
 
