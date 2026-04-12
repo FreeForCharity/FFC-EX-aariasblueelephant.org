@@ -84,42 +84,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // [BEHIND THE SCENES] AUTH PERSISTENCE SHIELD
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
-    const secret = urlParams.get('secret');
-
-    // Only activate the shield if we arrived from Google in THIS instance
-    const isArrivingFromAuth = userId && secret;
-
-    if (isArrivingFromAuth) {
-      console.info("[8:45:41 AM] SHIELD: Fresh OAuth Tokens detected. Activating Shield.");
-      sessionStorage.setItem('abe_auth_arrival', 'true');
-    }
-
+    // [BEHIND THE SCENES] AUTH HANDOVER
+    // We check the early Landing Pad (index.html) to see if tokens were snared
+    const arrivalFlag = sessionStorage.getItem('abe_auth_arrival') === 'true';
+    const payloadJson = sessionStorage.getItem('abe_auth_payload');
+    
     const checkSession = async () => {
-      // 1. Check for 'Natural' Session (Cookies)
+      console.info("[8:45:41 AM] AUTH: INITIALIZING HANDSHAKE...");
+      
+      // 1. Natural Check (Cookies)
       let session = await db.getSession();
       
-      const justArrived = sessionStorage.getItem('abe_auth_arrival') === 'true';
-      
-      if (!session && justArrived) {
-        console.warn("[8:45:41 AM] SHIELD: Initial check failed. Forcing crystallization (2.5s)...");
-        // Clear the flag so we don't keep retrying on every refresh
-        sessionStorage.removeItem('abe_auth_arrival');
+      if (!session && (arrivalFlag || payloadJson)) {
+        console.warn("[8:45:41 AM] AUTH: COOKIE BLOCKED. TRIGGERING FORCED RECOVERY (2.5s)...");
         
+        // Wait for background crystallization
         await new Promise(r => setTimeout(r, 2500));
         session = await db.getSession();
         
         if (session) {
-          console.info("[8:45:41 AM] SHIELD: Handshake Successful. Session Locked.");
+          console.info("[8:45:41 AM] AUTH: RECOVERY SUCCESSFUL.");
         } else {
-          console.error("[8:45:41 AM] SHIELD: Handshake Failed. Cookie block definitively suspected.");
+          console.error("[8:45:41 AM] AUTH: RECOVERY FAILED. DOMAIN TRUST OR APPWRITE CONFIG LIKELY MISMATCHED.");
         }
-      } else {
-        // Clean up the arrival flag if session was found normally or not needed
-        sessionStorage.removeItem('abe_auth_arrival');
       }
+      
+      // Cleanup the landing tokens to keep the blackboard clear for next navigation
+      sessionStorage.removeItem('abe_auth_arrival');
+      sessionStorage.removeItem('abe_auth_payload');
       
       handleSession(session);
     };
