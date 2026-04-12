@@ -89,22 +89,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check active sessions with a 'Patient Handshake' for OAuth reliability
     const checkSession = async () => {
-      // If we land back from Google but no session is detected yet, 
-      // be patient (up to 2.5s) to allow cookies to settle.
-      const isLandingFromAuth = window.location.search.includes('userId') || window.location.search.includes('secret') || window.location.search.includes('provider');
+      setIsLoading(true);
       
-      if (isLandingFromAuth) {
-        setIsLoading(true);
-        await new Promise(r => setTimeout(r, 2500)); // Wait for cookie crystallization (Hardened to 2.5s)
-      }
-
       let session = await db.getSession();
       
-      // Secondary fallback check if first one fails during transition
-      if (!session && isLandingFromAuth) {
-        await new Promise(r => setTimeout(r, 1000));
+      // If no session on first try, wait briefly and retry once.
+      // This handles the narrow window after OAuth where cookies are settling.
+      if (!session) {
+        await new Promise(r => setTimeout(r, 800));
         session = await db.getSession();
       }
 
@@ -112,11 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     checkSession();
-
-    // Fetch initial platform stats on load
     fetchTotalMembersCount();
 
-    // Listen for changes on auth state via callback
+    // Listen for real-time auth changes (login/logout from other tabs, etc.)
     const { unsubscribe } = db.onAuthStateChange((session) => {
       handleSession(session);
     });
@@ -125,6 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async (): Promise<void> => {
+    // Always save the current page so we can return after OAuth
+    const currentPath = window.location.pathname + window.location.search;
+    if (!localStorage.getItem('authReturnTo')) {
+      // Strip the GitHub Pages base path for the router
+      const cleanPath = currentPath.replace('/FFC-EX-aariasblueelephant.org', '') || '/';
+      localStorage.setItem('authReturnTo', cleanPath);
+    }
     setIsLoading(true);
     await db.signInWithGoogle();
   };

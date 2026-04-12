@@ -42,13 +42,10 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   onAuthStateChange(callback: (session: any) => void) {
-    // Appwrite doesn't have a direct equivalent to onAuthStateChange with a subscription 
-    // that returns the session immediately in the Web SDK in the same way.
-    // We'll simulate it by checking session.
-    this.getSession().then(callback);
-    
-    // For real-time updates and to catch OAuth arrivals, subscribe to multiple channels
-    const unsubscribe = this.client.subscribe(['account', 'sessions'], (response) => {
+    // Only subscribe to real-time events for session changes.
+    // Do NOT call getSession() here — the initial check is handled 
+    // by AuthContext's checkSession() to avoid a race condition.
+    const unsubscribe = this.client.subscribe(['account', 'sessions'], () => {
        this.getSession().then(callback);
     });
 

@@ -142,13 +142,7 @@ const Dashboard: React.FC = () => {
     }, 0);
     const donationTotal = getUserDonation(user?.email || '');
 
-    // Protection happens in middleware or AuthContext, but double check here
-    useEffect(() => {
-        if (!user) {
-            navigate('/login');
-        }
-    }, [user, navigate]);
-
+    // ProtectedRoute already handles the redirect to /login if user is null.
     if (!user) return null;
 
     const compressImage = (base64: string, maxWidth = 800, quality = 0.6): Promise<string> => {

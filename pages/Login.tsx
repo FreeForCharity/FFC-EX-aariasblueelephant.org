@@ -8,22 +8,30 @@ const Login: React.FC = () => {
   const { loginWithGoogle, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Capture returnTo from URL query params or router state
   const returnTo = location.state?.returnTo || new URLSearchParams(location.search).get('returnTo');
+  
   useEffect(() => {
     window.scrollTo(0, 0);
     
+    // Save returnTo so it persists through the OAuth redirect
+    if (returnTo) {
+      localStorage.setItem('authReturnTo', returnTo);
+    }
+    
     // If user is already logged in, redirect them
     if (user && !isLoading) {
-      const returnTo = localStorage.getItem('authReturnTo') || '/dashboard';
+      const destination = localStorage.getItem('authReturnTo') || '/dashboard';
       localStorage.removeItem('authReturnTo');
-      // Set flag to show dashboard prompt bubble on landing
       localStorage.setItem('showDashboardPrompt', 'true');
-      navigate(returnTo, { replace: true });
+      navigate(destination, { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, returnTo]);
 
   const handleGoogleAuth = async () => {
-    if (returnTo) {
+    // Ensure returnTo is saved before navigating away for OAuth
+    if (returnTo && !localStorage.getItem('authReturnTo')) {
       localStorage.setItem('authReturnTo', returnTo);
     }
     await loginWithGoogle();
