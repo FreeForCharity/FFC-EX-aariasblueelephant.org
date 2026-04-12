@@ -30,7 +30,11 @@ export class AppwriteProvider implements IDatabaseProvider {
         ...session,
         user
       };
-    } catch (e) {
+    } catch (e: any) {
+      // Diagnostic: Only alert if we're actually coming back from Google and it fails
+      if (e.code && e.code !== 401 && window.location.search.includes('userId')) {
+        alert(`Auth Diagnostic: Error ${e.code} - ${e.message}. Please check if your domain is added to Appwrite Platforms.`);
+      }
       return null;
     }
   }
@@ -50,9 +54,15 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    let redirectUrl = window.location.href.split('#')[0]; // Strip hashes
+    // Standardized Root Redirect: Most reliable for GitHub Pages cookie persistence
+    let redirectUrl = window.location.origin;
+    if (window.location.hostname.includes('github.io')) {
+      redirectUrl += '/FFC-EX-aariasblueelephant.org';
+    }
+    
+    // Ensure no trailing slashes to match Appwrite platform definitions exactly
     if (redirectUrl.endsWith('/')) {
-        redirectUrl = redirectUrl.slice(0, -1); // Sanitize trailing slashes
+        redirectUrl = redirectUrl.slice(0, -1);
     }
     
     // Appwrite redirects the whole page for OAuth

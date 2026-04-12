@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isLandingFromAuth = window.location.search.includes('userId') || window.location.search.includes('secret');
       
       if (!session && isLandingFromAuth) {
-        await new Promise(r => setTimeout(r, 1000)); // Wait for cookie crystallization
+        await new Promise(r => setTimeout(r, 1500)); // Wait for cookie crystallization
         session = await db.getSession();
       }
       
