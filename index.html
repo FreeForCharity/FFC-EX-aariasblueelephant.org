@@ -11,15 +11,17 @@
 
     gtag('config', 'G-66RGGXFPWC');
 
-    // SUPER CAPTURE: Definitive OAuth landing test
+    // SUPER CAPTURE: Catch tokens the millisecond they land
     (function() {
-      const search = window.location.search;
-      const hash = window.location.hash;
-      if (search.includes('userId') || hash.includes('userId')) {
-        const msg = "🚀 SUPER CAPTURE: Tokens found! Search: " + search + " Hash: " + hash;
+      const urlParams = new URLSearchParams(window.location.search || window.location.hash.replace('#', '?'));
+      const userId = urlParams.get('userId');
+      const secret = urlParams.get('secret');
+      
+      if (userId && secret) {
+        const msg = "🚀 SUPER CAPTURE: Keys Detected!\nUserId: " + userId.substring(0, 6) + "...\n\nSaving to Black Box and landing...";
         console.log(msg);
+        localStorage.setItem('auth_capture', JSON.stringify({ userId, secret, ts: new Date().toISOString() }));
         alert(msg);
-        sessionStorage.setItem('auth_capture_hit', msg);
       }
     })();
   </script>

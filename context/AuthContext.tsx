@@ -77,6 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       log("DETECTED HASH: NONE");
     }
 
+    // 📦 RECOVERY: Check Black Box (Saved by index.html script)
+    const blackBoxRaw = localStorage.getItem('auth_capture');
+    if (blackBoxRaw) {
+      try {
+        const data = JSON.parse(blackBoxRaw);
+        log(`RECOVERY: Captured tokens found! User: ${data.userId?.substring(0, 6)}...`);
+      } catch (e) {
+        log("RECOVERY: Black Box corrupted.");
+      }
+    } else {
+      log("RECOVERY: Black Box is empty.");
+    }
+
     // Attempt 1: Immediate check
     log("CHECK 1/3: Requesting current session...");
     let session = await db.getSession();
@@ -99,7 +112,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (session) {
       log("RESULT: Session Crystallized successfully.");
+      // Clear black box on success
+      localStorage.removeItem('auth_capture');
     } else {
+      // Diagnostic Warning
+      if (blackBoxRaw) {
+        log("CAUTION: Tokens arrived in URL but Appwrite rejected them. Domain mismatch likely.");
+      }
       log("RESULT: All attempts failed tracking. Redirect URI or Domain mismatch likely.");
     }
     
