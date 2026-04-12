@@ -169,17 +169,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
-      {/* BULLETPROOF DEBUG RIBBON */}
+      {/* BULLETPROOF DEBUG RIBBON - MOVED TO BOTTOM & PULSING */}
       <div style={{
         position: 'fixed',
-        top: 0,
+        bottom: 0,
         left: 0,
         right: 0,
-        height: '4px',
+        height: '10px',
         backgroundColor: '#0ea5e9',
         zIndex: 99999,
-        boxShadow: '0 2px 10px rgba(14, 165, 233, 0.5)'
-      }} title="SENTRY AUTH ACTIVE" />
+        boxShadow: '0 -2px 15px rgba(14, 165, 233, 0.8)',
+        animation: 'pulse 2s infinite'
+      }} title="SENTRY AUTH ACTIVE (DEBUG V2)">
+        <style>{`@keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }`}</style>
+      </div>
 
       {/* VANILLA CSS DIAGNOSTIC OVERLAY */}
       {(isHandshaking || handshakeError) && (
