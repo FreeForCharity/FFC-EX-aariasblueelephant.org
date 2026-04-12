@@ -45,13 +45,20 @@ const AuthRedirector = () => {
   React.useEffect(() => {
     if (user) {
       const returnTo = localStorage.getItem('authReturnTo');
-      if (returnTo) {
+      let redirectPath = returnTo || (user.role.startsWith('BoardMember') ? '/dashboard' : null);
+
+      if (redirectPath) {
         localStorage.removeItem('authReturnTo');
-        let redirectPath = returnTo;
+        
+        // Standardize GitHub Pages pathing
         if (window.location.hostname.includes('github.io') && !redirectPath.startsWith('/FFC-EX-aariasblueelephant.org')) {
-          redirectPath = '/FFC-EX-aariasblueelephant.org' + redirectPath;
+          redirectPath = '/FFC-EX-aariasblueelephant.org' + (redirectPath.startsWith('/') ? redirectPath : '/' + redirectPath);
         }
-        navigate(redirectPath, { replace: true });
+        
+        // Delay navigation slightly to let state settle
+        setTimeout(() => {
+          navigate(redirectPath, { replace: true });
+        }, 100);
       }
     }
   }, [user, navigate]);
