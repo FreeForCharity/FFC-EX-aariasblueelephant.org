@@ -96,6 +96,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // 1. Natural Check
       let session = await db.getSession();
+
+      // [INTELLIGENT SWAP] If we have incoming tokens, check for account mismatch
+      if (session && (arrivalFlag || payloadJson)) {
+        // If we have tokens, we are arriving from a fresh Google login.
+        // We should ensure the current session matches the incoming tokens.
+        // If it doesn't, we flush the old one to avoid 'Sticky Accounts'.
+        console.warn("[8:45:41 AM] SENTRY: Detected fresh tokens while session exists. Validating identity...");
+        
+        // Extract userId if possible from payload
+        try {
+          if (payloadJson) {
+            const payload = JSON.parse(payloadJson);
+            if (payload.userId && session.userId !== payload.userId) {
+              console.warn("[8:45:41 AM] SENTRY: Account Mismatch! Flushing old user to make room for new login.");
+              await db.signOut();
+              session = null;
+            }
+          }
+        } catch (e) { /* silent fail */ }
+      }
       
       if (!session && (arrivalFlag || payloadJson)) {
         setIsHandshaking(true);
