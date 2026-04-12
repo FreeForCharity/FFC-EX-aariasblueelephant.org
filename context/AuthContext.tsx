@@ -50,16 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         db.getUserAvatar(name);
 
       const normalizedEmail = (email || '').toLowerCase().trim();
-      let role: Role = 'User';
+      // 1. Start with metadata/default (lowest priority)
+      let role: Role = (rawUser.role || metadata.role || metadata.role_name) as Role || 'User';
       
-      // Email-based auto-promotion
+      // 2. Domain-based auto-promotion (Highest priority - ALWAYS WINS for our domain)
       if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
         role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
-      
-      // Metadata/Prefs-based override (Appwrite standard)
-      const explicitRole = rawUser.role || metadata.role || metadata.role_name;
-      if (explicitRole) role = explicitRole as Role;
+
+      console.info(`[SENTRY] Identity Resolved: ${email} | Role: ${role}`);
 
       setUser({
         id: rawUser.$id || rawUser.id,
@@ -69,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: avatarUrl
       });
     } else {
+      console.info("[SENTRY] Guest Session Active (No User)");
       setUser(null);
     }
     setIsLoading(false);

@@ -32,9 +32,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
+    console.warn(`[ProtectedRoute] Access Denied for ${user.email}. Role '${user.role}' not in:`, allowedRoles);
     return <Navigate to="/permission-denied" replace />;
   }
 
+  console.info(`[ProtectedRoute] Access Granted for ${user.email} (Role: ${user.role})`);
   return <>{children}</>;
 };
 
