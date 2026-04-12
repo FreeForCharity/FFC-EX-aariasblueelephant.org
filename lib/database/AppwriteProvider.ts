@@ -53,7 +53,7 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    const projectId = 'ABE-Website-2024';
+    const projectId = APPWRITE_CONFIG.PROJECT_ID; // Use the actual ID from config: 69db08fb001174cd0d39
     let redirectUrl = window.location.origin;
     
     if (window.location.hostname.includes('github.io')) {
@@ -64,8 +64,8 @@ export class AppwriteProvider implements IDatabaseProvider {
       redirectUrl += '/';
     }
 
-    // FINAL DIAGNOSTIC: Visual confirmation before redirect
-    alert(`HANDSHAKE CHECK:\nProject ID: ${projectId}\nRedirect To: ${redirectUrl}\n\nIf your Project ID in Appwrite Console is LOWERCASE (abe-website-2024), please tell me!`);
+    // FINAL DIAGNOSTIC: Visual confirmation with the HEX ID
+    alert(`HANDSHAKE CHECK:\nProject ID: ${projectId}\nRedirect To: ${redirectUrl}\n\nIMPORTANT: Please ensure this HEX ID is used in your Google Console Redirect URI!`);
 
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
