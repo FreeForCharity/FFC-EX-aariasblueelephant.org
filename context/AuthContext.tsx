@@ -79,10 +79,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 📦 RECOVERY: Check Black Box (Saved by index.html script)
     const blackBoxRaw = localStorage.getItem('auth_capture');
+    let capturedUserId = '';
+    let capturedSecret = '';
+
     if (blackBoxRaw) {
       try {
         const data = JSON.parse(blackBoxRaw);
-        log(`RECOVERY: Captured tokens found! User: ${data.userId?.substring(0, 6)}...`);
+        capturedUserId = data.userId;
+        capturedSecret = data.secret;
+        log(`RECOVERY: Captured tokens found! User: ${capturedUserId?.substring(0, 6)}...`);
       } catch (e) {
         log("RECOVERY: Black Box corrupted.");
       }
@@ -91,8 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Attempt 1: Immediate check
-    log("CHECK 1/3: Requesting current session...");
-    let session = await db.getSession();
+    log(capturedUserId ? "CHECK 1/3: Attempting Manual Lock-In with captured keys..." : "CHECK 1/3: Requesting current session...");
+    let session = await db.getSession(capturedUserId, capturedSecret);
     
     // Attempt 2: Quick retry (1s) if first one fails
     if (!session) {
@@ -117,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       // Diagnostic Warning
       if (blackBoxRaw) {
-        log("CAUTION: Tokens arrived in URL but Appwrite rejected them. Domain mismatch likely.");
+        log("CAUTION: Manual Lock-In failed. Tokens may be invalid or expired.");
       }
       log("RESULT: All attempts failed tracking. Redirect URI or Domain mismatch likely.");
     }

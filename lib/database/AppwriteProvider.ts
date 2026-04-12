@@ -21,8 +21,13 @@ export class AppwriteProvider implements IDatabaseProvider {
     this.avatars = new Avatars(this.client);
   }
 
-  async getSession() {
+  async getSession(userId?: string, secret?: string) {
     try {
+      if (userId && secret) {
+        // Manual Lock-In: Link the session using tokens captured from the URL
+        await this.account.updateSession(userId, secret);
+      }
+
       const session = await this.account.getSession('current');
       if (!session) return null;
       
@@ -33,9 +38,9 @@ export class AppwriteProvider implements IDatabaseProvider {
         user
       };
     } catch (e: any) {
-      // Diagnostic: Only alert if we're actually coming back from Google and it fails
-      if (e.code && e.code !== 401 && window.location.search.includes('userId')) {
-        alert(`Auth Diagnostic: Error ${e.code} - ${e.message}. Please check if your domain is added to Appwrite Platforms.`);
+      // Diagnostic: Only log if we have actual token arrival issues
+      if (e.code && e.code !== 401 && (userId || window.location.search.includes('userId'))) {
+        console.error(`Auth Hardware Error: ${e.code} - ${e.message}`);
       }
       return null;
     }
