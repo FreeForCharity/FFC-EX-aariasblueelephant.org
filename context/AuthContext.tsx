@@ -49,9 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = 'User';
       
+      // Email-based auto-promotion
       if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
         role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
+      
+      // Metadata/Prefs-based override (Appwrite standard)
+      const explicitRole = rawUser.role || metadata.role || metadata.role_name;
+      if (explicitRole) role = explicitRole as Role;
 
       setUser({
         id: rawUser.$id || rawUser.id,

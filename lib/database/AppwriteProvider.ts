@@ -21,7 +21,15 @@ export class AppwriteProvider implements IDatabaseProvider {
 
   async getSession() {
     try {
-      return await this.account.getSession('current');
+      const session = await this.account.getSession('current');
+      if (!session) return null;
+      
+      // Enriched: Get full user details for role recognition
+      const user = await this.account.get();
+      return {
+        ...session,
+        user
+      };
     } catch (e) {
       return null;
     }
@@ -42,10 +50,8 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    let redirectUrl = window.location.origin;
-    if (window.location.hostname.includes('github.io')) {
-      redirectUrl += '/FFC-EX-aariasblueelephant.org';
-    }
+    let redirectUrl = window.location.href;
+    
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(
       OAuthProvider.Google,
