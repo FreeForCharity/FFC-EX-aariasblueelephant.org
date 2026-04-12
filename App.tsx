@@ -86,27 +86,11 @@ const PageLoader = () => (
   </div>
 );
 
-import AuthDebugOverlay from './components/AuthDebugOverlay';
-
-// Helper to render the debug overlay with access to AuthContext
-const DebugWrapper = () => {
-  const { authLogs, isLoading, user, checkSession } = useAuth();
-  return (
-    <AuthDebugOverlay 
-      logs={authLogs} 
-      isLoading={isLoading} 
-      user={user} 
-      onRetry={checkSession} 
-    />
-  );
-};
-
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <DataProvider>
         <Router>
-          <DebugWrapper />
           <VersionWatcher />
           <ScrollToTop />
           <Layout>

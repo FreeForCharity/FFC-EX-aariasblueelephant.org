@@ -17,7 +17,7 @@ class ResilientDatabase implements IDatabaseProvider {
   }
 
   // Auth
-  async getSession(userId?: string, secret?: string) { return this.provider.getSession(userId, secret); }
+  async getSession() { return this.provider.getSession(); }
   onAuthStateChange(callback: (session: any) => void) { return this.provider.onAuthStateChange(callback); }
   async signInWithGoogle() { return this.provider.signInWithGoogle(); }
   async signOut() { return this.provider.signOut(); }

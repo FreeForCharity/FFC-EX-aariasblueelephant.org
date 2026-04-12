@@ -2,7 +2,7 @@ import { Event, Testimonial, VolunteerApplication, EventRegistration, User } fro
 
 export interface IDatabaseProvider {
   // Auth
-  getSession(userId?: string, secret?: string): Promise<any>;
+  getSession(): Promise<any>;
   onAuthStateChange(callback: (session: any) => void): { unsubscribe: () => void };
   signInWithGoogle(): Promise<void>;
   signOut(): Promise<void>;
