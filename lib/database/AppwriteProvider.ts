@@ -24,7 +24,12 @@ export class AppwriteProvider implements IDatabaseProvider {
   async getSession() {
     try {
       const session = await this.account.getSession('current');
-      if (!session) return null;
+      if (!session) {
+        if (window.location.search.includes('userId')) {
+          console.warn("[8:45:41 AM] PROVIDER: Arrived from Google with tokens, but 'current' session is missing. Cookie block suspected.");
+        }
+        return null;
+      }
       
       // Enriched: Get full user details for role recognition
       const user = await this.account.get();
@@ -34,8 +39,10 @@ export class AppwriteProvider implements IDatabaseProvider {
       };
     } catch (e: any) {
       // Diagnostic: Only alert if we're actually coming back from Google and it fails
-      if (e.code && e.code !== 401 && window.location.search.includes('userId')) {
-        alert(`Auth Diagnostic: Error ${e.code} - ${e.message}. Please check if your domain is added to Appwrite Platforms.`);
+      if (e.code && e.code !== 401) {
+        if (window.location.search.includes('userId')) {
+          console.error(`[8:45:41 AM] PROVIDER: Auth Handshake Failed. Error ${e.code}: ${e.message}`);
+        }
       }
       return null;
     }

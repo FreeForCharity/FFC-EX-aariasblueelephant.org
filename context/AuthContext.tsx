@@ -84,28 +84,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check active sessions with a 'Patient Handshake' for OAuth reliability
+    // [BEHIND THE SCENES] AUTH PERSISTENCE SHIELD
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
+    const secret = urlParams.get('secret');
+
+    // Only activate the shield if we arrived from Google in THIS instance
+    const isArrivingFromAuth = userId && secret;
+
+    if (isArrivingFromAuth) {
+      console.info("[8:45:41 AM] SHIELD: Fresh OAuth Tokens detected. Activating Shield.");
+      sessionStorage.setItem('abe_auth_arrival', 'true');
+    }
+
     const checkSession = async () => {
+      // 1. Check for 'Natural' Session (Cookies)
       let session = await db.getSession();
       
-      // If we land back from Google but no session is detected yet, 
-      // be patient (up to 1s) to allow cookies to settle.
-      const isLandingFromAuth = window.location.search.includes('userId') || window.location.search.includes('secret');
+      const justArrived = sessionStorage.getItem('abe_auth_arrival') === 'true';
       
-      if (!session && isLandingFromAuth) {
-        await new Promise(r => setTimeout(r, 1500)); // Wait for cookie crystallization
+      if (!session && justArrived) {
+        console.warn("[8:45:41 AM] SHIELD: Initial check failed. Forcing crystallization (2.5s)...");
+        // Clear the flag so we don't keep retrying on every refresh
+        sessionStorage.removeItem('abe_auth_arrival');
+        
+        await new Promise(r => setTimeout(r, 2500));
         session = await db.getSession();
+        
+        if (session) {
+          console.info("[8:45:41 AM] SHIELD: Handshake Successful. Session Locked.");
+        } else {
+          console.error("[8:45:41 AM] SHIELD: Handshake Failed. Cookie block definitively suspected.");
+        }
+      } else {
+        // Clean up the arrival flag if session was found normally or not needed
+        sessionStorage.removeItem('abe_auth_arrival');
       }
       
       handleSession(session);
     };
 
     checkSession();
-
-    // Fetch initial platform stats on load
     fetchTotalMembersCount();
 
-    // Listen for changes on auth state via callback
     const { unsubscribe } = db.onAuthStateChange((session) => {
       handleSession(session);
     });
