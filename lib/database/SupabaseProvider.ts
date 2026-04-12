@@ -42,6 +42,11 @@ export class SupabaseProvider implements IDatabaseProvider {
     return count || 0;
   }
 
+  getUserAvatar(name: string) {
+    // Standard initial fallback for Supabase
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+  }
+
   async getEvents() {
     const { data, error } = await supabase.from('events').select('*').order('date', { ascending: true });
     if (error) throw error;

@@ -36,15 +36,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // User metadata mapping
       const metadata = rawUser.user_metadata || rawUser.prefs || {};
-      const name = metadata.full_name || rawUser.name || email.split('@')[0];
+      
+      // Prioritize Appwrite's native name (populated by Google OAuth)
+      const name = rawUser.name || metadata.full_name || email.split('@')[0];
 
-      // Aggressively search for Google Avatar across standard Provider locations
+      // Aggressively search for Google Avatar, fallback to premium Appwrite Avatars Initials
       const avatarUrl =
         metadata.avatar_url ||
         metadata.picture ||
         rawUser.identities?.[0]?.identity_data?.avatar_url ||
         rawUser.identities?.[0]?.identity_data?.picture ||
-        metadata.custom_claims?.picture;
+        metadata.custom_claims?.picture || 
+        db.getUserAvatar(name);
 
       const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = 'User';

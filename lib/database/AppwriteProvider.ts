@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Query, ID, OAuthProvider, ImageGravity, ImageFormat } from 'appwrite';
+import { Client, Account, Databases, Storage, Avatars, Query, ID, OAuthProvider, ImageGravity, ImageFormat } from 'appwrite';
 import { IDatabaseProvider } from './types';
 import { APPWRITE_CONFIG } from './config';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
@@ -8,6 +8,7 @@ export class AppwriteProvider implements IDatabaseProvider {
   private account: Account;
   private databases: Databases;
   private storage: Storage;
+  private avatars: Avatars;
 
   constructor() {
     this.client = new Client()
@@ -17,6 +18,7 @@ export class AppwriteProvider implements IDatabaseProvider {
     this.account = new Account(this.client);
     this.databases = new Databases(this.client);
     this.storage = new Storage(this.client);
+    this.avatars = new Avatars(this.client);
   }
 
   async getSession() {
@@ -94,6 +96,11 @@ export class AppwriteProvider implements IDatabaseProvider {
     } catch (e) {
       return 0;
     }
+  }
+
+  getUserAvatar(name: string) {
+    // Generate a high-quality initials avatar from Appwrite's cloud service
+    return this.avatars.getInitials(name).toString();
   }
 
   // Events

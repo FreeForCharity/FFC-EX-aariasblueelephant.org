@@ -8,6 +8,7 @@ export interface IDatabaseProvider {
   signOut(): Promise<void>;
   updateUser(data: { full_name?: string }): Promise<void>;
   getUserCount(): Promise<number>;
+  getUserAvatar(name: string): string;
 
   // Events
   getEvents(): Promise<Event[]>;

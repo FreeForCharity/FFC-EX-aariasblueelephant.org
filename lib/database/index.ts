@@ -31,6 +31,10 @@ class ResilientDatabase implements IDatabaseProvider {
     }
   }
 
+  getUserAvatar(name: string) {
+    return this.provider.getUserAvatar(name);
+  }
+
   // Events
   async getEvents() {
     try {
