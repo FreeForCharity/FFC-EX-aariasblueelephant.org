@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkSession = async () => {
     log(`INITIALIZING: Handshake starting...`);
+    log(`PROJECT ID: ABE-Website-2024`);
     log(`BRAWSER URL: ${window.location.href}`);
     setIsLoading(true);
     
