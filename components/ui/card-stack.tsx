@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import LazySupabaseImage from '../LazySupabaseImage';
+import ResilientImage from '../ResilientImage';
 
 
 export interface Card {
@@ -202,7 +202,7 @@ function CardImage({ card, showInfo, priority }: { card: Card, showInfo: boolean
     return (
         <>
             {card.dbCoords ? (
-                <LazySupabaseImage
+                <ResilientImage
                     id={card.dbCoords.id}
                     table={card.dbCoords.table}
                     column={card.dbCoords.column}

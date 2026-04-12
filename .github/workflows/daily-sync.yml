@@ -1,0 +1,36 @@
+name: Daily Appwrite Sync & Resilience Backup
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # Run at 01:00 AM daily
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  sync_and_backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allow the action to commit and push changes
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/checkout@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Resilience Data Sync
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: npm run fetch-data
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/resilience_data.ts
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-sync: Daily Resilience Data Backup [skip ci]" && git push)

@@ -8,7 +8,7 @@ import RichText, { extractMedia } from './RichText';
 import Logo from './Logo';
 import Button from './Button';
 import { Testimonial } from '../types';
-import LazySupabaseImage from './LazySupabaseImage';
+import ResilientImage from './ResilientImage';
 import NetworkAlert from './NetworkAlert';
 
 const TestimonialSection: React.FC = () => {
@@ -262,7 +262,7 @@ const TestimonialSection: React.FC = () => {
                           ) : (
                             <>
                               {/* Use LazySupabaseImage for testimonial thumbnails to save egress */}
-                              <LazySupabaseImage
+                              <ResilientImage
                                 id={item.id}
                                 table="testimonials"
                                 column="media"

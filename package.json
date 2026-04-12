@@ -5,14 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node prerender.js",
+    "fetch-data": "tsx scripts/fetch-resilience-data.ts",
+    "build": "npm run fetch-data && tsc && vite build && node prerender.js",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
+    "appwrite": "^24.1.1",
+    "csv-parse": "^6.2.1",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.554.0",
+    "node-appwrite": "^23.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-intersection-observer": "^10.0.3",
@@ -29,6 +33,7 @@
     "postcss": "^8.5.8",
     "puppeteer": "^24.38.0",
     "tailwindcss": "^4.2.2",
+    "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

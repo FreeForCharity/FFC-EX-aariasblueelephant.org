@@ -10,7 +10,7 @@ import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import RichText from '../components/RichText';
 import { formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
-import LazySupabaseImage from '../components/LazySupabaseImage';
+import ResilientImage from '../components/ResilientImage';
 
 
 export default function EventDetails() {
@@ -178,7 +178,7 @@ export default function EventDetails() {
       {/* Hero Image with Overlay */}
       <div className="relative h-[40vh] w-full overflow-hidden lg:h-[50vh]">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white dark:via-brand-dark/50 dark:to-brand-dark z-10" />
-        <LazySupabaseImage
+        <ResilientImage
           id={event.id}
           table="events"
           column="image"

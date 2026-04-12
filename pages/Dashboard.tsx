@@ -45,7 +45,7 @@ import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
 import WheelOfFun from '../components/WheelOfFun';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
-import LazySupabaseImage from '../components/LazySupabaseImage';
+import ResilientImage from '../components/ResilientImage';
 
 import { 
   Event, 
@@ -809,7 +809,7 @@ const Dashboard: React.FC = () => {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 group">
                                 <div className="flex items-center gap-6">
                                     <div className="relative h-16 w-16 rounded-xl overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm">
-                                        <LazySupabaseImage 
+                                        <ResilientImage 
                                             id={event.id}
                                             table="events"
                                             column="image"
@@ -1062,7 +1062,7 @@ const Dashboard: React.FC = () => {
                                         
                                         return (
                                             <div className="w-full md:w-32 lg:w-48 aspect-video md:aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex-shrink-0 relative group">
-                                                <LazySupabaseImage 
+                                                <ResilientImage 
                                                     id={testimonial.id}
                                                     table="testimonials"
                                                     column="media"

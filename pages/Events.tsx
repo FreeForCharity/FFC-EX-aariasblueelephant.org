@@ -14,7 +14,7 @@ import EventCalendarModal from '../components/EventCalendarModal';
 import RichText from '../components/RichText';
 import { parseDateLocal, formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
-import LazySupabaseImage from '../components/LazySupabaseImage';
+import ResilientImage from '../components/ResilientImage';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
@@ -51,7 +51,7 @@ const EventCardShort: React.FC<{
   // Memoized defensive lookup prioritizing UUID
   const userRegistration = React.useMemo(() => {
     if (!user || !eventRegistrations) return null;
-    return [...eventRegistrations].reverse().find(r => 
+    return [...(eventRegistrations || [])].reverse().find(r => 
       r.eventId === event.id && 
       (
         r.userId === user.id || 
@@ -126,7 +126,7 @@ const EventCardShort: React.FC<{
         onClick={() => onNavigate(`/events/${event.id}`)}
         className="relative h-40 md:h-auto md:w-56 overflow-hidden shrink-0 cursor-pointer"
       >
-        <LazySupabaseImage
+        <ResilientImage
           id={event.id}
           table="events"
           column="image"
@@ -150,10 +150,10 @@ const EventCardShort: React.FC<{
       <div className="p-6 flex flex-col flex-grow md:justify-center">
         <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-[9px] mb-2 uppercase tracking-widest opacity-80">
           <Calendar className="w-3 h-3" />
-          <span>{formatDateLocal(event.date)}</span>
+          <span>{event.date ? formatDateLocal(event.date) : 'Date TBD'}</span>
           <span className="text-slate-200 dark:text-slate-700 mx-1">•</span>
           <Clock className="w-3 h-3" />
-          <span>{event.time}</span>
+          <span>{event.time || 'Time TBD'}</span>
         </div>
         
         <h3 
@@ -310,7 +310,7 @@ const CardContent: React.FC<CardContentProps> = ({
     <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
       <div className={`grid grid-cols-1 ${activeEvent.mediaLink ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
         <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1 bg-slate-100 dark:bg-slate-800">
-          <LazySupabaseImage
+          <ResilientImage
             id={activeEvent.id}
             table="events"
             column="image"
@@ -576,7 +576,7 @@ export default function Events() {
 
   const activeEventRegistration = React.useMemo(() => {
     if (!user || !eventRegistrations || !activeEvent) return null;
-    return [...eventRegistrations].reverse().find(r => 
+    return [...(eventRegistrations || [])].reverse().find(r => 
       r.eventId === activeEvent.id && 
       (
         r.userId === user.id || 

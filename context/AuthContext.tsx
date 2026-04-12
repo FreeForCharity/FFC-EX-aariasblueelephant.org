@@ -1,14 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Role } from '../types';
-import { supabase } from '../lib/supabase';
+import { User as AppUser, Role } from '../types';
+import { db } from '../lib/database';
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => void;
+  updateProfile: (updates: Partial<AppUser>) => void;
   updateAvatar: (avatarUrl: string) => void;
   isLoading: boolean;
   isBoard: boolean;
@@ -19,7 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [totalMembers, setTotalMembers] = useState<number>(42); // Default fallback
@@ -27,19 +27,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isBoard = user?.role?.startsWith('BoardMember') || false;
   const isDonor = user?.role === 'Donor' || false;
 
-  // Derive User and RBAC state directly from Supabase session
+  // Derive User and RBAC state directly from Database session
   const handleSession = async (session: any) => {
-    if (session?.user) {
-      const email = session.user.email || '';
-      const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0];
+    if (session) {
+      // Normalize user data from either Supabase (session.user) or Appwrite (session directly or separate user object)
+      const rawUser = session.user || session; 
+      const email = rawUser.email || '';
+      
+      // User metadata mapping
+      const metadata = rawUser.user_metadata || rawUser.prefs || {};
+      const name = metadata.full_name || rawUser.name || email.split('@')[0];
 
-      // Aggressively search for Google Avatar across standard Google Provider locations
+      // Aggressively search for Google Avatar across standard Provider locations
       const avatarUrl =
-        session.user.user_metadata?.avatar_url ||
-        session.user.user_metadata?.picture ||
-        session.user.identities?.[0]?.identity_data?.avatar_url ||
-        session.user.identities?.[0]?.identity_data?.picture ||
-        session.user.user_metadata?.custom_claims?.picture;
+        metadata.avatar_url ||
+        metadata.picture ||
+        rawUser.identities?.[0]?.identity_data?.avatar_url ||
+        rawUser.identities?.[0]?.identity_data?.picture ||
+        metadata.custom_claims?.picture;
 
       const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = 'User';
@@ -49,15 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser({
-        id: session.user.id,
+        id: rawUser.$id || rawUser.id,
         email,
         name,
         role,
         avatar: avatarUrl
       });
-
-      const returnTo = localStorage.getItem('authReturnTo');
-      // We don't perform the manual redirect here anymore, because we pass the path directly to Supabase's redirectTo.
     } else {
       setUser(null);
     }
@@ -66,13 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchTotalMembersCount = async () => {
     try {
-      // Attempt to count users from a public profiles table (standard pattern for tracking signups)
-      const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      if (error) {
-        console.error('Supabase fetch error for total network:', error.message, error.details);
-      } else if (count !== null) {
-        setTotalMembers(count);
-      }
+      const count = await db.getUserCount();
+      setTotalMembers(count);
     } catch (e: any) {
       // Network unavailable — silently use default fallback count
     }
@@ -80,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check active sessions immediately on init
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    db.getSession().then((session) => {
       handleSession(session);
     });
 
@@ -88,42 +85,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchTotalMembersCount();
 
     // Listen for changes on auth state via callback
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { unsubscribe } = db.onAuthStateChange((session) => {
       handleSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
-    let redirectUrl = window.location.origin;
-    if (window.location.hostname.includes('github.io')) {
-      redirectUrl += '/FFC-EX-aariasblueelephant.org';
-    }
-
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: 'select_account',
-        },
-      }
-    });
+    await db.signInWithGoogle();
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await db.signOut();
   };
 
-  const updateProfile = async (updates: Partial<User>) => {
+  const updateProfile = async (updates: Partial<AppUser>) => {
     if (!user) return;
 
-    // Attempt real database metadata update (if extended to Postgres). For now, local merge overlay.
-    // In Supabase, you would theoretically update `auth.users` metadata:
     if (updates.name) {
-      await supabase.auth.updateUser({ data: { full_name: updates.name } });
+      await db.updateUser({ full_name: updates.name });
     }
 
     setUser({ ...user, ...updates });

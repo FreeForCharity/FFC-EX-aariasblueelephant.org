@@ -1,5 +1,5 @@
 import { User, Event, Donation, Testimonial, EventRegistration } from './types';
-import { REAL_EVENTS, REAL_REGISTRATIONS, REAL_TESTIMONIALS } from './data/resilience_data';
+import { RESILIENCE_EVENTS, RESILIENCE_REGISTRATIONS, RESILIENCE_TESTIMONIALS } from './data/resilience_data';
 
 export const MOCK_USERS: User[] = [
   { id: "1", email: "liji@blueelephant.org", role: "BoardMember.Owner", name: "Liji Chalatil" },
@@ -12,14 +12,15 @@ export const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1582213782
 export const DEFAULT_LOCAL_FALLBACK = '/outreach_workshop.png';
 
 export const STOCK_INCLUSIVE_IMAGES = [
-  'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?auto=format&fit=crop&q=80&w=1000', // Kids play
-  'https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&q=80&w=1000', // Inclusive play
-  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1000', // Sensory
-  'https://images.unsplash.com/photo-1497911270199-1c552ee64aa4?auto=format&fit=crop&q=80&w=1000', // Calm blue
-  'https://images.unsplash.com/photo-1502086223501-7ea2970dcb46?auto=format&fit=crop&q=80&w=1000', // Group
+  'https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?auto=format&fit=crop&q=80&w=1000', // Inclusive learning
+  'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=1000', // Children playing
+  'https://images.unsplash.com/photo-1542810634-71277d95dcbb?auto=format&fit=crop&q=80&w=1000', // Group activity
+  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1000', // Sensory play
+  'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?auto=format&fit=crop&q=80&w=1000', // Community joy
 ];
 
-export const ALL_EVENTS: Event[] = REAL_EVENTS;
+
+export const ALL_EVENTS: Event[] = RESILIENCE_EVENTS;
 
 export const SUPABASE_OVERRIDE_EVENTS: Event[] = [
   {
@@ -45,9 +46,9 @@ export const MOCK_DONATIONS: Donation[] = [
   { id: 'd3', amount: 250, date: '2023-08-20', campaign: 'Art Supplies Drive' },
 ];
 
-export const MOCK_TESTIMONIALS: Testimonial[] = REAL_TESTIMONIALS;
+export const MOCK_TESTIMONIALS: Testimonial[] = RESILIENCE_TESTIMONIALS;
 
-export const STATIC_REGISTRATIONS: EventRegistration[] = REAL_REGISTRATIONS;
+export const STATIC_REGISTRATIONS: EventRegistration[] = RESILIENCE_REGISTRATIONS;
 
 export const BYLAWS_HIGHLIGHTS = [
   "Organized exclusively for charitable purposes under Section 501(c)(3).",
