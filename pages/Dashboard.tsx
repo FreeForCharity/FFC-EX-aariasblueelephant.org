@@ -347,10 +347,9 @@ const Dashboard: React.FC = () => {
         if (item.id === 'wheel') return true;
         
         // For Board members: only show management tools and designated donor paths
+        // For Board members: show management tools AND global views (Overview, Wheel, etc.)
         if (isBoard) {
-            // Admin only needs these, they don't need 'user' items
-            // Remove 'donor' items from board sidebar to keep it clean as requested
-            return item.role === 'board';
+            return item.role === 'board' || item.role === 'all';
         }
         
         // For non-board members (regular users)

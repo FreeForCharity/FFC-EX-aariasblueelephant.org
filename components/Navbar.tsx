@@ -27,7 +27,7 @@ const Navbar: React.FC = () => {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showDashboardPrompt, setShowDashboardPrompt] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isBoard } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -238,7 +238,7 @@ const Navbar: React.FC = () => {
                       to="/dashboard"
                       className="flex items-center gap-1 text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors uppercase tracking-tight"
                     >
-                      <LayoutDashboard className="h-3 w-3" /> Dashboard
+                      <LayoutDashboard className="h-3 w-3" /> {isBoard ? 'Admin Dashboard' : 'Dashboard'}
                     </Link>
                   </div>
                 )}
@@ -291,7 +291,7 @@ const Navbar: React.FC = () => {
                   to="/dashboard"
                   onClick={() => setIsOpen(false)}
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 transition-all active:scale-95 shadow-sm"
-                  aria-label="Dashboard"
+                  aria-label={isBoard ? "Admin Dashboard" : "Dashboard"}
                 >
                   <LayoutDashboard className="h-5 w-5" />
                 </Link>
@@ -349,7 +349,7 @@ const Navbar: React.FC = () => {
                   className="flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-black text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 mb-2 border border-sky-100 dark:border-sky-800/50"
                 >
                   <LayoutDashboard className="h-6 w-6" />
-                  <span className="uppercase tracking-widest text-sm">Dashboard</span>
+                  <span className="uppercase tracking-widest text-sm">{isBoard ? 'Admin Dashboard' : 'Dashboard'}</span>
                 </Link>
               )}
 
