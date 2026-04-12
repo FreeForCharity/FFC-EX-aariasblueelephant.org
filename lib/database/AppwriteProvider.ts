@@ -64,11 +64,9 @@ export class AppwriteProvider implements IDatabaseProvider {
       redirectUrl += '/FFC-EX-aariasblueelephant.org';
     }
     
-    // Use the Landing Pad island to prevent URL stripping
     if (!redirectUrl.endsWith('/')) {
       redirectUrl += '/';
     }
-    redirectUrl += 'auth.html';
 
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(

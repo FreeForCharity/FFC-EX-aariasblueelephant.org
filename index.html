@@ -11,16 +11,25 @@
 
     gtag('config', 'G-66RGGXFPWC');
 
-    // SUPER CAPTURE: Catch tokens the millisecond they land
+    // MEGA CAPTURE: The 'Front Gate' Catcher
     (function() {
-      const urlParams = new URLSearchParams(window.location.search || window.location.hash.replace('#', '?'));
+      const search = window.location.search;
+      const hash = window.location.hash;
+      const urlParams = new URLSearchParams(search || hash.replace('#', '?'));
       const userId = urlParams.get('userId');
       const secret = urlParams.get('secret');
       
+      console.log("🕵️‍♂️ ENTRY CHECK: " + (userId ? "KEYS FOUND!" : "Empty Handed"));
+
       if (userId && secret) {
-        const msg = "🚀 SUPER CAPTURE: Keys Detected!\nUserId: " + userId.substring(0, 6) + "...\n\nSaving to Black Box and landing...";
-        console.log(msg);
-        localStorage.setItem('auth_capture', JSON.stringify({ userId, secret, ts: new Date().toISOString() }));
+        const msg = "🚀 MEGA CAPTURE: Keys Secured!\nUser: " + userId.substring(0, 6) + "...";
+        localStorage.setItem('auth_capture', JSON.stringify({ 
+          userId, 
+          secret, 
+          ts: new Date().toISOString(),
+          source: 'Front Gate'
+        }));
+        window.DEBUG_CAPTURE = true;
         alert(msg);
       }
     })();
