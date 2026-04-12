@@ -92,12 +92,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkSession = async () => {
       setIsLoading(true);
       
+      // Attempt 1: Immediate check
       let session = await db.getSession();
       
-      // If no session on first try, wait briefly and retry once.
-      // This handles the narrow window after OAuth where cookies are settling.
+      // Attempt 2: Quick retry (1s) if first one fails
       if (!session) {
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 1000));
+        session = await db.getSession();
+      }
+      
+      // Attempt 3: Hardened handshake retry (2.5s) for slow cookie settlement
+      if (!session) {
+        await new Promise(r => setTimeout(r, 1500));
         session = await db.getSession();
       }
 

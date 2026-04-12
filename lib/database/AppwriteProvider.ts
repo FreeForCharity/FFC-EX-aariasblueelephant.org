@@ -53,16 +53,17 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signInWithGoogle() {
-    // Standardized Root Redirect: Most reliable for GitHub Pages cookie persistence
-    let redirectUrl = window.location.origin;
-    if (window.location.hostname.includes('github.io')) {
-      redirectUrl += '/FFC-EX-aariasblueelephant.org';
+    // Explicitly define the base URL to match Appwrite Platfrom settings exactly
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    let baseUrl = window.location.origin;
+    
+    if (isGitHubPages) {
+      // Ensure the exact path is included for GitHub Pages subfolder
+      baseUrl = 'https://freeforcharity.github.io/FFC-EX-aariasblueelephant.org';
     }
     
-    // Ensure no trailing slashes to match Appwrite platform definitions exactly
-    if (redirectUrl.endsWith('/')) {
-        redirectUrl = redirectUrl.slice(0, -1);
-    }
+    // Force a trailing slash as it's the most common platform definition requirement
+    const redirectUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     
     // Appwrite redirects the whole page for OAuth
     this.account.createOAuth2Session(

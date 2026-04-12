@@ -10,8 +10,16 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { user, isLoading } = useAuth();
+  const [isGracePeriod, setIsGracePeriod] = React.useState(true);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    // Disable grace period after 5 seconds to ensure eventual redirection if really unauthenticated
+    const timer = setTimeout(() => setIsGracePeriod(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Stay in loading state if AuthContext is searching, or if we are in the grace window waiting for cookies
+  if (isLoading || (isGracePeriod && !user)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-dark">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent"></div>
