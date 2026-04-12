@@ -67,16 +67,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (explicitRole) role = explicitRole as Role;
 
       setUser({
-        id: rawUser.$id || rawUser.id,
-        email,
-        name,
-        role,
-        avatar: avatarUrl
+        id: session.user?.$id,
+        email: session.user?.email || '',
+        name: session.user?.name || '',
+        role: (session.user?.labels?.[0] as Role) || 'Member',
+        avatar: session.user?.prefs?.avatar || null
       });
     } else {
+      log("Session: NULL (User not authenticated)");
       setUser(null);
     }
     setIsLoading(false);
+  };
+
+  const checkSession = async () => {
+    log("Starting Session Handshake...");
+    setIsLoading(true);
+    
+    // Check if we are landing from Auth
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('userId') || params.has('secret')) {
+      log(`Landed from OAuth: userId=${params.get('userId')?.substring(0, 5)}...`);
+    }
+
+    // Attempt 1: Immediate check
+    log("Check 1/3: Requesting session from Appwrite...");
+    let session = await db.getSession();
+    
+    // Attempt 2: Quick retry (1s) if first one fails
+    if (!session) {
+      log("Check 1/3: No session. Checking LS returnTo...");
+      await new Promise(r => setTimeout(r, 1000));
+      log("Check 2/3: Retrying after 1s delay...");
+      session = await db.getSession();
+    }
+    
+    // Attempt 3: Hardened handshake retry (2.5s) for slow cookie settlement
+    if (!session) {
+      log("Check 2/3: Still no session. Final attempt coming...");
+      await new Promise(r => setTimeout(r, 1500));
+      log("Check 3/3: Running final 2.5s fallback check...");
+      session = await db.getSession();
+    }
+
+    if (session) {
+      log("SUCCESS: Session Crystallized.");
+    } else {
+      log("FAILED: No session found after 3 attempts.");
+    }
+    
+    handleSession(session);
   };
 
   const fetchTotalMembersCount = async () => {
@@ -89,32 +129,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const checkSession = async () => {
-      setIsLoading(true);
-      
-      // Attempt 1: Immediate check
-      let session = await db.getSession();
-      
-      // Attempt 2: Quick retry (1s) if first one fails
-      if (!session) {
-        await new Promise(r => setTimeout(r, 1000));
-        session = await db.getSession();
-      }
-      
-      // Attempt 3: Hardened handshake retry (2.5s) for slow cookie settlement
-      if (!session) {
-        await new Promise(r => setTimeout(r, 1500));
-        session = await db.getSession();
-      }
-
-      handleSession(session);
-    };
-
+    // Force debug mode for troubleshooting
+    localStorage.setItem('auth_debug', 'true');
+    log("App Initialized. Environment: " + window.location.hostname);
+    
     checkSession();
     fetchTotalMembersCount();
 
     // Listen for real-time auth changes (login/logout from other tabs, etc.)
     const { unsubscribe } = db.onAuthStateChange((session) => {
+      log("Real-time Auth Event detected.");
       handleSession(session);
     });
 
@@ -122,28 +146,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async (): Promise<void> => {
+    log("Login Triggered: Preparing flight path...");
     // Always save the current page so we can return after OAuth
     const currentPath = window.location.pathname + window.location.search;
     if (!localStorage.getItem('authReturnTo')) {
       // Strip the GitHub Pages base path for the router
       const cleanPath = currentPath.replace('/FFC-EX-aariasblueelephant.org', '') || '/';
       localStorage.setItem('authReturnTo', cleanPath);
+      log(`Saved returnTo: ${cleanPath}`);
     }
     setIsLoading(true);
+    log("Redirecting to Google OAuth...");
     await db.signInWithGoogle();
   };
 
   const logout = async () => {
+    log("Logout Triggered.");
     await db.signOut();
   };
 
   const updateProfile = async (updates: Partial<AppUser>) => {
     if (!user) return;
+    log(`Profile Update: ${Object.keys(updates).join(', ')}`);
 
     if (updates.name) {
-      await db.updateUser({ full_name: updates.name });
+      await db.updateName(updates.name); // Corrected to use account.updateName
     }
-
     setUser({ ...user, ...updates });
   };
 
@@ -152,7 +180,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isLoading, 
+      loginWithGoogle, 
+      logout, 
+      updateProfile, 
+      updateAvatar,
+      isBoard, 
+      isDonor, 
+      totalMembers,
+      authLogs,
+      checkSession
+    }}>
       {children}
     </AuthContext.Provider>
   );
