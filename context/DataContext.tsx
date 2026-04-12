@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { supabase } from '../lib/supabase';
-import { MOCK_DONATIONS, MOCK_TESTIMONIALS, SUPABASE_OVERRIDE_EVENTS } from '../constants';
+import { ALL_EVENTS, MOCK_DONATIONS, MOCK_TESTIMONIALS, SUPABASE_OVERRIDE_EVENTS, STATIC_REGISTRATIONS } from '../constants';
 
 interface MutationResult {
   success: boolean;
@@ -118,11 +118,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       hours: e.duration || e.hours || 0
     }));
 
+    // Fallback to ALL_EVENTS if data is empty or fetch failed
+    const baseEvents = mapped.length > 0 ? mapped : ALL_EVENTS;
+
     // Apply local overrides
     const overrideMap = new Map(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
-    const finalEvents = mapped.map(evt => overrideMap.get(evt.id) || evt);
+    const finalEvents = baseEvents.map(evt => overrideMap.get(evt.id) || evt);
     
-    // Add any overrides that aren't in the fetched list (e.g. if fetch failed or event is new/missing)
+    // Add any overrides that aren't in the base list
     SUPABASE_OVERRIDE_EVENTS.forEach(override => {
       if (!finalEvents.find(e => e.id === override.id)) {
         finalEvents.push(override);
@@ -248,21 +251,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }) : Promise.resolve();
 
-        const fetchRegistrations = session ? supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
+        const fetchRegistrations = supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
           .then(({ data }) => {
-            if (data) {
-              setEventRegistrations(data.map((r: any) => ({
-                id: r.id,
-                eventId: r.event_id,
-                userId: r.user_id,
-                userName: r.user_name,
-                userEmail: r.user_email,
-                specialNeeds: r.special_needs,
-                status: r.status,
-                date: r.date
-              })));
-            }
-          }) : Promise.resolve();
+            const dbRegs = data ? data.map((r: any) => ({
+              id: r.id,
+              eventId: r.event_id,
+              userId: r.user_id,
+              userName: r.user_name,
+              userEmail: r.user_email,
+              specialNeeds: r.special_needs,
+              status: r.status,
+              date: r.date
+            })) : [];
+            
+            // Merge with STATIC_REGISTRATIONS, prioritizing DB if available
+            const allRegs = [...dbRegs];
+            STATIC_REGISTRATIONS.forEach(s => {
+              if (!allRegs.find(r => r.id === s.id)) {
+                allRegs.push(s);
+              }
+            });
+            
+            setEventRegistrations(allRegs);
+          });
 
         await Promise.all([
           fetchEventsData(), 

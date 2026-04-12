@@ -58,3 +58,7 @@ metadata.json
 .DS_Store
 Thumbs.db
 .next/
+
+# === Production Data Backups (Private) ===
+*_rows.csv
+restored_data.json
