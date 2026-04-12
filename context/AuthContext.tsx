@@ -169,6 +169,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
+      {/* BULLETPROOF DEBUG RIBBON */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+        backgroundColor: '#0ea5e9',
+        zIndex: 99999,
+        boxShadow: '0 2px 10px rgba(14, 165, 233, 0.5)'
+      }} title="SENTRY AUTH ACTIVE" />
+
+      {/* VANILLA CSS DIAGNOSTIC OVERLAY */}
+      {(isHandshaking || handshakeError) && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.98)',
+          zIndex: 99998,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          textAlign: 'center',
+          fontFamily: 'sans-serif',
+          color: 'white',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ maxWidth: '400px' }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              border: `4px solid ${handshakeError ? '#ef4444' : '#0ea5e9'}`,
+              borderTopColor: handshakeError ? '#ef4444' : 'transparent',
+              borderRadius: '50%',
+              animation: handshakeError ? 'none' : 'spin 1s linear infinite',
+              margin: '0 auto 24px'
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 16px', color: handshakeError ? '#f87171' : 'white' }}>
+              {handshakeError ? 'Handshake Blocked' : 'Crystallizing your Session'}
+            </h2>
+            
+            <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '16px', marginBottom: '32px' }}>
+              {handshakeError ? handshakeError : "Google has verified your identity. We are now allowing the herd to align. This takes a few seconds..."}
+            </p>
+
+            {handshakeError && (
+              <button 
+                onClick={() => window.location.href = '/'}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#f87171',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Return Home
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {children}
     </AuthContext.Provider>
   );
