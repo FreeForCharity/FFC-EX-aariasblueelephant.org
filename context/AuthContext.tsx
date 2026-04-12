@@ -57,15 +57,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const checkSession = async () => {
-    log("INITIALIZING: Starting Session Handshake...");
+    log(`INITIALIZING: Handshake starting...`);
+    log(`BRAWSER URL: ${window.location.href}`);
     setIsLoading(true);
     
-    // Check if we are landing from Auth
+    // Check Search Params
     const params = new URLSearchParams(window.location.search);
     if (params.size > 0) {
-      log(`DETECTED PARAMS: ${window.location.search}`);
+      log(`DETECTED SEARCH: ${window.location.search}`);
     } else {
-      log("DETECTED PARAMS: NONE");
+      log("DETECTED SEARCH: NONE");
+    }
+
+    // Check Hash Params (Implicit Flow or SPA redirection)
+    if (window.location.hash) {
+      log(`DETECTED HASH: ${window.location.hash}`);
+    } else {
+      log("DETECTED HASH: NONE");
     }
 
     // Attempt 1: Immediate check
