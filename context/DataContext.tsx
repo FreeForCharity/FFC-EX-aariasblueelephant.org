@@ -102,7 +102,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Even on error, we proceed to apply overrides to whatever data we have (or empty)
     }
 
-    const mapped = (data || []).map((e: any) => ({
+    const mapped: Event[] = (data || []).map((e: any) => ({
       id: e.id,
       title: e.title,
       date: e.date,
@@ -113,17 +113,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       capacity: e.capacity,
       registered: e.registered || 0,
       initialLikes: e.initial_likes || 0,
-      image: undefined, // Image fetched on demand via LazySupabaseImage
+      image: e.image,
       mediaLink: e.media_link,
       hours: e.duration || e.hours || 0
     }));
 
     // Fallback to ALL_EVENTS if data is empty or fetch failed
-    const baseEvents = mapped.length > 0 ? mapped : ALL_EVENTS;
+    const baseEvents: Event[] = mapped.length > 0 ? mapped : ALL_EVENTS;
 
     // Apply local overrides
-    const overrideMap = new Map(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
-    const finalEvents = baseEvents.map(evt => overrideMap.get(evt.id) || evt);
+    const overrideMap = new Map<string, Event>(SUPABASE_OVERRIDE_EVENTS.map(e => [e.id, e]));
+    const finalEvents: Event[] = baseEvents.map(evt => overrideMap.get(evt.id) || evt);
     
     // Add any overrides that aren't in the base list
     SUPABASE_OVERRIDE_EVENTS.forEach(override => {
@@ -136,12 +136,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Cache management
     try {
-      const cacheEvents = finalEvents.map(evt => ({ 
-        ...evt, 
-        image: null // Don't cache huge base64 strings
-      }));
-      localStorage.setItem('abe_cache_events', JSON.stringify(cacheEvents));
-    } catch (e) {}
+      localStorage.setItem('abe_cache_events', JSON.stringify(finalEvents));
+    } catch (e) {
+      console.error("Cache set error:", e);
+    }
 
     return finalEvents;
   };
@@ -164,7 +162,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return MOCK_TESTIMONIALS;
     }
 
-    const mapped = data.map((t: any) => ({
+    const mapped: Testimonial[] = data.map((t: any) => ({
         id: t.id,
         author: t.author,
         authorEmail: t.author_email || t.authorEmail,
@@ -253,7 +251,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const fetchRegistrations = supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
           .then(({ data }) => {
-            const dbRegs = data ? data.map((r: any) => ({
+            const dbRegs: EventRegistration[] = data ? data.map((r: any) => ({
               id: r.id,
               eventId: r.event_id,
               userId: r.user_id,
@@ -265,7 +263,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             })) : [];
             
             // Merge with STATIC_REGISTRATIONS, prioritizing DB if available
-            const allRegs = [...dbRegs];
+            const allRegs: EventRegistration[] = [...dbRegs];
             STATIC_REGISTRATIONS.forEach(s => {
               if (!allRegs.find(r => r.id === s.id)) {
                 allRegs.push(s);
