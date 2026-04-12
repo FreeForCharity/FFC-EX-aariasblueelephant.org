@@ -23,6 +23,15 @@ const VersionWatcher = () => {
                 const localVersion = localStorage.getItem('app_version');
 
                 if (remoteVersion && remoteVersion !== localVersion) {
+                    // [SENTRY] GUARD: Never refresh if we are currently landing with auth tokens
+                    const hasAuthTokens = window.location.search.includes('userId') || window.location.hash.includes('userId');
+                    
+                    if (hasAuthTokens) {
+                        console.warn('ABE: New version detected, but delaying refresh for Auth Handshake.');
+                        localStorage.setItem('app_version', remoteVersion); // Silently update version so it doesn't loop
+                        return;
+                    }
+
                     console.log('ABE: New version detected, refreshing cache...', remoteVersion);
                     localStorage.setItem('app_version', remoteVersion);
                     // Force a hard reload to clear stubborn mobile cache

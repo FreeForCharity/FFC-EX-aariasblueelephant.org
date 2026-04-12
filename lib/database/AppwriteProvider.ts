@@ -22,27 +22,37 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async getSession() {
+    // Step 1: Convert any pending OAuth tokens into a session (from createOAuth2Token flow)
+    const payload = sessionStorage.getItem('abe_auth_payload');
+    if (payload) {
+      try {
+        const { userId, secret } = JSON.parse(payload);
+        if (userId && secret) {
+          console.info("[SENTRY] PROVIDER: Converting OAuth token to session...");
+          await this.account.createSession(userId, secret);
+          console.info("%c [SENTRY] PROVIDER: Session created from OAuth token! ", 'background: #10b981; color: white; font-weight: bold; border-radius: 3px;');
+        }
+      } catch (e: any) {
+        console.warn("[SENTRY] PROVIDER: Token→Session conversion failed:", e.message);
+      }
+      // Always clear consumed payload (tokens are single-use)
+      sessionStorage.removeItem('abe_auth_payload');
+    }
+
+    // Step 2: Check for existing session (cookie or just-created)
     try {
       const session = await this.account.getSession('current');
-      if (!session) {
-        if (window.location.search.includes('userId')) {
-          console.warn("[8:45:41 AM] PROVIDER: Arrived from Google with tokens, but 'current' session is missing. Cookie block suspected.");
-        }
-        return null;
-      }
-      
-      // Enriched: Get full user details for role recognition
+      if (!session) return null;
+
+      console.info("[SENTRY] PROVIDER: Session verified.");
       const user = await this.account.get();
       return {
         ...session,
         user
       };
     } catch (e: any) {
-      // Diagnostic: Only alert if we're actually coming back from Google and it fails
       if (e.code && e.code !== 401) {
-        if (window.location.search.includes('userId')) {
-          console.error(`[8:45:41 AM] PROVIDER: Auth Handshake Failed. Error ${e.code}: ${e.message}`);
-        }
+        console.warn(`[SENTRY] PROVIDER: Session check failed (${e.code}).`);
       }
       return null;
     }
@@ -74,8 +84,9 @@ export class AppwriteProvider implements IDatabaseProvider {
         redirectUrl = redirectUrl.slice(0, -1);
     }
     
-    // Appwrite redirects the whole page for OAuth
-    this.account.createOAuth2Session(
+    // Token flow: Appwrite redirects to Google, then returns to our URL with userId & secret params.
+    // The SENTRY landing pad in index.html snares them, and getSession() converts them to a session.
+    this.account.createOAuth2Token(
       OAuthProvider.Google,
       redirectUrl,
       redirectUrl
@@ -325,26 +336,47 @@ export class AppwriteProvider implements IDatabaseProvider {
     if (!path) return '';
     
     try {
-      // getFilePreview(bucketId, fileId, width, height, gravity, quality, borderWidth, borderColor, borderRadius, opacity, rotation, background, output)
       const result = this.storage.getFilePreview(
         APPWRITE_CONFIG.BUCKETS.MEDIA, 
         path, 
         width, 
-        0, // height 0 to auto-scale
-        ImageGravity.Center, // gravity
+        0, 
+        ImageGravity.Center,
         quality,
-        0, // borderWidth
-        '', // borderColor
-        0, // borderRadius
-        1, // opacity
-        0, // rotation
-        '', // background
-        ImageFormat.Webp // output format (smaller & faster)
+        0, 
+        '', 
+        0, 
+        1, 
+        0, 
+        '', 
+        ImageFormat.Webp
       );
       return result.toString();
     } catch (e) {
-      console.error("Failed to generate optimized preview:", e);
       return '';
+    }
+  }
+
+  // JWT Support for Incognito/Safari resilience
+  setJWT(jwt: string | null): void {
+    if (jwt) {
+      console.info("%c [PASSPORT] Injecting Passport (JWT) into Client... ", 'background: #10b981; color: white; font-weight: bold; border-radius: 3px;');
+      this.client.setJWT(jwt);
+    } else {
+      // Clear JWT if null (resetting the connection)
+      this.client.setJWT(null as any);
+    }
+  }
+
+  async createJWT(): Promise<string | null> {
+    try {
+      console.info("%c [PASSPORT] Requesting New Passport (JWT)... ", 'background: #f59e0b; color: white; font-weight: bold; border-radius: 3px;');
+      const jwt = await this.account.createJWT();
+      console.info("%c [PASSPORT] Passport Created Successfully! ", 'background: #10b981; color: white; font-weight: bold; border-radius: 3px;');
+      return jwt.jwt;
+    } catch (e) {
+      console.error("%c [PASSPORT] Failed to generate Passport (JWT): ", 'background: #ef4444; color: white; font-weight: bold; border-radius: 3px;', e);
+      return null;
     }
   }
 }

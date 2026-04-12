@@ -58,17 +58,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
 
-      console.info(`[SENTRY] Identity Resolved: ${email} | Role: ${role}`);
+      console.info(`%c [IDENTITY] Resolved: ${email} | Role: ${role} `, 'background: #0ea5e9; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');
 
       setUser({
         id: rawUser.$id || rawUser.id,
         email,
         name,
         role,
+        isBoard: role === 'BoardMember' || role === 'BoardMember.Owner',
         avatar: avatarUrl
       });
     } else {
-      console.info("[SENTRY] Guest Session Active (No User)");
+      console.info("%c [IDENTITY] Guest Session Active (No User Detected) ", 'background: #64748b; color: white; padding: 2px 5px; border-radius: 3px;');
       setUser(null);
     }
     setIsLoading(false);
@@ -85,64 +86,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [isHandshaking, setIsHandshaking] = useState(false);
   const [handshakeError, setHandshakeError] = useState<string | null>(null);
+  const [showManualOverride, setShowManualOverride] = useState(false);
 
   useEffect(() => {
     // [BEHIND THE SCENES] FINAL SENTRY HANDOVER
     const arrivalFlag = sessionStorage.getItem('abe_auth_arrival') === 'true';
     const payloadJson = sessionStorage.getItem('abe_auth_payload');
     
-    const checkSession = async () => {
-      console.info("[8:45:41 AM] SENTRY: Handshake Starting...");
-      
-      // 1. Natural Check
-      let session = await db.getSession();
+    const checkSession = async (retryCount = 0) => {
+      console.info("[SENTRY] Handshake Starting...");
 
-      // [SWAP REDUCED] We are removing the aggressive flush to restore basic login first
-      if (session && (arrivalFlag || payloadJson)) {
-        console.info("[8:45:41 AM] SENTRY: Fresh tokens detected. Keeping existing session for stability.");
-      }
-      
-      if (!session && (arrivalFlag || payloadJson)) {
-        setIsHandshaking(true);
-        console.warn("[8:45:41 AM] SENTRY: Handshake Delayed. Crystallizing (3 Tries)...");
-        
-        // Attempt 1 (1.5s)
-        await new Promise(r => setTimeout(r, 1500));
+      // 1. NATURAL CHECK: Provider handles cookies AND token→session conversion
+      //    IMPORTANT: Do NOT inject JWT before this — expired JWTs poison the client
+      let session = null;
+      try {
         session = await db.getSession();
-        
-        if (!session) {
-          console.warn("[8:45:41 AM] SENTRY: Handshake Retry 1 Failed. (3s Delay)...");
-          await new Promise(r => setTimeout(r, 3000));
-          session = await db.getSession();
-        }
-        
-        if (!session) {
-          console.warn("[8:45:41 AM] SENTRY: Handshake Retry 2 Failed. (5s Delay)...");
-          await new Promise(r => setTimeout(r, 5000));
-          session = await db.getSession();
-        }
-        
-        if (!session) {
-          console.error("[8:45:41 AM] SENTRY: Handshake Terminal Failure.");
-          setHandshakeError("Browser rejected the session cookie. Please check if 3rd party cookies are blocked.");
-        } else {
-          console.info("[8:45:41 AM] SENTRY: Handshake Secured. Session Crystallized.");
-        }
-        
-        setIsHandshaking(false);
+        if (session) console.info("[SENTRY] Session Check: Complete.");
+      } catch (e) {
+        console.error("%c [SENTRY] Handshake Buffer Error: ", 'background: #ef4444; color: white;', e);
       }
-      
-      // Cleanup
+
+      // 2. JWT FALLBACK: If native session failed, try stored passport as last resort
+      if (!session) {
+        const storedJwt = localStorage.getItem('abe_jwt');
+        if (storedJwt) {
+          console.info("%c [PASSPORT] No native session. Attempting JWT recovery... ", 'background: #f59e0b; color: white; border-radius: 3px;');
+          db.setJWT(storedJwt);
+          try {
+            session = await db.getSession();
+            if (session) {
+              console.info("%c [PASSPORT] Session recovered via JWT! ", 'background: #10b981; color: white; font-weight: bold; border-radius: 3px;');
+            }
+          } catch (e) {
+            // JWT also failed
+          }
+          if (!session) {
+            // JWT was expired/invalid — clear it to prevent poisoning future requests
+            console.warn("[PASSPORT] JWT expired or invalid. Clearing passport vault.");
+            localStorage.removeItem('abe_jwt');
+            db.setJWT(null);
+          }
+        }
+      }
+
+      // 3. PASSPORT SEAL: If session exists but no JWT stored, create one for future resilience
+      if (session && !localStorage.getItem('abe_jwt')) {
+        try {
+          const newJwt = await db.createJWT();
+          if (newJwt) {
+            localStorage.setItem('abe_jwt', newJwt);
+            console.info("%c [PASSPORT] Passport Secured. ", 'background: #10b981; color: white; font-weight: bold; border-radius: 3px;');
+          }
+        } catch (e) {
+          // Non-critical — session works without JWT
+        }
+      }
+
+      // 4. CRYSTALLIZATION RETRY: If we just arrived from OAuth but session isn't ready
+      const arrivalFlag = sessionStorage.getItem('abe_auth_arrival') === 'true';
+
+      if (!session && arrivalFlag) {
+        setIsHandshaking(true);
+        console.warn(`%c [SENTRY] Handshake Delayed. Crystallizing (Attempt ${retryCount + 1})... `, 'color: #f59e0b; font-weight: bold;');
+
+        if (retryCount > 2) {
+          setShowManualOverride(true);
+        }
+
+        if (retryCount < 5) {
+          await new Promise(r => setTimeout(r, 1500));
+          checkSession(retryCount + 1);
+          return;
+        } else {
+          console.error("[SENTRY] Handshake Terminal Failure.");
+          setHandshakeError("Session could not be established. Please try refreshing or check cookie settings.");
+          setIsHandshaking(false);
+          setIsLoading(false);
+          sessionStorage.removeItem('abe_auth_arrival');
+          return;
+        }
+      }
+
+      // Cleanup arrival flags
       sessionStorage.removeItem('abe_auth_arrival');
       sessionStorage.removeItem('abe_auth_payload');
-      
+      setShowManualOverride(false);
+
       handleSession(session);
+      setIsHandshaking(false);
     };
 
     checkSession();
     fetchTotalMembersCount();
 
     const { unsubscribe } = db.onAuthStateChange((session) => {
+      console.info("%c [IDENTITY] Auth State Changed (Event Received) ", 'background: #8b5cf6; color: white; padding: 2px 5px; border-radius: 3px;');
       handleSession(session);
     });
 
@@ -155,6 +193,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    console.info("[PASSPORT] Revoking Passport & Signing Out...");
+    localStorage.removeItem('abe_jwt');
+    db.setJWT(null);
     await db.signOut();
   };
 
@@ -171,6 +212,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateAvatar = (avatarUrl: string) => {
     updateProfile({ avatar: avatarUrl });
   };
+
+  // DIAGNOSTICS: Global Debug Hook (for Browser Console)
+  if (typeof window !== 'undefined') {
+    (window as any).ABE_DEBUG = {
+      user,
+      isBoard,
+      isDonor,
+      hasPassport: !!localStorage.getItem('abe_jwt'),
+      isIncognito: !navigator.cookieEnabled, // Simple check
+      forceRefresh: () => window.location.reload(),
+      clearAuth: () => {
+         localStorage.removeItem('abe_jwt');
+         sessionStorage.clear();
+         window.location.href = '/';
+      }
+    };
+  }
 
   return (
     <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
@@ -230,6 +288,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '17px', fontWeight: '500', marginBottom: '40px' }}>
               {handshakeError ? handshakeError : "Google has verified your identity. We are carefully aligning your session for maximum security."}
             </p>
+
+            {showManualOverride && !handshakeError && (
+              <div style={{ marginBottom: '40px', padding: '20px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>Handshake taking longer than expected...</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: 'transparent',
+                    color: '#0ea5e9',
+                    border: '1px solid #0ea5e9',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Force Crystallize Session
+                </button>
+              </div>
+            )}
 
             {handshakeError && (
               <button 

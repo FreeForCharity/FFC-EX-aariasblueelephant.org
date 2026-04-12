@@ -9,6 +9,10 @@ export interface IDatabaseProvider {
   updateUser(data: { full_name?: string }): Promise<void>;
   getUserCount(): Promise<number>;
   getUserAvatar(name: string): string;
+  
+  // JWT Support for Incognito/Safari resilience
+  setJWT(jwt: string | null): void;
+  createJWT(): Promise<string | null>;
 
   // Events
   getEvents(): Promise<Event[]>;

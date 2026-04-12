@@ -15,27 +15,35 @@
   <script>
     window.google_identity_auto_select = false;
     
-    // [BEHIND THE SCENES] FINAL SENTRY LANDING PAD
-    // Snares OAuth tokens and logs the full arrival state
+    // [BEHIND THE SCENES] FINAL SENTRY LANDING PAD (V6.3 GREEDY)
+    // Snares OAuth tokens from Query, Hash, and Fragments robustly.
     (function() {
       try {
+        const url = window.location.href;
         const search = window.location.search;
         const hash = window.location.hash;
-        console.info("[8:45:41 AM] SENTRY: Arrival URL detected.", { search, hash });
         
-        // Handle both standard query (?userId=...) and hash fragment (#?userId=...)
-        const params = new URLSearchParams(search || (hash.includes('?') ? hash.substring(hash.indexOf('?')) : ''));
+        // Greedy Regex Snare: Look into everything for userId and secret
+        const snare = (key) => {
+          const match = url.match(new RegExp('[?&#]' + key + '=([^&#]*)'));
+          return match ? match[1] : null;
+        };
+
+        const userId = snare('userId');
+        const secret = snare('secret');
         
-        const userId = params.get('userId');
-        const secret = params.get('secret');
+        console.info(`%c [SENTRY] Arrival Analysis: Tokens Found: ${userId && secret ? 'YES ✅' : 'NO ❌'} `, 
+          `background: ${userId && secret ? '#10b981' : '#f43f5e'}; color: white; font-weight: bold; border-radius: 3px;`);
         
         if (userId && secret) {
-          console.info("[8:45:41 AM] SENTRY: Tokens snared successfully.");
+          console.info("[SENTRY] Identity Snared. Locking into SessionVault...");
           sessionStorage.setItem('abe_auth_arrival', 'true');
           sessionStorage.setItem('abe_auth_payload', JSON.stringify({ userId, secret, ts: Date.now() }));
+        } else if (search.length > 1 || hash.length > 1) {
+          console.warn("[SENTRY] Arrival Detected but Snare Failed. Full URL for Debug:", url);
         }
       } catch (e) {
-        console.error("[8:45:41 AM] SENTRY: Landing Pad error.", e);
+        console.error("[SENTRY] Landing Pad Malfunction:", e);
       }
     })();
   </script>

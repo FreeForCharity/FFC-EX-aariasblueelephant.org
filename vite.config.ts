@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       port: 4000,
+      strictPort: true,
       host: '0.0.0.0',
     },
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],

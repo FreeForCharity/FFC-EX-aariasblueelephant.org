@@ -182,4 +182,14 @@ export class SupabaseProvider implements IDatabaseProvider {
     const { data } = supabase.storage.from('media').getPublicUrl(path);
     return data.publicUrl;
   }
+
+  // JWT Support (Supabase handles this internally, but we satisfy the interface)
+  setJWT(_jwt: string | null): void {
+    // No-op for Supabase
+  }
+
+  async createJWT(): Promise<string | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  }
 }

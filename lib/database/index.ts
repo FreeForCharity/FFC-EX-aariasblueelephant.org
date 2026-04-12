@@ -107,6 +107,10 @@ class ResilientDatabase implements IDatabaseProvider {
       return path; // Fallback to raw path
     }
   }
+
+  // JWT Support
+  setJWT(jwt: string | null) { this.provider.setJWT(jwt); }
+  async createJWT() { return this.provider.createJWT(); }
 }
 
 export const db = new ResilientDatabase();
