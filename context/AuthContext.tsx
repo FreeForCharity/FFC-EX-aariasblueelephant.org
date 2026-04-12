@@ -97,24 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Natural Check
       let session = await db.getSession();
 
-      // [INTELLIGENT SWAP] If we have incoming tokens, check for account mismatch
+      // [SWAP REDUCED] We are removing the aggressive flush to restore basic login first
       if (session && (arrivalFlag || payloadJson)) {
-        // If we have tokens, we are arriving from a fresh Google login.
-        // We should ensure the current session matches the incoming tokens.
-        // If it doesn't, we flush the old one to avoid 'Sticky Accounts'.
-        console.warn("[8:45:41 AM] SENTRY: Detected fresh tokens while session exists. Validating identity...");
-        
-        // Extract userId if possible from payload
-        try {
-          if (payloadJson) {
-            const payload = JSON.parse(payloadJson);
-            if (payload.userId && session.userId !== payload.userId) {
-              console.warn("[8:45:41 AM] SENTRY: Account Mismatch! Flushing old user to make room for new login.");
-              await db.signOut();
-              session = null;
-            }
-          }
-        } catch (e) { /* silent fail */ }
+        console.info("[8:45:41 AM] SENTRY: Fresh tokens detected. Keeping existing session for stability.");
       }
       
       if (!session && (arrivalFlag || payloadJson)) {
@@ -189,31 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{ user, loginWithGoogle, logout, updateProfile, updateAvatar, isLoading, isBoard, isDonor, totalMembers }}>
-      {/* BULLETPROOF DEBUG RIBBON - WITH TEXT */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '30px',
-        backgroundColor: '#0ea5e9',
-        zIndex: 99999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        fontFamily: 'sans-serif',
-        letterSpacing: '1px',
-        boxShadow: '0 -2px 15px rgba(14, 165, 233, 0.8)',
-        animation: 'pulse 2s infinite'
-      }}>
-        [ ACTIVE SENTRY: DEBUG V3 ]
-        <style>{`@keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }`}</style>
-      </div>
+      {/* FINAL SENTRY: Premium Crystallization Overlay */}
 
-      {/* VANILLA CSS DIAGNOSTIC OVERLAY */}
       {(isHandshaking || handshakeError) && (
         <div style={{
           position: 'fixed',
@@ -221,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.98)',
+          backgroundColor: '#0f172a', // Brand Dark
           zIndex: 99998,
           display: 'flex',
           flexDirection: 'column',
@@ -229,41 +191,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           justifyContent: 'center',
           padding: '24px',
           textAlign: 'center',
-          fontFamily: 'sans-serif',
-          color: 'white',
-          backdropFilter: 'blur(10px)'
+          fontFamily: "'Inter', sans-serif",
+          color: 'white'
         }}>
-          <div style={{ maxWidth: '400px' }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              border: `4px solid ${handshakeError ? '#ef4444' : '#0ea5e9'}`,
-              borderTopColor: handshakeError ? '#ef4444' : 'transparent',
-              borderRadius: '50%',
-              animation: handshakeError ? 'none' : 'spin 1s linear infinite',
-              margin: '0 auto 24px'
-            }} />
+          <div style={{ maxWidth: '440px' }}>
+            {/* Elegant Brand Loader */}
+            <div style={{ position: 'relative', width: '100px', height: '100px', margin: '0 auto 40px' }}>
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                border: '3px solid rgba(14, 165, 233, 0.1)',
+                borderRadius: '50%'
+              }} />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                border: '3px solid transparent',
+                borderTopColor: handshakeError ? '#ef4444' : '#0ea5e9',
+                borderRadius: '50%',
+                animation: handshakeError ? 'none' : 'spin 2s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+              }} />
+              <div style={{
+                position: 'absolute',
+                inset: '15%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <img src="/logo.png" style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.8 }} alt="ABE" />
+              </div>
+            </div>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 16px', color: handshakeError ? '#f87171' : 'white' }}>
-              {handshakeError ? 'Handshake Blocked' : 'Crystallizing your Session'}
+            <h2 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+              {handshakeError ? 'Handshake Blocked' : 'Securing the Herd...'}
             </h2>
             
-            <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '16px', marginBottom: '32px' }}>
-              {handshakeError ? handshakeError : "Google has verified your identity. We are now allowing the herd to align. This takes a few seconds..."}
+            <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '17px', fontWeight: '500', marginBottom: '40px' }}>
+              {handshakeError ? handshakeError : "Google has verified your identity. We are carefully aligning your session for maximum security."}
             </p>
 
             {handshakeError && (
               <button 
                 onClick={() => window.location.href = '/'}
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  color: '#f87171',
-                  border: '1px solid rgba(239, 68, 68, 0.5)',
-                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  backgroundColor: '#0ea5e9',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '16px',
                   cursor: 'pointer',
-                  fontWeight: '500'
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  boxShadow: '0 10px 20px rgba(14, 165, 233, 0.3)'
                 }}
               >
                 Return Home
