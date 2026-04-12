@@ -43,10 +43,10 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
               <div className="flex-1 space-y-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                    Connection Barrier Detected
+                    System Configuration Alert — Database Service Disruption
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                    It looks like your current network (common in offices, hospitals, or schools) might be restricting access to some of our community features. We've enabled a <span className="text-sky-500 font-semibold">Resilience Mode</span> so you can still browse, but some real-time data and logins may be limited.
+                    We are currently experiencing a temporary database service disruption. <span className="text-sky-500 font-semibold">Resilience Mode</span> has been automatically enabled, allowing you to browse our core mission and content while real-time features and account access may be briefly limited. For assistance, reach us at <a href="mailto:info@aariasblueelephant.org" className="text-sky-500 font-bold hover:underline">info@aariasblueelephant.org</a>.
                   </p>
                 </div>
 
@@ -54,16 +54,16 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
                   <div className="flex items-start gap-3 p-4 bg-amber-500/5 rounded-xl border border-amber-500/10">
                     <Radio className="h-5 w-5 text-amber-500 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Try a Hotspot</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Switching to a mobile network or personal hotspot usually bypasses these barriers.</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Resilient Browsing</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Our local fallback system ensures you can still access events and mission details despite backend outages.</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3 p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
                     <Info className="h-5 w-5 text-indigo-500 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Change DNS</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Switching your device's DNS to 1.1.1.1 or 8.8.8.8 often restores full connectivity.</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Offline Services</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">New signups and real-time likes are temporarily suspended to protect your data integrity.</p>
                     </div>
                   </div>
                 </div>
