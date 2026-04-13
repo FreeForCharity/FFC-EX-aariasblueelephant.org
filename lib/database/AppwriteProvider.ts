@@ -89,7 +89,8 @@ export class AppwriteProvider implements IDatabaseProvider {
     this.account.createOAuth2Token(
       OAuthProvider.Google,
       redirectUrl,
-      redirectUrl
+      redirectUrl,
+      ['profile', 'email']
     );
   }
 

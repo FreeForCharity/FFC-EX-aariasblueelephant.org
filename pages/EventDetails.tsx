@@ -149,6 +149,7 @@ export default function EventDetails() {
             setRegistrationSubmitted(true);
           } else {
             console.error("Auto-registration failed:", result.error);
+            alert("Registration failed: " + result.error + "\n\nIf you see a permission error, please contact the administrator.");
           }
         }
       }
