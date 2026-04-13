@@ -130,9 +130,10 @@ export const RESILIENCE_REGISTRATIONS: EventRegistration[] = ${JSON.stringify(da
     
     console.log(`✅ [${PROVIDER.toUpperCase()}] Resilience snapshot updated successfully.`);
     console.log(`📊 Stats: ${data.events.length} events, ${data.testimonials.length} testimonials, ${data.registrations.length} registrations.`);
-  } catch (error) {
-    console.error(`❌ [${PROVIDER.toUpperCase()}] Backup failed:`, error);
-    process.exit(1);
+  } catch (error: any) {
+    console.error(`❌ [${PROVIDER.toUpperCase()}] Backup failed:`, error.message || error);
+    console.warn(`⚠️ Warning: Could not generate resilience data. The pipeline will continue using default fallbacks, but your active connection to ${PROVIDER.toUpperCase()} may be degraded or quota-exceeded!`);
+    // Removing process.exit(1) to prevent the entire deployment pipeline from breaking due to a database quota error.
   }
 }
 
