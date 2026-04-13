@@ -64,6 +64,20 @@ const AuthRedirector = () => {
   return null;
 };
 
+// Component to handle external redirects (e.g. Google Forms)
+const ExternalRedirect = ({ url }: { url: string }) => {
+  React.useEffect(() => {
+    window.location.replace(url);
+  }, [url]);
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center bg-slate-50 dark:bg-brand-dark transition-colors duration-500">
+      <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
+      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Redirecting you...</h2>
+      <p className="text-slate-500 dark:text-slate-400 mt-2">Taking you to our inclusion form.</p>
+    </div>
+  );
+};
+
 // Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -130,6 +144,9 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
+                
+                {/* External Redirects */}
+                <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" />} />
               </Routes>
             </Suspense>
           </Layout>
