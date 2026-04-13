@@ -43,10 +43,10 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
               <div className="flex-1 space-y-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                    System Configuration Alert — Database Service Disruption
+                    Site Disruption Notice — High Volume Traffic
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                    We are currently experiencing a temporary database service disruption. <span className="text-sky-500 font-semibold">Resilience Mode</span> has been automatically enabled, allowing you to browse our core mission and content while real-time features and account access may be briefly limited. For assistance, reach us at <a href="mailto:info@aariasblueelephant.org" className="text-sky-500 font-bold hover:underline">info@aariasblueelephant.org</a>.
+                    We are currently experiencing issues with our database due to exceptionally high volume. <span className="text-sky-500 font-semibold">Resilience Mode</span> has been automatically enabled so you can still browse our core mission and events. For any urgent questions, registrations, or assistance, please contact us directly at <a href="mailto:info@aariasblueelephant.org" className="text-sky-500 font-bold hover:underline">info@aariasblueelephant.org</a>.
                   </p>
                 </div>
 
