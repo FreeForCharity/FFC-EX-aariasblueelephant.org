@@ -40,13 +40,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Prioritize Appwrite's native name (populated by Google OAuth)
       const name = rawUser.name || metadata.full_name || email.split('@')[0];
 
-      // Aggressively search for Google Avatar, fallback to premium Appwrite Avatars Initials
+      // Aggressively search for Google Avatar across all possible Appwrite/Google metadata paths
       const avatarUrl =
-        metadata.avatar_url ||
-        metadata.picture ||
-        rawUser.identities?.[0]?.identity_data?.avatar_url ||
         rawUser.identities?.[0]?.identity_data?.picture ||
-        metadata.custom_claims?.picture || 
+        rawUser.identities?.[0]?.identity_data?.avatar_url ||
+        metadata.picture ||
+        metadata.avatar_url ||
+        rawUser.prefs?.picture ||
+        rawUser.prefs?.avatar_url ||
         db.getUserAvatar(name);
 
       const normalizedEmail = (email || '').toLowerCase().trim();
@@ -58,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
 
-      console.info(`%c [IDENTITY] Resolved: ${email} | Role: ${role} `, 'background: #0ea5e9; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');
+      console.info(`%c [IDENTITY] Resolved: ${email} | Role: ${role} | Image: ${avatarUrl ? 'YES' : 'NO'} `, 'background: #0ea5e9; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');
 
       setUser({
         id: rawUser.$id || rawUser.id,
@@ -196,7 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.info("[PASSPORT] Revoking Passport & Signing Out...");
     localStorage.removeItem('abe_jwt');
     db.setJWT(null);
-    await db.signOut();
+    try {
+      await db.signOut();
+    } catch (e) {
+      console.warn("[PASSPORT] Database signout failed, forcing local clear.");
+    }
+    // Hard reset to clear all React state and memory
+    window.location.href = '/';
   };
 
   const updateProfile = async (updates: Partial<AppUser>) => {

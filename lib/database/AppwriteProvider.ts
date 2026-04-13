@@ -94,7 +94,12 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   async signOut() {
-    await this.account.deleteSession('current');
+    try {
+      await this.account.deleteSession('current');
+    } catch (e: any) {
+      // If no session exists or 401, we are already effectively signed out
+      if (e.code !== 401) throw e;
+    }
   }
 
   async updateUser(data: { full_name?: string }) {
