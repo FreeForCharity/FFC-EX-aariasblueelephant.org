@@ -30,14 +30,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Derive User and RBAC state directly from Database session
   const handleSession = async (session: any) => {
     if (session) {
-      // Normalize user data from either Supabase (session.user) or Appwrite (session directly or separate user object)
-      const rawUser = session.user || session; 
-      const email = rawUser.email || '';
+      const rawUser = session.user || session;
+      const metadata = session?.providerAccessTokenMetadata || session?.meta || rawUser.user_metadata || rawUser.prefs || {};
+      const email = rawUser.email || metadata.email || "";
       
-      // User metadata mapping
-      const metadata = rawUser.user_metadata || rawUser.prefs || {};
-      
-      // Prioritize Appwrite's native name (populated by Google OAuth)
+      // Name resolution: Prioritize Appwrite's native name (populated by Google OAuth)
       const name = rawUser.name || metadata.full_name || email.split('@')[0];
 
       // Aggressively search for Google Avatar across all possible Appwrite/Google metadata paths
@@ -51,10 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         db.getUserAvatar(name);
 
       const normalizedEmail = (email || '').toLowerCase().trim();
-      // 1. Start with metadata/default (lowest priority)
       let role: Role = (rawUser.role || metadata.role || metadata.role_name) as Role || 'User';
       
-      // 2. Domain-based auto-promotion (Highest priority - ALWAYS WINS for our domain)
       if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
         role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
       }
@@ -195,7 +190,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     console.info("[PASSPORT] Revoking Passport & Signing Out...");
-    localStorage.removeItem('abe_jwt');
+    
+    // Hard Nuke: Clear every single bit of local storage to prevent session survival
+    localStorage.clear();
+    sessionStorage.clear();
+    
     db.setJWT(null);
     try {
       await db.signOut();

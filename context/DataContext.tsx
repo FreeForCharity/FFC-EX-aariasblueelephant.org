@@ -99,12 +99,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       try {
         const session = await db.getSession();
+        const email = session?.user?.email || "";
+        const isBoard = email.toLowerCase().endsWith('@aariasblueelephant.org');
         
         const [evts, tests, apps, regs] = await Promise.all([
           db.getEvents(),
           db.getTestimonials(),
           session ? db.getVolunteerApplications(session.user?.id || session.$id) : Promise.resolve([]),
-          db.getEventRegistrations(session?.user?.id || session?.$id)
+          // Administrative Exposure: Fetch ALL registrations for Board members
+          isBoard 
+            ? db.getEventRegistrations() 
+            : db.getEventRegistrations(session?.user?.id || session?.$id)
         ]);
 
         setEvents(evts);

@@ -95,10 +95,14 @@ export class AppwriteProvider implements IDatabaseProvider {
 
   async signOut() {
     try {
-      await this.account.deleteSession('current');
+      // Global purge: Deletes ALL active sessions for this account across all devices
+      await this.account.deleteSessions();
+      console.info("%c [IDENTITY] Global PURGE: All sessions terminated. ", 'background: #ef4444; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');
     } catch (e: any) {
       // If no session exists or 401, we are already effectively signed out
-      if (e.code !== 401) throw e;
+      if (e.code !== 401) {
+        console.warn("[IDENTITY] Signout error:", e.message);
+      }
     }
   }
 
