@@ -297,7 +297,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteRegistration = async (id: string): Promise<MutationResult> => {
     try {
-      await db.deleteEventRegistration(id);
+      try {
+        await db.deleteEventRegistration(id);
+      } catch (err: any) {
+        // [RESILIENCE FALLBACK]: Supabase PostgREST drops the connection (Failed to fetch) 
+        // when attempting to delete untouched 'Pending' rows due to strict unconfigured constraints.
+        // As the user outlined, changing state to 'Approved' unlocks deletion.
+        const msg = err.message || '';
+        if (msg.includes('Failed to fetch') || msg.includes('fetch')) {
+          console.warn("Caught Supabase Network Exception on Pending Delete. Executing Pre-Flight Update Workaround.");
+          await db.updateEventRegistration(id, { status: 'Approved' });
+          await db.deleteEventRegistration(id); // Re-attempt deletion
+        } else {
+          throw err;
+        }
+      }
+      
       setEventRegistrations(eventRegistrations.filter(r => r.id !== id));
       return { success: true };
     } catch (error: any) {

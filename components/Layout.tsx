@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Navbar />
       <main id="main-content" className="flex-grow outline-none pt-24" tabIndex={-1}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <NetworkAlert />
+          {isNetworkBlocked && <NetworkAlert />}
         </div>
         {children}
       </main>
