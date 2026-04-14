@@ -3,7 +3,7 @@
  * Change this to 'supabase' to switch back to Supabase.
  * Then push the code and deploy.
  */
-export const ACTIVE_DB: 'appwrite' | 'supabase' = 'appwrite';
+export const ACTIVE_DB: 'appwrite' | 'supabase' = 'supabase';
 
 export const APPWRITE_CONFIG = {
   ENDPOINT: 'https://sfo.cloud.appwrite.io/v1',

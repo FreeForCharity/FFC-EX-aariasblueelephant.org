@@ -86,11 +86,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
-      // Try to load from cache first for instant UI
+      // Local cache management
       const cachedEvents = localStorage.getItem('abe_cache_events');
-      if (cachedEvents) {
+      const cachedTests = localStorage.getItem('abe_cache_testimonials');
+      const cacheTime = localStorage.getItem('abe_cache_time');
+      const CACHE_TTL_MS = 1000 * 60 * 15; // 15 Stale-While-Revalidate TTL to save Supabase Egress
+
+      const isFresh = cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_TTL_MS);
+
+      if (cachedEvents && cachedTests) {
           try {
               setEvents(JSON.parse(cachedEvents));
+              setTestimonials(JSON.parse(cachedTests));
               setIsLoading(false); 
           } catch (e) {}
       }
@@ -100,17 +107,40 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const session = await db.getSession();
         const email = session?.user?.email || "";
+        const userId = session?.user?.id || session?.$id;
         const isBoard = email.toLowerCase().endsWith('@aariasblueelephant.org');
         
-        const [evts, tests, apps, regs] = await Promise.all([
-          db.getEvents(),
-          db.getTestimonials(),
-          session ? db.getVolunteerApplications(session.user?.id || session.$id) : Promise.resolve([]),
-          // Administrative Exposure: Fetch ALL registrations for Board members
-          isBoard 
+        // 1. Fetch user specific, lightweight things always
+        const userAppsPromise = session ? db.getVolunteerApplications(userId) : Promise.resolve([]);
+        const userRegsPromise = isBoard 
             ? db.getEventRegistrations() 
-            : db.getEventRegistrations(session?.user?.id || session?.$id)
-        ]);
+            : db.getEventRegistrations(userId);
+
+        // 2. Conditionally fetch Heavy collections only if cache is stale
+        let evts = events;
+        let tests = testimonials;
+
+        if (!isFresh || events.length === 0) {
+           const heavyData = await Promise.all([
+             db.getEvents(),
+             db.getTestimonials()
+           ]);
+           evts = heavyData[0];
+           tests = heavyData[1];
+
+           // Leakage Diagnostic: Track Payload size!
+           const payloadSize = JSON.stringify(evts).length + JSON.stringify(tests).length;
+           const payloadKB = payloadSize / 1024;
+           if (payloadKB > 800) {
+             console.warn(`🚨 [EGRESS LEAK WARNING] High DB Payload detected: ${payloadKB.toFixed(2)} KB!. Suspected Base64 string injection instead of Storage URLs. This will rapidly consume database egress quota.`);
+           }
+
+           localStorage.setItem('abe_cache_events', JSON.stringify(evts));
+           localStorage.setItem('abe_cache_testimonials', JSON.stringify(tests));
+           localStorage.setItem('abe_cache_time', Date.now().toString());
+        }
+
+        const [apps, regs] = await Promise.all([userAppsPromise, userRegsPromise]);
 
         setEvents(evts);
         setTestimonials(tests);
