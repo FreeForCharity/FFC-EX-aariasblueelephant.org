@@ -107,6 +107,7 @@ export class SupabaseProvider implements IDatabaseProvider {
   async getTestimonials() {
     const { data, error } = await supabase.from('testimonials')
       .select('*')
+      .order('rank', { ascending: true, nullsFirst: false })
       .order('date', { ascending: false });
     if (error) throw error;
     return (data || []).map((t: any) => ({
