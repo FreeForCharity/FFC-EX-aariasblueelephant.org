@@ -68,12 +68,28 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async createEvent(event: Partial<Event>) {
-    const { error } = await supabase.from('events').insert([event]);
+    const payload = {
+      ...event,
+      initial_likes: event.initialLikes,
+      media_link: event.mediaLink
+    };
+    delete payload.initialLikes;
+    delete payload.mediaLink;
+    
+    const { error } = await supabase.from('events').insert([payload]);
     if (error) throw error;
   }
 
   async updateEvent(id: string, data: Partial<Event>) {
-    const { error } = await supabase.from('events').update(data).eq('id', id);
+    const payload = {
+      ...data,
+      ...(data.initialLikes !== undefined && { initial_likes: data.initialLikes }),
+      ...(data.mediaLink !== undefined && { media_link: data.mediaLink })
+    };
+    delete payload.initialLikes;
+    delete payload.mediaLink;
+
+    const { error } = await supabase.from('events').update(payload).eq('id', id);
     if (error) throw error;
   }
 
@@ -111,12 +127,28 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async createTestimonial(testimonial: Partial<Testimonial>) {
-    const { error } = await supabase.from('testimonials').insert([testimonial]);
+    const payload = {
+      ...testimonial,
+      author_email: testimonial.authorEmail,
+      user_id: testimonial.userId
+    };
+    delete payload.authorEmail;
+    delete payload.userId;
+
+    const { error } = await supabase.from('testimonials').insert([payload]);
     if (error) throw error;
   }
 
   async updateTestimonial(id: string, data: Partial<Testimonial>) {
-    const { error } = await supabase.from('testimonials').update(data).eq('id', id);
+    const payload = {
+      ...data,
+      ...(data.authorEmail !== undefined && { author_email: data.authorEmail }),
+      ...(data.userId !== undefined && { user_id: data.userId })
+    };
+    delete payload.authorEmail;
+    delete payload.userId;
+
+    const { error } = await supabase.from('testimonials').update(payload).eq('id', id);
     if (error) throw error;
   }
 
@@ -135,16 +167,31 @@ export class SupabaseProvider implements IDatabaseProvider {
     if (userId) query = query.eq('user_id', userId);
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return (data || []).map((app: any) => ({
+      ...app,
+      userId: app.user_id
+    }));
   }
 
   async createVolunteerApplication(app: Partial<VolunteerApplication>) {
-    const { error } = await supabase.from('volunteer_applications').insert([app]);
+    const payload = {
+      ...app,
+      user_id: app.userId
+    };
+    delete payload.userId;
+
+    const { error } = await supabase.from('volunteer_applications').insert([payload]);
     if (error) throw error;
   }
 
   async updateVolunteerApplication(id: string, data: Partial<VolunteerApplication>) {
-    const { error } = await supabase.from('volunteer_applications').update(data).eq('id', id);
+    const payload = {
+      ...data,
+      ...(data.userId !== undefined && { user_id: data.userId })
+    };
+    delete payload.userId;
+
+    const { error } = await supabase.from('volunteer_applications').update(payload).eq('id', id);
     if (error) throw error;
   }
 
@@ -158,16 +205,51 @@ export class SupabaseProvider implements IDatabaseProvider {
     if (userId) query = query.eq('user_id', userId);
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return (data || []).map((reg: any) => ({
+      ...reg,
+      eventId: reg.event_id,
+      userId: reg.user_id,
+      userName: reg.user_name,
+      userEmail: reg.user_email,
+      specialNeeds: reg.special_needs
+    }));
   }
 
   async createEventRegistration(reg: Partial<EventRegistration>) {
-    const { error } = await supabase.from('event_registrations').insert([reg]);
+    const payload = {
+      ...reg,
+      event_id: reg.eventId,
+      user_id: reg.userId,
+      user_name: reg.userName,
+      user_email: reg.userEmail,
+      special_needs: reg.specialNeeds
+    };
+    delete payload.eventId;
+    delete payload.userId;
+    delete payload.userName;
+    delete payload.userEmail;
+    delete payload.specialNeeds;
+
+    const { error } = await supabase.from('event_registrations').insert([payload]);
     if (error) throw error;
   }
 
   async updateEventRegistration(id: string, data: Partial<EventRegistration>) {
-    const { error } = await supabase.from('event_registrations').update(data).eq('id', id);
+    const payload = {
+      ...data,
+      ...(data.eventId !== undefined && { event_id: data.eventId }),
+      ...(data.userId !== undefined && { user_id: data.userId }),
+      ...(data.userName !== undefined && { user_name: data.userName }),
+      ...(data.userEmail !== undefined && { user_email: data.userEmail }),
+      ...(data.specialNeeds !== undefined && { special_needs: data.specialNeeds })
+    };
+    delete payload.eventId;
+    delete payload.userId;
+    delete payload.userName;
+    delete payload.userEmail;
+    delete payload.specialNeeds;
+
+    const { error } = await supabase.from('event_registrations').update(payload).eq('id', id);
     if (error) throw error;
   }
 
