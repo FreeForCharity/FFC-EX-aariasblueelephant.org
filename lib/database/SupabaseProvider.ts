@@ -71,10 +71,13 @@ export class SupabaseProvider implements IDatabaseProvider {
     const payload = {
       ...event,
       initial_likes: event.initialLikes,
-      media_link: event.mediaLink
+      media_link: event.mediaLink,
+      duration: event.hours
     };
-    delete payload.initialLikes;
-    delete payload.mediaLink;
+    delete (payload as any).initialLikes;
+    delete (payload as any).mediaLink;
+    delete (payload as any).hours;
+    delete payload.id;
     
     const { error } = await supabase.from('events').insert([payload]);
     if (error) throw error;
@@ -84,10 +87,13 @@ export class SupabaseProvider implements IDatabaseProvider {
     const payload = {
       ...data,
       ...(data.initialLikes !== undefined && { initial_likes: data.initialLikes }),
-      ...(data.mediaLink !== undefined && { media_link: data.mediaLink })
+      ...(data.mediaLink !== undefined && { media_link: data.mediaLink }),
+      ...(data.hours !== undefined && { duration: data.hours })
     };
-    delete payload.initialLikes;
-    delete payload.mediaLink;
+    delete (payload as any).initialLikes;
+    delete (payload as any).mediaLink;
+    delete (payload as any).hours;
+    delete payload.id;
 
     const { error } = await supabase.from('events').update(payload).eq('id', id);
     if (error) throw error;
@@ -133,8 +139,9 @@ export class SupabaseProvider implements IDatabaseProvider {
       author_email: testimonial.authorEmail,
       user_id: testimonial.userId
     };
-    delete payload.authorEmail;
-    delete payload.userId;
+    delete (payload as any).authorEmail;
+    delete (payload as any).userId;
+    delete payload.id;
 
     const { error } = await supabase.from('testimonials').insert([payload]);
     if (error) throw error;
@@ -146,8 +153,9 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...(data.authorEmail !== undefined && { author_email: data.authorEmail }),
       ...(data.userId !== undefined && { user_id: data.userId })
     };
-    delete payload.authorEmail;
-    delete payload.userId;
+    delete (payload as any).authorEmail;
+    delete (payload as any).userId;
+    delete payload.id;
 
     const { error } = await supabase.from('testimonials').update(payload).eq('id', id);
     if (error) throw error;
@@ -190,7 +198,8 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...data,
       ...(data.userId !== undefined && { user_id: data.userId })
     };
-    delete payload.userId;
+    delete (payload as any).userId;
+    delete payload.id;
 
     const { error } = await supabase.from('volunteer_applications').update(payload).eq('id', id);
     if (error) throw error;
@@ -244,11 +253,12 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...(data.userEmail !== undefined && { user_email: data.userEmail }),
       ...(data.specialNeeds !== undefined && { special_needs: data.specialNeeds })
     };
-    delete payload.eventId;
-    delete payload.userId;
-    delete payload.userName;
-    delete payload.userEmail;
-    delete payload.specialNeeds;
+    delete (payload as any).eventId;
+    delete (payload as any).userId;
+    delete (payload as any).userName;
+    delete (payload as any).userEmail;
+    delete (payload as any).specialNeeds;
+    delete payload.id;
 
     const { error } = await supabase.from('event_registrations').update(payload).eq('id', id);
     if (error) throw error;
