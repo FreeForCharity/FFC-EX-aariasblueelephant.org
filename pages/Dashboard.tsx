@@ -271,13 +271,48 @@ const Dashboard: React.FC = () => {
             ])
         ];
 
-        const csvString = rows.map(e => e.join(",")).join("\n");
+        const csvString = rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", `registrations_${eventTitle.replace(/\s+/g, '_').toLowerCase()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleExportAllRegistrations = () => {
+        // Sort registrations by date (newest first)
+        const allRegs = [...eventRegistrations].sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        const rows = [
+            ["Event", "Name", "Email", "Registration Date", "Status", "Accommodations"],
+            ...allRegs.map(r => {
+                const eventTitle = events.find(e => e.id === r.eventId)?.title || 'Unknown Event';
+                return [
+                    eventTitle,
+                    r.userName,
+                    r.userEmail,
+                    r.date,
+                    r.status,
+                    r.specialNeeds ? "Yes" : "No"
+                ];
+            })
+        ];
+
+        const csvString = rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `all_registrations_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -390,9 +425,25 @@ const Dashboard: React.FC = () => {
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalRegistrations} Signups</h3>
                             </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-brand-cyan hover:bg-brand-cyan/5" onClick={() => setActiveView('manage-registrations')}>
-                            Manage All <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex-1 justify-between group/btn text-slate-500 hover:text-brand-cyan hover:bg-brand-cyan/5" 
+                                onClick={() => setActiveView('manage-registrations')}
+                            >
+                                Manage All <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="px-3 text-slate-500 hover:text-brand-cyan hover:bg-brand-cyan/5"
+                                onClick={handleExportAllRegistrations}
+                                title="Download All Registrations CSV"
+                            >
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
