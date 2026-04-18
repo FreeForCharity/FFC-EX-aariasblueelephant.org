@@ -50,8 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const normalizedEmail = (email || '').toLowerCase().trim();
       let role: Role = (rawUser.role || metadata.role || metadata.role_name) as Role || 'User';
       
-      if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
-        role = normalizedEmail === 'admin@aariasblueelephant.org' ? 'BoardMember.Owner' : 'BoardMember';
+      if (normalizedEmail === 'admin@aariasblueelephant.org') {
+        role = 'BoardMember.Owner';
+      } else if (normalizedEmail.endsWith('@aariasblueelephant.org')) {
+        role = 'User';
       }
 
       console.info(`%c [IDENTITY] Resolved: ${email} | Role: ${role} | Image: ${avatarUrl ? 'YES' : 'NO'} `, 'background: #0ea5e9; color: white; font-weight: bold; padding: 2px 5px; border-radius: 3px;');

@@ -129,7 +129,7 @@ const App: React.FC = () => {
                 <Route
                   path="/dashboard"
                   element={
-                    <ProtectedRoute allowedRoles={['BoardMember.Owner', 'BoardMember', 'User', 'Donor', 'Member']}>
+                    <ProtectedRoute>
                       <Dashboard />
                     </ProtectedRoute>
                   }
