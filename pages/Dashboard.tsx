@@ -387,8 +387,8 @@ const Dashboard: React.FC = () => {
             return item.role === 'board' || item.role === 'all';
         }
         
-        // For non-board members (regular users)
-        if (item.role === 'user') return true;
+        // For non-board members (regular users/members/donors)
+        if (item.role === 'user' || item.role === 'all') return true; 
         if (item.role === 'donor') return isDonor;
         return false;
     });
@@ -412,9 +412,10 @@ const Dashboard: React.FC = () => {
             const totalRegistrations = eventRegistrations.length;
             const pendingApplications = volunteerApplications.filter(v => v.status === 'Pending').length;
             const pendingStories = testimonials.filter(t => t.status === 'Pending').length;
+            const pendingRegistrations = eventRegistrations.filter(r => r.status === 'Pending').length;
 
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="h-12 w-12 rounded-xl bg-brand-cyan/10 flex items-center justify-center text-brand-cyan group-hover:scale-110 transition-transform">
@@ -444,6 +445,21 @@ const Dashboard: React.FC = () => {
                                 <Download className="h-4 w-4" />
                             </Button>
                         </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                                <Clock className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">Pending Event<br/>Registrations</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingRegistrations} Pending</h3>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-amber-500 hover:bg-amber-500/5" onClick={() => setActiveView('manage-registrations')}>
+                            Review Now <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
 
                     <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">

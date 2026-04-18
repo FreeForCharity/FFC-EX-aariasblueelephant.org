@@ -12,9 +12,9 @@ const PermissionDenied: React.FC = () => {
       <div className="mb-6 rounded-full bg-red-500/10 p-6 ring-1 ring-red-500/20">
         <ShieldAlert className="h-16 w-16 text-red-500" />
       </div>
-      <h1 className="mb-4 text-3xl font-bold text-white">Access Restricted</h1>
+      <h1 className="mb-4 text-3xl font-bold text-white">Insufficient Permissions</h1>
       <p className="mb-8 max-w-md text-lg text-slate-400">
-        This area is restricted to Board Members only. You do not have the necessary permissions to view this content.
+        You do not have the necessary permissions to view this content. If you believe this is an error, please contact support.
       </p>
       <div className="flex flex-col gap-4 sm:flex-row">
         <Link to="/">
