@@ -149,6 +149,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       } catch (error) {
         console.error("Fetch data error. Falling back to static offline resilience data:", error);
+        setIsNetworkBlocked(true); // Flag that we are operating in offline/degraded mode
         
         try {
           // Ultimate Offline Fallback: Import the statically generated resilience data
@@ -157,7 +158,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (events.length === 0) setEvents(RESILIENCE_EVENTS);
           if (testimonials.length === 0) setTestimonials(RESILIENCE_TESTIMONIALS);
           
-          setIsNetworkBlocked(true); // Flag that we are operating in offline/degraded mode
         } catch (fallbackError) {
            console.error("Resilience fallback failed:", fallbackError);
         }
