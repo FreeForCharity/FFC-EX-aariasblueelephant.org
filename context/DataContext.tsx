@@ -111,7 +111,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isBoard = email.toLowerCase().endsWith('@aariasblueelephant.org');
         
         // 1. Fetch user specific, lightweight things always
-        const userAppsPromise = session ? db.getVolunteerApplications(userId) : Promise.resolve([]);
+        const userAppsPromise = isBoard 
+            ? db.getVolunteerApplications() 
+            : (session ? db.getVolunteerApplications(userId) : Promise.resolve([]));
         const userRegsPromise = isBoard 
             ? db.getEventRegistrations() 
             : db.getEventRegistrations(userId);
@@ -245,7 +247,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await db.createVolunteerApplication({ ...data, status: 'Pending' });
       const session = await db.getSession();
-      const apps = await db.getVolunteerApplications(session?.user?.id || session?.$id);
+      const email = session?.user?.email || "";
+      const isBoard = email.toLowerCase().endsWith('@aariasblueelephant.org');
+      const userId = session?.user?.id || session?.$id;
+      const apps = await db.getVolunteerApplications(isBoard ? undefined : userId);
       setVolunteerApplications(apps);
       return { success: true };
     } catch (error: any) {
