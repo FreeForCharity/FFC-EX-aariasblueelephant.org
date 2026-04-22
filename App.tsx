@@ -65,7 +65,7 @@ const AuthRedirector = () => {
 };
 
 // Component to handle external redirects (e.g. Google Forms)
-const ExternalRedirect = ({ url }: { url: string }) => {
+const ExternalRedirect = ({ url, message = "Taking you to your destination..." }: { url: string, message?: string }) => {
   React.useEffect(() => {
     window.location.replace(url);
   }, [url]);
@@ -73,7 +73,7 @@ const ExternalRedirect = ({ url }: { url: string }) => {
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center bg-slate-50 dark:bg-brand-dark transition-colors duration-500">
       <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
       <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Redirecting you...</h2>
-      <p className="text-slate-500 dark:text-slate-400 mt-2">Taking you to our inclusion form.</p>
+      <p className="text-slate-500 dark:text-slate-400 mt-2">{message}</p>
     </div>
   );
 };
@@ -146,7 +146,9 @@ const App: React.FC = () => {
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
                 
                 {/* External Redirects */}
-                <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" />} />
+                <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />
+                <Route path="/RSVP" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
+                <Route path="/rsvp" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
               </Routes>
             </Suspense>
           </Layout>
