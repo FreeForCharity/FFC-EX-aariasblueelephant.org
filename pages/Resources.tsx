@@ -35,7 +35,7 @@ const Resources: React.FC = () => {
           <StagedFadeIn delay={100}>
             <Link to="/resources/understanding" className="group block h-full bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-[#8b5cf6]/30 transition-all duration-300">
               <div className="h-64 w-full overflow-hidden relative">
-                <img src="/images/understanding_autism.png" alt="Family connection" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src="/images/understanding_autism.webp" alt="Family connection" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-6">
                   <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl inline-block">
@@ -59,7 +59,7 @@ const Resources: React.FC = () => {
           <StagedFadeIn delay={200}>
             <Link to="/resources/interventions" className="group block h-full bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-[#10b981]/30 transition-all duration-300">
               <div className="h-64 w-full overflow-hidden relative">
-                <img src="/images/autism_intervention.png" alt="Therapist with child" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src="/images/autism_intervention.webp" alt="Therapist with child" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-6">
                   <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl inline-block">
@@ -83,7 +83,7 @@ const Resources: React.FC = () => {
           <StagedFadeIn delay={300}>
             <Link to="/resources/screening" className="group block h-full bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-[#0ea5e9]/30 transition-all duration-300">
               <div className="h-64 w-full overflow-hidden relative">
-                <img src="/images/autism_screening.png" alt="Medical professional" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src="/images/autism_screening.webp" alt="Medical professional" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-6">
                   <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl inline-block">

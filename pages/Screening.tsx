@@ -33,7 +33,7 @@ const Screening: React.FC = () => {
         <StagedFadeIn delay={100}>
           <div className="w-full h-[350px] mb-12 rounded-3xl overflow-hidden shadow-lg relative group">
             <img 
-              src="/images/autism_screening.png" 
+              src="/images/autism_screening.webp" 
               alt="Medical professional smiling safely" 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
@@ -52,7 +52,7 @@ const Screening: React.FC = () => {
           <StagedFadeIn delay={200}>
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row gap-8 items-center">
               <div className="w-full md:w-1/3 rounded-2xl overflow-hidden shrink-0 hidden md:block border border-slate-200 dark:border-slate-700">
-                 <img src="/images/understanding_autism.png" alt="Child's hands playing" className="w-full h-full object-cover" />
+                 <img src="/images/understanding_autism.webp" alt="Child's hands playing" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
@@ -75,7 +75,7 @@ const Screening: React.FC = () => {
           <StagedFadeIn delay={300}>
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row-reverse gap-8 items-center">
               <div className="w-full md:w-1/3 rounded-2xl overflow-hidden shrink-0 hidden md:block border border-slate-200 dark:border-slate-700">
-                 <img src="/images/autism_screening.png" alt="Medical team taking notes" className="w-full h-full object-cover" />
+                 <img src="/images/autism_screening.webp" alt="Medical team taking notes" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">

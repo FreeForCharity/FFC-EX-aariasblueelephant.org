@@ -1,5 +1,18 @@
 import { Event, Testimonial, VolunteerApplication, EventRegistration, User } from '../../types';
 
+export interface FriendEntry {
+  id: string;
+  name: string;
+  grade: string;
+  school: string;
+  teacher: string;
+  category: string;
+  content: string;
+  media: string | string[];
+  priority?: number;
+  date?: string;
+}
+
 export interface IDatabaseProvider {
   // Auth
   getSession(): Promise<any>;
@@ -42,4 +55,10 @@ export interface IDatabaseProvider {
 
   // Storage
   getMediaUrl(path: string): Promise<string>;
+
+  // Circle of Friends
+  getFriendEntries(): Promise<FriendEntry[]>;
+  createFriendEntry(entry: Partial<FriendEntry>): Promise<void>;
+  updateFriendEntry(id: string, data: Partial<FriendEntry>): Promise<void>;
+  deleteFriendEntry(id: string): Promise<void>;
 }

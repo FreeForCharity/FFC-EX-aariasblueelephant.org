@@ -39,7 +39,7 @@ const Interventions: React.FC = () => {
               </p>
             </div>
             <div className="w-full md:w-1/3 rounded-2xl overflow-hidden shadow-md shrink-0 border border-slate-200 dark:border-slate-700">
-              <img src="/images/autism_intervention.png" alt="Special educator teaching" className="w-full h-full object-cover" />
+              <img src="/images/autism_intervention.webp" alt="Special educator teaching" className="w-full h-full object-cover" />
             </div>
           </div>
         </StagedFadeIn>

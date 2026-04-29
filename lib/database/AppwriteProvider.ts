@@ -367,6 +367,12 @@ export class AppwriteProvider implements IDatabaseProvider {
     }
   }
 
+  // Circle of Friends (Stubs for now, since active DB is Supabase)
+  async getFriendEntries() { return []; }
+  async createFriendEntry(entry: Partial<any>) { return; }
+  async updateFriendEntry(id: string, data: Partial<any>) { return; }
+  async deleteFriendEntry(id: string) { return; }
+
   // JWT Support for Incognito/Safari resilience
   setJWT(jwt: string | null): void {
     if (jwt) {

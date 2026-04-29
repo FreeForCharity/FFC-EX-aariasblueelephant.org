@@ -13,7 +13,7 @@ const Logo: React.FC<LogoProps> = ({
   className = "h-10 w-10",
   variant = 'default',
   alt = "Aaria's Blue Elephant Logo",
-  src = "/qr-logo.png"
+  src = "/qr-logo.webp"
 }) => {
   const [imgError, setImgError] = useState(false);
 

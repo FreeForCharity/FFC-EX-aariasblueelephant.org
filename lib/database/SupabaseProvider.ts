@@ -276,6 +276,52 @@ export class SupabaseProvider implements IDatabaseProvider {
     return data.publicUrl;
   }
 
+  async getFriendEntries() {
+    const { data, error } = await supabase.from('circle_of_friends')
+      .select('*')
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((e: any) => ({
+      id: e.id,
+      name: e.name,
+      grade: e.grade,
+      school: e.school,
+      teacher: e.teacher,
+      category: e.category,
+      content: e.content,
+      media: e.media,
+      priority: e.priority,
+      date: e.created_at
+    }));
+  }
+
+  async createFriendEntry(entry: Partial<any>) {
+    const payload = { ...entry };
+    if (payload.date) {
+      payload.created_at = payload.date;
+      delete payload.date;
+    }
+    const { error } = await supabase.from('circle_of_friends').insert([payload]);
+    if (error) throw error;
+  }
+
+  async updateFriendEntry(id: string, data: Partial<any>) {
+    const payload = { ...data };
+    if (payload.date) {
+      payload.created_at = payload.date;
+      delete payload.date;
+    }
+    delete payload.id;
+    const { error } = await supabase.from('circle_of_friends').update(payload).eq('id', id);
+    if (error) throw error;
+  }
+
+  async deleteFriendEntry(id: string) {
+    const { error } = await supabase.from('circle_of_friends').delete().eq('id', id);
+    if (error) throw error;
+  }
+
   // JWT Support (Supabase handles this internally, but we satisfy the interface)
   setJWT(_jwt: string | null): void {
     // No-op for Supabase

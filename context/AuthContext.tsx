@@ -284,7 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <img src="/logo.png" style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.8 }} alt="ABE" />
+                <img src="/logo.webp" style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.8 }} alt="ABE" />
               </div>
             </div>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

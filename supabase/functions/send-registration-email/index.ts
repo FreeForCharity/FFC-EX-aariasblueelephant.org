@@ -67,7 +67,7 @@ serve(async (req) => {
         `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 24px;">
-              <img src="https://aariasblueelephant.org/logo.png" alt="Aaria's Blue Elephant Logo" style="width: 120px; height: auto;" />
+              <img src="https://aariasblueelephant.org/logo.webp" alt="Aaria's Blue Elephant Logo" style="width: 120px; height: auto;" />
             </div>
             <h1 style="color: #00AEEF; text-align: center;">Registration Received!</h1>
             <p style="font-size: 16px; color: #4a5568;">Hi ${userName},</p>
@@ -111,7 +111,7 @@ serve(async (req) => {
         `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 24px;">
-              <img src="https://aariasblueelephant.org/logo.png" alt="Aaria's Blue Elephant Logo" style="width: 120px; height: auto;" />
+              <img src="https://aariasblueelephant.org/logo.webp" alt="Aaria's Blue Elephant Logo" style="width: 120px; height: auto;" />
             </div>
             <h1 style="color: #48BB78; text-align: center;">You're Approved!</h1>
             <p style="font-size: 16px; color: #4a5568;">Hi ${userName},</p>

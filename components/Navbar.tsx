@@ -82,7 +82,8 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
     { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: 'Events', path: '/events', icon: Users, color: '#8b5cf6' },
+    { name: 'Circle of Friends', path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
+    { name: 'Events', path: '/events', icon: Stars, color: '#8b5cf6' },
     { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
     { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
   ];
@@ -122,7 +123,7 @@ const Navbar: React.FC = () => {
                     </svg>
                   </div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white p-2 flex items-center justify-center shadow-lg border border-slate-200 dark:border-none group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                    <Logo src="./logo.png" className="h-full w-full relative z-10" alt="Organization Logo" />
+                    <Logo src="./logo.webp" className="h-full w-full relative z-10" alt="Organization Logo" />
                   </div>
                 </div>
                 <span className="font-bold text-slate-800 dark:text-white text-xs sm:text-sm lg:text-base tracking-tight whitespace-nowrap z-10 relative mt-1.5 text-center sm:text-left hidden xs:block">Aaria's Blue Elephant</span>

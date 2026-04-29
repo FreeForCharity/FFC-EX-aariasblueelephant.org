@@ -93,6 +93,7 @@ const Resources = lazy(() => import('./pages/Resources'));
 const UnderstandingAutism = lazy(() => import('./pages/UnderstandingAutism'));
 const Interventions = lazy(() => import('./pages/Interventions'));
 const Screening = lazy(() => import('./pages/Screening'));
+const CircleOfFriends = lazy(() => import('./pages/CircleOfFriends'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -101,7 +102,7 @@ const PageLoader = () => (
       <div className="h-20 w-20 border-4 border-slate-200 dark:border-slate-800 rounded-full"></div>
       <div className="absolute top-0 left-0 h-20 w-20 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin"></div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <img src="/logo.png" alt="ABE" className="h-10 w-10 opacity-70 animate-pulse" />
+        <img src="/logo.webp" alt="ABE" className="h-10 w-10 opacity-70 animate-pulse" />
       </div>
     </div>
     <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Creating an Inclusive World</h2>
@@ -143,6 +144,7 @@ const App: React.FC = () => {
                 <Route path="/resources/understanding" element={<UnderstandingAutism />} />
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
+                <Route path="/circle-of-friends" element={<CircleOfFriends />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
                 
                 {/* External Redirects */}

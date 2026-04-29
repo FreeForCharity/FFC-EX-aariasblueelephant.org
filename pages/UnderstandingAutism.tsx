@@ -33,7 +33,7 @@ const UnderstandingAutism: React.FC = () => {
         <StagedFadeIn delay={100}>
           <div className="w-full h-[400px] mb-12 rounded-3xl overflow-hidden shadow-lg relative group">
             <img 
-              src="/images/understanding_autism.png" 
+              src="/images/understanding_autism.webp" 
               alt="Parent and child connecting calmly" 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
@@ -67,7 +67,7 @@ const UnderstandingAutism: React.FC = () => {
                   </div>
                 </div>
                 <div className="w-full md:w-1/3 rounded-2xl overflow-hidden shadow-md shrink-0 border-4 border-white dark:border-slate-700">
-                  <img src="/images/autism_intervention.png" alt="Child playing with blocks" className="w-full h-full object-cover" />
+                  <img src="/images/autism_intervention.webp" alt="Child playing with blocks" className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@ const UnderstandingAutism: React.FC = () => {
                 </div>
 
                 <div className="w-full md:w-2/5 rounded-2xl overflow-hidden shadow-2xl shrink-0 border-4 border-white/20">
-                  <img src="/images/understanding_autism.png" alt="Embracing families" className="w-full h-full object-cover" />
+                  <img src="/images/understanding_autism.webp" alt="Embracing families" className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>

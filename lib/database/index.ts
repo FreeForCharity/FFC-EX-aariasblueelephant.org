@@ -111,6 +111,19 @@ class ResilientDatabase implements IDatabaseProvider {
   // JWT Support
   setJWT(jwt: string | null) { this.provider.setJWT(jwt); }
   async createJWT() { return this.provider.createJWT(); }
+
+  // Circle of Friends
+  async getFriendEntries() {
+    try {
+      return await this.provider.getFriendEntries();
+    } catch (e) {
+      console.warn("Database error for circle of friends", e);
+      return [];
+    }
+  }
+  async createFriendEntry(entry: Partial<any>) { return this.provider.createFriendEntry(entry); }
+  async updateFriendEntry(id: string, data: Partial<any>) { return this.provider.updateFriendEntry(id, data); }
+  async deleteFriendEntry(id: string) { return this.provider.deleteFriendEntry(id); }
 }
 
 export const db = new ResilientDatabase();
