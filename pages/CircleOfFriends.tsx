@@ -380,39 +380,6 @@ const CircleOfFriends: React.FC = () => {
     }
   };
 
-  const migrateLocalDataToCloud = async () => {
-    if (!isAdmin) return;
-    if (confirm('This will upload all local entries to Supabase. Proceed?')) {
-      try {
-        let localEntries = await getEntriesFromDB();
-        if (!localEntries || localEntries.length === 0) {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) localEntries = JSON.parse(saved);
-        }
-        
-        if (!localEntries || localEntries.length === 0) {
-          alert('No local entries found to migrate!');
-          return;
-        }
-
-        // Fetch what is ACTUALLY in Supabase right now
-        const dbEntries = await db.getFriendEntries();
-        let count = 0;
-        for (const entry of localEntries) {
-          // Check if it already exists IN SUPABASE
-          const exists = dbEntries.find(e => e.id === entry.id);
-          if (!exists) {
-            await db.createFriendEntry(entry);
-            count++;
-          }
-        }
-        alert(`Successfully migrated ${count} new entries to Supabase! Refreshing...`);
-        window.location.reload();
-      } catch (e) {
-        console.error('Migration failed', e);
-        alert('Migration failed. Check console.');
-      }
-    }
   };
 
   const handleEdit = (entry: FriendEntry, e: React.MouseEvent) => {
@@ -489,11 +456,6 @@ const CircleOfFriends: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            {isAdmin && entries.length > 0 && (
-              <button type="button" onClick={migrateLocalDataToCloud} className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 px-4 py-4 text-sm bg-amber-500 hover:bg-amber-600 text-white shadow-xl shadow-amber-500/20 shrink-0 group z-10 relative cursor-pointer">
-                Migrate Local Data
-              </button>
-            )}
             {isAdmin && (
               <button type="button" onClick={handleOpenModal} className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 px-8 py-4 text-lg bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 shrink-0 group z-10 relative cursor-pointer">
                 <PlusCircle className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
