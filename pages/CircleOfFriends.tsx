@@ -380,8 +380,6 @@ const CircleOfFriends: React.FC = () => {
     }
   };
 
-  };
-
   const handleEdit = (entry: FriendEntry, e: React.MouseEvent) => {
     e.stopPropagation();
     setFormData({
