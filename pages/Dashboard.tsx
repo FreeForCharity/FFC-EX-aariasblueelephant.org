@@ -862,6 +862,20 @@ const Dashboard: React.FC = () => {
                                                 onChange={e => setEditFormData({...editFormData, mediaLink: e.target.value})}
                                             />
                                         </div>
+                                        <div className="pt-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Type</label>
+                                            <select 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                value={editFormData.type || 'Event'}
+                                                onChange={e => setEditFormData({...editFormData, type: e.target.value as any})}
+                                            >
+                                                <option value="Class">Class</option>
+                                                <option value="Event">Event</option>
+                                                <option value="Fundraiser">Fundraiser</option>
+                                                <option value="Outreach">Outreach</option>
+                                                <option value="Advocacy">Advocacy</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
