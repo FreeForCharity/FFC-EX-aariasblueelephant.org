@@ -570,7 +570,11 @@ const Dashboard: React.FC = () => {
 
     const handleAddEventSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const result = await addEvent(editFormData as any);
+        const payload = {
+            ...editFormData,
+            type: editFormData.type || 'Event'
+        };
+        const result = await addEvent(payload as any);
         if (result.success) {
             setIsAddingEvent(false);
             setEditFormData({});
@@ -593,7 +597,7 @@ const Dashboard: React.FC = () => {
                         onClick={() => {
                             setIsAddingEvent(!isAddingEvent);
                             setEditingEventId(null);
-                            setEditFormData({ hours: 1 });
+                            setEditFormData({ hours: 1, type: 'Event' });
                         }}
                     >
                         {isAddingEvent ? "Cancel" : "Add New Event"}
