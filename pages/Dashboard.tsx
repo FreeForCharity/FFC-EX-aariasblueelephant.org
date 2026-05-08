@@ -116,6 +116,7 @@ const Dashboard: React.FC = () => {
     const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
     const [testimonialEditForm, setTestimonialEditForm] = useState<Partial<TestimonialType>>({});
     const [albumUrlInput, setAlbumUrlInput] = useState(mediaAlbumUrl || '');
+    const [albumUrlSaved, setAlbumUrlSaved] = useState(false);
 
     // Sync input with context
     useEffect(() => {
@@ -1348,10 +1349,16 @@ const Dashboard: React.FC = () => {
                     <Button 
                         onClick={async () => {
                             const result = await updateMediaAlbumUrl(albumUrlInput);
-                            if (!result.success) setAppError(result.error || "Failed to update album URL");
+                            if (!result.success) {
+                                setAppError(result.error || "Failed to update album URL");
+                            } else {
+                                setAlbumUrlSaved(true);
+                                setTimeout(() => setAlbumUrlSaved(false), 3000);
+                            }
                         }}
+                        className={albumUrlSaved ? "bg-green-600 hover:bg-green-700 border-green-600" : ""}
                     >
-                        Save Configuration
+                        {albumUrlSaved ? "Saved Successfully!" : "Save Configuration"}
                     </Button>
                 </div>
             </div>
