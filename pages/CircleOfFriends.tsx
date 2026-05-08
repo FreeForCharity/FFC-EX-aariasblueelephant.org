@@ -540,7 +540,7 @@ const CircleOfFriends: React.FC = () => {
             <div className="flex items-center gap-4 mb-10">
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest px-4">
-                Student Stories & Inclusion Visions
+                Voices of the Herd: Student Inclusion Visions
               </h2>
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
             </div>

@@ -82,7 +82,7 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
     { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: 'Voices of the Herd', path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
+    { name: 'Circle of Friends', path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
     { name: 'Events', path: '/events', icon: Stars, color: '#8b5cf6' },
     { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
     { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
