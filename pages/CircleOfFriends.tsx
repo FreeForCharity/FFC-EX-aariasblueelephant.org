@@ -449,9 +449,6 @@ const CircleOfFriends: React.FC = () => {
               <Users className="h-10 w-10 text-sky-500" />
               <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Voices of the Herd: Student Inclusion Visions</h1>
             </div>
-            <p className="text-lg text-slate-600 dark:text-slate-400 font-medium italic">
-              A collection of incredible ideas, actions, and stories from students making a difference in our community.
-            </p>
           </div>
           <div className="flex gap-3">
             {isAdmin && (
