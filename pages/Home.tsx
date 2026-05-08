@@ -438,7 +438,9 @@ const Home: React.FC = () => {
                 isOpen={lightboxOpen} 
                 onClose={() => setLightboxOpen(false)} 
                 images={albumImages} 
-                initialIndex={lightboxIndex} 
+                currentIndex={lightboxIndex}
+                onNext={() => setLightboxIndex((prev) => (prev + 1) % albumImages.length)}
+                onPrev={() => setLightboxIndex((prev) => (prev - 1 + albumImages.length) % albumImages.length)}
             />
         </div>
     );
