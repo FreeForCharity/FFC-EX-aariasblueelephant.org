@@ -550,25 +550,6 @@ const CircleOfFriends: React.FC = () => {
           </div>
         </div>
 
-        {/* General Submissions Section */}
-        {generalEntries.length > 0 && (
-          <div className="mt-20">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-              <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest px-4">
-                Voices of the Herd: Student Inclusion Visions
-              </h2>
-              <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {generalEntries.map(entry => (
-                <EntryCardItem key={entry.id} entry={entry} isExpanded={expandedCards.includes(entry.id)} onToggle={toggleCard} onEdit={handleEdit} onDelete={handleDelete} onMediaClick={(imgs, idx) => setSelectedMedia({ images: imgs, index: idx })} isAdmin={isAdmin} />
-              ))}
-            </div>
-          </div>
-        )}
-
       </div>
 
       {/* Submission Modal */}
