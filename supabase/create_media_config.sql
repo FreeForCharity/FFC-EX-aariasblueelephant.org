@@ -9,29 +9,30 @@ CREATE TABLE IF NOT EXISTS app_settings (
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone." ON app_settings;
 CREATE POLICY "Public profiles are viewable by everyone." ON app_settings
     FOR SELECT USING (true);
 
--- Allow admins to insert/update
+-- Allow admins to insert/update based on email domain
+DROP POLICY IF EXISTS "Board members can insert app_settings" ON app_settings;
 CREATE POLICY "Board members can insert app_settings" ON app_settings
     FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM profiles
-            WHERE profiles.id = auth.uid()
-            AND profiles.role = 'board'
-        )
+        auth.email() IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
+        OR auth.email() LIKE '%@aariasblueelephant.org'
     );
 
+DROP POLICY IF EXISTS "Board members can update app_settings" ON app_settings;
 CREATE POLICY "Board members can update app_settings" ON app_settings
     FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM profiles
-            WHERE profiles.id = auth.uid()
-            AND profiles.role = 'board'
-        )
+        auth.email() IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
+        OR auth.email() LIKE '%@aariasblueelephant.org'
     );
 
--- Insert initial empty or placeholder config
+-- Insert initial placeholder config
 INSERT INTO app_settings (key, value)
 VALUES ('google_photos_album_url', '')
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO app_settings (key, value)
+VALUES ('carousel_mode', 'events')
 ON CONFLICT (key) DO NOTHING;

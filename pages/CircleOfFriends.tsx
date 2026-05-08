@@ -525,12 +525,22 @@ const CircleOfFriends: React.FC = () => {
 
         {/* Entries Section */}
         <div className="mt-8">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest px-4">
-              Voices of the Herd: Student Inclusion Visions
-            </h2>
-            <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+          <div className="flex flex-col items-center mb-16">
+            <div className="flex items-center gap-6 mb-4">
+              <div className="h-24 w-24 shrink-0 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-800/50 shadow-sm border border-slate-100 dark:border-slate-800 p-2">
+                <img src="/assets/elephants/elephant_herd_1778240839067.png" alt="Elephant Herd" className="h-full w-full object-contain mix-blend-multiply dark:mix-blend-normal" />
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                Voices of the Herd
+              </h2>
+            </div>
+            <div className="flex items-center gap-4 w-full">
+              <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+              <span className="text-sm font-black text-sky-600 dark:text-sky-400 uppercase tracking-[0.2em] px-4 whitespace-nowrap">
+                Student Inclusion Visions
+              </span>
+              <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
