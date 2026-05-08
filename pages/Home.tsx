@@ -107,7 +107,10 @@ const Home: React.FC = () => {
             isRealEvent: true
         }));
 
-    const allEvents = carouselMode === 'media' && albumImages.length > 0 
+    // Select the cards to show in the carousel
+    // If in media mode, we prioritize album images, but ONLY if we have them.
+    // If albumImages is empty (still fetching or failed), we fallback to events so the user doesn't see a grey box.
+    const allEvents = (carouselMode === 'media' && albumImages.length > 0)
         ? albumImages.map((img, i) => ({
             id: `media-${i}`,
             title: 'Media Outreach',
