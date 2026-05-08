@@ -208,15 +208,28 @@ export default function CardStack({
 }
 
 function CardImage({ card, showInfo, priority }: { card: Card, showInfo: boolean, priority?: boolean }) {
+    const isMedia = !card.isRealEvent && !card.dbCoords;
     return (
         <>
+            {/* Blurred background fill for media photos (prevents ugly grey bars) */}
+            {isMedia && (
+                <div
+                    className="absolute inset-0 scale-110"
+                    style={{
+                        backgroundImage: `url(${card.src})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'blur(18px) brightness(0.4)',
+                    }}
+                />
+            )}
             {card.dbCoords ? (
                 <ResilientImage
                     id={card.dbCoords.id}
                     table={card.dbCoords.table}
                     column={card.dbCoords.column}
                     alt={card.alt}
-                    className="w-full h-full object-cover pointer-events-none select-none"
+                    className="w-full h-full object-cover pointer-events-none select-none relative z-10"
                     fallbackImage={card.src}
                 />
             ) : (
@@ -224,16 +237,17 @@ function CardImage({ card, showInfo, priority }: { card: Card, showInfo: boolean
                     src={card.src}
                     alt={card.alt}
                     loading={priority ? "eager" : "lazy"}
-                    className="w-full h-full object-cover pointer-events-none select-none"
+                    className={`w-full h-full pointer-events-none select-none relative z-10 ${
+                        isMedia ? 'object-contain' : 'object-cover'
+                    }`}
                     draggable={false}
                 />
             )}
             {/* Dark gradient overlay for text legibility */}
-            <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${showInfo ? 'opacity-100' : 'opacity-0'}`} />
+            <div className={`absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/10 to-transparent transition-opacity duration-300 ${showInfo ? 'opacity-100' : 'opacity-0'}`} />
             
-            {/* Show Info text even when not hovered but slightly more subtle if not hovered */}
             <motion.div
-                className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white"
+                className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white z-30"
                 initial={false}
                 animate={{ 
                     opacity: showInfo ? 1 : 0.8,
