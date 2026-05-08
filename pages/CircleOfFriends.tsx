@@ -447,9 +447,9 @@ const CircleOfFriends: React.FC = () => {
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-2">
               <Users className="h-10 w-10 text-sky-500" />
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Circle of Friends</h1>
+              <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Voices of the Herd: Student Inclusion Visions</h1>
             </div>
-            <p className="text-lg text-slate-600 dark:text-slate-400 font-medium">
+            <p className="text-lg text-slate-600 dark:text-slate-400 font-medium italic">
               A collection of incredible ideas, actions, and stories from students making a difference in our community.
             </p>
           </div>
@@ -540,7 +540,7 @@ const CircleOfFriends: React.FC = () => {
             <div className="flex items-center gap-4 mb-10">
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest px-4">
-                Community Ideas
+                Student Stories & Inclusion Visions
               </h2>
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
             </div>
