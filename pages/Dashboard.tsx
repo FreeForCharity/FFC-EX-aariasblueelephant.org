@@ -1337,9 +1337,14 @@ const Dashboard: React.FC = () => {
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">
                         Media Photos — Paste Direct Image URLs
                     </label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 ml-1">
-                        In Google Photos, open each photo → click the <strong>⋮ menu → "Copy Link"</strong> or right-click image → <strong>"Copy image address"</strong>. Paste one URL per line below.
-                    </p>
+                    <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-lg text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                        <p className="font-bold">⚠️ Important: You need direct image URLs, not sharing links.</p>
+                        <p>1. Open your Google Photos sharing link in a browser.</p>
+                        <p>2. The photo opens full-screen.</p>
+                        <p>3. <strong>Right-click directly on the photo</strong> → <strong>"Copy image address"</strong> (Chrome) or <strong>"Copy Image URL"</strong> (Safari).</p>
+                        <p>4. The URL will start with <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">https://lh3.googleusercontent.com/...</code> — paste that below.</p>
+                        <p>5. Repeat for each photo, one URL per line.</p>
+                    </div>
                     <textarea
                         rows={8}
                         className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan transition-all font-mono"
