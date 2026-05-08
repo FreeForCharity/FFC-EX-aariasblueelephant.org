@@ -11,7 +11,6 @@ import StickerIcon from '../components/StickerIcon';
 import CardStack from '../components/ui/card-stack';
 import TestimonialSection from '../components/TestimonialSection';
 import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
-import { fetchGooglePhotosAlbum } from '../lib/utils/googlePhotos';
 import MediaLightbox from '../components/MediaLightbox';
 
 // Move static data outside to allow random initialization
@@ -71,19 +70,18 @@ const Home: React.FC = () => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
     
-    // Fetch Media Outreach images
+    // Parse Media Outreach images — stored as newline-separated direct image URLs
     useEffect(() => {
-        if (mediaAlbumUrl) {
-            setIsFetchingMedia(true);
-            fetchGooglePhotosAlbum(mediaAlbumUrl).then(images => {
-                if (images && images.length > 0) {
-                    setAlbumImages(images);
-                }
-            }).catch(console.error).finally(() => {
-                setIsFetchingMedia(false);
-            });
+        if (carouselMode === 'media' && mediaAlbumUrl) {
+            const urls = mediaAlbumUrl
+                .split('\n')
+                .map(u => u.trim())
+                .filter(u => u.startsWith('http'));
+            setAlbumImages(urls);
+        } else {
+            setAlbumImages([]);
         }
-    }, [mediaAlbumUrl]);
+    }, [mediaAlbumUrl, carouselMode]);
 
     const upcomingEvents = dbEvents
         .filter((e) => {
@@ -241,7 +239,7 @@ const Home: React.FC = () => {
 
                             <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[1.2] xl:aspect-[1.1] group border-4 border-white/90 dark:border-slate-800/90 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900 w-full lg:max-w-[500px] xl:max-w-[650px]">
                                 <CardStack 
-                                    isSkeleton={isFetchingMedia || (isLoading && dbEvents.length === 0)}
+                                    isSkeleton={isLoading && dbEvents.length === 0}
                                     onCardClick={(card) => {
                                         if (carouselMode === 'media') {
                                             const idx = albumImages.findIndex(img => img === card.src);

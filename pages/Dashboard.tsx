@@ -1331,26 +1331,32 @@ const Dashboard: React.FC = () => {
                     </button>
                 </div>
             </div>
-            
-            <div className="space-y-6">
+
+            <div className="space-y-4">
                 <div>
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">
-                        Google Photos Album URL
+                        Media Photos — Paste Direct Image URLs
                     </label>
-                    <input 
-                        type="url"
-                        className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan transition-all"
-                        placeholder="https://photos.app.goo.gl/..."
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 ml-1">
+                        In Google Photos, open each photo → click the <strong>⋮ menu → "Copy Link"</strong> or right-click image → <strong>"Copy image address"</strong>. Paste one URL per line below.
+                    </p>
+                    <textarea
+                        rows={8}
+                        className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan transition-all font-mono"
+                        placeholder={`https://lh3.googleusercontent.com/...\nhttps://lh3.googleusercontent.com/...\nhttps://...`}
                         value={albumUrlInput}
                         onChange={e => setAlbumUrlInput(e.target.value)}
                     />
+                    <p className="text-xs text-slate-400 mt-1 ml-1">
+                        {albumUrlInput.split('\n').filter(u => u.trim().startsWith('http')).length} image URL(s) entered
+                    </p>
                 </div>
                 <div className="flex gap-3">
                     <Button 
                         onClick={async () => {
                             const result = await updateMediaAlbumUrl(albumUrlInput);
                             if (!result.success) {
-                                setAppError(result.error || "Failed to update album URL");
+                                setAppError(result.error || "Failed to update media URLs");
                             } else {
                                 setAlbumUrlSaved(true);
                                 setTimeout(() => setAlbumUrlSaved(false), 3000);
@@ -1358,7 +1364,7 @@ const Dashboard: React.FC = () => {
                         }}
                         className={albumUrlSaved ? "bg-green-600 hover:bg-green-700 border-green-600" : ""}
                     >
-                        {albumUrlSaved ? "Saved Successfully!" : "Save Configuration"}
+                        {albumUrlSaved ? "Saved Successfully! ✓" : "Save Configuration"}
                     </Button>
                 </div>
             </div>
