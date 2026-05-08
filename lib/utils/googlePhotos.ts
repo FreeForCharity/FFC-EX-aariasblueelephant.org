@@ -20,24 +20,26 @@ export async function fetchGooglePhotosAlbum(albumUrl: string): Promise<string[]
 
     // Google Photos stores image data inside script tags.
     // We look for high-quality image URLs starting with lh3.googleusercontent.com
-    // Specifically, we look for URLs that contain the 'pw' (photos web) marker or standard content markers
-    const regex = /"(https:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_]+)"/g;
+    // We also look for other CDN patterns like photos-fife.googleusercontent.com
+    const regex = /"(https:\/\/[a-z0-9]+\.googleusercontent\.com\/[a-zA-Z0-9\-_]+)"/g;
     
     const matches = Array.from(html.matchAll(regex));
     
     // We get a lot of duplicates and small UI icons. 
-    // Usually the actual photos are the ones that appear frequently or have specific lengths,
-    // but the easiest way is to filter unique ones.
     const rawUrls = [...new Set(matches.map((m: any) => m[1]))] as string[];
     
-    // We want to request high quality versions. Appending '=w1920-h1080-no' forces high resolution.
-    // Also, we want to filter out tiny profile icons or generic Google UI assets if any leak through.
-    // Real photos typically have long IDs.
+    // Filtering logic:
+    // 1. URLs must be long (real photos have long IDs)
+    // 2. Filter out common UI assets or profile icons
     const validPhotoUrls = rawUrls
-      .filter(url => url.length > 50) 
+      .filter(url => {
+        const isProfileIcon = url.includes('placeholder') || url.includes('profile');
+        return url.length > 80 && !isProfileIcon;
+      })
       .map(url => `${url}=w1920-h1080-no`);
 
-    return validPhotoUrls;
+    // Only take the first 25-30 to keep it performant
+    return validPhotoUrls.slice(0, 30);
 
   } catch (error) {
     console.error("Error fetching Google Photos:", error);
