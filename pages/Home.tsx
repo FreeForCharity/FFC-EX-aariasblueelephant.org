@@ -11,6 +11,8 @@ import StickerIcon from '../components/StickerIcon';
 import CardStack from '../components/ui/card-stack';
 import TestimonialSection from '../components/TestimonialSection';
 import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
+import { fetchGooglePhotosAlbum } from '../lib/utils/googlePhotos';
+import MediaLightbox from '../components/MediaLightbox';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -60,8 +62,28 @@ const Home: React.FC = () => {
     // Animations play on full refresh (isAppInitialLoad is true)
     // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
     const shouldAnimate = useRef(isAppInitialLoad).current;
-    const { events: dbEvents, isLoading } = useData();
+    const { events: dbEvents, isLoading, mediaAlbumUrl, carouselMode } = useData();
     const navigate = useNavigate();
+    
+    // Media Album State
+    const [albumImages, setAlbumImages] = useState<string[]>([]);
+    const [isFetchingMedia, setIsFetchingMedia] = useState(false);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    
+    // Fetch Media Outreach images
+    useEffect(() => {
+        if (mediaAlbumUrl) {
+            setIsFetchingMedia(true);
+            fetchGooglePhotosAlbum(mediaAlbumUrl).then(images => {
+                if (images && images.length > 0) {
+                    setAlbumImages(images);
+                }
+            }).catch(console.error).finally(() => {
+                setIsFetchingMedia(false);
+            });
+        }
+    }, [mediaAlbumUrl]);
 
     const upcomingEvents = dbEvents
         .filter((e) => {
@@ -85,7 +107,16 @@ const Home: React.FC = () => {
             isRealEvent: true
         }));
 
-    const allEvents = [...upcomingEvents, ...pastEvents];
+    const allEvents = carouselMode === 'media' && albumImages.length > 0 
+        ? albumImages.map((img, i) => ({
+            id: `media-${i}`,
+            title: 'Media Outreach',
+            date: 'Community Highlight',
+            image: img,
+            description: 'Aaria\'s Blue Elephant Impact',
+            isRealEvent: false
+        }))
+        : [...upcomingEvents, ...pastEvents];
 
     const a = (cls: string) => shouldAnimate ? cls : '';
 
@@ -207,7 +238,16 @@ const Home: React.FC = () => {
 
                             <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/10] lg:aspect-[1.2] xl:aspect-[1.1] group border-4 border-white/90 dark:border-slate-800/90 sticker-shadow hover:sticker-shadow-purple transition-all duration-500 bg-slate-100 dark:bg-slate-900 w-full lg:max-w-[500px] xl:max-w-[650px]">
                                 <CardStack 
-                                    isSkeleton={isLoading && dbEvents.length === 0}
+                                    isSkeleton={isFetchingMedia || (isLoading && dbEvents.length === 0)}
+                                    onCardClick={(card) => {
+                                        if (carouselMode === 'media') {
+                                            const idx = albumImages.findIndex(img => img === card.src);
+                                            if (idx !== -1) {
+                                                setLightboxIndex(idx);
+                                                setLightboxOpen(true);
+                                            }
+                                        }
+                                    }}
                                     initialCards={
                                         allEvents.map((evt) => ({
                                             id: evt.id,
@@ -392,6 +432,14 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </section>
+            
+            {/* Media Lightbox */}
+            <MediaLightbox 
+                isOpen={lightboxOpen} 
+                onClose={() => setLightboxOpen(false)} 
+                images={albumImages} 
+                initialIndex={lightboxIndex} 
+            />
         </div>
     );
 };

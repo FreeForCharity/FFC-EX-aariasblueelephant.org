@@ -23,11 +23,13 @@ export interface Card {
 interface CardStackProps {
   initialCards: Card[];
   isSkeleton?: boolean;
+  onCardClick?: (card: Card) => void;
 }
 
 export default function CardStack({ 
     initialCards: propCards,
-    isSkeleton
+    isSkeleton,
+    onCardClick
 }: CardStackProps) {
   const [cards, setCards] = useState<Card[]>(propCards);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -173,7 +175,14 @@ export default function CardStack({
                         onHoverEnd={() => setShowInfo(false)}
                     >
                         {/* Wrapper for the actual card - thinner border, no extra shadows to avoid double shadow */}
-                        <div className={`w-full h-full relative rounded-3xl overflow-hidden border-2 border-white/50 dark:border-slate-800/50 cursor-grab active:cursor-grabbing transition-transform duration-300 ${isFront && 'hover:scale-[1.01]'}`}>
+                        <div 
+                            className={`w-full h-full relative rounded-3xl overflow-hidden border-2 border-white/50 dark:border-slate-800/50 cursor-grab active:cursor-grabbing transition-transform duration-300 ${isFront && 'hover:scale-[1.01]'}`}
+                            onClick={() => {
+                                if (isFront && onCardClick && !card.isRealEvent) {
+                                    onCardClick(card);
+                                }
+                            }}
+                        >
                             {isFront && card.isRealEvent ? (
                                 <Link to={`/events/${card.id}`} className="block w-full h-full">
                                     <CardImage card={card} showInfo={showInfo} priority={isFront} />

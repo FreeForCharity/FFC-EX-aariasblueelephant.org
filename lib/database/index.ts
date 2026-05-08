@@ -124,6 +124,26 @@ class ResilientDatabase implements IDatabaseProvider {
   async createFriendEntry(entry: Partial<any>) { return this.provider.createFriendEntry(entry); }
   async updateFriendEntry(id: string, data: Partial<any>) { return this.provider.updateFriendEntry(id, data); }
   async deleteFriendEntry(id: string) { return this.provider.deleteFriendEntry(id); }
+
+  // App Settings
+  async getMediaAlbumUrl() {
+    try {
+      return await this.provider.getMediaAlbumUrl();
+    } catch (e) {
+      return '';
+    }
+  }
+  async setMediaAlbumUrl(url: string) { return this.provider.setMediaAlbumUrl(url); }
+
+  async getCarouselMode(): Promise<'events' | 'media'> {
+    try {
+      return await this.provider.getCarouselMode();
+    } catch (e) {
+      return 'events';
+    }
+  }
+
+  async setCarouselMode(mode: 'events' | 'media') { return this.provider.setCarouselMode(mode); }
 }
 
 export const db = new ResilientDatabase();

@@ -373,6 +373,12 @@ export class AppwriteProvider implements IDatabaseProvider {
   async updateFriendEntry(id: string, data: Partial<any>) { return; }
   async deleteFriendEntry(id: string) { return; }
 
+  // App Settings (Media Album)
+  async getMediaAlbumUrl(): Promise<string | null> { return null; }
+  async setMediaAlbumUrl(url: string): Promise<void> { return; }
+  async getCarouselMode(): Promise<'events' | 'media'> { return 'events'; }
+  async setCarouselMode(mode: 'events' | 'media'): Promise<void> { return; }
+
   // JWT Support for Incognito/Safari resilience
   setJWT(jwt: string | null): void {
     if (jwt) {

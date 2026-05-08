@@ -29,6 +29,10 @@ interface DataContextType {
   getUserDonation: (email: string) => number;
   fetchEventDetails: (id: string) => Promise<Event | null>;
   fetchTestimonialMedia: (id: string) => Promise<string | null>;
+  mediaAlbumUrl: string;
+  updateMediaAlbumUrl: (url: string) => Promise<MutationResult>;
+  carouselMode: 'events' | 'media';
+  updateCarouselMode: (mode: 'events' | 'media') => Promise<MutationResult>;
   isLoading: boolean;
   hasInitialFetch: boolean;
   isNetworkBlocked: boolean;
@@ -41,6 +45,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
+  const [mediaAlbumUrl, setMediaAlbumUrl] = useState<string>('');
+  const [carouselMode, setCarouselMode] = useState<'events' | 'media'>('events');
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
   const [isNetworkBlocked, setIsNetworkBlocked] = useState(false);
@@ -144,10 +150,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const [apps, regs] = await Promise.all([userAppsPromise, userRegsPromise]);
 
+        const albumUrl = await db.getMediaAlbumUrl();
+        const mode = await db.getCarouselMode();
+
         setEvents(evts);
         setTestimonials(tests);
         setVolunteerApplications(apps);
         setEventRegistrations(regs);
+        setMediaAlbumUrl(albumUrl);
+        setCarouselMode(mode);
 
       } catch (error) {
         console.error("Fetch data error. Falling back to static offline resilience data:", error);
@@ -335,6 +346,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 0;
   };
 
+  const updateMediaAlbumUrl = async (url: string): Promise<MutationResult> => {
+    try {
+      await db.setMediaAlbumUrl(url);
+      setMediaAlbumUrl(url);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateCarouselMode = async (mode: 'events' | 'media'): Promise<MutationResult> => {
+    try {
+      await db.setCarouselMode(mode);
+      setCarouselMode(mode);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <DataContext.Provider value={{
       events,
@@ -358,6 +389,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getUserDonation,
       fetchEventDetails,
       fetchTestimonialMedia,
+      mediaAlbumUrl,
+      updateMediaAlbumUrl,
+      carouselMode,
+      updateCarouselMode,
       isLoading,
       hasInitialFetch,
       isNetworkBlocked

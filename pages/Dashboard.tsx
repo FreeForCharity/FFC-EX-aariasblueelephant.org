@@ -61,6 +61,7 @@ type ViewState =
     | 'manage-registrations' 
     | 'volunteers' 
     | 'manage-testimonials' 
+    | 'media-outreach'
     | 'wheel' 
     | 'history' 
     | 'receipts' 
@@ -87,7 +88,11 @@ const Dashboard: React.FC = () => {
         updateEvent,
         deleteEvent,
         addEvent,
-        updateTestimonial
+        updateTestimonial,
+        mediaAlbumUrl,
+        updateMediaAlbumUrl,
+        carouselMode,
+        updateCarouselMode
     } = useData();
     
     const navigate = useNavigate();
@@ -110,6 +115,12 @@ const Dashboard: React.FC = () => {
     const [newDuration, setNewDuration] = useState<string>('');
     const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
     const [testimonialEditForm, setTestimonialEditForm] = useState<Partial<TestimonialType>>({});
+    const [albumUrlInput, setAlbumUrlInput] = useState(mediaAlbumUrl || '');
+
+    // Sync input with context
+    useEffect(() => {
+        setAlbumUrlInput(mediaAlbumUrl);
+    }, [mediaAlbumUrl]);
     
     // Testimonial Form State (Sync with About.tsx)
     const [newStory, setNewStory] = useState({
@@ -364,6 +375,7 @@ const Dashboard: React.FC = () => {
         
         // Management View (Board Only)
         { id: 'events', label: 'Manage Events', icon: Calendar, role: 'board' },
+        { id: 'media-outreach', label: 'Media Outreach', icon: ImageIcon, role: 'board' },
         { id: 'manage-registrations', label: 'Manage Registrations', icon: Users, role: 'board' },
         { id: 'volunteers', label: 'Review Volunteers', icon: Heart, role: 'board' },
         { id: 'manage-testimonials', label: 'Manage Stories', icon: MessageSquare, role: 'board' },
@@ -1267,6 +1279,84 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
+    const renderMediaOutreachSection = () => (
+        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg max-w-3xl">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Media Outreach Configuration</h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+                Provide a public Google Photos Album URL to display dynamic photos on the landing page and Media gallery. 
+                This will replace the standard events carousel when "Media Outreach" mode is selected.
+            </p>
+
+            <div className="mb-8 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 ml-1">
+                    Carousel Display Mode
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const result = await updateCarouselMode('events');
+                            if (!result.success) setAppError(result.error || "Failed to update carousel mode");
+                        }}
+                        className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                            carouselMode === 'events'
+                                ? 'border-brand-purple bg-brand-purple/5'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-slate-900 dark:text-white">Events Carousel</span>
+                            {carouselMode === 'events' && <CheckCircle2 className="h-5 w-5 text-brand-purple" />}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Display upcoming and past events from the database.</p>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const result = await updateCarouselMode('media');
+                            if (!result.success) setAppError(result.error || "Failed to update carousel mode");
+                        }}
+                        className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                            carouselMode === 'media'
+                                ? 'border-brand-cyan bg-brand-cyan/5'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-slate-900 dark:text-white">Media Outreach</span>
+                            {carouselMode === 'media' && <CheckCircle2 className="h-5 w-5 text-brand-cyan" />}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Display photos from the Google Photos album below.</p>
+                    </button>
+                </div>
+            </div>
+            
+            <div className="space-y-6">
+                <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">
+                        Google Photos Album URL
+                    </label>
+                    <input 
+                        type="url"
+                        className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-brand-cyan transition-all"
+                        placeholder="https://photos.app.goo.gl/..."
+                        value={albumUrlInput}
+                        onChange={e => setAlbumUrlInput(e.target.value)}
+                    />
+                </div>
+                <div className="flex gap-3">
+                    <Button 
+                        onClick={async () => {
+                            const result = await updateMediaAlbumUrl(albumUrlInput);
+                            if (!result.success) setAppError(result.error || "Failed to update album URL");
+                        }}
+                    >
+                        Save Configuration
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
 
     const renderHistorySection = () => (
         <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
@@ -1928,6 +2018,7 @@ const Dashboard: React.FC = () => {
             case 'manage-registrations': return renderManageRegistrationsSection();
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
+            case 'media-outreach': return renderMediaOutreachSection();
             case 'wheel': return renderWheelSection();
 
             case 'history': return renderHistorySection();

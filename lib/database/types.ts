@@ -61,4 +61,10 @@ export interface IDatabaseProvider {
   createFriendEntry(entry: Partial<FriendEntry>): Promise<void>;
   updateFriendEntry(id: string, data: Partial<FriendEntry>): Promise<void>;
   deleteFriendEntry(id: string): Promise<void>;
+
+  // App Settings
+  getMediaAlbumUrl(): Promise<string>;
+  setMediaAlbumUrl(url: string): Promise<void>;
+  getCarouselMode(): Promise<'events' | 'media'>;
+  setCarouselMode(mode: 'events' | 'media'): Promise<void>;
 }

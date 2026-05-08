@@ -331,4 +331,27 @@ export class SupabaseProvider implements IDatabaseProvider {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token || null;
   }
+
+  // App Settings
+  async getMediaAlbumUrl(): Promise<string> {
+    const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'google_photos_album_url').single();
+    if (error) return '';
+    return data?.value || '';
+  }
+
+  async setMediaAlbumUrl(url: string): Promise<void> {
+    const { error } = await supabase.from('app_settings').upsert({ key: 'google_photos_album_url', value: url });
+    if (error) throw error;
+  }
+
+  async getCarouselMode(): Promise<'events' | 'media'> {
+    const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'carousel_mode').single();
+    if (error || !data) return 'events';
+    return (data.value === 'media' ? 'media' : 'events') as 'events' | 'media';
+  }
+
+  async setCarouselMode(mode: 'events' | 'media'): Promise<void> {
+    const { error } = await supabase.from('app_settings').upsert({ key: 'carousel_mode', value: mode });
+    if (error) throw error;
+  }
 }
