@@ -452,6 +452,77 @@ const CircleOfFriends: React.FC = () => {
           )}
         </div>
 
+        {/* Awards Accordion Section */}
+        <div className="space-y-6 mb-20">
+          <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-8 flex items-center gap-3">
+            <Stars className="h-6 w-6 text-amber-500" />
+            Featured Awards
+          </h2>
+          
+          <div className="grid grid-cols-1 gap-4">
+            {AWARDS.map((award) => {
+              const awardSubs = awardEntries[award.title] || [];
+              const isExpanded = expandedCategories.includes(award.id);
+              
+              return (
+                <div key={award.id} className={`rounded-3xl border transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl ${award.border}` : 'border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                  {/* Accordion Header */}
+                  <button 
+                    type="button"
+                    onClick={() => toggleCategory(award.id)}
+                    className={`w-full p-6 sm:p-8 flex items-center justify-between transition-colors ${isExpanded ? award.bg : 'bg-white dark:bg-slate-900'}`}
+                  >
+                    <div className="flex items-center gap-6 text-left">
+                      <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 shadow-inner bg-white dark:bg-slate-800 ${award.color}`}>
+                        <award.icon className="h-8 w-8" />
+                      </div>
+                      <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-800/50 shadow-sm border border-slate-100 dark:border-slate-800">
+                        <img src={award.image} alt={award.title} className="h-full w-full object-contain p-1 mix-blend-multiply dark:mix-blend-normal" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{award.title}</h3>
+                        <p className={`text-sm font-bold uppercase tracking-widest mt-1 ${award.color}`}>{award.subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {awardSubs.length > 0 && (
+                        <span className="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/50 dark:bg-slate-950/50 text-slate-600 dark:text-slate-300">
+                          {awardSubs.length} Winner{awardSubs.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      <div className={`p-2 rounded-full transition-transform duration-300 bg-white dark:bg-slate-800 shadow-sm ${isExpanded ? 'rotate-180' : ''}`}>
+                        <ChevronDown className="h-5 w-5 text-slate-400" />
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Accordion Body */}
+                  <div 
+                    className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className={`p-6 sm:p-8 border-t ${award.border} bg-slate-50/50 dark:bg-slate-900/50`}>
+                        {awardSubs.length > 0 ? (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            {awardSubs.map(entry => (
+                              <EntryCardItem key={entry.id} entry={entry} isExpanded={expandedCards.includes(entry.id)} onToggle={toggleCard} onEdit={handleEdit} onDelete={handleDelete} onMediaClick={(imgs, idx) => setSelectedMedia({ images: imgs, index: idx })} isAdmin={isAdmin} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-12">
+                            <award.icon className={`h-12 w-12 mx-auto mb-4 opacity-20 ${award.color}`} />
+                            <p className="text-slate-500 dark:text-slate-400 font-medium italic">No entries for this award yet.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Entries Section */}
         <div className="mt-8">
           <div className="flex items-center gap-4 mb-10">
@@ -463,8 +534,7 @@ const CircleOfFriends: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* Combine Award Entries and General Entries if needed, or just show all in one grid */}
-            {[...Object.values(awardEntries).flat(), ...generalEntries].sort(sortByPriority).map(entry => (
+            {generalEntries.map(entry => (
               <EntryCardItem key={entry.id} entry={entry} isExpanded={expandedCards.includes(entry.id)} onToggle={toggleCard} onEdit={handleEdit} onDelete={handleDelete} onMediaClick={(imgs, idx) => setSelectedMedia({ images: imgs, index: idx })} isAdmin={isAdmin} />
             ))}
           </div>
