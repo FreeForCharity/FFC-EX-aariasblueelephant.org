@@ -151,6 +151,7 @@ const App: React.FC = () => {
                 <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />
                 <Route path="/RSVP" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
                 <Route path="/rsvp" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
+                <Route path="/softball" element={<ExternalRedirect url="https://forms.gle/Ec5Y5N3uE7URZeE79" message="Taking you to the Softball form." />} />
               </Routes>
             </Suspense>
           </Layout>
