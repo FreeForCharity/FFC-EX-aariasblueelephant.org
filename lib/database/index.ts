@@ -1,19 +1,29 @@
 import { ACTIVE_DB } from './config';
 import { AppwriteProvider } from './AppwriteProvider';
 import { SupabaseProvider } from './SupabaseProvider';
-import { IDatabaseProvider } from './types';
+import { SimulatedProvider } from './SimulatedProvider';
+import { IDatabaseProvider, Team, SubCoach, Student, CheckIn } from './types';
 import { ALL_EVENTS, STATIC_REGISTRATIONS } from '../../constants';
 import { RESILIENCE_TESTIMONIALS } from '../../data/resilience_data';
 
 class ResilientDatabase implements IDatabaseProvider {
-  private provider: IDatabaseProvider;
+  private realProvider: IDatabaseProvider;
+  private simulatedProvider: IDatabaseProvider;
 
   constructor() {
     if (ACTIVE_DB === 'appwrite') {
-      this.provider = new AppwriteProvider();
+      this.realProvider = new AppwriteProvider();
     } else {
-      this.provider = new SupabaseProvider();
+      this.realProvider = new SupabaseProvider();
     }
+    this.simulatedProvider = new SimulatedProvider();
+  }
+
+  private get provider(): IDatabaseProvider {
+    if (localStorage.getItem('abe_use_simulation') === 'true') {
+      return this.simulatedProvider;
+    }
+    return this.realProvider;
   }
 
   // Auth
@@ -144,6 +154,19 @@ class ResilientDatabase implements IDatabaseProvider {
   }
 
   async setCarouselMode(mode: 'events' | 'media') { return this.provider.setCarouselMode(mode); }
+
+  // Summer Buddy Up
+  async getTeams(userIdOrEmail?: string) { return this.provider.getTeams(userIdOrEmail); }
+  async createTeam(team: Partial<Team>) { return this.provider.createTeam(team); }
+  async updateTeam(id: string, data: Partial<Team>) { return this.provider.updateTeam(id, data); }
+  async getSubCoaches(teamId: string) { return this.provider.getSubCoaches(teamId); }
+  async createSubCoach(coach: Partial<SubCoach>) { return this.provider.createSubCoach(coach); }
+  async updateSubCoach(id: string, data: Partial<SubCoach>) { return this.provider.updateSubCoach(id, data); }
+  async getStudents(teamId: string) { return this.provider.getStudents(teamId); }
+  async createStudent(student: Partial<Student>) { return this.provider.createStudent(student); }
+  async getCheckIns(teamId: string) { return this.provider.getCheckIns(teamId); }
+  async createCheckIn(checkIn: Partial<CheckIn>) { return this.provider.createCheckIn(checkIn); }
+  async getAllTeamsForAdmin() { return this.provider.getAllTeamsForAdmin(); }
 }
 
 export const db = new ResilientDatabase();

@@ -6,7 +6,10 @@ import RichText from '../components/RichText';
 import { db } from '../lib/database';
 import { useAuth } from '../context/AuthContext';
 
-import { FriendEntry } from '../lib/database/types';
+import { FriendEntry, Team } from '../lib/database/types';
+import { SummerBuddyUpRegistration } from '../components/SummerBuddyUpRegistration';
+import { SummerBuddyUpDashboard } from '../components/SummerBuddyUpDashboard';
+import { DevSimulationPanel } from '../components/DevSimulationPanel';
 
 const AWARDS = [
   { id: 'trunk', title: 'The "Trunk of Friendship" Award', subtitle: 'Connecting / Helping', icon: HandHelping, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-200 dark:border-rose-800', image: '/assets/elephants/trunk_friendship_1777051824961.webp' },
@@ -232,7 +235,7 @@ const EntryCardItem = ({
 
 
 const CircleOfFriends: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loginWithGoogle } = useAuth();
   const isAdmin = user?.isBoard || false;
 
   const [entries, setEntries] = useState<FriendEntry[]>([]);
@@ -259,6 +262,102 @@ const CircleOfFriends: React.FC = () => {
     media: [] as string[],
     priority: 23
   });
+
+  // Summer Buddy Up states
+  const [activeTab, setActiveTab] = useState<'voices' | 'summer-buddy-up'>('voices');
+  const [myTeam, setMyTeam] = useState<Team | null>(null);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [adminTeams, setAdminTeams] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(true);
+  const [viewAsCoach, setViewAsCoach] = useState(false);
+
+  const loadMyTeam = async () => {
+    if (!user) {
+      setMyTeam(null);
+      setTeamsLoading(false);
+      return;
+    }
+    try {
+      setTeamsLoading(true);
+      const userEmail = user.email;
+      const userTeams = await db.getTeams(userEmail);
+      if (userTeams && userTeams.length > 0) {
+        setMyTeam(userTeams[0]);
+      } else {
+        setMyTeam(null);
+      }
+    } catch (err) {
+      console.error('Error fetching user team:', err);
+      setMyTeam(null);
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
+
+  const loadAdminTeams = async () => {
+    if (!user || !user.isBoard) {
+      setAdminTeams([]);
+      setAdminLoading(false);
+      return;
+    }
+    try {
+      setAdminLoading(true);
+      const data = await db.getAllTeamsForAdmin();
+      setAdminTeams(data || []);
+    } catch (err) {
+      console.error('Error fetching admin cohorts data:', err);
+      setAdminTeams([]);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'summer-buddy-up') {
+      loadMyTeam();
+      if (user?.isBoard) {
+        loadAdminTeams();
+      }
+    }
+  }, [activeTab, user]);
+
+  const mappedUser = user ? {
+    id: user.id,
+    email: user.email,
+    user_metadata: {
+      full_name: user.name || (user as any).user_metadata?.full_name || ''
+    }
+  } : null;
+
+  const renderCoachPortal = () => {
+    if (!mappedUser) return null;
+
+    if (teamsLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">Loading Cohort Data...</p>
+        </div>
+      );
+    }
+
+    if (!myTeam) {
+      return (
+        <SummerBuddyUpRegistration
+          currentUser={mappedUser}
+          onSuccess={() => loadMyTeam()}
+        />
+      );
+    }
+
+    return (
+      <SummerBuddyUpDashboard
+        team={myTeam}
+        currentUser={mappedUser}
+        onRefreshTeam={loadMyTeam}
+      />
+    );
+  };
 
   // Load from database on mount
   useEffect(() => {
@@ -442,7 +541,36 @@ const CircleOfFriends: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* Simple Action Bar */}
+        {/* Tab Switcher */}
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-inner">
+            <button
+              onClick={() => setActiveTab('voices')}
+              className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer ${
+                activeTab === 'voices'
+                  ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350'
+              }`}
+            >
+              Voices of the Herd
+            </button>
+            <button
+              onClick={() => setActiveTab('summer-buddy-up')}
+              className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer flex items-center gap-2 ${
+                activeTab === 'summer-buddy-up'
+                  ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              Summer Buddy Up
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'voices' ? (
+          <>
+            {/* Simple Action Bar */}
         <div className="flex justify-end mb-12">
           {isAdmin && (
             <button type="button" onClick={handleOpenModal} className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 px-8 py-4 text-lg bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 shrink-0 group z-10 relative cursor-pointer">
@@ -549,6 +677,38 @@ const CircleOfFriends: React.FC = () => {
             ))}
           </div>
         </div>
+        </>
+        ) : (
+          /* Summer Buddy Up Portal */
+          <div className="space-y-12">
+            {!user ? (
+              <SummerBuddyUpPromo onLogin={loginWithGoogle} />
+            ) : user.isBoard ? (
+              <div className="space-y-6">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setViewAsCoach(!viewAsCoach)}
+                    className="inline-flex items-center justify-center rounded-xl font-black uppercase tracking-wider transition duration-200 px-5 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer shadow-sm"
+                  >
+                    {viewAsCoach ? 'Switch to Board View' : 'Switch to Coach View'}
+                  </button>
+                </div>
+                {viewAsCoach ? renderCoachPortal() : (
+                  <SummerBuddyUpAdmin
+                    teams={adminTeams}
+                    loading={adminLoading}
+                    onRefresh={loadAdminTeams}
+                    currentUser={mappedUser}
+                  />
+                )}
+              </div>
+            ) : (
+              renderCoachPortal()
+            )}
+            <LegalDisclaimerFooter />
+          </div>
+        )}
 
       </div>
 
@@ -745,6 +905,355 @@ const CircleOfFriends: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Dev Simulation Panel (only active on localhost) */}
+      <DevSimulationPanel />
+    </div>
+  );
+};
+
+// Guest Promotion view for unauthenticated users
+const SummerBuddyUpPromo: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  return (
+    <div className="max-w-4xl mx-auto py-12 px-6 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/60 dark:border-slate-800 text-slate-700 dark:text-slate-200">
+      <div className="text-center mb-10">
+        <div className="inline-flex p-4 bg-sky-50 dark:bg-sky-950/40 rounded-3xl text-sky-600 dark:text-sky-400 mb-4 shadow-inner">
+          <Users className="h-10 w-10 animate-pulse" />
+        </div>
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+          Summer Buddy Up Cohorts
+        </h2>
+        <p className="text-base text-slate-600 dark:text-slate-350 max-w-2xl mx-auto leading-relaxed">
+          Create an inclusive summer playgroup, log your journey through milestones, and celebrate with physical certificates and awards at our end-of-summer ceremony in Tracy!
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div className="p-6 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex gap-4">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-sky-100 dark:bg-sky-900/35 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
+            1
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Cohort Team Roles</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <strong>Head Coach</strong> registers the cohort. Up to 3 co-parent <strong>Sub-Coaches</strong> join to claim profiles and execute digital consents.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex gap-4">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-amber-100 dark:bg-amber-900/35 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+            2
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">The 3:1 Buddy Ratio</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Enforces structured inclusion. Each group must maintain a minimum 3:1 ratio of Peer Mentors to Inclusion Buddies (Special Education/ND students).
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex gap-4">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-emerald-100 dark:bg-emerald-900/35 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+            3
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Waiver & Consent Gate</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Protecting safety and privacy. Sub-coaches must authenticate via Google to sign liability waivers before logs can be uploaded.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex gap-4">
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-rose-100 dark:bg-rose-900/35 text-rose-600 dark:text-rose-455 flex items-center justify-center font-bold">
+            4
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Physical Award Locking</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Students within LUSD and Tracy Unified school districts are automatically locked to physical attendance at the ceremony to claim their trophies.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center p-8 bg-sky-50 dark:bg-sky-950/30 rounded-2xl border border-sky-100 dark:border-sky-900/35 shadow-inner">
+        <h4 className="font-extrabold text-sky-900 dark:text-sky-300 text-lg mb-2">Ready to buddy up this summer?</h4>
+        <p className="text-sm text-sky-700/80 dark:text-sky-400/80 mb-6 max-w-md mx-auto">
+          Authenticate using Google Auth to start registering your student cohort or access your coach dashboard.
+        </p>
+        <button
+          onClick={onLogin}
+          className="inline-flex items-center justify-center rounded-xl font-black uppercase tracking-wider transition duration-200 px-8 py-3.5 text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 cursor-pointer"
+        >
+          Continue with Google Auth
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Legal transparency footer
+const LegalDisclaimerFooter: React.FC = () => {
+  return (
+    <div className="max-w-4xl mx-auto mt-12 p-6 bg-slate-100/50 dark:bg-slate-900/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 text-center text-xs text-slate-555 dark:text-slate-400 space-y-2.5">
+      <p className="font-bold text-slate-600 dark:text-slate-350">
+        Circle of Friends — Summer Buddy Up • Supporting "Fun without barriers," inclusive play, and compassionate community.
+      </p>
+      <p className="leading-relaxed">
+        Entity No. B20250299015 | 101 Felicia Ave, Tracy, CA 95391 | 501(c)(3) status pending
+      </p>
+    </div>
+  );
+};
+
+// Administrative control panel
+const SummerBuddyUpAdmin: React.FC<{
+  teams: any[];
+  loading: boolean;
+  onRefresh: () => void;
+  currentUser: any;
+}> = ({ teams, loading, onRefresh, currentUser }) => {
+  const [updatingTeamId, setUpdatingTeamId] = useState<string | null>(null);
+
+  const handleStatusChange = async (teamId: string, newStatus: any) => {
+    try {
+      setUpdatingTeamId(teamId);
+      await db.updateTeam(teamId, { status: newStatus });
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      alert('Failed to update team status.');
+    } finally {
+      setUpdatingTeamId(null);
+    }
+  };
+
+  const handleRatioOverrideToggle = async (teamId: string, currentOverride: boolean) => {
+    try {
+      setUpdatingTeamId(teamId);
+      await db.updateTeam(teamId, { ratio_override: !currentOverride });
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to toggle ratio override:', err);
+      alert('Failed to update ratio override.');
+    } finally {
+      setUpdatingTeamId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">Loading Administrative Oversight Data...</p>
+      </div>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800">
+        <Users className="h-12 w-12 text-slate-350 dark:text-slate-600 mx-auto mb-4 animate-bounce" />
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">No Cohorts Registered Yet</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Registered playgroups and team check-ins will be listed here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+            Summer Buddy Up Administration Console
+          </h2>
+          <p className="text-xs text-slate-555 dark:text-slate-450 mt-1">
+            Review registered playgroups, override mentor ratios, toggle statuses, and check YouTube logs.
+          </p>
+        </div>
+        <div className="shrink-0 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-850 text-right">
+          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Total Cohorts</span>
+          <span className="text-lg font-black text-sky-600 dark:text-sky-400">{teams.length} Registered</span>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {teams.map((teamData: any) => {
+          const { team, subCoaches = [], students = [], checkIns = [] } = teamData;
+          const peerMentors = students.filter((s: any) => s.classification === 'Peer Mentor').length;
+          const inclusionBuddies = students.filter((s: any) => s.classification === 'Inclusion Buddy').length;
+          const ratioValid = inclusionBuddies >= Math.ceil(peerMentors / 2) || team.ratio_override;
+
+          return (
+            <div key={team.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden">
+              {/* Top Summary Header */}
+              <div className="p-6 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200/40 dark:border-slate-850 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-905 dark:text-white uppercase tracking-wide">
+                    {team.team_name}
+                  </h3>
+                  <p className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-1">
+                    Focus Area: {team.focus_area}
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                    ratioValid
+                      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border-emerald-100 dark:border-emerald-900/30'
+                      : 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/30'
+                  }`}>
+                    Ratio: {peerMentors} Mentors / {inclusionBuddies} Inclusion {ratioValid ? '✓' : '⚠️'}
+                  </span>
+
+                  <button
+                    onClick={() => handleRatioOverrideToggle(team.id, team.ratio_override)}
+                    disabled={updatingTeamId === team.id}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
+                      team.ratio_override
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white shadow'
+                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    {team.ratio_override ? 'Override Enabled' : 'Override Ratio'}
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black text-slate-450 uppercase tracking-widest">Status:</span>
+                    <select
+                      value={team.status}
+                      disabled={updatingTeamId === team.id}
+                      onChange={(e) => handleStatusChange(team.id, e.target.value)}
+                      className="bg-white dark:bg-slate-850 border border-slate-250 dark:border-slate-750 rounded-lg px-2 py-1 text-xs font-bold text-slate-750 dark:text-slate-300 outline-none"
+                    >
+                      <option value="PENDING_CONSENT">Pending Consent</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="FLAGGED">Flagged</option>
+                      <option value="COMPLETED">Completed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Roster & logs content */}
+              <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Column 1: Coaches */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
+                    Coaches & Parents ({subCoaches.length + 1})
+                  </h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2.5 text-xs">
+                      <div className="w-1.5 h-1.5 bg-sky-500 rounded-full mt-1 shrink-0"></div>
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          Jane Headcoach <span className="text-[8px] font-black bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 rounded">HEAD COACH</span>
+                        </p>
+                        <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">headcoach@aariasblueelephant.org</p>
+                      </div>
+                    </div>
+
+                    {subCoaches.map((coach: any) => (
+                      <div key={coach.id} className="flex items-start gap-2.5 text-xs">
+                        <div className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${coach.consent_accepted ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`}></div>
+                        <div>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            {coach.name} 
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${
+                              coach.consent_accepted 
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-450'
+                            }`}>
+                              {coach.consent_accepted ? 'Consented' : 'Pending waiver'}
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">{coach.email} • {coach.phone || 'No Phone'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 2: Students */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
+                    Student Roster ({students.length})
+                  </h4>
+
+                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {students.map((student: any) => (
+                      <div key={student.id} className="text-xs bg-slate-50/50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-850">
+                        <div className="font-bold text-slate-850 dark:text-slate-200">{student.name}</div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-600 dark:text-slate-450 font-medium">
+                            Grade {student.grade}
+                          </span>
+                          <span className={`text-[9px] px-1 py-0.5 rounded font-black uppercase tracking-wider ${
+                            student.classification === 'Inclusion Buddy'
+                              ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-455'
+                              : 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400'
+                          }`}>
+                            {student.classification}
+                          </span>
+                        </div>
+                        <div className="text-[9px] text-slate-455 dark:text-slate-500 mt-1">
+                          District: {student.school_district} | Delivery: {student.award_delivery_type}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 3: Milestones */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-455 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
+                    Milestone check-ins ({checkIns.length}/4)
+                  </h4>
+
+                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {['JULY_15', 'JULY_30', 'AUGUST_15', 'AUGUST_30'].map((milestone) => {
+                      const log = checkIns.find((c: any) => c.milestone_target === milestone);
+
+                      return (
+                        <div key={milestone} className="text-xs border border-slate-150 dark:border-slate-850 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-705 dark:text-slate-350">{milestone.replace('_', ' ')}</span>
+                            <span className={`px-1.5 py-0.5 rounded font-black text-[8px] tracking-wider uppercase ${
+                              log 
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-450' 
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                            }`}>
+                              {log ? 'Submitted' : 'Missing'}
+                            </span>
+                          </div>
+                          {log ? (
+                            <div className="mt-2 space-y-1">
+                              <p className="text-slate-500 dark:text-slate-450 italic line-clamp-2">"{log.project_summary}"</p>
+                              <a 
+                                href={log.youtube_url} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-sky-600 dark:text-sky-400 font-bold hover:underline inline-block mt-0.5 truncate max-w-full"
+                              >
+                                Watch Video Log ↗
+                              </a>
+                            </div>
+                          ) : (
+                            <p className="text-[9px] text-slate-455 italic mt-1">No logs uploaded.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

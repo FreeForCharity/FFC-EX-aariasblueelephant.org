@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { IDatabaseProvider } from './types';
+import { IDatabaseProvider, Team, SubCoach, Student, CheckIn } from './types';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
 
 export class SupabaseProvider implements IDatabaseProvider {
@@ -353,5 +353,143 @@ export class SupabaseProvider implements IDatabaseProvider {
   async setCarouselMode(mode: 'events' | 'media'): Promise<void> {
     const { error } = await supabase.from('app_settings').upsert({ key: 'carousel_mode', value: mode });
     if (error) throw error;
+  }
+
+  // Summer Buddy Up
+  async getTeams(userIdOrEmail?: string): Promise<Team[]> {
+    let email = '';
+    let uid = '';
+    if (userIdOrEmail) {
+      if (userIdOrEmail.includes('@')) {
+        email = userIdOrEmail.toLowerCase();
+      } else {
+        uid = userIdOrEmail;
+      }
+    } else {
+      const session = await this.getSession();
+      email = session?.user?.email?.toLowerCase() || '';
+      uid = session?.user?.id || '';
+    }
+
+    const teamIds = new Set<string>();
+    const teamsList: Team[] = [];
+
+    if (uid) {
+      const { data: headCoachTeams, error: err1 } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('head_coach_id', uid);
+      if (err1) throw err1;
+      if (headCoachTeams) {
+        for (const t of headCoachTeams) {
+          if (!teamIds.has(t.id)) {
+            teamIds.add(t.id);
+            teamsList.push(t);
+          }
+        }
+      }
+    }
+
+    if (email) {
+      const { data: subCoachesData, error: err2 } = await supabase
+        .from('sub_coaches')
+        .select('team_id')
+        .eq('email', email);
+      if (err2) throw err2;
+      
+      const subCoachTeamIds = (subCoachesData || []).map(s => s.team_id);
+      if (subCoachTeamIds.length > 0) {
+        const { data: subTeams, error: err3 } = await supabase
+          .from('teams')
+          .select('*')
+          .in('id', subCoachTeamIds);
+        if (err3) throw err3;
+        if (subTeams) {
+          for (const t of subTeams) {
+            if (!teamIds.has(t.id)) {
+              teamIds.add(t.id);
+              teamsList.push(t);
+            }
+          }
+        }
+      }
+    }
+
+    return teamsList;
+  }
+
+  async createTeam(team: Partial<Team>): Promise<Team> {
+    const { data, error } = await supabase.from('teams').insert([team]).select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  async updateTeam(id: string, data: Partial<Team>): Promise<void> {
+    const { error } = await supabase.from('teams').update(data).eq('id', id);
+    if (error) throw error;
+  }
+
+  async getSubCoaches(teamId: string): Promise<SubCoach[]> {
+    const { data, error } = await supabase.from('sub_coaches').select('*').eq('team_id', teamId);
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createSubCoach(coach: Partial<SubCoach>): Promise<void> {
+    const { error } = await supabase.from('sub_coaches').insert([{
+      ...coach,
+      email: coach.email?.toLowerCase()
+    }]);
+    if (error) throw error;
+  }
+
+  async updateSubCoach(id: string, data: Partial<SubCoach>): Promise<void> {
+    const payload = { ...data };
+    if (payload.email) payload.email = payload.email.toLowerCase();
+    const { error } = await supabase.from('sub_coaches').update(payload).eq('id', id);
+    if (error) throw error;
+  }
+
+  async getStudents(teamId: string): Promise<Student[]> {
+    const { data, error } = await supabase.from('students').select('*').eq('team_id', teamId);
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createStudent(student: Partial<Student>): Promise<void> {
+    const { error } = await supabase.from('students').insert([student]);
+    if (error) throw error;
+  }
+
+  async getCheckIns(teamId: string): Promise<CheckIn[]> {
+    const { data, error } = await supabase.from('check_ins').select('*').eq('team_id', teamId).order('submitted_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createCheckIn(checkIn: Partial<CheckIn>): Promise<void> {
+    const { error } = await supabase.from('check_ins').insert([checkIn]);
+    if (error) throw error;
+  }
+
+  async getAllTeamsForAdmin(): Promise<any[]> {
+    const { data: teams, error: errTeams } = await supabase.from('teams').select('*').order('created_at', { ascending: false });
+    if (errTeams) throw errTeams;
+    
+    const { data: checkIns, error: errCheckIns } = await supabase.from('check_ins').select('*');
+    if (errCheckIns) throw errCheckIns;
+
+    const { data: subCoaches, error: errSubCoaches } = await supabase.from('sub_coaches').select('*');
+    if (errSubCoaches) throw errSubCoaches;
+
+    const { data: students, error: errStudents } = await supabase.from('students').select('*');
+    if (errStudents) throw errStudents;
+
+    return (teams || []).map(team => ({
+      ...team,
+      check_ins: (checkIns || []).filter(c => c.team_id === team.id),
+      sub_coaches: (subCoaches || []).filter(s => s.team_id === team.id),
+      students: (students || []).filter(st => st.team_id === team.id)
+    }));
   }
 }

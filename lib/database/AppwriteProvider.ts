@@ -401,4 +401,17 @@ export class AppwriteProvider implements IDatabaseProvider {
       return null;
     }
   }
+
+  // Summer Buddy Up Stubs
+  async getTeams(_userIdOrEmail?: string): Promise<any[]> { return []; }
+  async createTeam(_team: Partial<any>): Promise<any> { return {} as any; }
+  async updateTeam(_id: string, _data: Partial<any>): Promise<void> { return; }
+  async getSubCoaches(_teamId: string): Promise<any[]> { return []; }
+  async createSubCoach(_coach: Partial<any>): Promise<void> { return; }
+  async updateSubCoach(_id: string, _data: Partial<any>): Promise<void> { return; }
+  async getStudents(_teamId: string): Promise<any[]> { return []; }
+  async createStudent(_student: Partial<any>): Promise<void> { return; }
+  async getCheckIns(_teamId: string): Promise<any[]> { return []; }
+  async createCheckIn(_checkIn: Partial<any>): Promise<void> { return; }
+  async getAllTeamsForAdmin(): Promise<any[]> { return []; }
 }
