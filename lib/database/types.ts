@@ -135,4 +135,5 @@ export interface CheckIn {
 export interface BuddyUpConfig {
   checkins_enabled: boolean;
   checkin_questions: string[];
+  unlocked_milestones?: string[];
 }

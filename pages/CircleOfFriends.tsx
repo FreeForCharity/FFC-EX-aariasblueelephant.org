@@ -1242,14 +1242,27 @@ const SummerBuddyUpAdmin: React.FC<{
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 space-y-4">
           <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wide border-b border-slate-100 pb-2">Program Settings</h3>
           
-          <div className="flex items-center gap-3">
-            <input 
-              type="checkbox" 
-              checked={config.checkins_enabled} 
-              onChange={e => setConfig({...config, checkins_enabled: e.target.checked})}
-              className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500"
-            />
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Enable Check-Ins App-Wide</span>
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Unlock Specific Milestones App-Wide</span>
+            <div className="flex flex-wrap gap-4">
+              {['JULY_15', 'JULY_30', 'AUGUST_15', 'AUGUST_30'].map(milestone => (
+                <label key={milestone} className="flex items-center gap-2 cursor-pointer bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <input 
+                    type="checkbox" 
+                    checked={(config.unlocked_milestones || []).includes(milestone) || (config.checkins_enabled && !(config.unlocked_milestones))} 
+                    onChange={e => {
+                      const current = config.unlocked_milestones || (config.checkins_enabled ? ['JULY_15', 'JULY_30', 'AUGUST_15', 'AUGUST_30'] : []);
+                      const next = e.target.checked 
+                        ? [...current, milestone] 
+                        : current.filter(m => m !== milestone);
+                      setConfig({...config, unlocked_milestones: next, checkins_enabled: next.length > 0});
+                    }}
+                    className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500"
+                  />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{milestone.replace('_', ' ')}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
