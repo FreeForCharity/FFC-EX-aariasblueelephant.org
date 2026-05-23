@@ -406,6 +406,7 @@ export class AppwriteProvider implements IDatabaseProvider {
   async getTeams(_userIdOrEmail?: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
   async createTeam(_team: Partial<any>): Promise<any> { throw new Error('Not supported with AppwriteProvider'); }
   async updateTeam(_id: string, _data: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async deleteTeam(_id: string): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
   async getSubCoaches(_teamId: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
   async createSubCoach(_coach: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
   async updateSubCoach(_id: string, _data: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
