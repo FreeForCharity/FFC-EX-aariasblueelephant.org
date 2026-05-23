@@ -308,11 +308,11 @@ const CircleOfFriends: React.FC = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'summer-buddy-up' || tabParam === 'buddy') {
-        return 'summer-buddy-up';
+      if (tabParam === 'voices') {
+        return 'voices';
       }
     }
-    return 'voices';
+    return 'summer-buddy-up';
   });
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
@@ -645,25 +645,9 @@ const CircleOfFriends: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setActiveTab('voices');
-                const url = new URL(window.location.href);
-                url.searchParams.delete('tab');
-                window.history.replaceState({}, '', url.toString());
-              }}
-              className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer ${
-                activeTab === 'voices'
-                  ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350'
-              }`}
-            >
-              Voices of the Herd
-            </button>
-            <button
-              type="button"
-              onClick={() => {
                 setActiveTab('summer-buddy-up');
                 const url = new URL(window.location.href);
-                url.searchParams.set('tab', 'summer-buddy-up');
+                url.searchParams.delete('tab');
                 window.history.replaceState({}, '', url.toString());
               }}
               className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer flex items-center gap-2 ${
@@ -674,6 +658,22 @@ const CircleOfFriends: React.FC = () => {
             >
               <Users className="h-4 w-4" />
               Summer Buddy Up
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('voices');
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'voices');
+                window.history.replaceState({}, '', url.toString());
+              }}
+              className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer ${
+                activeTab === 'voices'
+                  ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350'
+              }`}
+            >
+              Voices of the Herd
             </button>
           </div>
         </div>
