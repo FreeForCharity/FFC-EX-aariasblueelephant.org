@@ -43,6 +43,14 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   // Clipboard copy feedback
   const [copySuccess, setCopySuccess] = useState(false);
 
+  // Edit Team State
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addMemberType, setAddMemberType] = useState<'student'|'coach'>('student');
+  const [addMemberForm, setAddMemberForm] = useState({
+    name: '', email: '', phone: '', grade: '', school_district: 'LUSD', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: ''
+  });
+  const [addingMember, setAddingMember] = useState(false);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -151,7 +159,47 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
     }
   };
 
-  const copyInviteText = () => {
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddingMember(true);
+    try {
+      if (addMemberType === 'student') {
+        await db.createStudent({
+          team_id: team.id,
+          name: addMemberForm.name,
+          grade: addMemberForm.grade,
+          school_district: addMemberForm.school_district as any,
+          classification: addMemberForm.classification as any,
+          award_delivery_type: addMemberForm.award_delivery_type as any,
+          parent_email: addMemberForm.parent_email
+        });
+      } else {
+        await db.createSubCoach({
+          team_id: team.id,
+          name: addMemberForm.name,
+          email: addMemberForm.email,
+          phone: addMemberForm.phone
+        });
+      }
+      
+      setShowAddMemberModal(false);
+      onRefreshTeam();
+      loadData();
+      alert(`Successfully added new ${addMemberType}! The team is now pending Admin Approval.`);
+      
+      // Reset form
+      setAddMemberForm({
+        name: '', email: '', phone: '', grade: '', school_district: 'LUSD', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: ''
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add member. Please try again.');
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const generateInviteLink = (subCoach: SubCoach) => {
     const inviteLink = `${window.location.origin}${window.location.pathname}?tab=summer-buddy-up`;
     const text = `Hey co-coach! I registered our Aaria's Blue Elephant Summer Buddy Up team ("${team.team_name}"). Please log in to ${inviteLink} using your Google account (${currentUser.id === team.head_coach_id ? 'the email I added' : 'your email'}) to claim your profile and accept the safety waivers so we can start tracking our check-ins! 🐘💙`;
     
@@ -201,8 +249,137 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   }
 
   return (
-    <div className={`space-y-6 font-sans relative ${showWaiverModal ? 'blur-sm select-none pointer-events-none' : ''}`}>
+    <div className={`space-y-6 font-sans relative ${(showWaiverModal || showAddMemberModal) ? 'blur-sm select-none pointer-events-none' : ''}`}>
       
+      {/* ADD MEMBER MODAL OVERLAY */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 select-text pointer-events-auto">
+          <div className="bg-white max-w-xl w-full rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-sky-500 to-indigo-600 px-6 py-5 text-white flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-xl font-bold">Edit Team</h3>
+                <p className="text-xs text-indigo-100 mt-1">Add a new student or sub-coach to the roster</p>
+              </div>
+              <button onClick={() => setShowAddMemberModal(false)} className="text-white hover:text-sky-200 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto grow">
+              <div className="flex space-x-2 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setAddMemberType('student')}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${addMemberType === 'student' ? 'bg-sky-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  Add Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddMemberType('coach')}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${addMemberType === 'coach' ? 'bg-sky-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  Add Sub-Coach
+                </button>
+              </div>
+
+              <form id="add-member-form" onSubmit={handleAddMember} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={addMemberForm.name}
+                    onChange={(e) => setAddMemberForm({...addMemberForm, name: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                {addMemberType === 'coach' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={addMemberForm.email}
+                        onChange={(e) => setAddMemberForm({...addMemberForm, email: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Phone Number</label>
+                      <input
+                        type="tel"
+                        required
+                        value={addMemberForm.phone}
+                        onChange={(e) => setAddMemberForm({...addMemberForm, phone: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {addMemberType === 'student' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Grade Level</label>
+                        <select required value={addMemberForm.grade} onChange={(e) => setAddMemberForm({...addMemberForm, grade: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                          <option value="">Select Grade</option>
+                          {['Pre-K','K','1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th','Transition (18-22)'].map(g => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">School District</label>
+                        <select required value={addMemberForm.school_district} onChange={(e) => setAddMemberForm({...addMemberForm, school_district: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                          <option value="LUSD">LUSD</option>
+                          <option value="Tracy Unified">Tracy Unified</option>
+                          <option value="Other Out of Area">Other Out of Area</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Role</label>
+                        <select required value={addMemberForm.classification} onChange={(e) => setAddMemberForm({...addMemberForm, classification: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                          <option value="Inclusion Buddy">Inclusion Buddy (IEP)</option>
+                          <option value="Peer Mentor">Peer Mentor (GenEd)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Awards</label>
+                        <select required value={addMemberForm.award_delivery_type} onChange={(e) => setAddMemberForm({...addMemberForm, award_delivery_type: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                          <option value="IN_PERSON_ONLY">In-Person Only</option>
+                          <option value="VIRTUAL_DIGITAL">Virtual/Digital</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Parent Email</label>
+                      <input type="email" required value={addMemberForm.parent_email} onChange={(e) => setAddMemberForm({...addMemberForm, parent_email: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+            
+            <div className="border-t border-slate-100 p-6 bg-slate-50 shrink-0">
+              <button
+                type="submit"
+                form="add-member-form"
+                disabled={addingMember}
+                className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-xl shadow-lg transition"
+              >
+                {addingMember ? 'Saving...' : `Add ${addMemberType === 'student' ? 'Student' : 'Sub-Coach'}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* WAIVER MODAL OVERLAY */}
       {showWaiverModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 select-text pointer-events-auto">
@@ -300,15 +477,26 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
           </div>
 
           <div className="flex flex-col items-start md:items-end gap-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
               <span className="text-xs font-semibold text-sky-100">Status:</span>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 isTeamActive 
                   ? 'bg-emerald-500 text-white shadow shadow-emerald-250 animate-pulse' 
+                  : team.status === 'PENDING_ADMIN_APPROVAL'
+                  ? 'bg-amber-500 text-white shadow shadow-amber-200'
                   : 'bg-yellow-450 text-slate-900 shadow shadow-yellow-200'
               }`}>
-                {team.status === 'PENDING_CONSENT' ? '⏳ PENDING PARENT CONSENT' : '✓ ACTIVE COHORT'}
+                {team.status === 'PENDING_CONSENT' ? '⏳ PENDING PARENT CONSENT' : team.status === 'PENDING_ADMIN_APPROVAL' ? '⏳ PENDING ADMIN APPROVAL' : '✓ ACTIVE COHORT'}
               </span>
+              
+              {currentUser.id === team.head_coach_id && (
+                <button
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-1 px-3 rounded-full backdrop-blur-sm transition-colors mt-2 md:mt-0"
+                >
+                  Edit Team
+                </button>
+              )}
             </div>
 
             {/* Prize eligibility check */}

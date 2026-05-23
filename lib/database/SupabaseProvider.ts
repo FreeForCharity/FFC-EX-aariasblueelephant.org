@@ -429,6 +429,44 @@ export class SupabaseProvider implements IDatabaseProvider {
     if (error) throw error;
   }
 
+  async getPendingSubCoachInvites(): Promise<any[]> {
+    const session = await this.getSession();
+    const email = session?.user?.email?.toLowerCase();
+    if (!email) return [];
+    
+    // Fetch pending invites
+    const { data: invites, error } = await supabase
+      .from('sub_coaches')
+      .select(`
+        *,
+        team:teams (
+          team_name,
+          head_coach_id
+        )
+      `)
+      .eq('email', email)
+      .eq('consent_accepted', false);
+      
+    if (error) throw error;
+    return invites || [];
+  }
+
+  async acceptSubCoachInvite(id: string): Promise<void> {
+    const session = await this.getSession();
+    const uid = session?.user?.id;
+    if (!uid) throw new Error("Must be logged in to accept invite");
+    
+    const { error } = await supabase
+      .from('sub_coaches')
+      .update({ 
+        consent_accepted: true,
+        user_id: uid
+      })
+      .eq('id', id);
+      
+    if (error) throw error;
+  }
+
   async getSubCoaches(teamId: string): Promise<SubCoach[]> {
     const { data, error } = await supabase.from('sub_coaches').select('*').eq('team_id', teamId);
     if (error) throw error;
@@ -441,6 +479,10 @@ export class SupabaseProvider implements IDatabaseProvider {
       email: coach.email?.toLowerCase()
     }]);
     if (error) throw error;
+    
+    if (coach.team_id) {
+      await this.updateTeam(coach.team_id, { status: 'PENDING_ADMIN_APPROVAL' });
+    }
   }
 
   async updateSubCoach(id: string, data: Partial<SubCoach>): Promise<void> {
@@ -459,6 +501,10 @@ export class SupabaseProvider implements IDatabaseProvider {
   async createStudent(student: Partial<Student>): Promise<void> {
     const { error } = await supabase.from('students').insert([student]);
     if (error) throw error;
+    
+    if (student.team_id) {
+      await this.updateTeam(student.team_id, { status: 'PENDING_ADMIN_APPROVAL' });
+    }
   }
 
   async getCheckIns(teamId: string): Promise<CheckIn[]> {

@@ -81,6 +81,9 @@ export interface IDatabaseProvider {
   createCheckIn(checkIn: Partial<CheckIn>): Promise<void>;
   getAllTeamsForAdmin(): Promise<any[]>;
   
+  getPendingSubCoachInvites(): Promise<any[]>;
+  acceptSubCoachInvite(id: string): Promise<void>;
+  
   // Settings
   getBuddyUpConfig(): Promise<BuddyUpConfig>;
   updateBuddyUpConfig(config: BuddyUpConfig): Promise<void>;
@@ -91,7 +94,7 @@ export interface Team {
   team_name: string;
   focus_area: string;
   head_coach_id: string;
-  status: 'PENDING_CONSENT' | 'ACTIVE' | 'FLAGGED' | 'COMPLETED';
+  status: 'PENDING_CONSENT' | 'PENDING_ADMIN_APPROVAL' | 'ACTIVE' | 'FLAGGED' | 'COMPLETED';
   ratio_override: boolean;
   created_at: string;
 }

@@ -315,6 +315,7 @@ const CircleOfFriends: React.FC = () => {
     return 'voices';
   });
   const [myTeam, setMyTeam] = useState<Team | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
   const [adminTeams, setAdminTeams] = useState<any[]>([]);
   const [adminLoading, setAdminLoading] = useState(true);
@@ -323,21 +324,27 @@ const CircleOfFriends: React.FC = () => {
   const loadMyTeam = async () => {
     if (!user) {
       setMyTeam(null);
+      setPendingInvites([]);
       setTeamsLoading(false);
       return;
     }
     try {
       setTeamsLoading(true);
-      const userEmail = user.email;
-      const userTeams = await db.getTeams(userEmail);
+      const [userTeams, invites] = await Promise.all([
+        db.getTeams(),
+        db.getPendingSubCoachInvites()
+      ]);
+      
       if (userTeams && userTeams.length > 0) {
         setMyTeam(userTeams[0]);
       } else {
         setMyTeam(null);
       }
+      setPendingInvites(invites || []);
     } catch (err) {
-      console.error('Error fetching user team:', err);
+      console.error('Error fetching user team or invites:', err);
       setMyTeam(null);
+      setPendingInvites([]);
     } finally {
       setTeamsLoading(false);
     }
@@ -386,6 +393,37 @@ const CircleOfFriends: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
           <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">Loading Cohort Data...</p>
+        </div>
+      );
+    }
+
+    if (pendingInvites.length > 0 && !myTeam) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-sky-50 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 p-6 rounded-3xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Users className="w-32 h-32 text-sky-600" />
+            </div>
+            <div className="relative z-10">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Pending Invitation</h2>
+              <p className="text-slate-600 dark:text-slate-300 font-medium max-w-xl mb-6">
+                You have been invited to join <strong>{pendingInvites[0].team?.team_name || 'a team'}</strong> as a Sub-Coach. Accept the invitation to join the cohort dashboard.
+              </p>
+              <button 
+                onClick={async () => {
+                  try {
+                    await db.acceptSubCoachInvite(pendingInvites[0].id);
+                    await loadMyTeam();
+                  } catch (e) {
+                    alert('Failed to accept invite.');
+                  }
+                }}
+                className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-md shadow-sky-500/20"
+              >
+                Accept Invitation
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -1270,13 +1308,24 @@ const SummerBuddyUpAdmin: React.FC<{
                       value={team.status}
                       disabled={updatingTeamId === team.id}
                       onChange={(e) => handleStatusChange(team.id, e.target.value)}
-                      className="bg-white dark:bg-slate-850 border border-slate-250 dark:border-slate-750 rounded-lg px-2 py-1 text-xs font-bold text-slate-750 dark:text-slate-300 outline-none"
+                      className={`bg-white dark:bg-slate-850 border rounded-lg px-2 py-1 text-xs font-bold outline-none ${team.status === 'PENDING_ADMIN_APPROVAL' ? 'border-amber-400 text-amber-600 dark:text-amber-400' : 'border-slate-250 dark:border-slate-750 text-slate-750 dark:text-slate-300'}`}
                     >
                       <option value="PENDING_CONSENT">Pending Consent</option>
+                      <option value="PENDING_ADMIN_APPROVAL">Pending Approval</option>
                       <option value="ACTIVE">Active</option>
                       <option value="FLAGGED">Flagged</option>
                       <option value="COMPLETED">Completed</option>
                     </select>
+                    
+                    {team.status === 'PENDING_ADMIN_APPROVAL' && (
+                      <button
+                        onClick={() => handleStatusChange(team.id, 'ACTIVE')}
+                        disabled={updatingTeamId === team.id}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors animate-pulse hover:animate-none shadow shadow-emerald-500/20"
+                      >
+                        Approve
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

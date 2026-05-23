@@ -317,6 +317,38 @@ export class SimulatedProvider implements IDatabaseProvider {
     }
   }
 
+  async getPendingSubCoachInvites(): Promise<any[]> {
+    const session = await this.getSession();
+    const email = session?.user?.email?.toLowerCase();
+    if (!email) return [];
+    
+    const subCoaches = this.getList<SubCoach>('abe_sim_sub_coaches');
+    const teams = this.getList<Team>('abe_sim_teams');
+    
+    const pending = subCoaches.filter(sc => sc.email === email && !sc.consent_accepted);
+    
+    return pending.map(sc => {
+      const team = teams.find(t => t.id === sc.team_id);
+      return {
+        ...sc,
+        team: team ? { team_name: team.team_name, head_coach_id: team.head_coach_id } : null
+      };
+    });
+  }
+
+  async acceptSubCoachInvite(id: string): Promise<void> {
+    const session = await this.getSession();
+    const uid = session?.user?.id;
+    if (!uid) throw new Error("Must be logged in");
+    
+    const subCoaches = this.getList<SubCoach>('abe_sim_sub_coaches');
+    const index = subCoaches.findIndex(sc => sc.id === id);
+    if (index !== -1) {
+      subCoaches[index] = { ...subCoaches[index], consent_accepted: true, user_id: uid };
+      this.saveList('abe_sim_sub_coaches', subCoaches);
+    }
+  }
+
   async getSubCoaches(teamId: string): Promise<SubCoach[]> {
     const subCoaches = this.getList<SubCoach>('abe_sim_sub_coaches');
     return subCoaches.filter(s => s.team_id === teamId);
