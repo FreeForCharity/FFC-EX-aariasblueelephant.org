@@ -187,6 +187,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
+    // Save current path so we return here after Google auth redirects back
+    if (!localStorage.getItem('authReturnTo')) {
+      const path = window.location.pathname + window.location.search;
+      const basePath = '/FFC-EX-aariasblueelephant.org';
+      const cleanPath = path.startsWith(basePath) ? path.substring(basePath.length) : path;
+      localStorage.setItem('authReturnTo', cleanPath || '/');
+    }
     await db.signInWithGoogle();
   };
 

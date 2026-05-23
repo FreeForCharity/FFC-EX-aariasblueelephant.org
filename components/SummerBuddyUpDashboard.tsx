@@ -51,6 +51,8 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   });
   const [addingMember, setAddingMember] = useState(false);
 
+  const [waiverJustSubmitted, setWaiverJustSubmitted] = useState(false);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -71,15 +73,22 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
       if (matchedSubCoach) {
         setMySubCoachRecord(matchedSubCoach);
         // Show waiver modal if they haven't accepted it yet
-        if (!matchedSubCoach.consent_accepted) {
+        if (!matchedSubCoach.consent_accepted && !waiverJustSubmitted) {
           setShowWaiverModal(true);
+        } else if (matchedSubCoach.consent_accepted || waiverJustSubmitted) {
+          setShowWaiverModal(false);
         }
       }
 
       // Check for dynamic status transition:
       // If team is PENDING_CONSENT, and all sub-coaches have consent_accepted = true
       const allConsented = coachesList.every(c => c.consent_accepted === true);
-      if (team.status === 'PENDING_CONSENT' && allConsented) {
+      // Include local waiverjustsubmitted logic to prevent race conditions from blocking active transition
+      const allConsentedOrSubmitted = coachesList.every(c => 
+        c.consent_accepted === true || (c.id === matchedSubCoach?.id && waiverJustSubmitted)
+      );
+      
+      if (team.status === 'PENDING_CONSENT' && (allConsented || allConsentedOrSubmitted)) {
         // Automatically move to admin approval queue once consent is gathered
         await db.updateTeam(team.id, { status: 'PENDING_ADMIN_APPROVAL' });
         onRefreshTeam();
@@ -101,6 +110,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
     if (!mySubCoachRecord || !waiverChecks.liability || !waiverChecks.noFace || !waiverChecks.piiSafe) return;
 
     setSubmittingWaiver(true);
+    setWaiverJustSubmitted(true);
     try {
       await db.updateSubCoach(mySubCoachRecord.id, {
         consent_accepted: true,
@@ -111,6 +121,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
       loadData();
     } catch (err) {
       console.error('Failed to submit waiver:', err);
+      setWaiverJustSubmitted(false);
     } finally {
       setSubmittingWaiver(false);
     }
