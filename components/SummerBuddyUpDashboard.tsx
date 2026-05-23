@@ -709,7 +709,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                           <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold py-1 px-3 rounded-full">
                             ✓ Submitted
                           </span>
-                        ) : !isTeamActive || !buddyUpConfig?.checkins_enabled ? (
+                        ) : !isTeamActive || (buddyUpConfig?.unlocked_milestones && !buddyUpConfig.unlocked_milestones.includes(milestone.key)) || (!buddyUpConfig?.unlocked_milestones && !buddyUpConfig?.checkins_enabled) ? (
                           <button
                             disabled
                             className="text-xs bg-slate-100 text-slate-400 border border-slate-200 font-semibold py-1.5 px-3 rounded-xl cursor-not-allowed"
