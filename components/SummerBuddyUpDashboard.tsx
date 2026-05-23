@@ -76,11 +76,12 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
         }
       }
 
-      // Check for dynamic status transition to ACTIVE:
+      // Check for dynamic status transition:
       // If team is PENDING_CONSENT, and all sub-coaches have consent_accepted = true
       const allConsented = coachesList.every(c => c.consent_accepted === true);
       if (team.status === 'PENDING_CONSENT' && allConsented) {
-        await db.updateTeam(team.id, { status: 'ACTIVE' });
+        // Automatically move to admin approval queue once consent is gathered
+        await db.updateTeam(team.id, { status: 'PENDING_ADMIN_APPROVAL' });
         onRefreshTeam();
       }
 
@@ -251,6 +252,22 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   return (
     <div className={`space-y-6 font-sans relative ${(showWaiverModal || showAddMemberModal) ? 'blur-sm select-none pointer-events-none' : ''}`}>
       
+      {team.status === 'PENDING_ADMIN_APPROVAL' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm mb-6">
+          <div className="bg-amber-100 p-2 rounded-full text-amber-600 mt-0.5">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-bold text-amber-800 text-sm">Awaiting Administrator Approval</h3>
+            <p className="text-amber-700 text-xs mt-1 leading-relaxed">
+              Your cohort registration is complete! An administrator is currently reviewing your team details. You can continue to invite sub-coaches and add students while you wait.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ADD MEMBER MODAL OVERLAY */}
       {showAddMemberModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 select-text pointer-events-auto">
