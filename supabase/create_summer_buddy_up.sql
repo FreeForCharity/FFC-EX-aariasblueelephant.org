@@ -81,7 +81,6 @@ USING (
     AND sub_coaches.email = LOWER(auth.jwt() ->> 'email')
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- INSERT: Authenticated users can create
@@ -97,7 +96,6 @@ FOR UPDATE TO authenticated
 USING (
   head_coach_id = auth.uid()
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- DELETE: Head coach or admin
@@ -137,13 +135,20 @@ USING (
   )
   -- Admins
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- INSERT: Authenticated users (head coaches during wizard registration)
 DROP POLICY IF EXISTS "Insert sub_coaches policy" ON sub_coaches;
 CREATE POLICY "Insert sub_coaches policy" ON sub_coaches
 FOR INSERT TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM teams 
+    WHERE teams.id = sub_coaches.team_id 
+    AND teams.head_coach_id = auth.uid()
+  )
+  OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
+);
 WITH CHECK (true);
 
 -- UPDATE: Self (to accept consent/bind user_id), head coach, or admin
@@ -158,7 +163,6 @@ USING (
     AND teams.head_coach_id = auth.uid()
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- DELETE: Head coach or admin
@@ -195,13 +199,20 @@ USING (
     AND sub_coaches.consent_accepted = true
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- INSERT: Authenticated users (head coach registers roster)
 DROP POLICY IF EXISTS "Insert students policy" ON students;
 CREATE POLICY "Insert students policy" ON students
 FOR INSERT TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM teams 
+    WHERE teams.id = students.team_id 
+    AND teams.head_coach_id = auth.uid()
+  )
+  OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
+);
 WITH CHECK (true);
 
 -- UPDATE/DELETE: Head coach or admin
@@ -215,7 +226,6 @@ USING (
     AND teams.head_coach_id = auth.uid()
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- =========================================================================
@@ -239,7 +249,6 @@ USING (
     AND sub_coaches.consent_accepted = true
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-  OR auth.jwt() ->> 'email' LIKE '%@aariasblueelephant.org'
 );
 
 -- INSERT: Head coach or consented sub-coaches, AND only if team is not in PENDING_CONSENT

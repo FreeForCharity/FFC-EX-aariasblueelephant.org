@@ -8,10 +8,12 @@ export class SimulatedProvider implements IDatabaseProvider {
 
   constructor() {
     // Listen for custom events to trigger auth changes inside the app
-    window.addEventListener('abe_sim_auth_change', (e: any) => {
-      const session = e.detail;
-      this.authCallbacks.forEach(cb => cb(session));
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('abe_sim_auth_change', (e: any) => {
+        const session = e.detail;
+        this.authCallbacks.forEach(cb => cb(session));
+      });
+    }
   }
 
   private getList<T>(key: string, defaultVal: T[] = []): T[] {

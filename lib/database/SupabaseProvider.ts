@@ -473,23 +473,23 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async getAllTeamsForAdmin(): Promise<any[]> {
-    const { data: teams, error: errTeams } = await supabase.from('teams').select('*').order('created_at', { ascending: false });
-    if (errTeams) throw errTeams;
-    
-    const { data: checkIns, error: errCheckIns } = await supabase.from('check_ins').select('*');
-    if (errCheckIns) throw errCheckIns;
+    const { data: teams, error } = await supabase
+      .from('teams')
+      .select(`
+        *,
+        sub_coaches (*),
+        students (*),
+        check_ins (*)
+      `)
+      .order('created_at', { ascending: false });
 
-    const { data: subCoaches, error: errSubCoaches } = await supabase.from('sub_coaches').select('*');
-    if (errSubCoaches) throw errSubCoaches;
-
-    const { data: students, error: errStudents } = await supabase.from('students').select('*');
-    if (errStudents) throw errStudents;
+    if (error) throw error;
 
     return (teams || []).map(team => ({
-      ...team,
-      check_ins: (checkIns || []).filter(c => c.team_id === team.id),
-      sub_coaches: (subCoaches || []).filter(s => s.team_id === team.id),
-      students: (students || []).filter(st => st.team_id === team.id)
+      team: { ...team, sub_coaches: undefined, students: undefined, check_ins: undefined },
+      checkIns: team.check_ins || [],
+      subCoaches: team.sub_coaches || [],
+      students: team.students || []
     }));
   }
 

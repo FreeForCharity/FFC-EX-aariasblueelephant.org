@@ -20,7 +20,7 @@ class ResilientDatabase implements IDatabaseProvider {
   }
 
   private get provider(): IDatabaseProvider {
-    if (localStorage.getItem('abe_use_simulation') === 'true') {
+    if (typeof window !== 'undefined' && localStorage.getItem('abe_use_simulation') === 'true') {
       return this.simulatedProvider;
     }
     return this.realProvider;

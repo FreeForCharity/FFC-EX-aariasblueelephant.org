@@ -152,8 +152,8 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   };
 
   const copyInviteText = () => {
-    const inviteLink = `${window.location.origin}${window.location.pathname}`;
-    const text = `Hey co-coach! I registered our Aaria's Blue Elephant Summer Buddy Up team ("${team.team_name}"). Please log in to ${inviteLink} using your Google account (${currentUser.email === team.head_coach_id ? 'your email' : 'the email I added'}) to claim your profile and accept the safety waivers so we can start tracking our check-ins! 🐘💙`;
+    const inviteLink = `${window.location.origin}${window.location.pathname}?tab=summer-buddy-up`;
+    const text = `Hey co-coach! I registered our Aaria's Blue Elephant Summer Buddy Up team ("${team.team_name}"). Please log in to ${inviteLink} using your Google account (${currentUser.id === team.head_coach_id ? 'the email I added' : 'your email'}) to claim your profile and accept the safety waivers so we can start tracking our check-ins! 🐘💙`;
     
     navigator.clipboard.writeText(text).then(() => {
       setCopySuccess(true);

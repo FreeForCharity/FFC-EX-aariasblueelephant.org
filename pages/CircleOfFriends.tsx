@@ -305,10 +305,12 @@ const CircleOfFriends: React.FC = () => {
 
   // Summer Buddy Up states
   const [activeTab, setActiveTab] = useState<'voices' | 'summer-buddy-up'>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    if (tabParam === 'summer-buddy-up' || tabParam === 'buddy') {
-      return 'summer-buddy-up';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'summer-buddy-up' || tabParam === 'buddy') {
+        return 'summer-buddy-up';
+      }
     }
     return 'voices';
   });
@@ -1226,7 +1228,7 @@ const SummerBuddyUpAdmin: React.FC<{
           const { team, subCoaches = [], students = [], checkIns = [] } = teamData;
           const peerMentors = students.filter((s: any) => s.classification === 'Peer Mentor').length;
           const inclusionBuddies = students.filter((s: any) => s.classification === 'Inclusion Buddy').length;
-          const ratioValid = inclusionBuddies >= Math.ceil(peerMentors / 2) || team.ratio_override;
+          const ratioValid = inclusionBuddies >= Math.ceil(peerMentors / 3) || team.ratio_override;
 
           return (
             <div key={team.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden">

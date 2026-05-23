@@ -105,7 +105,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   // Validations
   const peerMentors = students.filter(s => s.classification === 'Peer Mentor').length;
   const inclusionBuddies = students.filter(s => s.classification === 'Inclusion Buddy').length;
-  const ratioViolated = peerMentors > inclusionBuddies * 2; // violation if peer mentors are > 2x inclusion buddies
+  const ratioViolated = peerMentors > inclusionBuddies * 3; // violation if peer mentors are > 3x inclusion buddies
 
   const isStepValid = () => {
     if (step === 1) {

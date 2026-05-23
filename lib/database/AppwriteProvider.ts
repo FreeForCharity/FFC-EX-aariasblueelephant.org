@@ -403,17 +403,17 @@ export class AppwriteProvider implements IDatabaseProvider {
   }
 
   // Summer Buddy Up Stubs
-  async getTeams(_userIdOrEmail?: string): Promise<any[]> { return []; }
-  async createTeam(_team: Partial<any>): Promise<any> { return {} as any; }
-  async updateTeam(_id: string, _data: Partial<any>): Promise<void> { return; }
-  async getSubCoaches(_teamId: string): Promise<any[]> { return []; }
-  async createSubCoach(_coach: Partial<any>): Promise<void> { return; }
-  async updateSubCoach(_id: string, _data: Partial<any>): Promise<void> { return; }
-  async getStudents(_teamId: string): Promise<any[]> { return []; }
-  async createStudent(_student: Partial<any>): Promise<void> { return; }
-  async getCheckIns(_teamId: string): Promise<any[]> { return []; }
-  async createCheckIn(_checkIn: Partial<any>): Promise<void> { return; }
-  async getAllTeamsForAdmin(): Promise<any[]> { return []; }
-  async getBuddyUpConfig(): Promise<any> { return { checkins_enabled: false, checkin_questions: [] }; }
-  async updateBuddyUpConfig(_config: any): Promise<void> { return; }
+  async getTeams(_userIdOrEmail?: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async createTeam(_team: Partial<any>): Promise<any> { throw new Error('Not supported with AppwriteProvider'); }
+  async updateTeam(_id: string, _data: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async getSubCoaches(_teamId: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async createSubCoach(_coach: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async updateSubCoach(_id: string, _data: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async getStudents(_teamId: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async createStudent(_student: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async getCheckIns(_teamId: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async createCheckIn(_checkIn: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
+  async getAllTeamsForAdmin(): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async getBuddyUpConfig(): Promise<any> { throw new Error('Not supported with AppwriteProvider'); }
+  async updateBuddyUpConfig(_config: any): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
 }

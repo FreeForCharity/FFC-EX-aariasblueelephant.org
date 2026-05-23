@@ -76,7 +76,10 @@ const Login: React.FC = () => {
     localStorage.setItem('abe_sim_session', JSON.stringify(mockSession));
     
     // Check if there was a returnTo path saved
-    const returnTo = localStorage.getItem('authReturnTo') || '/circle-of-friends?tab=summer-buddy-up';
+    let returnTo = localStorage.getItem('authReturnTo') || '/circle-of-friends?tab=summer-buddy-up';
+    if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      returnTo = '/circle-of-friends?tab=summer-buddy-up';
+    }
     localStorage.removeItem('authReturnTo');
     localStorage.setItem('showDashboardPrompt', 'true');
     
