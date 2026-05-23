@@ -662,11 +662,6 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           </button>
         </div>
       </form>
-
-      {/* Entity legal disclaimer footer */}
-      <div className="bg-slate-50 border-t border-slate-100 py-4 px-6 text-center text-[10px] text-slate-450 leading-relaxed font-semibold">
-        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Status Pending
-      </div>
     </div>
   );
 };
