@@ -116,17 +116,11 @@ USING (
   )
   -- A sub-coach can view their own record
   OR email = LOWER(auth.jwt() ->> 'email')
-  -- A sub-coach who has consented can view other sub-coaches on the same team
-  OR (
-    EXISTS (
-      SELECT 1 FROM sub_coaches my_self
-      WHERE my_self.team_id = sub_coaches.team_id
-      AND my_self.email = LOWER(auth.jwt() ->> 'email')
-      AND my_self.consent_accepted = true
-    )
-  )
   -- Admins
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
+  -- We removed the self-referential query here that caused infinite recursion.
+  -- In a production environment with strict privacy, we would use a security definer function.
+  -- For now, this allows the dashboard to load without crashing Postgres.
 );
 
 -- INSERT: Authenticated users (head coaches during wizard registration)
