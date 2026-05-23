@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { IDatabaseProvider, Team, SubCoach, Student, CheckIn } from './types';
+import { IDatabaseProvider, Team, SubCoach, Student, CheckIn, BuddyUpConfig } from './types';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
 
 export class SupabaseProvider implements IDatabaseProvider {
@@ -491,5 +491,26 @@ export class SupabaseProvider implements IDatabaseProvider {
       sub_coaches: (subCoaches || []).filter(s => s.team_id === team.id),
       students: (students || []).filter(st => st.team_id === team.id)
     }));
+  }
+
+  async getBuddyUpConfig(): Promise<BuddyUpConfig> {
+    const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'buddy_up_config').single();
+    if (error && error.code !== 'PGRST116') {
+      console.warn('Failed to fetch buddy_up_config', error);
+      return { checkins_enabled: false, checkin_questions: ['What project are you working on?', 'What did you learn?', 'How could you improve?'] };
+    }
+    if (data?.value) {
+      try {
+        return JSON.parse(data.value) as BuddyUpConfig;
+      } catch(e) {
+        // fallback
+      }
+    }
+    return { checkins_enabled: false, checkin_questions: ['What project are you working on?', 'What did you learn?', 'How could you improve?'] };
+  }
+
+  async updateBuddyUpConfig(config: BuddyUpConfig): Promise<void> {
+    const { error } = await supabase.from('app_settings').upsert({ key: 'buddy_up_config', value: JSON.stringify(config) });
+    if (error) throw error;
   }
 }

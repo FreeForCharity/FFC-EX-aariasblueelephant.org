@@ -414,4 +414,6 @@ export class AppwriteProvider implements IDatabaseProvider {
   async getCheckIns(_teamId: string): Promise<any[]> { return []; }
   async createCheckIn(_checkIn: Partial<any>): Promise<void> { return; }
   async getAllTeamsForAdmin(): Promise<any[]> { return []; }
+  async getBuddyUpConfig(): Promise<any> { return { checkins_enabled: false, checkin_questions: [] }; }
+  async updateBuddyUpConfig(_config: any): Promise<void> { return; }
 }

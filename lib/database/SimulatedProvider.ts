@@ -1,4 +1,4 @@
-import { IDatabaseProvider, Team, SubCoach, Student, CheckIn, FriendEntry } from './types';
+import { IDatabaseProvider, Team, SubCoach, Student, CheckIn, BuddyUpConfig, FriendEntry } from './types';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../../types';
 import { ALL_EVENTS, STATIC_REGISTRATIONS } from '../../constants';
 import { RESILIENCE_TESTIMONIALS } from '../../data/resilience_data';
@@ -382,8 +382,7 @@ export class SimulatedProvider implements IDatabaseProvider {
       team_id: checkIn.team_id || '',
       milestone_target: checkIn.milestone_target || 'JULY_15',
       youtube_url: checkIn.youtube_url || '',
-      project_summary: checkIn.project_summary || '',
-      learnings_log: checkIn.learnings_log || '',
+      answers: checkIn.answers || {},
       submitted_at: new Date().toISOString()
     };
     checkIns.push(newCheckIn);
@@ -402,5 +401,22 @@ export class SimulatedProvider implements IDatabaseProvider {
       sub_coaches: subCoaches.filter(s => s.team_id === team.id),
       students: students.filter(st => st.team_id === team.id)
     })).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+
+  async getBuddyUpConfig(): Promise<BuddyUpConfig> {
+    const defaultCfg: BuddyUpConfig = { checkins_enabled: false, checkin_questions: ['What project are you working on?', 'What did you learn?', 'How could you improve?'] };
+    const saved = localStorage.getItem('abe_sim_buddy_up_config');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // use default
+      }
+    }
+    return defaultCfg;
+  }
+
+  async updateBuddyUpConfig(config: BuddyUpConfig): Promise<void> {
+    localStorage.setItem('abe_sim_buddy_up_config', JSON.stringify(config));
   }
 }

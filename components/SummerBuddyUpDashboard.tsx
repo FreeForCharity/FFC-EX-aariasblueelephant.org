@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/database';
-import { Team, SubCoach, Student, CheckIn } from '../lib/database/types';
+import { Team, SubCoach, Student, CheckIn, BuddyUpConfig } from '../lib/database/types';
 
 interface SummerBuddyUpDashboardProps {
   team: Team;
@@ -34,9 +34,11 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   const [submittingCheckIn, setSubmittingCheckIn] = useState(false);
   const [activeMilestoneForm, setActiveMilestoneForm] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [projectSummary, setProjectSummary] = useState('');
-  const [learningsLog, setLearningsLog] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [checkInError, setCheckInError] = useState('');
+
+  // Config State
+  const [buddyUpConfig, setBuddyUpConfig] = useState<BuddyUpConfig | null>(null);
 
   // Clipboard copy feedback
   const [copySuccess, setCopySuccess] = useState(false);
@@ -44,15 +46,17 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [coachesList, studentsList, checkInsList] = await Promise.all([
+      const [coachesList, studentsList, checkInsList, config] = await Promise.all([
         db.getSubCoaches(team.id),
         db.getStudents(team.id),
-        db.getCheckIns(team.id)
+        db.getCheckIns(team.id),
+        db.getBuddyUpConfig()
       ]);
 
       setSubCoaches(coachesList);
       setStudents(studentsList);
       setCheckIns(checkInsList);
+      setBuddyUpConfig(config);
 
       // Check if logged in user is a sub-coach
       const matchedSubCoach = coachesList.find(c => c.email.toLowerCase() === currentUser.email.toLowerCase());
@@ -114,14 +118,13 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
       return;
     }
 
-    if (projectSummary.trim().length < 10) {
-      setCheckInError('Summary must be at least 10 characters.');
-      return;
-    }
+    if (!buddyUpConfig) return;
 
-    if (learningsLog.trim().length < 10) {
-      setCheckInError('Learnings log must be at least 10 characters.');
-      return;
+    for (const q of buddyUpConfig.checkin_questions) {
+      if (!answers[q] || answers[q].trim().length < 5) {
+        setCheckInError(`Please provide a more detailed answer for: "${q}"`);
+        return;
+      }
     }
 
     setSubmittingCheckIn(true);
@@ -130,14 +133,12 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
         team_id: team.id,
         milestone_target: milestone,
         youtube_url: youtubeUrl.trim(),
-        project_summary: projectSummary.trim(),
-        learnings_log: learningsLog.trim()
+        answers
       });
 
       // Clear form & close
       setYoutubeUrl('');
-      setProjectSummary('');
-      setLearningsLog('');
+      setAnswers({});
       setActiveMilestoneForm(null);
       
       // Reload checkins
@@ -461,6 +462,12 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
               </div>
             </div>
 
+            {!buddyUpConfig?.checkins_enabled && (
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm font-semibold">
+                Check-ins are currently disabled by the administrator. Please check back later.
+              </div>
+            )}
+
             {/* MILESTONE GRID */}
             <div className="space-y-4">
               {milestoneDetails.map((milestone) => {
@@ -497,7 +504,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                           <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold py-1 px-3 rounded-full">
                             ✓ Submitted
                           </span>
-                        ) : !isTeamActive ? (
+                        ) : !isTeamActive || !buddyUpConfig?.checkins_enabled ? (
                           <button
                             disabled
                             className="text-xs bg-slate-100 text-slate-400 border border-slate-200 font-semibold py-1.5 px-3 rounded-xl cursor-not-allowed"
@@ -528,7 +535,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                     {/* SUBMITTED CONTENT VIEW */}
                     {checkIn && (
                       <div className="mt-4 border-t border-slate-100 pt-3.5 space-y-2.5 text-xs text-slate-750">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 mb-3">
                           <span className="font-bold text-slate-500">Video Link:</span>
                           <a 
                             href={checkIn.youtube_url} 
@@ -539,15 +546,13 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                             🎬 View YouTube Video
                           </a>
                         </div>
-                        <div>
-                          <span className="font-bold text-slate-800 block mb-0.5">Project Activity Summary:</span>
-                          <p className="bg-white p-2.5 border border-slate-150 rounded-xl leading-relaxed">{checkIn.project_summary}</p>
-                        </div>
-                        <div>
-                          <span className="font-bold text-slate-800 block mb-0.5">Learnings & Social Empathy Log:</span>
-                          <p className="bg-white p-2.5 border border-slate-150 rounded-xl leading-relaxed">{checkIn.learnings_log}</p>
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-semibold text-right">
+                        {Object.entries(checkIn.answers || {}).map(([question, answer], i) => (
+                          <div key={i}>
+                            <span className="font-bold text-slate-800 block mb-0.5">{question}</span>
+                            <p className="bg-white p-2.5 border border-slate-150 rounded-xl leading-relaxed">{answer}</p>
+                          </div>
+                        ))}
+                        <div className="text-[10px] text-slate-400 font-semibold text-right mt-2">
                           Submitted at {new Date(checkIn.submitted_at).toLocaleDateString()}
                         </div>
                       </div>
@@ -578,29 +583,19 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                             </p>
                           </div>
 
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1">What activity did you do? (Project Summary) <span className="text-red-500">*</span></label>
-                            <textarea
-                              required
-                              value={projectSummary}
-                              onChange={(e) => setProjectSummary(e.target.value)}
-                              placeholder="e.g. Gathered at Central Park and built a collaborative sensory painting using watercolors, leaves, and sponges..."
-                              rows={3}
-                              className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none text-slate-800 text-xs leading-normal"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-1">Social Learnings & Empathy Observations <span className="text-red-500">*</span></label>
-                            <textarea
-                              required
-                              value={learningsLog}
-                              onChange={(e) => setLearningsLog(e.target.value)}
-                              placeholder="e.g. The buddy cohort showed amazing synergy! Mentors adapted rules naturally so our inclusion buddy could participate comfortably..."
-                              rows={3}
-                              className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none text-slate-800 text-xs leading-normal"
-                            />
-                          </div>
+                          {buddyUpConfig?.checkin_questions.map((question, i) => (
+                            <div key={i}>
+                              <label className="block font-bold text-slate-700 mb-1">{question} <span className="text-red-500">*</span></label>
+                              <textarea
+                                required
+                                value={answers[question] || ''}
+                                onChange={(e) => setAnswers(prev => ({ ...prev, [question]: e.target.value }))}
+                                placeholder="Type your answer here..."
+                                rows={3}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none text-slate-800 text-xs leading-normal"
+                              />
+                            </div>
+                          ))}
                         </div>
 
                         <button

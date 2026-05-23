@@ -44,8 +44,7 @@ CREATE TABLE IF NOT EXISTS check_ins (
   team_id UUID REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
   milestone_target TEXT NOT NULL,
   youtube_url TEXT NOT NULL,
-  project_summary TEXT NOT NULL,
-  learnings_log TEXT NOT NULL,
+  answers JSONB NOT NULL DEFAULT '{}'::jsonb,
   submitted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
   UNIQUE (team_id, milestone_target)
 );
@@ -263,3 +262,25 @@ WITH CHECK (
     AND teams.status != 'PENDING_CONSENT'
   )
 );
+
+-- 9. Insert Default App Settings for Buddy Up
+INSERT INTO app_settings (key, value)
+VALUES (
+  'buddy_up_config', 
+  '{"checkins_enabled": false, "checkin_questions": ["What project are you working on?", "What did you learn?", "How could you improve?"]}'
+)
+ON CONFLICT (key) DO NOTHING;
+
+-- 10. Migration for existing check_ins tables (safe addition of JSONB answers)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='check_ins' AND column_name='answers') THEN
+        ALTER TABLE check_ins ADD COLUMN answers JSONB NOT NULL DEFAULT '{}'::jsonb;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='check_ins' AND column_name='project_summary') THEN
+        ALTER TABLE check_ins DROP COLUMN project_summary;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='check_ins' AND column_name='learnings_log') THEN
+        ALTER TABLE check_ins DROP COLUMN learnings_log;
+    END IF;
+END $$;

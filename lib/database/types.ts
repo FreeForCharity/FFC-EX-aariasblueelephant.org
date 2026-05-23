@@ -80,6 +80,10 @@ export interface IDatabaseProvider {
   getCheckIns(teamId: string): Promise<CheckIn[]>;
   createCheckIn(checkIn: Partial<CheckIn>): Promise<void>;
   getAllTeamsForAdmin(): Promise<any[]>;
+  
+  // Settings
+  getBuddyUpConfig(): Promise<BuddyUpConfig>;
+  updateBuddyUpConfig(config: BuddyUpConfig): Promise<void>;
 }
 
 export interface Team {
@@ -120,8 +124,11 @@ export interface CheckIn {
   team_id: string;
   milestone_target: 'JULY_15' | 'JULY_30' | 'AUGUST_15' | 'AUGUST_30';
   youtube_url: string;
-  project_summary: string;
-  learnings_log: string;
+  answers: Record<string, string>;
   submitted_at: string;
 }
 
+export interface BuddyUpConfig {
+  checkins_enabled: boolean;
+  checkin_questions: string[];
+}

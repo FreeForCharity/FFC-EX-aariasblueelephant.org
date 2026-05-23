@@ -167,6 +167,8 @@ class ResilientDatabase implements IDatabaseProvider {
   async getCheckIns(teamId: string) { return this.provider.getCheckIns(teamId); }
   async createCheckIn(checkIn: Partial<CheckIn>) { return this.provider.createCheckIn(checkIn); }
   async getAllTeamsForAdmin() { return this.provider.getAllTeamsForAdmin(); }
+  async getBuddyUpConfig() { return this.provider.getBuddyUpConfig(); }
+  async updateBuddyUpConfig(config: any) { return this.provider.updateBuddyUpConfig(config); }
 }
 
 export const db = new ResilientDatabase();

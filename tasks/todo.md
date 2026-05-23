@@ -36,3 +36,8 @@
 - [x] Handle unauthenticated views (show a beautiful program page with login CTA).
 - [x] Handle admin view inside "Summer Buddy Up" to let board members see all teams and check-in submissions.
 - [x] Verify everything locally across multiple simulated identities.
+
+## Phase 7: Cohort Dashboard Navigation & Simulated Login Routing
+- [x] Add a direct sidebar/mobile menu link for **Summer Buddy Up** inside `pages/Dashboard.tsx`.
+- [x] Handle click redirection on path-based nav items in `pages/Dashboard.tsx`.
+- [x] Modify simulated login default redirect in `pages/Login.tsx` to go to `/circle-of-friends?tab=summer-buddy-up`.

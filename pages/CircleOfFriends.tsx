@@ -263,8 +263,55 @@ const CircleOfFriends: React.FC = () => {
     priority: 23
   });
 
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    localStorage.getItem('abe_show_dev_panel') === 'true'
+  );
+
+  const handleSimulateLogin = (role: 'admin' | 'head_coach') => {
+    localStorage.setItem('abe_use_simulation', 'true');
+    
+    let email = '';
+    let name = '';
+    let id = '';
+
+    if (role === 'head_coach') {
+      email = 'headcoach@aariasblueelephant.org';
+      name = 'Jane Headcoach';
+      id = 'hc-user-id';
+    } else if (role === 'admin') {
+      email = 'admin@aariasblueelephant.org';
+      name = 'Board Administrator';
+      id = 'admin-user-id';
+    }
+
+    const mockSession = {
+      user: {
+        id,
+        email,
+        email_confirmed_at: new Date().toISOString(),
+        user_metadata: {
+          full_name: name,
+          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00AEEF&color=fff`
+        }
+      }
+    };
+    
+    localStorage.setItem('abe_sim_session', JSON.stringify(mockSession));
+    window.location.reload();
+  };
+
   // Summer Buddy Up states
-  const [activeTab, setActiveTab] = useState<'voices' | 'summer-buddy-up'>('voices');
+  const [activeTab, setActiveTab] = useState<'voices' | 'summer-buddy-up'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'summer-buddy-up' || tabParam === 'buddy') {
+      return 'summer-buddy-up';
+    }
+    return 'voices';
+  });
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [teamsLoading, setTeamsLoading] = useState(true);
   const [adminTeams, setAdminTeams] = useState<any[]>([]);
@@ -545,7 +592,13 @@ const CircleOfFriends: React.FC = () => {
         <div className="flex justify-center mb-12">
           <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-inner">
             <button
-              onClick={() => setActiveTab('voices')}
+              type="button"
+              onClick={() => {
+                setActiveTab('voices');
+                const url = new URL(window.location.href);
+                url.searchParams.delete('tab');
+                window.history.replaceState({}, '', url.toString());
+              }}
               className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer ${
                 activeTab === 'voices'
                   ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
@@ -555,7 +608,13 @@ const CircleOfFriends: React.FC = () => {
               Voices of the Herd
             </button>
             <button
-              onClick={() => setActiveTab('summer-buddy-up')}
+              type="button"
+              onClick={() => {
+                setActiveTab('summer-buddy-up');
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'summer-buddy-up');
+                window.history.replaceState({}, '', url.toString());
+              }}
               className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer flex items-center gap-2 ${
                 activeTab === 'summer-buddy-up'
                   ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md'
@@ -682,7 +741,11 @@ const CircleOfFriends: React.FC = () => {
           /* Summer Buddy Up Portal */
           <div className="space-y-12">
             {!user ? (
-              <SummerBuddyUpPromo onLogin={loginWithGoogle} />
+              <SummerBuddyUpPromo 
+                onLogin={loginWithGoogle} 
+                isLocalhost={isLocalhost}
+                onSimulateLogin={handleSimulateLogin}
+              />
             ) : user.isBoard ? (
               <div className="space-y-6">
                 <div className="flex justify-end">
@@ -913,7 +976,11 @@ const CircleOfFriends: React.FC = () => {
 };
 
 // Guest Promotion view for unauthenticated users
-const SummerBuddyUpPromo: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+const SummerBuddyUpPromo: React.FC<{ 
+  onLogin: () => void; 
+  isLocalhost: boolean; 
+  onSimulateLogin: (role: 'admin' | 'head_coach') => void;
+}> = ({ onLogin, isLocalhost, onSimulateLogin }) => {
   return (
     <div className="max-w-4xl mx-auto py-12 px-6 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/60 dark:border-slate-800 text-slate-700 dark:text-slate-200">
       <div className="text-center mb-10">
@@ -989,6 +1056,30 @@ const SummerBuddyUpPromo: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
         >
           Continue with Google Auth
         </button>
+
+        {isLocalhost && (
+          <div className="mt-6 pt-6 border-t border-sky-100 dark:border-sky-900/50">
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-3 uppercase tracking-[0.15em] text-center">
+              Local Development Bypass (Google Auth is unavailable on localhost)
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-3">
+              <button
+                type="button"
+                onClick={() => onSimulateLogin('admin')}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition cursor-pointer shadow-md"
+              >
+                Simulate Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => onSimulateLogin('head_coach')}
+                className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition cursor-pointer shadow-md"
+              >
+                Simulate Coach
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1016,6 +1107,23 @@ const SummerBuddyUpAdmin: React.FC<{
   currentUser: any;
 }> = ({ teams, loading, onRefresh, currentUser }) => {
   const [updatingTeamId, setUpdatingTeamId] = useState<string | null>(null);
+  const [config, setConfig] = useState<any>(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  useEffect(() => {
+    db.getBuddyUpConfig().then(setConfig);
+  }, []);
+
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await db.updateBuddyUpConfig(config);
+      alert('Program Settings Saved!');
+    } catch (e) {
+      alert('Failed to save program settings.');
+    }
+    setSavingConfig(false);
+  };
 
   const handleStatusChange = async (teamId: string, newStatus: any) => {
     try {
@@ -1078,6 +1186,40 @@ const SummerBuddyUpAdmin: React.FC<{
           <span className="text-lg font-black text-sky-600 dark:text-sky-400">{teams.length} Registered</span>
         </div>
       </div>
+
+      {config && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 space-y-4">
+          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wide border-b border-slate-100 pb-2">Program Settings</h3>
+          
+          <div className="flex items-center gap-3">
+            <input 
+              type="checkbox" 
+              checked={config.checkins_enabled} 
+              onChange={e => setConfig({...config, checkins_enabled: e.target.checked})}
+              className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500"
+            />
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Enable Check-Ins App-Wide</span>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Check-In Questions (One per line)</label>
+            <textarea
+              value={config.checkin_questions.join('\n')}
+              onChange={e => setConfig({...config, checkin_questions: e.target.value.split('\n').filter(q => q.trim())})}
+              rows={4}
+              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-250 dark:border-slate-750 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-sky-500/30"
+            />
+          </div>
+
+          <button 
+            onClick={handleSaveConfig}
+            disabled={savingConfig}
+            className="bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 font-bold text-xs px-4 py-2 rounded-xl transition hover:bg-slate-800 dark:hover:bg-slate-700"
+          >
+            {savingConfig ? 'Saving...' : 'Save Settings'}
+          </button>
+        </div>
+      )}
 
       <div className="space-y-6">
         {teams.map((teamData: any) => {
@@ -1231,7 +1373,7 @@ const SummerBuddyUpAdmin: React.FC<{
                           </div>
                           {log ? (
                             <div className="mt-2 space-y-1">
-                              <p className="text-slate-500 dark:text-slate-450 italic line-clamp-2">"{log.project_summary}"</p>
+                              <p className="text-slate-500 dark:text-slate-450 italic line-clamp-2">"{String(Object.values(log.answers || {})[0] || 'Log submitted')}"</p>
                               <a 
                                 href={log.youtube_url} 
                                 target="_blank" 
