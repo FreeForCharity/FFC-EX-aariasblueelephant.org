@@ -557,8 +557,8 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
               {/* Head Coach */}
               <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-150">
                 <div>
-                  <div className="font-bold text-slate-800"> Jane Headcoach (You)</div>
-                  <div className="text-[10px] text-sky-650 font-semibold mt-0.5">Primary Coordinator</div>
+                  <div className="font-bold text-slate-800"> {currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Primary Coordinator'} (You)</div>
+                  <div className="text-[10px] text-sky-650 font-semibold mt-0.5">{currentUser.email}</div>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full">Owner</span>

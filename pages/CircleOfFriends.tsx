@@ -1368,9 +1368,11 @@ const SummerBuddyUpAdmin: React.FC<{
                       <div className="w-1.5 h-1.5 bg-sky-500 rounded-full mt-1 shrink-0"></div>
                       <div>
                         <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          Jane Headcoach <span className="text-[8px] font-black bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 rounded">HEAD COACH</span>
+                          Primary Coordinator <span className="text-[8px] font-black bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 rounded">HEAD COACH</span>
                         </p>
-                        <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">headcoach@aariasblueelephant.org</p>
+                        <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5" title={team.head_coach_id}>
+                          ID: {team.head_coach_id.substring(0, 8)}...
+                        </p>
                       </div>
                     </div>
 
