@@ -195,7 +195,11 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
       onSuccess(newTeam);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Failed to register the team. The team name might already be taken.');
+      if (err.message?.includes('teams_team_name_key') || err.message?.includes('duplicate key value')) {
+        setErrorMsg(`The team name "${teamName}" is already taken. Please choose a different name.`);
+      } else {
+        setErrorMsg(err.message || 'Failed to register the team. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -218,10 +222,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           Bring children of all abilities together for local sensory-friendly projects and fun!
         </p>
 
-        {/* Legal pending tag */}
-        <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-white">
-          501(c)(3) Nonprofit
-        </span>
+
 
         {/* Step Indicator */}
         <div className="flex items-center gap-2 mt-6">

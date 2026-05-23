@@ -414,6 +414,8 @@ export class AppwriteProvider implements IDatabaseProvider {
   async getCheckIns(_teamId: string): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
   async createCheckIn(_checkIn: Partial<any>): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
   async getAllTeamsForAdmin(): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async getPendingSubCoachInvites(): Promise<any[]> { throw new Error('Not supported with AppwriteProvider'); }
+  async acceptSubCoachInvite(_id: string): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
   async getBuddyUpConfig(): Promise<any> { throw new Error('Not supported with AppwriteProvider'); }
   async updateBuddyUpConfig(_config: any): Promise<void> { throw new Error('Not supported with AppwriteProvider'); }
 }
