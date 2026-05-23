@@ -69,5 +69,5 @@
 - **WCAG Compliance**: High contrast, alt text on all images, no flashing, readable fonts.
 - **Palette**: Use soft, sensory-friendly blues (#00AEEF), yellows (#FFE066), purples (#C3AED6), greens (#A8E6CF), pinks (#FFB6C1).
 - **Mission Alignment**: Reinforce "fun without barriers," "inclusive play," and "compassionate community."
-- **Legal Transparency**: Include Entity No. B20250299015 (101 Felicia Ave, Tracy, CA 95391) and "501(c)(3) status pending" where relevant.
+- **Legal Transparency**: Include Entity No. B20250299015 (101 Felicia Ave, Tracy, CA 95391) and "501(c)(3) Nonprofit" where relevant.
 - **Communications**: Warm, hopeful tone. LinkedIn posts 150–300 words. Always include: https://aariasblueelephant.org/.

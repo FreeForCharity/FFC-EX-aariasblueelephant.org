@@ -275,7 +275,7 @@ const PrivacyPolicy: React.FC = () => {
                         <p>We accept monetary donations via our secure third-party portals, and occasionally physical in-kind donations of specialized sensory equipment. All donations are used to further the direct mission of the charity, specifically to fund event venues, trained staff, accessibility resources, and operational expenses.</p>
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Refunds &amp; Tax Deductibility</h3>
-                        <p>As standard practice for non-profit organizations, donations are non-refundable unless there has been a palpable error in the transaction. <strong>Please Note:</strong> Aaria's Blue Elephant is currently operating with its 501(c)(3) tax-exempt status pending. Donors should consult their tax advisors regarding the current deductibility of their contributions.</p>
+                        <p>As standard practice for non-profit organizations, donations are non-refundable unless there has been a palpable error in the transaction. <strong>Please Note:</strong> Aaria's Blue Elephant is currently operating with its 501(c)(3) tax-exempt status. Donors should consult their tax advisors regarding the current deductibility of their contributions.</p>
                     </div>
 
                     <hr className="my-12 border-slate-200 dark:border-slate-800" />
@@ -320,7 +320,7 @@ const PrivacyPolicy: React.FC = () => {
                                 <strong className="text-slate-900 dark:text-white w-32">Entity No:</strong> B20250299015
                             </li>
                             <li className="flex items-center gap-3">
-                                <strong className="text-slate-900 dark:text-white w-32">Tax Status:</strong> 501(c)(3) Pending
+                                <strong className="text-slate-900 dark:text-white w-32">Tax Status:</strong> 501(c)(3) Nonprofit
                             </li>
                             <li className="flex items-center gap-3">
                                 <strong className="text-slate-900 dark:text-white w-32">Email Contact:</strong> <a href="mailto:info@aariasblueelephant.org" className="text-sky-600 dark:text-sky-400 hover:underline">info@aariasblueelephant.org</a>

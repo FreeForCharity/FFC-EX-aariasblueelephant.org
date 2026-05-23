@@ -232,7 +232,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
                   <h5 className="font-bold text-slate-800">3. Liability Release & PII Safety</h5>
                   <p>
-                    Aaria's Blue Elephant is a pending 501(c)(3) (Entity No. B20250299015). Activities are self-guided and voluntary. You release Aaria's Blue Elephant from direct liabilities during independent cohort project sessions. Do not include students' full names or locations in YouTube video titles.
+                    Aaria's Blue Elephant is a 501(c)(3) (Entity No. B20250299015). Activities are self-guided and voluntary. You release Aaria's Blue Elephant from direct liabilities during independent cohort project sessions. Do not include students' full names or locations in YouTube video titles.
                   </p>
                 </div>
               </div>
@@ -617,7 +617,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
       
       {/* Entity legal disclaimer footer */}
       <div className="bg-slate-50 border border-slate-200 py-4 px-6 text-center text-[10px] text-slate-450 leading-relaxed font-semibold rounded-2xl shadow-sm">
-        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Status Pending
+        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Nonprofit
       </div>
     </div>
   );
