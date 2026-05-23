@@ -72,6 +72,7 @@ export interface IDatabaseProvider {
   getTeams(userIdOrEmail?: string): Promise<Team[]>;
   createTeam(team: Partial<Team>): Promise<Team>;
   updateTeam(id: string, data: Partial<Team>): Promise<void>;
+  deleteTeam(id: string): Promise<void>;
   getSubCoaches(teamId: string): Promise<SubCoach[]>;
   createSubCoach(coach: Partial<SubCoach>): Promise<void>;
   updateSubCoach(id: string, data: Partial<SubCoach>): Promise<void>;

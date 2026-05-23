@@ -429,6 +429,11 @@ export class SupabaseProvider implements IDatabaseProvider {
     if (error) throw error;
   }
 
+  async deleteTeam(id: string): Promise<void> {
+    const { error } = await supabase.from('teams').delete().eq('id', id);
+    if (error) throw error;
+  }
+
   async getPendingSubCoachInvites(): Promise<any[]> {
     const session = await this.getSession();
     const email = session?.user?.email?.toLowerCase();

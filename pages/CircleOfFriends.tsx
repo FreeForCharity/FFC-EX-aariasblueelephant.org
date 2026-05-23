@@ -1175,14 +1175,28 @@ const SummerBuddyUpAdmin: React.FC<{
     }
   };
 
-  const handleRatioOverrideToggle = async (teamId: string, currentOverride: boolean) => {
+  const handleRatioOverrideToggle = async (teamId: string, currentStatus: boolean) => {
     try {
       setUpdatingTeamId(teamId);
-      await db.updateTeam(teamId, { ratio_override: !currentOverride });
+      await db.updateTeam(teamId, { ratio_override: !currentStatus });
       onRefresh();
     } catch (err) {
-      console.error('Failed to toggle ratio override:', err);
-      alert('Failed to update ratio override.');
+      console.error('Error updating ratio override:', err);
+      alert('Failed to update ratio override');
+    } finally {
+      setUpdatingTeamId(null);
+    }
+  };
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this team? All associated sub-coaches, students, and check-ins will be deleted as well.')) return;
+    try {
+      setUpdatingTeamId(teamId);
+      await db.deleteTeam(teamId);
+      onRefresh();
+    } catch (err) {
+      console.error('Error deleting team:', err);
+      alert('Failed to delete team');
     } finally {
       setUpdatingTeamId(null);
     }
@@ -1301,18 +1315,14 @@ const SummerBuddyUpAdmin: React.FC<{
 
                   <div className="flex items-center gap-2">
                     <span className="text-[9px] font-black text-slate-450 uppercase tracking-widest">Status:</span>
-                    <select
-                      value={team.status}
-                      disabled={updatingTeamId === team.id}
-                      onChange={(e) => handleStatusChange(team.id, e.target.value)}
-                      className={`bg-white dark:bg-slate-850 border rounded-lg px-2 py-1 text-xs font-bold outline-none ${team.status === 'PENDING_ADMIN_APPROVAL' ? 'border-amber-400 text-amber-600 dark:text-amber-400' : 'border-slate-250 dark:border-slate-750 text-slate-750 dark:text-slate-300'}`}
-                    >
-                      <option value="PENDING_CONSENT">Pending Consent</option>
-                      <option value="PENDING_ADMIN_APPROVAL">Pending Approval</option>
-                      <option value="ACTIVE">Active</option>
-                      <option value="FLAGGED">Flagged</option>
-                      <option value="COMPLETED">Completed</option>
-                    </select>
+                    <span className={`px-2 py-1 rounded-md text-xs font-bold border ${
+                      team.status === 'PENDING_ADMIN_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      team.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      team.status === 'PENDING_CONSENT' ? 'bg-slate-50 text-slate-600 border-slate-200' :
+                      'bg-slate-100 text-slate-700 border-slate-300'
+                    }`}>
+                      {team.status.replace(/_/g, ' ')}
+                    </span>
                     
                     {team.status === 'PENDING_ADMIN_APPROVAL' && (
                       <button
@@ -1320,9 +1330,27 @@ const SummerBuddyUpAdmin: React.FC<{
                         disabled={updatingTeamId === team.id}
                         className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors animate-pulse hover:animate-none shadow shadow-emerald-500/20"
                       >
-                        Approve
+                        Approve Cohort
                       </button>
                     )}
+
+                    {team.status === 'ACTIVE' && (
+                      <button
+                        onClick={() => handleStatusChange(team.id, 'INACTIVE')}
+                        disabled={updatingTeamId === team.id}
+                        className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                      >
+                        Deactivate
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleDeleteTeam(team.id)}
+                      disabled={updatingTeamId === team.id}
+                      className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ml-2"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>
