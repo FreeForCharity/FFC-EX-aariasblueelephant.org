@@ -220,7 +220,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
         {/* Legal pending tag */}
         <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-white">
-          501(c)(3) Status Pending
+          501(c)(3) Nonprofit
         </span>
 
         {/* Step Indicator */}
@@ -596,7 +596,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-700">
                 <h4 className="font-bold text-slate-850">Primary Head Coach Certification and Obligations:</h4>
                 <p>
-                  As the primary submitter (Head Coach), you are the administrative owner of this Aaria's Blue Elephant team. You acknowledge that Aaria's Blue Elephant is a pending 501(c)(3) nonprofit entity (Entity No. B20250299015).
+                  As the primary submitter (Head Coach), you are the administrative owner of this Aaria's Blue Elephant team. You acknowledge that Aaria's Blue Elephant is a 501(c)(3) nonprofit entity (Entity No. B20250299015).
                 </p>
                 <p>
                   You agree to conduct your group projects in safe, sensory-friendly public spaces or consenting parent homes, ensuring inclusion and safety for children of all sensory profiles.
@@ -665,7 +665,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
       {/* Entity legal disclaimer footer */}
       <div className="bg-slate-50 border-t border-slate-100 py-4 px-6 text-center text-[10px] text-slate-450 leading-relaxed font-semibold">
-        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Status Pending
+        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Nonprofit
       </div>
     </div>
   );

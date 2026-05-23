@@ -1095,7 +1095,7 @@ const LegalDisclaimerFooter: React.FC = () => {
         Circle of Friends — Summer Buddy Up • Supporting "Fun without barriers," inclusive play, and compassionate community.
       </p>
       <p className="leading-relaxed">
-        Entity No. B20250299015 | 101 Felicia Ave, Tracy, CA 95391 | 501(c)(3) status pending
+        Entity No. B20250299015 | 101 Felicia Ave, Tracy, CA 95391 | 501(c)(3) Nonprofit
       </p>
     </div>
   );
