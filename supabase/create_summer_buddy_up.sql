@@ -149,7 +149,6 @@ WITH CHECK (
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
 );
-WITH CHECK (true);
 
 -- UPDATE: Self (to accept consent/bind user_id), head coach, or admin
 DROP POLICY IF EXISTS "Update sub_coaches policy" ON sub_coaches;
@@ -213,7 +212,6 @@ WITH CHECK (
   )
   OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
 );
-WITH CHECK (true);
 
 -- UPDATE/DELETE: Head coach or admin
 DROP POLICY IF EXISTS "Write students policy" ON students;
