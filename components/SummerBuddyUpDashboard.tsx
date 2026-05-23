@@ -803,10 +803,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
         </div>
       </div>
       
-      {/* Entity legal disclaimer footer */}
-      <div className="bg-slate-50 border border-slate-200 py-4 px-6 text-center text-[10px] text-slate-450 leading-relaxed font-semibold rounded-2xl shadow-sm">
-        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Nonprofit
-      </div>
+
     </div>
   );
 };
