@@ -435,11 +435,11 @@ export class SimulatedProvider implements IDatabaseProvider {
     const checkIns = this.getList<CheckIn>('abe_sim_check_ins');
 
     return teams.map(team => ({
-      ...team,
-      check_ins: checkIns.filter(c => c.team_id === team.id),
-      sub_coaches: subCoaches.filter(s => s.team_id === team.id),
+      team: team,
+      checkIns: checkIns.filter(c => c.team_id === team.id),
+      subCoaches: subCoaches.filter(s => s.team_id === team.id),
       students: students.filter(st => st.team_id === team.id)
-    })).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    })).sort((a, b) => b.team.created_at.localeCompare(a.team.created_at));
   }
 
   async getBuddyUpConfig(): Promise<BuddyUpConfig> {
