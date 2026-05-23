@@ -20,7 +20,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   // Form State
   const [teamName, setTeamName] = useState('');
-  const [focusArea, setFocusArea] = useState('Inclusive Play');
+  const [focusArea, setFocusArea] = useState('DIGITAL DISCOVERY');
   const [headCoachPhone, setHeadCoachPhone] = useState('');
   
   // Sub Coaches
@@ -40,10 +40,14 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   const [overrideExplanation, setOverrideExplanation] = useState('');
   const [certifyOfflineConsent, setCertifyOfflineConsent] = useState(false);
   const [acceptCoordinatorRole, setAcceptCoordinatorRole] = useState(false);
-  const [headCoachPhone, setHeadCoachPhone] = useState('');
-  const [focusArea, setFocusArea] = useState('DIGITAL DISCOVERY');
   
-  const focusAreas = ['DIGITAL DISCOVERY', 'PERFORMANCE ARTS', 'COMMUNITY SPIRIT', 'CREATIVE PLAY', 'Other'];
+  const focusAreas = [
+    { value: 'DIGITAL DISCOVERY', label: 'DIGITAL DISCOVERY: Co-build a community park or "dream school" in Minecraft or Roblox.' },
+    { value: 'PERFORMANCE ARTS', label: 'PERFORMANCE ARTS: Choreograph a dance, write the "Blue Elephant Anthem," or perform a puppet show.' },
+    { value: 'COMMUNITY SPIRIT', label: 'COMMUNITY SPIRIT: Create "Welcome to the Herd" care packages for new students or a large mural for a favorite teacher.' },
+    { value: 'CREATIVE PLAY', label: 'CREATIVE PLAY: Use clay for stop-motion animation, build Lego murals, or write joint poems.' },
+    { value: 'Other', label: 'Other' }
+  ];
 
   // Add/Remove Sub-Coach handlers
   const addSubCoach = () => {
