@@ -180,15 +180,17 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
       // 3. Add students
       for (const student of students) {
-        await db.createStudent({
-          team_id: newTeam.id,
-          name: student.name.trim(),
-          grade: student.grade,
-          school_district: student.school_district,
-          classification: student.classification,
-          award_delivery_type: student.award_delivery_type,
-          parent_email: student.parent_email.trim().toLowerCase()
-        });
+        if (student.name.trim()) {
+          await db.createStudent({
+            team_id: newTeam.id,
+            name: student.name.trim(),
+            grade: student.grade,
+            school_district: student.school_district,
+            classification: student.classification,
+            award_delivery_type: student.award_delivery_type,
+            parent_email: student.parent_email.trim().toLowerCase()
+          });
+        }
       }
 
       // Trigger success callback
@@ -650,17 +652,29 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
             <div />
           )}
 
-          <button
-            type="submit"
-            disabled={!isStepValid() || loading}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-              step === 4 
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-200' 
-                : 'bg-sky-500 hover:bg-sky-400 shadow-sky-100'
-            }`}
-          >
-            {loading ? 'Registering...' : step === 4 ? 'Submit Roster & Register Team' : 'Continue'}
-          </button>
+          <div className="flex items-center gap-3">
+            {(step === 2 || step === 3) && (
+              <button
+                type="button"
+                onClick={() => setStep(step + 1)}
+                disabled={loading}
+                className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Skip for now
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!isStepValid() || loading}
+              className={`px-6 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
+                step === 4 
+                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-200' 
+                  : 'bg-sky-500 hover:bg-sky-400 shadow-sky-100'
+              }`}
+            >
+              {loading ? 'Registering...' : step === 4 ? 'Submit Roster & Register Team' : 'Continue'}
+            </button>
+          </div>
         </div>
       </form>
 
