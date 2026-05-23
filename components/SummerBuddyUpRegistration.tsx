@@ -20,8 +20,16 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   // Form State
   const [teamName, setTeamName] = useState('');
-  const [focusArea, setFocusArea] = useState('Inclusive Play');
   const [headCoachPhone, setHeadCoachPhone] = useState('');
+  const [focusArea, setFocusArea] = useState('DIGITAL DISCOVERY');
+  
+  const focusAreas = [
+    { value: 'DIGITAL DISCOVERY', label: 'DIGITAL DISCOVERY: Co-build a community park or "dream school" in Minecraft or Roblox.' },
+    { value: 'PERFORMANCE ARTS', label: 'PERFORMANCE ARTS: Choreograph a dance, write the "Blue Elephant Anthem," or perform a puppet show.' },
+    { value: 'COMMUNITY SPIRIT', label: 'COMMUNITY SPIRIT: Create "Welcome to the Herd" care packages for new students or a large mural for a favorite teacher.' },
+    { value: 'CREATIVE PLAY', label: 'CREATIVE PLAY: Use clay for stop-motion animation, build Lego murals, or write joint poems.' },
+    { value: 'Other', label: 'Other' }
+  ];
   
   // Sub Coaches
   const [subCoaches, setSubCoaches] = useState<Omit<SubCoach, 'id' | 'team_id' | 'consent_accepted' | 'user_id'>[]>([
@@ -40,9 +48,6 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   const [overrideExplanation, setOverrideExplanation] = useState('');
   const [certifyOfflineConsent, setCertifyOfflineConsent] = useState(false);
   const [acceptCoordinatorRole, setAcceptCoordinatorRole] = useState(false);
-
-  // Focus area presets
-  const focusAreas = ['Inclusive Play', 'Creative Arts & Music', 'Unified Sports & Games', 'Reading Buddies', 'Other / Custom'];
 
   // Add/Remove Sub-Coach handlers
   const addSubCoach = () => {
@@ -293,7 +298,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-350 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none text-slate-800"
                   >
                     {focusAreas.map(area => (
-                      <option key={area} value={area}>{area}</option>
+                      <option key={area.value} value={area.value}>{area.label}</option>
                     ))}
                   </select>
                 </div>
