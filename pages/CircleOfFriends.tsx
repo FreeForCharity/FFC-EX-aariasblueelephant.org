@@ -809,7 +809,6 @@ const CircleOfFriends: React.FC = () => {
             ) : (
               renderCoachPortal()
             )}
-            <LegalDisclaimerFooter />
           </div>
         )}
 
@@ -1125,19 +1124,6 @@ const SummerBuddyUpPromo: React.FC<{
   );
 };
 
-// Legal transparency footer
-const LegalDisclaimerFooter: React.FC = () => {
-  return (
-    <div className="max-w-4xl mx-auto mt-12 p-6 bg-slate-100/50 dark:bg-slate-900/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 text-center text-xs text-slate-555 dark:text-slate-400 space-y-2.5">
-      <p className="font-bold text-slate-600 dark:text-slate-350">
-        Circle of Friends — Summer Buddy Up • Supporting "Fun without barriers," inclusive play, and compassionate community.
-      </p>
-      <p className="leading-relaxed">
-        Entity No. B20250299015 | 101 Felicia Ave, Tracy, CA 95391 | 501(c)(3) Nonprofit
-      </p>
-    </div>
-  );
-};
 
 // Administrative control panel
 const SummerBuddyUpAdmin: React.FC<{
