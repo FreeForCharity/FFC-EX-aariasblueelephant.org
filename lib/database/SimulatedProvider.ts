@@ -322,6 +322,12 @@ export class SimulatedProvider implements IDatabaseProvider {
     }
   }
 
+  async deleteTeam(id: string): Promise<void> {
+    const teams = this.getList<Team>('abe_sim_teams');
+    const filtered = teams.filter(t => t.id !== id);
+    this.saveList('abe_sim_teams', filtered);
+  }
+
   async getPendingSubCoachInvites(): Promise<any[]> {
     const session = await this.getSession();
     const email = session?.user?.email?.toLowerCase();
