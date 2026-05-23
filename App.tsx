@@ -145,6 +145,7 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
+                <Route path="/buddy" element={<Navigate to="/circle-of-friends" replace />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
                 
                 {/* External Redirects */}

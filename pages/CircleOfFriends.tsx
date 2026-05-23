@@ -1063,9 +1063,9 @@ const SummerBuddyUpPromo: React.FC<{
             2
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">The 3:1 Buddy Ratio</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Enforces structured inclusion. Each group must maintain a minimum 3:1 ratio of Peer Mentors to Inclusion Buddies (Special Education/ND students).
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">The Inclusion Ratio</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Enforces structured inclusion. Each group can have up to 3 Peer Mentors (Gen Ed) for every 1 Inclusion Buddy (Special Education/ND).
             </p>
           </div>
         </div>

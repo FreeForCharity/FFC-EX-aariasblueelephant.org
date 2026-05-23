@@ -40,9 +40,10 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   const [overrideExplanation, setOverrideExplanation] = useState('');
   const [certifyOfflineConsent, setCertifyOfflineConsent] = useState(false);
   const [acceptCoordinatorRole, setAcceptCoordinatorRole] = useState(false);
-
-  // Focus area presets
-  const focusAreas = ['Inclusive Play', 'Creative Arts & Music', 'Unified Sports & Games', 'Reading Buddies', 'Other / Custom'];
+  const [headCoachPhone, setHeadCoachPhone] = useState('');
+  const [focusArea, setFocusArea] = useState('DIGITAL DISCOVERY');
+  
+  const focusAreas = ['DIGITAL DISCOVERY', 'PERFORMANCE ARTS', 'COMMUNITY SPIRIT', 'CREATIVE PLAY', 'Other'];
 
   // Add/Remove Sub-Coach handlers
   const addSubCoach = () => {
@@ -109,7 +110,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   const isStepValid = () => {
     if (step === 1) {
-      return teamName.trim().length >= 3 && headCoachPhone.trim().length >= 7;
+      return teamName.trim().length >= 1 && headCoachPhone.trim().length >= 7;
     }
     if (step === 2) {
       // If there are subcoaches, validate their inputs (if they started typing)
@@ -554,7 +555,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 {ratioViolated ? (
                   <div className="flex-1 bg-red-50 border border-red-200 p-3 rounded-xl">
                     <div className="text-xs font-bold text-red-800 mb-1">
-                      ⚠️ Ratio Alert (Needs at least 1 Inclusion Buddy for every 2 Peer Mentors)
+                      ⚠️ Ratio Alert (Needs at least 1 Inclusion Buddy for every 3 Peer Mentors)
                     </div>
                     <label className="flex items-start gap-1.5 select-none cursor-pointer">
                       <input
@@ -577,11 +578,11 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                       />
                     )}
                   </div>
-                ) : (
+                ) : peerMentors > 0 && inclusionBuddies > 0 ? (
                   <div className="text-xs bg-emerald-50 text-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-200 font-semibold flex items-center gap-1.5">
                     ✓ Inclusion Buddy ratio constraints met!
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
