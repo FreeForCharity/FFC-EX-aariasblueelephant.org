@@ -73,15 +73,7 @@ ALTER TABLE check_ins ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Select teams policy" ON teams;
 CREATE POLICY "Select teams policy" ON teams
 FOR SELECT TO authenticated
-USING (
-  head_coach_id = auth.uid()
-  OR EXISTS (
-    SELECT 1 FROM sub_coaches 
-    WHERE sub_coaches.team_id = teams.id 
-    AND sub_coaches.email = LOWER(auth.jwt() ->> 'email')
-  )
-  OR auth.jwt() ->> 'email' IN ('admin@aariasblueelephant.org', 'aariasblueelephant@gmail.com')
-);
+USING (true);
 
 -- INSERT: Authenticated users can create
 DROP POLICY IF EXISTS "Insert teams policy" ON teams;
