@@ -159,6 +159,7 @@ class ResilientDatabase implements IDatabaseProvider {
   async getTeams(userIdOrEmail?: string) { return this.provider.getTeams(userIdOrEmail); }
   async createTeam(team: Partial<Team>) { return this.provider.createTeam(team); }
   async updateTeam(id: string, data: Partial<Team>) { return this.provider.updateTeam(id, data); }
+  async deleteTeam(id: string) { return this.provider.deleteTeam(id); }
   async getSubCoaches(teamId: string) { return this.provider.getSubCoaches(teamId); }
   async createSubCoach(coach: Partial<SubCoach>) { return this.provider.createSubCoach(coach); }
   async updateSubCoach(id: string, data: Partial<SubCoach>) { return this.provider.updateSubCoach(id, data); }
