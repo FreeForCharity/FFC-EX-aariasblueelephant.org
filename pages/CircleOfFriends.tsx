@@ -330,10 +330,22 @@ const CircleOfFriends: React.FC = () => {
     }
     try {
       setTeamsLoading(true);
-      const [fetchedTeams, invites] = await Promise.all([
-        db.getTeams(),
-        db.getPendingSubCoachInvites()
-      ]);
+      
+      let fetchedTeams: Team[] = [];
+      let invites: any[] = [];
+
+      try {
+        fetchedTeams = await db.getTeams();
+      } catch (e) {
+        console.error('Error fetching teams (tables may not exist):', e);
+      }
+
+      try {
+        invites = await db.getPendingSubCoachInvites();
+      } catch (e) {
+        console.error('Error fetching invites (tables may not exist):', e);
+      }
+
       if (fetchedTeams && fetchedTeams.length > 0) {
         setMyTeam(fetchedTeams[0]);
       } else {
@@ -341,7 +353,7 @@ const CircleOfFriends: React.FC = () => {
       }
       setPendingInvites(invites || []);
     } catch (err) {
-      console.error('Error fetching user team or invites:', err);
+      console.error('Unexpected error in loadMyTeam:', err);
       setMyTeam(null);
       setPendingInvites([]);
     } finally {
