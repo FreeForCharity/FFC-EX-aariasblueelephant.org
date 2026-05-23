@@ -294,6 +294,11 @@ export class SimulatedProvider implements IDatabaseProvider {
 
   async createTeam(team: Partial<Team>): Promise<Team> {
     const teams = this.getList<Team>('abe_sim_teams');
+    
+    if (teams.some(t => t.team_name.toLowerCase() === team.team_name?.toLowerCase())) {
+      throw new Error('duplicate key value violates unique constraint "teams_team_name_key"');
+    }
+    
     const newTeam: Team = {
       id: crypto.randomUUID?.() || Math.random().toString(36).substring(2, 11),
       team_name: team.team_name || 'Mock Team',
