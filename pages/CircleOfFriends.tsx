@@ -330,13 +330,12 @@ const CircleOfFriends: React.FC = () => {
     }
     try {
       setTeamsLoading(true);
-      const [userTeams, invites] = await Promise.all([
+      const [fetchedTeams, invites] = await Promise.all([
         db.getTeams(),
         db.getPendingSubCoachInvites()
       ]);
-      
-      if (userTeams && userTeams.length > 0) {
-        setMyTeam(userTeams[0]);
+      if (fetchedTeams && fetchedTeams.length > 0) {
+        setMyTeam(fetchedTeams[0]);
       } else {
         setMyTeam(null);
       }
