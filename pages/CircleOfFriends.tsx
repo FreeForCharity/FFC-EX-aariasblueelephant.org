@@ -1258,7 +1258,7 @@ const SummerBuddyUpAdmin: React.FC<{
               value={config.checkin_questions.join('\n')}
               onChange={e => setConfig({...config, checkin_questions: e.target.value.split('\n').filter(q => q.trim())})}
               rows={4}
-              className="w-full bg-slate-50 dark:bg-slate-850 border border-slate-250 dark:border-slate-750 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-sky-500/30"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-sky-500/30"
             />
           </div>
 
