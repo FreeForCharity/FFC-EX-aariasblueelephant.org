@@ -37,6 +37,56 @@ const Login: React.FC = () => {
     await loginWithGoogle();
   };
 
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    localStorage.getItem('abe_show_dev_panel') === 'true'
+  );
+
+  const simulateLogin = (role: 'admin' | 'head_coach') => {
+    localStorage.setItem('abe_use_simulation', 'true');
+    
+    let email = '';
+    let name = '';
+    let id = '';
+
+    if (role === 'head_coach') {
+      email = 'headcoach@aariasblueelephant.org';
+      name = 'Jane Headcoach';
+      id = 'hc-user-id';
+    } else if (role === 'admin') {
+      email = 'admin@aariasblueelephant.org';
+      name = 'Board Administrator';
+      id = 'admin-user-id';
+    }
+
+    const mockSession = {
+      user: {
+        id,
+        email,
+        email_confirmed_at: new Date().toISOString(),
+        user_metadata: {
+          full_name: name,
+          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00AEEF&color=fff`
+        }
+      }
+    };
+    
+    localStorage.setItem('abe_sim_session', JSON.stringify(mockSession));
+    
+    // Check if there was a returnTo path saved
+    let returnTo = localStorage.getItem('authReturnTo') || '/circle-of-friends?tab=summer-buddy-up';
+    if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
+      returnTo = '/circle-of-friends?tab=summer-buddy-up';
+    }
+    localStorage.removeItem('authReturnTo');
+    localStorage.setItem('showDashboardPrompt', 'true');
+    
+    // Hard reload/redirect to ensure session is fully crystallized in memory
+    window.location.href = returnTo;
+  };
+
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
       <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden">
@@ -73,6 +123,30 @@ const Login: React.FC = () => {
               </svg>
               {isLoading ? 'Connecting...' : 'Continue with Google'}
             </Button>
+
+            {isLocalhost && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.15em] mb-2 text-center">
+                  Local Simulation Bypass
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => simulateLogin('admin')}
+                    className="flex justify-center items-center py-2 px-3 text-xs font-bold text-slate-700 hover:text-slate-900 dark:text-slate-350 dark:hover:text-white bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-250 dark:border-amber-900/60 rounded-xl transition cursor-pointer"
+                  >
+                    Simulate Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => simulateLogin('head_coach')}
+                    className="flex justify-center items-center py-2 px-3 text-xs font-bold text-slate-700 hover:text-slate-900 dark:text-slate-350 dark:hover:text-white bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/20 dark:hover:bg-sky-950/40 border border-sky-250 dark:border-sky-900/60 rounded-xl transition cursor-pointer"
+                  >
+                    Simulate Coach
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

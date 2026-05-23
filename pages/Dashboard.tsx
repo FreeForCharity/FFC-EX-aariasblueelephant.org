@@ -67,7 +67,8 @@ type ViewState =
     | 'receipts' 
     | 'my-events' 
     | 'my-volunteering' 
-    | 'testimonial';
+    | 'testimonial'
+    | 'buddy-up';
 
 const Dashboard: React.FC = () => {
     const { user, isBoard, isDonor, updateAvatar } = useAuth();
@@ -389,10 +390,11 @@ const Dashboard: React.FC = () => {
         { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor' }, 
         
         // Always Visible (at the end)
+        { id: 'buddy-up', label: 'Summer Buddy Up', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
         { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
     ].filter(item => {
-        // Special case for wheel - always show
-        if (item.id === 'wheel') return true;
+        // Special case for wheel and buddy-up - always show
+        if (item.id === 'wheel' || item.id === 'buddy-up') return true;
         
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)
@@ -2087,7 +2089,13 @@ const Dashboard: React.FC = () => {
                             <button
                                 type="button"
                                 key={item.id}
-                                onClick={() => setActiveView(item.id as ViewState)}
+                                onClick={() => {
+                                    if ('path' in item && item.path) {
+                                        navigate(item.path);
+                                    } else {
+                                        setActiveView(item.id as ViewState);
+                                    }
+                                }}
                                 className={`w-full flex items-center px-4 py-3 text-xs font-bold rounded-lg transition-all duration-200 group ${isActive
                                     ? 'bg-brand-cyan/10 text-brand-cyan shadow-sm dark:bg-brand-cyan/10 dark:text-brand-cyan'
                                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
@@ -2110,7 +2118,13 @@ const Dashboard: React.FC = () => {
                             <button
                                 type="button"
                                 key={item.id}
-                                onClick={() => setActiveView(item.id as ViewState)}
+                                onClick={() => {
+                                    if ('path' in item && item.path) {
+                                        navigate(item.path);
+                                    } else {
+                                        setActiveView(item.id as ViewState);
+                                    }
+                                }}
                                 className={`flex-shrink-0 flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-all ${isActive
                                     ? 'bg-brand-cyan text-slate-900 bg-brand-cyan dark:text-slate-900'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'

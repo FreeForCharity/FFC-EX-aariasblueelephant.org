@@ -1,0 +1,624 @@
+import React, { useState, useEffect } from 'react';
+import { db } from '../lib/database';
+import { Team, SubCoach, Student, CheckIn, BuddyUpConfig } from '../lib/database/types';
+
+interface SummerBuddyUpDashboardProps {
+  team: Team;
+  currentUser: {
+    id: string;
+    email: string;
+    user_metadata?: {
+      full_name?: string;
+    };
+  };
+  onRefreshTeam: () => void;
+}
+
+export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ team, currentUser, onRefreshTeam }) => {
+  const [subCoaches, setSubCoaches] = useState<SubCoach[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Waiver modal state
+  const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [mySubCoachRecord, setMySubCoachRecord] = useState<SubCoach | null>(null);
+  const [waiverChecks, setWaiverChecks] = useState({
+    liability: false,
+    noFace: false,
+    piiSafe: false
+  });
+  const [submittingWaiver, setSubmittingWaiver] = useState(false);
+
+  // New Check-In Form State
+  const [submittingCheckIn, setSubmittingCheckIn] = useState(false);
+  const [activeMilestoneForm, setActiveMilestoneForm] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [checkInError, setCheckInError] = useState('');
+
+  // Config State
+  const [buddyUpConfig, setBuddyUpConfig] = useState<BuddyUpConfig | null>(null);
+
+  // Clipboard copy feedback
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [coachesList, studentsList, checkInsList, config] = await Promise.all([
+        db.getSubCoaches(team.id),
+        db.getStudents(team.id),
+        db.getCheckIns(team.id),
+        db.getBuddyUpConfig()
+      ]);
+
+      setSubCoaches(coachesList);
+      setStudents(studentsList);
+      setCheckIns(checkInsList);
+      setBuddyUpConfig(config);
+
+      // Check if logged in user is a sub-coach
+      const matchedSubCoach = coachesList.find(c => c.email.toLowerCase() === currentUser.email.toLowerCase());
+      if (matchedSubCoach) {
+        setMySubCoachRecord(matchedSubCoach);
+        // Show waiver modal if they haven't accepted it yet
+        if (!matchedSubCoach.consent_accepted) {
+          setShowWaiverModal(true);
+        }
+      }
+
+      // Check for dynamic status transition to ACTIVE:
+      // If team is PENDING_CONSENT, and all sub-coaches have consent_accepted = true
+      const allConsented = coachesList.every(c => c.consent_accepted === true);
+      if (team.status === 'PENDING_CONSENT' && allConsented) {
+        await db.updateTeam(team.id, { status: 'ACTIVE' });
+        onRefreshTeam();
+      }
+
+    } catch (err) {
+      console.error('Error loading team dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [team.id, currentUser.email]);
+
+  const handleWaiverSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mySubCoachRecord || !waiverChecks.liability || !waiverChecks.noFace || !waiverChecks.piiSafe) return;
+
+    setSubmittingWaiver(true);
+    try {
+      await db.updateSubCoach(mySubCoachRecord.id, {
+        consent_accepted: true,
+        user_id: currentUser.id
+      });
+      setShowWaiverModal(false);
+      // Reload everything to trigger ACTIVE checks
+      loadData();
+    } catch (err) {
+      console.error('Failed to submit waiver:', err);
+    } finally {
+      setSubmittingWaiver(false);
+    }
+  };
+
+  const handleCheckInSubmit = async (e: React.FormEvent, milestone: 'JULY_15' | 'JULY_30' | 'AUGUST_15' | 'AUGUST_30') => {
+    e.preventDefault();
+    setCheckInError('');
+
+    // Quick regex validation for unlisted/listed YouTube urls
+    const ytRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+    if (!ytRegex.test(youtubeUrl)) {
+      setCheckInError('Please enter a valid YouTube video URL.');
+      return;
+    }
+
+    if (!buddyUpConfig) return;
+
+    for (const q of buddyUpConfig.checkin_questions) {
+      if (!answers[q] || answers[q].trim().length < 5) {
+        setCheckInError(`Please provide a more detailed answer for: "${q}"`);
+        return;
+      }
+    }
+
+    setSubmittingCheckIn(true);
+    try {
+      await db.createCheckIn({
+        team_id: team.id,
+        milestone_target: milestone,
+        youtube_url: youtubeUrl.trim(),
+        answers
+      });
+
+      // Clear form & close
+      setYoutubeUrl('');
+      setAnswers({});
+      setActiveMilestoneForm(null);
+      
+      // Reload checkins
+      loadData();
+    } catch (err: any) {
+      console.error(err);
+      setCheckInError(err.message || 'Failed to submit check-in.');
+    } finally {
+      setSubmittingCheckIn(false);
+    }
+  };
+
+  const copyInviteText = () => {
+    const inviteLink = `${window.location.origin}${window.location.pathname}?tab=summer-buddy-up`;
+    const text = `Hey co-coach! I registered our Aaria's Blue Elephant Summer Buddy Up team ("${team.team_name}"). Please log in to ${inviteLink} using your Google account (${currentUser.id === team.head_coach_id ? 'the email I added' : 'your email'}) to claim your profile and accept the safety waivers so we can start tracking our check-ins! 🐘💙`;
+    
+    navigator.clipboard.writeText(text).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    });
+  };
+
+  // Masking functions for co-parent privacy before waiver consent
+  const maskEmail = (email: string) => {
+    const parts = email.split('@');
+    if (parts.length !== 2) return email;
+    const name = parts[0];
+    const domain = parts[1];
+    if (name.length <= 2) return `${name[0]}***@${domain}`;
+    return `${name.substring(0, 2)}***${name.substring(name.length - 1)}@${domain}`;
+  };
+
+  const maskPhone = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length < 4) return phone;
+    return `(***) ***-**${cleaned.substring(cleaned.length - 2)}`;
+  };
+
+  const isHeadCoach = currentUser.id === team.head_coach_id;
+  const isTeamActive = team.status !== 'PENDING_CONSENT';
+
+  // Check-ins targets configuration
+  const milestoneDetails = [
+    { key: 'JULY_15', label: 'Milestone 1: July 15', dateLabel: 'July 15 Check-in' },
+    { key: 'JULY_30', label: 'Milestone 2: July 30', dateLabel: 'July 30 Check-in' },
+    { key: 'AUGUST_15', label: 'Milestone 3: August 15', dateLabel: 'August 15 Check-in' },
+    { key: 'AUGUST_30', label: 'Milestone 4: August 30', dateLabel: 'August 30 Check-in' }
+  ];
+
+  const submittedCount = checkIns.length;
+  const isPrizeEligible = submittedCount >= 2;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-semibold">Loading Summer Buddy Up Dashboard...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`space-y-6 font-sans relative ${showWaiverModal ? 'blur-sm select-none pointer-events-none' : ''}`}>
+      
+      {/* WAIVER MODAL OVERLAY */}
+      {showWaiverModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 select-text pointer-events-auto">
+          <div className="bg-white max-w-xl w-full rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-650 to-sky-500 px-6 py-5 text-white">
+              <h3 className="text-xl font-bold">Parent Partnership Consent & Waiver</h3>
+              <p className="text-xs text-indigo-100 mt-1">Review legal releases to join team "{team.team_name}"</p>
+            </div>
+            
+            <form onSubmit={handleWaiverSubmit} className="p-6 space-y-4">
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-xs leading-relaxed text-slate-650 border-b border-slate-100 pb-4">
+                <p>
+                  Welcome! You have been added as a Partnering Parent/Sub-Coach for the Summer Buddy Up program. To safeguard student privacy and establish safe guidelines, please review and accept the agreements below:
+                </p>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
+                  <h5 className="font-bold text-slate-800">1. Offline Consent Signatures</h5>
+                  <p>
+                    All students on the roster must have offline signatures captured from their respective legal guardians before participating. By checking the boxes, you agree to coordinate and verify that physical safety release sheets are kept on file.
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
+                  <h5 className="font-bold text-slate-800">2. No-Face Photography Compliance</h5>
+                  <p>
+                    Aaria's Blue Elephant promotes child safety and protects children from online facial recognition trackers. When filming check-in videos, please avoid direct eye-level frontal face shots of students. Film from behind, focus on hands/actions, use creative camera angles, or obtain explicit parent permission first.
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
+                  <h5 className="font-bold text-slate-800">3. Liability Release & PII Safety</h5>
+                  <p>
+                    Aaria's Blue Elephant is a pending 501(c)(3) (Entity No. B20250299015). Activities are self-guided and voluntary. You release Aaria's Blue Elephant from direct liabilities during independent cohort project sessions. Do not include students' full names or locations in YouTube video titles.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={waiverChecks.liability}
+                    onChange={(e) => setWaiverChecks({ ...waiverChecks, liability: e.target.checked })}
+                    className="mt-0.5"
+                    required
+                  />
+                  <span className="text-xs text-slate-700">
+                    I accept the general liability waiver release policies.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={waiverChecks.noFace}
+                    onChange={(e) => setWaiverChecks({ ...waiverChecks, noFace: e.target.checked })}
+                    className="mt-0.5"
+                    required
+                  />
+                  <span className="text-xs text-slate-700">
+                    I agree to follow the "No-Face" visual filming guardrails in all milestone uploads.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={waiverChecks.piiSafe}
+                    onChange={(e) => setWaiverChecks({ ...waiverChecks, piiSafe: e.target.checked })}
+                    className="mt-0.5"
+                    required
+                  />
+                  <span className="text-xs text-slate-700">
+                    I certify I will protect child PII and submit only unlisted YouTube links.
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!waiverChecks.liability || !waiverChecks.noFace || !waiverChecks.piiSafe || submittingWaiver}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl shadow-lg transition"
+              >
+                {submittingWaiver ? 'Signing...' : 'Sign Waiver & Open Dashboard'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DASHBOARD HERO BANNER */}
+      <div className="bg-gradient-to-r from-sky-450 via-sky-350 to-indigo-400 p-6 md:p-8 rounded-3xl text-white shadow-lg relative">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+              Summer Buddy Cohort
+            </span>
+            <h2 className="text-3xl font-extrabold mt-1.5">{team.team_name}</h2>
+            <p className="text-sm text-sky-50 mt-1">Focus Area: <strong className="text-white">{team.focus_area}</strong></p>
+          </div>
+
+          <div className="flex flex-col items-start md:items-end gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-sky-100">Status:</span>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                isTeamActive 
+                  ? 'bg-emerald-500 text-white shadow shadow-emerald-250 animate-pulse' 
+                  : 'bg-yellow-450 text-slate-900 shadow shadow-yellow-200'
+              }`}>
+                {team.status === 'PENDING_CONSENT' ? '⏳ PENDING PARENT CONSENT' : '✓ ACTIVE COHORT'}
+              </span>
+            </div>
+
+            {/* Prize eligibility check */}
+            <div className="text-[11px] font-medium text-sky-100">
+              {isPrizeEligible ? (
+                <span className="bg-emerald-600/30 border border-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                  🎉 Final Award Ceremony Eligible ({submittedCount}/4)
+                </span>
+              ) : (
+                <span className="bg-white/10 px-2 py-0.5 rounded-full">
+                  Submit any 2 milestones to qualify for awards ({submittedCount}/4)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* WARNING IF PENDING_CONSENT */}
+      {!isTeamActive && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl text-xs md:text-sm text-amber-800">
+          <div className="font-bold mb-1">⚠️ Checklist Locked (Pending Co-Parent Consent)</div>
+          Our safety policy requires all listed co-parents to log in and sign their safety waiver. Once all sub-coaches accept, the timeline checklist will automatically unlock!
+        </div>
+      )}
+
+      {/* TWO COLUMN CONTENT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN: ROSTER INFO */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          {/* PARENT COORDINATORS CARD */}
+          <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 flex justify-between items-center text-sm md:text-base">
+              <span>Coaches & Parents</span>
+              <span className="text-[10px] text-slate-400 font-normal">Pull Login Matched</span>
+            </h3>
+
+            <div className="space-y-3">
+              {/* Head Coach */}
+              <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-150">
+                <div>
+                  <div className="font-bold text-slate-800"> Jane Headcoach (You)</div>
+                  <div className="text-[10px] text-sky-650 font-semibold mt-0.5">Primary Coordinator</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full">Owner</span>
+                </div>
+              </div>
+
+              {/* Sub Coaches */}
+              {subCoaches.map((coach, index) => {
+                const isConsented = coach.consent_accepted;
+                return (
+                  <div key={index} className="p-2.5 rounded-xl border border-slate-150 space-y-1.5 text-xs bg-white">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-slate-800">{coach.name}</div>
+                        <div className="text-[10px] text-slate-400">Co-Parent</div>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        isConsented 
+                          ? 'bg-emerald-500 text-white' 
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {isConsented ? 'Consented' : 'Pending'}
+                      </span>
+                    </div>
+
+                    <div className="text-[10.5px] text-slate-500 space-y-0.5 border-t border-slate-50 pt-1.5 font-mono">
+                      <div>
+                        Email: <span className="text-slate-700">{isConsented || isHeadCoach ? coach.email : maskEmail(coach.email)}</span>
+                      </div>
+                      <div>
+                        Phone: <span className="text-slate-700">{isConsented || isHeadCoach ? coach.phone : maskPhone(coach.phone)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Manual Invite widget (Head coach only) */}
+            {isHeadCoach && (
+              <div className="border border-indigo-100 bg-indigo-50/50 p-3.5 rounded-xl space-y-2.5">
+                <div className="text-xs font-bold text-indigo-900">Invite Co-Parents / Partners</div>
+                <p className="text-[10px] text-slate-500 leading-normal">
+                  Since we protect user privacy and use zero transaction emails, copy and share the link/text directly with co-parents to sign waivers!
+                </p>
+                <button
+                  type="button"
+                  onClick={copyInviteText}
+                  className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold text-white transition flex items-center justify-center gap-1.5 ${
+                    copySuccess ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-550'
+                  }`}
+                >
+                  {copySuccess ? '✓ Copied Invite to Clipboard!' : 'Copy WhatsApp / Text Invite'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* REGISTERED STUDENTS CARD */}
+          <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-4">
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 text-sm md:text-base">
+              Roster Students ({students.length})
+            </h3>
+            
+            <div className="space-y-3">
+              {students.map((student, index) => (
+                <div key={index} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2 relative overflow-hidden">
+                  {/* Category Accent */}
+                  <div className={`absolute top-0 left-0 w-1.5 h-full ${
+                    student.classification === 'Inclusion Buddy' ? 'bg-purple-400' : 'bg-sky-400'
+                  }`}></div>
+
+                  <div className="pl-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-850">{student.name}</span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        student.classification === 'Inclusion Buddy' 
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200' 
+                          : 'bg-sky-50 text-sky-700 border border-sky-200'
+                      }`}>
+                        {student.classification === 'Inclusion Buddy' ? 'Buddy' : 'Mentor'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-y-1.5 mt-2 text-[10px] text-slate-500 font-semibold border-t border-slate-200/50 pt-2">
+                      <div>Grade: <span className="text-slate-850">{student.grade}</span></div>
+                      <div>District: <span className="text-slate-850">{student.school_district}</span></div>
+                      <div className="col-span-2">
+                        Delivery: <span className="text-indigo-650">{student.award_delivery_type === 'IN_PERSON_ONLY' ? '🏆 Local In-Person Ceremony' : '✉️ Virtual Digital'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: PROGRESS TIMELINE & FORM */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white border border-slate-200 p-5 md:p-6 rounded-2xl shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base md:text-lg">Buddy Up Check-In Milestones</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Flexible dates: Submit any 2 out of 4 check-ins for award certification.</p>
+              </div>
+            </div>
+
+            {!buddyUpConfig?.checkins_enabled && (
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm font-semibold">
+                Check-ins are currently disabled by the administrator. Please check back later.
+              </div>
+            )}
+
+            {/* MILESTONE GRID */}
+            <div className="space-y-4">
+              {milestoneDetails.map((milestone) => {
+                const checkIn = checkIns.find(c => c.milestone_target === milestone.key);
+                const isFormActive = activeMilestoneForm === milestone.key;
+
+                return (
+                  <div key={milestone.key} className={`border rounded-2xl p-4 transition-all ${
+                    checkIn 
+                      ? 'border-emerald-200 bg-emerald-50/20' 
+                      : isFormActive 
+                        ? 'border-sky-400 ring-2 ring-sky-100 bg-white' 
+                        : 'border-slate-200 bg-white'
+                  }`}>
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
+                          checkIn 
+                            ? 'bg-emerald-500 text-white' 
+                            : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {checkIn ? '✓' : '•'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-xs md:text-sm">{milestone.label}</h4>
+                          <span className="text-[10px] text-slate-400 font-medium">Cohort Milestones Log</span>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div>
+                        {checkIn ? (
+                          <span className="text-xs bg-emerald-100 text-emerald-800 font-semibold py-1 px-3 rounded-full">
+                            ✓ Submitted
+                          </span>
+                        ) : !isTeamActive || !buddyUpConfig?.checkins_enabled ? (
+                          <button
+                            disabled
+                            className="text-xs bg-slate-100 text-slate-400 border border-slate-200 font-semibold py-1.5 px-3 rounded-xl cursor-not-allowed"
+                          >
+                            Locked
+                          </button>
+                        ) : isFormActive ? (
+                          <button
+                            onClick={() => setActiveMilestoneForm(null)}
+                            className="text-xs text-slate-500 hover:text-slate-700 font-semibold px-2 py-1"
+                          >
+                            Cancel
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setActiveMilestoneForm(milestone.key);
+                              setCheckInError('');
+                            }}
+                            className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-650 border border-sky-200 font-semibold py-1.5 px-3.5 rounded-xl transition"
+                          >
+                            Submit Log
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SUBMITTED CONTENT VIEW */}
+                    {checkIn && (
+                      <div className="mt-4 border-t border-slate-100 pt-3.5 space-y-2.5 text-xs text-slate-750">
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <span className="font-bold text-slate-500">Video Link:</span>
+                          <a 
+                            href={checkIn.youtube_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sky-600 hover:underline font-mono break-all font-semibold flex items-center gap-1"
+                          >
+                            🎬 View YouTube Video
+                          </a>
+                        </div>
+                        {Object.entries(checkIn.answers || {}).map(([question, answer], i) => (
+                          <div key={i}>
+                            <span className="font-bold text-slate-800 block mb-0.5">{question}</span>
+                            <p className="bg-white p-2.5 border border-slate-150 rounded-xl leading-relaxed">{answer}</p>
+                          </div>
+                        ))}
+                        <div className="text-[10px] text-slate-400 font-semibold text-right mt-2">
+                          Submitted at {new Date(checkIn.submitted_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ACTIVE FORM SUBMISSION PANEL */}
+                    {isFormActive && (
+                      <form onSubmit={(e) => handleCheckInSubmit(e, milestone.key as any)} className="mt-4 border-t border-slate-100 pt-4 space-y-4 text-xs">
+                        {checkInError && (
+                          <div className="bg-red-50 border border-red-250 p-2.5 rounded-lg text-xs text-red-700">
+                            {checkInError}
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">Unlisted YouTube URL <span className="text-red-500">*</span></label>
+                            <input
+                              type="url"
+                              required
+                              value={youtubeUrl}
+                              onChange={(e) => setYoutubeUrl(e.target.value)}
+                              placeholder="e.g. https://www.youtube.com/watch?v=..."
+                              className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none text-slate-800 placeholder-slate-400 text-xs font-mono"
+                            />
+                            <p className="text-[9px] text-slate-400 mt-1">
+                              ⚠️ To protect child privacy, configure your YouTube video privacy settings as <strong>Unlisted</strong>. Do not use student full names in titles!
+                            </p>
+                          </div>
+
+                          {buddyUpConfig?.checkin_questions.map((question, i) => (
+                            <div key={i}>
+                              <label className="block font-bold text-slate-700 mb-1">{question} <span className="text-red-500">*</span></label>
+                              <textarea
+                                required
+                                value={answers[question] || ''}
+                                onChange={(e) => setAnswers(prev => ({ ...prev, [question]: e.target.value }))}
+                                placeholder="Type your answer here..."
+                                rows={3}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none text-slate-800 text-xs leading-normal"
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={submittingCheckIn}
+                          className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs py-2 px-4 rounded-xl shadow transition active:scale-95"
+                        >
+                          {submittingCheckIn ? 'Uploading...' : 'Submit Log Entries'}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Entity legal disclaimer footer */}
+      <div className="bg-slate-50 border border-slate-200 py-4 px-6 text-center text-[10px] text-slate-450 leading-relaxed font-semibold rounded-2xl shadow-sm">
+        Aaria's Blue Elephant • 101 Felicia Ave, Tracy, CA 95391 • Entity No. B20250299015 • 501(c)(3) Status Pending
+      </div>
+    </div>
+  );
+};
