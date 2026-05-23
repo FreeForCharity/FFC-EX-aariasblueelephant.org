@@ -298,7 +298,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-350 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none text-slate-800"
                   >
                     {focusAreas.map(area => (
-                      <option key={area} value={area}>{area}</option>
+                      <option key={area.value} value={area.value}>{area.label}</option>
                     ))}
                   </select>
                 </div>
