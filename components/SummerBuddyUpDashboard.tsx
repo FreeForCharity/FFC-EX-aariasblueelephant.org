@@ -108,6 +108,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
   const handleWaiverSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mySubCoachRecord || !waiverChecks.liability || !waiverChecks.noFace || !waiverChecks.piiSafe) return;
+    if (submittingWaiver) return; // Prevent double submission
 
     setSubmittingWaiver(true);
     setWaiverJustSubmitted(true);
@@ -117,12 +118,13 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
         user_id: currentUser.id
       });
       setShowWaiverModal(false);
-      // Reload everything to trigger ACTIVE checks
-      loadData();
+      // Let the backend process, then reload
+      setTimeout(() => {
+        loadData();
+      }, 1500);
     } catch (err) {
       console.error('Failed to submit waiver:', err);
       setWaiverJustSubmitted(false);
-    } finally {
       setSubmittingWaiver(false);
     }
   };

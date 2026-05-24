@@ -128,7 +128,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
       return true;
     }
     if (step === 3) {
-      if (students.length < 3) return false;
+      if (students.length < 2) return false;
       for (const s of students) {
         if (!s.name.trim() || !s.parent_email.trim().includes('@')) return false;
       }
@@ -405,7 +405,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           <div className="space-y-5">
             <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Step 3: Register Students (Min 3, Max 9)</h3>
+                <h3 className="text-xl font-bold text-slate-800">Step 3: Register Students (Min 2, Max 9)</h3>
                 <p className="text-xs text-slate-500 mt-1">
                   Compose your buddy cohort. Maintain the inclusive peer mentor ratio!
                 </p>

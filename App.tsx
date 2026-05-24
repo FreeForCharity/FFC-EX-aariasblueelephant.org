@@ -54,9 +54,12 @@ const AuthRedirector = () => {
   React.useEffect(() => {
     if (user) {
       const returnTo = localStorage.getItem('authReturnTo');
-      if (returnTo) {
+      if (returnTo && returnTo !== '/') {
         localStorage.removeItem('authReturnTo');
-        navigate(returnTo, { replace: true });
+        // Defer execution slightly to ensure Router is fully mounted and ready
+        setTimeout(() => {
+          navigate(returnTo, { replace: true });
+        }, 100);
       }
     }
   }, [user, navigate]);
