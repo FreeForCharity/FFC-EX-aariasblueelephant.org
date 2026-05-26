@@ -439,7 +439,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 <div key={index} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student #{index + 1}</span>
-                    {students.length > 3 && (
+                    {students.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeStudent(index)}
@@ -658,7 +658,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           )}
 
           <div className="flex items-center gap-3">
-            {(step === 2 || step === 3) && (
+            {step === 2 && (
               <button
                 type="button"
                 onClick={() => setStep(step + 1)}
