@@ -31,8 +31,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   // Students
   const [students, setStudents] = useState<Omit<Student, 'id' | 'team_id'>[]>([
     { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
+    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
   ]);
 
   // Overrides & Consent
