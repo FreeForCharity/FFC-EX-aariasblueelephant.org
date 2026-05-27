@@ -1288,7 +1288,7 @@ const SummerBuddyUpAdmin: React.FC<{
       <div className="space-y-6">
         {teams.map((teamData: any) => {
           const { team, subCoaches = [], students = [], checkIns = [] } = teamData;
-          const peerMentors = students.filter((s: any) => s.classification === 'Gen Ed, without any special accomodation').length;
+          const peerMentors = students.filter((s: any) => s.classification === 'Gen Ed, without any special accommodation').length;
           const inclusionBuddies = students.filter((s: any) => s.classification === 'Inclusion Buddy').length;
           const ratioValid = inclusionBuddies >= Math.ceil(peerMentors / 3) || team.ratio_override;
 
