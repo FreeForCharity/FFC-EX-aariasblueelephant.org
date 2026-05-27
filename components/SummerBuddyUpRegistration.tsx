@@ -30,9 +30,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   // Students
   const [students, setStudents] = useState<Omit<Student, 'id' | 'team_id'>[]>([
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
+    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accommodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
     { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
+    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accommodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
   ]);
 
   // Overrides & Consent
@@ -74,7 +74,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
       name: '',
       grade: '3rd',
       school_district: 'Tracy Unified',
-      classification: 'Gen Ed, without any special accomodation',
+      classification: 'Gen Ed, without any special accommodation',
       award_delivery_type: 'IN_PERSON_ONLY',
       parent_email: currentUser.email
     }]);
@@ -108,7 +108,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   };
 
   // Validations
-  const peerMentors = students.filter(s => s.classification === 'Gen Ed, without any special accomodation').length;
+  const peerMentors = students.filter(s => s.classification === 'Gen Ed, without any special accommodation').length;
   const inclusionBuddies = students.filter(s => s.classification === 'Inclusion Buddy').length;
   const ratioViolated = peerMentors > inclusionBuddies * 3; // violation if peer mentors are > 3x inclusion buddies
 
@@ -498,7 +498,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                         onChange={(e) => updateStudent(index, 'classification', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       >
-                        <option value="Gen Ed, without any special accomodation">Gen Ed, without any special accomodation</option>
+                        <option value="Gen Ed, without any special accommodation">Gen Ed, without any special accommodation</option>
                         <option value="Inclusion Buddy">Inclusion Buddy (Special Education)</option>
                       </select>
                     </div>

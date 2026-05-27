@@ -375,7 +375,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Role</label>
                         <select required value={addMemberForm.classification} onChange={(e) => setAddMemberForm({...addMemberForm, classification: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
                           <option value="Inclusion Buddy">Inclusion Buddy (IEP)</option>
-                          <option value="Gen Ed, without any special accomodation">Gen Ed, without any special accomodation</option>
+                          <option value="Gen Ed, without any special accommodation">Gen Ed, without any special accommodation</option>
                         </select>
                       </div>
                       <div>
