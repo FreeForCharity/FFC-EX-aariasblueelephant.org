@@ -405,7 +405,7 @@ export class SimulatedProvider implements IDatabaseProvider {
       name: student.name || '',
       grade: student.grade || '',
       school_district: student.school_district || 'Other Out of Area',
-      classification: student.classification || 'Gen Ed, without any special accommodation',
+      classification: student.classification || 'Gen Ed, without any special accomodation',
       award_delivery_type: student.award_delivery_type || 'VIRTUAL_DIGITAL',
       parent_email: student.parent_email || '',
       parent_user_id: student.parent_user_id || null,
