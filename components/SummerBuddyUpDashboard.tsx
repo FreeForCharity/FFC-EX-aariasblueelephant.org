@@ -414,13 +414,13 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
       {showWaiverModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 select-text pointer-events-auto">
           <div className="bg-white max-w-xl w-full rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-650 to-sky-500 px-6 py-5 text-white">
+            <div className="bg-gradient-to-r from-indigo-600 to-sky-500 px-6 py-5 text-white">
               <h3 className="text-xl font-bold">Parent Partnership Consent & Waiver</h3>
               <p className="text-xs text-indigo-100 mt-1">Review legal releases to join team "{team.team_name}"</p>
             </div>
             
             <form onSubmit={handleWaiverSubmit} className="p-6 space-y-4">
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-xs leading-relaxed text-slate-650 border-b border-slate-100 pb-4">
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-xs leading-relaxed text-slate-600 border-b border-slate-100 pb-4">
                 <p>
                   Welcome! You have been added as a Partnering Parent/Sub-Coach for the Summer Buddy Up program. To safeguard student privacy and establish safe guidelines, please review and accept the agreements below:
                 </p>
@@ -571,7 +571,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
               <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-150">
                 <div>
                   <div className="font-bold text-slate-800"> {currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Primary Coordinator'} (You)</div>
-                  <div className="text-[10px] text-sky-650 font-semibold mt-0.5">{currentUser.email}</div>
+                  <div className="text-[10px] text-sky-600 font-semibold mt-0.5">{currentUser.email}</div>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full">Owner</span>
@@ -660,7 +660,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                       <div>Grade: <span className="text-slate-850">{student.grade}</span></div>
                       <div>District: <span className="text-slate-850">{student.school_district}</span></div>
                       <div className="col-span-2">
-                        Delivery: <span className="text-indigo-650">{student.award_delivery_type === 'IN_PERSON_ONLY' ? '🏆 Local In-Person Ceremony' : '✉️ Virtual Digital'}</span>
+                        Delivery: <span className="text-indigo-600">{student.award_delivery_type === 'IN_PERSON_ONLY' ? '🏆 Local In-Person Ceremony' : '✉️ Virtual Digital'}</span>
                       </div>
                     </div>
                   </div>
@@ -725,7 +725,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                         ) : !isTeamActive || (buddyUpConfig?.unlocked_milestones && !buddyUpConfig.unlocked_milestones.includes(milestone.key)) || (!buddyUpConfig?.unlocked_milestones && !buddyUpConfig?.checkins_enabled) ? (
                           <button
                             disabled
-                            className="text-xs bg-slate-100 text-slate-400 border border-slate-200 font-semibold py-1.5 px-3 rounded-xl cursor-not-allowed"
+                            className="text-xs bg-slate-200 text-slate-500 border border-slate-300 font-semibold py-1.5 px-4 rounded-xl cursor-not-allowed"
                           >
                             Locked
                           </button>
@@ -742,7 +742,7 @@ export const SummerBuddyUpDashboard: React.FC<SummerBuddyUpDashboardProps> = ({ 
                               setActiveMilestoneForm(milestone.key);
                               setCheckInError('');
                             }}
-                            className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-650 border border-sky-200 font-semibold py-1.5 px-3.5 rounded-xl transition"
+                            className="text-xs bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-4 rounded-xl shadow-sm transition-colors"
                           >
                             Submit Log
                           </button>
