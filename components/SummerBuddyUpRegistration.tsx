@@ -336,7 +336,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 type="button"
                 onClick={addSubCoach}
                 disabled={subCoaches.length >= 3}
-                className="text-xs font-semibold bg-sky-50 hover:bg-sky-100 disabled:opacity-50 text-sky-650 border border-sky-200 px-3 py-1.5 rounded-xl transition"
+                className="text-xs font-bold bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl shadow-sm transition-colors"
               >
                 + Add Partner
               </button>
