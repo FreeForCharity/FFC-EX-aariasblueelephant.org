@@ -414,7 +414,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 <button
                   type="button"
                   onClick={addStudent}
-                  className="text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-650 border border-sky-200 px-3 py-1.5 rounded-xl transition"
+                  className="text-xs font-bold bg-sky-500 text-white hover:bg-sky-600 px-4 py-2 rounded-xl shadow-sm transition-colors"
                 >
                   + Add Student
                 </button>
@@ -649,7 +649,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               type="button"
               onClick={handleBack}
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-650 hover:bg-slate-50 transition font-semibold text-sm disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-100 transition font-bold text-sm disabled:opacity-50"
             >
               Back
             </button>
