@@ -116,7 +116,7 @@ export interface Student {
   name: string;
   grade: string;
   school_district: 'LUSD' | 'Tracy Unified' | 'Other Out of Area';
-  classification: 'Inclusion Buddy' | 'Peer Mentor';
+  classification: 'Inclusion Buddy' | 'Gen Ed, without any special accomodation';
   award_delivery_type: 'IN_PERSON_ONLY' | 'VIRTUAL_DIGITAL';
   parent_email: string;
   parent_user_id?: string | null;

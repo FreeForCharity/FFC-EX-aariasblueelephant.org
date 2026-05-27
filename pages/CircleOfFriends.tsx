@@ -1065,7 +1065,7 @@ const SummerBuddyUpPromo: React.FC<{
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">The Inclusion Ratio</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Enforces structured inclusion. Each group can have up to 3 Peer Mentors (Gen Ed) for every 1 Inclusion Buddy (Special Education/ND).
+              Enforces structured inclusion. Each group can have up to 3 Gen Ed Students for every 1 Inclusion Buddy (Special Education/ND).
             </p>
           </div>
         </div>
@@ -1288,7 +1288,7 @@ const SummerBuddyUpAdmin: React.FC<{
       <div className="space-y-6">
         {teams.map((teamData: any) => {
           const { team, subCoaches = [], students = [], checkIns = [] } = teamData;
-          const peerMentors = students.filter((s: any) => s.classification === 'Peer Mentor').length;
+          const peerMentors = students.filter((s: any) => s.classification === 'Gen Ed, without any special accomodation').length;
           const inclusionBuddies = students.filter((s: any) => s.classification === 'Inclusion Buddy').length;
           const ratioValid = inclusionBuddies >= Math.ceil(peerMentors / 3) || team.ratio_override;
 
