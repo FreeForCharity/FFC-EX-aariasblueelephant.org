@@ -30,9 +30,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   // Students
   const [students, setStudents] = useState<Omit<Student, 'id' | 'team_id'>[]>([
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Peer Mentor', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
+    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
     { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Inclusion Buddy', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email },
-    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Peer Mentor', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
+    { name: '', grade: '3rd', school_district: 'Tracy Unified', classification: 'Gen Ed, without any special accomodation', award_delivery_type: 'IN_PERSON_ONLY', parent_email: currentUser.email }
   ]);
 
   // Overrides & Consent
@@ -72,9 +72,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
     if (students.length >= 9) return;
     setStudents([...students, {
       name: '',
-      grade: '4th',
+      grade: '3rd',
       school_district: 'Tracy Unified',
-      classification: 'Peer Mentor',
+      classification: 'Gen Ed, without any special accomodation',
       award_delivery_type: 'IN_PERSON_ONLY',
       parent_email: currentUser.email
     }]);
@@ -108,7 +108,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   };
 
   // Validations
-  const peerMentors = students.filter(s => s.classification === 'Peer Mentor').length;
+  const peerMentors = students.filter(s => s.classification === 'Gen Ed, without any special accomodation').length;
   const inclusionBuddies = students.filter(s => s.classification === 'Inclusion Buddy').length;
   const ratioViolated = peerMentors > inclusionBuddies * 3; // violation if peer mentors are > 3x inclusion buddies
 
@@ -407,7 +407,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               <div>
                 <h3 className="text-xl font-bold text-slate-800">Step 3: Register Students (Min 2, Max 9)</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Compose your buddy cohort. Maintain the inclusive peer mentor ratio!
+                  Compose your buddy cohort. Maintain the inclusive Gen Ed ratio!
                 </p>
               </div>
               {students.length < 9 ? (
@@ -498,7 +498,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                         onChange={(e) => updateStudent(index, 'classification', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       >
-                        <option value="Peer Mentor">Peer Mentor (Neurotypical)</option>
+                        <option value="Gen Ed, without any special accomodation">Gen Ed, without any special accomodation</option>
                         <option value="Inclusion Buddy">Inclusion Buddy (Special Education)</option>
                       </select>
                     </div>
@@ -547,7 +547,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                   <div className="flex gap-4 mt-1.5">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      Peer Mentors: <strong className="text-slate-900">{peerMentors}</strong>
+                      <div className="text-slate-600 font-medium">Gen Ed Students: <strong className="text-slate-900">{peerMentors}</strong></div>
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-purple-500"></span>
@@ -559,7 +559,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 {ratioViolated ? (
                   <div className="flex-1 bg-red-50 border border-red-200 p-3 rounded-xl">
                     <div className="text-xs font-bold text-red-800 mb-1">
-                      ⚠️ Ratio Alert (Needs at least 1 Inclusion Buddy for every 3 Peer Mentors)
+                      ⚠️ Ratio Alert (Needs at least 1 Inclusion Buddy for every 3 Gen Ed Students)
                     </div>
                     <label className="flex items-start gap-1.5 select-none cursor-pointer">
                       <input
