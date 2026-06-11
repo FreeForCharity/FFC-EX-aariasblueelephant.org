@@ -35,16 +35,17 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Install Puppeteer Browsers
+        env:
+          # prerender uses the runner's preinstalled Chrome — skip puppeteer's flaky download
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - name: Verify system Chrome for prerender
         run: |
-          # clear any partial download, then run puppeteer's own installer and
-          # fail fast here (not in prerender) if chrome still isn't usable
-          rm -rf ~/.cache/puppeteer
-          node node_modules/puppeteer/install.mjs
-          node -e "console.log('chrome at:', require('puppeteer').executablePath())"
+          which google-chrome
+          google-chrome --version
       - name: Build
         run: npm run build
         env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
