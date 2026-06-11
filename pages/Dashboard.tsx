@@ -1973,6 +1973,7 @@ const Dashboard: React.FC = () => {
                     title="Aaria's Block Craft 3D"
                     className="w-full h-full"
                     allow="microphone; autoplay; fullscreen"
+                    allowFullScreen
                 />
             </div>
         </div>
