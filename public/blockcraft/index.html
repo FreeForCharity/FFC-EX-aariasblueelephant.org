@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Aaria's Block Craft 3D 🌈</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#aee7ff;
+    font-family:"Comic Sans MS","Chalkboard SE","Marker Felt","Segoe UI",sans-serif; }
+  #gameCanvas { position:fixed; inset:0; display:block; }
+
+  /* ---------- Title screen ---------- */
+  #titleScreen { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:22px; text-align:center;
+    background:linear-gradient(180deg,#7ec8ff 0%,#b9e7ff 45%,#baf2bb 100%); }
+  #titleScreen h1 { font-size:min(8vw,64px); line-height:1.15;
+    background:linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 0 rgba(255,255,255,.35); animation:bounceTitle 2.4s ease-in-out infinite; }
+  @keyframes bounceTitle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  #titleScreen .subtitle { font-size:min(3.4vw,24px); color:#246; }
+  #titleScreen .titleEmojis { font-size:min(7vw,46px); letter-spacing:10px; animation:bounceTitle 3s .4s ease-in-out infinite; }
+  .bigBtn { font-family:inherit; font-size:26px; padding:16px 44px; border:none; border-radius:30px;
+    background:linear-gradient(180deg,#ffd43b,#ffa94d); color:#5c3c00; cursor:pointer;
+    box-shadow:0 6px 0 #e8920c, 0 10px 18px rgba(0,0,0,.18); transition:transform .12s; }
+  .bigBtn:hover { transform:scale(1.06); }
+  .bigBtn:active { transform:translateY(4px); box-shadow:0 2px 0 #e8920c; }
+  .bigBtn.green { background:linear-gradient(180deg,#8ce99a,#51cf66); color:#0b4419; box-shadow:0 6px 0 #2f9e44,0 10px 18px rgba(0,0,0,.18); }
+  .bigBtn.green:active { box-shadow:0 2px 0 #2f9e44; }
+
+  /* Non-profit logo (Aaria's Blue Elephant) */
+  #logoImg { width:min(36vh,210px); border-radius:50%;
+    box-shadow:0 10px 28px rgba(20,40,90,.3);
+    animation:bounceTitle 3s ease-in-out infinite; }
+  #orgFooter { font-size:15px; color:#2b517d; background:rgba(255,255,255,.55);
+    padding:8px 20px; border-radius:18px; }
+  #nameRow { display:flex; align-items:center; gap:12px; font-size:20px; color:#246;
+    background:rgba(255,255,255,.6); padding:10px 18px; border-radius:20px; }
+  #nameRow input { font-family:inherit; font-size:22px; text-align:center; width:200px;
+    padding:8px 12px; border:3px solid #74c0fc; border-radius:14px; color:#1d4ed8; background:#fff; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:fixed; inset:0; z-index:10; pointer-events:none; display:none; }
+  #crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-size:22px; color:#fff; text-shadow:0 0 6px rgba(0,0,0,.6); }
+  #scoreBar { position:absolute; top:12px; left:12px; display:flex; gap:10px; }
+  .scoreChip { background:rgba(255,255,255,.88); border-radius:20px; padding:8px 16px; font-size:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,.18); color:#333; }
+  #portalChip { pointer-events:auto; cursor:pointer; }
+  #portalChip:hover { transform:scale(1.07); }
+  #portalChip.portalReady { background:linear-gradient(90deg,#d0bfff,#a5d8ff); animation:pulseChip 1.2s infinite; }
+  @keyframes pulseChip { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  #flash { position:fixed; inset:0; z-index:90; background:#fff; display:none; pointer-events:none; }
+  #menuBar { position:absolute; top:12px; right:12px; display:flex; gap:8px; pointer-events:auto; }
+  .menuBtn { font-family:inherit; font-size:17px; padding:10px 14px; border:none; border-radius:18px;
+    background:rgba(255,255,255,.92); cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.18); transition:transform .1s; }
+  .menuBtn:hover { transform:scale(1.08); background:#fff; }
+  #hotbar { position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    display:flex; gap:6px; pointer-events:auto; background:rgba(0,0,0,.25); padding:8px; border-radius:18px;
+    max-width:96vw; overflow-x:auto; }
+  .hotSlot { width:58px; height:58px; min-width:58px; border-radius:12px; border:3px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.18); cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; color:#fff; font-size:11px; gap:1px; }
+  .hotSlot .swatch { width:30px; height:30px; border-radius:6px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.18); background-size:cover; }
+  .hotSlot.selected { border-color:#ffd43b; background:rgba(255,212,59,.35); transform:scale(1.1); }
+  #lookHint { position:absolute; bottom:96px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,.92); padding:10px 22px; border-radius:22px; font-size:19px; color:#246;
+    box-shadow:0 4px 10px rgba(0,0,0,.2); }
+  #sideBtns { position:absolute; right:14px; top:46%; display:flex; flex-direction:column; gap:10px; pointer-events:auto; }
+  .sideBtn { width:64px; height:64px; font-size:24px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; border-radius:16px; }
+  .sideBtn small { font-size:11px; }
+  .sideBtn.active { background:#ffe066; box-shadow:0 0 0 3px #fab005, 0 3px 8px rgba(0,0,0,.18); }
+
+  /* on-screen control pad — always visible, no Esc or mouse-lock needed */
+  #touchPad, #touchActs { position:absolute; bottom:110px; pointer-events:auto; }
+  #touchPad { left:18px; width:168px; height:168px; }
+  #touchActs { right:18px; display:flex; flex-direction:column; gap:14px; }
+  .tBtn { position:absolute; width:54px; height:54px; border:none; border-radius:14px;
+    background:rgba(255,255,255,.78); font-size:22px; box-shadow:0 3px 8px rgba(0,0,0,.25);
+    cursor:pointer; touch-action:none; user-select:none; }
+  .tBtn:active { background:#ffe066; transform:scale(1.08); }
+  #tUp{left:57px;top:0} #tLeft{left:0;top:57px} #tRight{left:114px;top:57px} #tDown{left:57px;top:114px}
+  #touchActs .tBtn { position:static; width:64px; height:64px; font-size:28px; }
+  #tMode { box-shadow:0 0 0 3px #51cf66, 0 3px 8px rgba(0,0,0,.25); }
+  #tMode.digMode { box-shadow:0 0 0 3px #ff922b, 0 3px 8px rgba(0,0,0,.25); }
+  #projectPanel { position:absolute; top:70px; left:12px; width:270px; background:rgba(255,255,255,.92);
+    border-radius:18px; padding:14px; box-shadow:0 4px 12px rgba(0,0,0,.2); pointer-events:auto; display:none; }
+  #projectPanel h3 { font-size:19px; color:#1d4ed8; margin-bottom:6px; }
+  #projectPanel .stageName { font-size:16px; color:#444; margin-bottom:8px; }
+  #projBarOuter { height:18px; background:#e5e7eb; border-radius:10px; overflow:hidden; margin-bottom:10px; }
+  #projBarInner { height:100%; width:0%; border-radius:10px; transition:width .25s;
+    background:linear-gradient(90deg,#69db7c,#38d9a9); }
+  #projectPanel button { font-family:inherit; font-size:14px; border:none; border-radius:12px; padding:8px 10px;
+    cursor:pointer; margin-right:6px; }
+  #magicBtn { background:#e0bbff; } #quitProjBtn { background:#ffe0e0; }
+  #toasts { position:absolute; top:74px; left:50%; transform:translateX(-50%); display:flex;
+    flex-direction:column; align-items:center; gap:8px; width:min(620px,90vw); }
+  .toast { background:rgba(255,255,255,.95); border-radius:20px; padding:12px 22px; font-size:19px; color:#333;
+    box-shadow:0 5px 14px rgba(0,0,0,.22); text-align:center; animation:toastIn .3s ease; }
+  @keyframes toastIn { from{opacity:0; transform:translateY(-14px) scale(.9)} to{opacity:1; transform:none} }
+
+  /* ---------- Dialog ---------- */
+  #dialogOverlay { position:fixed; inset:0; z-index:50; background:rgba(20,40,80,.45); display:none;
+    align-items:center; justify-content:center; padding:18px; }
+  #dialogBox { background:linear-gradient(180deg,#ffffff,#f0f9ff); width:min(640px,94vw); max-height:92vh;
+    overflow-y:auto; border-radius:26px; padding:26px 28px; box-shadow:0 14px 40px rgba(0,0,0,.35);
+    text-align:center; animation:popIn .25s ease; }
+  @keyframes popIn { from{transform:scale(.85); opacity:0} to{transform:scale(1); opacity:1} }
+  #dialogBox h2 { font-size:27px; color:#1d4ed8; margin-bottom:10px; }
+  #dialogBox .scene { font-size:21px; color:#333; margin-bottom:14px; line-height:1.45; }
+  #dialogBox .bigEmoji { font-size:58px; margin-bottom:8px; animation:bounceTitle 2s infinite; }
+  .choiceBtn { display:block; width:100%; margin:9px 0; font-family:inherit; font-size:19px; line-height:1.35;
+    padding:14px 18px; border:3px solid #cde; border-radius:18px; background:#fff; cursor:pointer;
+    transition:transform .1s, background .15s; color:#234; text-align:left; }
+  .choiceBtn:hover { transform:scale(1.025); background:#fffbe6; border-color:#ffd43b; }
+  .choiceBtn.correct { background:#d3f9d8; border-color:#51cf66; }
+  .choiceBtn.again { background:#fff3bf; border-color:#ffd43b; }
+  .speakIco { cursor:pointer; margin-left:8px; }
+  .dlgRow { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .dlgRow .bigBtn { font-size:20px; padding:12px 26px; }
+  .pickGrid { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:12px 0; }
+  .pickCard { width:118px; padding:12px 6px; border-radius:18px; border:3px solid #cde; background:#fff;
+    cursor:pointer; font-family:inherit; font-size:15px; transition:transform .1s; color:#234; }
+  .pickCard:hover { transform:scale(1.07); border-color:#74c0fc; background:#e7f5ff; }
+  .pickCard .ico { font-size:38px; display:block; margin-bottom:4px; }
+  #micCircle { width:92px; height:92px; border-radius:50%; margin:10px auto; font-size:42px; border:none;
+    cursor:pointer; background:linear-gradient(180deg,#ff8787,#fa5252); color:#fff;
+    box-shadow:0 5px 0 #c92a2a; }
+  #micCircle.listening { animation:pulse 1s infinite; background:linear-gradient(180deg,#69db7c,#37b24d); box-shadow:0 5px 0 #2b8a3e; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+  .sentenceCard { font-size:22px; background:#fff9db; border:3px dashed #ffd43b; border-radius:18px;
+    padding:14px; margin:10px 0; color:#5c4500; line-height:1.4; }
+  .stirZone { font-size:70px; cursor:pointer; display:inline-block; transition:transform .08s; }
+
+  /* ---------- Confetti & floating emoji ---------- */
+  .confetti { position:fixed; top:-20px; z-index:200; font-size:24px; pointer-events:none;
+    animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:.9; } }
+  .floatHeart { position:fixed; z-index:200; font-size:30px; pointer-events:none; animation:floatUp 1.6s ease-out forwards; }
+  @keyframes floatUp { to { transform:translateY(-130px) scale(1.4); opacity:0; } }
+
+  /* Oreo stack viz */
+  #oreoStack { display:flex; flex-direction:column-reverse; align-items:center; min-height:130px;
+    justify-content:flex-start; margin:8px 0; }
+  .oreoLayer { width:150px; height:26px; border-radius:13px; margin-top:-6px; box-shadow:0 3px 5px rgba(0,0,0,.25);
+    animation:popIn .25s ease; display:flex; align-items:center; justify-content:center; font-size:13px; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="titleScreen">
+  <img id="logoImg" src="logo.png" alt="Aaria's Blue Elephant — Building a New Inclusive World">
+  <h1>Aaria's Block Craft 3D</h1>
+  <div class="subtitle">Built for <b>Aaria and Her Friends</b> 💖 — building, animal friends, slime &amp; cookies!</div>
+  <div class="titleEmojis">🐘🐰🦕🏠🚗🚀🍪🌈</div>
+  <div id="nameRow">
+    <label for="playerNameInput">Who is playing?</label>
+    <input id="playerNameInput" value="Aaria" maxlength="20">
+  </div>
+  <button class="bigBtn green" id="playBtn">▶ Play!</button>
+  <button class="bigBtn" id="howBtn" style="font-size:20px; padding:12px 30px;">❓ How to Play</button>
+  <div id="orgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA</div>
+</div>
+
+<div id="hud">
+  <div id="scoreBar">
+    <div class="scoreChip" id="starChip">⭐ 0</div>
+    <div class="scoreChip" id="heartChip">💖 0</div>
+    <div class="scoreChip" id="portalChip" title="Word power opens the wormhole!">🌀 0/5</div>
+  </div>
+  <div id="menuBar">
+    <button class="menuBtn" id="buildMenuBtn">🏗️ Build</button>
+    <button class="menuBtn" id="slimeBtn">🌈 Slime Lab</button>
+    <button class="menuBtn" id="oreoBtn">🍪 Oreo Kitchen</button>
+    <button class="menuBtn" id="kindBtn">💌 Kind Words</button>
+    <button class="menuBtn" id="settingsBtn">⚙️</button>
+    <button class="menuBtn" id="helpBtn">❓</button>
+  </div>
+  <div id="projectPanel">
+    <h3 id="projTitle">🏠 Cozy Home</h3>
+    <div class="stageName" id="projStage">Stage 1</div>
+    <div id="projBarOuter"><div id="projBarInner"></div></div>
+    <div id="projCount" style="text-align:center;font-size:16px;color:#444;margin-bottom:8px;">0/0</div>
+    <button id="magicBtn">✨ Finish</button>
+    <button id="quitProjBtn">🛑 Stop</button>
+  </div>
+  <div id="sideBtns">
+    <button class="menuBtn sideBtn" id="flyBtn" title="Fly">🕊️<small>Fly</small></button>
+    <button class="menuBtn sideBtn" id="viewBtn" title="Camera view">👀<small>View</small></button>
+  </div>
+  <div id="toasts"></div>
+  <div id="hotbar"></div>
+  <div id="lookHint">✋ Drag the world to look around · 👆 Click to build! (🧱/⛏️ button on the right)</div>
+
+  <!-- on-screen controls: arrows move, ⬆ jumps (double-tap = fly), 🧱/⛏️ switches build & dig -->
+  <div id="touchPad">
+    <button class="tBtn" id="tUp">▲</button>
+    <button class="tBtn" id="tLeft">◀</button>
+    <button class="tBtn" id="tRight">▶</button>
+    <button class="tBtn" id="tDown">▼</button>
+  </div>
+  <div id="touchActs">
+    <button class="tBtn" id="tJump" title="Jump (double-tap = fly)">⬆</button>
+    <button class="tBtn" id="tMode" title="Switch build / dig">🧱</button>
+  </div>
+</div>
+
+<div id="dialogOverlay"><div id="dialogBox"></div></div>
+<div id="flash"></div>
+
+<script src="lib/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/world.js"></script>
+<script src="js/animals.js"></script>
+<script src="js/squishy.js"></script>
+<script src="js/portal.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/activities.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
