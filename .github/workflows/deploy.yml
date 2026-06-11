@@ -37,9 +37,11 @@ jobs:
         run: npm ci
       - name: Install Puppeteer Browsers
         run: |
-          # clear any partial download left by npm postinstall, then fetch a clean copy
+          # clear any partial download, then run puppeteer's own installer and
+          # fail fast here (not in prerender) if chrome still isn't usable
           rm -rf ~/.cache/puppeteer
-          npm exec -- puppeteer browsers install chrome
+          node node_modules/puppeteer/install.mjs
+          node -e "console.log('chrome at:', require('puppeteer').executablePath())"
       - name: Build
         run: npm run build
         env:
