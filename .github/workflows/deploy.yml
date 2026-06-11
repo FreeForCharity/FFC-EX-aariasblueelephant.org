@@ -36,7 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Install Puppeteer Browsers
-        run: npm exec -- puppeteer browsers install chrome
+        run: |
+          # clear any partial download left by npm postinstall, then fetch a clean copy
+          rm -rf ~/.cache/puppeteer
+          npm exec -- puppeteer browsers install chrome
       - name: Build
         run: npm run build
         env:
