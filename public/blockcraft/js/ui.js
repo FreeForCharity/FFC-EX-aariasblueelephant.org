@@ -483,6 +483,35 @@ ABC.ui = (function () {
     ABC.saveSoon && ABC.saveSoon();
   }
 
+  /* ---------------- ✨ mobile quick menu — every feature, one button ---------------- */
+  function openQuickMenu() {
+    const press = (id) => () => { closeDialog(); const b = $(id); if (b) b.click(); };
+    const items = [
+      { ico: '🏗️', label: 'Build',      go: press('buildMenuBtn') },
+      { ico: '🌈', label: 'Slime',      go: press('slimeBtn') },
+      { ico: '🍪', label: 'Oreo',       go: press('oreoBtn') },
+      { ico: '💌', label: 'Kind Words', go: press('kindBtn') },
+      { ico: '🏅', label: 'Stickers',   go: press('stickersBtn') },
+      { ico: '📋', label: 'Adventures', go: () => { closeDialog(); ABC.quests.showBoard(); } },
+      { ico: '🌻', label: 'Sunflower',  go: () => { closeDialog(); ABC.overnight.showFlower(); } },
+      { ico: '🗺️', label: 'Map',        go: press('mapBtn') },
+      { ico: '📸', label: 'Photo',      go: press('photoBtn') },
+      { ico: '🖼️', label: 'Album',      go: press('albumBtn') },
+      { ico: '👀', label: 'View',       go: press('viewBtn') },
+      { ico: '⛶',  label: 'Big Screen', go: press('fsBtn') },
+      { ico: '⚙️', label: 'Settings',   go: press('settingsBtn') },
+      { ico: '❓', label: 'Help',       go: press('helpBtn') },
+    ];
+    let html = `<div class="pickGrid" style="margin-top:4px;">`;
+    items.forEach((it, i) => {
+      html += `<button class="pickCard" data-i="${i}"><span class="ico">${it.ico}</span>${it.label}</button>`;
+    });
+    html += '</div>';
+    openDialog(html);
+    box().querySelectorAll('.pickCard').forEach(b =>
+      b.addEventListener('click', () => { ABC.audio.sfx.pop(); items[+b.dataset.i].go(); }));
+  }
+
   /* ---------------- settings & help ---------------- */
   function showSettings() {
     const s = ABC.audio.settings;
@@ -548,6 +577,6 @@ ABC.ui = (function () {
   return { openDialog, closeDialog, isOpen, toast, bellaSays, confetti, floatHearts,
            refreshScore, addStars, addHearts, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
-           getHand, setHand, openBag,
+           getHand, setHand, openBag, openQuickMenu,
            showSettings, showHelp, pick, pick3, esc };
 })();

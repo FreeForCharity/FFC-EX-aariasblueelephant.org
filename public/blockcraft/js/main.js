@@ -655,6 +655,8 @@
   $('albumBtn').onclick    = () => ABC.photo.openAlbum();
   $('stickersBtn').onclick = () => ABC.stickers.openBook();
   $('flowerChip').onclick  = () => ABC.overnight.showFlower();
+  $('moreBtn').onclick     = () => ABC.ui.openQuickMenu();
+  $('tFly').addEventListener('click', () => $('flyBtn').click());
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
   /* full screen — works standalone and inside the dashboard iframe */
