@@ -213,10 +213,40 @@ ABC.squishy = (function () {
     const S = ABC.world.SIZE - 2;
     s.dragTarget = { x: Math.max(-S, Math.min(S, x)), z: Math.max(-S, Math.min(S, z)) };
   }
+  /* drop a cutout onto another cutout → they stack into dough art 🎨 */
+  function trySnapStack(s) {
+    if (s.data.kind !== 'cutout') return false;
+    let best = null, bestD = 0.9;
+    for (const o of list) {
+      if (o === s || o.data.kind !== 'cutout') continue;
+      const d = Math.hypot(o.group.position.x - s.group.position.x,
+                           o.group.position.z - s.group.position.z);
+      if (d < bestD && (o.data.stackY || 0) >= (best ? best.data.stackY || 0 : -1)) { best = o; bestD = d; }
+    }
+    if (!best) return false;
+    s.data.x = best.data.x; s.data.z = best.data.z;
+    s.data.stackY = (best.data.stackY || 0) + 0.3;
+    s.group.position.set(s.data.x, s.group.position.y, s.data.z);
+    ABC.audio.sfx.stamp();
+    ABC.ui.confetti(8);
+    const height = Math.round(s.data.stackY / 0.3) + 1;
+    if (height === 3) {
+      setTimeout(() => ABC.ui.askBuilder(
+        'You stacked your dough shapes into ART! Tell me about it:',
+        'I made beautiful art with my dough shapes!',
+        null, { emoji: '🎨', stars: 2 }), 500);
+    } else {
+      ABC.ui.toast('🎨 Stacked! Add more shapes to make dough art!', 2600);
+    }
+    return true;
+  }
+
   function release(s) {
     if (!s.grabbed) return;
     s.grabbed = false;
     s.dragTarget = null;
+    if (trySnapStack(s)) { ABC.saveSoon && ABC.saveSoon(); return; }
+    s.data.stackY = 0;
     // plop back down with a satisfying wobble
     s.spring.vy -= 6;
     s.spring.vx += 4;
@@ -277,7 +307,7 @@ ABC.squishy = (function () {
         const step = Math.min(1, dt * 7);
         g.position.x += dx * step;
         g.position.z += dz * step;
-        const gy = groundYAt(g.position.x, g.position.z);
+        const gy = groundYAt(g.position.x, g.position.z) + (s.data.stackY || 0);
         g.position.y += ((gy + 0.18) - g.position.y) * Math.min(1, dt * 8);  // slight lift while held
         if (dist > 0.15) {
           g.rotation.y = Math.atan2(dx, dz);          // face the pull direction
@@ -290,7 +320,7 @@ ABC.squishy = (function () {
         const g = s.group;
         g.rotation.z *= Math.pow(0.01, dt);
         g.rotation.x *= Math.pow(0.01, dt);
-        const gy = groundYAt(g.position.x, g.position.z);
+        const gy = groundYAt(g.position.x, g.position.z) + (s.data.stackY || 0);
         g.position.y += (gy - g.position.y) * Math.min(1, dt * 6);
       }
 

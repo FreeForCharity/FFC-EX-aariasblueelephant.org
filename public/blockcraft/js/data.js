@@ -52,6 +52,15 @@ ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass'
   'slab','wedge','pillar','door','pane','knob',
   'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
 
+/* Surprise pocket 🎁 — one surprise per day; saying what you found takes it out */
+ABC.SURPRISES = [
+  { ico:'⭐', s:'I found three shiny stars in my bag!', grant:'stars' },
+  { ico:'🦋', s:'A little butterfly was sleeping in my bag!', grant:'butterfly' },
+  { ico:'🍪', s:'I found a sweet dough heart inside!', grant:'cutout' },
+  { ico:'🌀', s:'My bag is full of magic word power!', grant:'portal' },
+  { ico:'💖', s:'There are two kindness hearts for me!', grant:'hearts' },
+];
+
 /* Cookie cutters for the playdough/slime 🍪 */
 ABC.CUTTERS = [
   { shape:'star',   ico:'⭐', label:'Star Cutter' },
