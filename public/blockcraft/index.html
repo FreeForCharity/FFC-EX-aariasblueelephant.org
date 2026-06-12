@@ -47,8 +47,8 @@
   #scoreBar { position:absolute; top:12px; left:12px; display:flex; gap:10px; }
   .scoreChip { background:rgba(255,255,255,.88); border-radius:20px; padding:8px 16px; font-size:20px;
     box-shadow:0 3px 8px rgba(0,0,0,.18); color:#333; }
-  #portalChip, #questChip { pointer-events:auto; cursor:pointer; }
-  #portalChip:hover, #questChip:hover { transform:scale(1.07); }
+  #portalChip, #questChip, #flowerChip { pointer-events:auto; cursor:pointer; }
+  #portalChip:hover, #questChip:hover, #flowerChip:hover { transform:scale(1.07); }
   #portalChip.portalReady, #questChip.portalReady { background:linear-gradient(90deg,#d0bfff,#a5d8ff); animation:pulseChip 1.2s infinite; }
   @keyframes pulseChip { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
   #flash { position:fixed; inset:0; z-index:90; background:#fff; display:none; pointer-events:none; }
@@ -220,12 +220,14 @@
     <div class="scoreChip" id="heartChip">💖 0</div>
     <div class="scoreChip" id="portalChip" title="Word power opens the wormhole!">🌀 0/5</div>
     <div class="scoreChip" id="questChip" title="Today's Adventures">📋 0/3</div>
+    <div class="scoreChip" id="flowerChip" title="Days of adventures">🌻 0</div>
   </div>
   <div id="menuBar">
     <button class="menuBtn" id="buildMenuBtn">🏗️<span class="btnTxt"> Build</span></button>
     <button class="menuBtn" id="slimeBtn">🌈<span class="btnTxt"> Slime Lab</span></button>
     <button class="menuBtn" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
+    <button class="menuBtn" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn" id="fsBtn" title="Full screen">⛶</button>
     <button class="menuBtn" id="settingsBtn">⚙️</button>
     <button class="menuBtn" id="helpBtn">❓</button>
@@ -244,6 +246,8 @@
     <button class="menuBtn sideBtn" id="zoomInBtn" title="Zoom in">🔍<small>＋</small></button>
     <button class="menuBtn sideBtn" id="zoomOutBtn" title="Zoom out">🔍<small>−</small></button>
     <button class="menuBtn sideBtn" id="mapBtn" title="Sky map">🗺️<small>Map</small></button>
+    <button class="menuBtn sideBtn" id="photoBtn" title="Take a photo">📸<small>Photo</small></button>
+    <button class="menuBtn sideBtn" id="albumBtn" title="Photo album">🖼️<small>Album</small></button>
   </div>
   <div id="toasts"></div>
   <button id="bagBtn" title="Your school bag — everything is inside!">🎒</button>
@@ -268,14 +272,19 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=13"></script>
-<script src="js/audio.js?v=13"></script>
-<script src="js/world.js?v=13"></script>
-<script src="js/animals.js?v=13"></script>
-<script src="js/squishy.js?v=13"></script>
-<script src="js/portal.js?v=13"></script>
-<script src="js/ui.js?v=13"></script>
-<script src="js/activities.js?v=13"></script>
-<script src="js/main.js?v=13"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/audio.js?v=14"></script>
+<script src="js/world.js?v=14"></script>
+<script src="js/animals.js?v=14"></script>
+<script src="js/squishy.js?v=14"></script>
+<script src="js/portal.js?v=14"></script>
+<script src="js/ui.js?v=14"></script>
+<script src="js/activities.js?v=14"></script>
+<script src="js/music.js?v=14"></script>
+<script src="js/pet.js?v=14"></script>
+<script src="js/stickers.js?v=14"></script>
+<script src="js/overnight.js?v=14"></script>
+<script src="js/photo.js?v=14"></script>
+<script src="js/main.js?v=14"></script>
 </body>
 </html>

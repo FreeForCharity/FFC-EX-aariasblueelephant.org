@@ -42,6 +42,7 @@
   ABC.animals.spawnAll(scene);
   ABC.squishy.init(scene);
   ABC.portal.init(scene);
+  ABC.music.init(scene);
 
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
 
@@ -172,6 +173,7 @@
     scene.traverse(o => { if (o.userData && o.userData.ghost) ghosts.push(o); });
     const hits = raycaster.intersectObjects(
       [...ghosts, ...ABC.animals.meshTargets(), ...ABC.squishy.meshTargets(),
+       ...ABC.music.meshTargets(),
        ...ABC.portal.meshTargets()], false);
     return hits.length ? hits[0] : null;
   }
@@ -194,6 +196,7 @@
       if (o.userData.animalRef)  return { kind: 'animal', animal: o.userData.animalRef, point: ent.point };
       if (o.userData.squishyRef) return { kind: 'squishy', squishy: o.userData.squishyRef, point: ent.point };
       if (o.userData.portalRef)  return { kind: 'portal', portal: o.userData.portalRef, point: ent.point };
+      if (o.userData.noteRef)    return { kind: 'note', mesh: o, point: ent.point };
       if (o.userData.ghost)      return { kind: 'ghost', mesh: o, point: ent.point };
     }
     if (vox) return { kind: 'block', cell: vox.cell, place: vox.prev };
@@ -313,6 +316,7 @@
     // friends & magic things respond first
     if (info.kind === 'animal')  { ABC.activities.talkToAnimal(info.animal); return; }
     if (info.kind === 'portal')  { ABC.portal.use(info.portal); return; }
+    if (info.kind === 'note')    { ABC.music.handleClick(info.mesh); return; }
     if (info.kind === 'squishy') {
       if (hand.kind === 'cutter') ABC.squishy.stamp(info.squishy, hand.shape);
       else ABC.squishy.poke(info.squishy, hitPoint);
@@ -573,6 +577,10 @@
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         world: ABC.world.serialize(),
         squishies: ABC.squishy.serialize(),
+        pet: ABC.pet.serialize(),
+        stickers: ABC.stickers.serialize(),
+        overnight: ABC.overnight.serialize(),
+        photo: ABC.photo.serialize(),
         playerName: ABC.state.playerName,
         portalCharge: ABC.state.portalCharge || 0,
         quests: ABC.state.quests || null,
@@ -605,6 +613,10 @@
       const d = JSON.parse(raw);
       ABC.world.deserialize(d.world);
       ABC.squishy.deserialize(d.squishies);
+      ABC.pet.deserialize(d.pet);
+      ABC.stickers.deserialize(d.stickers);
+      ABC.overnight.deserialize(d.overnight);
+      ABC.photo.deserialize(d.photo);
       if (d.playerName) ABC.state.playerName = d.playerName;
       ABC.state.portalCharge = d.portalCharge || 0;
       ABC.state.quests = d.quests || null;
@@ -639,6 +651,10 @@
   $('zoomInBtn').onclick   = () => setZoom(-0.18);
   $('zoomOutBtn').onclick  = () => setZoom(+0.18);
   $('mapBtn').onclick      = () => showMap();
+  $('photoBtn').onclick    = () => ABC.photo.takePhoto();
+  $('albumBtn').onclick    = () => ABC.photo.openAlbum();
+  $('stickersBtn').onclick = () => ABC.stickers.openBook();
+  $('flowerChip').onclick  = () => ABC.overnight.showFlower();
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
   /* full screen — works standalone and inside the dashboard iframe */
@@ -702,8 +718,12 @@
       }, 900);
     } else {
       ABC.ui.bellaSays('Welcome back, {player}! Your world missed you! 💙', 4500);
+      ABC.pet.onLogin();
+      ABC.overnight.onLogin();
       // show today's three adventures for a focused start
-      setTimeout(() => { if (!ABC.ui.isOpen()) ABC.quests.showBoard(); }, 5500);
+      setTimeout(() => { if (!ABC.ui.isOpen()) ABC.quests.showBoard(); }, 9000);
+      // offer a pet to kids who don't have one yet
+      setTimeout(() => { if (!ABC.ui.isOpen()) ABC.pet.maybeAdoptPrompt(); }, 16000);
     }
   };
   $('howBtn').onclick = () => ABC.ui.showHelp();
@@ -725,6 +745,7 @@
       updateFly(dt);
       updateParticles(dt);
       ABC.animals.update(dt, now / 1000);
+      ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);
       ABC.portal.update(dt);
       if (!ABC.ui.isOpen()) ABC.portal.checkWalkIn(feet, dt);
@@ -742,6 +763,7 @@
     }
     renderer.render(scene, camera);
   }
+  ABC.renderScene = () => renderer.render(scene, camera);   // fresh frame for photo snaps
   requestAnimationFrame(loop);
 
   // test hook: ?autostart skips the title screen (used for automated checks)

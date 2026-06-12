@@ -252,6 +252,7 @@ ABC.activities = (function () {
   function talkToAnimal(a) {
     if (a.isGuide) { bellaChat(a); return; }
     if (a.isVendor) { shop(a); return; }
+    if (ABC.pet && ABC.pet.tryInteract(a)) return;   // your own pet 💕
     if (!a.emotion) {
       // half the time the animal has a treasure — practice ASKING for it!
       if (Math.random() < 0.5) { animalRequest(a); return; }
