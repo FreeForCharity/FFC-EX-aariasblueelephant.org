@@ -109,11 +109,22 @@ ABC.audio = (function () {
     const clean = String(text).replace(/<[^>]*>/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}✨⭐]/gu, '');
     if (!clean.trim()) return;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(clean);
-    u.rate = 0.92; u.pitch = 1.15;
-    if (voice) u.voice = voice;
-    speechSynthesis.speak(u);
+    // Chrome quirk: speaking immediately after cancel() silently drops the
+    // utterance — queue it a tick later
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(clean);
+      u.rate = 0.92; u.pitch = 1.15;
+      if (!voice) pickVoice();          // voices sometimes load late
+      if (voice) u.voice = voice;
+      speechSynthesis.speak(u);
+    }, 60);
   }
+  // Chrome quirk #2: long speech silently pauses after ~15s — keep it awake
+  setInterval(() => {
+    if (window.speechSynthesis && speechSynthesis.speaking && !speechSynthesis.paused) {
+      speechSynthesis.pause(); speechSynthesis.resume();
+    }
+  }, 9000);
   function stopSay() { if (window.speechSynthesis) speechSynthesis.cancel(); }
 
   /* ---- Speech recognition (voice mode) ---- */

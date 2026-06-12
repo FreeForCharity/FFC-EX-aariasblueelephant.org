@@ -428,6 +428,17 @@
       else grounded = false;
     }
 
+    // animals are solid friends — you bump into them, not through them
+    for (const a of ABC.animals.list) {
+      const r = 0.45 + a.def.size * 0.5;
+      const dx = feet.x - a.group.position.x, dz = feet.z - a.group.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d < r && d > 0.001 && Math.abs(feet.y - a.group.position.y) < 2.2) {
+        feet.x = a.group.position.x + (dx / d) * r;
+        feet.z = a.group.position.z + (dz / d) * r;
+      }
+    }
+
     const S = ABC.world.SIZE - 1;
     feet.x = Math.max(-S, Math.min(S, feet.x));
     feet.z = Math.max(-S, Math.min(S, feet.z));
@@ -474,7 +485,7 @@
   };
 
   /* ---------------- save / load ---------------- */
-  const SAVE_KEY = 'aariasBlockCraft2';
+  const SAVE_KEY = 'aariasBlockCraft3';   // v3: infinite world (edits-only saves)
   let saveTimer = null;
   function saveNow() {
     try {
@@ -501,8 +512,15 @@
 
   function load() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return false;
+      let raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        // migrate stars/hearts/name/settings from the old fixed-world save
+        const old = localStorage.getItem('aariasBlockCraft2');
+        if (!old) return false;
+        const o = JSON.parse(old);
+        delete o.world; delete o.squishies;
+        raw = JSON.stringify(o);
+      }
       const d = JSON.parse(raw);
       ABC.world.deserialize(d.world);
       ABC.squishy.deserialize(d.squishies);
@@ -612,11 +630,14 @@
 
   /* ---------------- main loop ---------------- */
   let last = performance.now();
+  let chunkTimer = 0;
   function loop(now) {
     requestAnimationFrame(loop);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (started) {
+      chunkTimer += dt;
+      if (chunkTimer > 0.3) { chunkTimer = 0; ABC.world.ensureChunks(feet.x, feet.z); }
       updatePlayer(dt);
       updateFly(dt);
       ABC.animals.update(dt, now / 1000);

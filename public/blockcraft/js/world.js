@@ -1,8 +1,8 @@
 /* Aaria's Block Craft 3D — voxel world engine (Three.js r128) */
 ABC.world = (function () {
-  const SIZE = 72;            // world extends -SIZE..SIZE in x,z
+  const SIZE = 4000;          // soft travel limit — the world generates forever as you walk
   const MAX_Y = 40;
-  const MIN_Y = -3;           // diggable underground: -1,-2 dirt, -3 stone
+  const MIN_Y = -2;           // dig through grass and dirt down to bedrock stone
 
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
@@ -184,6 +184,8 @@ ABC.world = (function () {
     map.set(k, type);
     if (rot) rotMap.set(k, rot); else rotMap.delete(k);
     dirty.add(type);
+    editSet.set(k, { t: type, r: rot || 0 });   // player edits persist forever
+    editDel.delete(k);
     return true;
   }
   function remove(x,y,z) {
@@ -194,6 +196,8 @@ ABC.world = (function () {
     map.delete(k);
     rotMap.delete(k);
     dirty.add(old);
+    editSet.delete(k);
+    editDel.add(k);                              // remember the hole forever
     return true;
   }
 
@@ -304,7 +308,7 @@ ABC.world = (function () {
     scene.add(hemi);
     // dark base far below the bedrock layer
     underMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(SIZE*2+1, 1, SIZE*2+1),
+      new THREE.BoxGeometry(2000, 1, 2000),
       new THREE.MeshLambertMaterial({ color: 0x4a4036 }));
     underMesh.position.set(0, MIN_Y - 0.51, 0);
     scene.add(underMesh);
@@ -358,7 +362,174 @@ ABC.world = (function () {
 
   function blockMeshes() { return Object.values(meshes); }
 
-  return { SIZE, MAX_Y, MIN_Y, initScene, generate, get, set, remove, flush, key,
-           blockMeshes, serialize, deserialize, materials,
+  /* ============================================================
+     INFINITE WORLD — chunks generate forever as you explore 🌍
+     ============================================================ */
+  const CHUNK = 16, LOAD_R = 3, UNLOAD_R = 6;
+  const chunks = new Map();                  // "cx,cz" -> [keys]
+  const editSet = new Map(), editDel = new Set();   // the player's changes, forever
+  let structMap = null;                      // handcrafted spawn features
+
+  function hash2(x, z) {
+    let h = (x * 374761393 + z * 668265263) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function vnoise(x, z, s) {
+    const fx = x / s, fz = z / s, x0 = Math.floor(fx), z0 = Math.floor(fz);
+    const tx = fx - x0, tz = fz - z0, sm = (t) => t * t * (3 - 2 * t);
+    const a = hash2(x0, z0), b = hash2(x0 + 1, z0), c = hash2(x0, z0 + 1), d = hash2(x0 + 1, z0 + 1);
+    return a + (b - a) * sm(tx) + (c - a) * sm(tz) + (a - b - c + d) * sm(tx) * sm(tz);
+  }
+  function gset(keys, x, y, z, t, rot) {     // generator write (not a player edit)
+    const k = key(x, y, z);
+    map.set(k, t);
+    if (rot) rotMap.set(k, rot);
+    dirty.add(t);
+    keys.push(k);
+  }
+  function genTree(keys, x, z, baseY) {
+    const th = 3 + ((hash2(x, z) * 2) | 0);
+    for (let y = 1; y <= th; y++) gset(keys, x, baseY + y, z, 'wood');
+    for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = 0; dy <= 2; dy++)
+      if (Math.abs(dx) + Math.abs(dz) + dy < 4) gset(keys, x + dx, baseY + th + dy, z + dz, 'leaf');
+  }
+  function genColumn(keys, x, z) {
+    const sp = Math.hypot(x, z);
+    let e = vnoise(x, z, 46), m = vnoise(x + 777, z - 777, 34);
+    let rv = Math.abs(vnoise(x - 911, z + 911, 70) - 0.5);
+    if (sp < 34) { e = 0.45; rv = 0.5; m = 0.4; }          // calm flat home meadow
+    const mount = e > 0.70 ? Math.round((e - 0.70) * 34) : 0;
+    const water = mount === 0 && rv < 0.035;
+    gset(keys, x, -2, z, 'stone');                          // bedrock
+    gset(keys, x, -1, z, 'dirt');
+    if (water) { gset(keys, x, 0, z, 'water'); return; }
+    gset(keys, x, 0, z, (rv < 0.055 && mount === 0) ? 'sand' : 'grass');
+    for (let y = 1; y <= mount; y++)
+      gset(keys, x, y, z, (y >= mount - 1 && mount > 5) ? 'snow' : 'stone');
+    if (mount === 0) {
+      const h = hash2(x * 3 + 1, z * 3 + 7);
+      if (m > 0.60 && h < 0.085 && sp > 16) genTree(keys, x, z, 0);
+      else if (h < 0.013) gset(keys, x, 1, z, 'flower');
+    }
+  }
+  function genHouse(keys, hx, hz) {          // a discoverable village house
+    for (let x = 0; x <= 4; x++) for (let z = 0; z <= 4; z++) {
+      gset(keys, hx + x, 0, hz + z, 'grass');
+      gset(keys, hx + x, 1, hz + z, 'plank');
+      for (let y = 1; y <= 2; y++)
+        if (x === 0 || x === 4 || z === 0 || z === 4) gset(keys, hx + x, y, hz + z, 'plank');
+    }
+    gset(keys, hx + 2, 1, hz, 'door'); gset(keys, hx + 2, 2, hz, 'pane');
+    for (let x = -1; x <= 5; x++) for (let z = -1; z <= 5; z++) gset(keys, hx + x, 3, hz + z, 'brick');
+    gset(keys, hx + 2, 4, hz + 2, 'star');
+  }
+  function genChunk(cx, cz) {
+    const keys = [];
+    for (let x = cx * CHUNK; x < (cx + 1) * CHUNK; x++)
+      for (let z = cz * CHUNK; z < (cz + 1) * CHUNK; z++) genColumn(keys, x, z);
+    // sometimes a cozy village house appears in flat, dry land
+    const hcx = cx * CHUNK + 5, hcz = cz * CHUNK + 5;
+    if (Math.hypot(hcx, hcz) > 48 && hash2(cx * 13, cz * 17) < 0.05 &&
+        vnoise(hcx, hcz, 46) < 0.62 && Math.abs(vnoise(hcx - 911, hcz + 911, 70) - 0.5) > 0.08)
+      genHouse(keys, hcx, hcz);
+    // handcrafted spawn features (arch, markets, garden, sky island)
+    for (const [k, v] of structMap) {
+      const [x, , z] = k.split(',').map(Number);
+      if (x >= cx * CHUNK && x < (cx + 1) * CHUNK && z >= cz * CHUNK && z < (cz + 1) * CHUNK) {
+        map.set(k, v.t); if (v.r) rotMap.set(k, v.r); dirty.add(v.t); keys.push(k);
+      }
+    }
+    // the player's own changes always win
+    for (const k of editDel) {
+      const [x, , z] = k.split(',').map(Number);
+      if (x >= cx * CHUNK && x < (cx + 1) * CHUNK && z >= cz * CHUNK && z < (cz + 1) * CHUNK) {
+        const old = map.get(k); if (old) { map.delete(k); rotMap.delete(k); dirty.add(old); }
+      }
+    }
+    for (const [k, v] of editSet) {
+      const [x, , z] = k.split(',').map(Number);
+      if (x >= cx * CHUNK && x < (cx + 1) * CHUNK && z >= cz * CHUNK && z < (cz + 1) * CHUNK) {
+        map.set(k, v.t); if (v.r) rotMap.set(k, v.r); else rotMap.delete(k); dirty.add(v.t); keys.push(k);
+      }
+    }
+    chunks.set(cx + ',' + cz, keys);
+  }
+  function ensureChunks(px, pz) {
+    const ccx = Math.floor(px / CHUNK), ccz = Math.floor(pz / CHUNK);
+    let gen = 0;
+    for (let r = 0; r <= LOAD_R && gen < 3; r++)
+      for (let dx = -r; dx <= r && gen < 3; dx++) for (let dz = -r; dz <= r && gen < 3; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        const ck = (ccx + dx) + ',' + (ccz + dz);
+        if (!chunks.has(ck)) { genChunk(ccx + dx, ccz + dz); gen++; }
+      }
+    if (gen) {
+      for (const [ck, keys] of chunks) {
+        const [cx, cz] = ck.split(',').map(Number);
+        if (Math.max(Math.abs(cx - ccx), Math.abs(cz - ccz)) > UNLOAD_R) {
+          for (const k of keys) { const t = map.get(k); if (t) { map.delete(k); rotMap.delete(k); dirty.add(t); } }
+          chunks.delete(ck);
+        }
+      }
+      flush();
+    }
+  }
+  /* handcrafted features near spawn, written once into an overlay */
+  function buildStructures() {
+    structMap = new Map();
+    const ss = (x, y, z, t, r) => structMap.set(key(x, y, z), { t, r: r || 0 });
+    const arch = [[-3,1],[-3,2],[-3,3],[-2,4],[-1,5],[0,5],[1,5],[2,4],[3,3],[3,2],[3,1]];
+    arch.forEach(([x,y]) => ss(x, y, -6, 'rainbow'));
+    [[6,-6],[7,-6],[6,-7]].forEach(([x,z]) => ss(x, 1, z, 'blue'));
+    ss(6,2,-6,'blue'); ss(6,3,-6,'star');
+    for (let x=0;x<=3;x++) ss(-16+x,1,2,'plank');                       // Mr. Maple's stall
+    ss(-16,1,5,'wood'); ss(-13,1,5,'wood'); ss(-16,2,5,'wood'); ss(-13,2,5,'wood');
+    ss(-16,2,2,'wood'); ss(-13,2,2,'wood'); ss(-15,2,2,'star'); ss(-14,2,2,'gold');
+    for (let x=-1;x<=4;x++) for (let z=-1;z<=4;z++) ss(-16+x,3,2+z,(x+z)%2?'red':'white');
+    const IC = 36, IY = 24;                                             // sky island
+    for (let x=IC-6;x<=IC+6;x++) for (let z=IC-6;z<=IC+6;z++) {
+      const d = Math.hypot(x-IC, z-IC);
+      if (d <= 6) ss(x, IY, z, d > 4.6 ? 'snow' : 'grass');
+      if (d <= 3) ss(x, IY-1, z, 'snow');
+    }
+    [[-2,1],[-2,2],[-1,3],[0,3],[1,3],[2,2],[2,1]].forEach(([dx,dy]) => ss(IC+dx, IY+dy, IC, 'rainbow'));
+    [[-3,-3],[3,-3],[-3,3],[3,3]].forEach(([dx,dz]) => ss(IC+dx, IY+1, IC+dz, 'star'));
+    ss(IC, IY+1, IC-3, 'oreo'); ss(IC-1, IY+1, IC-3, 'slimePink');
+    for (let x=0;x<=3;x++) ss(44+x,1,58,'plank');                       // Mrs. Cocoa's stall
+    for (let x=-1;x<=4;x++) for (let z=-1;z<=2;z++) ss(44+x,3,57+z,(x+z)%2?'blue':'white');
+    ss(44,2,58,'wood'); ss(47,2,58,'wood'); ss(45,2,58,'star');
+    for (let x=44;x<=49;x++) for (let z=52;z<=60;z++) ss(x,0,z,'grass'); // flat patch for the stall
+  }
+  function infiniteInit() {
+    buildStructures();
+    ensureChunks(0, 0);
+    ensureChunks(0, 6);
+  }
+  function serializeEdits() {
+    const d = [];
+    for (const [k, v] of editSet) d.push(k + ':' + v.t + (v.r ? ':' + v.r : ''));
+    return { d, r: [...editDel], inf: 1 };
+  }
+  function deserializeEdits(data) {
+    if (!data || !data.inf) return;          // old fixed-world saves are skipped
+    editSet.clear(); editDel.clear();
+    for (const e of (data.d || [])) {
+      const p = e.split(':');
+      if (ABC.BLOCK_DEFS[p[1]]) editSet.set(p[0], { t: p[1], r: +p[2] || 0 });
+    }
+    for (const k of (data.r || [])) editDel.add(k);
+    // regenerate everything with the edits applied
+    for (const [, keys] of chunks) for (const k of keys) {
+      const t = map.get(k); if (t) { map.delete(k); rotMap.delete(k); dirty.add(t); }
+    }
+    chunks.clear();
+    ensureChunks(0, 6);
+    flush();
+  }
+
+  return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
+           blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
+           ensureChunks,
            getScene: () => scene };
 })();
