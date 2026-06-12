@@ -287,6 +287,8 @@ ABC.activities = (function () {
       trice: 'orange with three pointy horns', longneck: 'blue with a very long neck',
       mammoth: 'furry brown with long tusks', elephant: 'blue with big flappy ears',
       puzzleEle: 'rainbow-colored with patches like a puzzle',
+      capy: 'big, round and chubby like a fuzzy ball', penguin: 'round and waddly with a white tummy',
+      panda: 'round like a dumpling with black ears',
     }[d.kind] || 'very friendly';
     return `${a.name} is a ${colorWord} ${d.label.toLowerCase()} who likes to play.`;
   }
