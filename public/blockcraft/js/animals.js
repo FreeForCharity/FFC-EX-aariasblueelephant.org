@@ -217,6 +217,12 @@ ABC.animals = (function () {
     // 🏪 Mr. Maple runs the village market
     const vendor = spawn('capy', -14, 4, 'Mr. Maple');
     vendor.isVendor = true; vendor.home = { x: -14, z: 4 }; vendor.range = 2;
+    // 🏘️ Mrs. Cocoa runs the town market (south-east town)
+    const vendor2 = spawn('panda', 46, 56, 'Mrs. Cocoa');
+    vendor2.isVendor = true; vendor2.home = { x: 46, z: 56 }; vendor2.range = 2;
+    // town & forest dwellers
+    spawn('puppy', 45, 47); spawn('cat', 49, 49);
+    spawn('bunny', -50, 45); spawn('butterfly', -55, 50); spawn('penguin', 55, -40);
     // cute friends near spawn (incl. the big round cuties!)
     spawn('capy', 10, -4); spawn('panda', -10, -2);
     spawn('bunny', -5, -10);  spawn('bunny', 14, 6);
@@ -272,9 +278,9 @@ ABC.animals = (function () {
           const hz = a.home ? a.home.z : g.position.z;
           const r = a.range || 12;
           a.target = new THREE.Vector3(
-            Math.max(-46, Math.min(46, hx + (Math.random()*2-1)*r)),
+            Math.max(-(ABC.world.SIZE-2), Math.min(ABC.world.SIZE-2, hx + (Math.random()*2-1)*r)),
             a.baseY,
-            Math.max(-46, Math.min(46, hz + (Math.random()*2-1)*r)));
+            Math.max(-(ABC.world.SIZE-2), Math.min(ABC.world.SIZE-2, hz + (Math.random()*2-1)*r)));
         }
       }
       if (a.target) {
