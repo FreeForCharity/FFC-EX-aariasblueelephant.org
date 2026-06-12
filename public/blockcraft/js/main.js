@@ -23,6 +23,13 @@
     lastFwdTap = now;
   }
   let thirdPerson = false;
+  let zoom = 1;                                   // 0.55 (close) … 1.7 (far)
+  function setZoom(dz) {
+    zoom = Math.max(0.55, Math.min(1.7, zoom + dz));
+    camera.fov = 72 * (thirdPerson ? 1 : Math.max(0.6, Math.min(1.25, zoom)));
+    camera.updateProjectionMatrix();
+    ABC.audio.sfx.gentle();
+  }
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -431,7 +438,7 @@
     camera.rotateY(yaw); camera.rotateX(pitch);
     if (thirdPerson) {
       const back = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-      camera.position.set(feet.x, feet.y + EYE + 1.6, feet.z).addScaledVector(back, 4.2);
+      camera.position.set(feet.x, feet.y + EYE + 1.6 * zoom, feet.z).addScaledVector(back, 4.2 * zoom);
       avatar.position.set(feet.x, feet.y, feet.z);
       avatar.rotation.y = yaw + Math.PI;
     } else {
@@ -530,6 +537,8 @@
   $('quitProjBtn').onclick = () => ABC.activities.quitProject();
   $('viewBtn').onclick     = () => toggleView();
   $('portalChip').onclick  = () => ABC.portal.findPortal();
+  $('zoomInBtn').onclick   = () => setZoom(-0.18);
+  $('zoomOutBtn').onclick  = () => setZoom(+0.18);
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
   /* full screen — works standalone and inside the dashboard iframe */
