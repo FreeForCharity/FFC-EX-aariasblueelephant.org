@@ -31,6 +31,13 @@ ABC.BLOCK_DEFS = {
   yellow:  { name:'Sunny Yellow', emoji:'🌟', color:'#ffd43b', pat:'plain' },
   black:   { name:'Night Black',  emoji:'⬛', color:'#343a40', pat:'plain' },
   white:   { name:'Cloud White',  emoji:'⬜', color:'#f1f3f5', pat:'plain' },
+  gold:    { name:'Golden Brick', emoji:'🟨', color:'#e7b416', pat:'bricks', glow:true },
+  slab:    { name:'Half Slab',    emoji:'▬', color:'#d9a05b', pat:'planks', shape:'slab' },
+  wedge:   { name:'Triangle',     emoji:'🔺', color:'#c0584b', pat:'bricks', shape:'wedge', rotates:true },
+  pillar:  { name:'Round Pillar', emoji:'⚪', color:'#f1f3f5', pat:'plain',  shape:'pillar' },
+  door:    { name:'Cute Door',    emoji:'🚪', color:'#8a5a2b', pat:'door',   shape:'pane', rotates:true },
+  pane:    { name:'Window Pane',  emoji:'🪟', color:'#bfeaff', pat:'glass',  alpha:0.5, shape:'pane', rotates:true },
+  knob:    { name:'Golden Handle',emoji:'🔘', color:'#ffd43b', pat:'plain',  shape:'knob', glow:true },
   slimeGreen:  { name:'Green Slime',  emoji:'🟢', color:'#7be042', pat:'slime', alpha:0.85, locked:true },
   slimePink:   { name:'Pink Slime',   emoji:'🩷', color:'#ff8fc8', pat:'slime', alpha:0.85, locked:true },
   slimePurple: { name:'Purple Slime', emoji:'🟣', color:'#b388ff', pat:'slime', alpha:0.85, locked:true },
@@ -40,9 +47,18 @@ ABC.BLOCK_DEFS = {
 };
 
 /* Hotbar order (unlocked-by-default first) */
-ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','stone','glass','sand','snow',
+ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass','sand','snow',
   'leaf','flower','rainbow','star','water','red','blue','yellow','black','white',
+  'slab','wedge','pillar','door','pane','knob',
   'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
+
+/* Cookie cutters for the playdough/slime 🍪 */
+ABC.CUTTERS = [
+  { shape:'star',   ico:'⭐', label:'Star Cutter' },
+  { shape:'heart',  ico:'❤️', label:'Heart Cutter' },
+  { shape:'flower', ico:'🌸', label:'Flower Cutter' },
+  { shape:'circle', ico:'⚪', label:'Circle Cutter' },
+];
 
 /* ============================== BLUEPRINTS ============================== */
 /* Helpers build arrays of cells {x,y,z,t} (relative, y=0 sits on ground top). */

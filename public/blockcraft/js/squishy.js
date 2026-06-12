@@ -16,10 +16,19 @@ ABC.squishy = (function () {
       color: SLIME_COLORS[data.color] || 0x7be042,
       transparent: true, opacity: 0.88, shininess: 90,
       specular: 0xffffff });
-    const blob = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), mat);
+    // unique geometry per slime — its vertices get squished in real time
+    const geo = new THREE.SphereGeometry(0.9, 22, 16);
+    const blob = new THREE.Mesh(geo, mat);
     blob.scale.y = 0.72;
     blob.position.y = 0.62;
+    blob.userData.isBlob = true;
     g.add(blob);
+    g.userData.soft = {
+      blob,
+      base: geo.attributes.position.array.slice(),   // rest shape
+      d: new Float32Array(geo.attributes.position.count),   // radial dent per vertex
+      v: new Float32Array(geo.attributes.position.count),   // dent velocity
+    };
     // googly eyes — slimes are friends too
     const eyeW = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const eyeB = new THREE.MeshBasicMaterial({ color: 0x222222 });
@@ -76,9 +85,65 @@ ABC.squishy = (function () {
     return g;
   }
 
+  /* ---------- cookie-cutter cutouts (playdough shapes!) ---------- */
+  function cutoutShape(shape) {
+    const s = new THREE.Shape();
+    if (shape === 'heart') {
+      s.moveTo(0, -0.45);
+      s.bezierCurveTo(0.55, 0.05, 0.45, 0.5, 0, 0.22);
+      s.bezierCurveTo(-0.45, 0.5, -0.55, 0.05, 0, -0.45);
+    } else if (shape === 'star') {
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 ? 0.22 : 0.52, a = i / 10 * Math.PI * 2 - Math.PI / 2;
+        i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+    } else if (shape === 'flower') {
+      for (let i = 0; i <= 36; i++) {
+        const a = i / 36 * Math.PI * 2;
+        const r = 0.38 + Math.sin(a * 6) * 0.13;            // scalloped petals
+        i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+    } else {  // circle
+      s.absarc(0, 0, 0.45, 0, Math.PI * 2);
+    }
+    return s;
+  }
+  function buildCutout(data) {
+    const g = new THREE.Group();
+    const geo = new THREE.ExtrudeGeometry(cutoutShape(data.shape),
+      { depth: 0.22, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.04, bevelSegments: 2 });
+    geo.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+      color: data.colorHex || 0xff8fc8, shininess: 60 }));
+    m.position.y = 0.16;
+    g.add(m);
+    return g;
+  }
+  /* stamp a cutter into a slime → pops out a matching dough shape */
+  function stamp(target, shape) {
+    if (target.data.kind !== 'slime') {
+      ABC.ui.toast('🍪 The cutter works on your squishy slime!', 2600);
+      return;
+    }
+    poke(target);
+    ABC.audio.sfx.stamp();
+    const p = target.group.position;
+    const a = Math.random() * Math.PI * 2;
+    const s = spawn({ kind: 'cutout', shape,
+      colorHex: SLIME_COLORS[target.data.color] || 0xff8fc8,
+      x: p.x + Math.cos(a) * 1.6, z: p.z + Math.sin(a) * 1.6 });
+    s.spring.vy -= 5;   // lands with a wobble
+    ABC.ui.confetti(10);
+    ABC.ui.floatHearts(2);
+    ABC.saveSoon && ABC.saveSoon();
+    return s;
+  }
+
   /* ---------- spawn / serialize ---------- */
   function spawn(data) {
-    const g = data.kind === 'slime' ? buildSlime(data) : buildOreo(data);
+    const g = data.kind === 'slime' ? buildSlime(data)
+            : data.kind === 'cutout' ? buildCutout(data)
+            : buildOreo(data);
     g.position.set(data.x, groundYAt(data.x, data.z), data.z);
     scene.add(g);
     const s = { group: g, data,
@@ -109,19 +174,39 @@ ABC.squishy = (function () {
     ABC.audio.sfx.squish();
   }
 
-  function poke(s) {
-    // SQUASH! flatten hard, then jiggle back like jelly
-    s.spring.vy -= 9;
-    s.spring.vx += 5;
+  /* dent the jelly surface around a world-space contact point */
+  function dent(s, worldPoint, power) {
+    const soft = s.group.userData.soft;
+    if (!soft) return;
+    const local = worldPoint ? soft.blob.worldToLocal(worldPoint.clone())
+                             : new THREE.Vector3(0, 0.9, 0);   // default: press the top
+    const pos = soft.base, n = soft.v.length;
+    for (let i = 0; i < n; i++) {
+      const dx = pos[i*3] - local.x, dy = pos[i*3+1] - local.y, dz = pos[i*3+2] - local.z;
+      const w = Math.max(0, 1 - Math.sqrt(dx*dx + dy*dy + dz*dz) / 1.1);
+      soft.v[i] -= power * w * w;
+    }
+  }
+
+  function poke(s, worldPoint) {
+    if (s.data.kind === 'cutout') {           // cutouts give a firm dough bounce
+      s.spring.vy -= 4; s.jiggle = 0.6;
+      ABC.audio.sfx.plop();
+      return;
+    }
+    dent(s, worldPoint, 7);                   // deep finger dent right where touched
+    s.spring.vy -= (s.data.kind === 'slime' ? 4 : 8);
+    s.spring.vx += 3;
     s.jiggle = 1;
-    squelch(true);
+    if (s.data.kind === 'slime') ABC.audio.sfx.squishBig(); else squelch(true);
     if (Math.random() < 0.3) ABC.ui.floatHearts(2);
   }
   function grab(s) {
     s.grabbed = true;
     s.dragTarget = null;
     s.spring.vy += 4;        // lifts and stretches up as you grab it
-    squelch(true);
+    dent(s, null, -3);       // top bulges up toward your hand
+    if (s.data.kind === 'slime') ABC.audio.sfx.stretchy(); else squelch(true);
   }
   function dragTo(s, x, z) {
     if (!s.grabbed) return;
@@ -136,10 +221,38 @@ ABC.squishy = (function () {
     s.spring.vy -= 6;
     s.spring.vx += 4;
     s.jiggle = 1;
-    squelch(true);
+    dent(s, null, 5);          // top splats flat as it lands
+    if (s.data.kind === 'slime') ABC.audio.sfx.plop(); else squelch(true);
     s.data.x = s.group.position.x;
     s.data.z = s.group.position.z;
     ABC.saveSoon && ABC.saveSoon();
+  }
+
+  /* per-frame jelly vertex integration */
+  function updateSoft(s, dt, moveX, moveZ, speed) {
+    const soft = s.group.userData.soft;
+    if (!soft) return;
+    const pos = soft.blob.geometry.attributes.position;
+    const base = soft.base, d = soft.d, v = soft.v, n = v.length;
+    // gooey trailing while dragged: trailing side bulges, leading side flattens
+    let fx = 0, fz = 0;
+    if (speed > 0.05) { fx = -moveX / (speed || 1); fz = -moveZ / (speed || 1); }
+    const decay = Math.pow(0.004, dt);
+    for (let i = 0; i < n; i++) {
+      if (speed > 0.05) {
+        const align = (base[i*3] * fx + base[i*3+2] * fz);  // + on trailing side
+        v[i] += align * speed * 2.2 * dt;
+      }
+      v[i] += -70 * d[i] * dt;            // spring back to rest
+      v[i] *= decay;                       // damping
+      d[i] = Math.max(-0.55, Math.min(0.8, d[i] + v[i] * dt));
+      const k = 1 + d[i];
+      pos.array[i*3]   = base[i*3]   * k;
+      pos.array[i*3+1] = base[i*3+1] * k;
+      pos.array[i*3+2] = base[i*3+2] * k;
+    }
+    pos.needsUpdate = true;
+    soft.blob.geometry.computeVertexNormals();
   }
 
   /* ---------- per-frame ---------- */
@@ -154,13 +267,13 @@ ABC.squishy = (function () {
       s.wobbleT += dt;
       s.jiggle = Math.max(0, (s.jiggle || 0) - dt * 1.4);
 
-      let speed = 0;
+      let speed = 0, mvX = 0, mvZ = 0;
       if (s.grabbed && s.dragTarget) {
         // slime chases your finger with gooey lag, stretching as it goes
         const g = s.group;
         const dx = s.dragTarget.x - g.position.x, dz = s.dragTarget.z - g.position.z;
         const dist = Math.hypot(dx, dz);
-        speed = dist;
+        speed = dist; mvX = dx; mvZ = dz;
         const step = Math.min(1, dt * 7);
         g.position.x += dx * step;
         g.position.z += dz * step;
@@ -188,6 +301,7 @@ ABC.squishy = (function () {
       const sx = sp.sx * idle * (1 + pull * 0.35);
       const sy = (sp.sy / Math.sqrt(sp.sx)) * (s.grabbed ? 1.25 + pull * 0.3 : 1);
       s.group.scale.set(sx, sy * idle, sx);
+      updateSoft(s, dt, mvX, mvZ, speed);    // jelly surface ripples
     }
   }
 
@@ -197,6 +311,6 @@ ABC.squishy = (function () {
     return out;
   }
 
-  return { init, spawn, update, poke, grab, dragTo, release,
+  return { init, spawn, update, poke, grab, dragTo, release, stamp,
            serialize, deserialize, meshTargets, list };
 })();

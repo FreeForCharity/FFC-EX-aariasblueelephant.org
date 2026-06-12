@@ -7,6 +7,7 @@ ABC.world = (function () {
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
   const map = new Map();      // "x,y,z" -> type
+  const rotMap = new Map();   // "x,y,z" -> 0..3 quarter-turns (rotating shapes only)
   const key = (x,y,z) => x + ',' + y + ',' + z;
 
   /* ---------- canvas textures ---------- */
@@ -78,6 +79,13 @@ ABC.world = (function () {
         g.fillStyle = '#3a2c20';
         for (let i=0;i<12;i++) { g.beginPath(); g.arc(5+rnd()*54, (rnd()<.5?2+rnd()*18:44+rnd()*18), 2.5, 0, 7); g.fill(); }
         break;
+      case 'door':
+        g.fillStyle = '#6e4520'; g.fillRect(0,0,64,64);
+        g.strokeStyle = '#4a2d12'; g.lineWidth = 4;
+        g.strokeRect(8,6,48,52); g.strokeRect(14,12,36,18); g.strokeRect(14,36,36,18);
+        g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(50,34,5,0,7); g.fill();  // golden knob
+        g.strokeStyle = '#b8860b'; g.lineWidth = 2; g.beginPath(); g.arc(50,34,5,0,7); g.stroke();
+        break;
     }
     // subtle block border for the voxel look
     g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 4; g.strokeRect(0,0,64,64);
@@ -88,9 +96,38 @@ ABC.world = (function () {
   function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
     t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
+  /* ---------- shaped block geometries ---------- */
+  function wedgeGeo() {
+    // a right-triangle ramp: full at -z, slopes down toward +z
+    const g = new THREE.BufferGeometry();
+    const v = [ // x,y,z triplets — two triangle sides + slope + bottom + back
+      -.5,-.5,-.5,  .5,-.5,-.5,  .5,.5,-.5,   -.5,-.5,-.5,  .5,.5,-.5,  -.5,.5,-.5,   // back face
+      -.5,-.5,-.5, -.5,.5,-.5,  -.5,-.5,.5,                                            // left tri
+       .5,-.5,-.5,  .5,-.5,.5,   .5,.5,-.5,                                            // right tri
+      -.5,.5,-.5,   .5,.5,-.5,   .5,-.5,.5,   -.5,.5,-.5,  .5,-.5,.5,  -.5,-.5,.5,    // slope
+      -.5,-.5,-.5, -.5,-.5,.5,   .5,-.5,.5,   -.5,-.5,-.5,  .5,-.5,.5,  .5,-.5,-.5,   // bottom
+    ];
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    const uv = [];
+    for (let i = 0; i < v.length / 3; i++) uv.push((v[i*3]+0.5), (v[i*3+1]+0.5));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.computeVertexNormals();
+    return g;
+  }
+  function geoFor(def) {
+    switch (def.shape) {
+      case 'slab':   return new THREE.BoxGeometry(1, 0.5, 1).translate(0, -0.25, 0);
+      case 'wedge':  return wedgeGeo();
+      case 'pillar': return new THREE.CylinderGeometry(0.42, 0.42, 1, 14);
+      case 'pane':   return new THREE.BoxGeometry(1, 1, 0.14);
+      case 'knob':   return new THREE.BoxGeometry(0.3, 0.3, 0.3);
+      default:       return blockGeo;
+    }
+  }
+
   /* ---------- mesh management (capacity grows on demand) ---------- */
   function newMesh(id, cap) {
-    const m = new THREE.InstancedMesh(blockGeo, materials[id], cap);
+    const m = new THREE.InstancedMesh(geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
     m.count = 0;
     m.userData.type = id;
     m.userData.positions = [];
@@ -112,10 +149,10 @@ ABC.world = (function () {
   const _m4 = new THREE.Matrix4();
   function rebuild(type) {
     let m = meshes[type];
-    const pos = [];
+    const pos = [], keys = [];
     for (const [k, t] of map) if (t === type) {
       const [x,y,z] = k.split(',').map(Number);
-      pos.push([x,y,z]);
+      pos.push([x,y,z]); keys.push(k);
     }
     if (pos.length > m.instanceMatrix.count) {       // grow capacity
       scene.remove(m);
@@ -124,8 +161,11 @@ ABC.world = (function () {
       m = meshes[type] = newMesh(type, cap);
     }
     m.count = pos.length;
+    const slabOff = ABC.BLOCK_DEFS[type].shape === 'slab' ? 0 : 0;  // slab geo already offset
     for (let i=0;i<m.count;i++) {
-      _m4.makeTranslation(pos[i][0]+0.5, pos[i][1]+0.5, pos[i][2]+0.5);
+      const rot = rotMap.get(keys[i]) || 0;
+      _m4.makeRotationY(rot * Math.PI / 2);
+      _m4.setPosition(pos[i][0]+0.5, pos[i][1]+0.5 + slabOff, pos[i][2]+0.5);
       m.setMatrixAt(i, _m4);
     }
     m.userData.positions = pos;
@@ -135,13 +175,14 @@ ABC.world = (function () {
 
   function inBounds(x,y,z) { return Math.abs(x)<=SIZE && Math.abs(z)<=SIZE && y>=MIN_Y && y<=MAX_Y; }
   function get(x,y,z) { return map.get(key(x,y,z)) || null; }
-  function set(x,y,z,type) {
+  function set(x,y,z,type,rot) {
     if (!inBounds(x,y,z)) return false;
     const k = key(x,y,z);
     const old = map.get(k);
-    if (old === type) return false;
+    if (old === type && (rotMap.get(k)||0) === (rot||0)) return false;
     if (old) dirty.add(old);
     map.set(k, type);
+    if (rot) rotMap.set(k, rot); else rotMap.delete(k);
     dirty.add(type);
     return true;
   }
@@ -151,6 +192,7 @@ ABC.world = (function () {
     const old = map.get(k);
     if (!old) return false;
     map.delete(k);
+    rotMap.delete(k);
     dirty.add(old);
     return true;
   }
@@ -246,20 +288,23 @@ ABC.world = (function () {
   /* ---------- save / load (diff against the generated world) ---------- */
   function serialize() {
     const diffs = [];
-    for (const [k,t] of map) if (defaultMap.get(k) !== t) diffs.push(k + ':' + t);
+    for (const [k,t] of map) {
+      const r = rotMap.get(k) || 0;
+      if (defaultMap.get(k) !== t || r) diffs.push(k + ':' + t + (r ? ':' + r : ''));
+    }
     const removed = [];
     for (const k of defaultMap.keys()) if (!map.has(k)) removed.push(k);
     return { d: diffs, r: removed };
   }
   function deserialize(data) {
     if (!data) return;
-    map.clear();
+    map.clear(); rotMap.clear();
     for (const [k,t] of defaultMap) map.set(k, t);
     for (const k of (data.r||[])) map.delete(k);
     for (const e of (data.d||[])) {
-      const i = e.lastIndexOf(':');
-      const k = e.slice(0,i), t = e.slice(i+1);
-      if (ABC.BLOCK_DEFS[t]) map.set(k, t);
+      const parts = e.split(':');            // "x,y,z" ":type" [":rot"]
+      const k = parts[0], t = parts[1], r = +parts[2] || 0;
+      if (ABC.BLOCK_DEFS[t]) { map.set(k, t); if (r) rotMap.set(k, r); }
     }
     for (const t of Object.keys(meshes)) dirty.add(t);
     flush();
