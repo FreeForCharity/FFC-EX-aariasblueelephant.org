@@ -61,6 +61,14 @@ ABC.SURPRISES = [
   { ico:'💖', s:'There are two kindness hearts for me!', grant:'hearts' },
 ];
 
+/* Village market 🏪 — learn asking, paying and thanking */
+ABC.SHOP_GOODS = [
+  { ico:'🍎', label:'Apple Basket', price:2, word:'the apple basket', grant:'apples' },
+  { ico:'🎈', label:'Magic Balloon', price:3, word:'a magic balloon', grant:'balloon' },
+  { ico:'⭐', label:'Lamp Blocks',  price:4, word:'three glowing lamp blocks', grant:'lamps' },
+  { ico:'🍪', label:'Cookie Treat', price:2, word:'a cookie treat', grant:'cookie' },
+];
+
 /* Cookie cutters for the playdough/slime 🍪 */
 ABC.CUTTERS = [
   { shape:'star',   ico:'⭐', label:'Star Cutter' },
