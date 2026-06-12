@@ -5,6 +5,13 @@ ABC.animals = (function () {
   let nameIdx = 0;
 
   function mat(color) { return new THREE.MeshLambertMaterial({ color }); }
+  function sp(group, r, x, y, z, color, sy) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), mat(color));
+    m.position.set(x, y, z);
+    if (sy) m.scale.y = sy;
+    group.add(m);
+    return m;
+  }
   function bx(group, w,h,d, x,y,z, color) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(color));
     m.position.set(x,y,z);
@@ -110,7 +117,39 @@ ABC.animals = (function () {
       const charm = bx(g, .5,.22,.06, 0,1.6,1.06, '#ff5e7e');
       charm.material = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:0xb197fc, emissiveIntensity:.5 });
     },
-    puzzleEle(g, d) {                                 /* rainbow puzzle elephant from the logo 🌈 */
+    capy(g, d) {                       /* a big round chonky capybara ball */
+      sp(g, 1.05, 0, 1.05, 0, d.body, 0.92);          // ball body
+      sp(g, .55, 0, 1.35, .85, d.body);                // round snoot
+      sp(g, .16, -.2, 1.65, 1.28, '#3a2a18');          // nose
+      bx(g, .18,.22,.1, -.45,1.95,.55, d.accent);      // tiny ears
+      bx(g, .18,.22,.1,  .45,1.95,.55, d.accent);
+      [[-.5,.45],[.5,.45],[-.5,-.45],[.5,-.45]].forEach(([x,z]) =>
+        sp(g, .2, x, .18, z, d.accent));               // stubby ball feet
+      face(g, .9, 1.55, 1.18);
+    },
+    penguin(g, d) {                    /* a round penguin like a bowling pin ball */
+      sp(g, .85, 0, .95, 0, d.body, 1.05);             // ball body
+      sp(g, .62, 0, 1.05, .32, d.accent, 1.0);         // white tummy
+      sp(g, .5, 0, 1.95, .1, d.body);                  // round head
+      bx(g, .3,.12,.2, 0, 1.85, .58, '#ffa94d');       // beak
+      sp(g, .3, -.8, 1.0, 0, d.body, 1.4);             // flippers
+      sp(g, .3,  .8, 1.0, 0, d.body, 1.4);
+      [[-.3],[.3]].forEach(([x]) => bx(g, .35,.12,.45, x, .08, .15, '#ffa94d'));
+      face(g, .56, 2.05, .55);
+    },
+    panda(g, d) {                      /* a perfectly round panda dumpling */
+      sp(g, 1.0, 0, 1.0, 0, d.body, 0.95);             // ball body
+      sp(g, .68, 0, 1.95, .25, d.body);                // round head
+      sp(g, .2, -.4, 2.5, .2, d.accent);               // black ears
+      sp(g, .2,  .4, 2.5, .2, d.accent);
+      sp(g, .17, -.26, 2.0, .78, d.accent);            // eye patches
+      sp(g, .17,  .26, 2.0, .78, d.accent);
+      sp(g, .12, 0, 1.78, .9, d.accent);               // nose
+      [[-.55,.4],[.55,.4],[-.55,-.4],[.55,-.4]].forEach(([x,z]) =>
+        sp(g, .26, x, .2, z, d.accent));               // chubby ball paws
+      face(g, .5, 2.02, .93);
+    },
+    puzzleEle(g, d) {                               /* rainbow puzzle elephant from the logo 🌈 */
       const pal = ['#fa5252','#ffa94d','#ffd43b','#69db7c','#4dabf7','#b197fc'];
       let p = 0; const next = () => pal[(p++) % pal.length];
       // patchwork body: 2x2x3 grid of colored boxes
@@ -175,7 +214,8 @@ ABC.animals = (function () {
     // Bella the Blue Elephant — guide, stays near spawn
     const bella = spawn('elephant', 4, -8, 'Bella');
     bella.isGuide = true; bella.home = {x:4, z:-8}; bella.range = 6;
-    // cute friends near spawn
+    // cute friends near spawn (incl. the big round cuties!)
+    spawn('capy', 10, -4); spawn('panda', -10, -2);
     spawn('bunny', -5, -10);  spawn('bunny', 14, 6);
     spawn('cat', 6, 8);       spawn('puppy', -8, 4);
     spawn('butterfly', 0, 2); spawn('butterfly', 10, -4);
