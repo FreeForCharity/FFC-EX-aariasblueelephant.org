@@ -103,7 +103,9 @@ ABC.audio = (function () {
     if (!vs.length) return;
     if (S.voiceName) { voice = vs.find(v => v.name === S.voiceName) || voice; if (voice) return; }
     // prefer the most natural-sounding voices available on this device
-    const ranks = [/natural/i, /premium/i, /enhanced/i, /Ava|Zoe|Allison|Joelle/i, /Samantha/i, /Google US English/i, /Karen|Moira|female/i];
+    // (Edge "Online Natural", neural voices, enhanced Apple voices, then Google)
+    const ranks = [/online.*natural/i, /natural/i, /neural/i, /premium/i, /enhanced/i,
+      /Ava|Zoe|Allison|Joelle|Aria|Jenny/i, /Samantha/i, /Google US English/i, /Karen|Moira|female/i];
     for (const r of ranks) { const v = vs.find(v => r.test(v.name)); if (v) { voice = v; return; } }
     voice = vs[0];
   }
@@ -127,13 +129,22 @@ ABC.audio = (function () {
     if (!clean.trim()) return;
     speechSynthesis.cancel();
     // Chrome quirk: speaking immediately after cancel() silently drops the
-    // utterance — queue it a tick later
+    // utterance — queue it a tick later. Speak sentence-by-sentence with
+    // natural micro-pauses, the way a person reads to a child.
     setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(clean);
-      u.rate = 0.95; u.pitch = 1.04;   // gentler — less chipmunk, more human
       if (!voice) pickVoice();          // voices sometimes load late
-      if (voice) u.voice = voice;
-      speechSynthesis.speak(u);
+      const parts = clean.match(/[^.!?…]+[.!?…]*/g) || [clean];
+      for (const part of parts) {
+        const p = part.trim();
+        if (!p) continue;
+        const u = new SpeechSynthesisUtterance(p);
+        u.rate = 0.92; u.pitch = 1.0;   // calm, human pace — no chipmunk
+        // tiny lift on questions and excitement, like real speech
+        if (/\?$/.test(p)) u.pitch = 1.08;
+        else if (/!$/.test(p)) { u.pitch = 1.05; u.rate = 0.96; }
+        if (voice) u.voice = voice;
+        speechSynthesis.speak(u);       // queued utterances get natural gaps
+      }
     }, 60);
   }
   // Chrome quirk #2: long speech silently pauses after ~15s — keep it awake
