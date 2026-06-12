@@ -117,6 +117,7 @@ ABC.activities = (function () {
     const p = prompts.stages[a.stageIdx];
     setTimeout(() => {
       ui().askExpressive(p, () => {
+        ABC.quests.mark('build');
         if (a.stageIdx === a.bp.stages.length - 1) nextStage();   // triggers complete
         else nextStage();
       }, { stars: 2 });
@@ -218,11 +219,13 @@ ABC.activities = (function () {
   function talkToAnimal(a) {
     if (a.isGuide) { bellaChat(a); return; }
     if (!a.emotion) {
-      // friendly hello + describing prompt about the animal itself
+      // half the time the animal has a treasure — practice ASKING for it!
+      if (Math.random() < 0.5) { animalRequest(a); return; }
+      // otherwise: friendly hello + describing prompt about the animal
       const d = a.def;
       ui().askExpressive({
         emoji: d.emoji,
-        scene: `You walked up to ${a.name} the ${d.label}! ${a.name} looks at you with friendly eyes. What can you tell me about ${a.name}?`,
+        scene: `${a.name} the ${d.label} looks at you with friendly eyes. What can you tell me about ${a.name}?`,
         options: [
           { t: describeAnimal(a), q: 'best' },
           { t: d.label + '.', q: 'name' },
@@ -251,10 +254,29 @@ ABC.activities = (function () {
             ABC.audio.sfx.munch();
             ui().confetti(16);
             ui().addHearts(1);
+            ABC.quests.mark('animal');
             ui().toast('💖 ' + fillTpl(k.say, a), 5000, true);
           }, '💖');
       }, 400);
     }, { stars: 1 });
+  }
+
+  /* the animal found something — asking nicely gets it! (requesting practice) */
+  function animalRequest(a) {
+    const want = ui().pick(ABC.ANIMAL_WANTS);
+    ui().askExpressive({
+      emoji: a.def.emoji + want.ico,
+      scene: `${a.name} the ${a.def.label} found ${want.word}! ${want.ico} How do we ask for it nicely?`,
+      options: [
+        { t: `Can I have ${want.word}, please?`, q: 'best' },
+        { t: 'Give.', q: 'name' },
+        { t: 'The door is open.', q: 'off' } ],
+    }, () => {
+      ABC.animals.celebrate(a, performance.now() / 1000);
+      ui().confetti(14);
+      ui().addStars(1);   // bonus on top of the expressive star
+      ui().toast(`${want.ico} ${a.name} happily shares ${want.word} with you! Asking nicely is magic! 💖`, 4600, true);
+    });
   }
 
   function describeAnimal(a) {
@@ -332,6 +354,7 @@ ABC.activities = (function () {
             ui().unlockBlock(color.key);
             const p = spotInFront(3);
             ABC.squishy.spawn({ kind:'slime', color: color.key, mixin: mixin.label, x: p.x, z: p.z });
+            ABC.quests.mark('words');
             ABC.saveSoon && ABC.saveSoon();
             ui().bellaSays(`Your pet slime is wiggling right there! Poke it to squish it! 🫧`, 5000);
           }, { stars: 2 });
@@ -397,12 +420,88 @@ ABC.activities = (function () {
             ui().unlockBlock(blockId);
             const p = spotInFront(3);
             ABC.squishy.spawn({ kind:'oreo', cream: cream.label, topping: topping.label, x: p.x, z: p.z });
+            ABC.quests.mark('words');
             ABC.saveSoon && ABC.saveSoon();
             ui().bellaSays('Your giant Oreo is on the ground! Poke it, squish it, or carry it home! 🍪', 5000);
           }, { stars: 2 });
         }, 600);
       }
     };
+  }
+
+  /* =====================================================
+     TODAY'S ADVENTURES 📋 — 3 focus quests per day
+     ===================================================== */
+  ABC.quests = (function () {
+    const todayKey = () => new Date().toISOString().slice(0, 10);
+    function state() {
+      let q = ABC.state.quests;
+      if (!q || q.date !== todayKey()) {
+        q = ABC.state.quests = { date: todayKey(), done: {}, celebrated: false };
+      }
+      return q;
+    }
+    function allDone() { return ABC.QUEST_DEFS.every(d => state().done[d.key]); }
+    function refreshChip() {
+      const chip = document.getElementById('questChip');
+      if (!chip) return;
+      const n = ABC.QUEST_DEFS.filter(d => state().done[d.key]).length;
+      chip.textContent = '📋 ' + n + '/' + ABC.QUEST_DEFS.length;
+      chip.classList.toggle('portalReady', allDone());
+    }
+    function mark(key) {
+      const q = state();
+      if (q.done[key]) return;
+      q.done[key] = true;
+      refreshChip();
+      ABC.saveSoon && ABC.saveSoon();
+      const def = ABC.QUEST_DEFS.find(d => d.key === key);
+      ui().toast(`📋 Adventure done: ${def.ico} ${def.label}!`, 3600, true);
+      if (allDone() && !q.celebrated) {
+        q.celebrated = true;
+        ABC.saveSoon && ABC.saveSoon();
+        setTimeout(() => {
+          ui().confetti(80);
+          ABC.audio.sfx.fanfare();
+          ui().addStars(5);
+          ABC.portal.charge(2);
+          ui().bellaSays('ALL of today’s adventures are DONE! You are a superstar, {player}! 🎆⭐', 6500);
+        }, 1200);
+      }
+    }
+    function showBoard() {
+      const q = state();
+      let html = `<div class="bigEmoji">📋</div><h2>Today's Adventures</h2>
+        <div class="scene">Three special things to do today!</div>`;
+      ABC.QUEST_DEFS.forEach(d => {
+        const done = !!q.done[d.key];
+        html += `<div class="sentenceCard" style="display:flex; align-items:center; gap:12px; ${done ? 'opacity:.65; border-style:solid; border-color:#51cf66;' : ''}">
+          <span style="font-size:30px;">${done ? '✅' : d.ico}</span>
+          <span style="flex:1; text-align:left;">${d.label}</span></div>`;
+      });
+      html += `<div class="dlgRow"><button class="bigBtn green" id="qbOk">${allDone() ? 'All done! 🎆' : 'Let’s go! 🚀'}</button></div>`;
+      ABC.ui.openDialog(html);
+      ABC.audio.say(allDone() ? 'All adventures done! Amazing!' : 'Here are today’s three adventures!');
+      document.getElementById('qbOk').onclick = () => ABC.ui.closeDialog();
+    }
+    return { mark, showBoard, refreshChip, state };
+  })();
+
+  /* =====================================================
+     SHOW & TELL 🧩 — describe your own creations
+     ===================================================== */
+  let lastShowTell = 0;
+  function initShowTell(count) { lastShowTell = count || 0; }
+  function maybeShowTell(placedCount) {
+    if (placedCount - lastShowTell < 25) return;
+    lastShowTell = placedCount;
+    const sentence = ui().pick(ABC.SHOWTELL_SENTENCES);
+    setTimeout(() => {
+      if (ABC.ui.isOpen()) return;
+      ui().askBuilder(
+        'WOW, {player}! Look at what you are building! Tell me about it — tap the words in order:',
+        sentence, null, { emoji: '🏗️✨', stars: 2 });
+    }, 600);
   }
 
   /* =====================================================
@@ -445,11 +544,12 @@ ABC.activities = (function () {
       ui().confetti(30);
       ui().addHearts(2);
       ABC.portal.charge(2);   // real-world words are SUPER word power
+      ABC.quests.mark('words');
       ui().bellaSays(`You used your words with ${who.label}! That is real magic! 💖🌀`, 5500);
     };
   }
 
   return { showBuildMenu, tryFillGhost, magicFill, quitProject, talkToAnimal,
-           emotionTick, slimeLab, oreoKitchen, kindWords,
+           emotionTick, slimeLab, oreoKitchen, kindWords, maybeShowTell, initShowTell,
            hasActiveProject: () => !!active };
 })();
