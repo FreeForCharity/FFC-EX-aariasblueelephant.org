@@ -1736,13 +1736,20 @@ function buildMenu(){
     const cert = save.certs[v.id];
     const card = document.createElement("button");
     card.className = "lvlcard" + (locked ? " locked" : "");
-    card.innerHTML = secretLocked
-      ? `<div class="vemoji">❓</div><div class="vname">???</div>
-         <div class="vsub">Secret! Earn all 5 certificates to unlock…</div><div class="vstars"></div>`
-      : `<div class="vemoji">${locked ? "🔒" : v.emoji}</div>
-         <div class="vname">${v.name}</div>
-         <div class="vsub">${locked ? "Finish the level before to unlock!" : "Lv " + (i+1) + " • " + CFG[i].title}</div>
-         <div class="vstars">${cert ? "⭐".repeat(cert.stars) + ` ${cert.score}/100` : ""}</div>`;
+    // built with textContent (never innerHTML) — save data comes from localStorage
+    const stars = cert ? clamp(Math.round(Number(cert.stars) || 0), 0, 3) : 0;
+    const score = cert ? clamp(Math.round(Number(cert.score) || 0), 0, 100) : 0;
+    const parts = secretLocked
+      ? [["vemoji","❓"], ["vname","???"], ["vsub","Secret! Earn all 5 certificates to unlock…"], ["vstars",""]]
+      : [["vemoji", locked ? "🔒" : v.emoji],
+         ["vname", v.name],
+         ["vsub", locked ? "Finish the level before to unlock!" : "Lv " + (i+1) + " • " + CFG[i].title],
+         ["vstars", cert ? "⭐".repeat(stars) + ` ${score}/100` : ""]];
+    for (const [cls, text] of parts){
+      const div = document.createElement("div");
+      div.className = cls; div.textContent = text;
+      card.appendChild(div);
+    }
     if (!locked) card.addEventListener("click", () => { ensureAudio(); openIntro(i); });
     grid.appendChild(card);
   });
