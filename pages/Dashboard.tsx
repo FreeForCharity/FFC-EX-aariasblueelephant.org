@@ -36,7 +36,8 @@ import {
     Share,
     Link as LinkIcon,
     Gamepad2,
-    Bike
+    Bike,
+    Cookie
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -67,6 +68,7 @@ type ViewState =
     | 'wheel'
     | 'blockcraft'
     | 'roadsafety'
+    | 'doughlab'
     | 'history'
     | 'receipts' 
     | 'my-events' 
@@ -398,9 +400,10 @@ const Dashboard: React.FC = () => {
         { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
         { id: 'blockcraft', label: "Aaria's Block Craft 3D", icon: Gamepad2, role: 'all' },
         { id: 'roadsafety', label: 'Road Safety Heroes', icon: Bike, role: 'all' },
+        { id: 'doughlab', label: 'Dough Lab', icon: Cookie, role: 'all' },
     ].filter(item => {
-        // Special case for wheel, blockcraft, roadsafety and buddy-up - always show
-        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'roadsafety' || item.id === 'buddy-up') return true;
+        // Special case for the games/fun sections and buddy-up - always show
+        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'buddy-up') return true;
         
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)
@@ -2012,6 +2015,36 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
+    const renderDoughLabSection = () => (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Dough Lab 🫧</h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">
+                        A squishy playdough &amp; slime sensory simulator — pinch, stretch, squish and mix colors. Calming, creative fun for all ages.
+                    </p>
+                </div>
+                <a
+                    href="/doughlab/index.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-purple text-white font-bold shadow-lg hover:opacity-90 transition-opacity shrink-0"
+                >
+                    <Cookie className="h-5 w-5" /> Play Full Screen
+                </a>
+            </div>
+            <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
+                <iframe
+                    src="/doughlab/index.html"
+                    title="Dough Lab"
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                />
+            </div>
+        </div>
+    );
+
 
     const renderOverviewSection = () => (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -2108,6 +2141,7 @@ const Dashboard: React.FC = () => {
             case 'wheel': return renderWheelSection();
             case 'blockcraft': return renderBlockCraftSection();
             case 'roadsafety': return renderRoadSafetySection();
+            case 'doughlab': return renderDoughLabSection();
 
             case 'history': return renderHistorySection();
             case 'receipts': return renderReceiptsSection();
