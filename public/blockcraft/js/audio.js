@@ -95,9 +95,26 @@ ABC.audio = (function () {
 
   /* ---- Speech ---- */
   let voice = null;
+  function enVoices() {
+    return (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter(v => v.lang.startsWith('en'));
+  }
   function pickVoice() {
-    const vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
-    voice = vs.find(v=>/Samantha|Google US English|Karen|female/i.test(v.name)) || vs.find(v=>v.lang.startsWith('en')) || null;
+    const vs = enVoices();
+    if (!vs.length) return;
+    if (S.voiceName) { voice = vs.find(v => v.name === S.voiceName) || voice; if (voice) return; }
+    // prefer the most natural-sounding voices available on this device
+    const ranks = [/natural/i, /premium/i, /enhanced/i, /Ava|Zoe|Allison|Joelle/i, /Samantha/i, /Google US English/i, /Karen|Moira|female/i];
+    for (const r of ranks) { const v = vs.find(v => r.test(v.name)); if (v) { voice = v; return; } }
+    voice = vs[0];
+  }
+  function cycleVoice() {       // settings: tap to try the next voice
+    const vs = enVoices();
+    if (!vs.length) return null;
+    const i = vs.findIndex(v => voice && v.name === voice.name);
+    voice = vs[(i + 1) % vs.length];
+    S.voiceName = voice.name;
+    say('Hi! I sound like this!', { force: true });
+    return voice.name;
   }
   if (window.speechSynthesis) {
     pickVoice();
@@ -113,7 +130,7 @@ ABC.audio = (function () {
     // utterance — queue it a tick later
     setTimeout(() => {
       const u = new SpeechSynthesisUtterance(clean);
-      u.rate = 0.92; u.pitch = 1.15;
+      u.rate = 0.95; u.pitch = 1.04;   // gentler — less chipmunk, more human
       if (!voice) pickVoice();          // voices sometimes load late
       if (voice) u.voice = voice;
       speechSynthesis.speak(u);
@@ -144,5 +161,6 @@ ABC.audio = (function () {
     return r;
   }
 
-  return { settings:S, ensureCtx, sfx, startMusic, say, stopSay, listen, hasSR:!!SR };
+  return { settings:S, ensureCtx, sfx, startMusic, say, stopSay, listen, hasSR:!!SR,
+           cycleVoice, voiceName: () => voice ? voice.name : 'default' };
 })();

@@ -120,6 +120,24 @@ ABC.world = (function () {
       case 'wedge':  return wedgeGeo();
       case 'pillar': return new THREE.CylinderGeometry(0.42, 0.42, 1, 14);
       case 'pane':   return new THREE.BoxGeometry(1, 1, 0.14);
+      case 'stair': {
+        // two merged boxes: bottom half + back upper half = a climbable step
+        const lower = new THREE.BoxGeometry(1, 0.5, 1).translate(0, -0.25, 0);
+        const upper = new THREE.BoxGeometry(1, 0.5, 0.5).translate(0, 0.25, -0.25);
+        const g = new THREE.BufferGeometry();
+        const a = lower.attributes.position.array, b = upper.attributes.position.array;
+        const au = lower.attributes.uv.array, bu = upper.attributes.uv.array;
+        const an = lower.attributes.normal.array, bn = upper.attributes.normal.array;
+        const cat = (x, y) => { const o = new Float32Array(x.length + y.length); o.set(x); o.set(y, x.length); return o; };
+        g.setAttribute('position', new THREE.BufferAttribute(cat(a, b), 3));
+        g.setAttribute('uv', new THREE.BufferAttribute(cat(au, bu), 2));
+        g.setAttribute('normal', new THREE.BufferAttribute(cat(an, bn), 3));
+        const ia = lower.index.array, ib = upper.index.array, off = a.length / 3;
+        const idx = new Uint16Array(ia.length + ib.length);
+        idx.set(ia); for (let i = 0; i < ib.length; i++) idx[ia.length + i] = ib[i] + off;
+        g.setIndex(new THREE.BufferAttribute(idx, 1));
+        return g;
+      }
       case 'knob':   return new THREE.BoxGeometry(0.3, 0.3, 0.3);
       default:       return blockGeo;
     }
@@ -163,7 +181,8 @@ ABC.world = (function () {
     m.count = pos.length;
     const slabOff = ABC.BLOCK_DEFS[type].shape === 'slab' ? 0 : 0;  // slab geo already offset
     for (let i=0;i<m.count;i++) {
-      const rot = rotMap.get(keys[i]) || 0;
+      const raw = rotMap.get(keys[i]) || 0;
+      const rot = (raw & 3) + ((raw & 4) ? 1 : 0);    // bit 4 = door swung open
       _m4.makeRotationY(rot * Math.PI / 2);
       _m4.setPosition(pos[i][0]+0.5, pos[i][1]+0.5 + slabOff, pos[i][2]+0.5);
       m.setMatrixAt(i, _m4);
@@ -295,6 +314,18 @@ ABC.world = (function () {
     defaultMap = new Map(map);   // snapshot for save diffing
   }
 
+  /* ---------- color themes 🎨 ---------- */
+  let hemiLight = null;
+  function setTheme(key) {
+    const t = (ABC.THEMES || []).find(t => t.key === key) || ABC.THEMES[0];
+    scene.background = new THREE.Color(t.sky);
+    scene.fog.color.set(t.sky);
+    if (hemiLight) hemiLight.color.set(t.sky);
+    const dark = key === 'night';
+    scene.traverse(o => { if (o.isLight && o.isDirectionalLight) o.intensity = dark ? 0.45 : 0.95; });
+    if (hemiLight) hemiLight.intensity = dark ? 0.2 : 0.35;
+  }
+
   /* ---------- scene setup ---------- */
   function initScene(renderer) {
     scene = new THREE.Scene();
@@ -304,8 +335,8 @@ ABC.world = (function () {
     sun.position.set(40, 80, 25);
     scene.add(sun);
     scene.add(new THREE.AmbientLight(0xcfe8ff, 0.75));
-    const hemi = new THREE.HemisphereLight(0xbfe3ff, 0x7ed957, 0.35);
-    scene.add(hemi);
+    hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x7ed957, 0.35);
+    scene.add(hemiLight);
     // dark base far below the bedrock layer
     underMesh = new THREE.Mesh(
       new THREE.BoxGeometry(2000, 1, 2000),
@@ -528,8 +559,17 @@ ABC.world = (function () {
     flush();
   }
 
+  function getRot(x,y,z) { return rotMap.get(key(x,y,z)) || 0; }
+  function topBlock(x,z) {
+    for (let y = MAX_Y; y >= MIN_Y; y--) {
+      const t = map.get(key(x,y,z));
+      if (t) return { t, y };
+    }
+    return null;
+  }
+
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
-           ensureChunks,
+           ensureChunks, setTheme, getRot, topBlock,
            getScene: () => scene };
 })();

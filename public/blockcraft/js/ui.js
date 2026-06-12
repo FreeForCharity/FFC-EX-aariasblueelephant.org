@@ -491,6 +491,8 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setName">✏️ Player name: <b>${esc(ABC.state.playerName)}</b> — tap to change</button>
       <button class="choiceBtn" id="setVoice">${chk(s.voiceMode)} 🎤 Voice Mode — say sentences out loud ${ABC.audio.hasSR ? '' : '(needs Chrome/Edge)'}</button>
       <button class="choiceBtn" id="setRead">${chk(s.readAloud)} 🔊 Read everything aloud</button>
+      <button class="choiceBtn" id="setVoiceName">🗣️ Voice: <b>${esc(ABC.audio.voiceName())}</b> — tap to try another</button>
+      <button class="choiceBtn" id="setTheme">🎨 World colors — tap to change the sky!</button>
       <button class="choiceBtn" id="setSound">${chk(s.sound)} 🎵 Sound effects</button>
       <button class="choiceBtn" id="setMusic">${chk(s.music)} 🎶 Gentle music</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
@@ -512,6 +514,13 @@ ABC.ui = (function () {
       };
     });
     wire('setVoice', () => { s.voiceMode = !s.voiceMode; ABC.saveSoon(); showSettings(); });
+    wire('setVoiceName', () => { ABC.audio.cycleVoice(); ABC.saveSoon(); showSettings(); });
+    wire('setTheme', () => {
+      pickCard('World Colors 🎨', 'Pick a mood for your world!',
+        ABC.THEMES.map(t => ({ ico: t.ico, label: t.label, t })),
+        (c) => { closeDialog(); ABC.world.setTheme(c.t.key); s.theme = c.t.key; ABC.saveSoon();
+                 toast(c.t.ico + ' ' + c.t.label + '!', 2600, true); }, '🎨');
+    });
     wire('setRead',  () => { s.readAloud = !s.readAloud; ABC.saveSoon(); showSettings(); });
     wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); showSettings(); });
     wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); showSettings(); });
