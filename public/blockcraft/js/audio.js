@@ -26,13 +26,46 @@ ABC.audio = (function () {
     o.start(t); o.stop(t + dur + 0.05);
   }
 
+  /* shared white-noise buffer for wet/organic sounds */
+  let _noise = null;
+  function noiseBuffer() {
+    const c = ensureCtx();
+    if (_noise) return _noise;
+    _noise = c.createBuffer(1, c.sampleRate, c.sampleRate);
+    const d = _noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return _noise;
+  }
+  /* a wet squelch: noise squeezed through a falling band-pass + a soft thump */
+  function wet(dur, f0, f1, vol) {
+    if (!S.sound) return;
+    const c = ensureCtx(), t = c.currentTime;
+    const src = c.createBufferSource(); src.buffer = noiseBuffer();
+    src.playbackRate.value = 0.7 + Math.random() * 0.6;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.5;
+    bp.frequency.setValueAtTime(f0 * (0.85 + Math.random() * 0.3), t);
+    bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(bp).connect(g).connect(c.destination);
+    src.start(t); src.stop(t + dur + 0.05);
+    tone(90 + Math.random() * 40, dur * 0.8, 'sine', vol * 0.7, 0, 55);
+  }
+
   const sfx = {
     pop()      { tone(420, .12, 'square', .08); tone(640, .1, 'sine', .1, .02); },
     remove()   { tone(300, .15, 'triangle', .1, 0, 150); },
     ding()     { tone(880, .3, 'sine', .14); tone(1320, .4, 'sine', .08, .05); },
     star()     { [880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'sine',.1,i*.09)); },
     fanfare()  { [523,659,784,1046,1318].forEach((f,i)=>tone(f,.35,'triangle',.12,i*.13)); },
-    squish()   { tone(180, .2, 'sawtooth', .05, 0, 90); tone(90, .25, 'sine', .12, .02, 60); },
+    squish()   { wet(0.22, 480, 110, 0.22); },                                  // press into dough
+    squishBig(){ wet(0.4, 380, 70, 0.3); wet(0.18, 700, 200, 0.12); },          // deep two-stage splat
+    stretchy() { wet(0.35, 140, 520, 0.16); },                                  // pulling taffy upward
+    plop()     { wet(0.16, 300, 90, 0.2); tone(70, .2, 'sine', .15, .04, 45); },// lands back down
+    stamp()    { wet(0.12, 600, 250, 0.2); tone(660, .18, 'triangle', .12, .08); tone(990, .25, 'sine', .1, .14); },
+    grow()     { [330,392,494,587].forEach((f,i)=>tone(f,.22,'triangle',.09,i*.12)); },
     honk()     { tone(330, .25, 'square', .12); tone(415, .3, 'square', .12, .25); },
     whoosh()   { tone(220, 1.4, 'sawtooth', .07, 0, 1100); tone(110, 1.6, 'triangle', .08, 0, 700); },
     gentle()   { tone(660, .25, 'sine', .08); },

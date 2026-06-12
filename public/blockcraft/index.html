@@ -125,6 +125,9 @@
     cursor:pointer; font-family:inherit; font-size:15px; transition:transform .1s; color:#234; }
   .pickCard:hover { transform:scale(1.07); border-color:#74c0fc; background:#e7f5ff; }
   .pickCard .ico { font-size:38px; display:block; margin-bottom:4px; }
+  .bagSection { font-size:18px; font-weight:bold; color:#1d4ed8; margin:14px 0 4px;
+    border-bottom:2px dashed #cde; padding-bottom:4px; text-align:left; }
+  .bagItem { width:104px; font-size:13px; line-height:1.3; }
   #micCircle { width:92px; height:92px; border-radius:50%; margin:10px auto; font-size:42px; border:none;
     cursor:pointer; background:linear-gradient(180deg,#ff8787,#fa5252); color:#fff;
     box-shadow:0 5px 0 #c92a2a; }
@@ -176,6 +179,7 @@
     <div class="scoreChip" id="questChip" title="Today's Adventures">📋 0/3</div>
   </div>
   <div id="menuBar">
+    <button class="menuBtn" id="bagBtn">🎒 Bag</button>
     <button class="menuBtn" id="buildMenuBtn">🏗️ Build</button>
     <button class="menuBtn" id="slimeBtn">🌈 Slime Lab</button>
     <button class="menuBtn" id="oreoBtn">🍪 Oreo Kitchen</button>

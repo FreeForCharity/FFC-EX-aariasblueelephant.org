@@ -347,6 +347,63 @@ ABC.ui = (function () {
     $('msgOk').onclick = () => { ABC.audio.sfx.pop(); closeDialog(); onClose && onClose(); };
   }
 
+  /* ---------------- hand item & school bag 🎒 ----------------
+     hand = {kind:'block',id} | {kind:'tool',tool:'pickaxe'} |
+            {kind:'cutter',shape,ico} | {kind:'sapling'} | {kind:'animal',type} */
+  let hand = { kind: 'block', id: 'plank' };
+  function getHand() { return hand; }
+  function setHand(h, label) {
+    hand = h;
+    if (h.kind === 'block') selectBlock(h.id);
+    else {
+      document.querySelectorAll('.hotSlot').forEach(s => s.classList.remove('selected'));
+      if (ABC.setMode) ABC.setMode(h.kind === 'tool' ? 'dig' : 'place', true);
+      if (ABC.refreshHand) ABC.refreshHand();
+      if (label) toast(label, 2800);
+      ABC.audio.sfx.pop();
+    }
+  }
+
+  function openBag() {
+    const avail = ABC.HOTBAR_ORDER.filter(id => !ABC.BLOCK_DEFS[id].locked || ABC.state.unlocked.has(id));
+    let html = `<div class="bigEmoji">🎒</div><h2>{player}'s School Bag</h2>
+      <div class="bagSection">🔨 Tools</div><div class="pickGrid">
+        <button class="pickCard bagItem" data-kind="tool">⛏️<br>Pickaxe</button>`;
+    ABC.CUTTERS.forEach((c, i) => {
+      html += `<button class="pickCard bagItem" data-kind="cutter" data-i="${i}">${c.ico}🍪<br>${c.label}</button>`;
+    });
+    html += `</div><div class="bagSection">🌱 Nature &amp; Friends</div><div class="pickGrid">
+        <button class="pickCard bagItem" data-kind="sapling">🌱<br>Tree Sapling</button>`;
+    for (const [k, d] of Object.entries(ABC.ANIMAL_DEFS)) {
+      if (d.special) continue;
+      html += `<button class="pickCard bagItem" data-kind="animal" data-animal="${k}">${d.emoji}<br>${d.label}</button>`;
+    }
+    html += `</div><div class="bagSection">🧱 Blocks</div><div class="pickGrid">`;
+    avail.forEach(id => {
+      const def = ABC.BLOCK_DEFS[id];
+      html += `<button class="pickCard bagItem" data-kind="block" data-block="${id}" style="padding:8px;">
+        <span class="swatch" style="display:inline-block;width:34px;height:34px;border-radius:8px;background:${def.color};">${def.emoji}</span><br>${def.name}</button>`;
+    });
+    html += '</div>';
+    openDialog(ABC.tpl(html));
+    ABC.audio.say('What will you take out of your school bag?');
+    box().querySelectorAll('.bagItem').forEach(b => {
+      b.addEventListener('click', () => {
+        const kind = b.dataset.kind;
+        closeDialog();
+        if (kind === 'block')   setHand({ kind:'block', id: b.dataset.block });
+        if (kind === 'tool')    setHand({ kind:'tool', tool:'pickaxe' }, '⛏️ Pickaxe out! Click blocks to dig.');
+        if (kind === 'sapling') setHand({ kind:'sapling' }, '🌱 Sapling! Click the ground to plant a tree!');
+        if (kind === 'animal')  setHand({ kind:'animal', type: b.dataset.animal },
+          ABC.ANIMAL_DEFS[b.dataset.animal].emoji + ' Click the ground — a new friend will appear!');
+        if (kind === 'cutter') {
+          const c = ABC.CUTTERS[+b.dataset.i];
+          setHand({ kind:'cutter', shape: c.shape, ico: c.ico }, c.ico + '🍪 Cutter ready! Tap your slime to stamp a shape!');
+        }
+      });
+    });
+  }
+
   /* ---------------- hotbar ---------------- */
   let selectedBlock = 'plank';
   function buildHotbar() {
@@ -367,9 +424,11 @@ ABC.ui = (function () {
   }
   function selectBlock(id) {
     selectedBlock = id;
+    hand = { kind: 'block', id };
     document.querySelectorAll('.hotSlot').forEach(s =>
       s.classList.toggle('selected', s.dataset.block === id));
     ABC.audio.sfx.gentle();
+    if (ABC.setMode) ABC.setMode('place', true);   // picking a block means building
     if (ABC.refreshHand) ABC.refreshHand();
   }
   function selectByIndex(i) {
@@ -441,5 +500,6 @@ ABC.ui = (function () {
   return { openDialog, closeDialog, isOpen, toast, bellaSays, confetti, floatHearts,
            refreshScore, addStars, addHearts, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
+           getHand, setHand, openBag,
            showSettings, showHelp, pick, pick3, esc };
 })();
