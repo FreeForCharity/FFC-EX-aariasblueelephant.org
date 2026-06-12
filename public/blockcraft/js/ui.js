@@ -364,9 +364,45 @@ ABC.ui = (function () {
     }
   }
 
+  /* 🎁 once a day there's a surprise — say what you found to take it out! */
+  function pocketOpened() {
+    const today = new Date().toISOString().slice(0, 10);
+    return ABC.state.pocket === today;
+  }
+  function openPocket() {
+    closeDialog();
+    const sp = pick(ABC.SURPRISES);
+    askExpressive({
+      emoji: '🎁' + sp.ico,
+      scene: 'Something is hiding in the surprise pocket! ' + sp.ico + ' What do you say when you find it?',
+      options: [
+        { t: sp.s, q: 'best' },
+        { t: 'Thing.', q: 'name' },
+        { t: 'The grass is green.', q: 'off' } ],
+    }, () => {
+      ABC.state.pocket = new Date().toISOString().slice(0, 10);
+      ABC.saveSoon && ABC.saveSoon();
+      const p = ABC.player ? ABC.player.position : { x: 0, z: 0 };
+      if (sp.grant === 'stars')  addStars(3);
+      if (sp.grant === 'hearts') addHearts(2);
+      if (sp.grant === 'portal') ABC.portal.charge(2);
+      if (sp.grant === 'butterfly') {
+        const a = ABC.animals.spawn('butterfly', Math.round(p.x) + 2, Math.round(p.z) + 2);
+        (ABC.state.friends = ABC.state.friends || []).push({ kind:'butterfly', x:a.group.position.x, z:a.group.position.z, name:a.name });
+      }
+      if (sp.grant === 'cutout')
+        ABC.squishy.spawn({ kind:'cutout', shape:'heart', colorHex:0xff8fc8, x:Math.round(p.x)+2, z:Math.round(p.z)-2 });
+      bellaSays('What a wonderful surprise! Check the pocket again tomorrow! 🎁', 4800);
+    }, { stars: 1 });
+  }
+
   function openBag() {
     const avail = ABC.HOTBAR_ORDER.filter(id => !ABC.BLOCK_DEFS[id].locked || ABC.state.unlocked.has(id));
     let html = `<div class="bigEmoji">🎒</div><h2>{player}'s School Bag</h2>
+      <div class="bagSection">🎁 Surprise Pocket</div><div class="pickGrid">
+        <button class="pickCard bagItem" id="pocketBtn" ${pocketOpened() ? 'disabled style="opacity:.55"' : 'style="border-color:#ffd43b;animation:bounceTitle 1.6s infinite;"'}>
+          ${pocketOpened() ? '✅<br>Opened today!<br>Come back tomorrow' : '🎁<br>Something is<br>inside…'}</button>
+      </div>
       <div class="bagSection">🔨 Tools</div><div class="pickGrid">
         <button class="pickCard bagItem" data-kind="tool">⛏️<br>Pickaxe</button>`;
     ABC.CUTTERS.forEach((c, i) => {
@@ -386,8 +422,11 @@ ABC.ui = (function () {
     });
     html += '</div>';
     openDialog(ABC.tpl(html));
-    ABC.audio.say('What will you take out of your school bag?');
-    box().querySelectorAll('.bagItem').forEach(b => {
+    ABC.audio.say(pocketOpened() ? 'What will you take out of your school bag?'
+                                 : 'Ooh — something is hiding in the surprise pocket!');
+    const pb = $('pocketBtn');
+    if (pb && !pocketOpened()) pb.addEventListener('click', openPocket);
+    box().querySelectorAll('.bagItem[data-kind]').forEach(b => {
       b.addEventListener('click', () => {
         const kind = b.dataset.kind;
         closeDialog();

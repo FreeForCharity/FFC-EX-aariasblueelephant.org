@@ -465,6 +465,7 @@
         quests: ABC.state.quests || null,
         placedCount: ABC.state.placedCount || 0,
         friends: ABC.state.friends || [],
+        pocket: ABC.state.pocket || null,
         stars: ABC.state.stars, hearts: ABC.state.hearts,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         tutorialDone: ABC.state.tutorialDone,
@@ -488,6 +489,7 @@
       ABC.state.quests = d.quests || null;
       ABC.state.placedCount = d.placedCount || 0;
       ABC.state.friends = d.friends || [];
+      ABC.state.pocket = d.pocket || null;
       ABC.state.friends.forEach(f => {
         if (ABC.ANIMAL_DEFS[f.kind]) ABC.animals.spawn(f.kind, f.x, f.z, f.name);
       });
