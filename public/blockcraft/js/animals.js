@@ -214,6 +214,9 @@ ABC.animals = (function () {
     // Bella the Blue Elephant — guide, stays near spawn
     const bella = spawn('elephant', 4, -8, 'Bella');
     bella.isGuide = true; bella.home = {x:4, z:-8}; bella.range = 6;
+    // 🏪 Mr. Maple runs the village market
+    const vendor = spawn('capy', -14, 4, 'Mr. Maple');
+    vendor.isVendor = true; vendor.home = { x: -14, z: 4 }; vendor.range = 2;
     // cute friends near spawn (incl. the big round cuties!)
     spawn('capy', 10, -4); spawn('panda', -10, -2);
     spawn('bunny', -5, -10);  spawn('bunny', 14, 6);
@@ -279,6 +282,13 @@ ABC.animals = (function () {
         const dist = dir.length();
         if (dist > 0.4) {
           dir.normalize();
+          // walls stop walking animals — they politely pick a new path
+          const tx = g.position.x + dir.x * (a.speed * dt + 0.5);
+          const tz = g.position.z + dir.z * (a.speed * dt + 0.5);
+          if (!a.def.fly && (ABC.world.get(Math.floor(tx), 1, Math.floor(tz)) ||
+                             ABC.world.get(Math.floor(tx), 2, Math.floor(tz)))) {
+            a.target = null;
+          } else
           g.position.addScaledVector(dir, a.speed * dt);
           const want = Math.atan2(dir.x, dir.z);
           let dy = want - g.rotation.y;

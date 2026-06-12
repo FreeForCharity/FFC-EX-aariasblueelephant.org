@@ -56,7 +56,13 @@
   .menuBtn { font-family:inherit; font-size:17px; padding:10px 14px; border:none; border-radius:18px;
     background:rgba(255,255,255,.92); cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.18); transition:transform .1s; }
   .menuBtn:hover { transform:scale(1.08); background:#fff; }
-  #hotbar { position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  #bagBtn { position:absolute; bottom:14px; left:14px;
+    width:78px; height:78px; font-size:42px; border:none; border-radius:20px; cursor:pointer;
+    background:linear-gradient(180deg,#ffd43b,#ffa94d); box-shadow:0 5px 0 #e8920c, 0 8px 14px rgba(0,0,0,.25);
+    pointer-events:auto; animation:bounceTitle 3s ease-in-out infinite; z-index:5; }
+  #bagBtn:hover { transform:scale(1.1); }
+  #bagBtn:active { transform:translateY(3px); box-shadow:0 2px 0 #e8920c; }
+  #hotbar { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); max-width:calc(96vw - 200px);
     display:flex; gap:6px; pointer-events:auto; background:rgba(0,0,0,.25); padding:8px; border-radius:18px;
     max-width:96vw; overflow-x:auto; }
   .hotSlot { width:58px; height:58px; min-width:58px; border-radius:12px; border:3px solid rgba(255,255,255,.5);
@@ -179,7 +185,6 @@
     <div class="scoreChip" id="questChip" title="Today's Adventures">📋 0/3</div>
   </div>
   <div id="menuBar">
-    <button class="menuBtn" id="bagBtn">🎒 Bag</button>
     <button class="menuBtn" id="buildMenuBtn">🏗️ Build</button>
     <button class="menuBtn" id="slimeBtn">🌈 Slime Lab</button>
     <button class="menuBtn" id="oreoBtn">🍪 Oreo Kitchen</button>
@@ -201,6 +206,7 @@
     <button class="menuBtn sideBtn" id="viewBtn" title="Camera view">👀<small>View</small></button>
   </div>
   <div id="toasts"></div>
+  <button id="bagBtn" title="Your school bag — everything is inside!">🎒</button>
   <div id="hotbar"></div>
   <div id="lookHint">✋ Drag the world to look around · 👆 Click to build! (🧱/⛏️ button on the right)</div>
 
@@ -212,7 +218,8 @@
     <button class="tBtn" id="tDown">▼</button>
   </div>
   <div id="touchActs">
-    <button class="tBtn" id="tJump" title="Jump (double-tap = fly)">⬆</button>
+    <button class="tBtn" id="tJump" title="Jump / fly up (double-tap = fly)">⬆</button>
+    <button class="tBtn" id="tDesc" title="Fly down">⬇</button>
     <button class="tBtn" id="tMode" title="Switch build / dig">🧱</button>
   </div>
 </div>
@@ -221,14 +228,14 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/world.js"></script>
-<script src="js/animals.js"></script>
-<script src="js/squishy.js"></script>
-<script src="js/portal.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/activities.js"></script>
-<script src="js/main.js"></script>
+<script src="js/data.js?v=8"></script>
+<script src="js/audio.js?v=8"></script>
+<script src="js/world.js?v=8"></script>
+<script src="js/animals.js?v=8"></script>
+<script src="js/squishy.js?v=8"></script>
+<script src="js/portal.js?v=8"></script>
+<script src="js/ui.js?v=8"></script>
+<script src="js/activities.js?v=8"></script>
+<script src="js/main.js?v=8"></script>
 </body>
 </html>

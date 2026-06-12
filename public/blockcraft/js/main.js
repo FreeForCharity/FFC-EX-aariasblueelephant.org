@@ -16,6 +16,12 @@
   const EYE = 1.62;
   const feet = new THREE.Vector3(0, 1, 6);
   let vy = 0, grounded = false, flying = false, lastSpaceTap = 0;
+  let sprint = false, lastFwdTap = 0;
+  function fwdTap() {                      // double-tap forward = sprint! 🏃
+    const now = performance.now();
+    if (now - lastFwdTap < 320) { sprint = true; ABC.ui && ABC.ui.toast('🏃💨 Sprinting!', 1500); }
+    lastFwdTap = now;
+  }
   let thirdPerson = false;
 
   window.addEventListener('resize', () => {
@@ -106,6 +112,7 @@
   document.addEventListener('keydown', (e) => {
     if (ABC.ui.isOpen()) return;
     if (e.code === 'Space' && !e.repeat) tapSpace();
+    if ((e.code === 'KeyW' || e.code === 'ArrowUp') && !e.repeat) fwdTap();
     if (e.code === 'KeyV' && !e.repeat) toggleView();
     keys[e.code] = true;
     if (e.code.startsWith('Digit')) {
@@ -113,7 +120,10 @@
       if (n >= 1 && n <= 9) ABC.ui.selectByIndex(n - 1);
     }
   });
-  document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+  document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') sprint = false;
+  });
 
   function toggleView() {
     thirdPerson = !thirdPerson;
@@ -342,6 +352,8 @@
     el.addEventListener('pointercancel', () => { keys[code] = false; });
   };
   holdBtn('tUp', 'KeyW'); holdBtn('tDown', 'KeyS'); holdBtn('tLeft', 'KeyA'); holdBtn('tRight', 'KeyD');
+  holdBtn('tDesc', 'ShiftLeft');                                    // ⬇ fly down
+  $('tUp').addEventListener('pointerdown', fwdTap);                 // double-tap ▲ = sprint
   const jb = $('tJump');
   jb.addEventListener('pointerdown', (e) => { e.preventDefault(); tapSpace(); keys.Space = true; });
   jb.addEventListener('pointerup',   (e) => { e.preventDefault(); keys.Space = false; });
@@ -379,7 +391,7 @@
     if (move.lengthSq() > 0) move.normalize().multiplyScalar(speed * dt);
 
     if (flying) {
-      feet.x += move.x; feet.z += move.z;
+      feet.x += move.x * (sprint ? 1.6 : 1); feet.z += move.z * (sprint ? 1.6 : 1);
       if (keys.Space) feet.y += speed * dt;
       if (keys.ShiftLeft || keys.ShiftRight) feet.y -= speed * dt;
       const gy = surfaceY(feet.x, feet.z, feet.y);
@@ -388,15 +400,18 @@
         if (keys.ShiftLeft || keys.ShiftRight) { flying = false; $('flyBtn').classList.remove('active'); }
       }
     } else {
-      // horizontal, axis by axis, with 1-block step-up
-      for (const [dx, dz] of [[move.x, 0], [0, move.z]]) {
+      // horizontal, axis by axis, with 1-block step-up and a body radius
+      // (the radius stops you from pressing your face inside walls)
+      const spd = sprint ? 1.65 : 1;
+      for (const [dx, dz] of [[move.x * spd, 0], [0, move.z * spd]]) {
         if (!dx && !dz) continue;
         const nx = feet.x + dx, nz = feet.z + dz;
-        const sy = surfaceY(nx, nz, feet.y + 0.1);
-        if (sy - feet.y <= 1.05) {  // walkable or one step up
-          // head room check
-          if (!solid(nx, sy + 1.4, nz)) { feet.x = nx; feet.z = nz; }
+        let ok = true;
+        for (const [ox, oz] of [[.32,.32],[.32,-.32],[-.32,.32],[-.32,-.32]]) {
+          const sy = surfaceY(nx + ox, nz + oz, feet.y + 0.1);
+          if (sy - feet.y > 1.05 || solid(nx + ox, sy + 1.4, nz + oz)) { ok = false; break; }
         }
+        if (ok) { feet.x = nx; feet.z = nz; }
       }
       // gravity
       vy -= 22 * dt;

@@ -228,6 +228,16 @@ ABC.world = (function () {
     [[6,-6],[7,-6],[6,-7]].forEach(([x,z])=>{ set(x,1,z,'blue'); });
     set(6,2,-6,'blue'); set(6,3,-6,'star');
 
+    // 🏪 little village market stall (vendor stands here)
+    const MX = -16, MZ = 2;
+    for (let x=0;x<=3;x++) { set(MX+x,1,MZ,'plank'); }            // counter
+    set(MX,1,MZ+3,'wood'); set(MX+3,1,MZ+3,'wood');               // posts
+    set(MX,2,MZ+3,'wood'); set(MX+3,2,MZ+3,'wood');
+    set(MX,2,MZ,'wood'); set(MX+3,2,MZ,'wood');
+    for (let x=-1;x<=4;x++) for (let z=-1;z<=4;z++)
+      set(MX+x,3,MZ+z,(x+z)%2?'red':'white');                     // stripy awning
+    set(MX+1,2,MZ,'star'); set(MX+2,2,MZ,'gold');                 // sparkly display
+
     // ✨ SECRET SKY ISLAND — reached through the magic wormhole
     const IC = 36, IY = 24;          // island center & height
     for (let x=IC-6;x<=IC+6;x++) for (let z=IC-6;z<=IC+6;z++) {
