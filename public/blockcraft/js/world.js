@@ -1,6 +1,6 @@
 /* Aaria's Block Craft 3D — voxel world engine (Three.js r128) */
 ABC.world = (function () {
-  const SIZE = 48;            // world extends -SIZE..SIZE in x,z
+  const SIZE = 72;            // world extends -SIZE..SIZE in x,z
   const MAX_Y = 40;
   const MIN_Y = -3;           // diggable underground: -1,-2 dirt, -3 stone
 
@@ -227,6 +227,42 @@ ABC.world = (function () {
     // little blue elephant garden by the arch (mascot corner 🐘💙)
     [[6,-6],[7,-6],[6,-7]].forEach(([x,z])=>{ set(x,1,z,'blue'); });
     set(6,2,-6,'blue'); set(6,3,-6,'star');
+
+    // 🌊 winding river with sandy banks (east-west across the north)
+    for (let x=-SIZE;x<=SIZE;x++) {
+      const zc = Math.round(-40 + Math.sin(x/14)*8);
+      for (let dz=-1;dz<=1;dz++) set(x,0,zc+dz,'water');
+      set(x,0,zc-2,'sand'); set(x,0,zc+2,'sand');
+    }
+    // 🏔️ mountains (north-east corner): stone cones with snowy tops
+    [[52,-52,7],[60,-60,9],[44,-62,6],[63,-46,5]].forEach(([mx,mz,h])=>{
+      for (let y=1;y<=h;y++) {
+        const r = Math.max(1, h-y);
+        for (let dx=-r;dx<=r;dx++) for (let dz=-r;dz<=r;dz++)
+          if (dx*dx+dz*dz <= r*r) set(mx+dx,y,mz+dz, y>h-2?'snow':'stone');
+      }
+    });
+    // 🌲 forest (south-west): many trees
+    for (let i=0;i<26;i++) {
+      const fx = -64 + (rnd()*30|0), fz = 34 + (rnd()*30|0);
+      tree(fx, fz);
+    }
+    // 🏘️ little town (south-east): four cozy houses + town square
+    const house = (hx,hz) => {
+      for (let x=0;x<=4;x++) for (let z=0;z<=4;z++) set(hx+x,1,hz+z,'plank');
+      for (let y=1;y<=2;y++) for (let x=0;x<=4;x++) for (let z=0;z<=4;z++)
+        if (x===0||x===4||z===0||z===4) set(hx+x,y,hz+z,'plank');
+      set(hx+2,1,hz,'door'); set(hx+2,2,hz,'pane');
+      for (let x=-1;x<=5;x++) for (let z=-1;z<=5;z++) set(hx+x,3,hz+z,'brick');
+      set(hx+2,4,hz+2,'star');
+    };
+    house(40,40); house(50,40); house(40,52); house(50,52);
+    for (let x=46;x<=49;x++) for (let z=46;z<=49;z++) set(x,0,z,'stone'); // square
+    set(47,1,47,'gold'); set(48,1,48,'flower');
+    // town market stall #2
+    for (let x=0;x<=3;x++) set(44+x,1,58,'plank');
+    for (let x=-1;x<=4;x++) for (let z=-1;z<=2;z++) set(44+x,3,57+z,(x+z)%2?'blue':'white');
+    set(44,2,58,'wood'); set(47,2,58,'wood'); set(45,2,58,'star');
 
     // 🏪 little village market stall (vendor stands here)
     const MX = -16, MZ = 2;

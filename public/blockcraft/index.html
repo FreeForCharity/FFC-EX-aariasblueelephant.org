@@ -143,6 +143,28 @@
     padding:14px; margin:10px 0; color:#5c4500; line-height:1.4; }
   .stirZone { font-size:70px; cursor:pointer; display:inline-block; transition:transform .08s; }
 
+  /* 📱 compact layout on phones/small tablets — less text, more world */
+  @media (max-width: 820px) {
+    .menuBtn { font-size:13px; padding:6px 8px; border-radius:12px; }
+    #menuBar { gap:4px; flex-wrap:wrap; justify-content:flex-end; max-width:62vw; }
+    .scoreChip { font-size:14px; padding:4px 10px; }
+    .toast { font-size:14px; padding:8px 14px; max-width:80vw; }
+    #lookHint { font-size:13px; padding:6px 12px; bottom:84px; }
+    .hotSlot { width:44px; height:44px; min-width:44px; }
+    .hotSlot .swatch { width:24px; height:24px; }
+    #bagBtn { width:58px; height:58px; font-size:30px; }
+    .sideBtn { width:48px; height:48px; font-size:18px; }
+    .sideBtn small { font-size:9px; }
+    #dialogBox { padding:16px; }
+    #dialogBox h2 { font-size:21px; }
+    #dialogBox .scene { font-size:17px; }
+    .choiceBtn { font-size:16px; padding:10px 12px; }
+    #touchPad { width:140px; height:140px; }
+    #tUp{left:47px} #tLeft{top:47px} #tRight{left:94px;top:47px} #tDown{left:47px;top:94px}
+    .tBtn { width:46px; height:46px; font-size:18px; }
+    #touchActs .tBtn { width:52px; height:52px; font-size:22px; }
+  }
+
   /* ---------- Confetti & floating emoji ---------- */
   .confetti { position:fixed; top:-20px; z-index:200; font-size:24px; pointer-events:none;
     animation:fall linear forwards; }
@@ -230,14 +252,14 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=9"></script>
-<script src="js/audio.js?v=9"></script>
-<script src="js/world.js?v=9"></script>
-<script src="js/animals.js?v=9"></script>
-<script src="js/squishy.js?v=9"></script>
-<script src="js/portal.js?v=9"></script>
-<script src="js/ui.js?v=9"></script>
-<script src="js/activities.js?v=9"></script>
-<script src="js/main.js?v=9"></script>
+<script src="js/data.js?v=10"></script>
+<script src="js/audio.js?v=10"></script>
+<script src="js/world.js?v=10"></script>
+<script src="js/animals.js?v=10"></script>
+<script src="js/squishy.js?v=10"></script>
+<script src="js/portal.js?v=10"></script>
+<script src="js/ui.js?v=10"></script>
+<script src="js/activities.js?v=10"></script>
+<script src="js/main.js?v=10"></script>
 </body>
 </html>
