@@ -404,6 +404,31 @@ ABC.MISSION_PHRASES = [
   'I am feeling a little tired.', 'Look, I made a giant Oreo!',
 ];
 
+/* Animals sometimes have something — practice ASKING for it (requesting) 🥕 */
+ABC.ANIMAL_WANTS = [
+  { ico:'🥕', word:'the crunchy carrot' },
+  { ico:'🍎', word:'the juicy red apple' },
+  { ico:'🎾', word:'the bouncy ball' },
+  { ico:'🌸', word:'the pretty flower' },
+  { ico:'🍪', word:'a yummy cookie' },
+  { ico:'🫧', word:'the shiny bubbles' },
+];
+
+/* Show & Tell sentences (assembled word-by-word in the Sentence Builder) */
+ABC.SHOWTELL_SENTENCES = [
+  'I built something amazing all by myself!',
+  'Look at my big colorful creation!',
+  'I made this with my own two hands!',
+  'My building is tall and super cool!',
+];
+
+/* Today's Adventures — 3 focus quests per day 📋 */
+ABC.QUEST_DEFS = [
+  { key:'build',  ico:'🏗️', label:'Finish one build stage' },
+  { key:'animal', ico:'💖', label:'Help an animal friend feel better' },
+  { key:'words',  ico:'💬', label:'Do Kind Words, Slime Lab or Oreo Kitchen' },
+];
+
 /* Wormhole portal — the reward for using expressive language 🌀 */
 ABC.PORTAL = {
   NEED: 5,                                  // expressive successes to open it

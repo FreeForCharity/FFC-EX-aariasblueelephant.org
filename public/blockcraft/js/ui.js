@@ -259,6 +259,65 @@ ABC.ui = (function () {
     return hits / t.length >= 0.45;
   }
 
+  /* ============================================================
+     SENTENCE BUILDER — assemble the sentence word by word 🧩
+     A step from picking sentences toward producing them.
+     ============================================================ */
+  function askBuilder(sceneText, sentence, onSuccess, opts) {
+    opts = opts || {};
+    sceneText = ABC.tpl(sceneText); sentence = ABC.tpl(sentence);
+    const words = sentence.split(' ');
+    let next = 0;
+    const order = shuffle(words.map((w, i) => ({ w, i })));
+    let html = `<div class="bigEmoji">${opts.emoji || '🧩'}</div>
+      <h2>Build the Sentence!</h2>
+      <div class="scene">${sceneText} <span class="speakIco" id="sbHear">🔊</span></div>
+      <div class="sentenceCard" id="sbTarget" style="min-height:58px;">&nbsp;</div>
+      <div class="pickGrid" id="sbChips">`;
+    order.forEach((o, k) => {
+      html += `<button class="pickCard sbChip" data-i="${o.i}" style="width:auto; padding:10px 16px; font-size:19px;">${esc(o.w)}</button>`;
+    });
+    html += '</div>';
+    openDialog(html);
+    ABC.audio.say(sceneText + ' ... Tap the words in order: ' + sentence);
+    $('sbHear').onclick = () => ABC.audio.say(sentence, { force: true });
+
+    let missCount = 0;
+    box().querySelectorAll('.sbChip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const i = +chip.dataset.i;
+        if (i === next) {
+          chip.style.visibility = 'hidden';
+          next++;
+          $('sbTarget').textContent = words.slice(0, next).join(' ');
+          ABC.audio.sfx.pop();
+          ABC.audio.say(words[i], { force: true });
+          if (next >= words.length) {
+            ABC.audio.sfx.ding();
+            setTimeout(() => {
+              ABC.audio.say(sentence, { force: true });
+              closeDialog();
+              confetti(20);
+              addStars(opts.stars != null ? opts.stars : 2);
+              ABC.portal && ABC.portal.charge(1);
+              toast('🧩 ' + pick(ABC.PRAISE), 3600);
+              onSuccess && onSuccess();
+            }, 500);
+          }
+        } else {
+          ABC.audio.sfx.gentle();
+          chip.style.transform = 'rotate(-5deg)';
+          setTimeout(() => { chip.style.transform = ''; }, 250);
+          // gentle hint: glow the right chip after 2 misses
+          if (++missCount >= 2) {
+            const hint = box().querySelector(`.sbChip[data-i="${next}"]`);
+            if (hint) hint.style.boxShadow = '0 0 0 4px #ffd43b';
+          }
+        }
+      });
+    });
+  }
+
   /* ---------------- pick-a-card helper (for slime/oreo/kind acts) ---------------- */
   function pickCard(title, sceneText, cards, onPick, emoji) {
     sceneText = ABC.tpl(sceneText);
@@ -380,7 +439,7 @@ ABC.ui = (function () {
   }
 
   return { openDialog, closeDialog, isOpen, toast, bellaSays, confetti, floatHearts,
-           refreshScore, addStars, addHearts, askExpressive, pickCard, message,
+           refreshScore, addStars, addHearts, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
            showSettings, showHelp, pick, pick3, esc };
 })();

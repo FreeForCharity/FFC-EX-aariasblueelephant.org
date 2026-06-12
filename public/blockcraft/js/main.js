@@ -190,6 +190,8 @@
             p.y + 1 > feet.y && p.y < feet.y + 1.8) return;
         if (ABC.world.set(p.x, p.y, p.z, ABC.ui.getSelected())) {
           ABC.world.flush(); ABC.audio.sfx.pop(); saveSoon();
+          ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;
+          ABC.activities.maybeShowTell(ABC.state.placedCount);   // Show & Tell moments
         }
       }
     }
@@ -388,6 +390,8 @@
         squishies: ABC.squishy.serialize(),
         playerName: ABC.state.playerName,
         portalCharge: ABC.state.portalCharge || 0,
+        quests: ABC.state.quests || null,
+        placedCount: ABC.state.placedCount || 0,
         stars: ABC.state.stars, hearts: ABC.state.hearts,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         tutorialDone: ABC.state.tutorialDone,
@@ -408,6 +412,8 @@
       ABC.squishy.deserialize(d.squishies);
       if (d.playerName) ABC.state.playerName = d.playerName;
       ABC.state.portalCharge = d.portalCharge || 0;
+      ABC.state.quests = d.quests || null;
+      ABC.state.placedCount = d.placedCount || 0;
       ABC.state.stars = d.stars || 0;
       ABC.state.hearts = d.hearts || 0;
       (d.unlocked || []).forEach(b => ABC.state.unlocked.add(b));
@@ -429,6 +435,7 @@
   $('quitProjBtn').onclick = () => ABC.activities.quitProject();
   $('viewBtn').onclick     = () => toggleView();
   $('portalChip').onclick  = () => ABC.portal.findPortal();
+  $('questChip').onclick   = () => ABC.quests.showBoard();
 
   /* full screen — works standalone and inside the dashboard iframe */
   function toggleFullscreen() {
@@ -475,6 +482,8 @@
     refreshHand();
     ABC.ui.refreshScore();
     ABC.portal.refreshChip();
+    ABC.quests.refreshChip();
+    ABC.activities.initShowTell(ABC.state.placedCount || 0);
     started = true;
     saveSoon();
     setTimeout(() => { $('lookHint').style.display = 'none'; }, 9000);
@@ -488,6 +497,8 @@
       }, 900);
     } else {
       ABC.ui.bellaSays('Welcome back, {player}! Your world missed you! 💙', 4500);
+      // show today's three adventures for a focused start
+      setTimeout(() => { if (!ABC.ui.isOpen()) ABC.quests.showBoard(); }, 5500);
     }
   };
   $('howBtn').onclick = () => ABC.ui.showHelp();
