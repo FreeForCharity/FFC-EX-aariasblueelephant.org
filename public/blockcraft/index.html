@@ -143,41 +143,53 @@
     padding:14px; margin:10px 0; color:#5c4500; line-height:1.4; }
   .stirZone { font-size:70px; cursor:pointer; display:inline-block; transition:transform .08s; }
 
-  /* 📱 mobile & small tablets (under ~11"): icons only, no helper text */
+  /* 📱 MOBILE MODE (under ~11"): one ✨ menu, no side buttons, big clear game area */
+  .mobOnly { display:none; }
   @media (max-width: 1100px) {
-    .btnTxt { display:none; }                       /* menu buttons become icons */
-    .menuBtn { font-size:20px; padding:8px 11px; border-radius:14px; }
-    .sideBtn small { display:none; }                /* side buttons: icon only */
-    .sideBtn { width:52px; height:52px; font-size:22px; }
-    #lookHint { display:none !important; }          /* no tutorial text on mobile */
-    #orgFooter { font-size:11px; padding:5px 12px; }
-    #titleScreen .subtitle { font-size:15px; }
-    #titleScreen .titleEmojis { font-size:26px; letter-spacing:5px; }
-    #logoImg { width:120px; }
-    .scoreChip { font-size:15px; padding:5px 11px; }
-    #nameRow { font-size:15px; } #nameRow input { font-size:17px; width:150px; }
-    .bigBtn { font-size:20px; padding:12px 30px; }
-  }
-  /* 📱 extra-compact on phones */
-  @media (max-width: 820px) {
-    .menuBtn { font-size:13px; padding:6px 8px; border-radius:12px; }
-    #menuBar { gap:4px; flex-wrap:wrap; justify-content:flex-end; max-width:62vw; }
-    .scoreChip { font-size:14px; padding:4px 10px; }
-    .toast { font-size:14px; padding:8px 14px; max-width:80vw; }
-    #lookHint { font-size:13px; padding:6px 12px; bottom:84px; }
-    .hotSlot { width:44px; height:44px; min-width:44px; }
-    .hotSlot .swatch { width:24px; height:24px; }
-    #bagBtn { width:58px; height:58px; font-size:30px; }
-    .sideBtn { width:48px; height:48px; font-size:18px; }
-    .sideBtn small { font-size:9px; }
-    #dialogBox { padding:16px; }
-    #dialogBox h2 { font-size:21px; }
-    #dialogBox .scene { font-size:17px; }
-    .choiceBtn { font-size:16px; padding:10px 12px; }
-    #touchPad { width:140px; height:140px; }
-    #tUp{left:47px} #tLeft{top:47px} #tRight{left:94px;top:47px} #tDown{left:47px;top:94px}
-    .tBtn { width:46px; height:46px; font-size:18px; }
-    #touchActs .tBtn { width:52px; height:52px; font-size:22px; }
+    .mobOnly { display:block; }
+    .deskOnly { display:none !important; }          /* all menu buttons → one ✨ */
+    #moreBtn { font-size:24px; padding:9px 14px; border-radius:16px;
+      background:linear-gradient(180deg,#fff,#e7f5ff); box-shadow:0 3px 8px rgba(0,0,0,.22); }
+    #sideBtns { display:none !important; }          /* fly/view/zoom/map/photo live in ✨ */
+    #lookHint { display:none !important; }
+    /* chips: only the essentials, small */
+    .scoreChip { font-size:13px; padding:4px 9px; border-radius:14px; }
+    #questChip, #flowerChip { display:none; }       /* reachable from ✨ menu */
+    /* action buttons: one tidy column bottom-right, above the hotbar */
+    #touchActs { right:10px; bottom:84px; gap:8px; }
+    #touchActs .tBtn { width:50px; height:50px; font-size:20px; }
+    /* D-pad bottom-left, above the bag */
+    #touchPad { left:10px; bottom:96px; width:138px; height:138px; }
+    .tBtn { width:44px; height:44px; font-size:17px; }
+    #tUp{left:47px;top:0} #tLeft{left:0;top:47px} #tRight{left:94px;top:47px} #tDown{left:47px;top:94px}
+    /* bag + hotbar share the bottom edge cleanly */
+    #bagBtn { width:54px; height:54px; font-size:28px; left:10px; bottom:10px; animation:none; }
+    #hotbar { bottom:10px; left:74px; transform:none; max-width:calc(100vw - 160px);
+      padding:5px; gap:4px; }
+    .hotSlot { width:42px; height:42px; min-width:42px; font-size:9px; }
+    .hotSlot .swatch { width:22px; height:22px; }
+    /* dialogs & toasts: compact */
+    .toast { font-size:14px; padding:7px 13px; max-width:78vw; }
+    #toasts { top:56px; }
+    #dialogOverlay { padding:8px; }
+    #dialogBox { padding:14px; border-radius:20px; width:min(560px, calc(100vw - 16px)); max-height:88vh; }
+    #dialogBox h2 { font-size:20px; }
+    #dialogBox .scene { font-size:16px; margin-bottom:8px; }
+    #dialogBox .bigEmoji { font-size:40px; margin-bottom:4px; }
+    .choiceBtn { font-size:15px; padding:9px 11px; margin:6px 0; }
+    .pickCard { width:88px; padding:8px 4px; font-size:12px; }
+    .pickCard .ico { font-size:28px; }
+    /* project panel slimmer */
+    #projectPanel { width:200px; padding:9px; top:52px; }
+    #projectPanel h3 { font-size:15px; } #projectPanel .stageName { font-size:12px; }
+    /* compact title screen */
+    #orgFooter { font-size:10px; padding:4px 10px; }
+    #titleScreen { gap:12px; }
+    #titleScreen .subtitle { font-size:14px; }
+    #titleScreen .titleEmojis { font-size:22px; letter-spacing:4px; }
+    #logoImg { width:104px; }
+    #nameRow { font-size:14px; padding:7px 12px; } #nameRow input { font-size:16px; width:140px; }
+    .bigBtn { font-size:19px; padding:11px 28px; }
   }
 
   /* ---------- Confetti & floating emoji ---------- */
@@ -223,14 +235,15 @@
     <div class="scoreChip" id="flowerChip" title="Days of adventures">🌻 0</div>
   </div>
   <div id="menuBar">
-    <button class="menuBtn" id="buildMenuBtn">🏗️<span class="btnTxt"> Build</span></button>
-    <button class="menuBtn" id="slimeBtn">🌈<span class="btnTxt"> Slime Lab</span></button>
-    <button class="menuBtn" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
-    <button class="menuBtn" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
-    <button class="menuBtn" id="stickersBtn" title="My Treasures">🏅</button>
-    <button class="menuBtn" id="fsBtn" title="Full screen">⛶</button>
-    <button class="menuBtn" id="settingsBtn">⚙️</button>
-    <button class="menuBtn" id="helpBtn">❓</button>
+    <button class="menuBtn deskOnly" id="buildMenuBtn">🏗️<span class="btnTxt"> Build</span></button>
+    <button class="menuBtn deskOnly" id="slimeBtn">🌈<span class="btnTxt"> Slime Lab</span></button>
+    <button class="menuBtn deskOnly" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
+    <button class="menuBtn deskOnly" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
+    <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
+    <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>
+    <button class="menuBtn deskOnly" id="settingsBtn">⚙️</button>
+    <button class="menuBtn deskOnly" id="helpBtn">❓</button>
+    <button class="menuBtn mobOnly" id="moreBtn">✨</button>
   </div>
   <div id="projectPanel">
     <h3 id="projTitle">🏠 Cozy Home</h3>
@@ -264,6 +277,7 @@
   <div id="touchActs">
     <button class="tBtn" id="tJump" title="Jump / fly up (double-tap = fly)">⬆</button>
     <button class="tBtn" id="tDesc" title="Fly down">⬇</button>
+    <button class="tBtn mobOnly" id="tFly" title="Fly">🕊️</button>
     <button class="tBtn" id="tMode" title="Switch build / dig">🧱</button>
   </div>
 </div>
@@ -272,19 +286,19 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=14"></script>
-<script src="js/audio.js?v=14"></script>
-<script src="js/world.js?v=14"></script>
-<script src="js/animals.js?v=14"></script>
-<script src="js/squishy.js?v=14"></script>
-<script src="js/portal.js?v=14"></script>
-<script src="js/ui.js?v=14"></script>
-<script src="js/activities.js?v=14"></script>
-<script src="js/music.js?v=14"></script>
-<script src="js/pet.js?v=14"></script>
-<script src="js/stickers.js?v=14"></script>
-<script src="js/overnight.js?v=14"></script>
-<script src="js/photo.js?v=14"></script>
-<script src="js/main.js?v=14"></script>
+<script src="js/data.js?v=15"></script>
+<script src="js/audio.js?v=15"></script>
+<script src="js/world.js?v=15"></script>
+<script src="js/animals.js?v=15"></script>
+<script src="js/squishy.js?v=15"></script>
+<script src="js/portal.js?v=15"></script>
+<script src="js/ui.js?v=15"></script>
+<script src="js/activities.js?v=15"></script>
+<script src="js/music.js?v=15"></script>
+<script src="js/pet.js?v=15"></script>
+<script src="js/stickers.js?v=15"></script>
+<script src="js/overnight.js?v=15"></script>
+<script src="js/photo.js?v=15"></script>
+<script src="js/main.js?v=15"></script>
 </body>
 </html>
