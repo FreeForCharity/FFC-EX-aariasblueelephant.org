@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mountain House Road Safety Heroes — Aaria's Blue Elephant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="520" height="760"></canvas>
+  <div id="topbtns">
+    <button id="viewBtn" title="Toggle first-person view (V)">👁 View</button>
+    <button id="mapBtn" title="Toggle minimap (M)">🗺</button>
+    <button id="muteBtn" title="Sound on/off">🔊</button>
+  </div>
+
+  <!-- Touch controls -->
+  <div id="touch" class="hidden">
+    <div class="tgroup">
+      <button class="tbtn" id="btnL">◀</button>
+      <button class="tbtn" id="btnR">▶</button>
+    </div>
+    <div class="tgroup right">
+      <button class="tbtn go" id="btnGo">▲<br>GO</button>
+      <button class="tbtn stop" id="btnStop">✋<br>STOP</button>
+    </div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="menu" class="screen">
+    <img id="logoImg" alt="Aaria's Blue Elephant logo">
+    <h1>Mountain House<br>Road Safety Heroes</h1>
+    <p class="tagline">Ride &amp; drive the REAL streets of Mountain House, CA — map data © OpenStreetMap</p>
+    <div class="namebox">
+      <label for="playerName">Your name (for your certificates!):</label>
+      <input id="playerName" maxlength="24" placeholder="Type your name">
+    </div>
+    <div id="levelGrid"></div>
+    <p class="footer">Aaria's Blue Elephant • Building a New Inclusive World • aariasblueelephant.org</p>
+  </div>
+
+  <!-- LEVEL INTRO / BRIEFING -->
+  <div id="intro" class="screen hidden">
+    <div class="card">
+      <h2 id="introTitle"></h2>
+      <p id="introRoute" class="route"></p>
+      <canvas id="introMap" width="380" height="290"></canvas>
+      <div id="introRules"></div>
+      <div class="controls-hint">
+        ▲/W go • ▼/S brake • ◀ ▶/A D steer • <b>V</b> first-person view • M map
+      </div>
+      <div class="btnrow">
+        <button class="bigbtn" id="startBtn">🚦 Start!</button>
+        <button class="smallbtn" id="introBack">← Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAFETY TIP POPUP -->
+  <div id="tip" class="screen hidden">
+    <div class="card tipcard">
+      <div id="tipIcon" class="bigemoji"></div>
+      <h2 id="tipTitle"></h2>
+      <p id="tipText"></p>
+      <p id="tipPts" class="pts"></p>
+      <button class="bigbtn" id="tipBtn">Got it — be safe!</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz" class="screen hidden">
+    <div class="card">
+      <h2>🧠 Safety Quiz!</h2>
+      <p id="quizQ" class="quizq"></p>
+      <div id="quizOpts"></div>
+      <p id="quizWhy" class="quizwhy hidden"></p>
+      <button class="bigbtn hidden" id="quizNext">Next →</button>
+    </div>
+  </div>
+
+  <!-- CERTIFICATE -->
+  <div id="cert" class="screen hidden">
+    <h2 id="certHead">🎉 You did it!</h2>
+    <canvas id="certCanvas" width="900" height="640"></canvas>
+    <div class="btnrow">
+      <button class="bigbtn" id="certDownload">⬇️ Download Certificate</button>
+      <button class="bigbtn" id="certNext">Next Level →</button>
+      <button class="smallbtn" id="certMenu">Menu</button>
+    </div>
+  </div>
+
+  <!-- RETRY -->
+  <div id="retry" class="screen hidden">
+    <div class="card">
+      <div class="bigemoji">💪</div>
+      <h2 id="retryTitle">Almost!</h2>
+      <p id="retryText"></p>
+      <button class="bigbtn" id="retryBtn">🔄 Try Again</button>
+      <button class="smallbtn" id="retryMenu">Menu</button>
+    </div>
+  </div>
+</div>
+<script src="assets/logo-data.js"></script>
+<script src="assets/mh-map-data.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
