@@ -200,6 +200,76 @@
     return null;
   }
 
+  /* ---------------- pulverize particles 💥 ---------------- */
+  const particles = [];
+  function pulverize(x, y, z, type) {
+    const mat = ABC.world.materials[type];
+    if (!mat) return;
+    const geo = new THREE.BoxGeometry(0.16, 0.16, 0.16);
+    for (let i = 0; i < 14; i++) {
+      const p = new THREE.Mesh(geo, mat);
+      p.position.set(x + 0.2 + Math.random() * 0.6, y + 0.2 + Math.random() * 0.6, z + 0.2 + Math.random() * 0.6);
+      p.userData.v = new THREE.Vector3((Math.random() - .5) * 4, 2 + Math.random() * 3.5, (Math.random() - .5) * 4);
+      p.userData.life = 0.9 + Math.random() * 0.5;
+      p.userData.spin = (Math.random() - .5) * 12;
+      scene.add(p);
+      particles.push(p);
+    }
+  }
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.userData.life -= dt;
+      if (p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); continue; }
+      p.userData.v.y -= 14 * dt;
+      p.position.addScaledVector(p.userData.v, dt);
+      p.rotation.x += p.userData.spin * dt; p.rotation.z += p.userData.spin * dt;
+      const s = Math.min(1, p.userData.life * 2);
+      p.scale.setScalar(s);
+      if (p.position.y < 0.1) { p.position.y = 0.1; p.userData.v.y *= -0.4; p.userData.v.x *= 0.7; p.userData.v.z *= 0.7; }
+    }
+  }
+
+  /* ---------------- doors really open & close 🚪 ---------------- */
+  function toggleDoor(cell) {
+    const rot = ABC.world.getRot(cell.x, cell.y, cell.z);
+    const open = !(rot & 4);
+    ABC.world.set(cell.x, cell.y, cell.z, 'door', open ? (rot | 4) : (rot & 3));
+    ABC.world.flush();
+    ABC.audio.sfx[open ? 'pop' : 'plop']();
+    ABC.ui.toast(open ? '🚪 The door swings open — come in!' : '🚪 Click! The door is closed.', 2000);
+    saveSoon();
+  }
+
+  /* ---------------- satellite map 🗺️ ---------------- */
+  function showMap() {
+    const R = 56, CV = 2 * R + 1, SC = 4;
+    let html = `<div class="bigEmoji">🗺️</div><h2>Your World From the Sky</h2>
+      <canvas id="mapCv" width="${CV * SC}" height="${CV * SC}" style="width:min(82vw,440px); image-rendering:pixelated; border-radius:16px; border:4px solid #74c0fc;"></canvas>
+      <div class="dlgRow"><button class="bigBtn green" id="mapOk">Back to playing! 🎮</button></div>`;
+    ABC.ui.openDialog(html);
+    const g = $('mapCv').getContext('2d');
+    const px = Math.round(feet.x), pz = Math.round(feet.z);
+    for (let dx = -R; dx <= R; dx++) for (let dz = -R; dz <= R; dz++) {
+      const tb = ABC.world.topBlock(px + dx, pz + dz);
+      let col = '#9fdcff';
+      if (tb) {
+        col = (ABC.BLOCK_DEFS[tb.t] || {}).color || '#888';
+        if (tb.t === 'grass' && tb.y > 0) col = '#5aa327';
+      }
+      g.fillStyle = col;
+      g.fillRect((dx + R) * SC, (dz + R) * SC, SC, SC);
+    }
+    // you are here 💙 + facing arrow
+    g.fillStyle = '#1d4ed8';
+    g.beginPath(); g.arc(R * SC + SC/2, R * SC + SC/2, SC * 1.6, 0, 7); g.fill();
+    g.strokeStyle = '#fff'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(R * SC + SC/2, R * SC + SC/2);
+    g.lineTo(R * SC + SC/2 - Math.sin(yaw) * SC * 3.2, R * SC + SC/2 - Math.cos(yaw) * SC * 3.2); g.stroke();
+    ABC.audio.say('Look — your world from the sky! The blue dot is you.');
+    $('mapOk').onclick = () => ABC.ui.closeDialog();
+  }
+
   /* ---------------- tree growing 🌱 ---------------- */
   function growTree(x, y, z) {
     ABC.audio.sfx.grow();
@@ -250,10 +320,14 @@
     }
     if (info.kind === 'ghost')   { ABC.activities.tryFillGhost(info.mesh); return; }
     if (info.kind === 'block') {
+      // doors open and close with a click (any mode)
+      if (ABC.world.get(info.cell.x, info.cell.y, info.cell.z) === 'door') { toggleDoor(info.cell); return; }
       const digging = m === 'dig' || hand.kind === 'tool';
       if (digging) {
+        const t = ABC.world.get(info.cell.x, info.cell.y, info.cell.z);
         if (ABC.world.remove(info.cell.x, info.cell.y, info.cell.z)) {
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
+          pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
         } else if (info.cell.y === ABC.world.MIN_Y) {
           ABC.ui.toast('🪨 That is the super-strong bottom rock!', 2400);
         }
@@ -374,7 +448,13 @@
   });
 
   /* ---------------- movement & physics ---------------- */
-  const solid = (x, y, z) => !!ABC.world.get(Math.floor(x), Math.floor(y), Math.floor(z));
+  const solid = (x, y, z) => {
+    const fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z);
+    const t = ABC.world.get(fx, fy, fz);
+    if (!t) return false;
+    if (t === 'door' && (ABC.world.getRot(fx, fy, fz) & 4)) return false;   // open doors let you through
+    return true;
+  };
   /* highest walkable surface at column (x,z) at or below fromY (+ small step-up) */
   function surfaceY(x, z, fromY) {
     for (let y = Math.floor(fromY + 1.01); y >= ABC.world.MIN_Y; y--) {
@@ -502,7 +582,8 @@
         stars: ABC.state.stars, hearts: ABC.state.hearts,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         tutorialDone: ABC.state.tutorialDone,
-        settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode },
+        settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
+                    theme: s.theme, voiceName: s.voiceName },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }
@@ -557,6 +638,7 @@
   $('portalChip').onclick  = () => ABC.portal.findPortal();
   $('zoomInBtn').onclick   = () => setZoom(-0.18);
   $('zoomOutBtn').onclick  = () => setZoom(+0.18);
+  $('mapBtn').onclick      = () => showMap();
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
   /* full screen — works standalone and inside the dashboard iframe */
@@ -598,6 +680,7 @@
     if (nm) ABC.state.playerName = nm;
     ABC.audio.ensureCtx();
     ABC.audio.startMusic();
+    if (ABC.audio.settings.theme) ABC.world.setTheme(ABC.audio.settings.theme);
     $('titleScreen').style.display = 'none';
     $('hud').style.display = 'block';
     ABC.ui.buildHotbar();
@@ -640,6 +723,7 @@
       if (chunkTimer > 0.3) { chunkTimer = 0; ABC.world.ensureChunks(feet.x, feet.z); }
       updatePlayer(dt);
       updateFly(dt);
+      updateParticles(dt);
       ABC.animals.update(dt, now / 1000);
       ABC.squishy.update(dt, camera);
       ABC.portal.update(dt);

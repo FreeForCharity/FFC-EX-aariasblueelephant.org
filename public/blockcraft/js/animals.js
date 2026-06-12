@@ -303,15 +303,24 @@ ABC.animals = (function () {
           g.rotation.y += dy * Math.min(1, dt*4);
         }
       }
+      // follow the land: stand on top of hills, mountains, sand…
+      let gy = 1;
+      const tb = ABC.world.topBlock ? ABC.world.topBlock(Math.floor(g.position.x), Math.floor(g.position.z)) : null;
+      if (tb) gy = tb.y + 1;
+      a.groundY = a.groundY == null ? gy : a.groundY + (gy - a.groundY) * Math.min(1, dt * 6);
       // bob / hop / flutter
       if (a.def.fly) {
-        g.position.y = a.baseY + Math.sin(a.t*2.2)*0.5 + 0.8;
+        g.position.y = a.groundY + Math.sin(a.t*2.2)*0.5 + 1.6;
         const wings = g.userData.wings;
         if (wings) { wings[0].rotation.z = Math.sin(a.t*14)*0.7; wings[1].rotation.z = -Math.sin(a.t*14)*0.7; }
       } else if (a.def.hop) {
-        g.position.y = a.baseY + Math.abs(Math.sin(a.t*4))*0.35;
+        g.position.y = a.groundY + Math.abs(Math.sin(a.t*4))*0.35;
+      } else if (a.def.round) {
+        // round friends waddle-roll side to side as they toddle
+        g.position.y = a.groundY + Math.abs(Math.sin(a.t*3))*0.1;
+        g.rotation.z = Math.sin(a.t*3)*0.08;
       } else {
-        g.position.y = a.baseY + Math.abs(Math.sin(a.t*2))*0.06;
+        g.position.y = a.groundY + Math.abs(Math.sin(a.t*2))*0.06;
       }
       // celebration wiggle
       if (a.happyUntil > time) g.rotation.y += Math.sin(a.t*12)*0.06;

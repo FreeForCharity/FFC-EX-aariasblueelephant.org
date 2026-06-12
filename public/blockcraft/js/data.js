@@ -38,6 +38,7 @@ ABC.BLOCK_DEFS = {
   door:    { name:'Cute Door',    emoji:'🚪', color:'#8a5a2b', pat:'door',   shape:'pane', rotates:true },
   pane:    { name:'Window Pane',  emoji:'🪟', color:'#bfeaff', pat:'glass',  alpha:0.5, shape:'pane', rotates:true },
   knob:    { name:'Golden Handle',emoji:'🔘', color:'#ffd43b', pat:'plain',  shape:'knob', glow:true },
+  stair:   { name:'Stairs',       emoji:'🪜', color:'#d9a05b', pat:'planks', shape:'stair', rotates:true },
   slimeGreen:  { name:'Green Slime',  emoji:'🟢', color:'#7be042', pat:'slime', alpha:0.85, locked:true },
   slimePink:   { name:'Pink Slime',   emoji:'🩷', color:'#ff8fc8', pat:'slime', alpha:0.85, locked:true },
   slimePurple: { name:'Purple Slime', emoji:'🟣', color:'#b388ff', pat:'slime', alpha:0.85, locked:true },
@@ -49,8 +50,16 @@ ABC.BLOCK_DEFS = {
 /* Hotbar order (unlocked-by-default first) */
 ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass','sand','snow',
   'leaf','flower','rainbow','star','water','red','blue','yellow','black','white',
-  'slab','wedge','pillar','door','pane','knob',
+  'slab','wedge','stair','pillar','door','pane','knob',
   'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
+
+/* Color themes 🎨 — sky & world moods */
+ABC.THEMES = [
+  { key:'sunny',  ico:'☀️', label:'Sunny Day',   sky:0x9fdcff, grass:0xffffff },
+  { key:'sunset', ico:'🌅', label:'Sunset',      sky:0xffb29a, grass:0xffe3cf },
+  { key:'night',  ico:'🌙', label:'Starry Night',sky:0x32406e, grass:0xaabbe0 },
+  { key:'candy',  ico:'🍭', label:'Candy Land',  sky:0xe9c8ff, grass:0xffd9ee },
+];
 
 /* Surprise pocket 🎁 — one surprise per day; saying what you found takes it out */
 ABC.SURPRISES = [
@@ -142,7 +151,43 @@ ABC.buildBlueprints = function () {
   cell(eleTrunk,8,2,0,'white'); cell(eleTrunk,8,2,2,'white'); // tusks
   cell(eleTrunk,7,5,0,'star'); cell(eleTrunk,7,5,2,'star');   // sparkly eyes
 
+  /* ---- TWO-STOREY VILLA: 8 wide, 6 deep, staircase inside ---- */
+  const vFloor1=[], vFloor2=[], vRoof=[];
+  box(vFloor1, 0,0,0, 7,0,5, 'plank');                          // ground floor
+  for (let y=1;y<=2;y++) {                                      // walls floor 1 (wood look)
+    for (let x=0;x<=7;x++) { cell(vFloor1,x,y,0,'wood'); cell(vFloor1,x,y,5,'wood'); }
+    for (let z=1;z<=4;z++) { cell(vFloor1,0,y,z,'wood'); cell(vFloor1,7,y,z,'wood'); }
+  }
+  const vF1 = vFloor1.filter(c=>!(c.z===0 && c.x===3 && (c.y===1||c.y===2)));
+  cell(vF1,3,1,0,'door');                                       // front door
+  [[1,2,0],[6,2,0],[0,2,2],[7,2,3]].forEach(w=>cell(vF1,w[0],w[1],w[2],'pane'));
+  // staircase up (along east wall inside)
+  cell(vF1,6,1,4,'stair'); cell(vF1,6,2,3,'stair'); cell(vF1,6,3,2,'stair');
+  box(vFloor2, 0,3,0, 7,3,5, 'plank');                          // upper floor
+  const vF2 = vFloor2.filter(c=>!(c.x===6 && (c.z===2||c.z===3)));  // stair opening
+  for (let y=4;y<=5;y++) {                                      // walls floor 2 (white)
+    for (let x=0;x<=7;x++) { vF2.push({x,y,z:0,t:'white'}); vF2.push({x,y,z:5,t:'white'}); }
+    for (let z=1;z<=4;z++) { vF2.push({x:0,y,z,t:'white'}); vF2.push({x:7,y,z,t:'white'}); }
+  }
+  const vF2Final = vF2.filter(c=>!([[2,5,0],[5,5,0],[0,5,3],[7,5,3],[3,5,5],[4,5,5]].some(w=>w[0]===c.x&&w[1]===c.y&&w[2]===c.z)));
+  [[2,5,0],[5,5,0],[0,5,3],[7,5,3],[3,5,5],[4,5,5]].forEach(w=>vF2Final.push({x:w[0],y:w[1],z:w[2],t:'pane'}));
+  for (let i=0;i<3;i++)                                          // gabled wedge roof
+    for (let x=-1+0;x<=8;x++) {
+      cell(vRoof,x,6+i,i,'wedge'); cell(vRoof,x,6+i,5-i,'wedge');
+      if (i===2) cell(vRoof,x,6+i,2,'brick'), cell(vRoof,x,6+i,3,'brick');
+    }
+  cell(vRoof,3,6,0,'star');                                      // porch light
+
   return {
+    villa: {
+      id:'villa', title:'🏡 Two-Storey Villa', emoji:'🏡',
+      site:{x:16, z:-22},
+      stages:[
+        { name:'Ground Floor & Stairs', cells:vF1 },
+        { name:'Upstairs & Windows', cells:vF2Final },
+        { name:'Pointy Roof & Light', cells:vRoof },
+      ],
+    },
     home: {
       id:'home', title:'🏠 Cozy Home', emoji:'🏠',
       site:{x:8, z:-14},
@@ -222,6 +267,30 @@ ABC.COACH_WRONG = [
 
 /* Each prompt: scene text, emoji, options [{t,q}] q: best | name | off. Keep text SHORT. */
 ABC.PROJECT_PROMPTS = {
+  villa: {
+    intro: { emoji:'🏡', scene:'A BIG project! What are we building?',
+      options:[
+        { t:'A big two-storey villa with real stairs inside!', q:'best' },
+        { t:'House.', q:'name' },
+        { t:'I like ice cream.', q:'off' } ] },
+    stages:[
+      { emoji:'🪜', scene:'Ground floor done! What is inside?',
+        options:[
+          { t:'The wooden stairs go up to the second floor!', q:'best' },
+          { t:'Stairs.', q:'name' },
+          { t:'The cat says meow.', q:'off' } ] },
+      { emoji:'🪟', scene:'The upstairs is built! Tell me about it:',
+        options:[
+          { t:'The white upstairs has windows all around to see far away!', q:'best' },
+          { t:'Up.', q:'name' },
+          { t:'I wear shoes.', q:'off' } ] },
+      { emoji:'🏡', scene:'Your villa is DONE! How does it look?',
+        options:[
+          { t:'My big villa has two floors, stairs and a pointy roof!', q:'best' },
+          { t:'Done.', q:'name' },
+          { t:'Rain is wet.', q:'off' } ] },
+    ],
+  },
   home: {
     intro: { emoji:'🏠', scene:'What are we building?',
       options:[
