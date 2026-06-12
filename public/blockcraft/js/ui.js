@@ -369,6 +369,11 @@ ABC.ui = (function () {
     const today = new Date().toISOString().slice(0, 10);
     return ABC.state.pocket === today;
   }
+  /* the bag sparkles ✨ while today's surprise is still inside */
+  setInterval(() => {
+    const b = $('bagBtn');
+    if (b) b.classList.toggle('opened', pocketOpened());
+  }, 4000);
   function openPocket() {
     closeDialog();
     const sp = pick(ABC.SURPRISES);
