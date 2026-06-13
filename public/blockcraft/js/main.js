@@ -23,19 +23,34 @@
     lastFwdTap = now;
   }
   let thirdPerson = false;
-  let zoom = 1;                                   // 0.55 (close) … 1.7 (far)
-  function setZoom(dz) {
-    zoom = Math.max(0.55, Math.min(1.7, zoom + dz));
-    camera.fov = 72 * (thirdPerson ? 1 : Math.max(0.6, Math.min(1.25, zoom)));
+  let zoom = 1;                                   // 0.5 (right up close) … 6 (high in the sky)
+  function applyZoom() {
+    // zooming out past ~1.4 lifts you up and behind for a wide view;
+    // zooming all the way in returns to first person
+    const want3p = zoom > 1.4;
+    if (want3p !== thirdPerson) {
+      thirdPerson = want3p;
+      avatar.visible = thirdPerson;
+      hand.visible = !thirdPerson;
+      refreshHand();
+      $('viewBtn').classList.toggle('active', thirdPerson);
+    }
+    camera.fov = 72 * (thirdPerson ? 1 : Math.max(0.55, Math.min(1.35, zoom)));
     camera.updateProjectionMatrix();
+  }
+  function setZoom(dz) {
+    zoom = Math.max(0.5, Math.min(6, zoom + dz));
+    applyZoom();
     ABC.audio.sfx.gentle();
   }
 
-  window.addEventListener('resize', () => {
+  function onResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
   const scene = ABC.world.initScene(renderer);
   ABC.world.generate();
@@ -137,10 +152,9 @@
   });
 
   function toggleView() {
-    thirdPerson = !thirdPerson;
-    avatar.visible = thirdPerson;
-    hand.visible = !thirdPerson;
-    $('viewBtn').classList.toggle('active', thirdPerson);
+    // jump between a close first-person zoom and a comfy third-person zoom
+    zoom = thirdPerson ? 1 : 2.2;
+    applyZoom();
     ABC.audio.sfx.gentle();
   }
 
@@ -536,7 +550,8 @@
     camera.rotateY(yaw); camera.rotateX(pitch);
     if (thirdPerson) {
       const back = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-      camera.position.set(feet.x, feet.y + EYE + 1.6 * zoom, feet.z).addScaledVector(back, 4.2 * zoom);
+      // higher and further the more you zoom out — up to a soaring bird's-eye view
+      camera.position.set(feet.x, feet.y + EYE + 2.2 * zoom, feet.z).addScaledVector(back, 4.0 * zoom);
       avatar.position.set(feet.x, feet.y, feet.z);
       avatar.rotation.y = yaw + Math.PI;
     } else {
@@ -665,27 +680,39 @@
   $('tFly').addEventListener('click', () => $('flyBtn').click());
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
-  /* full screen — works standalone and inside the dashboard iframe */
-  function toggleFullscreen() {
-    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    if (fsEl) {
-      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    } else {
-      const root = document.documentElement;
-      const req = root.requestFullscreen || root.webkitRequestFullscreen;
-      if (req) {
-        const p = req.call(root);
-        if (p && p.catch) p.catch(() => {
-          ABC.ui.toast('Use the “Play Full Screen” button on the website instead! 🖥️', 3200);
-        });
-      }
-    }
-  }
-  document.addEventListener('fullscreenchange', () => {
-    const on = !!document.fullscreenElement;
+  /* full screen — works on Chrome/Edge/Firefox AND Safari (incl. iOS, which
+     has no Fullscreen API, via a CSS faux-fullscreen fallback) */
+  function nativeFsEl() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  function fsLabel() {
+    const on = !!nativeFsEl() || document.body.classList.contains('fauxFs');
     $('fsBtn').textContent = on ? '🗗' : '⛶';
     $('fsBtn').title = on ? 'Exit full screen' : 'Full screen';
-  });
+  }
+  function setFaux(on) {
+    document.body.classList.toggle('fauxFs', on);
+    fsLabel();
+    onResize();   // game canvas resizes to the new viewport
+  }
+  function toggleFullscreen() {
+    // already in faux mode → just leave it
+    if (document.body.classList.contains('fauxFs')) { setFaux(false); return; }
+    if (nativeFsEl()) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    const root = document.documentElement;
+    const req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (req) {
+      try {
+        const p = req.call(root);
+        if (p && p.catch) p.catch(() => setFaux(true));   // Safari may reject → faux
+      } catch (e) { setFaux(true); }
+    } else {
+      setFaux(true);   // iOS Safari: no API at all → faux fullscreen
+    }
+  }
+  document.addEventListener('fullscreenchange', fsLabel);
+  document.addEventListener('webkitfullscreenchange', fsLabel);
   $('fsBtn').onclick = toggleFullscreen;
   $('fsTitleBtn').onclick = toggleFullscreen;
   $('flyBtn').onclick      = () => {
