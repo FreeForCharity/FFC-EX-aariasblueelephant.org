@@ -481,6 +481,14 @@ ABC.world = (function () {
     for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = 0; dy <= 2; dy++)
       if (Math.abs(dx) + Math.abs(dz) + dy < 4) gset(keys, x + dx, baseY + th + dy, z + dz, 'leaf');
   }
+  /* one tree per spacing×spacing cell, jittered — keeps trees apart so
+     canopies never merge into a floating ceiling 🌲 */
+  function treeCell(x, z, spacing) {
+    const gx = Math.floor(x / spacing), gz = Math.floor(z / spacing);
+    const jx = gx * spacing + Math.floor(hash2(gx * 7 + 1, gz * 7 + 3) * spacing);
+    const jz = gz * spacing + Math.floor(hash2(gx * 13 + 5, gz * 13 + 9) * spacing);
+    return x === jx && z === jz;
+  }
   function genPine(keys, x, z, baseY) {     // tall conifer for forests/valleys
     const h = 4 + ((hash2(x, z) * 3) | 0);
     for (let y = 1; y <= h; y++) gset(keys, x, baseY + y, z, 'wood');
@@ -494,7 +502,7 @@ ABC.world = (function () {
   function genHome(keys, x, z) {             // calm flat home meadow
     gset(keys, x, 0, z, 'grass');
     const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
-    if (vnoise(x + 777, z - 777, 34) > 0.6 && h < 0.06 && sp > 16) genTree(keys, x, z, 0);
+    if (sp > 16 && treeCell(x, z, 9) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
     else if (h < 0.013) gset(keys, x, 1, z, 'flower');
   }
   function genWild(keys, x, z) {             // rolling grasslands between home and parks
@@ -505,7 +513,7 @@ ABC.world = (function () {
     else gset(keys, x, 0, z, 'grass');
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     if (hh === 0) {
-      if (vnoise(x, z, 26) > 0.62 && hsh < 0.04) genTree(keys, x, z, 0);
+      if (treeCell(x, z, 10) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
       else if (hsh < 0.008) gset(keys, x, 1, z, 'flower');
     }
   }
@@ -526,7 +534,7 @@ ABC.world = (function () {
         const cf = vnoise(x + 50, z - 20, 26);
         const mh = cf > 0.62 ? Math.round((cf - 0.62) * 70 * t) : 0;
         for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 7) ? 'snow' : 'granite');
-        if (mh === 0 && vnoise(x, z, 26) > 0.6 && hsh < 0.06) genPine(keys, x, z, 0);
+        if (mh === 0 && treeCell(x, z, 8) && vnoise(x, z, 26) > 0.55) genPine(keys, x, z, 0);
         break;
       }
       case 'zion': {
@@ -552,14 +560,14 @@ ABC.world = (function () {
       }
       case 'olympic': {
         gset(keys, x, 0, z, 'moss');
-        if (vnoise(x, z, 18) > 0.5 && hsh < 0.16) genPine(keys, x, z, 0);    // dense rainforest
+        if (treeCell(x, z, 6) && vnoise(x, z, 22) > 0.42) genPine(keys, x, z, 0);   // lush but spaced
         break;
       }
       case 'everglades': {
         if (vnoise(x, z, 14) < 0.46) {
           gset(keys, x, 0, z, 'water');
           if (hash2(x, z) < 0.05) { gset(keys, x, 1, z, 'leaf'); gset(keys, x, 2, z, 'leaf'); }  // reeds
-        } else { gset(keys, x, 0, z, 'grass'); if (hsh < 0.05) genTree(keys, x, z, 0); }
+        } else { gset(keys, x, 0, z, 'grass'); if (treeCell(x, z, 8)) genTree(keys, x, z, 0); }
         break;
       }
       case 'glacier': {
