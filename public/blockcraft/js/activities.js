@@ -218,9 +218,11 @@ ABC.activities = (function () {
 
   /* 🏪 the village market — ask politely, pay with stars, say thank you */
   function shop(a) {
-    ui().pickCard('Village Market 🏪',
+    const goods = (a.shopGoods || ['water', 'apple', 'cookie'])
+      .map(k => ABC.GOODS[k]).filter(Boolean);
+    ui().pickCard(`${a.name}'s Shop 🏪`,
       `Hello, {player}! I’m ${a.name}. What would you like today? You have ${ABC.state.stars} ⭐`,
-      ABC.SHOP_GOODS.map(g => ({ ico: g.ico, label: `${g.label} — ${g.price}⭐`, g })),
+      goods.map(g => ({ ico: g.ico, label: `${g.label} — ${g.price}⭐`, g })),
       (card) => {
         const g = card.g;
         if (ABC.state.stars < g.price) {
@@ -232,7 +234,7 @@ ABC.activities = (function () {
           emoji: g.ico,
           scene: `${a.name} smiles. How do we ask to buy it?`,
           options: [
-            { t: `Can I buy ${g.word}, please? Here are ${g.price} stars.`, q: 'best' },
+            { t: `Can I have ${g.word}, please? Here are ${g.price} stars.`, q: 'best' },
             { t: 'Want.', q: 'name' },
             { t: 'My hat is red.', q: 'off' } ],
         }, () => {
@@ -240,11 +242,14 @@ ABC.activities = (function () {
           ui().refreshScore();
           ABC.saveSoon && ABC.saveSoon();
           const p = ABC.player.position;
-          if (g.grant === 'apples') { ui().addHearts(1); ui().toast('🍎 Yum! Share the apples with your animal friends!', 3600, true); }
-          if (g.grant === 'balloon') { ui().floatHearts(8); ABC.portal.charge(2); ui().toast('🎈 The magic balloon fills you with word power!', 3600, true); }
-          if (g.grant === 'lamps') { for (let i=0;i<3;i++) ABC.world.set(Math.round(p.x)+i-1, 1, Math.round(p.z)-3, 'star'); ABC.world.flush(); ui().toast('⭐ Three glowing lamps, all yours!', 3400, true); }
-          if (g.grant === 'cookie') { ABC.squishy.spawn({ kind:'cutout', shape:'circle', colorHex:0x8a5a2b, x:Math.round(p.x)+2, z:Math.round(p.z)+2 }); ui().toast('🍪 One yummy cookie! What do we say? THANK YOU!', 3800, true); }
-          ui().bellaSays(`${a.name} says: thank you for shopping and for your lovely words! 💛`, 4600);
+          const k = g.kind;
+          if (k === 'water') { ABC.audio.sfx.gentle(); ui().floatHearts(2); ui().toast(`${g.ico} Glug glug — so refreshing! Ahh!`, 3600, true); }
+          else if (k === 'food') { ABC.audio.sfx.munch(); ui().addHearts(1); ui().toast(`${g.ico} Yum yum! Thank you, ${a.name}!`, 3600, true); }
+          else if (k === 'cookie') { ABC.squishy.spawn({ kind:'cutout', shape:'circle', colorHex:0x8a5a2b, x:Math.round(p.x)+2, z:Math.round(p.z)+2 }); ui().toast('🍪 A yummy cookie appeared! What do we say? THANK YOU!', 3800, true); }
+          else if (k === 'blocks') { for (let i=0;i<3;i++) ABC.world.set(Math.round(p.x)+i-1, Math.round(p.y)-1, Math.round(p.z)-3, 'star'); ABC.world.flush(); ui().toast('⭐ Three glowing lamps, all yours!', 3400, true); }
+          else if (k === 'balloon') { ui().floatHearts(8); ABC.portal.charge(2); ui().toast('🎈 The magic balloon fills you with word power!', 3600, true); }
+          ABC.stickers && ABC.stickers.award && ABC.stickers.award('shopper');
+          ui().bellaSays(`${a.name} says: thank you for shopping and for your kind words! 💛`, 4600);
         }, { stars: 0 });
       }, '🏪');
   }

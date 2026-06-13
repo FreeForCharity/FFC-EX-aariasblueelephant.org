@@ -214,9 +214,7 @@ ABC.animals = (function () {
     // Bella the Blue Elephant — guide, stays near spawn
     const bella = spawn('elephant', 4, -8, 'Bella');
     bella.isGuide = true; bella.home = {x:4, z:-8}; bella.range = 6;
-    // 🏪 Mr. Maple runs the home-meadow market
-    const vendor = spawn('capy', -14, 4, 'Mr. Maple');
-    vendor.isVendor = true; vendor.home = { x: -14, z: 4 }; vendor.range = 2;
+    // shops (incl. vendors) are placed by ABC.shops after spawnAll
     // a few gentle friends near home — the parks add their own as you explore
     spawn('bunny', -6, -10); spawn('butterfly', 2, 4); spawn('puppy', 8, 6);
     return list;
