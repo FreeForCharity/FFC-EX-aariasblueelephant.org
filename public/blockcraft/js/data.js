@@ -106,6 +106,8 @@ ABC.REGIONS = (function () {
       theme:{ sky:0xc8d4dc, fog:0xcdd9e0, near:38, far:118, light:0xe8eef2, lightI:0.82, hemi:0xc8d4dc, hemiI:0.36 } },
     { key:'hawaii', name:'Volcano Island', emoji:'🌋', weather:'clear', animal:'butterfly', build:'beachhut',
       theme:{ sky:0xffd0a0, fog:0xf2c69a, near:55, far:150, light:0xfff0d8, lightI:1.05, hemi:0xffd6b0, hemiI:0.42 } },
+    { key:'galaxy', name:'Starlight Meadow', emoji:'🌌', weather:'fireflies', animal:'butterfly', build:'cabin', night:true,
+      theme:{ sky:0x0a1030, fog:0x141a3c, near:46, far:150, light:0x7e8cd0, lightI:0.42, hemi:0x223066, hemiI:0.26 } },
   ];
   function regionAt(x, z) {
     const d = Math.hypot(x, z);

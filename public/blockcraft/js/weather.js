@@ -29,6 +29,7 @@ ABC.weather = (function () {
     dust:  { color: 0xe2caa0, size: 0.28, vy: -0.5, sway: 0,   vx: 5.5, op: 0.45 },
     steam: { color: 0xffffff, size: 0.6,  vy: 3.2,  sway: 0.7, vx: 0,   op: 0.4  },
     mist:  { color: 0xeaf2f5, size: 0.95, vy: 0.2,  sway: 0.3, vx: 1.4, op: 0.38 },
+    fireflies: { color: 0xfff07a, size: 0.34, vy: 0.5, sway: 1.6, vx: 0.5, op: 0.95, glow: true },
   };
 
   function setType(tp) {
@@ -38,6 +39,8 @@ ABC.weather = (function () {
     if (!c) { pts.visible = false; return; }
     pts.visible = true;
     mat.color.set(c.color); mat.size = c.size; mat.opacity = c.op;
+    mat.blending = c.glow ? THREE.AdditiveBlending : THREE.NormalBlending;
+    mat.needsUpdate = true;
   }
 
   function update(dt, cam) {
@@ -47,7 +50,9 @@ ABC.weather = (function () {
     for (let i = 0; i < N; i++) {
       const j = i * 3;
       pos[j+1] += c.vy * dt;
-      if (c.sway) pos[j] += Math.sin((pos[j+1] + i) * 1.5) * c.sway * dt;
+      if (c.glow) pos[j+1] += Math.sin((pos[j] + pos[j+2] + i) * 0.7) * 1.2 * dt;  // fireflies bob
+      if (c.sway) { pos[j] += Math.sin((pos[j+1] + i) * 1.5) * c.sway * dt;
+                    pos[j+2] += Math.cos((pos[j+1] + i) * 1.3) * c.sway * dt; }
       if (c.vx) pos[j] += c.vx * dt;
       const off = pos[j+1] < cy - 4 || pos[j+1] > cy + TOP ||
                   Math.abs(pos[j] - cx) > BOX || Math.abs(pos[j+2] - cz) > BOX;

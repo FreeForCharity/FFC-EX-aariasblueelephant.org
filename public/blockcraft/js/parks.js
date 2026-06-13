@@ -16,6 +16,7 @@ ABC.parks = (function () {
     denali:      { best: 'I see huge snowy mountains touching the sky!', off: 'My hat is red.' },
     acadia:      { best: 'I see the blue ocean splashing on grey rocky cliffs!', off: 'Dogs bark.' },
     hawaii:      { best: 'I see black rocks and glowing orange lava by the sea!', off: 'I like Tuesdays.' },
+    galaxy:      { best: 'I see twinkly fireflies and a sparkly galaxy in the night sky!', off: 'I have a cup.' },
   };
 
   function check(feet) {
