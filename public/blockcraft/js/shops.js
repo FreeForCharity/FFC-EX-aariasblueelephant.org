@@ -44,6 +44,7 @@ ABC.shops = (function () {
   function vendor(s, vx, vz) {
     const v = ABC.animals.spawn(s.animal, vx, vz, s.name);
     v.isVendor = true; v.shopGoods = s.goods; v.home = { x: vx, z: vz }; v.range = 2;
+    v.voiceSeed = ABC.audio.seedFor(s.name);   // a stable, distinct voice per shopkeeper 🗣️
     return v;
   }
 

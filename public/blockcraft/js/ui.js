@@ -322,7 +322,7 @@ ABC.ui = (function () {
   }
 
   /* ---------------- pick-a-card helper (for slime/oreo/kind acts) ---------------- */
-  function pickCard(title, sceneText, cards, onPick, emoji) {
+  function pickCard(title, sceneText, cards, onPick, emoji, speakOpts) {
     sceneText = ABC.tpl(sceneText);
     let html = `<div class="bigEmoji">${emoji || '✨'}</div><h2>${title}</h2>
       <div class="scene">${sceneText}</div><div class="pickGrid">`;
@@ -331,7 +331,7 @@ ABC.ui = (function () {
     });
     html += '</div>';
     openDialog(html);
-    ABC.audio.say(sceneText);
+    ABC.audio.say(sceneText, speakOpts);   // a vendor's greeting speaks in their own voice
     box().querySelectorAll('.pickCard').forEach(b => {
       b.addEventListener('click', () => {
         ABC.audio.sfx.pop();

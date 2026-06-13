@@ -218,6 +218,7 @@ ABC.activities = (function () {
 
   /* 🏪 the village market — ask politely, pay with stars, say thank you */
   function shop(a) {
+    const vp = ABC.audio.voiceFor(a.kind, a.voiceSeed || ABC.audio.seedFor(a.name));
     const goods = (a.shopGoods || ['water', 'apple', 'cookie'])
       .map(k => ABC.GOODS[k]).filter(Boolean);
     ui().pickCard(`${a.name}'s Shop 🏪`,
@@ -249,9 +250,11 @@ ABC.activities = (function () {
           else if (k === 'blocks') { for (let i=0;i<3;i++) ABC.world.set(Math.round(p.x)+i-1, Math.round(p.y)-1, Math.round(p.z)-3, 'star'); ABC.world.flush(); ui().toast('⭐ Three glowing lamps, all yours!', 3400, true); }
           else if (k === 'balloon') { ui().floatHearts(8); ABC.portal.charge(2); ui().toast('🎈 The magic balloon fills you with word power!', 3600, true); }
           ABC.stickers && ABC.stickers.award && ABC.stickers.award('shopper');
-          ui().bellaSays(`${a.name} says: thank you for shopping and for your kind words! 💛`, 4600);
+          ABC.audio.animalCall(a.kind);                       // a happy little chirp/grunt
+          ui().toast(`🏪 <b>${a.name}:</b> Thank you for shopping and for your kind words! 💛`, 4600, false);
+          ABC.audio.say(`Thank you for shopping, and for your kind words!`, vp);   // …in the vendor's own voice
         }, { stars: 0 });
-      }, '🏪');
+      }, '🏪', vp);
   }
 
   function talkToAnimal(a) {
