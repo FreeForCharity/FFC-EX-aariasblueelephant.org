@@ -750,9 +750,12 @@
         chunkTimer = 0;
         ABC.world.ensureChunks(feet.x, feet.z);
         const reg = ABC.parks.check(feet);                          // park arrival + passport
-        ABC.weather.setType(ABC.audio.settings.weather === false ? 'clear' : reg.weather);
+        const w = reg.weather;
+        // fireflies are magical, not weather — they shine even if weather is off
+        ABC.weather.setType((ABC.audio.settings.weather === false && w !== 'fireflies') ? 'clear' : w);
       }
       ABC.world.gradeFrame(feet.x, feet.z, dt);                     // color-grade the sky by region
+      ABC.world.updateSky(camera.position, dt);                     // stars + Milky Way at night 🌌
       updatePlayer(dt);
       updateFly(dt);
       updateParticles(dt);

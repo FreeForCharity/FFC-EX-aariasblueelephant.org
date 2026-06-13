@@ -343,6 +343,44 @@ ABC.world = (function () {
     if (target) gradeTo(target, dt);
   }
 
+  /* ---------- night sky: stars + Milky Way 🌌 ---------- */
+  let starField = null, galaxyBand = null, starOp = 0;
+  function buildStars() {
+    const mk = (n, R, ySpread, yBase, size, color, band) => {
+      const pos = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        if (band) {
+          const a = mulberry(i * 7 + 3)() * Math.PI * 2, sp = (mulberry(i * 13 + 1)() - 0.5) * 70;
+          pos[i*3] = Math.cos(a) * R; pos[i*3+1] = yBase + sp * 0.5 + Math.sin(a * 2) * 22; pos[i*3+2] = Math.sin(a) * R + sp;
+        } else {
+          const u = mulberry(i * 3 + 9)(), v = mulberry(i * 5 + 4)();
+          const th = 2 * Math.PI * u, ph = Math.acos(2 * v - 1);
+          pos[i*3] = R * Math.sin(ph) * Math.cos(th);
+          pos[i*3+1] = Math.abs(R * Math.cos(ph)) * ySpread + yBase;
+          pos[i*3+2] = R * Math.sin(ph) * Math.sin(th);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const m = new THREE.PointsMaterial({ color, size, transparent: true, opacity: 0, depthWrite: false });
+      const pts = new THREE.Points(g, m); pts.frustumCulled = false; scene.add(pts);
+      return pts;
+    };
+    starField = mk(1500, 260, 0.85, 40, 1.7, 0xffffff, false);
+    galaxyBand = mk(950, 250, 0, 130, 2.8, 0xc6ccff, true);
+  }
+  function updateSky(cam, dt) {
+    if (!starField) return;
+    starField.position.set(cam.x, 0, cam.z);
+    galaxyBand.position.set(cam.x, 0, cam.z);
+    galaxyBand.rotation.y += dt * 0.01;
+    const night = lockedTheme ? (lockedTheme.key === 'night' ? 1 : 0)
+      : (ABC.REGIONS && ABC.REGIONS.regionAt(cam.x, cam.z).night ? 1 : 0);
+    starOp += (night - starOp) * Math.min(1, dt * 1.2);
+    starField.material.opacity = starOp * 0.95;
+    galaxyBand.material.opacity = starOp * 0.8;
+  }
+
   /* ---------- scene setup ---------- */
   function initScene(renderer) {
     scene = new THREE.Scene();
@@ -379,6 +417,7 @@ ABC.world = (function () {
       new THREE.MeshBasicMaterial({ color:0xffe45e }));
     sunBall.position.set(70, 60, -80);
     scene.add(sunBall);
+    buildStars();
     initMeshes();
     return scene;
   }
@@ -558,6 +597,16 @@ ABC.world = (function () {
         for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 6) ? 'lava' : 'blackrock');
         break;
       }
+      case 'galaxy': {                       // 🌌 magical night meadow
+        gset(keys, x, 0, z, 'grass');
+        if (vnoise(x + 3, z + 3, 28) < 0.06) gset(keys, x, 0, z, 'water');   // still reflecting ponds
+        else {
+          const h2 = hash2(x * 5 + 2, z * 5 + 9);
+          if (h2 < 0.02) gset(keys, x, 1, z, 'star');                        // glowing ground sparkles
+          else if (h2 < 0.05) gset(keys, x, 1, z, 'flower');
+        }
+        break;
+      }
       default: gset(keys, x, 0, z, 'grass');
     }
   }
@@ -682,6 +731,6 @@ ABC.world = (function () {
 
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
-           ensureChunks, setTheme, gradeFrame, getRot, topBlock,
+           ensureChunks, setTheme, gradeFrame, updateSky, getRot, topBlock,
            getScene: () => scene };
 })();
