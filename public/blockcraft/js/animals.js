@@ -214,23 +214,11 @@ ABC.animals = (function () {
     // Bella the Blue Elephant — guide, stays near spawn
     const bella = spawn('elephant', 4, -8, 'Bella');
     bella.isGuide = true; bella.home = {x:4, z:-8}; bella.range = 6;
-    // 🏪 Mr. Maple runs the village market
+    // 🏪 Mr. Maple runs the home-meadow market
     const vendor = spawn('capy', -14, 4, 'Mr. Maple');
     vendor.isVendor = true; vendor.home = { x: -14, z: 4 }; vendor.range = 2;
-    // 🏘️ Mrs. Cocoa runs the town market (south-east town)
-    const vendor2 = spawn('panda', 46, 56, 'Mrs. Cocoa');
-    vendor2.isVendor = true; vendor2.home = { x: 46, z: 56 }; vendor2.range = 2;
-    // town & forest dwellers
-    spawn('puppy', 45, 47); spawn('cat', 49, 49);
-    spawn('bunny', -50, 45); spawn('butterfly', -55, 50); spawn('penguin', 55, -40);
-    // cute friends near spawn (incl. the big round cuties!)
-    spawn('capy', 10, -4); spawn('panda', -10, -2);
-    spawn('bunny', -5, -10);  spawn('bunny', 14, 6);
-    spawn('cat', 6, 8);       spawn('puppy', -8, 4);
-    spawn('butterfly', 0, 2); spawn('butterfly', 10, -4);
-    // prehistoric pals roam a bit further out
-    spawn('trex', 26, 20);    spawn('trice', -24, 22);
-    spawn('longneck', 30, -20); spawn('mammoth', -28, -24);
+    // a few gentle friends near home — the parks add their own as you explore
+    spawn('bunny', -6, -10); spawn('butterfly', 2, 4); spawn('puppy', 8, 6);
     return list;
   }
 

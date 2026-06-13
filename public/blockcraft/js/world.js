@@ -315,15 +315,32 @@ ABC.world = (function () {
   }
 
   /* ---------- color themes 🎨 ---------- */
-  let hemiLight = null;
+  let hemiLight = null, sunLight = null, lockedTheme = null;
+  /* a manual theme from Settings locks the look; 'auto' (or null) lets the
+     world color-grade by national-park region as you walk 🏞️ */
   function setTheme(key) {
-    const t = (ABC.THEMES || []).find(t => t.key === key) || ABC.THEMES[0];
-    scene.background = new THREE.Color(t.sky);
-    scene.fog.color.set(t.sky);
-    if (hemiLight) hemiLight.color.set(t.sky);
-    const dark = key === 'night';
-    scene.traverse(o => { if (o.isLight && o.isDirectionalLight) o.intensity = dark ? 0.45 : 0.95; });
-    if (hemiLight) hemiLight.intensity = dark ? 0.2 : 0.35;
+    if (!key || key === 'auto') { lockedTheme = null; return; }
+    lockedTheme = (ABC.THEMES || []).find(t => t.key === key) || null;
+  }
+  const _c1 = new THREE.Color(), _c2 = new THREE.Color();
+  function gradeTo(th, dt) {
+    if (!scene) return;
+    const k = Math.min(1, dt * 0.7);
+    const sky = th.sky, fog = th.fog != null ? th.fog : th.sky;
+    const near = th.near != null ? th.near : 60, far = th.far != null ? th.far : 150;
+    const light = th.light != null ? th.light : 0xfff7e0, lightI = th.lightI != null ? th.lightI : 0.95;
+    const hemi = th.hemi != null ? th.hemi : sky, hemiI = th.hemiI != null ? th.hemiI : 0.38;
+    if (scene.background.isColor) scene.background.lerp(_c1.set(sky), k);
+    scene.fog.color.lerp(_c1.set(fog), k);
+    scene.fog.near += (near - scene.fog.near) * k;
+    scene.fog.far += (far - scene.fog.far) * k;
+    if (sunLight) { sunLight.color.lerp(_c1.set(light), k); sunLight.intensity += (lightI - sunLight.intensity) * k; }
+    if (hemiLight) { hemiLight.color.lerp(_c1.set(hemi), k); hemiLight.intensity += (hemiI - hemiLight.intensity) * k; }
+  }
+  /* called every frame from the main loop with the player position */
+  function gradeFrame(x, z, dt) {
+    const target = lockedTheme || (ABC.REGIONS ? ABC.REGIONS.regionAt(x, z).theme : null);
+    if (target) gradeTo(target, dt);
   }
 
   /* ---------- scene setup ---------- */
@@ -331,9 +348,9 @@ ABC.world = (function () {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x9fdcff);
     scene.fog = new THREE.Fog(0x9fdcff, 60, 140);
-    const sun = new THREE.DirectionalLight(0xfff7e0, 0.95);
-    sun.position.set(40, 80, 25);
-    scene.add(sun);
+    sunLight = new THREE.DirectionalLight(0xfff7e0, 0.95);
+    sunLight.position.set(40, 80, 25);
+    scene.add(sunLight);
     scene.add(new THREE.AmbientLight(0xcfe8ff, 0.75));
     hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x7ed957, 0.35);
     scene.add(hemiLight);
@@ -425,23 +442,110 @@ ABC.world = (function () {
     for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = 0; dy <= 2; dy++)
       if (Math.abs(dx) + Math.abs(dz) + dy < 4) gset(keys, x + dx, baseY + th + dy, z + dz, 'leaf');
   }
+  function genPine(keys, x, z, baseY) {     // tall conifer for forests/valleys
+    const h = 4 + ((hash2(x, z) * 3) | 0);
+    for (let y = 1; y <= h; y++) gset(keys, x, baseY + y, z, 'wood');
+    for (let r = 2; r >= 0; r--) {
+      const yy = baseY + h - (2 - r);
+      for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++)
+        if (Math.abs(dx) + Math.abs(dz) <= r) gset(keys, x + dx, yy, z + dz, 'leaf');
+    }
+    gset(keys, x, baseY + h + 1, z, 'leaf');
+  }
+  function genHome(keys, x, z) {             // calm flat home meadow
+    gset(keys, x, 0, z, 'grass');
+    const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
+    if (vnoise(x + 777, z - 777, 34) > 0.6 && h < 0.06 && sp > 16) genTree(keys, x, z, 0);
+    else if (h < 0.013) gset(keys, x, 1, z, 'flower');
+  }
+  /* region terrain — each US national park looks distinct 🏞️ */
   function genColumn(keys, x, z) {
-    const sp = Math.hypot(x, z);
-    let e = vnoise(x, z, 46), m = vnoise(x + 777, z - 777, 34);
-    let rv = Math.abs(vnoise(x - 911, z + 911, 70) - 0.5);
-    if (sp < 34) { e = 0.45; rv = 0.5; m = 0.4; }          // calm flat home meadow
-    const mount = e > 0.70 ? Math.round((e - 0.70) * 34) : 0;
-    const water = mount === 0 && rv < 0.035;
     gset(keys, x, -2, z, 'stone');                          // bedrock
     gset(keys, x, -1, z, 'dirt');
-    if (water) { gset(keys, x, 0, z, 'water'); return; }
-    gset(keys, x, 0, z, (rv < 0.055 && mount === 0) ? 'sand' : 'grass');
-    for (let y = 1; y <= mount; y++)
-      gset(keys, x, y, z, (y >= mount - 1 && mount > 5) ? 'snow' : 'stone');
-    if (mount === 0) {
-      const h = hash2(x * 3 + 1, z * 3 + 7);
-      if (m > 0.60 && h < 0.085 && sp > 16) genTree(keys, x, z, 0);
-      else if (h < 0.013) gset(keys, x, 1, z, 'flower');
+    const reg = ABC.REGIONS.regionAt(x, z);
+    if (reg.key === 'home') return genHome(keys, x, z);
+    const sp = Math.hypot(x, z);
+    const t = Math.min(1, Math.max(0, (sp - ABC.REGIONS.HOME_R) / 30));  // ease in from home
+    const hsh = hash2(x * 3 + 1, z * 3 + 7);
+    const col = (y0, top, sub) => { for (let y = 1; y <= y0; y++) gset(keys, x, y, z, y === y0 ? top : sub); };
+    switch (reg.key) {
+      case 'yosemite': {
+        gset(keys, x, 0, z, 'grass');
+        const cf = vnoise(x + 50, z - 20, 26);
+        const mh = cf > 0.62 ? Math.round((cf - 0.62) * 70 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 7) ? 'snow' : 'granite');
+        if (mh === 0 && vnoise(x, z, 26) > 0.6 && hsh < 0.06) genPine(keys, x, z, 0);
+        break;
+      }
+      case 'zion': {
+        gset(keys, x, 0, z, 'sand');
+        const me = vnoise(x - 30, z + 40, 30);
+        const mh = me > 0.58 ? Math.round((me - 0.58) * 64 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y % 3 === 0) ? 'sandstone' : 'redrock');
+        break;
+      }
+      case 'grandcanyon': {
+        const river = Math.abs(vnoise(x + 11, z - 77, 64) - 0.5);
+        if (river < 0.04) { gset(keys, x, 0, z, 'water'); break; }
+        gset(keys, x, 0, z, 'sandstone');
+        const wall = Math.round((0.5 - river) * 2 * 11 * t);
+        for (let y = 1; y <= wall; y++) gset(keys, x, y, z, (Math.floor(y / 2) % 2) ? 'redrock' : 'sandstone');
+        break;
+      }
+      case 'yellowstone': {
+        gset(keys, x, 0, z, 'grass');
+        if (vnoise(x + 5, z + 5, 18) > 0.8) gset(keys, x, 0, z, 'water');   // hot springs
+        else if (hsh < 0.012) gset(keys, x, 1, z, 'flower');
+        break;
+      }
+      case 'olympic': {
+        gset(keys, x, 0, z, 'moss');
+        if (vnoise(x, z, 18) > 0.5 && hsh < 0.16) genPine(keys, x, z, 0);    // dense rainforest
+        break;
+      }
+      case 'everglades': {
+        if (vnoise(x, z, 14) < 0.46) {
+          gset(keys, x, 0, z, 'water');
+          if (hash2(x, z) < 0.05) { gset(keys, x, 1, z, 'leaf'); gset(keys, x, 2, z, 'leaf'); }  // reeds
+        } else { gset(keys, x, 0, z, 'grass'); if (hsh < 0.05) genTree(keys, x, z, 0); }
+        break;
+      }
+      case 'glacier': {
+        const fj = Math.abs(vnoise(x, z, 40) - 0.5);
+        if (fj < 0.06) { gset(keys, x, 0, z, 'water'); break; }
+        gset(keys, x, 0, z, vnoise(x + 9, z, 20) > 0.6 ? 'ice' : 'snow');
+        const pk = vnoise(x - 40, z + 10, 30);
+        const mh = pk > 0.66 ? Math.round((pk - 0.66) * 54 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, 'snow');
+        break;
+      }
+      case 'denali': {
+        gset(keys, x, 0, z, 'snow');
+        const pk = vnoise(x + 20, z - 20, 34);
+        const mh = pk > 0.5 ? Math.round((pk - 0.5) * 64 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 3) ? 'snow' : 'stone');
+        break;
+      }
+      case 'acadia': {
+        const oc = vnoise(x, z, 46);
+        if (oc < 0.46) { gset(keys, x, 0, z, 'water'); break; }
+        gset(keys, x, 0, z, oc < 0.52 ? 'sand' : 'grass');
+        const rk = vnoise(x + 30, z, 18);
+        const mh = rk > 0.7 ? Math.round((rk - 0.7) * 30 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, 'granite');
+        break;
+      }
+      case 'hawaii': {
+        const oc = vnoise(x, z, 50);
+        if (oc < 0.4) { gset(keys, x, 0, z, 'water'); break; }
+        gset(keys, x, 0, z, oc < 0.46 ? 'sand' : 'blackrock');
+        if (oc >= 0.46 && vnoise(x + 7, z + 7, 16) > 0.84) gset(keys, x, 1, z, 'lava');
+        const vc = vnoise(x - 25, z - 25, 30);
+        const mh = vc > 0.7 ? Math.round((vc - 0.7) * 54 * t) : 0;
+        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 6) ? 'lava' : 'blackrock');
+        break;
+      }
+      default: gset(keys, x, 0, z, 'grass');
     }
   }
   function genHouse(keys, hx, hz) {          // a discoverable village house
@@ -459,11 +563,6 @@ ABC.world = (function () {
     const keys = [];
     for (let x = cx * CHUNK; x < (cx + 1) * CHUNK; x++)
       for (let z = cz * CHUNK; z < (cz + 1) * CHUNK; z++) genColumn(keys, x, z);
-    // sometimes a cozy village house appears in flat, dry land
-    const hcx = cx * CHUNK + 5, hcz = cz * CHUNK + 5;
-    if (Math.hypot(hcx, hcz) > 48 && hash2(cx * 13, cz * 17) < 0.05 &&
-        vnoise(hcx, hcz, 46) < 0.62 && Math.abs(vnoise(hcx - 911, hcz + 911, 70) - 0.5) > 0.08)
-      genHouse(keys, hcx, hcz);
     // handcrafted spawn features (arch, markets, garden, sky island)
     for (const [k, v] of structMap) {
       const [x, , z] = k.split(',').map(Number);
@@ -570,6 +669,6 @@ ABC.world = (function () {
 
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
-           ensureChunks, setTheme, getRot, topBlock,
+           ensureChunks, setTheme, gradeFrame, getRot, topBlock,
            getScene: () => scene };
 })();
