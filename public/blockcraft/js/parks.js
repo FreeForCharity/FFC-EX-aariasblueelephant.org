@@ -2,6 +2,7 @@
    hear their name, describe what you see, and collect a stamp for each one. */
 ABC.parks = (function () {
   let visited = new Set();
+  const built = new Set();   // regions we've already offered a build in (this session)
   let cur = null;
 
   /* what to say when you first arrive at each park (describing words!) */
@@ -45,6 +46,22 @@ ABC.parks = (function () {
         (ABC.state.friends = ABC.state.friends || []).push({ kind: reg.animal, x: a.group.position.x, z: a.group.position.z, name: a.name });
       }
       setTimeout(() => { if (!ABC.ui.isOpen()) describe(reg); }, 1800);
+    }
+    // offer the region's signature build, once, where she's standing
+    if (reg.build && !built.has(reg.key)) {
+      built.add(reg.key);
+      const bpTitle = { cabin:'a log cabin', tent:'a camping tent', igloo:'an igloo',
+        lighthouse:'a lighthouse', adobe:'a desert hut', treehouse:'a tree house',
+        stilt:'a stilt house', lookout:'a lookout', beachhut:'a beach hut' }[reg.build] || 'something special';
+      const proj = { cabin:'cabin', tent:'tent', igloo:'igloo', lighthouse:'lighthouse' }[reg.build];
+      if (proj && ABC.buildBlueprints && ABC.PROJECT_PROMPTS[proj]) {
+        setTimeout(() => {
+          if (ABC.ui.isOpen()) { built.delete(reg.key); return; }   // try again next visit
+          ABC.ui.message(`Build here? ${reg.emoji}`,
+            `This is the perfect place for ${bpTitle}! Would you like to build one right here?`,
+            'Yes, let’s build! 🔨', () => ABC.activities.startProjectById(proj), reg.emoji);
+        }, 4200);
+      }
     }
     return reg;
   }

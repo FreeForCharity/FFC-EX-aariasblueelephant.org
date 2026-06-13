@@ -280,12 +280,15 @@ ABC.buildBlueprints = function () {
 
   /* ---- CAMPING TENT ⛺ (Yellowstone) ---- */
   const tentBody=[], tentTop=[];
-  box(tentBody, 0,0,0, 4,0,4, 'grass');
-  for (let z=0;z<=4;z++) { cell(tentBody,0,1,z,'canvas'); cell(tentBody,4,1,z,'canvas');
-    cell(tentBody,1,2,z,'canvas'); cell(tentBody,3,2,z,'canvas'); }
-  for (let z=0;z<=4;z++) cell(tentTop,2,3,z,'canvas');
-  cell(tentTop,2,1,0,'black'); cell(tentTop,2,2,0,'black');     // door flap opening
-  cell(tentTop,2,4,2,'star');
+  // A-frame ridge tent: peak at x=2, sloped fabric walls running along z (0..4)
+  const slope = [[0,0],[1,1],[2,2],[3,1],[4,0]];   // tent cross-section (inverted V)
+  for (let z=0;z<=4;z++) slope.forEach(([x,y])=>cell(tentBody,x,y,z,'canvas'));
+  for (let z=0;z<=4;z++) cell(tentBody,2,3,z,'wood');            // ridge pole along the top
+  // back wall closed; front wall open as a triangular doorway
+  cell(tentTop,1,0,4,'canvas'); cell(tentTop,2,0,4,'canvas'); cell(tentTop,3,0,4,'canvas');
+  cell(tentTop,2,1,4,'canvas');                                  // fill back gable
+  cell(tentTop,0,0,0,'wood'); cell(tentTop,4,0,0,'wood');        // front door posts
+  cell(tentTop,2,4,2,'star');                                    // flag on top
 
   /* ---- IGLOO 🧊 (Glacier / Denali) ---- */
   const igDome=[], igDoor=[];

@@ -252,6 +252,97 @@
     }
   }
 
+  /* ---------------- gravity: unsupported builds fall down 🌳🏚️ ----------------
+     terrain never falls; trees, houses & built blocks do. When the base is
+     dug away, the connected group that's no longer resting on the ground
+     drops as one piece and lands. */
+  const GROUND = new Set(['grass','dirt','stone','sand','snow','water','moss',
+    'redrock','sandstone','granite','blackrock','ice','lava']);
+  const NB6 = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  const falls = []; // active falling groups
+  function fallable(t) { return t && !GROUND.has(t); }
+
+  function collapseCheck(cell) {
+    // seeds: fallable blocks that were touching the removed one
+    const seeds = [];
+    for (const [dx, dy, dz] of NB6) {
+      const x = cell.x + dx, y = cell.y + dy, z = cell.z + dz;
+      if (fallable(ABC.world.get(x, y, z))) seeds.push({ x, y, z });
+    }
+    const done = new Set();
+    for (const s of seeds) {
+      const sk = ABC.world.key(s.x, s.y, s.z);
+      if (done.has(sk)) continue;
+      // flood the connected fallable cluster (capped for safety)
+      const cluster = [], seen = new Set([sk]), q = [[s.x, s.y, s.z]];
+      let overflow = false;
+      while (q.length) {
+        const [x, y, z] = q.shift();
+        if (!fallable(ABC.world.get(x, y, z))) continue;
+        cluster.push({ x, y, z, t: ABC.world.get(x, y, z) });
+        if (cluster.length > 500) { overflow = true; break; }
+        for (const [dx, dy, dz] of NB6) {
+          const nx = x+dx, ny = y+dy, nz = z+dz, kk = ABC.world.key(nx, ny, nz);
+          if (seen.has(kk)) continue; seen.add(kk);
+          if (fallable(ABC.world.get(nx, ny, nz))) q.push([nx, ny, nz]);
+        }
+      }
+      if (overflow) continue;
+      cluster.forEach(c => done.add(ABC.world.key(c.x, c.y, c.z)));
+      const inClus = new Set(cluster.map(c => ABC.world.key(c.x, c.y, c.z)));
+      // supported if any block sits on something solid that isn't part of itself
+      let supported = false;
+      for (const c of cluster) {
+        if (c.y - 1 < ABC.world.MIN_Y) { supported = true; break; }
+        const belowK = ABC.world.key(c.x, c.y - 1, c.z);
+        if (!inClus.has(belowK) && ABC.world.get(c.x, c.y - 1, c.z)) { supported = true; break; }
+      }
+      if (supported || !cluster.length) continue;
+      // how far can the whole piece drop before something stops it?
+      let drop = 64;
+      for (const c of cluster) {
+        if (inClus.has(ABC.world.key(c.x, c.y - 1, c.z))) continue;  // not a bottom cell
+        let rest = c.y;
+        while (rest - 1 >= ABC.world.MIN_Y && !ABC.world.get(c.x, rest - 1, c.z)) rest--;
+        drop = Math.min(drop, c.y - rest);
+      }
+      if (drop <= 0) continue;
+      dropCluster(cluster, drop);
+    }
+  }
+  function dropCluster(cluster, drop) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const grp = new THREE.Group();
+    for (const c of cluster) {
+      ABC.world.remove(c.x, c.y, c.z);
+      const m = new THREE.Mesh(geo, ABC.world.materials[c.t] || ABC.world.materials.wood);
+      m.position.set(c.x + 0.5, c.y + 0.5, c.z + 0.5);
+      grp.add(m);
+    }
+    ABC.world.flush();
+    scene.add(grp);
+    ABC.audio.sfx.remove();
+    falls.push({ grp, cluster, drop, fallen: 0, vy: 0 });
+  }
+  function updateFalls(dt) {
+    for (let i = falls.length - 1; i >= 0; i--) {
+      const f = falls[i];
+      f.vy = Math.min(26, f.vy + 42 * dt);
+      f.fallen = Math.min(f.drop, f.fallen + f.vy * dt);
+      f.grp.position.y = -f.fallen;
+      if (f.fallen >= f.drop) {
+        // land: re-place every block at its new resting spot
+        for (const c of f.cluster) ABC.world.set(c.x, c.y - f.drop, c.z, c.t);
+        ABC.world.flush();
+        scene.remove(f.grp);
+        falls.splice(i, 1);
+        ABC.audio.sfx.plop();
+        for (const c of f.cluster.slice(0, 6)) pulverize(c.x, c.y - f.drop, c.z, c.t);
+        saveSoon();
+      }
+    }
+  }
+
   /* ---------------- doors really open & close 🚪 ---------------- */
   function toggleDoor(cell) {
     const rot = ABC.world.getRot(cell.x, cell.y, cell.z);
@@ -351,6 +442,7 @@
         if (ABC.world.remove(info.cell.x, info.cell.y, info.cell.z)) {
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
           pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
+          collapseCheck(info.cell);                              // 🌳 unsupported parts fall
         } else if (info.cell.y === ABC.world.MIN_Y) {
           ABC.ui.toast('🪨 That is the super-strong bottom rock!', 2400);
         }
@@ -790,6 +882,7 @@
       updatePlayer(dt);
       updateFly(dt);
       updateParticles(dt);
+      updateFalls(dt);
       ABC.weather.update(dt, camera.position);
       ABC.shops.update(dt);
       ABC.signs.update(dt);
