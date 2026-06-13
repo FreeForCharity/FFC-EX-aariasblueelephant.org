@@ -32,7 +32,8 @@ ABC.parks = (function () {
       return reg;
     }
     const first = !visited.has(reg.key);
-    ABC.ui.bellaSays(`${reg.emoji} Welcome to ${reg.name}!`, 4200);
+    ABC.audio.regionSound(reg.key);                  // each park has its own arrival sound 🏞️
+    setTimeout(() => ABC.ui.bellaSays(`${reg.emoji} Welcome to ${reg.name}!`, 4200), 700);
     if (first) {
       visited.add(reg.key);
       ABC.saveSoon && ABC.saveSoon();
