@@ -299,6 +299,9 @@
       }
       if (supported || !cluster.length) continue;
       dropCluster(cluster);     // TIMBER! the whole disconnected piece comes down
+      const treeish = cluster.some(c => c.t === 'wood' || c.t === 'leaf');
+      ABC.ui.toast(treeish ? '🪓 TIMBER! The tree is falling down! 🌳'
+                           : '🏚️ Watch out — it’s tumbling down!', 2600, true);
     }
   }
   /* the unsupported piece collapses: every block falls and piles up on the
