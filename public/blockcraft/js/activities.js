@@ -25,19 +25,29 @@ ABC.activities = (function () {
     }, '🏗️');
   }
 
+  /* a clear, ground-level building spot a few blocks in front of the player */
+  function siteInFront() {
+    const cam = ABC.player;
+    const dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+    const x = Math.round(cam.position.x + dir.x * 7);
+    const z = Math.round(cam.position.z + dir.z * 7);
+    const tb = ABC.world.topBlock(x, z);
+    return { x, z, y: tb ? tb.y : 0 };     // y = ground top; blocks sit on y+1
+  }
+
   function startProject(bp) {
     if (active) quitProject(true);
     const prompts = ABC.PROJECT_PROMPTS[bp.id];
     ui().askExpressive(prompts.intro, () => {
-      active = { bp, stageIdx: -1, ghosts: new Map(), ghostGroup: new THREE.Group(), placed: 0, total: 0 };
+      active = { bp, site: siteInFront(), stageIdx: -1, ghosts: new Map(),
+        ghostGroup: new THREE.Group(), placed: 0, total: 0 };
       ABC.world.getScene().add(active.ghostGroup);
       if (!ghostMat) ghostMat = new THREE.MeshLambertMaterial({
         color: 0xffe066, transparent: true, opacity: 0.35, depthWrite: false });
       $('projectPanel').style.display = 'block';
       $('projTitle').textContent = bp.title;
       nextStage();
-      ABC.flyToSite && ABC.flyToSite(bp.site);
-      ui().bellaSays(`Tap the golden glowing spots to build! ✨ Or press Finish for magic help.`, 5000);
+      ui().bellaSays(`Right here! Tap the golden glowing spots to build! ✨ Or press Finish for magic help.`, 5000);
     }, { stars: 1 });
   }
 
@@ -53,7 +63,7 @@ ABC.activities = (function () {
     const cellMap = new Map();
     for (const c of st.cells) cellMap.set(c.x + ',' + c.y + ',' + c.z, c);
     for (const c of cellMap.values()) {
-      const wx = a.bp.site.x + c.x, wy = 1 + c.y, wz = a.bp.site.z + c.z;
+      const wx = a.site.x + c.x, wy = a.site.y + 1 + c.y, wz = a.site.z + c.z;
       if (ABC.world.get(wx, wy, wz) === c.t) continue;        // already there
       const m = new THREE.Mesh(geo, ghostMat);
       m.position.set(wx + 0.5, wy + 0.5, wz + 0.5);
@@ -126,26 +136,28 @@ ABC.activities = (function () {
 
   function completeProject() {
     const a = active; if (!a) return;
-    const bp = a.bp;
+    const bp = a.bp, site = a.site;
     ABC.state.completed.add(bp.id);
     cleanupProject();
     ui().confetti(50);
     ABC.audio.sfx.fanfare();
     ABC.saveSoon && ABC.saveSoon();
     if (bp.id === 'rocket') {
-      setTimeout(() => ui().askExpressive(ABC.PROJECT_PROMPTS.rocket.launch, () => launchRocket(bp), { stars: 3 }), 600);
+      setTimeout(() => ui().askExpressive(ABC.PROJECT_PROMPTS.rocket.launch, () => launchRocket(bp, site), { stars: 3 }), 600);
     } else if (bp.id === 'car') {
       ABC.audio.sfx.honk();
       ui().bellaSays('BEEP BEEP! Your rainbow car looks amazing! 🚗🌈', 5000);
-      const a2 = ABC.animals.spawn('puppy', bp.site.x - 2, bp.site.z + 5);
+      const a2 = ABC.animals.spawn('puppy', site.x - 2, site.z + 5);
       ui().toast(`🐶 ${a2.name} the Puppy ran over to admire your car!`, 4200);
     } else if (bp.id === 'home') {
-      const a2 = ABC.animals.spawn('bunny', bp.site.x + 3, bp.site.z - 3);
+      const a2 = ABC.animals.spawn('bunny', site.x + 3, site.z - 3);
       ui().bellaSays(`Your cozy home is beautiful! ${a2.name} the Bunny wants to move in! 🐰🏠`, 5500);
     } else if (bp.id === 'elephant') {
-      const a2 = ABC.animals.spawn('puzzleEle', bp.site.x - 4, bp.site.z + 6);
+      const a2 = ABC.animals.spawn('puzzleEle', site.x - 4, site.z + 6);
       ui().bellaSays(`You built ME a friend! 🐘💙 ${a2.name} the Rainbow Elephant came to say thank you. Together we are Building a New Inclusive World!`, 7000);
       ui().addHearts(2);
+    } else {
+      ui().bellaSays(`Hooray! Your ${bp.title.replace(/^[^ ]+ /,'')} is finished! 🎉`, 5000);
     }
   }
 
@@ -162,14 +174,14 @@ ABC.activities = (function () {
   }
 
   /* ---- Rocket launch animation ---- */
-  function launchRocket(bp) {
+  function launchRocket(bp, site) {
     const scene = ABC.world.getScene();
     // collect rocket cells (stages 1 & 2 = body+fins, nose)
     const cells = [...bp.stages[1].cells, ...bp.stages[2].cells];
     const group = new THREE.Group();
     const geo = new THREE.BoxGeometry(1, 1, 1);
     for (const c of cells) {
-      const wx = bp.site.x + c.x, wy = 1 + c.y, wz = bp.site.z + c.z;
+      const wx = site.x + c.x, wy = site.y + 1 + c.y, wz = site.z + c.z;
       if (ABC.world.get(wx, wy, wz) !== c.t) continue;
       ABC.world.remove(wx, wy, wz);
       const m = new THREE.Mesh(geo, ABC.world.materials[c.t]);
@@ -192,7 +204,7 @@ ABC.activities = (function () {
         const p = new THREE.Mesh(geo, smokeMat.clone());
         const s = 0.3 + Math.random() * 0.7;
         p.scale.setScalar(s);
-        p.position.set(bp.site.x + 1.5 + (Math.random()*3-1.5), 1.5 + group.position.y * 0.3, bp.site.z + 1.5 + (Math.random()*3-1.5));
+        p.position.set(site.x + 1.5 + (Math.random()*3-1.5), site.y + 1.5 + group.position.y * 0.3, site.z + 1.5 + (Math.random()*3-1.5));
         p.userData.vy = Math.random() * 1.5;
         scene.add(p); smoke.push(p);
       }
@@ -202,7 +214,7 @@ ABC.activities = (function () {
         scene.remove(group);
         smoke.forEach(p => scene.remove(p));
         // rocket gently lands back, ready to launch again
-        for (const c of cells) ABC.world.set(bp.site.x + c.x, 1 + c.y, bp.site.z + c.z, c.t);
+        for (const c of cells) ABC.world.set(site.x + c.x, site.y + 1 + c.y, site.z + c.z, c.t);
         ABC.world.flush();
         ui().confetti(40);
         ui().bellaSays('What a flight! Your rocket landed safely back on the pad. 🚀💙', 5200);
@@ -595,7 +607,12 @@ ABC.activities = (function () {
     };
   }
 
-  return { showBuildMenu, tryFillGhost, magicFill, quitProject, talkToAnimal,
+  function startProjectById(id) {
+    ensureBlueprints();
+    if (blueprints[id]) startProject(blueprints[id]);
+  }
+
+  return { showBuildMenu, startProjectById, tryFillGhost, magicFill, quitProject, talkToAnimal,
            emotionTick, slimeLab, oreoKitchen, kindWords, maybeShowTell, initShowTell,
            hasActiveProject: () => !!active };
 })();
