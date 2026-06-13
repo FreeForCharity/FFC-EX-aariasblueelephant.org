@@ -78,40 +78,48 @@ ABC.THEMES = [
    Regions are arranged in a compass around the calm home meadow.
    ============================================================ */
 ABC.REGIONS = (function () {
-  const HOME_R = 50;     // calm home meadow radius (no weather, gentle land)
+  const HOME_R = 80;     // calm home meadow radius (no weather, gentle land)
+  const PARK_R = 175;    // parks begin out here — a real walk of discovery
   const home = { key:'home', name:'Home Meadow', emoji:'🌼', weather:'clear',
     theme:{ sky:0x9fdcff, fog:0xc8e8ff, near:60, far:150, light:0xfff7e0, lightI:0.95, hemi:0xbfe3ff, hemiI:0.4 } };
+  const wild = { key:'wild', name:'Wild Grasslands', emoji:'🌾', weather:'clear',
+    theme:{ sky:0xa8dcf0, fog:0xcfeacf, near:55, far:165, light:0xfff7e0, lightI:0.96, hemi:0xc8e6c0, hemiI:0.4 } };
   /* the ten parks, clockwise around the compass */
   const parks = [
-    { key:'yosemite', name:'Yosemite Valley', emoji:'🏔️', weather:'clear', animal:'puppy', build:'cabin',
+    { key:'yosemite', name:'Granite Valley', emoji:'🏔️', weather:'clear', animal:'puppy', build:'cabin',
       theme:{ sky:0xbfe3ff, fog:0xcfe8ff, near:55, far:150, light:0xfff4dd, lightI:1.0, hemi:0xbfe3ff, hemiI:0.42 } },
-    { key:'zion', name:'Zion Canyon', emoji:'🏜️', weather:'dust', animal:'bunny', build:'adobe',
+    { key:'zion', name:'Red Rock Canyon', emoji:'🏜️', weather:'dust', animal:'bunny', build:'adobe',
       theme:{ sky:0xffd9b0, fog:0xf0c89a, near:50, far:135, light:0xfff0d0, lightI:1.05, hemi:0xffe0bf, hemiI:0.4 } },
-    { key:'grandcanyon', name:'Grand Canyon', emoji:'🪨', weather:'clear', animal:'bunny', build:'lookout',
+    { key:'grandcanyon', name:'Great Big Canyon', emoji:'🪨', weather:'clear', animal:'bunny', build:'lookout',
       theme:{ sky:0xe9c9a0, fog:0xd9b890, near:55, far:155, light:0xfff0d8, lightI:1.05, hemi:0xf0d6b0, hemiI:0.4 } },
-    { key:'yellowstone', name:'Yellowstone', emoji:'💨', weather:'steam', animal:'mammoth', build:'tent',
+    { key:'yellowstone', name:'Geyser Springs', emoji:'💨', weather:'steam', animal:'mammoth', build:'tent',
       theme:{ sky:0xcfe3ff, fog:0xd8e8c8, near:55, far:150, light:0xfff7e0, lightI:0.98, hemi:0xcfe3c8, hemiI:0.42 } },
-    { key:'olympic', name:'Olympic Rainforest', emoji:'🌲', weather:'rain', animal:'cat', build:'treehouse',
+    { key:'olympic', name:'Mossy Rainforest', emoji:'🌲', weather:'rain', animal:'cat', build:'treehouse',
       theme:{ sky:0x9fb6b0, fog:0xaec6bb, near:34, far:110, light:0xdfeede, lightI:0.78, hemi:0xa8c4b6, hemiI:0.34 } },
-    { key:'everglades', name:'Everglades', emoji:'🐊', weather:'rain', animal:'penguin', build:'stilt',
+    { key:'everglades', name:'Reedy Swamp', emoji:'🐊', weather:'rain', animal:'penguin', build:'stilt',
       theme:{ sky:0xcfe0c0, fog:0xc0d4a8, near:42, far:120, light:0xeef6d8, lightI:0.85, hemi:0xc0d4a8, hemiI:0.38 } },
-    { key:'glacier', name:'Glacier Fjords', emoji:'🧊', weather:'snow', animal:'penguin', build:'igloo',
+    { key:'glacier', name:'Frozen Fjords', emoji:'🧊', weather:'snow', animal:'penguin', build:'igloo',
       theme:{ sky:0xd4ecff, fog:0xe0f0ff, near:48, far:140, light:0xf0f8ff, lightI:0.9, hemi:0xd4ecff, hemiI:0.42 } },
-    { key:'denali', name:'Denali (Alaska)', emoji:'🏔️', weather:'snow', animal:'panda', build:'igloo',
+    { key:'denali', name:'Snowy Peaks', emoji:'🏔️', weather:'snow', animal:'panda', build:'igloo',
       theme:{ sky:0xcfe0f5, fog:0xdcecff, near:46, far:140, light:0xeaf2ff, lightI:0.85, hemi:0xcfe0f5, hemiI:0.4 } },
-    { key:'acadia', name:'Acadia Coast', emoji:'🌊', weather:'mist', animal:'penguin', build:'lighthouse',
+    { key:'acadia', name:'Ocean Cliffs', emoji:'🌊', weather:'mist', animal:'penguin', build:'lighthouse',
       theme:{ sky:0xc8d4dc, fog:0xcdd9e0, near:38, far:118, light:0xe8eef2, lightI:0.82, hemi:0xc8d4dc, hemiI:0.36 } },
-    { key:'hawaii', name:"Hawai'i Volcanoes", emoji:'🌋', weather:'clear', animal:'butterfly', build:'beachhut',
+    { key:'hawaii', name:'Volcano Island', emoji:'🌋', weather:'clear', animal:'butterfly', build:'beachhut',
       theme:{ sky:0xffd0a0, fog:0xf2c69a, near:55, far:150, light:0xfff0d8, lightI:1.05, hemi:0xffd6b0, hemiI:0.42 } },
   ];
   function regionAt(x, z) {
-    if (Math.hypot(x, z) < HOME_R) return home;
+    const d = Math.hypot(x, z);
+    if (d < HOME_R) return home;                   // cozy meadow around spawn
+    if (d < PARK_R) return wild;                   // wide grasslands to wander through
     let a = Math.atan2(z, x) + Math.PI;            // 0..2π
-    const i = Math.floor((a / (Math.PI * 2)) * parks.length) % parks.length;
-    return parks[i];
+    const f = (a / (Math.PI * 2)) * parks.length;
+    const idx = Math.floor(f) % parks.length;
+    const frac = f - Math.floor(f);                // position within this slice
+    if (frac < 0.18 || frac > 0.82) return wild;   // grassy corridors keep parks apart
+    return parks[idx];
   }
-  return { HOME_R, home, parks, regionAt,
-    all: [home, ...parks] };
+  return { HOME_R, PARK_R, home, wild, parks, regionAt,
+    all: [home, wild, ...parks] };
 })();
 
 /* Surprise pocket 🎁 — one surprise per day; saying what you found takes it out */

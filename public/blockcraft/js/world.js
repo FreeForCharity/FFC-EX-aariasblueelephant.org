@@ -458,14 +458,27 @@ ABC.world = (function () {
     if (vnoise(x + 777, z - 777, 34) > 0.6 && h < 0.06 && sp > 16) genTree(keys, x, z, 0);
     else if (h < 0.013) gset(keys, x, 1, z, 'flower');
   }
+  function genWild(keys, x, z) {             // rolling grasslands between home and parks
+    const e = vnoise(x, z, 44);
+    const hh = e > 0.6 ? Math.round((e - 0.6) * 18) : 0;
+    for (let y = 1; y <= hh; y++) gset(keys, x, y, z, y === hh ? 'grass' : 'dirt');
+    if (hh === 0) gset(keys, x, 0, z, 'grass');
+    else gset(keys, x, 0, z, 'grass');
+    const hsh = hash2(x * 3 + 1, z * 3 + 7);
+    if (hh === 0) {
+      if (vnoise(x, z, 26) > 0.62 && hsh < 0.04) genTree(keys, x, z, 0);
+      else if (hsh < 0.008) gset(keys, x, 1, z, 'flower');
+    }
+  }
   /* region terrain — each US national park looks distinct 🏞️ */
   function genColumn(keys, x, z) {
     gset(keys, x, -2, z, 'stone');                          // bedrock
     gset(keys, x, -1, z, 'dirt');
     const reg = ABC.REGIONS.regionAt(x, z);
     if (reg.key === 'home') return genHome(keys, x, z);
+    if (reg.key === 'wild') return genWild(keys, x, z);
     const sp = Math.hypot(x, z);
-    const t = Math.min(1, Math.max(0, (sp - ABC.REGIONS.HOME_R) / 30));  // ease in from home
+    const t = Math.min(1, Math.max(0, (sp - ABC.REGIONS.PARK_R) / 30));  // park features rise in gently
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     const col = (y0, top, sub) => { for (let y = 1; y <= y0; y++) gset(keys, x, y, z, y === y0 ? top : sub); };
     switch (reg.key) {
