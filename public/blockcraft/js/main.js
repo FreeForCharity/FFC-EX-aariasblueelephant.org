@@ -44,6 +44,8 @@
   ABC.portal.init(scene);
   ABC.music.init(scene);
   ABC.weather.init(scene);
+  ABC.shops.init(scene);
+  ABC.shops.placeAll();
 
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
 
@@ -760,6 +762,7 @@
       updateFly(dt);
       updateParticles(dt);
       ABC.weather.update(dt, camera.position);
+      ABC.shops.update(dt);
       ABC.animals.update(dt, now / 1000);
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);

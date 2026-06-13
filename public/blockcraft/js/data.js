@@ -134,12 +134,39 @@ ABC.SURPRISES = [
 ];
 
 /* Village market 🏪 — learn asking, paying and thanking */
-ABC.SHOP_GOODS = [
-  { ico:'🍎', label:'Apple Basket', price:2, word:'the apple basket', grant:'apples' },
-  { ico:'🎈', label:'Magic Balloon', price:3, word:'a magic balloon', grant:'balloon' },
-  { ico:'⭐', label:'Lamp Blocks',  price:4, word:'three glowing lamp blocks', grant:'lamps' },
-  { ico:'🍪', label:'Cookie Treat', price:2, word:'a cookie treat', grant:'cookie' },
-];
+/* one shared catalog of food, water & treats — sold at shops everywhere 🏪 */
+ABC.GOODS = {
+  water:    { ico:'💧', label:'Water Bottle', price:1, word:'a cool water bottle', kind:'water' },
+  juice:    { ico:'🧃', label:'Juice Box',    price:2, word:'a sweet juice box',   kind:'food' },
+  banana:   { ico:'🍌', label:'Banana',       price:2, word:'a yellow banana',      kind:'food' },
+  apple:    { ico:'🍎', label:'Apple',        price:2, word:'a red apple',          kind:'food' },
+  berries:  { ico:'🫐', label:'Berries',      price:2, word:'a cup of berries',     kind:'food' },
+  melon:    { ico:'🍉', label:'Watermelon',   price:3, word:'a juicy watermelon',   kind:'food' },
+  sandwich: { ico:'🥪', label:'Sandwich',     price:3, word:'a yummy sandwich',     kind:'food' },
+  soup:     { ico:'🍲', label:'Warm Soup',    price:3, word:'a bowl of warm soup',  kind:'food' },
+  fish:     { ico:'🐟', label:'Fresh Fish',   price:3, word:'a fresh fish',         kind:'food' },
+  milk:     { ico:'🥛', label:'Milk',         price:2, word:'a glass of milk',      kind:'food' },
+  cookie:   { ico:'🍪', label:'Cookie',       price:2, word:'a yummy cookie',       kind:'cookie' },
+  lamps:    { ico:'⭐', label:'Lamp Blocks',  price:4, word:'three glowing lamps',  kind:'blocks' },
+  balloon:  { ico:'🎈', label:'Magic Balloon',price:3, word:'a magic balloon',      kind:'balloon' },
+};
+/* a themed shop in every region + the home village — vendor name, animal, goods 🏪 */
+ABC.SHOPS = {
+  home1:       { name:'Mr. Maple',      animal:'capy',     at:{x:-14,z:4},  goods:['water','apple','cookie','lamps'] },
+  home2:       { name:'Baker Biscuit',  animal:'panda',    at:{x:-20,z:-4}, goods:['sandwich','cookie','milk'] },
+  home3:       { name:'Fruit Stand Poppy', animal:'bunny', at:{x:-22,z:8},  goods:['banana','melon','juice','water'] },
+  yosemite:    { name:'Ranger Pinecone', animal:'puppy',    goods:['water','sandwich','soup','lamps'] },
+  zion:        { name:'Sandy',           animal:'bunny',    goods:['water','juice','melon'] },
+  grandcanyon: { name:'Dusty',           animal:'bunny',    goods:['water','juice','banana'] },
+  yellowstone: { name:'Camp Cook Bru',   animal:'mammoth',  goods:['water','sandwich','soup','cookie'] },
+  olympic:     { name:'Fern',            animal:'cat',      goods:['water','berries','banana'] },
+  everglades:  { name:'Marsh',           animal:'penguin',  goods:['water','fish','juice'] },
+  glacier:     { name:'Frosty',          animal:'penguin',  goods:['water','soup','milk'] },
+  denali:      { name:'Yuki',            animal:'panda',    goods:['water','soup','sandwich'] },
+  acadia:      { name:'Captain Shelly',  animal:'penguin',  goods:['water','fish','milk'] },
+  hawaii:      { name:'Kai',             animal:'butterfly',goods:['water','melon','juice'] },
+  galaxy:      { name:'Comet',           animal:'butterfly',goods:['milk','cookie','water'] },
+};
 
 /* Cookie cutters for the playdough/slime 🍪 */
 ABC.CUTTERS = [
