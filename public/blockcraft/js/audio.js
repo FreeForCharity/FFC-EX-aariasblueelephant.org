@@ -200,6 +200,26 @@ ABC.audio = (function () {
     acadia:'waves', hawaii:'rumble',
   };
   function regionSound(key) { const f = sfx[REGION_SOUND[key]]; if (f) f(); }
+  /* a distinct speaking voice per character (shopkeepers etc.) so nobody
+     sounds the same — base pitch by animal kind + a per-name twist, and a
+     different system voice where the device offers more than one 🗣️ */
+  const KIND_PITCH = { capy:0.8, panda:0.85, bunny:1.28, puppy:1.12, cat:1.18,
+    butterfly:1.42, penguin:1.0, mammoth:0.6, trex:0.62, elephant:0.7, puzzleEle:1.3 };
+  function voiceFor(kind, seed) {
+    seed = Math.abs(seed | 0);
+    const vs = enVoices();
+    const base = KIND_PITCH[kind] != null ? KIND_PITCH[kind] : 1.0;
+    return {
+      pitch: Math.max(0.4, Math.min(2, base + ((seed % 5) - 2) * 0.06)),
+      rate: 0.9 + ((seed % 3) - 1) * 0.05,
+      voiceObj: vs.length ? vs[seed % vs.length] : null,
+    };
+  }
+  function seedFor(text) {
+    let h = 0; const s = String(text);
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return h;
+  }
   // Chrome quirk #2: long speech silently pauses after ~15s — keep it awake
   setInterval(() => {
     if (window.speechSynthesis && speechSynthesis.speaking && !speechSynthesis.paused) {
@@ -226,5 +246,6 @@ ABC.audio = (function () {
   }
 
   return { settings:S, ensureCtx, sfx, startMusic, say, sayBella, stopSay, listen, hasSR:!!SR,
-           cycleVoice, animalCall, regionSound, voiceName: () => voice ? voice.name : 'default' };
+           cycleVoice, animalCall, regionSound, voiceFor, seedFor,
+           voiceName: () => voice ? voice.name : 'default' };
 })();
