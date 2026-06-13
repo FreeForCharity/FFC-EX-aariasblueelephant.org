@@ -18,7 +18,8 @@ python3 -m http.server 8000     # then open http://localhost:8000
 ```
 
 **Controls:** `▲`/`W` go • `▼`/`S`/`Space` brake • `◀ ▶`/`A D` steer •
-**`V` toggles first-person thrill view** • `M` toggles the minimap.
+**`V` toggles the view** (chase racer ↔ real-aerial top-down) • `M` toggles the minimap.
+The arcade **chase view is the default**; the **top-down view drives over real aerial photos**.
 Big touch buttons appear automatically on tablets/phones.
 
 ## The journey — graduate through 5 levels (+ a secret!)
@@ -69,8 +70,10 @@ The top-down view drives over **real aerial photographs of Mountain House** — 
 and draped under the gameplay road via the camera transform (`assets/aerial-meta.js` holds the
 placement rects). The real road, lane lines, school/work zones and landmarks are drawn on top, so
 you can see actual houses, parks, cul-de-sacs and the high-school stadium as you ride. If an aerial
-image is missing the game falls back to the illustrated street style automatically. The first-person
-"thrill cam" stays illustrated (street-level photos aren't reliably available).
+image is missing the game falls back to the illustrated street style automatically. The default
+arcade **chase view** is a stylized pseudo-3D racer (recognizable Mountain House landmarks + real
+street names) — street-level *photo* realism isn't possible (Google Street View is off-limits and
+open street-level photos of MH are sparse), so the real-photo realism lives in the top-down view.
 
 Google Maps tiles/photos **can't legally be embedded** in a game (their ToS forbids extracting or
 reusing their imagery). NAIP aerial is U.S. government work in the public domain, and the street
