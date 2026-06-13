@@ -250,6 +250,7 @@ ABC.activities = (function () {
   }
 
   function talkToAnimal(a) {
+    ABC.audio.animalCall(a.kind);                    // each animal says hello its own way 🐾
     if (a.isGuide) { bellaChat(a); return; }
     if (a.isVendor) { shop(a); return; }
     if (ABC.pet && ABC.pet.tryInteract(a)) return;   // your own pet 💕

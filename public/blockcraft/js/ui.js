@@ -48,7 +48,10 @@ ABC.ui = (function () {
       setTimeout(()=>t.remove(), 500); }, dur || 3200);
     if (speak) ABC.audio.say(msg);
   }
-  function bellaSays(msg, dur) { toast('🐘💙 <b>Bella:</b> ' + msg, dur || 4200, true); }
+  function bellaSays(msg, dur) {
+    toast('🐘💙 <b>Bella:</b> ' + msg, dur || 4200, false);   // show silently…
+    ABC.audio.sayBella(ABC.tpl(msg));                          // …Bella speaks in her own voice 🐘🎺
+  }
 
   /* ---------------- confetti & hearts ---------------- */
   const CONF = ['🎉','⭐','🌈','💖','✨','🎊','🌸','💙'];

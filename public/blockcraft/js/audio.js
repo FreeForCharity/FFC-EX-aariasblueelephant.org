@@ -71,6 +71,27 @@ ABC.audio = (function () {
     gentle()   { tone(660, .25, 'sine', .08); },
     munch()    { tone(140, .09, 'square', .1); tone(120, .09, 'square', .1, .14); tone(150, .09, 'square', .1, .28); },
     sad()      { tone(440, .4, 'sine', .08, 0, 330); },
+    trumpet()  {                                    // Bella the elephant's little toot 🐘🎺
+      tone(330, .18, 'sawtooth', .08, 0, 520);
+      tone(520, .3, 'sawtooth', .1, .16, 660);
+      tone(440, .22, 'triangle', .06, .42, 380);
+    },
+    /* distinctive little animal voices 🐾 */
+    chirp()    { [1200,1600,1400].forEach((f,i)=>tone(f,.08,'sine',.06,i*.09)); },
+    meow()     { tone(700,.18,'sawtooth',.08,0,520); tone(520,.22,'sawtooth',.07,.16,420); },
+    woof()     { tone(220,.12,'square',.12,0,150); tone(175,.14,'square',.1,.17,120); },
+    squeak()   { tone(1400,.06,'sine',.05); tone(1750,.07,'sine',.05,.08); },
+    roar()     { tone(120,.5,'sawtooth',.13,0,70); tone(90,.5,'sawtooth',.09,.1,55); },
+    squawk()   { tone(900,.1,'square',.08,0,1150); tone(680,.12,'square',.07,.11,480); },
+    grunt()    { tone(165,.18,'triangle',.1,0,120); tone(140,.14,'triangle',.07,.16,110); },
+    lowrumble(){ tone(80,.6,'sine',.14,0,55); tone(110,.4,'sine',.07,.1,70); },
+    /* national-park arrival ambiences 🏞️ */
+    waves()    { wet(0.55,220,80,.12); wet(0.5,180,70,.1); },
+    rumble()   { tone(60,.9,'sine',.16,0,45); tone(95,.5,'sawtooth',.07,.2,60); },
+    shimmer()  { [1800,2200,2600,3000].forEach((f,i)=>tone(f,.3,'sine',.05,i*.08)); },
+    birds()    { [1300,1700,1500,1900,1600].forEach((f,i)=>tone(f,.09,'sine',.05,i*.13)); },
+    breeze()   { wet(0.8,520,200,.1); },
+    geyser()   { wet(0.6,150,460,.13); tone(90,.5,'sine',.08,0,60); },
   };
 
   /* Soft generative music: slow pentatonic bells */
@@ -131,6 +152,9 @@ ABC.audio = (function () {
     // Chrome quirk: speaking immediately after cancel() silently drops the
     // utterance — queue it a tick later. Speak sentence-by-sentence with
     // natural micro-pauses, the way a person reads to a child.
+    const useVoice = (opts && opts.voiceObj) || voice;
+    const baseRate = (opts && opts.rate) || 0.92;
+    const basePitch = (opts && opts.pitch) || 1.0;
     setTimeout(() => {
       if (!voice) pickVoice();          // voices sometimes load late
       const parts = clean.match(/[^.!?…]+[.!?…]*/g) || [clean];
@@ -138,15 +162,44 @@ ABC.audio = (function () {
         const p = part.trim();
         if (!p) continue;
         const u = new SpeechSynthesisUtterance(p);
-        u.rate = 0.92; u.pitch = 1.0;   // calm, human pace — no chipmunk
+        u.rate = baseRate; u.pitch = basePitch;   // calm, human pace — no chipmunk
         // tiny lift on questions and excitement, like real speech
-        if (/\?$/.test(p)) u.pitch = 1.08;
-        else if (/!$/.test(p)) { u.pitch = 1.05; u.rate = 0.96; }
-        if (voice) u.voice = voice;
+        if (/\?$/.test(p)) u.pitch = basePitch + 0.08;
+        else if (/!$/.test(p)) { u.pitch = basePitch + 0.05; u.rate = baseRate + 0.04; }
+        if (useVoice) u.voice = useVoice;
         speechSynthesis.speak(u);       // queued utterances get natural gaps
       }
     }, 60);
   }
+  /* Bella the elephant speaks in her own deep, gentle voice — different from
+     the player's chosen voice — after a little trumpet toot 🐘🎺 */
+  let bellaV = null;
+  function pickBella() {
+    const vs = enVoices();
+    if (!vs.length) return;
+    const deep = vs.find(v => /male|daniel|fred|alex|aaron|arthur|rishi|oliver|google uk english male/i.test(v.name)
+                              && (!voice || v.name !== voice.name));
+    bellaV = deep || vs.find(v => !voice || v.name !== voice.name) || vs[0];
+  }
+  function sayBella(text) {
+    sfx.trumpet();
+    if (!bellaV) pickBella();
+    setTimeout(() => say(text, { voiceObj: bellaV, pitch: 0.7, rate: 0.9, force: false }), 360);
+  }
+  /* each animal kind has its own little voice 🐾 */
+  const ANIMAL_CALL = {
+    bunny:'squeak', cat:'meow', puppy:'woof', butterfly:'chirp',
+    trex:'roar', trice:'roar', longneck:'lowrumble', mammoth:'lowrumble',
+    elephant:'trumpet', puzzleEle:'trumpet', penguin:'squawk', capy:'grunt', panda:'grunt',
+  };
+  function animalCall(kind) { const f = sfx[ANIMAL_CALL[kind]]; if (f) f(); }
+  /* each region greets you with its own sound 🏞️ */
+  const REGION_SOUND = {
+    yosemite:'birds', zion:'breeze', grandcanyon:'breeze', yellowstone:'geyser',
+    olympic:'birds', everglades:'waves', glacier:'shimmer', denali:'shimmer',
+    acadia:'waves', hawaii:'rumble',
+  };
+  function regionSound(key) { const f = sfx[REGION_SOUND[key]]; if (f) f(); }
   // Chrome quirk #2: long speech silently pauses after ~15s — keep it awake
   setInterval(() => {
     if (window.speechSynthesis && speechSynthesis.speaking && !speechSynthesis.paused) {
@@ -172,6 +225,6 @@ ABC.audio = (function () {
     return r;
   }
 
-  return { settings:S, ensureCtx, sfx, startMusic, say, stopSay, listen, hasSR:!!SR,
-           cycleVoice, voiceName: () => voice ? voice.name : 'default' };
+  return { settings:S, ensureCtx, sfx, startMusic, say, sayBella, stopSay, listen, hasSR:!!SR,
+           cycleVoice, animalCall, regionSound, voiceName: () => voice ? voice.name : 'default' };
 })();
