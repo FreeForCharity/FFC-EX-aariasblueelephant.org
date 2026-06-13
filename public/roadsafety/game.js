@@ -489,9 +489,35 @@ function openIntro(i){
     `<div class="rule">🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!</div>` +
     `<div class="rule" style="font-size:11px;opacity:.7;margin-top:6px">🛰 Real aerial imagery: USDA NAIP (public domain) • streets © OpenStreetMap</div>`;
   drawIntroMap(i);
+  buildIntroPhotos(i);
   loadAerial(i);            // preload the real aerial so the run starts crisp
   S.screen = "intro";
   show("intro");
+}
+/* real CC-BY-SA street photos as postcards, where Mapillary actually covers the route */
+function buildIntroPhotos(i){
+  const ph = document.getElementById("introPhotos");
+  ph.innerHTML = "";
+  if (typeof PHOTOS === "undefined" || !PHOTOS[i]) return;
+  const data = PHOTOS[i];
+  const cap = document.createElement("div");
+  cap.className = "photocap";
+  cap.textContent = `📷 Real photos of this route — ${data.area}, Mountain House`;
+  const strip = document.createElement("div");
+  strip.className = "photostrip";
+  for (const s of data.shots){
+    const a = document.createElement("a");
+    a.href = "https://www.mapillary.com/app/?image_key=" + encodeURIComponent(s.id);
+    a.target = "_blank"; a.rel = "noopener noreferrer";
+    const img = document.createElement("img");
+    img.src = s.file; img.loading = "lazy";
+    img.alt = "Real Mountain House street photo " + (s.when || "");
+    a.appendChild(img); strip.appendChild(a);
+  }
+  const attr = document.createElement("div");
+  attr.className = "photoattr";
+  attr.textContent = "Photos © Mapillary contributors · CC BY-SA 4.0";
+  ph.appendChild(cap); ph.appendChild(strip); ph.appendChild(attr);
 }
 function beginRun(){
   S.t = 24; S.speed = 0; S.score = 100; S.time = 0;
