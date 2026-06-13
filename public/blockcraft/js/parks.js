@@ -21,8 +21,16 @@ ABC.parks = (function () {
   function check(feet) {
     const reg = ABC.REGIONS.regionAt(feet.x, feet.z);
     if (reg.key === cur) return reg;
+    const prev = cur;
     cur = reg.key;
-    if (reg.key === 'home') return reg;
+    if (reg.key === 'home' || reg.key === 'wild') {
+      // a gentle one-time nudge the first time you leave the meadow
+      if (reg.key === 'wild' && prev === 'home' && !ABC.state.wildHint) {
+        ABC.state.wildHint = true; ABC.saveSoon && ABC.saveSoon();
+        ABC.ui.bellaSays('Ooh, the wild grasslands! Keep walking and you’ll discover an amazing new place! 🧭', 5200);
+      }
+      return reg;
+    }
     const first = !visited.has(reg.key);
     ABC.ui.bellaSays(`${reg.emoji} Welcome to ${reg.name}!`, 4200);
     if (first) {
