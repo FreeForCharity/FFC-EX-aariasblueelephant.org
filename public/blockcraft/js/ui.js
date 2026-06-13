@@ -500,6 +500,7 @@ ABC.ui = (function () {
       { ico: '📋', label: 'Adventures', go: () => { closeDialog(); ABC.quests.showBoard(); } },
       { ico: '🌻', label: 'Sunflower',  go: () => { closeDialog(); ABC.overnight.showFlower(); } },
       { ico: '🗺️', label: 'Map',        go: press('mapBtn') },
+      { ico: '📔', label: 'Parks',      go: press('passportBtn') },
       { ico: '📸', label: 'Photo',      go: press('photoBtn') },
       { ico: '🖼️', label: 'Album',      go: press('albumBtn') },
       { ico: '👀', label: 'View',       go: press('viewBtn') },
@@ -529,6 +530,7 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setTheme">🎨 World colors — tap to change the sky!</button>
       <button class="choiceBtn" id="setSound">${chk(s.sound)} 🎵 Sound effects</button>
       <button class="choiceBtn" id="setMusic">${chk(s.music)} 🎶 Gentle music</button>
+      <button class="choiceBtn" id="setWeather">${chk(s.weather !== false)} 🌦️ Gentle weather (rain &amp; snow)</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>
       <div class="dlgRow"><button class="bigBtn green" id="setDone">Done ✔</button></div>`);
@@ -550,14 +552,16 @@ ABC.ui = (function () {
     wire('setVoice', () => { s.voiceMode = !s.voiceMode; ABC.saveSoon(); showSettings(); });
     wire('setVoiceName', () => { ABC.audio.cycleVoice(); ABC.saveSoon(); showSettings(); });
     wire('setTheme', () => {
-      pickCard('World Colors 🎨', 'Pick a mood for your world!',
-        ABC.THEMES.map(t => ({ ico: t.ico, label: t.label, t })),
+      const opts = [{ key:'auto', ico:'🏞️', label:'By Place (auto)' }].concat(ABC.THEMES);
+      pickCard('World Colors 🎨', 'Each national park has its own sky — or pick one mood for everywhere!',
+        opts.map(t => ({ ico: t.ico, label: t.label, t })),
         (c) => { closeDialog(); ABC.world.setTheme(c.t.key); s.theme = c.t.key; ABC.saveSoon();
                  toast(c.t.ico + ' ' + c.t.label + '!', 2600, true); }, '🎨');
     });
     wire('setRead',  () => { s.readAloud = !s.readAloud; ABC.saveSoon(); showSettings(); });
     wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); showSettings(); });
     wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); showSettings(); });
+    wire('setWeather', () => { s.weather = s.weather === false; ABC.saveSoon(); showSettings(); });
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {

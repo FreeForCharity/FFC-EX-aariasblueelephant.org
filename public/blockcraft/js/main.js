@@ -43,6 +43,7 @@
   ABC.squishy.init(scene);
   ABC.portal.init(scene);
   ABC.music.init(scene);
+  ABC.weather.init(scene);
 
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
 
@@ -581,6 +582,7 @@
         stickers: ABC.stickers.serialize(),
         overnight: ABC.overnight.serialize(),
         photo: ABC.photo.serialize(),
+        parks: ABC.parks.serialize(),
         playerName: ABC.state.playerName,
         portalCharge: ABC.state.portalCharge || 0,
         quests: ABC.state.quests || null,
@@ -614,6 +616,7 @@
       ABC.world.deserialize(d.world);
       ABC.squishy.deserialize(d.squishies);
       ABC.pet.deserialize(d.pet);
+      ABC.parks.deserialize(d.parks);
       ABC.stickers.deserialize(d.stickers);
       ABC.overnight.deserialize(d.overnight);
       ABC.photo.deserialize(d.photo);
@@ -651,6 +654,7 @@
   $('zoomInBtn').onclick   = () => setZoom(-0.18);
   $('zoomOutBtn').onclick  = () => setZoom(+0.18);
   $('mapBtn').onclick      = () => showMap();
+  $('passportBtn').onclick = () => ABC.parks.openPassport();
   $('photoBtn').onclick    = () => ABC.photo.takePhoto();
   $('albumBtn').onclick    = () => ABC.photo.openAlbum();
   $('stickersBtn').onclick = () => ABC.stickers.openBook();
@@ -742,10 +746,17 @@
     last = now;
     if (started) {
       chunkTimer += dt;
-      if (chunkTimer > 0.3) { chunkTimer = 0; ABC.world.ensureChunks(feet.x, feet.z); }
+      if (chunkTimer > 0.3) {
+        chunkTimer = 0;
+        ABC.world.ensureChunks(feet.x, feet.z);
+        const reg = ABC.parks.check(feet);                          // park arrival + passport
+        ABC.weather.setType(ABC.audio.settings.weather === false ? 'clear' : reg.weather);
+      }
+      ABC.world.gradeFrame(feet.x, feet.z, dt);                     // color-grade the sky by region
       updatePlayer(dt);
       updateFly(dt);
       updateParticles(dt);
+      ABC.weather.update(dt, camera.position);
       ABC.animals.update(dt, now / 1000);
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);

@@ -45,11 +45,21 @@ ABC.BLOCK_DEFS = {
   slimeBlue:   { name:'Blue Slime',   emoji:'🔵', color:'#5dc8f5', pat:'slime', alpha:0.85, locked:true },
   oreo:        { name:'Oreo Cookie',  emoji:'🍪', color:'#2b2118', pat:'oreo',  locked:true },
   oreoPink:    { name:'Berry Oreo',   emoji:'🍓', color:'#2b2118', pat:'oreoPink', locked:true },
+  /* National Park nature blocks 🏞️ */
+  redrock:   { name:'Red Rock',     emoji:'🧱', color:'#c1572f', pat:'speck', speck:'#9c3f22' },
+  sandstone: { name:'Sandstone',    emoji:'🟧', color:'#e0a86a', pat:'speck', speck:'#c98f50' },
+  granite:   { name:'Granite',      emoji:'🗻', color:'#b8b2ad', pat:'speck', speck:'#928c87' },
+  moss:      { name:'Mossy Stone',  emoji:'🌿', color:'#6e8b54', pat:'speck', speck:'#4f6b3a' },
+  ice:       { name:'Ice',          emoji:'🧊', color:'#b9e8ff', pat:'speck', speck:'#9fd6f2', alpha:0.85 },
+  lava:      { name:'Lava',         emoji:'🌋', color:'#ff6a2b', pat:'plain', glow:true },
+  blackrock: { name:'Black Rock',   emoji:'⬛', color:'#2f2a2b', pat:'speck', speck:'#1d1a1b' },
+  canvas:    { name:'Tent Cloth',   emoji:'⛺', color:'#e8584e', pat:'plain' },
 };
 
 /* Hotbar order (unlocked-by-default first) */
 ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass','sand','snow',
   'leaf','flower','rainbow','star','water','red','blue','yellow','black','white',
+  'redrock','sandstone','granite','moss','ice','lava','blackrock','canvas',
   'slab','wedge','stair','pillar','door','pane','knob',
   'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
 
@@ -60,6 +70,49 @@ ABC.THEMES = [
   { key:'night',  ico:'🌙', label:'Starry Night',sky:0x32406e, grass:0xaabbe0 },
   { key:'candy',  ico:'🍭', label:'Candy Land',  sky:0xe9c8ff, grass:0xffd9ee },
 ];
+
+/* ============================================================
+   NATIONAL PARK REGIONS 🏞️ — walk a direction, reach a real park.
+   Each region has its own terrain (built in world.js), sky color
+   grading, gentle weather, a signature animal and a build to make.
+   Regions are arranged in a compass around the calm home meadow.
+   ============================================================ */
+ABC.REGIONS = (function () {
+  const HOME_R = 50;     // calm home meadow radius (no weather, gentle land)
+  const home = { key:'home', name:'Home Meadow', emoji:'🌼', weather:'clear',
+    theme:{ sky:0x9fdcff, fog:0xc8e8ff, near:60, far:150, light:0xfff7e0, lightI:0.95, hemi:0xbfe3ff, hemiI:0.4 } };
+  /* the ten parks, clockwise around the compass */
+  const parks = [
+    { key:'yosemite', name:'Yosemite Valley', emoji:'🏔️', weather:'clear', animal:'puppy', build:'cabin',
+      theme:{ sky:0xbfe3ff, fog:0xcfe8ff, near:55, far:150, light:0xfff4dd, lightI:1.0, hemi:0xbfe3ff, hemiI:0.42 } },
+    { key:'zion', name:'Zion Canyon', emoji:'🏜️', weather:'dust', animal:'bunny', build:'adobe',
+      theme:{ sky:0xffd9b0, fog:0xf0c89a, near:50, far:135, light:0xfff0d0, lightI:1.05, hemi:0xffe0bf, hemiI:0.4 } },
+    { key:'grandcanyon', name:'Grand Canyon', emoji:'🪨', weather:'clear', animal:'bunny', build:'lookout',
+      theme:{ sky:0xe9c9a0, fog:0xd9b890, near:55, far:155, light:0xfff0d8, lightI:1.05, hemi:0xf0d6b0, hemiI:0.4 } },
+    { key:'yellowstone', name:'Yellowstone', emoji:'💨', weather:'steam', animal:'mammoth', build:'tent',
+      theme:{ sky:0xcfe3ff, fog:0xd8e8c8, near:55, far:150, light:0xfff7e0, lightI:0.98, hemi:0xcfe3c8, hemiI:0.42 } },
+    { key:'olympic', name:'Olympic Rainforest', emoji:'🌲', weather:'rain', animal:'cat', build:'treehouse',
+      theme:{ sky:0x9fb6b0, fog:0xaec6bb, near:34, far:110, light:0xdfeede, lightI:0.78, hemi:0xa8c4b6, hemiI:0.34 } },
+    { key:'everglades', name:'Everglades', emoji:'🐊', weather:'rain', animal:'penguin', build:'stilt',
+      theme:{ sky:0xcfe0c0, fog:0xc0d4a8, near:42, far:120, light:0xeef6d8, lightI:0.85, hemi:0xc0d4a8, hemiI:0.38 } },
+    { key:'glacier', name:'Glacier Fjords', emoji:'🧊', weather:'snow', animal:'penguin', build:'igloo',
+      theme:{ sky:0xd4ecff, fog:0xe0f0ff, near:48, far:140, light:0xf0f8ff, lightI:0.9, hemi:0xd4ecff, hemiI:0.42 } },
+    { key:'denali', name:'Denali (Alaska)', emoji:'🏔️', weather:'snow', animal:'panda', build:'igloo',
+      theme:{ sky:0xcfe0f5, fog:0xdcecff, near:46, far:140, light:0xeaf2ff, lightI:0.85, hemi:0xcfe0f5, hemiI:0.4 } },
+    { key:'acadia', name:'Acadia Coast', emoji:'🌊', weather:'mist', animal:'penguin', build:'lighthouse',
+      theme:{ sky:0xc8d4dc, fog:0xcdd9e0, near:38, far:118, light:0xe8eef2, lightI:0.82, hemi:0xc8d4dc, hemiI:0.36 } },
+    { key:'hawaii', name:"Hawai'i Volcanoes", emoji:'🌋', weather:'clear', animal:'butterfly', build:'beachhut',
+      theme:{ sky:0xffd0a0, fog:0xf2c69a, near:55, far:150, light:0xfff0d8, lightI:1.05, hemi:0xffd6b0, hemiI:0.42 } },
+  ];
+  function regionAt(x, z) {
+    if (Math.hypot(x, z) < HOME_R) return home;
+    let a = Math.atan2(z, x) + Math.PI;            // 0..2π
+    const i = Math.floor((a / (Math.PI * 2)) * parks.length) % parks.length;
+    return parks[i];
+  }
+  return { HOME_R, home, parks, regionAt,
+    all: [home, ...parks] };
+})();
 
 /* Surprise pocket 🎁 — one surprise per day; saying what you found takes it out */
 ABC.SURPRISES = [
@@ -178,7 +231,60 @@ ABC.buildBlueprints = function () {
     }
   cell(vRoof,3,6,0,'star');                                      // porch light
 
+  /* ---- LOG CABIN 🪵 (Yosemite) ---- */
+  const cabW=[], cabR=[];
+  box(cabW, 0,0,0, 4,0,4, 'plank');
+  for (let y=1;y<=2;y++) for (let x=0;x<=4;x++) for (let z=0;z<=4;z++)
+    if (x===0||x===4||z===0||z===4) cell(cabW,x,y,z,'wood');
+  const cabWF = cabW.filter(c=>!(c.z===0&&c.x===2&&(c.y===1||c.y===2)));
+  cell(cabWF,2,1,0,'door'); cell(cabWF,1,2,0,'pane'); cell(cabWF,3,2,4,'pane'); cell(cabWF,0,2,2,'pane');
+  for (let i=0;i<3;i++) for (let x=-1;x<=5;x++) { cell(cabR,x,3+i,i,'wood'); cell(cabR,x,3+i,4-i,'wood'); }
+  cell(cabR,2,3,2,'star');
+
+  /* ---- CAMPING TENT ⛺ (Yellowstone) ---- */
+  const tentBody=[], tentTop=[];
+  box(tentBody, 0,0,0, 4,0,4, 'grass');
+  for (let z=0;z<=4;z++) { cell(tentBody,0,1,z,'canvas'); cell(tentBody,4,1,z,'canvas');
+    cell(tentBody,1,2,z,'canvas'); cell(tentBody,3,2,z,'canvas'); }
+  for (let z=0;z<=4;z++) cell(tentTop,2,3,z,'canvas');
+  cell(tentTop,2,1,0,'black'); cell(tentTop,2,2,0,'black');     // door flap opening
+  cell(tentTop,2,4,2,'star');
+
+  /* ---- IGLOO 🧊 (Glacier / Denali) ---- */
+  const igDome=[], igDoor=[];
+  for (let x=-2;x<=2;x++) for (let z=-2;z<=2;z++) cell(igDome,x,0,z,'snow');
+  const ring=[[-2,0],[2,0],[0,-2],[0,2],[-1,-1],[1,1],[-1,1],[1,-1],[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[1,-2],[-1,2],[1,2]];
+  ring.forEach(([x,z])=>{ cell(igDome,x,1,z,'ice'); });
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(([x,z])=>cell(igDome,x,2,z,'ice'));
+  cell(igDome,0,3,0,'ice');
+  cell(igDoor,0,1,-3,'ice'); cell(igDoor,0,1,-2,'snow'); cell(igDoor,0,2,-3,'ice'); // entry tunnel
+
+  /* ---- LIGHTHOUSE 🌊 (Acadia) ---- */
+  const lhBase=[], lhTower=[], lhTop=[];
+  for (let x=-1;x<=1;x++) for (let z=-1;z<=1;z++) cell(lhBase,x,0,z,'granite');
+  for (let y=1;y<=6;y++) { cell(lhTower,0,y,0,'white');
+    cell(lhTower,1,y,0, y%2?'red':'white'); cell(lhTower,-1,y,0, y%2?'red':'white');
+    cell(lhTower,0,y,1, y%2?'red':'white'); cell(lhTower,0,y,-1, y%2?'red':'white'); }
+  cell(lhTop,0,7,0,'star'); cell(lhTop,0,8,0,'gold');
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,z])=>cell(lhTop,x,7,z,'glass'));
+
   return {
+    cabin: {
+      id:'cabin', title:'🪵 Log Cabin', emoji:'🪵', site:{x:80, z:6},
+      stages:[ { name:'Log Walls & Door', cells:cabWF }, { name:'Wooden Roof & Lamp', cells:cabR } ],
+    },
+    tent: {
+      id:'tent', title:'⛺ Camping Tent', emoji:'⛺', site:{x:6, z:80},
+      stages:[ { name:'Tent Sides', cells:tentBody }, { name:'Top & Doorway', cells:tentTop } ],
+    },
+    igloo: {
+      id:'igloo', title:'🧊 Cozy Igloo', emoji:'🧊', site:{x:-80, z:-6},
+      stages:[ { name:'Snow & Ice Dome', cells:igDome }, { name:'Entry Tunnel', cells:igDoor } ],
+    },
+    lighthouse: {
+      id:'lighthouse', title:'🌊 Lighthouse', emoji:'🌊', site:{x:-6, z:-80},
+      stages:[ { name:'Base & Striped Tower', cells:lhTower.concat(lhBase) }, { name:'Glass Top & Beacon', cells:lhTop } ],
+    },
     villa: {
       id:'villa', title:'🏡 Two-Storey Villa', emoji:'🏡',
       site:{x:16, z:-22},
@@ -267,6 +373,46 @@ ABC.COACH_WRONG = [
 
 /* Each prompt: scene text, emoji, options [{t,q}] q: best | name | off. Keep text SHORT. */
 ABC.PROJECT_PROMPTS = {
+  cabin: {
+    intro: { emoji:'🪵', scene:'A cabin for the mountains! What are we making?',
+      options:[ { t:'A cozy wooden log cabin for the forest!', q:'best' }, { t:'Wood.', q:'name' }, { t:'I like blue.', q:'off' } ] },
+    stages:[
+      { emoji:'🪵', scene:'Log walls are up! Tell me:',
+        options:[ { t:'The brown log walls have a little door!', q:'best' }, { t:'Walls.', q:'name' }, { t:'Fish swim.', q:'off' } ] },
+      { emoji:'🏠', scene:'Cabin done! How does it look?',
+        options:[ { t:'My log cabin has a pointy roof and a warm lamp!', q:'best' }, { t:'Done.', q:'name' }, { t:'It is hot.', q:'off' } ] },
+    ],
+  },
+  tent: {
+    intro: { emoji:'⛺', scene:'Time to go camping! What are we building?',
+      options:[ { t:'A red camping tent to sleep in!', q:'best' }, { t:'Tent.', q:'name' }, { t:'I have toes.', q:'off' } ] },
+    stages:[
+      { emoji:'⛺', scene:'Tent sides up! What do you see?',
+        options:[ { t:'The red tent cloth makes cozy slanted walls!', q:'best' }, { t:'Red.', q:'name' }, { t:'Dogs bark.', q:'off' } ] },
+      { emoji:'🏕️', scene:'Tent finished! Describe it:',
+        options:[ { t:'My tent has a doorway to crawl in and a star on top!', q:'best' }, { t:'Done.', q:'name' }, { t:'My cup is full.', q:'off' } ] },
+    ],
+  },
+  igloo: {
+    intro: { emoji:'🧊', scene:'A house made of snow! What are we making?',
+      options:[ { t:'A round igloo made of snow and ice!', q:'best' }, { t:'Snow.', q:'name' }, { t:'I see a bus.', q:'off' } ] },
+    stages:[
+      { emoji:'❄️', scene:'The dome is built! Tell me:',
+        options:[ { t:'The white snowy dome is round like a ball!', q:'best' }, { t:'Round.', q:'name' }, { t:'I eat soup.', q:'off' } ] },
+      { emoji:'🧊', scene:'Igloo done! How does it look?',
+        options:[ { t:'My igloo has an icy tunnel to crawl inside!', q:'best' }, { t:'Done.', q:'name' }, { t:'Birds fly.', q:'off' } ] },
+    ],
+  },
+  lighthouse: {
+    intro: { emoji:'🌊', scene:'A tower by the sea! What are we building?',
+      options:[ { t:'A tall lighthouse to shine over the ocean!', q:'best' }, { t:'Tower.', q:'name' }, { t:'I like apples.', q:'off' } ] },
+    stages:[
+      { emoji:'🚥', scene:'Striped tower is up! What do you see?',
+        options:[ { t:'The tall tower has red and white stripes!', q:'best' }, { t:'Tall.', q:'name' }, { t:'Cats nap.', q:'off' } ] },
+      { emoji:'🌊', scene:'Lighthouse done! Describe it:',
+        options:[ { t:'My lighthouse has a glass top with a bright glowing light!', q:'best' }, { t:'Done.', q:'name' }, { t:'It is Tuesday.', q:'off' } ] },
+    ],
+  },
   villa: {
     intro: { emoji:'🏡', scene:'A BIG project! What are we building?',
       options:[
