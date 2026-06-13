@@ -298,49 +298,61 @@
         if (!inClus.has(belowK) && ABC.world.get(c.x, c.y - 1, c.z)) { supported = true; break; }
       }
       if (supported || !cluster.length) continue;
-      // how far can the whole piece drop before something stops it?
-      let drop = 64;
-      for (const c of cluster) {
-        if (inClus.has(ABC.world.key(c.x, c.y - 1, c.z))) continue;  // not a bottom cell
-        let rest = c.y;
-        while (rest - 1 >= ABC.world.MIN_Y && !ABC.world.get(c.x, rest - 1, c.z)) rest--;
-        drop = Math.min(drop, c.y - rest);
-      }
-      if (drop <= 0) continue;
-      dropCluster(cluster, drop);
+      dropCluster(cluster);     // TIMBER! the whole disconnected piece comes down
     }
   }
-  function dropCluster(cluster, drop) {
+  /* the unsupported piece collapses: every block falls and piles up on the
+     ground of its own column, so a tall tree pancakes into a heap 🌳→🪵 */
+  function dropCluster(cluster) {
     const geo = new THREE.BoxGeometry(1, 1, 1);
-    const grp = new THREE.Group();
+    // group by column
+    const cols = new Map();
     for (const c of cluster) {
-      ABC.world.remove(c.x, c.y, c.z);
-      const m = new THREE.Mesh(geo, ABC.world.materials[c.t] || ABC.world.materials.wood);
-      m.position.set(c.x + 0.5, c.y + 0.5, c.z + 0.5);
-      grp.add(m);
+      const ck = c.x + ',' + c.z;
+      (cols.get(ck) || cols.set(ck, []).get(ck)).push(c);
+    }
+    // remove from the world first so landings don't collide with originals
+    for (const c of cluster) ABC.world.remove(c.x, c.y, c.z);
+    ABC.world.flush();
+    let any = false;
+    for (const [, col] of cols) {
+      col.sort((a, b) => a.y - b.y);
+      const x = col[0].x, z = col[0].z;
+      // first solid ground at/below the column (ignoring cluster cells)
+      let rest = col[0].y;
+      while (rest - 1 >= ABC.world.MIN_Y && !ABC.world.get(x, rest - 1, z)) rest--;
+      // stack the column's blocks up from the ground, low ones first
+      col.forEach((c, i) => {
+        const target = rest + i;
+        if (target >= c.y) { ABC.world.set(x, c.y, z, c.t); return; }  // already low enough
+        const m = new THREE.Mesh(geo, ABC.world.materials[c.t] || ABC.world.materials.wood);
+        m.position.set(x + 0.5, c.y + 0.5, z + 0.5);
+        m.userData.spin = (Math.random() - 0.5) * 3;
+        scene.add(m);
+        falls.push({ m, x, z, t: c.t, y: c.y, target, vy: 0 });
+        any = true;
+      });
     }
     ABC.world.flush();
-    scene.add(grp);
-    ABC.audio.sfx.remove();
-    falls.push({ grp, cluster, drop, fallen: 0, vy: 0 });
+    if (any) ABC.audio.sfx.remove();
   }
   function updateFalls(dt) {
+    let landed = false;
     for (let i = falls.length - 1; i >= 0; i--) {
       const f = falls[i];
-      f.vy = Math.min(26, f.vy + 42 * dt);
-      f.fallen = Math.min(f.drop, f.fallen + f.vy * dt);
-      f.grp.position.y = -f.fallen;
-      if (f.fallen >= f.drop) {
-        // land: re-place every block at its new resting spot
-        for (const c of f.cluster) ABC.world.set(c.x, c.y - f.drop, c.z, c.t);
-        ABC.world.flush();
-        scene.remove(f.grp);
+      f.vy = Math.min(30, f.vy + 42 * dt);
+      f.y = Math.max(f.target, f.y - f.vy * dt);
+      f.m.position.y = f.y + 0.5;
+      f.m.rotation.z = (f.y - f.target) * 0.12 * (f.m.userData.spin || 0);
+      if (f.y <= f.target + 0.001) {
+        scene.remove(f.m);
+        ABC.world.set(f.x, f.target, f.z, f.t);
+        pulverize(f.x, f.target, f.z, f.t);
         falls.splice(i, 1);
-        ABC.audio.sfx.plop();
-        for (const c of f.cluster.slice(0, 6)) pulverize(c.x, c.y - f.drop, c.z, c.t);
-        saveSoon();
+        landed = true;
       }
     }
+    if (landed) { ABC.world.flush(); ABC.audio.sfx.plop(); saveSoon(); }
   }
 
   /* ---------------- doors really open & close 🚪 ---------------- */
