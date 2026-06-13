@@ -62,8 +62,19 @@ and unlock the next vehicle. Best scores are kept; progress saves automatically.
 - `tools/smoke-test.js` — headless autoplay test: a law-abiding autopilot must finish all 6 levels
   with a high score (`node tools/smoke-test.js`)
 
-## A note on map imagery
+## Real imagery
 
-Google Maps tiles/photos can't legally be embedded in a game, so this uses **OpenStreetMap**
-data instead — the same real streets, openly licensed. Attribution
-"© OpenStreetMap contributors" is shown on every map view, as the ODbL license requires.
+The top-down view drives over **real aerial photographs of Mountain House** — public-domain
+**USDA NAIP** imagery, fetched per route by `tools/fetch-aerial.js` into `assets/aerial/levelN.jpg`
+and draped under the gameplay road via the camera transform (`assets/aerial-meta.js` holds the
+placement rects). The real road, lane lines, school/work zones and landmarks are drawn on top, so
+you can see actual houses, parks, cul-de-sacs and the high-school stadium as you ride. If an aerial
+image is missing the game falls back to the illustrated street style automatically. The first-person
+"thrill cam" stays illustrated (street-level photos aren't reliably available).
+
+Google Maps tiles/photos **can't legally be embedded** in a game (their ToS forbids extracting or
+reusing their imagery). NAIP aerial is U.S. government work in the public domain, and the street
+geometry is **OpenStreetMap** (ODbL) — both openly licensed and credited in-game.
+
+To refresh the imagery: `node tools/fetch-aerial.js` (all levels) or `node tools/fetch-aerial.js 0`
+(one level).

@@ -59,6 +59,17 @@ const MAPW  = MH.water.map(r => { const p = pxify(r.p); return { a:r.a, p, b:bbo
 const MAPS  = MH.schools.map(r => { const p = pxify(r.p); return { n:r.n, p, b:bboxOf(p) }; });
 const POIS  = MH.pois.map(p => ({ k:p.k, n:p.n, x:p.x*PXM, y:p.y*PXM }));
 
+/* ---------- real NAIP aerial imagery (public domain, USDA) ---------- */
+const HAS_AERIAL = typeof AERIAL !== "undefined";
+const aerialImg = {};                 // li -> Image (or false if it failed to load)
+function loadAerial(li){
+  if (!HAS_AERIAL || !AERIAL[li] || aerialImg[li] !== undefined) return;
+  const im = new Image();
+  im.onerror = () => { aerialImg[li] = false; };
+  im.src = AERIAL[li].file;
+  aerialImg[li] = im;
+}
+
 /* ---------- routes: resample + smooth headings ---------- */
 function buildRoute(r){
   const raw = [];
@@ -447,8 +458,10 @@ function openIntro(i){
     `<div class="rule">⚡ Speed limit: ${S.cfg.base} mph (lower in special zones)</div>` +
     types.map(t => `<div class="rule">${RL[t]}</div>`).join("") +
     (S.cfg.bumps ? `<div class="rule">⚠️ Jumps are ONLY ok at closed events like this — never on open streets!</div>` : "") +
-    `<div class="rule">🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!</div>`;
+    `<div class="rule">🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!</div>` +
+    `<div class="rule" style="font-size:11px;opacity:.7;margin-top:6px">🛰 Real aerial imagery: USDA NAIP (public domain) • streets © OpenStreetMap</div>`;
   drawIntroMap(i);
+  loadAerial(i);            // preload the real aerial so the run starts crisp
   S.screen = "intro";
   show("intro");
 }
@@ -460,6 +473,7 @@ function beginRun(){
   S.o = laneC(S.cfg.lanes - 1);
   S.houses = genHouses(S.li);
   S.mm = buildMinimap(S.li);
+  loadAerial(S.li);
   sirenStop();
   S.screen = "playing";
   show(null);
@@ -696,15 +710,37 @@ const worldRot = () => Math.atan2(-cam.fx, cam.rx);
 /* ============================================================
    TOP-DOWN RENDERER (real map!)
    ============================================================ */
+/* Drape the real aerial photo onto the ground using the same camera transform
+   as everything else. The image→world mapping is a uniform affine (image is in
+   lat/lon, world is a local ENU approximation — both linear), so one transformed
+   drawImage places it perfectly, rotating & panning with the camera. */
+function drawAerialGround(){
+  if (!HAS_AERIAL) return false;
+  const rec = AERIAL[S.li], img = aerialImg[S.li];
+  if (!rec || !img || img === false || !img.complete || !img.naturalWidth) return false;
+  const sxx = rec.w / img.naturalWidth, syy = rec.h / img.naturalHeight;
+  const a = sxx * cam.rx, b = -sxx * cam.fx, c = syy * cam.ry, d = -syy * cam.fy;
+  const e = 260 + (rec.x0 - cam.x) * cam.rx + (rec.y0 - cam.y) * cam.ry;
+  const f = PLAYER_Y - ((rec.x0 - cam.x) * cam.fx + (rec.y0 - cam.y) * cam.fy);
+  ctx.save();
+  ctx.transform(a, b, c, d, e, f);         // composes with the shake translate
+  ctx.drawImage(img, 0, 0);
+  ctx.restore();
+  return true;
+}
+
 function drawTop(){
   const TH = THEMES[S.li], HW = HWf();
   const shx = S.shake ? (Math.random() - .5) * S.shake : 0;
   ctx.save();
   ctx.translate(shx, 0);
 
-  // grass
+  // grass (base — covered by aerial when available)
   ctx.fillStyle = TH.g1;
   ctx.fillRect(-10, -10, W + 20, H + 20);
+
+  // real aerial photo of Mountain House, draped via the camera transform
+  const onAerial = drawAerialGround();
 
   const inView = b => {
     // bbox vs camera circle (radius covers screen diagonal)
@@ -719,31 +755,34 @@ function drawTop(){
     }
   };
 
-  // parks, schools, water
-  for (const pk of MAPP){ if (!inView(pk.b)) continue;
-    poly(pk.p); ctx.closePath();
-    ctx.fillStyle = "#a8d796"; ctx.fill();
-    ctx.strokeStyle = "#8cc084"; ctx.lineWidth = 3; ctx.stroke();
+  // illustrated map layers — only when there's no real aerial under us
+  if (!onAerial){
+    // parks, schools, water
+    for (const pk of MAPP){ if (!inView(pk.b)) continue;
+      poly(pk.p); ctx.closePath();
+      ctx.fillStyle = "#a8d796"; ctx.fill();
+      ctx.strokeStyle = "#8cc084"; ctx.lineWidth = 3; ctx.stroke();
+    }
+    for (const sc of MAPS){ if (!inView(sc.b)) continue;
+      poly(sc.p); ctx.closePath();
+      ctx.fillStyle = "#eedcba"; ctx.fill();
+      ctx.strokeStyle = "#d9c193"; ctx.lineWidth = 3; ctx.stroke();
+    }
+    for (const wt of MAPW){ if (!inView(wt.b)) continue;
+      poly(wt.p);
+      if (wt.a){ ctx.closePath(); ctx.fillStyle = "#8ecdf2"; ctx.fill(); }
+      else { ctx.strokeStyle = "#8ecdf2"; ctx.lineWidth = 26; ctx.lineCap = "round"; ctx.stroke(); }
+    }
+    // all real streets (casing + fill)
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const RW = { hwy:74, major:62, minor:52, res:42 };
+    for (const rd of MAPR){ if (!inView(rd.b)) continue;
+      poly(rd.p);
+      ctx.strokeStyle = "#4a4f55"; ctx.lineWidth = RW[rd.c] + 7; ctx.stroke();
+      ctx.strokeStyle = rd.c === "hwy" ? "#71757c" : "#6d727a"; ctx.lineWidth = RW[rd.c]; ctx.stroke();
+    }
   }
-  for (const sc of MAPS){ if (!inView(sc.b)) continue;
-    poly(sc.p); ctx.closePath();
-    ctx.fillStyle = "#eedcba"; ctx.fill();
-    ctx.strokeStyle = "#d9c193"; ctx.lineWidth = 3; ctx.stroke();
-  }
-  for (const wt of MAPW){ if (!inView(wt.b)) continue;
-    poly(wt.p);
-    if (wt.a){ ctx.closePath(); ctx.fillStyle = "#8ecdf2"; ctx.fill(); }
-    else { ctx.strokeStyle = "#8ecdf2"; ctx.lineWidth = 26; ctx.lineCap = "round"; ctx.stroke(); }
-  }
-
-  // all real streets (casing + fill)
   ctx.lineCap = "round"; ctx.lineJoin = "round";
-  const RW = { hwy:74, major:62, minor:52, res:42 };
-  for (const rd of MAPR){ if (!inView(rd.b)) continue;
-    poly(rd.p);
-    ctx.strokeStyle = "#4a4f55"; ctx.lineWidth = RW[rd.c] + 7; ctx.stroke();
-    ctx.strokeStyle = rd.c === "hwy" ? "#71757c" : "#6d727a"; ctx.lineWidth = RW[rd.c]; ctx.stroke();
-  }
 
   /* --- the route road (gameplay road) --- */
   const i0 = Math.max(0, Math.floor((S.t - 300) / DS));
@@ -755,8 +794,9 @@ function drawTop(){
     RT.push([-Math.sin(S.rt.hd[i]), Math.cos(S.rt.hd[i])]); // world right vec
   }
   const path = pts => { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); };
-  path(P); ctx.strokeStyle = "#3d4248"; ctx.lineWidth = HW * 2 + 26; ctx.stroke();
-  path(P); ctx.strokeStyle = "#585e66"; ctx.lineWidth = HW * 2; ctx.stroke();
+  // over aerial: translucent so the real asphalt shows through, but lanes stay crisp
+  path(P); ctx.strokeStyle = onAerial ? "rgba(44,48,56,.55)" : "#3d4248"; ctx.lineWidth = HW * 2 + 26; ctx.stroke();
+  path(P); ctx.strokeStyle = onAerial ? "rgba(78,84,94,.5)"  : "#585e66"; ctx.lineWidth = HW * 2; ctx.stroke();
 
   // zone tints painted on the road
   for (const ev of S.events){
@@ -800,7 +840,7 @@ function drawTop(){
   }
   ctx.setLineDash([]);
 
-  drawHousesTop();
+  if (!onAerial) drawHousesTop();        // aerial already shows the real houses
   drawPoiLabels();
   for (const ev of S.events) drawEventTop(ev);
   drawFinishTop();

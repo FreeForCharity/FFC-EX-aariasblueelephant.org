@@ -1,0 +1,2 @@
+/* NAIP aerial placement rects in world-px space — imagery © USDA NAIP (public domain) */
+const AERIAL = [{"file":"assets/aerial/level0.jpg","x0":-198,"y0":-4614,"w":3876,"h":2082},{"file":"assets/aerial/level1.jpg","x0":-4578,"y0":-16470,"w":6786,"h":7902},{"file":"assets/aerial/level2.jpg","x0":-6324,"y0":-8868,"w":8394,"h":12186},{"file":"assets/aerial/level3.jpg","x0":-3018,"y0":-8868,"w":5826,"h":10962},{"file":"assets/aerial/level4.jpg","x0":-4578,"y0":-16470,"w":6726,"h":21354},{"file":"assets/aerial/level5.jpg","x0":-4884,"y0":-7164,"w":5484,"h":12048}];
