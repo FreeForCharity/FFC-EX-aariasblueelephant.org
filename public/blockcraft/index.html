@@ -9,6 +9,10 @@
   html,body { width:100%; height:100%; overflow:hidden; background:#aee7ff;
     font-family:"Comic Sans MS","Chalkboard SE","Marker Felt","Segoe UI",sans-serif; }
   #gameCanvas { position:fixed; inset:0; display:block; }
+  /* Safari / iOS faux-fullscreen: lift the game above everything and fill the screen */
+  body.fauxFs #hud, body.fauxFs #gameCanvas, body.fauxFs #dialogOverlay, body.fauxFs #flash {
+    position:fixed !important; inset:0 !important; z-index:2147483600; }
+  body.fauxFs { position:fixed; inset:0; width:100vw; height:100vh; overflow:hidden; }
 
   /* ---------- Title screen ---------- */
   #titleScreen { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
@@ -301,22 +305,22 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=22"></script>
-<script src="js/audio.js?v=22"></script>
-<script src="js/world.js?v=22"></script>
-<script src="js/animals.js?v=22"></script>
-<script src="js/squishy.js?v=22"></script>
-<script src="js/weather.js?v=22"></script>
-<script src="js/parks.js?v=22"></script>
-<script src="js/shops.js?v=22"></script>
-<script src="js/portal.js?v=22"></script>
-<script src="js/ui.js?v=22"></script>
-<script src="js/activities.js?v=22"></script>
-<script src="js/music.js?v=22"></script>
-<script src="js/pet.js?v=22"></script>
-<script src="js/stickers.js?v=22"></script>
-<script src="js/overnight.js?v=22"></script>
-<script src="js/photo.js?v=22"></script>
-<script src="js/main.js?v=22"></script>
+<script src="js/data.js?v=23"></script>
+<script src="js/audio.js?v=23"></script>
+<script src="js/world.js?v=23"></script>
+<script src="js/animals.js?v=23"></script>
+<script src="js/squishy.js?v=23"></script>
+<script src="js/weather.js?v=23"></script>
+<script src="js/parks.js?v=23"></script>
+<script src="js/shops.js?v=23"></script>
+<script src="js/portal.js?v=23"></script>
+<script src="js/ui.js?v=23"></script>
+<script src="js/activities.js?v=23"></script>
+<script src="js/music.js?v=23"></script>
+<script src="js/pet.js?v=23"></script>
+<script src="js/stickers.js?v=23"></script>
+<script src="js/overnight.js?v=23"></script>
+<script src="js/photo.js?v=23"></script>
+<script src="js/main.js?v=23"></script>
 </body>
 </html>
