@@ -397,13 +397,14 @@ const Dashboard: React.FC = () => {
         
         // Always Visible (at the end)
         { id: 'buddy-up', label: 'Summer Buddy Up', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
+        { id: 'belus-world', label: "Belu's World", icon: Gamepad2, role: 'all', path: '/belus-world' },
         { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
         { id: 'blockcraft', label: "Aaria's Block Craft 3D", icon: Gamepad2, role: 'all' },
         { id: 'roadsafety', label: 'Road Safety Heroes', icon: Bike, role: 'all' },
         { id: 'doughlab', label: 'Dough Lab', icon: Cookie, role: 'all' },
     ].filter(item => {
         // Special case for the games/fun sections and buddy-up - always show
-        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'buddy-up') return true;
+        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'buddy-up' || item.id === 'belus-world') return true;
         
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)
