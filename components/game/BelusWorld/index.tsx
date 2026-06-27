@@ -1,0 +1,503 @@
+// ===========================================================================
+// Belu's World — a 3D floating-island adventure for kids on the autism
+// spectrum. The child walks/jumps Belu (a blue elephant) across magical sky
+// islands. Each island teaches one ASD skill area across 5 levels. As the
+// child earns stars, two things VISIBLY happen: Belu grows up (baby → grown)
+// and each island blooms. Belu also remembers the child and grows a
+// personality across visits, learning right alongside them.
+//
+// Designed against evidence-based ASD principles (see project memory):
+// errorless / no-fail, no timers, predictable token rewards, First-Then visual
+// supports, read-aloud narration, and full sensory comfort settings.
+// ===========================================================================
+
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { BeluEmotion } from './BeluCharacter';
+import type { ZoneId } from './three/worldConfig';
+import { attachKeyboard, input } from './three/input';
+import HUD from './ui/HUD';
+import TouchControls from './ui/TouchControls';
+import LevelSelect from './ui/LevelSelect';
+import GrowthMap from './ui/GrowthMap';
+import { ACTIVITIES } from './activities/registry';
+import {
+  loadMemory,
+  saveMemory,
+  recordVisit,
+  recordZoneVisit,
+  recordMoment,
+  addAchievement,
+  type BeluMemory,
+} from './belu/memory';
+import { getDialogue } from './belu/dialogue';
+import {
+  loadProgress,
+  saveProgress,
+  awardLevel,
+  getGrowth,
+  completedLevels,
+  totalStars,
+  type GameProgress,
+  type ActivityZone,
+  ZONES,
+} from './belu/progress';
+import { speakAloud, playSound, stopSpeaking } from './belu/feedback';
+
+const GameCanvas = lazy(() => import('./three/GameCanvas'));
+
+type Phase = 'intro' | 'world';
+
+interface Settings {
+  reduceMotion: boolean;
+  calmMode: boolean;
+  sound: boolean;
+  narration: boolean;
+}
+
+const STICKER_KEYS: Record<ActivityZone, string> = {
+  meadow: '💛',
+  mountain: '⛰️',
+  cove: '🌊',
+  forest: '🌳',
+};
+
+interface RewardInfo {
+  stars: number;
+  skill: string;
+  levelUp: boolean;
+  grewUp: boolean;
+  growthLabel: string;
+  islandMastered: boolean;
+}
+
+export default function BelusWorldGame() {
+  const [phase, setPhase] = useState<Phase>('intro');
+  const [memory, setMemory] = useState<BeluMemory>(() => loadMemory());
+  const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
+  const [emotion, setEmotion] = useState<BeluEmotion>('happy');
+  const [beluLine, setBeluLine] = useState<string | null>(null);
+  const [nearZone, setNearZone] = useState<ZoneId | null>(null);
+  const [selectZone, setSelectZone] = useState<ActivityZone | null>(null);
+  const [active, setActive] = useState<{ zone: ActivityZone; level: number } | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [reward, setReward] = useState<RewardInfo | null>(null);
+  const [settings, setSettings] = useState<Settings>({
+    reduceMotion: false,
+    calmMode: false,
+    sound: true,
+    narration: true,
+  });
+
+  const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const isTouch = useRef(typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+
+  const growth = useMemo(() => getGrowth(progress), [progress]);
+  const islandLevels = useMemo(
+    () => Object.fromEntries(ZONES.map((z) => [z, completedLevels(progress, z)])) as Partial<Record<ZoneId, number>>,
+    [progress],
+  );
+  const stickers = useMemo(
+    () => ZONES.filter((z) => completedLevels(progress, z) > 0).map((z) => STICKER_KEYS[z]),
+    [progress],
+  );
+
+  // Belu speaks: speech bubble + (optional) read-aloud narration.
+  const speak = useCallback((line: string) => {
+    setBeluLine(line);
+    speakAloud(line, settingsRef.current.narration);
+    if (lineTimer.current) clearTimeout(lineTimer.current);
+    lineTimer.current = setTimeout(() => setBeluLine(null), 5000);
+  }, []);
+
+  function start() {
+    const m = recordVisit(memory);
+    saveMemory(m);
+    setMemory(m);
+    setPhase('world');
+    const greetKey = m.visitCount <= 1 ? 'greeting_first' : 'greeting_return';
+    setTimeout(() => speak(getDialogue(greetKey, { memory: m })), 700);
+  }
+
+  useEffect(() => {
+    if (phase !== 'world') return;
+    const detach = attachKeyboard();
+    return () => {
+      detach();
+      stopSpeaking();
+      if (lineTimer.current) clearTimeout(lineTimer.current);
+    };
+  }, [phase]);
+
+  const paused = active !== null || selectZone !== null || showSettings || showMap || reward !== null;
+
+  const handleProximity = useCallback(
+    (zone: ZoneId | null) => {
+      setNearZone(zone);
+      if (zone && zone !== 'home') {
+        setEmotion('curious');
+        speak(`Ooh, the ${ACTIVITIES[zone as ActivityZone].title}! Want to learn here with me?`);
+      }
+    },
+    [speak],
+  );
+
+  const handleEnter = useCallback((zone: ZoneId) => {
+    if (zone === 'home') return;
+    stopSpeaking();
+    setSelectZone(zone as ActivityZone);
+  }, []);
+
+  const handlePlay = useCallback(
+    (level: number) => {
+      if (!selectZone) return;
+      playSound('tap', settingsRef.current.sound);
+      setActive({ zone: selectZone, level });
+      setSelectZone(null);
+    },
+    [selectZone],
+  );
+
+  const handleComplete = useCallback(
+    (zone: ActivityZone, level: number, stars: number, moment: string) => {
+      const res = awardLevel(progress, zone, level - 1, stars);
+      saveProgress(res.progress);
+      setProgress(res.progress);
+
+      // personality memory (separate from leveling)
+      let m = recordZoneVisit(memory, zone);
+      m = recordMoment(m, moment);
+      m = addAchievement(m, `${ACTIVITIES[zone].skill} L${level}`);
+      saveMemory(m);
+      setMemory(m);
+
+      const mastered = completedLevels(res.progress, zone) >= 5;
+      setActive(null);
+      setEmotion('excited');
+      playSound(res.grewUp ? 'growup' : res.newLevel ? 'levelup' : 'star', settingsRef.current.sound);
+      setReward({
+        stars,
+        skill: ACTIVITIES[zone].skill,
+        levelUp: res.newLevel,
+        grewUp: res.grewUp,
+        growthLabel: getGrowth(res.progress).label,
+        islandMastered: mastered,
+      });
+    },
+    [progress, memory],
+  );
+
+  const ActivityComp = active ? ACTIVITIES[active.zone].component : null;
+
+  if (phase === 'intro') {
+    return <IntroScreen memory={memory} growthLabel={growth.label} onStart={start} />;
+  }
+
+  return (
+    <div className="relative h-screen w-full overflow-hidden" style={{ background: '#bfe2ff' }}>
+      <Suspense fallback={<LoadingWorld />}>
+        <GameCanvas
+          emotion={emotion}
+          paused={paused}
+          reduceMotion={settings.reduceMotion}
+          calmMode={settings.calmMode}
+          activeZone={nearZone}
+          growthScale={growth.scale}
+          growthStage={growth.stage}
+          islandLevels={islandLevels}
+          onProximity={handleProximity}
+          onEnter={handleEnter}
+        />
+      </Suspense>
+
+      <HUD
+        beluLine={beluLine}
+        nearZone={active || selectZone ? null : nearZone}
+        stickers={stickers}
+        totalStars={totalStars(progress)}
+        isTouch={isTouch.current}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenMap={() => setShowMap(true)}
+        onPlayNear={() => nearZone && handleEnter(nearZone)}
+      />
+
+      {isTouch.current && !paused && <TouchControls />}
+
+      {/* Level select (destination entry) */}
+      <AnimatePresence>
+        {selectZone && (
+          <LevelSelect
+            meta={ACTIVITIES[selectZone]}
+            levelStars={progress.islands[selectZone].levelStars}
+            onPlay={handlePlay}
+            onClose={() => setSelectZone(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Learning activity */}
+      <AnimatePresence>
+        {ActivityComp && active && (
+          <ActivityComp
+            key={`${active.zone}-${active.level}`}
+            level={active.level}
+            speak={speak}
+            onBeluEmotion={setEmotion}
+            onComplete={(r) => handleComplete(active.zone, active.level, r.stars, r.moment)}
+            onExit={() => {
+              setActive(null);
+              input.interactQueued = false;
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Reward / celebration */}
+      <AnimatePresence>
+        {reward && <RewardToast reward={reward} onClose={() => setReward(null)} />}
+      </AnimatePresence>
+
+      {/* Growth map */}
+      <AnimatePresence>{showMap && <GrowthMap progress={progress} onClose={() => setShowMap(false)} />}</AnimatePresence>
+
+      {/* Settings */}
+      <AnimatePresence>
+        {showSettings && (
+          <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; growthLabel: string; onStart: () => void }) {
+  const returning = memory.visitCount > 0;
+  return (
+    <div
+      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden p-6 text-center"
+      style={{ background: 'linear-gradient(180deg,#aee0ff 0%,#d8f0ff 55%,#fff6e0 100%)' }}
+    >
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute text-6xl opacity-80"
+          style={{ top: `${12 + i * 22}%` }}
+          initial={{ left: '-20%' }}
+          animate={{ left: '120%' }}
+          transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
+        >
+          ☁️
+        </motion.div>
+      ))}
+
+      <motion.div
+        initial={{ scale: 0, rotate: -10 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+        className="text-[110px] leading-none drop-shadow-lg"
+      >
+        🐘
+      </motion.div>
+
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-2 text-5xl font-black text-sky-700 drop-shadow-sm"
+      >
+        Belu's World
+      </motion.h1>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="mt-2 max-w-md text-lg font-semibold text-sky-900/70"
+      >
+        {returning
+          ? `Welcome back! ${growthLabel} is waiting on the sky islands. Earn stars to help Belu grow!`
+          : 'Explore floating islands, learn amazing skills, and help baby Belu grow up big and strong!'}
+      </motion.p>
+
+      <motion.button
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onStart}
+        className="mt-8 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
+      >
+        {returning ? 'Continue ✨' : 'Start Adventure ✨'}
+      </motion.button>
+
+      <p className="mt-6 text-sm font-medium text-sky-900/50">
+        Move with arrow keys or the joystick · Jump to explore · No way to lose 💙
+      </p>
+    </div>
+  );
+}
+
+function LoadingWorld() {
+  return (
+    <div className="flex h-screen w-full flex-col items-center justify-center" style={{ background: '#bfe2ff' }}>
+      <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 1.2, repeat: Infinity }} className="text-7xl">
+        🐘
+      </motion.div>
+      <p className="mt-4 text-lg font-bold text-sky-700">Floating up to the islands…</p>
+    </div>
+  );
+}
+
+function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => void }) {
+  const headline = reward.grewUp ? 'Belu Grew Up!' : reward.levelUp ? 'Level Complete!' : 'Great Job!';
+  const hero = reward.grewUp ? '🐘✨' : reward.islandMastered ? '🌷' : '⭐';
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,28,46,0.5)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.6, y: 40 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.8 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+        className="relative rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {Array.from({ length: 16 }).map((_, i) => {
+          const a = (i / 16) * Math.PI * 2;
+          return (
+            <motion.span
+              key={i}
+              className="absolute left-1/2 top-12 text-xl"
+              initial={{ x: 0, y: 0, opacity: 1 }}
+              animate={{ x: Math.cos(a) * 140, y: Math.sin(a) * 140, opacity: 0 }}
+              transition={{ duration: 1.2, delay: 0.1 }}
+            >
+              {['✨', '⭐', '🌟'][i % 3]}
+            </motion.span>
+          );
+        })}
+
+        <motion.div
+          animate={{ scale: [1, 1.18, 1], rotate: reward.grewUp ? [0, 6, -6, 0] : 0 }}
+          transition={{ duration: 1.4, repeat: Infinity }}
+          className="text-7xl"
+        >
+          {hero}
+        </motion.div>
+
+        <h2 className="mt-3 text-2xl font-black text-slate-800">{headline}</h2>
+
+        {/* stars earned */}
+        <div className="mt-2 flex justify-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              initial={{ scale: 0, rotate: -40 }}
+              animate={{ scale: i < reward.stars ? 1 : 0.6, rotate: 0 }}
+              transition={{ delay: 0.2 + i * 0.15, type: 'spring' }}
+              className="text-3xl"
+              style={{ filter: i < reward.stars ? 'none' : 'grayscale(1) opacity(0.4)' }}
+            >
+              ⭐
+            </motion.span>
+          ))}
+        </div>
+
+        <p className="mt-2 font-semibold text-slate-500">You grew your “{reward.skill}” skill 🌱</p>
+
+        {reward.grewUp && (
+          <p className="mt-3 rounded-2xl bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">
+            🎉 Belu is now {reward.growthLabel}! You helped Belu grow.
+          </p>
+        )}
+        {reward.islandMastered && !reward.grewUp && (
+          <p className="mt-3 rounded-2xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-700">
+            🌷 You fully bloomed this island!
+          </p>
+        )}
+
+        <button
+          onClick={onClose}
+          className="mt-5 rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
+        >
+          Keep exploring →
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function SettingsPanel({
+  settings,
+  onChange,
+  onClose,
+}: {
+  settings: Settings;
+  onChange: (s: Settings) => void;
+  onClose: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,28,46,0.5)', backdropFilter: 'blur(8px)' }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92 }}
+        className="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-extrabold text-slate-800">Comfort Settings</h2>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            ✕
+          </button>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">Make Belu's World feel just right for you. 💙</p>
+
+        <Toggle label="Calm mode" hint="Softer glow, gentler colors" on={settings.calmMode} onClick={() => onChange({ ...settings, calmMode: !settings.calmMode })} />
+        <Toggle label="Reduce motion" hint="Slow down drifting clouds & effects" on={settings.reduceMotion} onClick={() => onChange({ ...settings, reduceMotion: !settings.reduceMotion })} />
+        <Toggle label="Sounds" hint="Gentle chimes for stars & success" on={settings.sound} onClick={() => onChange({ ...settings, sound: !settings.sound })} />
+        <Toggle label="Read aloud" hint="Belu speaks her words out loud" on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
+
+        <button
+          onClick={onClose}
+          className="mt-5 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
+        >
+          Done
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Toggle({ label, hint, on, onClick }: { label: string; hint: string; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="mb-3 flex w-full items-center justify-between rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-left"
+    >
+      <span>
+        <span className="block font-bold text-slate-700">{label}</span>
+        <span className="block text-xs text-slate-400">{hint}</span>
+      </span>
+      <span className="relative h-7 w-12 flex-none rounded-full transition" style={{ background: on ? '#5fa8e8' : '#cbd5e1' }}>
+        <span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all" style={{ left: on ? 22 : 2 }} />
+      </span>
+    </button>
+  );
+}

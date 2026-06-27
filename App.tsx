@@ -97,6 +97,7 @@ const UnderstandingAutism = lazy(() => import('./pages/UnderstandingAutism'));
 const Interventions = lazy(() => import('./pages/Interventions'));
 const Screening = lazy(() => import('./pages/Screening'));
 const CircleOfFriends = lazy(() => import('./pages/CircleOfFriends'));
+const BelusWorld = lazy(() => import('./pages/BelusWorld'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -148,6 +149,7 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
+                <Route path="/belus-world" element={<BelusWorld />} />
                 <Route path="/buddy" element={<Navigate to="/circle-of-friends" replace />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
                 
