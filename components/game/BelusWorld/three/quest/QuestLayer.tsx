@@ -242,6 +242,13 @@ export default function QuestLayer(props: Props) {
   // ---- per-frame logic ----
   frame.current = (dt: number) => {
     const st = S.current;
+    if (import.meta.env.DEV) {
+      (window as unknown as { __quest?: unknown }).__quest = {
+        zone: st.zone, roundIdx: st.roundIdx, picked: st.picked.size,
+        seqDone: st.seqDone.length, solved: st.solved, slips: st.slips,
+        lock: Math.max(0, st.lockUntil - st.clock),
+      };
+    }
     if (props.paused) return;
     st.clock += dt;
 

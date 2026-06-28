@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { ISLAND_LIST, ISLANDS, BRIDGES, type ZoneId, type IslandDef } from './worldConfig';
 import { BRIDGE_SEGMENTS } from './worldMath';
 import { Tree, Flower, Crystal, Waterfall, Clouds, makeRng } from './Scenery';
+import WorldLife from './WorldLife';
 
 function Island({ isl }: { isl: IslandDef }) {
   return (
@@ -216,6 +217,7 @@ export default function World({ activeZone, reduceMotion, islandLevels }: Props)
   return (
     <group>
       <Clouds reduceMotion={reduceMotion} />
+      <WorldLife reduceMotion={reduceMotion} />
       <RainbowBridges />
       {ISLAND_LIST.map((isl) => (
         <Island key={isl.id} isl={isl} />

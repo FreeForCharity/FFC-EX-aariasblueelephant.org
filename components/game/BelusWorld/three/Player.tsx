@@ -137,6 +137,20 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     // share Belu's live position with the embodied quest system
     beluPos.copy(pos.current);
     beluState.grounded = grounded.current;
+    if (import.meta.env.DEV) {
+      const w = window as unknown as {
+        __belu?: { x: number; y: number; z: number };
+        __beluTele?: (x: number, z: number) => void;
+      };
+      w.__belu = { x: pos.current.x, y: pos.current.y, z: pos.current.z };
+      if (!w.__beluTele) {
+        w.__beluTele = (x: number, z: number) => {
+          pos.current.x = x;
+          pos.current.z = z;
+          vy.current = 0;
+        };
+      }
+    }
     motion.current.speed = Math.min(1, speed2 / SPEED);
     motion.current.airborne = !grounded.current;
     motion.current.vy = vy.current;
