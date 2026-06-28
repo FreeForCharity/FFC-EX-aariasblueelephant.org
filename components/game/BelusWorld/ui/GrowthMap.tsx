@@ -8,9 +8,10 @@
 // ---------------------------------------------------------------------------
 
 import { motion } from 'framer-motion';
-import { ACTIVITIES } from '../activities/registry';
+import { ISLANDS } from '../three/worldConfig';
 import {
   type GameProgress,
+  type ActivityZone,
   ZONES,
   MAX_LEVEL,
   MAX_STARS_PER_ISLAND,
@@ -19,6 +20,13 @@ import {
   completedLevels,
   totalStars,
 } from '../belu/progress';
+
+const SKILLS: Record<ActivityZone, string> = {
+  meadow: 'Reading Emotions',
+  mountain: 'Life Skills',
+  cove: 'Calm & Senses',
+  forest: 'Expressive Language',
+};
 
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
 const GROWTH_SCALE = [44, 60, 78, 96];
@@ -85,7 +93,7 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
         <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-400">Island Gardens</h3>
         <div className="flex flex-col gap-2.5">
           {ZONES.map((z) => {
-            const meta = ACTIVITIES[z];
+            const meta = { emoji: ISLANDS[z].emoji, accent: ISLANDS[z].accent, skill: SKILLS[z] };
             const done = completedLevels(progress, z);
             const s = islandStars(progress, z);
             const bloomPct = (done / MAX_LEVEL) * 100;

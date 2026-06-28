@@ -6,8 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { ACTIVITIES } from '../activities/registry';
-import type { ZoneId } from '../three/worldConfig';
+import { ISLANDS, type ZoneId } from '../three/worldConfig';
 
 interface Props {
   beluLine: string | null;
@@ -17,11 +16,10 @@ interface Props {
   isTouch: boolean;
   onOpenSettings: () => void;
   onOpenMap: () => void;
-  onPlayNear: () => void;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onPlayNear }: Props) {
-  const zoneMeta = nearZone && nearZone !== 'home' ? ACTIVITIES[nearZone as Exclude<ZoneId, 'home'>] : null;
+export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap }: Props) {
+  const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
@@ -77,30 +75,21 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
         </button>
       </div>
 
-      {/* Proximity prompt — center bottom-ish */}
+      {/* Arrival banner — shows which island you've reached */}
       <AnimatePresence>
         {zoneMeta && (
-          <motion.button
-            key={zoneMeta.zone}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          <motion.div
+            key={zoneMeta.id}
+            initial={{ opacity: 0, y: -16, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            onClick={onPlayNear}
-            className="pointer-events-auto absolute left-1/2 top-[64%] -translate-x-1/2 rounded-3xl px-6 py-4 text-center shadow-2xl"
+            exit={{ opacity: 0, y: -16, scale: 0.9 }}
+            className="absolute left-1/2 top-20 -translate-x-1/2 rounded-3xl px-6 py-3 text-center shadow-2xl"
             style={{ background: `linear-gradient(140deg, #ffffff, ${zoneMeta.accent}33)`, border: `2px solid ${zoneMeta.accent}` }}
           >
             <div className="text-2xl">{zoneMeta.emoji}</div>
-            <div className="text-base font-extrabold text-slate-800">{zoneMeta.title}</div>
-            <div className="mb-1 text-xs font-semibold" style={{ color: '#7a6' }}>
-              {zoneMeta.skill}
-            </div>
-            <div
-              className="mt-1 inline-block rounded-full px-4 py-1.5 text-sm font-bold text-white"
-              style={{ background: zoneMeta.accent }}
-            >
-              {isTouch ? 'Tap to play ✋' : 'Press E to play ▶'}
-            </div>
-          </motion.button>
+            <div className="text-base font-extrabold text-slate-800">{zoneMeta.label}</div>
+            <div className="mt-0.5 text-xs font-semibold text-slate-500">Walk up to your friend to begin ✨</div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -108,7 +97,7 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
       {!isTouch && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/35 px-4 py-2 text-xs font-medium text-white backdrop-blur">
           <span className="font-bold">WASD</span> / arrows to move · <span className="font-bold">Space</span> to jump ·{' '}
-          <span className="font-bold">E</span> to play
+          walk into a glowing orb to answer
         </div>
       )}
     </div>

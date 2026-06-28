@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
+import { beluPos, beluState } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 
@@ -31,7 +32,7 @@ interface Props {
   emotion: BeluEmotion;
   paused: boolean;
   onProximity: (zone: ZoneId | null) => void;
-  onEnter: (zone: ZoneId) => void;
+  onEnter?: (zone: ZoneId) => void;
   reduceMotion: boolean;
   growthScale: number;
   growthStage: number;
@@ -68,7 +69,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     // ---- consume interact edge ----
     if (input.interactQueued) {
       input.interactQueued = false;
-      if (nearZone.current) onEnter(nearZone.current);
+      if (nearZone.current && onEnter) onEnter(nearZone.current);
     }
 
     if (paused) {
@@ -133,6 +134,9 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
       group.current.position.copy(pos.current);
       group.current.rotation.y = facing.current;
     }
+    // share Belu's live position with the embodied quest system
+    beluPos.copy(pos.current);
+    beluState.grounded = grounded.current;
     motion.current.speed = Math.min(1, speed2 / SPEED);
     motion.current.airborne = !grounded.current;
     motion.current.vy = vy.current;
