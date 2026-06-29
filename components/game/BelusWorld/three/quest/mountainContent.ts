@@ -39,7 +39,31 @@ export interface MountainLevel {
   moment: string;
   /** the routine, in the order the ordered/safe stations must be visited */
   stations: Station[];
+  /** hidden collectible "morning stars" to discover by walking near them */
+  stars?: [number, number][];
 }
+
+// A few hidden "morning stars" tucked between the stations on every level. They
+// sparkle softly; walking near one collects it with a chime + burst. Finding all
+// of them is an optional, no-pressure bonus — pure discovery delight, never
+// required to finish, never penalised if missed.
+const STARS: [number, number][][] = [
+  [[2.3, 0], [-2.3, 0.5]],
+  [[2.4, -0.4], [-2.4, 0.6]],
+  [[2.6, -0.2], [-2.6, 0.2], [0, 0.4]],
+  [[0, 0], [0, -1.6]],
+  [[2.6, -0.4], [-2.6, 0.4], [0, 0.6]],
+];
+
+// Cheery lines Nimbus the cloud-buddy says as the morning gets going. Picked by
+// step index so they stay deterministic (no random at render).
+export const NIMBUS_LINES = [
+  'Yawwwn… oh! Good morning, Belu! Let us get ready together!',
+  'Way to go! The sun is peeking out!',
+  'Look — it is getting brighter! Keep going!',
+  'You are SO good at this. Almost there!',
+  'Wow, what a morning! The sun is way up high!',
+];
 
 function st(
   emoji: string,
@@ -81,6 +105,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
       st('🪥', 'Brush teeth', 'ordered', RING[2][0], RING[2][1], { done: 'Sparkly clean teeth!' }),
       st('👟', 'Put on shoes', 'ordered', RING[3][0], RING[3][1], { done: 'Shoes on — ready to go!' }),
     ],
+    stars: STARS[0],
   },
   {
     goal: 'Do the steps in order',
@@ -94,6 +119,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
       st('👕', 'Get dressed', 'ordered', RING[3][0], RING[3][1], { done: 'All dressed!' }),
       st('🥣', 'Eat breakfast', 'ordered', RING[4][0], RING[4][1], { done: 'Yum — good fuel!' }),
     ],
+    stars: STARS[1],
   },
   {
     goal: 'The whole morning',
@@ -109,6 +135,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
       st('🎒', 'Pack bag', 'ordered', RING[4][0], RING[4][1], { done: 'Bag is packed!' }),
       st('🚪', 'Say goodbye', 'ordered', RING[5][0], RING[5][1], { done: 'Bye-bye — have a great day!' }),
     ],
+    stars: STARS[2],
   },
   {
     goal: 'Stay safe',
@@ -126,6 +153,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
       st('🔒', 'Buckle your seatbelt', 'safe', SAFE_SPOTS[3][0], SAFE_SPOTS[3][1], { pair: 3, done: 'Click! Safe and ready.' }),
       st('🎮', 'Stand up in the car', 'unsafe', SAFE_SPOTS[3][0] + TWIN_DX, SAFE_SPOTS[3][1], { pair: 3 }),
     ],
+    stars: STARS[3],
   },
   {
     goal: 'All by myself',
@@ -140,5 +168,6 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
       st('🥣', 'Eat breakfast', 'any', RING[4][0], RING[4][1], { done: 'Yummy breakfast!' }),
       st('🎒', 'Pack my bag', 'any', RING[5][0], RING[5][1], { done: 'Bag is packed!' }),
     ],
+    stars: STARS[4],
   },
 ];

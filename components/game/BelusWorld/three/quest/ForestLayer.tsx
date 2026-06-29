@@ -26,7 +26,8 @@ import type { BeluEmotion } from '../../BeluCharacter';
 import Animal3D from './Animal3D';
 import AnswerOrb, { type OrbStatus } from './AnswerOrb';
 import { makeLabelTexture } from './emojiTexture';
-import { FOREST_STORY, type SpellWord } from './forestContent';
+import { FOREST_STORY, FOREST_TWINKLES, TWINKLE_FINDS, type SpellWord } from './forestContent';
+import { Twinkle, Wisp, GlowMushroom, WishTree, WordTrail, seeded } from './forestExtras';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'forest' as const;
@@ -35,6 +36,11 @@ const LINGER = 1.4; // seconds close before the word bubbles appear
 const WORD_DIST = 3.0; // how far the word bubbles sit in front of the friend
 const WORD_SPREAD = 2.6; // sideways gap between word bubbles (no overlap)
 const WORD_PICK = 1.5; // walk this close to a word bubble to "say" it
+const TWINKLE_PICK = 1.9; // walk this close to a hidden twinkle to collect it
+
+// A ring of glow-mushrooms around the forest heart that light up one by one as
+// the child helps friends — the world visibly waking because of them.
+const MUSHROOM_COLORS = ['#c6a0ff', '#ff8fc8', '#7cc6ff', '#ffd166', '#86d6c0', '#a0ffb8'];
 
 // Deterministic shuffle (no Math.random at render/module time — like the rest of
 // the world). Same friend always lays its words out the same way.
@@ -52,6 +58,10 @@ interface FriendRT {
   done: boolean;
   doneAt: number;
 }
+interface TwinkleRT {
+  found: boolean;
+  foundAt: number;
+}
 interface State {
   clock: number;
   active: boolean;
@@ -68,6 +78,10 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  // ---- engagement extras ----
+  twinkles: TwinkleRT[]; // hidden collectibles found so far
+  found: number; // count of twinkles collected this level
+  trail: { emoji: string; pos: [number, number, number]; born: number } | null; // last word-cast puff
 }
 
 interface Props {
@@ -87,11 +101,16 @@ function clampLevel(level: number) {
 export default function ForestLayer(props: Props) {
   const [, force] = useState(0);
   const bump = () => force((v) => (v + 1) % 1_000_000);
+  const twinklesOf = (level: number) =>
+    FOREST_STORY[clampLevel(level)].twinkles ?? FOREST_TWINKLES;
+
   const S = useRef<State>({
     clock: 0, active: false, level: props.level,
     friends: FOREST_STORY[clampLevel(props.level)].friends.map(() => ({ done: false, doneAt: -99 })),
     finished: 0, disarmed: false, activeFriend: -1, lingerStart: 0, listening: false,
     progress: 0, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    twinkles: twinklesOf(props.level).map(() => ({ found: false, foundAt: -99 })),
+    found: 0, trail: null,
   });
   const frame = useRef<(dt: number) => void>(() => {});
   const isl = ISLANDS[ZONE];
@@ -99,6 +118,11 @@ export default function ForestLayer(props: Props) {
   const friendWorld = (i: number): [number, number] => {
     const fr = FOREST_STORY[clampLevel(S.current.level)].friends[i];
     return [isl.cx + fr.pos[0], isl.cz + fr.pos[1]];
+  };
+
+  const twinkleWorld = (i: number): [number, number] => {
+    const t = twinklesOf(S.current.level)[i];
+    return [isl.cx + t.pos[0], isl.cz + t.pos[1]];
   };
 
   // the laid-out word bubbles for a friend (correct words + decoys, mixed)
@@ -149,6 +173,9 @@ export default function ForestLayer(props: Props) {
     S.current.activeFriend = -1;
     S.current.listening = false;
     S.current.progress = 0;
+    S.current.twinkles = twinklesOf(props.level).map(() => ({ found: false, foundAt: -99 }));
+    S.current.found = 0;
+    S.current.trail = null;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, 'Walk up to a friend to hear their wish 💜');
@@ -195,6 +222,9 @@ export default function ForestLayer(props: Props) {
     if (said === expected) {
       st.progress += 1;
       props.playSound('correct');
+      // a sparkle puff rises where the word landed — "your word did that!"
+      const layout = wordLayout(i);
+      st.trail = { emoji: words[k].emoji, pos: [layout[k][0], isl.top + 1.4, layout[k][2]], born: st.clock };
       if (st.progress >= fr.spell.length) {
         // the whole spell landed → the wanted thing magically appears
         st.friends[i].done = true;
@@ -250,6 +280,33 @@ export default function ForestLayer(props: Props) {
     if (st.wrongIdx >= 0 && st.clock > st.wrongUntil) {
       st.wrongIdx = -1;
       bump();
+    }
+    // let the last word-cast sparkle puff fade out
+    if (st.trail && st.clock - st.trail.born > 1.1) {
+      st.trail = null;
+      bump();
+    }
+
+    // ---- hidden twinkles: collectible discovery (no-fail, anytime on island) ----
+    {
+      const tw = twinklesOf(st.level);
+      for (let i = 0; i < tw.length; i++) {
+        if (st.twinkles[i]?.found) continue;
+        const [tx, tz] = twinkleWorld(i);
+        if (Math.hypot(beluPos.x - tx, beluPos.z - tz) < TWINKLE_PICK) {
+          st.twinkles[i] = { found: true, foundAt: st.clock };
+          st.found += 1;
+          props.playSound('tap');
+          props.setEmotion('excited');
+          props.speak(TWINKLE_FINDS[Math.floor(seeded(i + st.level) * TWINKLE_FINDS.length) % TWINKLE_FINDS.length]);
+          // a little celebration once the whole forest sparkle-hunt is done
+          if (st.found >= tw.length) {
+            props.playSound('levelup');
+            props.speak('You found every hidden sparkle in the forest! 🌟');
+          }
+          bump();
+        }
+      }
     }
 
     const dCenter = Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz);
@@ -334,9 +391,73 @@ export default function ForestLayer(props: Props) {
 
   // ---- render ----
   const friends = FOREST_STORY[clampLevel(S.current.level)].friends;
+  const twinkles = twinklesOf(S.current.level);
+  const totalFriends = friends.length;
+  const allDone = S.current.active === false && S.current.disarmed && S.current.finished >= totalFriends && S.current.finished > 0;
+  // glow-mushroom ring: how many are lit grows with friends helped (the forest
+  // waking up because of the child). One extra lights the moment all are done.
+  const NUM_MUSHROOMS = 6;
+  const litCount = totalFriends > 0
+    ? Math.round((S.current.finished / totalFriends) * NUM_MUSHROOMS)
+    : 0;
   return (
     <group>
       <Ticker fnRef={frame} />
+
+      {/* two firefly guides give the forest living personality; they speed up
+          and brighten as Belu helps more friends (escalating delight) */}
+      <Wisp center={[isl.cx, isl.top, isl.cz]} color={isl.accent} seed={1} excited={S.current.finished > 0} />
+      <Wisp center={[isl.cx, isl.top, isl.cz]} color="#ffd166" seed={4} excited={S.current.finished >= 2} />
+
+      {/* a ring of glow-mushrooms around the forest heart, lighting up with progress */}
+      {Array.from({ length: NUM_MUSHROOMS }).map((_, k) => {
+        const a = (k / NUM_MUSHROOMS) * Math.PI * 2;
+        const rr = isl.radius * 0.62;
+        return (
+          <GlowMushroom
+            key={`m${k}`}
+            position={[isl.cx + Math.cos(a) * rr, isl.top, isl.cz + Math.sin(a) * rr]}
+            color={MUSHROOM_COLORS[k % MUSHROOM_COLORS.length]}
+            lit={k < litCount}
+            seed={k + 1}
+          />
+        );
+      })}
+
+      {/* hidden twinkles to discover — sparkle until found, then pop + chime */}
+      {twinkles.map((tw, i) => {
+        const rt = S.current.twinkles[i] ?? { found: false, foundAt: -99 };
+        // once collected, keep it mounted briefly for the pop-and-rise animation
+        if (rt.found && S.current.clock - rt.foundAt > 1.3) return null;
+        const [tx, tz] = twinkleWorld(i);
+        return (
+          <Twinkle
+            key={`t${i}`}
+            position={[tx, isl.top + 0.9, tz]}
+            emoji={tw.emoji}
+            color={isl.accent}
+            collected={rt.found}
+            collectedAt={rt.foundAt}
+            clock={S.current.clock}
+            seed={i + 1}
+          />
+        );
+      })}
+
+      {/* the rising sparkle puff from the last magic word that landed */}
+      {S.current.trail && (
+        <WordTrail
+          position={S.current.trail.pos}
+          emoji={S.current.trail.emoji}
+          color={isl.accent}
+          born={S.current.trail.born}
+          clock={S.current.clock}
+        />
+      )}
+
+      {/* the big finale: a glowing wish-tree aura once every friend is helped */}
+      <WishTree position={[isl.cx, isl.top, isl.cz]} color={isl.accent} on={allDone} clock={S.current.clock} />
+
       {friends.map((fr, i) => {
         const rt = S.current.friends[i] ?? { done: false, doneAt: -99 };
         const [fx, fz] = friendWorld(i);
