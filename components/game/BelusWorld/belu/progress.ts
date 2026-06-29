@@ -21,10 +21,43 @@ export interface IslandProgress {
   levelStars: number[];
 }
 
+export type CosmeticSlot = 'head' | 'face' | 'back';
+export interface Cosmetic {
+  id: string;
+  name: string;
+  icon: string;
+  slot: CosmeticSlot;
+}
+/** Everything Belu can wear. Earned one per completed level (UNLOCK_ORDER). */
+export const COSMETICS: Cosmetic[] = [
+  { id: 'cap', name: 'Explorer Cap', icon: '🧢', slot: 'head' },
+  { id: 'bow', name: 'Cute Bow', icon: '🎀', slot: 'head' },
+  { id: 'party', name: 'Party Hat', icon: '🥳', slot: 'head' },
+  { id: 'crown', name: 'Golden Crown', icon: '👑', slot: 'head' },
+  { id: 'wizard', name: 'Wizard Hat', icon: '🧙', slot: 'head' },
+  { id: 'glasses', name: 'Cool Shades', icon: '🕶️', slot: 'face' },
+  { id: 'cape', name: 'Hero Cape', icon: '🦸', slot: 'back' },
+  { id: 'wings', name: 'Fairy Wings', icon: '🧚', slot: 'back' },
+];
+/** the order items unlock as the child completes levels */
+export const UNLOCK_ORDER = ['cap', 'bow', 'glasses', 'cape', 'party', 'crown', 'wings', 'wizard'];
+
+export interface EquippedCosmetics {
+  head?: string;
+  face?: string;
+  back?: string;
+}
+
+export function cosmeticById(id: string): Cosmetic | undefined {
+  return COSMETICS.find((c) => c.id === id);
+}
+
 export interface GameProgress {
   islands: Record<ActivityZone, IslandProgress>;
   /** cosmetic accessories the child has unlocked for Belu */
   unlocked: string[];
+  /** which cosmetic is worn in each slot */
+  equipped: EquippedCosmetics;
 }
 
 const KEY = 'belus_world_progress_v1';
@@ -42,6 +75,7 @@ function defaults(): GameProgress {
       forest: emptyIsland(),
     },
     unlocked: [],
+    equipped: {},
   };
 }
 
@@ -64,6 +98,7 @@ export function loadProgress(): GameProgress {
       }
     }
     if (Array.isArray(parsed.unlocked)) base.unlocked = parsed.unlocked;
+    if (parsed.equipped && typeof parsed.equipped === 'object') base.equipped = parsed.equipped;
     return base;
   } catch {
     return defaults();
@@ -168,6 +203,8 @@ export interface AwardResult {
   grewUp: boolean;
   growthBefore: GrowthStage;
   growthAfter: GrowthStage;
+  /** a cosmetic unlocked by finishing this level for the first time, if any */
+  unlockedItem?: Cosmetic;
 }
 
 /** Record a finished level. levelIdx is 0-based. stars is 1..3. Keeps the best. */
@@ -186,16 +223,35 @@ export function awardLevel(
   const wasIncomplete = prevBest === 0;
   next.islands[zone].levelStars[levelIdx] = Math.max(prevBest, Math.min(MAX_STARS_PER_LEVEL, stars));
   const growthAfter = getGrowth(next).stage;
+
+  // first-time level completion unlocks the next cosmetic
+  let unlockedItem: Cosmetic | undefined;
+  if (wasIncomplete) {
+    next.unlocked = [...p.unlocked];
+    const nextId = UNLOCK_ORDER.find((id) => !next.unlocked.includes(id));
+    if (nextId) {
+      next.unlocked.push(nextId);
+      unlockedItem = cosmeticById(nextId);
+      // auto-equip the very first thing they earn so the reward is visible
+      if (!next.equipped[unlockedItem!.slot]) {
+        next.equipped = { ...next.equipped, [unlockedItem!.slot]: nextId };
+      }
+    }
+  }
+
   return {
     progress: next,
     newLevel: wasIncomplete,
     grewUp: growthAfter > growthBefore,
     growthBefore,
     growthAfter,
+    unlockedItem,
   };
 }
 
-export function unlockAccessory(p: GameProgress, id: string): GameProgress {
-  if (p.unlocked.includes(id)) return p;
-  return { ...p, unlocked: [...p.unlocked, id] };
+export function equipCosmetic(p: GameProgress, slot: CosmeticSlot, id: string | null): GameProgress {
+  const equipped = { ...p.equipped };
+  if (id === null) delete equipped[slot];
+  else equipped[slot] = id;
+  return { ...p, equipped };
 }

@@ -16,10 +16,12 @@ interface Props {
   isTouch: boolean;
   onOpenSettings: () => void;
   onOpenMap: () => void;
+  onOpenWardrobe: () => void;
   onToggleFullscreen: () => void;
+  onExit: () => void;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onToggleFullscreen }: Props) {
+export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onExit }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
 
   return (
@@ -61,6 +63,14 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           )}
         </div>
         <button
+          onClick={onOpenWardrobe}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label="Dress up Belu"
+          title="Dress up Belu"
+        >
+          🎩
+        </button>
+        <button
           onClick={onOpenMap}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
           aria-label="Growth map"
@@ -74,6 +84,14 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           title="Full screen"
         >
           ⛶
+        </button>
+        <button
+          onClick={onExit}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label="Exit game"
+          title="Exit"
+        >
+          ✕
         </button>
         <button
           onClick={onOpenSettings}

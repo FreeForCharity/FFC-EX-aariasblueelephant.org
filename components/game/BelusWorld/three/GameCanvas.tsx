@@ -32,6 +32,7 @@ interface Props {
   /** Belu's current size + growth stage (visible "growing up") */
   growthScale: number;
   growthStage: number;
+  equipped?: import('../belu/progress').EquippedCosmetics;
   /** completed-level count per zone island (drives the bloom) */
   islandLevels: Partial<Record<ZoneId, number>>;
   /** which level to play next on each zone island */
@@ -79,6 +80,7 @@ export default function GameCanvas({
   activeZone,
   growthScale,
   growthStage,
+  equipped,
   islandLevels,
   islandNextLevel,
   sound,
@@ -142,6 +144,7 @@ export default function GameCanvas({
           reduceMotion={reduceMotion}
           growthScale={growthScale}
           growthStage={growthStage}
+          equipped={equipped}
         />
         {/* Feelings Meadow is caring-play (StoryLayer); the other islands use
             the quest/orb layer. */}

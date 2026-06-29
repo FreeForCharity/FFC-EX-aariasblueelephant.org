@@ -19,6 +19,7 @@ import { attachKeyboard } from './three/input';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
 import GrowthMap from './ui/GrowthMap';
+import Wardrobe from './ui/Wardrobe';
 import type { QuestStatus } from './three/quest/QuestLayer';
 import {
   loadMemory,
@@ -34,12 +35,14 @@ import {
   loadProgress,
   saveProgress,
   awardLevel,
+  equipCosmetic,
   getGrowth,
   completedLevels,
   nextLevel,
   totalStars,
   type GameProgress,
   type ActivityZone,
+  type CosmeticSlot,
   ZONES,
 } from './belu/progress';
 import { speakAloud, playSound, stopSpeaking } from './belu/feedback';
@@ -69,6 +72,7 @@ interface RewardInfo {
   grewUp: boolean;
   growthLabel: string;
   islandMastered: boolean;
+  unlockedItem?: { name: string; icon: string };
 }
 
 export default function BelusWorldGame() {
@@ -80,6 +84,7 @@ export default function BelusWorldGame() {
   const [nearZone, setNearZone] = useState<ZoneId | null>(null);
   const [questStatus, setQuestStatus] = useState<QuestStatus | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWardrobe, setShowWardrobe] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [reward, setReward] = useState<RewardInfo | null>(null);
   const [settings, setSettings] = useState<Settings>({
@@ -136,7 +141,7 @@ export default function BelusWorldGame() {
     };
   }, [phase]);
 
-  const paused = showSettings || showMap || reward !== null;
+  const paused = showSettings || showMap || reward !== null || showWardrobe;
 
   const handleProximity = useCallback((zone: ZoneId | null) => {
     setNearZone(zone);
@@ -146,6 +151,15 @@ export default function BelusWorldGame() {
   // a sound helper bound to the current sound setting
   const sfx = useCallback((kind: Parameters<typeof playSound>[0]) => {
     playSound(kind, settingsRef.current.sound);
+  }, []);
+
+  const handleEquip = useCallback((slot: CosmeticSlot, id: string | null) => {
+    setProgress((p) => {
+      const next = equipCosmetic(p, slot, id);
+      saveProgress(next);
+      return next;
+    });
+    playSound('tap', settingsRef.current.sound);
   }, []);
 
   const toggleFullscreen = useCallback(() => {
@@ -181,6 +195,7 @@ export default function BelusWorldGame() {
         grewUp: res.grewUp,
         growthLabel: getGrowth(res.progress).label,
         islandMastered: mastered,
+        unlockedItem: res.unlockedItem ? { name: res.unlockedItem.name, icon: res.unlockedItem.icon } : undefined,
       });
     },
     [progress, memory],
@@ -191,7 +206,7 @@ export default function BelusWorldGame() {
   }
 
   return (
-    <div ref={rootRef} className="relative h-screen w-full overflow-hidden bg-[#bfe2ff]">
+    <div ref={rootRef} className="fixed inset-0 z-50 overflow-hidden bg-[#bfe2ff]">
       <Suspense fallback={<LoadingWorld />}>
         <GameCanvas
           emotion={emotion}
@@ -201,6 +216,7 @@ export default function BelusWorldGame() {
           activeZone={nearZone}
           growthScale={growth.scale}
           growthStage={growth.stage}
+          equipped={progress.equipped}
           islandLevels={islandLevels}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
@@ -221,7 +237,9 @@ export default function BelusWorldGame() {
         isTouch={isTouch.current}
         onOpenSettings={() => setShowSettings(true)}
         onOpenMap={() => setShowMap(true)}
+        onOpenWardrobe={() => setShowWardrobe(true)}
         onToggleFullscreen={toggleFullscreen}
+        onExit={() => { stopSpeaking(); window.history.back(); }}
       />
 
       <AnimatePresence>
@@ -240,6 +258,11 @@ export default function BelusWorldGame() {
       {/* Growth map */}
       <AnimatePresence>{showMap && <GrowthMap progress={progress} onClose={() => setShowMap(false)} />}</AnimatePresence>
 
+      {/* Wardrobe */}
+      <AnimatePresence>
+        {showWardrobe && <Wardrobe progress={progress} onEquip={handleEquip} onClose={() => setShowWardrobe(false)} />}
+      </AnimatePresence>
+
       {/* Settings */}
       <AnimatePresence>
         {showSettings && (
@@ -256,7 +279,7 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
   const returning = memory.visitCount > 0;
   return (
     <div
-      className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden p-6 text-center"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto p-6 text-center"
       style={{ background: 'linear-gradient(180deg,#aee0ff 0%,#d8f0ff 55%,#fff6e0 100%)' }}
     >
       {[0, 1, 2].map((i) => (
@@ -517,6 +540,11 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
         {reward.islandMastered && !reward.grewUp && (
           <p className="mt-3 rounded-2xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-700">
             🌷 You fully bloomed this island!
+          </p>
+        )}
+        {reward.unlockedItem && (
+          <p className="mt-3 rounded-2xl bg-violet-100 px-4 py-2 text-sm font-bold text-violet-700">
+            🎁 New for Belu: {reward.unlockedItem.icon} {reward.unlockedItem.name}! Tap 🎩 to wear it.
           </p>
         )}
 
