@@ -5,8 +5,11 @@
   /* ---------------- renderer / camera ---------------- */
   const canvas = $('gameCanvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // smooth skin: cap pixel ratio (cheapest big win — scales shadow + PBR + fill at once)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, ABC.SMOOTH ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if (ABC.SMOOTH) document.body.classList.add('skin-smooth');
+  ABC._renderer = renderer;   // diagnostics/test seam
 
   const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 300);
   ABC.player = camera;
@@ -52,7 +55,15 @@
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
-  const scene = ABC.world.initScene(renderer);
+  // if the Smooth skin fails to init on a weak GPU (PMREM/shadows/shaders), fall
+  // back to Classic on the next load so a kid is never stuck on a broken world.
+  let scene;
+  try {
+    scene = ABC.world.initScene(renderer);
+  } catch (e) {
+    if (ABC.SMOOTH) { try { localStorage.setItem('abcSkin', 'classic'); } catch (_) {} location.reload(); }
+    throw e;
+  }
   ABC.world.generate();
   ABC.animals.spawnAll(scene);
   ABC.squishy.init(scene);
@@ -65,6 +76,7 @@
   ABC.signs.placeAll();
 
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
+  ABC.setLook = (y, p) => { yaw = y; pitch = p; };   // test/debug: aim the camera
 
   /* ---------------- player avatar (visible in 3rd person) ---------------- */
   const avatar = new THREE.Group();
@@ -872,8 +884,56 @@
   };
   $('howBtn').onclick = () => ABC.ui.showHelp();
 
+  /* ---------------- skin picker (title screen) ----------------
+     The smooth skin rebuilds materials/geometry/renderer at startup, so flipping
+     it writes the choice and reloads — calmer than a mid-session visual pop. */
+  function currentSkin() { try { return localStorage.getItem('abcSkin') === 'smooth' ? 'smooth' : 'classic'; } catch (e) { return 'classic'; } }
+  function labelSkinBtn() {
+    const b = $('skinBtn'); if (!b) return;
+    b.textContent = currentSkin() === 'smooth' ? '✨ Look: Smooth' : '🧱 Look: Classic';
+  }
+  ABC.setSkin = (skin) => {
+    try { localStorage.setItem('abcSkin', skin === 'smooth' ? 'smooth' : 'classic'); } catch (e) {}
+    location.reload();
+  };
+  if ($('skinBtn')) {
+    $('skinBtn').onclick = () => ABC.setSkin(currentSkin() === 'smooth' ? 'classic' : 'smooth');
+    labelSkinBtn();
+  }
+
   /* emotion spawner: gentle pace */
   setInterval(() => { if (started && !ABC.ui.isOpen()) ABC.activities.emotionTick(); }, 25000);
+
+  /* ---------------- smooth-skin perf guard ----------------
+     Sample FPS once a second; if it's low for a sustained 3s, calmly drop the
+     single most expensive feature (the sun shadow) ONCE — never frame-to-frame,
+     never strobing. Steps back up only on a fresh session (Settings reload). */
+  let _frames = 0, _t0 = performance.now(), _lowSec = 0, _perfRung = 0;
+  function sampleFPS(now) {
+    if (!ABC.SMOOTH) return;                 // classic is byte-for-byte: no sampling at all
+    _frames++;
+    if (now - _t0 >= 1000) {
+      const fps = _frames * 1000 / (now - _t0);
+      _frames = 0; _t0 = now;
+      window.__abcFps = Math.round(fps);
+      if (ABC._noPerfGuard) return;
+      // act only on a sustained 3s trend, one rung at a time, never frame-to-frame
+      if (fps < 28) _lowSec++; else _lowSec = 0;
+      if (_lowSec >= 3 && _perfRung < 2) {
+        _lowSec = 0; _perfRung++;
+        if (_perfRung === 1) {               // rung 1: drop the sun shadow + HUD blur
+          renderer.shadowMap.enabled = false;
+          renderer.shadowMap.needsUpdate = true;
+          document.body.classList.add('perf-lite');
+        } else {                             // rung 2: drop pixel ratio + the reflection env
+          renderer.setPixelRatio(1.0);
+          const sc = ABC.world.getScene && ABC.world.getScene();
+          if (sc) sc.environment = null;
+        }
+        ABC.ui && ABC.ui.toast && ABC.ui.toast('✨ Smoothing things out for your device…', 2600);
+      }
+    }
+  }
 
   /* ---------------- main loop ---------------- */
   let last = performance.now();
@@ -883,6 +943,7 @@
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (started) {
+      sampleFPS(now);
       chunkTimer += dt;
       if (chunkTimer > 0.3) {
         chunkTimer = 0;
@@ -893,6 +954,7 @@
         ABC.weather.setType((ABC.audio.settings.weather === false && w !== 'fireflies') ? 'clear' : w);
       }
       ABC.world.gradeFrame(feet.x, feet.z, dt);                     // color-grade the sky by region
+      ABC.world.updateSun(feet.x, feet.z);                          // smooth skin: sun shadow follows you ☀️
       ABC.world.updateSky(camera.position, dt);                     // stars + Milky Way at night 🌌
       updatePlayer(dt);
       updateFly(dt);

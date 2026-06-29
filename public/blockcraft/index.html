@@ -222,6 +222,207 @@
     justify-content:flex-start; margin:8px 0; }
   .oreoLayer { width:150px; height:26px; border-radius:13px; margin-top:-6px; box-shadow:0 3px 5px rgba(0,0,0,.25);
     animation:popIn .25s ease; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  /* =====================================================================
+     ✨ SMOOTH SKIN — premium, spacious, calm control theme (opt-in only)
+     Purely additive, scoped under body.skin-smooth, so the Classic skin is
+     byte-for-byte unchanged. Keeps EVERY existing button/feature — just laid
+     out with breathing room and soft translucent "cards" like a finished app.
+     ===================================================================== */
+  body.skin-smooth {
+    --hud-pad: 20px;
+    --glass: rgba(255,255,255,.66);
+    --glass-flat: rgba(248,251,253,.93);
+    --ink: #163a4c;
+    --accent: #1fb6a6;
+  }
+  /* one reusable soft-glass surface for every control */
+  body.skin-smooth .scoreChip,
+  body.skin-smooth .menuBtn,
+  body.skin-smooth #bagBtn,
+  body.skin-smooth #hotbar,
+  body.skin-smooth .hotSlot,
+  body.skin-smooth .tBtn,
+  body.skin-smooth #lookHint,
+  body.skin-smooth #projectPanel {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+    backdrop-filter: blur(8px) saturate(115%);
+    box-shadow: 0 10px 26px -10px rgba(18,38,56,.5), inset 0 1px 0 rgba(255,255,255,.9);
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform .09s ease, background .12s ease, box-shadow .12s ease;
+  }
+  body.skin-smooth .scoreChip { border-radius:16px; padding:9px 16px; font-size:18px; }
+  body.skin-smooth .menuBtn   { border-radius:16px; padding:10px 15px; font-weight:600; }
+  body.skin-smooth .menuBtn:hover { background:rgba(255,255,255,.86); transform:translateY(-1px); }
+  body.skin-smooth .menuBtn:active,
+  body.skin-smooth .tBtn:active,
+  body.skin-smooth #bagBtn:active { transform:scale(.93); background:rgba(31,182,166,.26); }
+
+  /* spacious edge placement — replaces the cramped defaults */
+  body.skin-smooth #scoreBar { top:var(--hud-pad); left:var(--hud-pad); gap:12px; }
+  body.skin-smooth #menuBar  { top:var(--hud-pad); right:var(--hud-pad); gap:10px; }
+  body.skin-smooth #sideBtns { right:var(--hud-pad); top:86px; gap:13px;
+    max-height:calc(100vh - 340px); }
+  body.skin-smooth .sideBtn  { width:60px; height:60px; border-radius:17px; font-size:22px; }
+  body.skin-smooth .sideBtn small { font-size:10px; opacity:.8; }
+  body.skin-smooth .sideBtn.active { background:rgba(31,182,166,.3);
+    box-shadow:0 0 0 3px var(--accent), 0 8px 18px -8px rgba(18,38,56,.5); }
+
+  /* the bag — calm: no pulsing glow, no strobing sparkle */
+  body.skin-smooth #bagBtn {
+    bottom:var(--hud-pad); left:var(--hud-pad);
+    width:90px; height:90px; border-radius:24px;
+    background:linear-gradient(180deg,#fff,rgba(255,255,255,.6));
+    animation:none;
+  }
+  body.skin-smooth #bagBtn::after { content:''; }
+  body.skin-smooth #bagBtn:hover { transform:scale(1.06) rotate(-3deg); }
+
+  /* hotbar — a clean centered tray */
+  body.skin-smooth #hotbar {
+    bottom:var(--hud-pad); padding:10px 12px; gap:8px; border-radius:20px;
+    max-width:min(94vw,640px); background:var(--glass); }
+  body.skin-smooth .hotSlot { border-radius:14px; border:2px solid rgba(255,255,255,.7);
+    box-shadow:none; }
+  body.skin-smooth .hotSlot.selected { border-color:var(--accent);
+    background:rgba(31,182,166,.22); transform:scale(1.08); }
+  body.skin-smooth .hotSlot .swatch { border-radius:8px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.12); }
+
+  /* movement pad + action cluster — roomier, softer, thumb-friendly */
+  body.skin-smooth #touchPad  { left:24px; bottom:128px; width:176px; height:176px; }
+  body.skin-smooth #touchActs { right:24px; bottom:128px; gap:16px; }
+  body.skin-smooth .tBtn { border-radius:17px; font-size:23px; }
+  body.skin-smooth #tUp{left:60px;top:0} body.skin-smooth #tLeft{left:0;top:60px}
+  body.skin-smooth #tRight{left:120px;top:60px} body.skin-smooth #tDown{left:60px;top:120px}
+  body.skin-smooth #touchActs .tBtn { width:66px; height:66px; font-size:28px; }
+  body.skin-smooth #tMode { box-shadow:0 0 0 3px #2fb36a, 0 8px 18px -8px rgba(18,38,56,.5); }
+  body.skin-smooth #tMode.digMode { box-shadow:0 0 0 3px #ff922b, 0 8px 18px -8px rgba(18,38,56,.5); }
+  body.skin-smooth #lookHint { bottom:104px; border-radius:22px; padding:11px 22px; color:var(--ink); }
+  body.skin-smooth #crosshair { text-shadow:0 0 8px rgba(0,0,0,.45); opacity:.7; }
+  body.skin-smooth #projectPanel { border-radius:20px; }
+
+  /* =====================================================================
+     SMOOTH DECLUTTER — reference-clean placement (like Block Craft 3D):
+     only TWO big standing buttons on the right (Build + Fly); the dense rail
+     and secondary menu buttons fold into the single ✨ menu; calm corners.
+     Scoped to body.skin-smooth → Classic untouched. These come AFTER the
+     base smooth block so they win by source order.
+     ===================================================================== */
+
+  /* one ✨ door, visible on desktop too (it's .mobOnly = hidden by default) */
+  body.skin-smooth #moreBtn {
+    display:flex !important; align-items:center; justify-content:center;
+    width:60px; height:60px; min-width:60px; padding:0;
+    font-size:28px; line-height:1; border-radius:18px; font-weight:700; }
+  body.skin-smooth #moreBtn:hover { transform:translateY(-1px); }
+
+  /* fold the secondary top-row buttons into ✨ (keep Build promoted, Settings
+     + Full Screen one-tap). Keep #buildMenuBtn shown — it's promoted below.   */
+  body.skin-smooth #slimeBtn, body.skin-smooth #oreoBtn, body.skin-smooth #kindBtn,
+  body.skin-smooth #stickersBtn, body.skin-smooth #helpBtn { display:none !important; }
+
+  /* the dense right rail folds into ✨ — hide every rail button EXCEPT #flyBtn
+     (which we promote). NB: we can't display:none the #sideBtns CONTAINER, or
+     its child #flyBtn can't be shown via position:fixed (a fixed element still
+     can't escape a display:none ancestor). So hide the siblings by id.        */
+  body.skin-smooth #viewBtn, body.skin-smooth #zoomInBtn, body.skin-smooth #zoomOutBtn,
+  body.skin-smooth #mapBtn, body.skin-smooth #passportBtn, body.skin-smooth #photoBtn,
+  body.skin-smooth #albumBtn { display:none !important; }
+  body.skin-smooth #sideBtns { gap:0; }   /* container collapses (only fixed child left) */
+
+  /* fold the two passive progress chips into ✨ (Adventures / Sunflower)       */
+  body.skin-smooth #questChip, body.skin-smooth #flowerChip { display:none !important; }
+  body.skin-smooth #lookHint { display:none !important; }
+
+  /* RIGHT-MID promoted pair: 🏗️ Build (top) + 🕊️ Fly (under), vertically
+     centred, well clear of the bottom action cluster. Re-anchor the EXISTING
+     in-place buttons with position:fixed — no DOM moves, handlers stay wired.  */
+  body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn {
+    position:fixed; right:var(--hud-pad); z-index:6;
+    width:78px; height:78px; min-width:78px; padding:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; border-radius:22px; font-size:30px; line-height:1.05; }
+  /* upper-right (just below the menu), NOT vertical-centre — that would collide
+     with the bottom action cluster on ~800px-tall screens. Here they sit high
+     and the verbs sit low, with a wide clear gap between.                      */
+  body.skin-smooth #buildMenuBtn { top:96px; }
+  body.skin-smooth #flyBtn       { top:182px; }
+  body.skin-smooth #buildMenuBtn .btnTxt { display:block; font-size:12px; font-weight:600; }
+  body.skin-smooth #flyBtn small { font-size:11px; opacity:.85; }
+  body.skin-smooth #flyBtn.active { background:rgba(31,182,166,.3);
+    box-shadow:0 0 0 3px var(--accent,#1fb6a6), 0 8px 18px -8px rgba(18,38,56,.5); }
+
+  /* bottom-right action verbs (jump / descend / dig); rail is gone so no overlap */
+  body.skin-smooth #touchActs { right:var(--hud-pad); bottom:140px; gap:16px; }
+  body.skin-smooth #touchActs .tBtn { width:68px; height:68px; font-size:28px; border-radius:18px; }
+  body.skin-smooth #touchActs #tFly { display:none !important; }   /* one Fly only (promoted) */
+
+  /* bottom-left D-pad (dominant) + bag corner, desktop-sized */
+  body.skin-smooth #touchPad { left:var(--hud-pad); bottom:140px; width:198px; height:198px; }
+  body.skin-smooth #touchPad .tBtn { width:62px; height:62px; font-size:26px; border-radius:18px; }
+  body.skin-smooth #tUp   { left:68px;  top:0;    }
+  body.skin-smooth #tLeft { left:0;     top:68px; }
+  body.skin-smooth #tRight{ left:136px; top:68px; }
+  body.skin-smooth #tDown { left:68px;  top:136px;}
+  body.skin-smooth #bagBtn { bottom:var(--hud-pad); left:var(--hud-pad); width:84px; height:84px; }
+
+  /* bottom-center hotbar: reserve corner space so it never slides under bag/actions */
+  body.skin-smooth #hotbar { bottom:var(--hud-pad); left:50%; transform:translateX(-50%);
+    max-width:min(620px, calc(100vw - 2*var(--hud-pad) - 440px)); }
+
+  /* short viewports: shrink + lift so nothing rides over the hotbar */
+  @media (max-height: 640px) {
+    body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn {
+      width:64px; height:64px; min-width:64px; font-size:26px; }
+    body.skin-smooth #buildMenuBtn { top:78px; }
+    body.skin-smooth #flyBtn       { top:150px; }
+    body.skin-smooth #touchPad  { bottom:118px; width:170px; height:170px; }
+    body.skin-smooth #touchPad .tBtn { width:54px; height:54px; }
+    body.skin-smooth #tUp{left:58px;top:0} body.skin-smooth #tLeft{left:0;top:58px}
+    body.skin-smooth #tRight{left:116px;top:58px} body.skin-smooth #tDown{left:58px;top:116px}
+    body.skin-smooth #touchActs { bottom:118px; }
+    body.skin-smooth #touchActs .tBtn { width:58px; height:58px; }
+  }
+
+  /* phones (<=1100px): the GLOBAL mobile query already hides the rail + shows ✨
+     and compacts everything; just suppress our promoted pair so there's no
+     orphaned Build/Fly, and restore the mobile #tFly button.                    */
+  @media (max-width: 1100px) {
+    body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn { display:none !important; }
+    body.skin-smooth #touchActs #tFly { display:block !important; }
+    /* re-assert the proven compact mobile layout (my desktop rules above are
+       higher-specificity than the global mobile ones, so restate them here).
+       Critically: the centered desktop hotbar max-width calc goes NEGATIVE on a
+       phone — pin it back to the mobile left-anchored bar.                      */
+    body.skin-smooth #hotbar { left:82px; transform:none; bottom:10px;
+      max-width:calc(100vw - 170px); }
+    body.skin-smooth #bagBtn { width:62px; height:62px; left:10px; bottom:10px; }
+    body.skin-smooth #touchPad { left:10px; bottom:96px; width:138px; height:138px; }
+    body.skin-smooth #touchPad .tBtn { width:44px; height:44px; font-size:17px; }
+    body.skin-smooth #tUp{left:47px;top:0} body.skin-smooth #tLeft{left:0;top:47px}
+    body.skin-smooth #tRight{left:94px;top:47px} body.skin-smooth #tDown{left:47px;top:94px}
+    body.skin-smooth #touchActs { right:10px; bottom:84px; gap:8px; }
+    body.skin-smooth #touchActs .tBtn { width:50px; height:50px; font-size:20px; }
+  }
+
+  /* PERF + accessibility fallbacks (load-bearing) */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    body.skin-smooth .scoreChip, body.skin-smooth .menuBtn, body.skin-smooth #bagBtn,
+    body.skin-smooth #hotbar, body.skin-smooth .hotSlot, body.skin-smooth .tBtn,
+    body.skin-smooth #lookHint, body.skin-smooth #projectPanel { background:var(--glass-flat); }
+  }
+  body.skin-smooth.perf-lite .scoreChip, body.skin-smooth.perf-lite .menuBtn,
+  body.skin-smooth.perf-lite #bagBtn, body.skin-smooth.perf-lite #hotbar,
+  body.skin-smooth.perf-lite .hotSlot, body.skin-smooth.perf-lite .tBtn,
+  body.skin-smooth.perf-lite #lookHint, body.skin-smooth.perf-lite #projectPanel {
+    -webkit-backdrop-filter:none; backdrop-filter:none; background:var(--glass-flat); }
+  @media (prefers-reduced-motion: reduce) {
+    body.skin-smooth #bagBtn, body.skin-smooth .menuBtn, body.skin-smooth .tBtn { transition:none; }
+  }
+  body.skin-smooth button:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -237,10 +438,12 @@
     <input id="playerNameInput" value="Aaria" maxlength="20">
   </div>
   <button class="bigBtn green" id="playBtn">▶ Play!</button>
-  <div style="display:flex; gap:14px;">
+  <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
     <button class="bigBtn" id="howBtn" style="font-size:20px; padding:12px 30px;">❓ How to Play</button>
+    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🧱 Look: Classic</button>
     <button class="bigBtn" id="fsTitleBtn" style="font-size:20px; padding:12px 30px;">⛶ Full Screen</button>
   </div>
+  <div id="skinHint" style="font-size:14px; color:#2b517d; background:rgba(255,255,255,.55); padding:6px 16px; border-radius:14px; max-width:520px;">✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.</div>
   <div id="orgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA</div>
 </div>
 
@@ -305,23 +508,23 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=28"></script>
-<script src="js/audio.js?v=28"></script>
-<script src="js/world.js?v=28"></script>
-<script src="js/animals.js?v=28"></script>
-<script src="js/squishy.js?v=28"></script>
-<script src="js/weather.js?v=28"></script>
-<script src="js/parks.js?v=28"></script>
-<script src="js/shops.js?v=28"></script>
-<script src="js/signs.js?v=28"></script>
-<script src="js/portal.js?v=28"></script>
-<script src="js/ui.js?v=28"></script>
-<script src="js/activities.js?v=28"></script>
-<script src="js/music.js?v=28"></script>
-<script src="js/pet.js?v=28"></script>
-<script src="js/stickers.js?v=28"></script>
-<script src="js/overnight.js?v=28"></script>
-<script src="js/photo.js?v=28"></script>
-<script src="js/main.js?v=28"></script>
+<script src="js/data.js?v=29"></script>
+<script src="js/audio.js?v=29"></script>
+<script src="js/world.js?v=29"></script>
+<script src="js/animals.js?v=29"></script>
+<script src="js/squishy.js?v=29"></script>
+<script src="js/weather.js?v=29"></script>
+<script src="js/parks.js?v=29"></script>
+<script src="js/shops.js?v=29"></script>
+<script src="js/signs.js?v=29"></script>
+<script src="js/portal.js?v=29"></script>
+<script src="js/ui.js?v=29"></script>
+<script src="js/activities.js?v=29"></script>
+<script src="js/music.js?v=29"></script>
+<script src="js/pet.js?v=29"></script>
+<script src="js/stickers.js?v=29"></script>
+<script src="js/overnight.js?v=29"></script>
+<script src="js/photo.js?v=29"></script>
+<script src="js/main.js?v=29"></script>
 </body>
 </html>

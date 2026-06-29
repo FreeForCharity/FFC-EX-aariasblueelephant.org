@@ -507,6 +507,8 @@ ABC.ui = (function () {
       { ico: '📸', label: 'Photo',      go: press('photoBtn') },
       { ico: '🖼️', label: 'Album',      go: press('albumBtn') },
       { ico: '👀', label: 'View',       go: press('viewBtn') },
+      { ico: '🔍', label: 'Zoom +',     go: press('zoomInBtn') },
+      { ico: '🔭', label: 'Zoom −',     go: press('zoomOutBtn') },
       { ico: '⛶',  label: 'Big Screen', go: press('fsBtn') },
       { ico: '⚙️', label: 'Settings',   go: press('settingsBtn') },
       { ico: '❓', label: 'Help',       go: press('helpBtn') },
@@ -525,8 +527,10 @@ ABC.ui = (function () {
   function showSettings() {
     const s = ABC.audio.settings;
     const chk = (v) => v ? '✅' : '⬜';
+    const skinNow = ABC.SMOOTH ? '✨ Smooth' : '🧱 Classic';
     openDialog(`<img src="logo.png" style="width:90px;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.2);" alt=""><h2>Settings</h2>
       <button class="choiceBtn" id="setName">✏️ Player name: <b>${esc(ABC.state.playerName)}</b> — tap to change</button>
+      <button class="choiceBtn" id="setSkin">🎨 Block look: <b>${skinNow}</b> — tap to switch (Smooth = soft, rounded, gentle shadows)</button>
       <button class="choiceBtn" id="setVoice">${chk(s.voiceMode)} 🎤 Voice Mode — say sentences out loud ${ABC.audio.hasSR ? '' : '(needs Chrome/Edge)'}</button>
       <button class="choiceBtn" id="setRead">${chk(s.readAloud)} 🔊 Read everything aloud</button>
       <button class="choiceBtn" id="setVoiceName">🗣️ Voice: <b>${esc(ABC.audio.voiceName())}</b> — tap to try another</button>
@@ -551,6 +555,13 @@ ABC.ui = (function () {
         toast(`Hi, <b>${esc(ABC.state.playerName)}</b>! 👋`, 3000, true);
         showSettings();
       };
+    });
+    wire('setSkin', () => {
+      const next = ABC.SMOOTH ? 'classic' : 'smooth';
+      const niceNext = next === 'smooth' ? 'Smooth ✨' : 'Classic 🧱';
+      message('Switch the block look?',
+        `I'll switch to <b>${niceNext}</b> and reload your world (your build is saved). Ready?`,
+        'Yes, switch! 🎨', () => { (ABC.setSkin || function(){})(next); }, '🎨');
     });
     wire('setVoice', () => { s.voiceMode = !s.voiceMode; ABC.saveSoon(); showSettings(); });
     wire('setVoiceName', () => { ABC.audio.cycleVoice(); ABC.saveSoon(); showSettings(); });
