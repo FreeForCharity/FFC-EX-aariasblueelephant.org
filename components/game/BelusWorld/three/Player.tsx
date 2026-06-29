@@ -16,6 +16,7 @@ import { input } from './input';
 import { beluPos, beluState } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
+import type { EquippedCosmetics } from '../belu/progress';
 
 const SPEED = 7.5;
 const GRAVITY = 24;
@@ -36,10 +37,11 @@ interface Props {
   reduceMotion: boolean;
   growthScale: number;
   growthStage: number;
+  equipped?: EquippedCosmetics;
 }
 
 const Player = forwardRef<PlayerHandle, Props>(function Player(
-  { emotion, paused, onProximity, onEnter, reduceMotion, growthScale, growthStage },
+  { emotion, paused, onProximity, onEnter, reduceMotion, growthScale, growthStage, equipped },
   ref,
 ) {
   const group = useRef<THREE.Group>(null);
@@ -199,7 +201,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
 
   return (
     <group ref={group}>
-      <Belu3D motion={motion} emotion={emotion} growthScale={growthScale} growthStage={growthStage} />
+      <Belu3D motion={motion} emotion={emotion} growthScale={growthScale} growthStage={growthStage} equipped={equipped} />
     </group>
   );
 });

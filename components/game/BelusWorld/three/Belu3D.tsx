@@ -9,6 +9,7 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { BeluEmotion } from '../BeluCharacter';
+import type { EquippedCosmetics } from '../belu/progress';
 
 export interface MotionRef {
   speed: number; // 0..1 how fast Belu is moving on the ground
@@ -23,6 +24,8 @@ interface Props {
   growthScale?: number;
   /** 0 baby, 1 little, 2 big, 3 grown — gates visible features */
   growthStage?: number;
+  /** cosmetics Belu is wearing */
+  equipped?: EquippedCosmetics;
 }
 
 const BODY = '#5fa8e8';
@@ -61,7 +64,7 @@ function Leg({ x, z, swing }: { x: number; z: number; swing: React.MutableRefObj
   );
 }
 
-export default function Belu3D({ motion, emotion, growthScale = 1, growthStage = 2 }: Props) {
+export default function Belu3D({ motion, emotion, growthScale = 1, growthStage = 2, equipped }: Props) {
   const root = useRef<THREE.Group>(null);
   const bodyGrp = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
@@ -272,9 +275,155 @@ export default function Belu3D({ motion, emotion, growthScale = 1, growthStage =
               </mesh>
             </>
           )}
+
+          {/* worn cosmetics on the head + face */}
+          {equipped?.head && <HeadGear id={equipped.head} />}
+          {equipped?.face && <FaceGear id={equipped.face} />}
         </group>
+
+        {/* worn cosmetics on the back */}
+        {equipped?.back && <BackGear id={equipped.back} />}
       </group>
     </group>
    </group>
   );
+}
+
+// --- worn cosmetics (procedural, nothing to download) -----------------------
+
+function HeadGear({ id }: { id: string }) {
+  if (id === 'cap') {
+    return (
+      <group position={[0, 0.82, 0.05]}>
+        <mesh castShadow scale={[1, 0.62, 1]}>
+          <sphereGeometry args={[0.52, 18, 12]} />
+          <meshStandardMaterial color="#e8556b" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, -0.04, 0.42]} rotation={[-0.25, 0, 0]}>
+          <cylinderGeometry args={[0.34, 0.34, 0.06, 20, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#c8455a" roughness={0.6} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0.32, 0]}>
+          <sphereGeometry args={[0.07, 10, 8]} />
+          <meshStandardMaterial color="#ffd166" />
+        </mesh>
+      </group>
+    );
+  }
+  if (id === 'bow') {
+    return (
+      <group position={[0.34, 0.78, 0.1]} rotation={[0, 0, -0.3]}>
+        <mesh position={[-0.16, 0, 0]} rotation={[0, 0, 0.5]}>
+          <coneGeometry args={[0.16, 0.3, 12]} />
+          <meshStandardMaterial color="#ff8fc8" roughness={0.5} />
+        </mesh>
+        <mesh position={[0.16, 0, 0]} rotation={[0, 0, -0.5 + Math.PI]}>
+          <coneGeometry args={[0.16, 0.3, 12]} />
+          <meshStandardMaterial color="#ff8fc8" roughness={0.5} />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.09, 12, 10]} />
+          <meshStandardMaterial color="#ff6fb5" />
+        </mesh>
+      </group>
+    );
+  }
+  if (id === 'party') {
+    return (
+      <group position={[0, 0.95, 0.05]}>
+        <mesh castShadow position={[0, 0.3, 0]}>
+          <coneGeometry args={[0.34, 0.9, 18]} />
+          <meshStandardMaterial color="#6c8cff" roughness={0.4} emissive="#6c8cff" emissiveIntensity={0.15} />
+        </mesh>
+        <mesh position={[0, 0.78, 0]}>
+          <sphereGeometry args={[0.1, 12, 10]} />
+          <meshStandardMaterial color="#ffd166" emissive="#ffd166" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+    );
+  }
+  if (id === 'crown') {
+    return (
+      <group position={[0, 0.9, 0.05]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.42, 0.42, 0.22, 7, 1, true]} />
+          <meshStandardMaterial color="#ffcf33" metalness={0.7} roughness={0.25} emissive="#caa000" emissiveIntensity={0.2} side={THREE.DoubleSide} />
+        </mesh>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const a = (i / 5) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * 0.42, 0.18, Math.sin(a) * 0.42]}>
+              <coneGeometry args={[0.07, 0.2, 8]} />
+              <meshStandardMaterial color="#ffcf33" metalness={0.7} roughness={0.25} />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+  if (id === 'wizard') {
+    return (
+      <group position={[0, 0.95, 0.05]}>
+        <mesh castShadow position={[0, 0.45, 0]} rotation={[0.05, 0, 0.04]}>
+          <coneGeometry args={[0.32, 1.2, 20]} />
+          <meshStandardMaterial color="#3b3a8c" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.3, 0.62, 24]} />
+          <meshStandardMaterial color="#2c2b6e" roughness={0.6} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0.05, 0.55, 0.28]}>
+          <octahedronGeometry args={[0.08, 0]} />
+          <meshStandardMaterial color="#ffd166" emissive="#ffd166" emissiveIntensity={0.5} />
+        </mesh>
+      </group>
+    );
+  }
+  return null;
+}
+
+function FaceGear({ id }: { id: string }) {
+  if (id === 'glasses') {
+    return (
+      <group position={[0, 0.12, 0.78]}>
+        <mesh position={[-0.3, 0, 0]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.04, 18]} />
+          <meshStandardMaterial color="#1c2433" roughness={0.2} metalness={0.3} />
+        </mesh>
+        <mesh position={[0.3, 0, 0]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.04, 18]} />
+          <meshStandardMaterial color="#1c2433" roughness={0.2} metalness={0.3} />
+        </mesh>
+        <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.22, 8]} />
+          <meshStandardMaterial color="#1c2433" />
+        </mesh>
+      </group>
+    );
+  }
+  return null;
+}
+
+function BackGear({ id }: { id: string }) {
+  if (id === 'cape') {
+    return (
+      <mesh position={[0, 0.15, -0.95]} rotation={[0.22, 0, 0]} castShadow>
+        <planeGeometry args={[1.5, 1.7, 6, 6]} />
+        <meshStandardMaterial color="#e8395b" roughness={0.7} side={THREE.DoubleSide} />
+      </mesh>
+    );
+  }
+  if (id === 'wings') {
+    return (
+      <group position={[0, 0.3, -0.7]}>
+        {[-1, 1].map((s) => (
+          <mesh key={s} position={[0.5 * s, 0, 0]} rotation={[0, s * 0.5, s * 0.3]} scale={[1, 1.4, 0.1]}>
+            <sphereGeometry args={[0.5, 16, 12]} />
+            <meshStandardMaterial color="#bfe7ff" transparent opacity={0.6} emissive="#9fd8ff" emissiveIntensity={0.3} roughness={0.2} side={THREE.DoubleSide} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+  return null;
 }

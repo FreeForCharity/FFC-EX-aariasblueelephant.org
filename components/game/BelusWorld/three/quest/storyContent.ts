@@ -1,27 +1,25 @@
 // ---------------------------------------------------------------------------
-// Feelings Meadow — reshaped as CARING PLAY, not a quiz.
-//
-// Friends sit in the meadow under a little weather cloud that shows how they
-// feel (🌧️ sad, ⛈️ scared, ☁️ lonely, 🌥️ worried). There are no questions and
-// no right/wrong answers. The child simply walks Belu up to a friend and stays
-// with them — Belu comforts them, their cloud clears step by step into sunshine,
-// flowers burst open, and when every friend is sunny the whole meadow blooms.
-//
-// The learning (reading emotions) happens by SEEING the feeling and the body
-// language, hearing Belu name it, and watching kindness change their world.
+// Feelings Meadow content — caring play, the owner's design:
+//   walk up to a 3D animal → linger a moment → a CLUE about how it feels pops
+//   up → 3 ways to help appear → choose the kind one → the animal cheers up.
+// The feeling is read from the animal's body language + the clue; the choice is
+// about HOW TO BE KIND (a real social skill), never an abstract "what feeling?".
 // ---------------------------------------------------------------------------
 
-import type { Mood } from './QuestNPC';
+import type { AnimalSpecies, AnimalMood } from './Animal3D';
+
+export interface HelpOption {
+  emoji: string;
+  label: string;
+  correct?: boolean;
+}
 
 export interface StoryFriend {
-  face: string;
-  /** kid-facing feeling word — Belu names it on approach */
-  feeling: string;
-  mood: Mood;
-  /** cloud stages from worst → sunny; last is always ☀️. careNeeded = stages-1 */
-  clouds: string[];
-  /** local position on the meadow (offset from the island centre, XZ) */
-  pos: [number, number];
+  species: AnimalSpecies;
+  feeling: AnimalMood; // also drives the body-language animation
+  clue: string;
+  helps: HelpOption[];
+  pos: [number, number]; // local offset from the meadow centre (XZ)
 }
 
 export interface StoryLevel {
@@ -32,71 +30,84 @@ export interface StoryLevel {
   friends: StoryFriend[];
 }
 
-const RAIN = ['🌧️', '🌥️', '☀️'];
-const STORM = ['⛈️', '🌥️', '☀️'];
-const LONELY = ['☁️', '🌤️', '☀️'];
-const WORRY = ['🌥️', '🌤️', '☀️'];
+// the clue + the 3 ways-to-help for each feeling (1 kind choice, 2 unkind)
+const FEELINGS: Record<AnimalMood, { clue: string; helps: HelpOption[] }> = {
+  scared: {
+    clue: 'is hiding and trembling — they feel scared.',
+    helps: [
+      { emoji: '🤫', label: 'Sit quietly close', correct: true },
+      { emoji: '👻', label: 'Jump out & yell' },
+      { emoji: '🚶', label: 'Walk away' },
+    ],
+  },
+  sad: {
+    clue: 'is slumped and quiet — they feel sad.',
+    helps: [
+      { emoji: '🤗', label: 'Give a warm hug', correct: true },
+      { emoji: '🙅', label: 'Say "stop crying"' },
+      { emoji: '😆', label: 'Laugh at them' },
+    ],
+  },
+  lonely: {
+    clue: 'is sitting all by themselves — they feel lonely.',
+    helps: [
+      { emoji: '🎈', label: 'Invite them to play', correct: true },
+      { emoji: '🙈', label: 'Ignore them' },
+      { emoji: '🚶', label: 'Leave them alone' },
+    ],
+  },
+  worried: {
+    clue: 'keeps fidgeting and looking around — they feel worried.',
+    helps: [
+      { emoji: '🌬️', label: 'Breathe slow together', correct: true },
+      { emoji: '🏃', label: 'Rush them' },
+      { emoji: '🙄', label: 'Say it’s silly' },
+    ],
+  },
+  happy: { clue: 'feels happy!', helps: [{ emoji: '🎉', label: 'Celebrate!', correct: true }] },
+};
 
-function f(face: string, feeling: string, mood: Mood, clouds: string[], x: number, z: number): StoryFriend {
-  return { face, feeling, mood, clouds, pos: [x, z] };
+function f(species: AnimalSpecies, feeling: AnimalMood, x: number, z: number): StoryFriend {
+  return { species, feeling, clue: FEELINGS[feeling].clue, helps: FEELINGS[feeling].helps, pos: [x, z] };
 }
 
 export const MEADOW_STORY: StoryLevel[] = [
   {
-    goal: 'Cheer up 2 friends',
-    intro: "Some meadow friends feel cloudy today. Walk up close and Belu will help them feel better!",
-    outro: 'You made the whole meadow sunny! You are such a kind friend. ☀️',
-    moment: 'cheered up friends in the meadow',
-    friends: [
-      f('🐰', 'sad', 'sad', RAIN, -2, -1),
-      f('🦊', 'scared', 'scared', STORM, 3, 1),
-    ],
+    goal: 'Help 2 friends',
+    intro: "Some meadow friends are feeling big feelings. Walk up close, see how they feel, and choose a kind way to help!",
+    outro: 'You helped every friend feel better. You are so kind! ☀️',
+    moment: 'helped friends in the meadow',
+    friends: [f('fox', 'scared', -2, 0), f('bunny', 'sad', 3, 1)],
   },
   {
-    goal: 'Help 3 friends feel sunny',
-    intro: "More friends feel cloudy. Go be with each one until their sunshine comes back!",
-    outro: 'Every friend is smiling now. You helped the sun come out! 🌈',
-    moment: 'cheered up friends in the meadow',
-    friends: [
-      f('🐻', 'sad', 'sad', RAIN, -3, 2),
-      f('🐥', 'scared', 'scared', STORM, 3, -2),
-      f('🐰', 'lonely', 'sad', LONELY, 0, 3),
-    ],
+    goal: 'Help 3 friends',
+    intro: "More friends need a kind buddy. Look at how each one looks and feels, then help.",
+    outro: 'Three happy friends — the whole meadow is smiling! 🌈',
+    moment: 'helped friends in the meadow',
+    friends: [f('bear', 'sad', -3, 2), f('bird', 'scared', 3, -2), f('bunny', 'lonely', 0, 3)],
   },
   {
-    goal: 'Warm up 3 cloudy friends',
-    intro: "Look at how each friend's body looks. Stay close and help their cloud clear away.",
-    outro: 'You noticed how everyone felt and helped. The meadow is glowing! ☀️',
-    moment: 'cheered up friends in the meadow',
-    friends: [
-      f('🦊', 'worried', 'disappointed', WORRY, -3, -2),
-      f('🐻', 'sad', 'sad', RAIN, 3, 2),
-      f('🐱', 'scared', 'scared', STORM, -2, 3),
-    ],
+    goal: 'Read 3 feelings & help',
+    intro: "Watch their bodies closely — they each feel something different. Choose how to help each one.",
+    outro: 'You read every feeling and helped. Amazing kindness! ☀️',
+    moment: 'helped friends in the meadow',
+    friends: [f('cat', 'worried', -3, -2), f('bear', 'sad', 3, 2), f('fox', 'scared', -2, 3)],
   },
   {
-    goal: 'Bring sunshine to 4 friends',
-    intro: "Lots of friends need a kind buddy today. Visit every one of them!",
-    outro: 'Four happy friends! You turned the whole sky sunny. 🌻',
-    moment: 'cheered up friends in the meadow',
-    friends: [
-      f('🐰', 'sad', 'sad', RAIN, -4, 0),
-      f('🐦', 'lonely', 'sad', LONELY, 4, 0),
-      f('🐻', 'worried', 'disappointed', WORRY, 0, -3),
-      f('🦊', 'scared', 'scared', STORM, 0, 3),
-    ],
+    goal: 'Help 4 friends',
+    intro: "Lots of friends need help today. You know how to be kind — go to each one!",
+    outro: 'Four friends, four smiles. You’re a wonderful friend! 🌻',
+    moment: 'helped friends in the meadow',
+    friends: [f('bunny', 'sad', -4, 0), f('bird', 'lonely', 4, 0), f('bear', 'worried', 0, -3), f('cat', 'scared', 0, 3)],
   },
   {
     goal: 'Be everyone’s kind friend',
-    intro: "The whole meadow is feeling big feelings. You know just what to do — go spread kindness!",
-    outro: 'You are the kindest friend in all the sky islands. The meadow is in full bloom! 🌷',
+    intro: "The whole meadow has big feelings. Help every single friend feel safe and happy!",
+    outro: 'You are the kindest friend in the sky islands. The meadow is in full bloom! 🌷',
     moment: 'spread kindness across the meadow',
     friends: [
-      f('🐻', 'sad', 'sad', RAIN, -4, -2),
-      f('🐱', 'scared', 'scared', STORM, 4, -2),
-      f('🐰', 'lonely', 'sad', LONELY, -3, 3),
-      f('🦊', 'worried', 'disappointed', WORRY, 3, 3),
-      f('🐥', 'sad', 'sad', RAIN, 0, 0),
+      f('bear', 'sad', -4, -2), f('cat', 'scared', 4, -2), f('bunny', 'lonely', -3, 3),
+      f('fox', 'worried', 3, 3), f('bird', 'sad', 0, 0),
     ],
   },
 ];
