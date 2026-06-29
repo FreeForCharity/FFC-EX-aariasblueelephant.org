@@ -424,7 +424,7 @@ function QuestPanel({ status }: { status: QuestStatus }) {
 
         {!correct && (
           <p className="mt-1 text-xs font-semibold text-slate-500">
-            Walk Belu into the matching glowing orb 🫧 (or tap it)
+            {status.hint ?? 'Walk Belu into the matching glowing orb 🫧 (or tap it)'}
           </p>
         )}
       </div>
