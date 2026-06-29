@@ -15,7 +15,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BeluEmotion } from './BeluCharacter';
 import { ISLANDS, type ZoneId } from './three/worldConfig';
-import { attachKeyboard } from './three/input';
+import { attachKeyboard, queueGoHome } from './three/input';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
 import GrowthMap from './ui/GrowthMap';
@@ -239,6 +239,7 @@ export default function BelusWorldGame() {
         onOpenMap={() => setShowMap(true)}
         onOpenWardrobe={() => setShowWardrobe(true)}
         onToggleFullscreen={toggleFullscreen}
+        onGoHome={() => { queueGoHome(); sfx('tap'); }}
         onExit={() => { stopSpeaking(); window.history.back(); }}
       />
 

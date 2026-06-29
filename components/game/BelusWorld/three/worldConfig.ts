@@ -129,5 +129,16 @@ export interface Obstacle {
 export const OBSTACLES: Obstacle[] = (() => {
   const m = ISLANDS.mountain;
   const len = Math.hypot(m.cx, m.cz) || 1;
-  return [{ x: m.cx + (m.cx / len) * 6.5, z: m.cz + (m.cz / len) * 6.5, r: 3.0 }];
+  const home = ISLANDS.home;
+  const meadow = ISLANDS.meadow;
+  return [
+    // Morning Mountain peak
+    { x: m.cx + (m.cx / len) * 6.5, z: m.cz + (m.cz / len) * 6.5, r: 3.0 },
+    // home cottage + its welcome trees (positions mirror HomeDecor in World.tsx)
+    { x: home.cx + 0, z: home.cz - 2, r: 1.7 },
+    { x: home.cx + 3.5, z: home.cz + 1, r: 0.7 },
+    { x: home.cx - 3.8, z: home.cz + 0.5, r: 0.7 },
+    // the meadow's big tree (mirrors ZoneDecor meadow tree)
+    { x: meadow.cx + meadow.radius * 0.5, z: meadow.cz - meadow.radius * 0.3, r: 0.7 },
+  ];
 })();

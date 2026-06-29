@@ -13,7 +13,7 @@ import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { ISLANDS } from '../worldConfig';
-import { beluPos } from '../playerState';
+import { beluPos, dynamicSolids } from '../playerState';
 import type { BeluEmotion } from '../../BeluCharacter';
 import Animal3D, { type AnimalMood } from './Animal3D';
 import AnswerOrb, { type OrbStatus } from './AnswerOrb';
@@ -23,10 +23,11 @@ import { MEADOW_STORY } from './storyContent';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'meadow' as const;
-const APPROACH = 3.2; // get this close to a friend to start observing
+const APPROACH = 4.6; // stay this close to a friend while observing & choosing
 const LINGER = 1.6; // seconds of staying close before the clue appears
-const HELP_DIST = 2.0; // how far the help bubbles sit in front of a friend
-const HELP_PICK = 1.7; // walk this close to a help bubble to choose it
+const HELP_DIST = 2.3; // how far the help bubbles sit in front of a friend
+const HELP_SPREAD = 2.8; // sideways gap between the 3 help bubbles (no overlap)
+const HELP_PICK = 1.5; // walk this close to a help bubble to choose it
 
 const FEELING_FACE: Record<AnimalMood, string> = {
   scared: '😨', sad: '😢', lonely: '😞', worried: '😟', happy: '😊',
@@ -92,9 +93,9 @@ export default function StoryLayer(props: Props) {
     const px = -dz;
     const pz = dx;
     return [-1, 0, 1].map((o) => [
-      fx + dx * HELP_DIST + px * o * 1.8,
+      fx + dx * HELP_DIST + px * o * HELP_SPREAD,
       isl.top + 1.0,
-      fz + dz * HELP_DIST + pz * o * 1.8,
+      fz + dz * HELP_DIST + pz * o * HELP_SPREAD,
     ]);
   }
 
@@ -174,6 +175,12 @@ export default function StoryLayer(props: Props) {
 
   frame.current = (dt: number) => {
     const st = S.current;
+    // keep the meadow animals registered as solid things (walk around them)
+    const lvlFriends = MEADOW_STORY[clampLevel(st.level)].friends;
+    dynamicSolids.meadow = lvlFriends.map((_, i) => {
+      const [fx, fz] = friendWorld(i);
+      return { x: fx, z: fz, r: 1.05 };
+    });
     if (props.paused) return;
     st.clock += dt;
 

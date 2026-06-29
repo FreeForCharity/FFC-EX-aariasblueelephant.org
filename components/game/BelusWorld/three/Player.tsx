@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
-import { beluPos, beluState } from './playerState';
+import { beluPos, beluState, dynamicSolids } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
@@ -74,6 +74,14 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
       if (nearZone.current && onEnter) onEnter(nearZone.current);
     }
 
+    // ---- warp home (quick-travel button) ----
+    if (input.goHomeQueued) {
+      input.goHomeQueued = false;
+      pos.current.set(PLAYER_SPAWN.x, sampleGround(PLAYER_SPAWN.x, PLAYER_SPAWN.z).y + 0.5, PLAYER_SPAWN.z);
+      vy.current = 0;
+      vel.current.set(0, 0, 0);
+    }
+
     if (paused) {
       motion.current.speed = 0;
       // keep camera trained on Belu while a panel is open
@@ -93,15 +101,21 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     pos.current.x += vel.current.x * dt;
     pos.current.z += vel.current.z * dt;
 
-    // ---- solid obstacles (walk around, not through) ----
-    for (const o of OBSTACLES) {
-      const dx = pos.current.x - o.x;
-      const dz = pos.current.z - o.z;
+    // ---- solid things (walk around, not through): static obstacles +
+    //      animals/friends that each layer registers as dynamic solids ----
+    const pushOut = (ox: number, oz: number, r: number) => {
+      const dx = pos.current.x - ox;
+      const dz = pos.current.z - oz;
       const d = Math.hypot(dx, dz);
-      if (d < o.r && d > 1e-4) {
-        pos.current.x = o.x + (dx / d) * o.r;
-        pos.current.z = o.z + (dz / d) * o.r;
+      if (d < r && d > 1e-4) {
+        pos.current.x = ox + (dx / d) * r;
+        pos.current.z = oz + (dz / d) * r;
       }
+    };
+    for (const o of OBSTACLES) pushOut(o.x, o.z, o.r);
+    for (const key in dynamicSolids) {
+      const list = dynamicSolids[key];
+      for (let i = 0; i < list.length; i++) pushOut(list[i].x, list[i].z, list[i].r);
     }
 
     // ---- jump + gravity ----

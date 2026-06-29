@@ -53,7 +53,7 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
       // is Belu close enough to choose me? → swell + brighten so it's obvious
       const near =
         Math.hypot(beluPos.x - position[0], beluPos.z - position[2]) < NEAR_DIST;
-      const targetScale = near ? 1.28 : 1;
+      const targetScale = near ? 1.12 : 1;
       const s = grp.current.scale.x + (targetScale - grp.current.scale.x) * Math.min(1, dt * 8);
       // idle bob (a little livelier when Belu is near)
       const bob = Math.sin(t.current * 2) * (near ? 0.2 : 0.12);
@@ -87,7 +87,7 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
         onPointerOut={() => (document.body.style.cursor = 'auto')}
       >
-        <sphereGeometry args={[0.85, 24, 18]} />
+        <sphereGeometry args={[0.6, 24, 18]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -95,17 +95,17 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
           roughness={0.25}
           metalness={0.1}
           transparent
-          opacity={0.4}
+          opacity={0.38}
           depthWrite={false}
         />
       </mesh>
       {/* picture + word — always on top of the bubble & facing the camera */}
-      <sprite position={[0, 0, 0]} scale={[1.9, 1.9, 1]} renderOrder={10}>
+      <sprite position={[0, 0, 0]} scale={[1.5, 1.5, 1]} renderOrder={10}>
         <spriteMaterial map={tex} transparent depthWrite={false} depthTest={false} />
       </sprite>
       {/* soft glow ring under it on the ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.05, 0]}>
-        <ringGeometry args={[0.7, 1.0, 28]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.75, 0]}>
+        <ringGeometry args={[0.45, 0.66, 28]} />
         <meshBasicMaterial color={color} transparent opacity={0.35} side={THREE.DoubleSide} />
       </mesh>
     </group>

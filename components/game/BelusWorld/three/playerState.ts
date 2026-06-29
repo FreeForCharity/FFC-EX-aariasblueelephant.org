@@ -12,3 +12,15 @@ export const beluPos = new THREE.Vector3(0, 0.4, 6);
 
 /** Is Belu currently standing on the ground (not mid-jump)? */
 export const beluState = { grounded: true };
+
+export interface Solid {
+  x: number;
+  z: number;
+  r: number;
+}
+
+// Moving / per-island solids Belu can't walk through (animals, friends). Each
+// layer (StoryLayer, QuestLayer) writes its own keyed slice every frame; the
+// Player controller pushes Belu out of all of them. Static solids (mountain,
+// hut, trees) live in worldConfig.OBSTACLES.
+export const dynamicSolids: Record<string, Solid[]> = {};
