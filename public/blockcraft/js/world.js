@@ -1,19 +1,32 @@
 /* Aaria's Block Craft 3D — voxel world engine (Three.js r128) */
 ABC.world = (function () {
+  /* ---------- selectable skin ----------
+     'smooth' = the elevated, premium "Block Craft" look (beveled blocks, soft PBR
+     materials, gentle shadows, gradient sky). Read ONCE at load so every material,
+     geometry and renderer setting is built for the chosen skin. Classic is the
+     default and is left byte-for-byte unchanged (the `else` branch everywhere). */
+  const SMOOTH = (function () {
+    try { return localStorage.getItem('abcSkin') === 'smooth'; } catch (e) { return false; }
+  })();
+  ABC.SMOOTH = SMOOTH;        // expose so main.js / ui.js read the SAME value
+
   const SIZE = 4000;          // soft travel limit — the world generates forever as you walk
   const MAX_Y = 40;
   const MIN_Y = -2;           // dig through grass and dirt down to bedrock stone
 
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
+  let _maxAniso = 1, _sky = null, _shadowR = 32;   // smooth-skin render state
   const map = new Map();      // "x,y,z" -> type
   const rotMap = new Map();   // "x,y,z" -> 0..3 quarter-turns (rotating shapes only)
   const key = (x,y,z) => x + ',' + y + ',' + z;
 
   /* ---------- canvas textures ---------- */
   function makeTexture(def) {
-    const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+    const S = SMOOTH ? 128 : 64;            // smooth skin paints at 2x for crisp, soft sampling
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
     const g = cv.getContext('2d');
+    if (SMOOTH) { g.save(); g.scale(S/64, S/64); }   // pattern art below is authored in 64px space
     g.fillStyle = def.color; g.fillRect(0,0,64,64);
     const rnd = mulberry(def.color.length * 7 + (def.pat||'').length * 13);
     switch (def.pat) {
@@ -87,14 +100,138 @@ ABC.world = (function () {
         g.strokeStyle = '#b8860b'; g.lineWidth = 2; g.beginPath(); g.arc(50,34,5,0,7); g.stroke();
         break;
     }
-    // subtle block border for the voxel look
-    g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 4; g.strokeRect(0,0,64,64);
+    if (SMOOTH) {
+      g.restore();                          // back to 128px space for the soft finishing passes
+      // (A) soft top-light gradient — gives every face a gentle lit-to-shadow shade
+      const lg = g.createLinearGradient(0,0,0,S);
+      lg.addColorStop(0,   'rgba(255,255,255,0.16)');
+      lg.addColorStop(0.5, 'rgba(255,255,255,0)');
+      lg.addColorStop(1,   'rgba(0,0,0,0.10)');
+      g.fillStyle = lg; g.fillRect(0,0,S,S);
+      // (B) gentle corner ambient-occlusion vignette — REPLACES the hard black outline
+      const rg = g.createRadialGradient(S/2,S/2,S*0.30, S/2,S/2,S*0.74);
+      rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,0.13)');
+      g.fillStyle = rg; g.fillRect(0,0,S,S);
+    } else {
+      // subtle block border for the classic voxel look (unchanged)
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 4; g.strokeRect(0,0,64,64);
+    }
     const tex = new THREE.CanvasTexture(cv);
-    tex.magFilter = THREE.NearestFilter;
+    if (SMOOTH) {
+      tex.encoding = THREE.sRGBEncoding;            // required once renderer outputEncoding=sRGB
+      tex.magFilter = THREE.LinearFilter;           // SOFT, not pixelated
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.generateMipmaps = true;
+      tex.anisotropy = Math.min(8, _maxAniso);      // crisp at grazing angles, no shimmer
+    } else {
+      tex.magFilter = THREE.NearestFilter;
+    }
+    tex.needsUpdate = true;
     return tex;
   }
   function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
     t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+  /* ============================================================
+     SMOOTH SKIN render helpers — only used when SMOOTH is true.
+     ============================================================ */
+
+  /* Beveled unit cube (r128 has no RoundedBoxGeometry). Soft, light-catching
+     edges like the app icon. Outputs a plain BufferGeometry safe for InstancedMesh. */
+  function roundedBoxGeo(size, radius, segments) {
+    size = size || 1; radius = radius || 0.07; segments = segments || 1;
+    radius = Math.min(radius, size / 2);
+    const half = size / 2, seg = segments * 2 + 1;
+    const box = new THREE.BoxGeometry(size, size, size, seg, seg, seg);
+    box.deleteAttribute('normal'); box.deleteAttribute('uv');
+    const g = box.toNonIndexed();
+    const pos = g.attributes.position, inner = half - radius;
+    const v = new THREE.Vector3(), n = new THREE.Vector3(), dir = new THREE.Vector3();
+    const normals = new Float32Array(pos.count * 3);
+    const uvs = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      n.set(Math.max(-inner, Math.min(inner, v.x)),
+            Math.max(-inner, Math.min(inner, v.y)),
+            Math.max(-inner, Math.min(inner, v.z)));
+      dir.copy(v).sub(n);
+      if (dir.lengthSq() < 1e-10) dir.copy(v);
+      dir.normalize();
+      pos.setXYZ(i, n.x + dir.x * radius, n.y + dir.y * radius, n.z + dir.z * radius);
+      normals[i*3] = dir.x; normals[i*3+1] = dir.y; normals[i*3+2] = dir.z;
+      const ax = Math.abs(dir.x), ay = Math.abs(dir.y), az = Math.abs(dir.z);
+      const px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
+      let u, w;
+      if (ax >= ay && ax >= az) { u = pz; w = py; }
+      else if (ay >= ax && ay >= az) { u = px; w = pz; }
+      else { u = px; w = py; }
+      uvs[i*2] = u / size + 0.5; uvs[i*2+1] = w / size + 0.5;
+    }
+    g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    pos.needsUpdate = true;
+    g.computeBoundingSphere();              // the shadow path consults this
+    return g;
+  }
+
+  /* A cheap procedural environment: a sky→horizon→ground gradient run through
+     PMREM so blocks pick up soft daylight fill + a faint sheen. No asset fetch.
+     Built ONCE at load (the generator is the costly part) then disposed. */
+  function makeEnvironment(renderer) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const cv = document.createElement('canvas'); cv.width = 16; cv.height = 128;
+    const c = cv.getContext('2d');
+    const grad = c.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0.00, '#eaf4ff');     // zenith
+    grad.addColorStop(0.45, '#cfe6ff');     // sky
+    grad.addColorStop(0.50, '#dfe6ea');     // horizon haze (neutral, not green)
+    grad.addColorStop(0.56, '#b9bdc0');     // ground near — soft gray so it doesn't tint snow/sand
+    grad.addColorStop(1.00, '#8a8f92');     // ground (neutral)
+    c.fillStyle = grad; c.fillRect(0, 0, 16, 128);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    const env = pmrem.fromEquirectangular(tex).texture;
+    pmrem.dispose(); tex.dispose();
+    return env;
+  }
+
+  /* Soft matte PBR block; glassy blocks (water/glass/ice) get a wet catch-light. */
+  function makeBlockMaterial(def) {
+    const map = makeTexture(def);           // already sRGB-encoded + mipmapped in SMOOTH
+    const glassy = def.alpha != null;       // every see-through block already sets alpha
+    const m = new THREE.MeshStandardMaterial({
+      map,
+      roughness: glassy ? 0.14 : 0.92,
+      metalness: 0.0,                       // voxels are never metallic
+      envMapIntensity: glassy ? 0.8 : 0.32, // gentle fill; low on matte so the neutral env doesn't tint snow/sand
+    });
+    if (def.alpha != null) { m.transparent = true; m.opacity = def.alpha; }
+    if (def.glow) { m.emissive = new THREE.Color(0xffe066); m.emissiveIntensity = 0.6; m.roughness = 0.6; }
+    return m;
+  }
+
+  /* Vertical gradient sky dome — beats a flat background color. Raw shader (no
+     chunk injection) so it's robust across THREE builds. Colors are graded by
+     region each frame in gradeTo so dusk/night look right too. */
+  function makeSky() {
+    const geo = new THREE.SphereGeometry(280, 32, 16);   // inside camera.far(300), outside fog.far
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: { top: { value: new THREE.Color(0x7ec8ff) },
+                  bottom: { value: new THREE.Color(0xdff1ff) } },
+      vertexShader: 'varying vec3 vW; void main(){ vW = position;' +
+        ' gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      // apply the SAME exposure + ACES + sRGB the renderer uses for everything else,
+      // so the dome matches the terrain/fog and the horizon blends seamlessly.
+      fragmentShader: 'varying vec3 vW; uniform vec3 top; uniform vec3 bottom;' +
+        ' void main(){ float h = normalize(vW).y; float t = pow(clamp(h*0.5+0.5,0.0,1.0), 0.9);' +
+        ' vec3 c = mix(bottom, top, t) * 1.18;' +
+        ' c = (c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14);' +
+        ' c = pow(clamp(c,0.0,1.0), vec3(1.0/2.2));' +
+        ' gl_FragColor = vec4(c, 1.0); }'
+    });
+    const sky = new THREE.Mesh(geo, mat); sky.frustumCulled = false; return sky;
+  }
 
   /* ---------- shaped block geometries ---------- */
   function wedgeGeo() {
@@ -150,15 +287,26 @@ ABC.world = (function () {
     m.userData.type = id;
     m.userData.positions = [];
     m.frustumCulled = false;
+    if (SMOOTH) {
+      // opaque blocks cast shadows; transparent ones (water/glass/ice/slime/pane)
+      // would throw a solid black shadow (the depth pass ignores opacity), so skip
+      m.castShadow = ABC.BLOCK_DEFS[id].alpha == null;
+      m.receiveShadow = true;
+    }
     scene.add(m);
     return m;
   }
   function initMeshes() {
-    blockGeo = new THREE.BoxGeometry(1,1,1);
+    blockGeo = SMOOTH ? roundedBoxGeo(1, 0.07, 1) : new THREE.BoxGeometry(1,1,1);
     for (const [id, def] of Object.entries(ABC.BLOCK_DEFS)) {
-      const mat = new THREE.MeshLambertMaterial({ map: makeTexture(def) });
-      if (def.alpha != null) { mat.transparent = true; mat.opacity = def.alpha; }
-      if (def.glow) mat.emissive = new THREE.Color(0xffe066), mat.emissiveIntensity = 0.6;
+      let mat;
+      if (SMOOTH) {
+        mat = makeBlockMaterial(def);
+      } else {
+        mat = new THREE.MeshLambertMaterial({ map: makeTexture(def) });
+        if (def.alpha != null) { mat.transparent = true; mat.opacity = def.alpha; }
+        if (def.glow) mat.emissive = new THREE.Color(0xffe066), mat.emissiveIntensity = 0.6;
+      }
       materials[id] = mat;
       meshes[id] = newMesh(id, 512);
     }
@@ -323,14 +471,28 @@ ABC.world = (function () {
     lockedTheme = (ABC.THEMES || []).find(t => t.key === key) || null;
   }
   const _c1 = new THREE.Color(), _c2 = new THREE.Color();
-  function gradeTo(th, dt) {
+  function gradeTo(th, dt, night) {
     if (!scene) return;
     const k = Math.min(1, dt * 0.7);
     const sky = th.sky, fog = th.fog != null ? th.fog : th.sky;
-    const near = th.near != null ? th.near : 60, far = th.far != null ? th.far : 150;
-    const light = th.light != null ? th.light : 0xfff7e0, lightI = th.lightI != null ? th.lightI : 0.95;
-    const hemi = th.hemi != null ? th.hemi : sky, hemiI = th.hemiI != null ? th.hemiI : 0.38;
-    if (scene.background.isColor) scene.background.lerp(_c1.set(sky), k);
+    let near = th.near != null ? th.near : 60, far = th.far != null ? th.far : 150;
+    const light = th.light != null ? th.light : 0xfff7e0;
+    let lightI = th.lightI != null ? th.lightI : 0.95;
+    const hemi = th.hemi != null ? th.hemi : sky;
+    let hemiI = th.hemiI != null ? th.hemiI : 0.38;
+    if (SMOOTH) {
+      // keep the airy view distance & the brighter ACES-balanced sun; still let
+      // the region's MOOD come through. At NIGHT, dim the sun right down so it
+      // doesn't cast a sunny-day shadow under a navy sky (its shadow stays faint
+      // rather than toggling castShadow — which would recompile shaders mid-walk).
+      near *= 1.3; far *= 1.6; hemiI *= 0.9;
+      lightI *= night ? 0.6 : 2.7;
+      // deepen the zenith so the sky reads as a rich blue after ACES+exposure
+      // (a pale hue would blow out to near-white); keep the horizon = fog so it blends
+      if (_sky) { _sky.material.uniforms.top.value.lerp(_c1.set(sky).multiplyScalar(0.66), k);
+                  _sky.material.uniforms.bottom.value.lerp(_c2.set(fog), k); }
+    }
+    if (scene.background && scene.background.isColor) scene.background.lerp(_c1.set(sky), k);
     scene.fog.color.lerp(_c1.set(fog), k);
     scene.fog.near += (near - scene.fog.near) * k;
     scene.fog.far += (far - scene.fog.far) * k;
@@ -339,8 +501,10 @@ ABC.world = (function () {
   }
   /* called every frame from the main loop with the player position */
   function gradeFrame(x, z, dt) {
-    const target = lockedTheme || (ABC.REGIONS ? ABC.REGIONS.regionAt(x, z).theme : null);
-    if (target) gradeTo(target, dt);
+    const reg = ABC.REGIONS ? ABC.REGIONS.regionAt(x, z) : null;
+    const night = lockedTheme ? lockedTheme.key === 'night' : !!(reg && reg.night);
+    const target = lockedTheme || (reg ? reg.theme : null);
+    if (target) gradeTo(target, dt, night);
   }
 
   /* ---------- night sky: stars + Milky Way 🌌 ---------- */
@@ -369,7 +533,21 @@ ABC.world = (function () {
     starField = mk(1500, 260, 0.85, 40, 1.7, 0xffffff, false);
     galaxyBand = mk(950, 250, 0, 130, 2.8, 0xc6ccff, true);
   }
+  /* keep the bright sun + its tight shadow frustum centered on the player, so a
+     1024 map covers a small area at high quality. Rounds the target to reduce
+     shadow swim as you walk (a soft help — the sun axis is diagonal, so it's not
+     a perfect texel lock, but enough at this map size to stay calm). */
+  const _sunBase = new THREE.Vector3(40, 80, 25);
+  function updateSun(px, pz) {
+    if (!SMOOTH || !sunLight) return;
+    const texel = (_shadowR * 2) / sunLight.shadow.mapSize.x;
+    const tx = Math.round(px / texel) * texel, tz = Math.round(pz / texel) * texel;
+    sunLight.target.position.set(tx, 0, tz);
+    sunLight.position.set(tx + _sunBase.x, _sunBase.y, tz + _sunBase.z);
+  }
+
   function updateSky(cam, dt) {
+    if (SMOOTH && _sky) _sky.position.set(cam.x, 0, cam.z);   // dome follows the player
     if (!starField) return;
     starField.position.set(cam.x, 0, cam.z);
     galaxyBand.position.set(cam.x, 0, cam.z);
@@ -384,14 +562,44 @@ ABC.world = (function () {
   /* ---------- scene setup ---------- */
   function initScene(renderer) {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x9fdcff);
-    scene.fog = new THREE.Fog(0x9fdcff, 60, 140);
-    sunLight = new THREE.DirectionalLight(0xfff7e0, 0.95);
-    sunLight.position.set(40, 80, 25);
-    scene.add(sunLight);
-    scene.add(new THREE.AmbientLight(0xcfe8ff, 0.75));
-    hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x7ed957, 0.35);
-    scene.add(hemiLight);
+    _maxAniso = renderer.capabilities.getMaxAnisotropy();
+    if (SMOOTH) {
+      // cinematic color pipeline + soft shadows
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.18;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      // gradient sky dome instead of a flat color; airier fog
+      scene.background = null;
+      _sky = makeSky(); scene.add(_sky);
+      scene.fog = new THREE.Fog(0xdff1ff, 80, 240);
+      scene.environment = makeEnvironment(renderer);   // soft daylight fill for the PBR blocks
+      // one warm key sun that casts a single soft, player-following shadow
+      sunLight = new THREE.DirectionalLight(0xfff3da, 2.4);
+      sunLight.position.set(40, 80, 25);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.set(1024, 1024);
+      _shadowR = 32;
+      const sc = sunLight.shadow.camera;
+      sc.left = -_shadowR; sc.right = _shadowR; sc.top = _shadowR; sc.bottom = -_shadowR;
+      sc.near = 1; sc.far = 220; sc.updateProjectionMatrix();
+      sunLight.shadow.bias = -0.0005;
+      sunLight.shadow.normalBias = 0.5;               // primary fix for axis-aligned voxel acne
+      scene.add(sunLight); scene.add(sunLight.target);
+      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5));
+      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34);
+      scene.add(hemiLight);
+    } else {
+      scene.background = new THREE.Color(0x9fdcff);
+      scene.fog = new THREE.Fog(0x9fdcff, 60, 140);
+      sunLight = new THREE.DirectionalLight(0xfff7e0, 0.95);
+      sunLight.position.set(40, 80, 25);
+      scene.add(sunLight);
+      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.75));
+      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x7ed957, 0.35);
+      scene.add(hemiLight);
+    }
     // dark base far below the bedrock layer
     underMesh = new THREE.Mesh(
       new THREE.BoxGeometry(2000, 1, 2000),
@@ -739,6 +947,6 @@ ABC.world = (function () {
 
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
-           ensureChunks, setTheme, gradeFrame, updateSky, getRot, topBlock,
+           ensureChunks, setTheme, gradeFrame, updateSky, updateSun, getRot, topBlock,
            getScene: () => scene };
 })();
