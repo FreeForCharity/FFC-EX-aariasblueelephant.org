@@ -304,110 +304,6 @@
   body.skin-smooth #crosshair { text-shadow:0 0 8px rgba(0,0,0,.45); opacity:.7; }
   body.skin-smooth #projectPanel { border-radius:20px; }
 
-  /* =====================================================================
-     SMOOTH DECLUTTER — reference-clean placement (like Block Craft 3D):
-     only TWO big standing buttons on the right (Build + Fly); the dense rail
-     and secondary menu buttons fold into the single ✨ menu; calm corners.
-     Scoped to body.skin-smooth → Classic untouched. These come AFTER the
-     base smooth block so they win by source order.
-     ===================================================================== */
-
-  /* one ✨ door, visible on desktop too (it's .mobOnly = hidden by default) */
-  body.skin-smooth #moreBtn {
-    display:flex !important; align-items:center; justify-content:center;
-    width:60px; height:60px; min-width:60px; padding:0;
-    font-size:28px; line-height:1; border-radius:18px; font-weight:700; }
-  body.skin-smooth #moreBtn:hover { transform:translateY(-1px); }
-
-  /* fold the secondary top-row buttons into ✨ (keep Build promoted, Settings
-     + Full Screen one-tap). Keep #buildMenuBtn shown — it's promoted below.   */
-  body.skin-smooth #slimeBtn, body.skin-smooth #oreoBtn, body.skin-smooth #kindBtn,
-  body.skin-smooth #stickersBtn, body.skin-smooth #helpBtn { display:none !important; }
-
-  /* the dense right rail folds into ✨ — hide every rail button EXCEPT #flyBtn
-     (which we promote). NB: we can't display:none the #sideBtns CONTAINER, or
-     its child #flyBtn can't be shown via position:fixed (a fixed element still
-     can't escape a display:none ancestor). So hide the siblings by id.        */
-  body.skin-smooth #viewBtn, body.skin-smooth #zoomInBtn, body.skin-smooth #zoomOutBtn,
-  body.skin-smooth #mapBtn, body.skin-smooth #passportBtn, body.skin-smooth #photoBtn,
-  body.skin-smooth #albumBtn { display:none !important; }
-  body.skin-smooth #sideBtns { gap:0; }   /* container collapses (only fixed child left) */
-
-  /* fold the two passive progress chips into ✨ (Adventures / Sunflower)       */
-  body.skin-smooth #questChip, body.skin-smooth #flowerChip { display:none !important; }
-  body.skin-smooth #lookHint { display:none !important; }
-
-  /* RIGHT-MID promoted pair: 🏗️ Build (top) + 🕊️ Fly (under), vertically
-     centred, well clear of the bottom action cluster. Re-anchor the EXISTING
-     in-place buttons with position:fixed — no DOM moves, handlers stay wired.  */
-  body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn {
-    position:fixed; right:var(--hud-pad); z-index:6;
-    width:78px; height:78px; min-width:78px; padding:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px; border-radius:22px; font-size:30px; line-height:1.05; }
-  /* upper-right (just below the menu), NOT vertical-centre — that would collide
-     with the bottom action cluster on ~800px-tall screens. Here they sit high
-     and the verbs sit low, with a wide clear gap between.                      */
-  body.skin-smooth #buildMenuBtn { top:96px; }
-  body.skin-smooth #flyBtn       { top:182px; }
-  body.skin-smooth #buildMenuBtn .btnTxt { display:block; font-size:12px; font-weight:600; }
-  body.skin-smooth #flyBtn small { font-size:11px; opacity:.85; }
-  body.skin-smooth #flyBtn.active { background:rgba(31,182,166,.3);
-    box-shadow:0 0 0 3px var(--accent,#1fb6a6), 0 8px 18px -8px rgba(18,38,56,.5); }
-
-  /* bottom-right action verbs (jump / descend / dig); rail is gone so no overlap */
-  body.skin-smooth #touchActs { right:var(--hud-pad); bottom:140px; gap:16px; }
-  body.skin-smooth #touchActs .tBtn { width:68px; height:68px; font-size:28px; border-radius:18px; }
-  body.skin-smooth #touchActs #tFly { display:none !important; }   /* one Fly only (promoted) */
-
-  /* bottom-left D-pad (dominant) + bag corner, desktop-sized */
-  body.skin-smooth #touchPad { left:var(--hud-pad); bottom:140px; width:198px; height:198px; }
-  body.skin-smooth #touchPad .tBtn { width:62px; height:62px; font-size:26px; border-radius:18px; }
-  body.skin-smooth #tUp   { left:68px;  top:0;    }
-  body.skin-smooth #tLeft { left:0;     top:68px; }
-  body.skin-smooth #tRight{ left:136px; top:68px; }
-  body.skin-smooth #tDown { left:68px;  top:136px;}
-  body.skin-smooth #bagBtn { bottom:var(--hud-pad); left:var(--hud-pad); width:84px; height:84px; }
-
-  /* bottom-center hotbar: reserve corner space so it never slides under bag/actions */
-  body.skin-smooth #hotbar { bottom:var(--hud-pad); left:50%; transform:translateX(-50%);
-    max-width:min(620px, calc(100vw - 2*var(--hud-pad) - 440px)); }
-
-  /* short viewports: shrink + lift so nothing rides over the hotbar */
-  @media (max-height: 640px) {
-    body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn {
-      width:64px; height:64px; min-width:64px; font-size:26px; }
-    body.skin-smooth #buildMenuBtn { top:78px; }
-    body.skin-smooth #flyBtn       { top:150px; }
-    body.skin-smooth #touchPad  { bottom:118px; width:170px; height:170px; }
-    body.skin-smooth #touchPad .tBtn { width:54px; height:54px; }
-    body.skin-smooth #tUp{left:58px;top:0} body.skin-smooth #tLeft{left:0;top:58px}
-    body.skin-smooth #tRight{left:116px;top:58px} body.skin-smooth #tDown{left:58px;top:116px}
-    body.skin-smooth #touchActs { bottom:118px; }
-    body.skin-smooth #touchActs .tBtn { width:58px; height:58px; }
-  }
-
-  /* phones (<=1100px): the GLOBAL mobile query already hides the rail + shows ✨
-     and compacts everything; just suppress our promoted pair so there's no
-     orphaned Build/Fly, and restore the mobile #tFly button.                    */
-  @media (max-width: 1100px) {
-    body.skin-smooth #buildMenuBtn, body.skin-smooth #flyBtn { display:none !important; }
-    body.skin-smooth #touchActs #tFly { display:block !important; }
-    /* re-assert the proven compact mobile layout (my desktop rules above are
-       higher-specificity than the global mobile ones, so restate them here).
-       Critically: the centered desktop hotbar max-width calc goes NEGATIVE on a
-       phone — pin it back to the mobile left-anchored bar.                      */
-    body.skin-smooth #hotbar { left:82px; transform:none; bottom:10px;
-      max-width:calc(100vw - 170px); }
-    body.skin-smooth #bagBtn { width:62px; height:62px; left:10px; bottom:10px; }
-    body.skin-smooth #touchPad { left:10px; bottom:96px; width:138px; height:138px; }
-    body.skin-smooth #touchPad .tBtn { width:44px; height:44px; font-size:17px; }
-    body.skin-smooth #tUp{left:47px;top:0} body.skin-smooth #tLeft{left:0;top:47px}
-    body.skin-smooth #tRight{left:94px;top:47px} body.skin-smooth #tDown{left:47px;top:94px}
-    body.skin-smooth #touchActs { right:10px; bottom:84px; gap:8px; }
-    body.skin-smooth #touchActs .tBtn { width:50px; height:50px; font-size:20px; }
-  }
-
   /* PERF + accessibility fallbacks (load-bearing) */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     body.skin-smooth .scoreChip, body.skin-smooth .menuBtn, body.skin-smooth #bagBtn,
@@ -440,7 +336,7 @@
   <button class="bigBtn green" id="playBtn">▶ Play!</button>
   <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
     <button class="bigBtn" id="howBtn" style="font-size:20px; padding:12px 30px;">❓ How to Play</button>
-    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🧱 Look: Classic</button>
+    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🎨 Look: Smooth</button>
     <button class="bigBtn" id="fsTitleBtn" style="font-size:20px; padding:12px 30px;">⛶ Full Screen</button>
   </div>
   <div id="skinHint" style="font-size:14px; color:#2b517d; background:rgba(255,255,255,.55); padding:6px 16px; border-radius:14px; max-width:520px;">✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.</div>
@@ -461,6 +357,7 @@
     <button class="menuBtn deskOnly" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn deskOnly" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
+    <button class="menuBtn" id="skinToggleBtn" title="Switch Smooth / Classic look">🎨</button>
     <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>
     <button class="menuBtn deskOnly" id="settingsBtn">⚙️</button>
     <button class="menuBtn deskOnly" id="helpBtn">❓</button>
@@ -508,23 +405,23 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=29"></script>
-<script src="js/audio.js?v=29"></script>
-<script src="js/world.js?v=29"></script>
-<script src="js/animals.js?v=29"></script>
-<script src="js/squishy.js?v=29"></script>
-<script src="js/weather.js?v=29"></script>
-<script src="js/parks.js?v=29"></script>
-<script src="js/shops.js?v=29"></script>
-<script src="js/signs.js?v=29"></script>
-<script src="js/portal.js?v=29"></script>
-<script src="js/ui.js?v=29"></script>
-<script src="js/activities.js?v=29"></script>
-<script src="js/music.js?v=29"></script>
-<script src="js/pet.js?v=29"></script>
-<script src="js/stickers.js?v=29"></script>
-<script src="js/overnight.js?v=29"></script>
-<script src="js/photo.js?v=29"></script>
-<script src="js/main.js?v=29"></script>
+<script src="js/data.js?v=30"></script>
+<script src="js/audio.js?v=30"></script>
+<script src="js/world.js?v=30"></script>
+<script src="js/animals.js?v=30"></script>
+<script src="js/squishy.js?v=30"></script>
+<script src="js/weather.js?v=30"></script>
+<script src="js/parks.js?v=30"></script>
+<script src="js/shops.js?v=30"></script>
+<script src="js/signs.js?v=30"></script>
+<script src="js/portal.js?v=30"></script>
+<script src="js/ui.js?v=30"></script>
+<script src="js/activities.js?v=30"></script>
+<script src="js/music.js?v=30"></script>
+<script src="js/pet.js?v=30"></script>
+<script src="js/stickers.js?v=30"></script>
+<script src="js/overnight.js?v=30"></script>
+<script src="js/photo.js?v=30"></script>
+<script src="js/main.js?v=30"></script>
 </body>
 </html>
