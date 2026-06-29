@@ -711,8 +711,8 @@ ABC.world = (function () {
   function genHome(keys, x, z) {             // calm flat home meadow
     gset(keys, x, 0, z, 'grass');
     const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
-    if (sp > 16 && treeCell(x, z, 9) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
-    else if (h < 0.013) gset(keys, x, 1, z, 'flower');
+    if (sp > 16 && treeCell(x, z, 13) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
+    else if (h < 0.007) gset(keys, x, 1, z, 'flower');
   }
   function genWild(keys, x, z) {             // rolling grasslands between home and parks
     const e = vnoise(x, z, 44);
@@ -722,8 +722,8 @@ ABC.world = (function () {
     else gset(keys, x, 0, z, 'grass');
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     if (hh === 0) {
-      if (treeCell(x, z, 10) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
-      else if (hsh < 0.008) gset(keys, x, 1, z, 'flower');
+      if (treeCell(x, z, 14) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
+      else if (hsh < 0.004) gset(keys, x, 1, z, 'flower');
     }
   }
   /* region terrain — each US national park looks distinct 🏞️ */
@@ -743,7 +743,7 @@ ABC.world = (function () {
         const cf = vnoise(x + 50, z - 20, 26);
         const mh = cf > 0.62 ? Math.round((cf - 0.62) * 70 * t) : 0;
         for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 7) ? 'snow' : 'granite');
-        if (mh === 0 && treeCell(x, z, 8) && vnoise(x, z, 26) > 0.55) genPine(keys, x, z, 0);
+        if (mh === 0 && treeCell(x, z, 11) && vnoise(x, z, 26) > 0.55) genPine(keys, x, z, 0);
         break;
       }
       case 'zion': {
@@ -769,14 +769,14 @@ ABC.world = (function () {
       }
       case 'olympic': {
         gset(keys, x, 0, z, 'moss');
-        if (treeCell(x, z, 6) && vnoise(x, z, 22) > 0.42) genPine(keys, x, z, 0);   // lush but spaced
+        if (treeCell(x, z, 9) && vnoise(x, z, 22) > 0.42) genPine(keys, x, z, 0);   // lush but spaced
         break;
       }
       case 'everglades': {
         if (vnoise(x, z, 14) < 0.46) {
           gset(keys, x, 0, z, 'water');
           if (hash2(x, z) < 0.05) { gset(keys, x, 1, z, 'leaf'); gset(keys, x, 2, z, 'leaf'); }  // reeds
-        } else { gset(keys, x, 0, z, 'grass'); if (treeCell(x, z, 8)) genTree(keys, x, z, 0); }
+        } else { gset(keys, x, 0, z, 'grass'); if (treeCell(x, z, 11)) genTree(keys, x, z, 0); }
         break;
       }
       case 'glacier': {
@@ -889,9 +889,9 @@ ABC.world = (function () {
     structMap = new Map();
     const ss = (x, y, z, t, r) => structMap.set(key(x, y, z), { t, r: r || 0 });
     const arch = [[-3,1],[-3,2],[-3,3],[-2,4],[-1,5],[0,5],[1,5],[2,4],[3,3],[3,2],[3,1]];
-    arch.forEach(([x,y]) => ss(x, y, -6, 'rainbow'));
-    [[6,-6],[7,-6],[6,-7]].forEach(([x,z]) => ss(x, 1, z, 'blue'));
-    ss(6,2,-6,'blue'); ss(6,3,-6,'star');
+    arch.forEach(([x,y]) => ss(x, y, -14, 'rainbow'));   // pushed back so spawn is open
+    [[8,-12],[9,-12],[8,-13]].forEach(([x,z]) => ss(x, 1, z, 'blue'));   // mascot garden, off to the side
+    ss(8,2,-12,'blue'); ss(8,3,-12,'star');
     for (let x=0;x<=3;x++) ss(-16+x,1,2,'plank');                       // Mr. Maple's stall
     ss(-16,1,5,'wood'); ss(-13,1,5,'wood'); ss(-16,2,5,'wood'); ss(-13,2,5,'wood');
     ss(-16,2,2,'wood'); ss(-13,2,2,'wood'); ss(-15,2,2,'star'); ss(-14,2,2,'gold');

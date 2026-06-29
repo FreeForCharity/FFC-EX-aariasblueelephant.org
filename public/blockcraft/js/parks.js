@@ -40,10 +40,10 @@ ABC.parks = (function () {
       visited.add(reg.key);
       ABC.saveSoon && ABC.saveSoon();
       ABC.ui.confetti(20);
-      // one signature animal greets you (fewer animals, more meaningful)
-      if (reg.animal && ABC.animals && ABC.animals.list.length < 22) {
-        const a = ABC.animals.spawn(reg.animal, Math.round(feet.x) + 3, Math.round(feet.z) + 3);
-        (ABC.state.friends = ABC.state.friends || []).push({ kind: reg.animal, x: a.group.position.x, z: a.group.position.z, name: a.name });
+      // one signature animal greets you — session-only, NOT saved forever, and
+      // capped low so the meadow never fills up with animals
+      if (reg.animal && ABC.animals && ABC.animals.list.length < 10) {
+        ABC.animals.spawn(reg.animal, Math.round(feet.x) + 3, Math.round(feet.z) + 3);
       }
       setTimeout(() => { if (!ABC.ui.isOpen()) describe(reg); }, 1800);
     }
