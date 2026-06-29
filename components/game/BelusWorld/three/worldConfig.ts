@@ -117,3 +117,17 @@ export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest'];
 export const INTERACT_RADIUS = 4.5;
 
 export const PLAYER_SPAWN = { x: 0, y: 0.4, z: 6 };
+
+// Solid things Belu can't walk through (horizontal keep-out cylinders). The
+// Morning Mountain peak is a real landmark — Belu walks AROUND it, not through.
+// World.tsx renders the peak at this same spot, so visuals and collision agree.
+export interface Obstacle {
+  x: number;
+  z: number;
+  r: number;
+}
+export const OBSTACLES: Obstacle[] = (() => {
+  const m = ISLANDS.mountain;
+  const len = Math.hypot(m.cx, m.cz) || 1;
+  return [{ x: m.cx + (m.cx / len) * 6.5, z: m.cz + (m.cz / len) * 6.5, r: 3.0 }];
+})();

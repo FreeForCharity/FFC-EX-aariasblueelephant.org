@@ -16,9 +16,10 @@ interface Props {
   isTouch: boolean;
   onOpenSettings: () => void;
   onOpenMap: () => void;
+  onToggleFullscreen: () => void;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap }: Props) {
+export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onToggleFullscreen }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
 
   return (
@@ -65,6 +66,14 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           aria-label="Growth map"
         >
           🗺️
+        </button>
+        <button
+          onClick={onToggleFullscreen}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label="Full screen"
+          title="Full screen"
+        >
+          ⛶
         </button>
         <button
           onClick={onOpenSettings}

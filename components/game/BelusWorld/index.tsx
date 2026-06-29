@@ -19,6 +19,7 @@ import { attachKeyboard } from './three/input';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
 import GrowthMap from './ui/GrowthMap';
+import type { QuestStatus } from './three/quest/QuestLayer';
 import {
   loadMemory,
   saveMemory,
@@ -77,6 +78,7 @@ export default function BelusWorldGame() {
   const [emotion, setEmotion] = useState<BeluEmotion>('happy');
   const [beluLine, setBeluLine] = useState<string | null>(null);
   const [nearZone, setNearZone] = useState<ZoneId | null>(null);
+  const [questStatus, setQuestStatus] = useState<QuestStatus | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [reward, setReward] = useState<RewardInfo | null>(null);
@@ -87,6 +89,7 @@ export default function BelusWorldGame() {
     narration: true,
   });
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -145,6 +148,13 @@ export default function BelusWorldGame() {
     playSound(kind, settingsRef.current.sound);
   }, []);
 
+  const toggleFullscreen = useCallback(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else el.requestFullscreen?.().catch(() => {});
+  }, []);
+
   const handleQuestComplete = useCallback(
     (zone: ActivityZone, level: number, stars: number, moment: string) => {
       const res = awardLevel(progress, zone, level - 1, stars);
@@ -178,7 +188,7 @@ export default function BelusWorldGame() {
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden" style={{ background: '#bfe2ff' }}>
+    <div ref={rootRef} className="relative h-screen w-full overflow-hidden bg-[#bfe2ff]">
       <Suspense fallback={<LoadingWorld />}>
         <GameCanvas
           emotion={emotion}
@@ -196,18 +206,26 @@ export default function BelusWorldGame() {
           setEmotion={setEmotion}
           playSound={sfx}
           onQuestComplete={handleQuestComplete}
+          onQuestStatus={setQuestStatus}
         />
       </Suspense>
 
       <HUD
         beluLine={beluLine}
-        nearZone={nearZone}
+        nearZone={questStatus ? null : nearZone}
         stickers={stickers}
         totalStars={totalStars(progress)}
         isTouch={isTouch.current}
         onOpenSettings={() => setShowSettings(true)}
         onOpenMap={() => setShowMap(true)}
+        onToggleFullscreen={toggleFullscreen}
       />
+
+      <AnimatePresence>
+        {questStatus && !showSettings && !showMap && reward === null && (
+          <QuestPanel status={questStatus} />
+        )}
+      </AnimatePresence>
 
       {!paused && <TouchControls />}
 
@@ -350,6 +368,67 @@ function LoadingWorld() {
       </motion.div>
       <p className="mt-4 text-lg font-bold text-sky-700">Floating up to the islands…</p>
     </div>
+  );
+}
+
+// The persistent "what to do right now" task card, pinned top-center. Keeps the
+// current question + progress on screen so the child always knows the next step.
+function QuestPanel({ status }: { status: QuestStatus }) {
+  const correct = status.phase === 'correct';
+  return (
+    <motion.div
+      key="questpanel"
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      className="pointer-events-none fixed left-1/2 top-20 z-30 w-[min(92vw,460px)] -translate-x-1/2"
+    >
+      <div
+        className="rounded-3xl px-5 py-3 text-center shadow-2xl backdrop-blur"
+        style={{
+          background: correct
+            ? 'linear-gradient(140deg,#eafff0,#ffffff)'
+            : `linear-gradient(140deg,#ffffff,${status.accent}22)`,
+          border: `2px solid ${correct ? '#69db7c' : status.accent}`,
+        }}
+      >
+        <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+          <span className="text-base">{status.emoji}</span>
+          <span>{status.title}</span>
+          <span className="text-slate-300">·</span>
+          <span>Level {status.level}</span>
+        </div>
+
+        {/* progress dots */}
+        <div className="mt-1 flex justify-center gap-1.5">
+          {Array.from({ length: status.total }).map((_, i) => (
+            <div
+              key={i}
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: i === status.step ? 20 : 8,
+                background: i < status.step || correct ? '#69db7c' : i === status.step ? status.accent : '#d8e0ec',
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.p
+          key={status.instruction}
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={`mt-2 font-extrabold ${correct ? 'text-green-600 text-xl' : 'text-slate-800 text-base'}`}
+        >
+          {correct ? '🎉 ' + status.instruction : status.instruction}
+        </motion.p>
+
+        {!correct && (
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            Walk Belu into the matching glowing orb 🫧 (or tap it)
+          </p>
+        )}
+      </div>
+    </motion.div>
   );
 }
 

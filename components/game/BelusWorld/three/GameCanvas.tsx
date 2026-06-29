@@ -15,7 +15,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World from './World';
-import QuestLayer from './quest/QuestLayer';
+import QuestLayer, { type QuestStatus } from './quest/QuestLayer';
 import { PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { ActivityZone } from '../belu/progress';
@@ -41,6 +41,7 @@ interface Props {
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: Sound) => void;
   onQuestComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
+  onQuestStatus: (s: QuestStatus | null) => void;
 }
 
 function Lighting({ calmMode }: { calmMode: boolean }) {
@@ -85,6 +86,7 @@ export default function GameCanvas({
   setEmotion,
   playSound,
   onQuestComplete,
+  onQuestStatus,
 }: Props) {
   const player = useRef<PlayerHandle>(null);
   // start at a safe-ish ratio and let the monitor scale it to the device
@@ -149,6 +151,7 @@ export default function GameCanvas({
           setEmotion={setEmotion}
           playSound={playSound}
           onComplete={onQuestComplete}
+          onStatus={onQuestStatus}
         />
       </Suspense>
 
