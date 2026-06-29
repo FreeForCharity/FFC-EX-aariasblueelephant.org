@@ -22,13 +22,15 @@ import type { BeluEmotion } from '../../BeluCharacter';
 import AnswerOrb, { type OrbStatus } from './AnswerOrb';
 import BreatheOrb from './BreatheOrb';
 import { makeLabelTexture } from './emojiTexture';
-import { COVE_LEVELS, type CoveLevel, type CoveTotem } from './coveContent';
+import { COVE_LEVELS, SHELL_FINDS, DOLPHIN_JOKES, type CoveLevel, type CoveTotem } from './coveContent';
+import { shellLayout, Shell, StormWaves, DolphinBuddy, PopBubbles, type ShellSpot } from './coveExtras';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'cove' as const;
 const TOTEM_DIST = 3.0; // how far the totems sit out in front, toward home
 const TOTEM_SPREAD = 2.9; // sideways gap between totems (no overlap)
 const TOTEM_PICK = 1.6; // walk this close to a totem to choose it
+const SHELL_FIND = 1.5; // walk this close to a hidden shell to discover it
 
 // stormy → calm colours the water lerps between as breaths complete
 const STORM_COLOR = new THREE.Color('#3a4a5e'); // dark, choppy grey-blue
@@ -50,6 +52,16 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  // hidden treasure shells scattered around the cove
+  shells: ShellSpot[];
+  shellFound: boolean[]; // parallel to shells
+  shellFoundAt: number[]; // clock time each was found (for the pop animation)
+  shellCount: number; // how many found this session (for the proud counter)
+  sparkleAt: [number, number, number] | null; // where the last shell sparkle burst sits
+  sparkleUntil: number;
+  // the surprise dolphin buddy + its one-time greeting
+  dolphinGreeted: boolean;
+  jokeShown: boolean;
 }
 
 interface Props {
@@ -87,6 +99,8 @@ export default function CoveLayer(props: Props) {
     clock: 0, active: false, level: props.level, disarmed: false,
     phase: 'pre', calm: 0, calmTarget: 0, picked: [],
     wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    shells: [], shellFound: [], shellFoundAt: [], shellCount: 0,
+    sparkleAt: null, sparkleUntil: 0, dolphinGreeted: false, jokeShown: false,
   });
   const frame = useRef<(dt: number) => void>(() => {});
   const water = useRef<THREE.Mesh>(null);
@@ -141,6 +155,15 @@ export default function CoveLayer(props: Props) {
     st.finishAt = 0;
     st.calm = 0;
     st.calmTarget = 0;
+    // scatter this level's hidden treasure shells (deterministic per level)
+    st.shells = shellLayout(isl.cx, isl.cz, isl.radius, lvl.shells, (props.level + 1) * 5.13);
+    st.shellFound = st.shells.map(() => false);
+    st.shellFoundAt = st.shells.map(() => -99);
+    st.shellCount = 0;
+    st.sparkleAt = null;
+    st.sparkleUntil = 0;
+    st.dolphinGreeted = false;
+    st.jokeShown = false;
     props.setEmotion('overwhelmed'); // the sea (and Belu) start stormy
     props.speak(lvl.intro);
     if (needCount(lvl) > 0) {
@@ -214,6 +237,22 @@ export default function CoveLayer(props: Props) {
     bump();
   }
 
+  // child walked near a hidden shell → discover it (chime, sparkle, kind line).
+  // Finding shells is pure delight: it's never required and never penalised.
+  function findShell(i: number) {
+    const st = S.current;
+    if (st.shellFound[i]) return;
+    st.shellFound[i] = true;
+    st.shellFoundAt[i] = st.clock;
+    st.shellCount += 1;
+    st.sparkleAt = [st.shells[i].x, isl.top + 0.6, st.shells[i].z];
+    st.sparkleUntil = st.clock + 1.3;
+    props.playSound('star'); // bright chime for treasure
+    props.setEmotion('excited');
+    props.speak(SHELL_FINDS[(st.shellCount - 1) % SHELL_FINDS.length]);
+    bump();
+  }
+
   // BreatheOrb tells us each phase begins; on every "Breathe out" the sea settles
   // one notch (so the child SEES their breathing calm the storm).
   function onBreathPhase(label: string) {
@@ -234,10 +273,11 @@ export default function CoveLayer(props: Props) {
     st.calmTarget = 1; // sea fully calm
     st.phase = 'done';
     props.setEmotion('calm');
-    props.playSound('star');
+    props.playSound('levelup'); // bigger, brighter chord for the calm payoff
     const lvl = COVE_LEVELS[clampLevel(st.level)];
     emitStatus('correct', lvl.outro, 'The sea is calm 🌈');
-    st.finishAt = st.clock + 2.2; // let fish leap + rainbow show before finishing
+    // a touch longer so the surprise dolphin can surface, greet, and play
+    st.finishAt = st.clock + 4.2;
     bump();
   }
 

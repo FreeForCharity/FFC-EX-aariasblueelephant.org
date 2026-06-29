@@ -21,6 +21,7 @@ import { Flower } from '../Scenery';
 import { makeLabelTexture } from './emojiTexture';
 import { MEADOW_STORY } from './storyContent';
 import type { QuestStatus } from './QuestLayer';
+import { Firefly, FloatingHeart, MeadowFinale } from './meadowExtras';
 
 const ZONE = 'meadow' as const;
 const APPROACH = 4.6; // stay this close to a friend while observing & choosing
@@ -28,6 +29,7 @@ const LINGER = 1.6; // seconds of staying close before the clue appears
 const HELP_DIST = 2.3; // how far the help bubbles sit in front of a friend
 const HELP_SPREAD = 2.8; // sideways gap between the 3 help bubbles (no overlap)
 const HELP_PICK = 1.5; // walk this close to a help bubble to choose it
+const FIREFLY_FIND = 2.2; // walk this close to a hidden firefly to collect it
 
 const FEELING_FACE: Record<AnimalMood, string> = {
   scared: '😨', sad: '😢', lonely: '😞', worried: '😟', happy: '😊',
@@ -42,6 +44,9 @@ interface State {
   active: boolean;
   level: number;
   friends: FriendRT[];
+  fireflies: boolean[]; // collected?
+  firefliesFound: number;
+  finaleAt: number; // clock time the meadow finale began (0 = none)
   helped: number;
   disarmed: boolean;
   // current friend being observed/helped
@@ -73,6 +78,7 @@ export default function StoryLayer(props: Props) {
   const bump = () => force((v) => (v + 1) % 1_000_000);
   const S = useRef<State>({
     clock: 0, active: false, level: props.level, friends: MEADOW_STORY[clampLevel(props.level)].friends.map(() => ({ healed: false, healedAt: -99 })),
+    fireflies: MEADOW_STORY[clampLevel(props.level)].fireflies.map(() => false), firefliesFound: 0, finaleAt: 0,
     helped: 0, disarmed: false, activeFriend: -1, lingerStart: 0, observed: false,
     wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
   });
@@ -82,6 +88,11 @@ export default function StoryLayer(props: Props) {
   const friendWorld = (i: number): [number, number] => {
     const fr = MEADOW_STORY[clampLevel(S.current.level)].friends[i];
     return [isl.cx + fr.pos[0], isl.cz + fr.pos[1]];
+  };
+
+  const fireflyWorld = (i: number): [number, number] => {
+    const ff = MEADOW_STORY[clampLevel(S.current.level)].fireflies[i];
+    return [isl.cx + ff[0], isl.cz + ff[1]];
   };
 
   // 3 help bubbles in an arc on the home-facing side of a friend
@@ -113,6 +124,9 @@ export default function StoryLayer(props: Props) {
     S.current.active = true;
     S.current.level = props.level;
     S.current.friends = lvl.friends.map(() => ({ healed: false, healedAt: -99 }));
+    S.current.fireflies = lvl.fireflies.map(() => false);
+    S.current.firefliesFound = 0;
+    S.current.finaleAt = 0;
     S.current.helped = 0;
     S.current.activeFriend = -1;
     S.current.observed = false;
@@ -154,10 +168,16 @@ export default function StoryLayer(props: Props) {
       st.lockUntil = st.clock + 0.8;
       props.playSound('star');
       props.setEmotion('excited');
+      // the friend cheers up IN THEIR OWN VOICE — gives them personality
+      props.speak(fr.thanks);
       emitStatus('correct', `Yay! Your ${fr.species} feels safe and happy now! ☀️`);
       const total = MEADOW_STORY[clampLevel(st.level)].friends.length;
-      if (st.helped >= total) st.finishAt = st.clock + 1.5;
-      else {
+      if (st.helped >= total) {
+        // big escalating celebration: a level-up chime + meadow-wide finale burst
+        st.finaleAt = st.clock;
+        props.playSound('levelup');
+        st.finishAt = st.clock + 2.4;
+      } else {
         st.activeFriend = -1;
         st.observed = false;
       }
@@ -183,6 +203,29 @@ export default function StoryLayer(props: Props) {
     });
     if (props.paused) return;
     st.clock += dt;
+
+    // --- hidden fireflies: walk near one to collect it (delightful discovery,
+    //     never required, never a fail). Sparkle + chime + a kind little line.
+    if (st.active) {
+      const ffs = MEADOW_STORY[clampLevel(st.level)].fireflies;
+      for (let i = 0; i < ffs.length; i++) {
+        if (st.fireflies[i]) continue;
+        const [fx, fz] = fireflyWorld(i);
+        if (Math.hypot(beluPos.x - fx, beluPos.z - fz) < FIREFLY_FIND) {
+          st.fireflies[i] = true;
+          st.firefliesFound += 1;
+          props.playSound('correct');
+          const total = ffs.length;
+          if (st.firefliesFound >= total) {
+            props.playSound('star');
+            props.speak(`You found every firefly! ${total} little lights — they’ll light your way. ✨`);
+          } else {
+            props.speak(`Ooh, a firefly! ✨ ${st.firefliesFound} of ${total} found.`);
+          }
+          bump();
+        }
+      }
+    }
 
     if (st.finishAt > 0 && st.clock >= st.finishAt) {
       st.finishAt = 0;

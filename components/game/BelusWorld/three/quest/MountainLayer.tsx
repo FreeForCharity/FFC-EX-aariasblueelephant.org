@@ -20,13 +20,15 @@ import { ISLANDS } from '../worldConfig';
 import { beluPos, dynamicSolids } from '../playerState';
 import type { BeluEmotion } from '../../BeluCharacter';
 import { makeLabelTexture } from './emojiTexture';
-import { MOUNTAIN_ROUTINE, type Station } from './mountainContent';
+import { MOUNTAIN_ROUTINE, NIMBUS_LINES, type Station } from './mountainContent';
+import { MorningSun, Nimbus, StepStone, StarSpark } from './mountainExtras';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'mountain' as const;
 const REACH = 1.7; // walk this close to a station to "do" it
 const NUDGE_AT = 1.7; // walking this close to a wrong station triggers the nudge
 const STATION_SOLID_R = 0.85; // keep-out radius so Belu walks around the objects
+const STAR_PICK = 1.5; // walk this close to a hidden star to collect it
 
 interface StationRT {
   done: boolean;
@@ -44,6 +46,12 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  // hidden collectible stars: collect time per star (-99 = not yet)
+  starsAt: number[];
+  starsFound: number;
+  // companion cloud + Nimbus cheer pulse
+  cheerUntil: number;
+  nimbusLine: number;
 }
 
 interface Props {
@@ -72,11 +80,31 @@ export default function MountainLayer(props: Props) {
     clock: 0, active: false, level: props.level,
     stations: MOUNTAIN_ROUTINE[clampLevel(props.level)].stations.map(() => ({ done: false, doneAt: -99 })),
     doneCount: 0, disarmed: false, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    starsAt: (MOUNTAIN_ROUTINE[clampLevel(props.level)].stars ?? []).map(() => -99),
+    starsFound: 0, cheerUntil: 0, nimbusLine: -1,
   });
   const frame = useRef<(dt: number) => void>(() => {});
   const isl = ISLANDS[ZONE];
 
   const stationWorld = (s: Station): [number, number] => [isl.cx + s.pos[0], isl.cz + s.pos[1]];
+  const starWorld = (p: [number, number]): [number, number] => [isl.cx + p[0], isl.cz + p[1]];
+
+  // how far along the morning we are (0..1) — drives the rising sun + Nimbus
+  function progress(): number {
+    const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
+    const total = Math.max(1, targetCount(lvl.stations));
+    return Math.min(1, S.current.doneCount / total);
+  }
+
+  function nimbusCheer() {
+    const st = S.current;
+    st.cheerUntil = st.clock + 1.2;
+    const idx = Math.min(NIMBUS_LINES.length - 1, st.doneCount);
+    if (idx !== st.nimbusLine) {
+      st.nimbusLine = idx;
+      props.speak(NIMBUS_LINES[idx]);
+    }
+  }
 
   function emitStatus(phase: 'question' | 'correct', instruction: string, hint?: string) {
     const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
@@ -108,6 +136,10 @@ export default function MountainLayer(props: Props) {
     S.current.wrongIdx = -1;
     S.current.finishAt = 0;
     S.current.lockUntil = S.current.clock + 0.35;
+    S.current.starsAt = (lvl.stars ?? []).map(() => -99);
+    S.current.starsFound = 0;
+    S.current.cheerUntil = 0;
+    S.current.nimbusLine = -1;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, actionHint());
@@ -183,11 +215,16 @@ export default function MountainLayer(props: Props) {
 
     const total = targetCount(lvl.stations);
     if (st.doneCount >= total) {
-      props.playSound('star');
+      props.playSound('levelup');
+      // a big morning finish: Nimbus is wide awake, the sun is all the way up
+      st.cheerUntil = st.clock + 2.0;
       emitStatus('correct', station.done ?? 'You did it!', 'Routine complete! 🌟');
-      st.finishAt = st.clock + 1.4;
+      st.finishAt = st.clock + 1.8;
     } else {
-      emitStatus('correct', station.done ?? 'Nice — you did it!', actionHint());
+      props.playSound('star');
+      nimbusCheer(); // the cloud buddy cheers + the sun climbs another notch
+      const stars = st.starsFound > 0 ? ` (★ ${st.starsFound} found!)` : '';
+      emitStatus('correct', (station.done ?? 'Nice — you did it!') + stars, actionHint());
     }
     bump();
   }
@@ -227,6 +264,24 @@ export default function MountainLayer(props: Props) {
       stopRoutine();
       return;
     }
+    // hidden morning stars: collect any Belu walks near (no lock — pure bonus)
+    const stars = lvl.stars ?? [];
+    for (let i = 0; i < stars.length; i++) {
+      if (st.starsAt[i] > 0) continue;
+      const [sx, sz] = starWorld(stars[i]);
+      if (Math.hypot(beluPos.x - sx, beluPos.z - sz) < STAR_PICK) {
+        st.starsAt[i] = st.clock;
+        st.starsFound += 1;
+        props.playSound('tap');
+        props.speak(
+          st.starsFound >= stars.length
+            ? 'Wow! You found ALL the morning stars! ⭐'
+            : 'Ooh, a sparkly morning star! ⭐',
+        );
+        bump();
+      }
+    }
+
     if (st.clock < st.lockUntil) return;
 
     // which station is Belu close enough to "do"? (nearest within reach)
@@ -246,9 +301,44 @@ export default function MountainLayer(props: Props) {
 
   // ---- render ----
   const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
+  const prog = (() => {
+    const total = Math.max(1, targetCount(lvl.stations));
+    return Math.min(1, S.current.doneCount / total);
+  })();
+  const cheering = S.current.active && S.current.clock < S.current.cheerUntil;
+  const awake = S.current.active; // Nimbus naps until the routine begins
+  const starList = lvl.stars ?? [];
   return (
     <group>
       <Ticker fnRef={frame} />
+
+      {/* the morning sun rises + brightens as the routine progresses */}
+      <MorningSun center={[isl.cx, isl.cz]} top={isl.top} progress={prog} />
+
+      {/* Nimbus the sleepy cloud buddy — wakes + cheers Belu on */}
+      <Nimbus
+        position={[isl.cx - 5.4, isl.top + 3.0, isl.cz - 4.6]}
+        awake={awake}
+        cheer={cheering}
+        clock={S.current.clock}
+      />
+
+      {/* hidden collectible morning stars */}
+      {starList.map((p, i) => {
+        const at = S.current.starsAt[i] ?? -99;
+        // once collected and its pop animation is over, stop rendering it
+        if (at > 0 && S.current.clock - at > 0.5) return null;
+        const [sx, sz] = [isl.cx + p[0], isl.cz + p[1]];
+        return (
+          <StarSpark
+            key={`${S.current.level}-star-${i}`}
+            position={[sx, isl.top + 1.1, sz]}
+            collectedAt={at}
+            clock={S.current.clock}
+          />
+        );
+      })}
+
       {lvl.stations.map((station, i) => {
         const rt = S.current.stations[i] ?? { done: false, doneAt: -99 };
         const [x, z] = stationWorld(station);
@@ -269,6 +359,8 @@ export default function MountainLayer(props: Props) {
             {justDone && (
               <Sparkles count={20} scale={2.4} size={6} speed={0.6} color="#7CFC9A" position={[0, 1.4, 0]} />
             )}
+            {/* a glowing footprint pad that lights up once this step is done */}
+            <StepStone position={[0, 0.06, 1.05]} lit={rt.done} accent={isl.accent} />
           </Station3D>
         );
       })}

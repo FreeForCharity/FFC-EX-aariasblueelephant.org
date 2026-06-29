@@ -43,6 +43,9 @@ export interface ForestLevel {
   outro: string;
   moment: string;
   friends: ForestFriend[];
+  /** hidden collectible "twinkles" (fireflies/stars) scattered to be found.
+   *  Optional — defaults are filled in by FOREST_TWINKLES if a level omits them. */
+  twinkles?: { emoji: string; pos: [number, number] }[];
 }
 
 // ---- little builders so the data stays readable -----------------------------
@@ -63,6 +66,11 @@ export const FOREST_STORY: ForestLevel[] = [
       "My forest friends are wishing for things! Walk up close, see what they want, then walk into the magic WORD to make it appear.",
     outro: 'You said every magic word so well! Your words make things happen. 🌳',
     moment: 'cast my first magic words in the forest',
+    twinkles: [
+      { emoji: '✨', pos: [-5.5, -4] },
+      { emoji: '⭐', pos: [5.5, -4.5] },
+      { emoji: '🐝', pos: [0, 5.5] },
+    ],
     friends: [
       {
         species: 'fox', thought: '🍎',
@@ -220,4 +228,30 @@ export const FOREST_STORY: ForestLevel[] = [
       },
     ],
   },
+];
+
+// Default scatter of hidden twinkles for any level that doesn't specify its own.
+// Kept deterministic (fixed positions) — kids can hunt these down between
+// friends for a little sparkle + chime, with no pressure to find them all.
+export const FOREST_TWINKLES: { emoji: string; pos: [number, number] }[] = [
+  { emoji: '✨', pos: [-5.5, -4] },
+  { emoji: '🐝', pos: [5.5, -4] },
+  { emoji: '⭐', pos: [0, 5.6] },
+  { emoji: '🍄', pos: [-5.8, 3.5] },
+];
+
+// Warm one-liners Belu says when a hidden twinkle is found — the firefly guide
+// celebrating discovery. Rotated by a seed so it doesn't feel repetitive.
+export const TWINKLE_FINDS: string[] = [
+  'Ooh, a hidden sparkle! You found it! ✨',
+  'A little firefly was hiding there — well spotted! 🐝',
+  'You have sharp eyes! Another shiny one! ⭐',
+  'The forest left a sparkle just for you! 🍄',
+];
+
+// Belu's gentle nudges while exploring the forest (idle personality).
+export const FOREST_NUDGES: string[] = [
+  'The forest feels happier the more friends we help. 🌳',
+  'Listen — the fireflies are dancing! 🐝',
+  'Your words are magic here. Try walking into one! 💜',
 ];
