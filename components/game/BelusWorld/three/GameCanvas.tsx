@@ -15,8 +15,11 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World from './World';
+import QuestLayer from './quest/QuestLayer';
 import { PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
+import type { ActivityZone } from '../belu/progress';
+import type { Sound } from '../belu/feedback';
 
 interface Props {
   emotion: BeluEmotion;
@@ -30,8 +33,14 @@ interface Props {
   growthStage: number;
   /** completed-level count per zone island (drives the bloom) */
   islandLevels: Partial<Record<ZoneId, number>>;
+  /** which level to play next on each zone island */
+  islandNextLevel: Record<ActivityZone, number>;
+  sound: boolean;
   onProximity: (zone: ZoneId | null) => void;
-  onEnter: (zone: ZoneId) => void;
+  speak: (line: string) => void;
+  setEmotion: (e: BeluEmotion) => void;
+  playSound: (kind: Sound) => void;
+  onQuestComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
 }
 
 function Lighting({ calmMode }: { calmMode: boolean }) {
@@ -69,8 +78,13 @@ export default function GameCanvas({
   growthScale,
   growthStage,
   islandLevels,
+  islandNextLevel,
+  sound,
   onProximity,
-  onEnter,
+  speak,
+  setEmotion,
+  playSound,
+  onQuestComplete,
 }: Props) {
   const player = useRef<PlayerHandle>(null);
   // start at a safe-ish ratio and let the monitor scale it to the device
@@ -122,10 +136,19 @@ export default function GameCanvas({
           emotion={emotion}
           paused={paused}
           onProximity={onProximity}
-          onEnter={onEnter}
           reduceMotion={reduceMotion}
           growthScale={growthScale}
           growthStage={growthStage}
+        />
+        <QuestLayer
+          islandNextLevel={islandNextLevel}
+          paused={paused}
+          reduceMotion={reduceMotion}
+          sound={sound}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={playSound}
+          onComplete={onQuestComplete}
         />
       </Suspense>
 

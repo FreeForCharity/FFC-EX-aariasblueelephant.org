@@ -14,13 +14,11 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BeluEmotion } from './BeluCharacter';
-import type { ZoneId } from './three/worldConfig';
-import { attachKeyboard, input } from './three/input';
+import { ISLANDS, type ZoneId } from './three/worldConfig';
+import { attachKeyboard } from './three/input';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
-import LevelSelect from './ui/LevelSelect';
 import GrowthMap from './ui/GrowthMap';
-import { ACTIVITIES } from './activities/registry';
 import {
   loadMemory,
   saveMemory,
@@ -37,6 +35,7 @@ import {
   awardLevel,
   getGrowth,
   completedLevels,
+  nextLevel,
   totalStars,
   type GameProgress,
   type ActivityZone,
@@ -78,8 +77,6 @@ export default function BelusWorldGame() {
   const [emotion, setEmotion] = useState<BeluEmotion>('happy');
   const [beluLine, setBeluLine] = useState<string | null>(null);
   const [nearZone, setNearZone] = useState<ZoneId | null>(null);
-  const [selectZone, setSelectZone] = useState<ActivityZone | null>(null);
-  const [active, setActive] = useState<{ zone: ActivityZone; level: number } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [reward, setReward] = useState<RewardInfo | null>(null);
@@ -102,6 +99,10 @@ export default function BelusWorldGame() {
   );
   const stickers = useMemo(
     () => ZONES.filter((z) => completedLevels(progress, z) > 0).map((z) => STICKER_KEYS[z]),
+    [progress],
+  );
+  const islandNextLevel = useMemo(
+    () => Object.fromEntries(ZONES.map((z) => [z, nextLevel(progress, z)])) as Record<ActivityZone, number>,
     [progress],
   );
 
@@ -132,36 +133,19 @@ export default function BelusWorldGame() {
     };
   }, [phase]);
 
-  const paused = active !== null || selectZone !== null || showSettings || showMap || reward !== null;
+  const paused = showSettings || showMap || reward !== null;
 
-  const handleProximity = useCallback(
-    (zone: ZoneId | null) => {
-      setNearZone(zone);
-      if (zone && zone !== 'home') {
-        setEmotion('curious');
-        speak(`Ooh, the ${ACTIVITIES[zone as ActivityZone].title}! Want to learn here with me?`);
-      }
-    },
-    [speak],
-  );
-
-  const handleEnter = useCallback((zone: ZoneId) => {
-    if (zone === 'home') return;
-    stopSpeaking();
-    setSelectZone(zone as ActivityZone);
+  const handleProximity = useCallback((zone: ZoneId | null) => {
+    setNearZone(zone);
+    if (zone && zone !== 'home') setEmotion('curious');
   }, []);
 
-  const handlePlay = useCallback(
-    (level: number) => {
-      if (!selectZone) return;
-      playSound('tap', settingsRef.current.sound);
-      setActive({ zone: selectZone, level });
-      setSelectZone(null);
-    },
-    [selectZone],
-  );
+  // a sound helper bound to the current sound setting
+  const sfx = useCallback((kind: Parameters<typeof playSound>[0]) => {
+    playSound(kind, settingsRef.current.sound);
+  }, []);
 
-  const handleComplete = useCallback(
+  const handleQuestComplete = useCallback(
     (zone: ActivityZone, level: number, stars: number, moment: string) => {
       const res = awardLevel(progress, zone, level - 1, stars);
       saveProgress(res.progress);
@@ -170,17 +154,16 @@ export default function BelusWorldGame() {
       // personality memory (separate from leveling)
       let m = recordZoneVisit(memory, zone);
       m = recordMoment(m, moment);
-      m = addAchievement(m, `${ACTIVITIES[zone].skill} L${level}`);
+      m = addAchievement(m, `${ISLANDS[zone].label} L${level}`);
       saveMemory(m);
       setMemory(m);
 
       const mastered = completedLevels(res.progress, zone) >= 5;
-      setActive(null);
       setEmotion('excited');
       playSound(res.grewUp ? 'growup' : res.newLevel ? 'levelup' : 'star', settingsRef.current.sound);
       setReward({
         stars,
-        skill: ACTIVITIES[zone].skill,
+        skill: ISLANDS[zone].label,
         levelUp: res.newLevel,
         grewUp: res.grewUp,
         growthLabel: getGrowth(res.progress).label,
@@ -189,8 +172,6 @@ export default function BelusWorldGame() {
     },
     [progress, memory],
   );
-
-  const ActivityComp = active ? ACTIVITIES[active.zone].component : null;
 
   if (phase === 'intro') {
     return <IntroScreen memory={memory} growthLabel={growth.label} onStart={start} />;
@@ -208,52 +189,27 @@ export default function BelusWorldGame() {
           growthScale={growth.scale}
           growthStage={growth.stage}
           islandLevels={islandLevels}
+          islandNextLevel={islandNextLevel}
+          sound={settings.sound}
           onProximity={handleProximity}
-          onEnter={handleEnter}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={sfx}
+          onQuestComplete={handleQuestComplete}
         />
       </Suspense>
 
       <HUD
         beluLine={beluLine}
-        nearZone={active || selectZone ? null : nearZone}
+        nearZone={nearZone}
         stickers={stickers}
         totalStars={totalStars(progress)}
         isTouch={isTouch.current}
         onOpenSettings={() => setShowSettings(true)}
         onOpenMap={() => setShowMap(true)}
-        onPlayNear={() => nearZone && handleEnter(nearZone)}
       />
 
-      {isTouch.current && !paused && <TouchControls />}
-
-      {/* Level select (destination entry) */}
-      <AnimatePresence>
-        {selectZone && (
-          <LevelSelect
-            meta={ACTIVITIES[selectZone]}
-            levelStars={progress.islands[selectZone].levelStars}
-            onPlay={handlePlay}
-            onClose={() => setSelectZone(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Learning activity */}
-      <AnimatePresence>
-        {ActivityComp && active && (
-          <ActivityComp
-            key={`${active.zone}-${active.level}`}
-            level={active.level}
-            speak={speak}
-            onBeluEmotion={setEmotion}
-            onComplete={(r) => handleComplete(active.zone, active.level, r.stars, r.moment)}
-            onExit={() => {
-              setActive(null);
-              input.interactQueued = false;
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {!paused && <TouchControls />}
 
       {/* Reward / celebration */}
       <AnimatePresence>
@@ -308,20 +264,61 @@ function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; gro
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-2 text-5xl font-black text-sky-700 drop-shadow-sm"
+        className="mt-2 text-5xl font-black drop-shadow-sm sm:text-6xl"
+        style={{
+          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}
       >
         Belu's World
       </motion.h1>
+
+      {/* multicolour autism-acceptance infinity symbol */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.35, type: 'spring' }}
+        className="mt-1 text-4xl font-black leading-none"
+        style={{
+          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}
+        aria-label="autism acceptance infinity symbol"
+      >
+        ∞
+      </motion.div>
+
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-2 max-w-md text-lg font-semibold text-sky-900/70"
+        transition={{ delay: 0.45 }}
+        className="mt-2 text-lg font-extrabold text-sky-800"
+      >
+        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖
+      </motion.p>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55 }}
+        className="mt-1 max-w-md text-base font-semibold text-sky-900/70"
       >
         {returning
           ? `Welcome back! ${growthLabel} is waiting on the sky islands. Earn stars to help Belu grow!`
-          : 'Explore floating islands, learn amazing skills, and help baby Belu grow up big and strong!'}
+          : 'Explore floating islands, meet friendly faces, and help baby Belu grow up big and strong!'}
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="mt-3 text-3xl tracking-[0.3em]"
+      >
+        🐘🌸⛰️🌊🌳🌈
+      </motion.div>
 
       <motion.button
         initial={{ opacity: 0, y: 20 }}
@@ -330,13 +327,16 @@ function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; gro
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="mt-8 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
+        className="mt-7 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
       >
-        {returning ? 'Continue ✨' : 'Start Adventure ✨'}
+        {returning ? 'Continue ✨' : 'Calling all friends of Aaria ✨'}
       </motion.button>
 
-      <p className="mt-6 text-sm font-medium text-sky-900/50">
-        Move with arrow keys or the joystick · Jump to explore · No way to lose 💙
+      <p className="mt-5 text-sm font-medium text-sky-900/50">
+        Move with the arrows or joystick · Meet friends · Walk into glowing orbs · No way to lose 💙
+      </p>
+      <p className="mt-4 rounded-full bg-white/55 px-5 py-2 text-xs font-semibold text-sky-900/70">
+        A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org
       </p>
     </div>
   );

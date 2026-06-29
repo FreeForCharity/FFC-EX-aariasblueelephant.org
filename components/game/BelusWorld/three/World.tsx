@@ -4,11 +4,14 @@
 // (which crystal is glowing because Belu is near it).
 // ---------------------------------------------------------------------------
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { ISLAND_LIST, ISLANDS, BRIDGES, type ZoneId, type IslandDef } from './worldConfig';
 import { BRIDGE_SEGMENTS } from './worldMath';
-import { Tree, Flower, Crystal, Waterfall, Clouds, makeRng } from './Scenery';
+import { useFrame } from '@react-three/fiber';
+import { Tree, Flower, Waterfall, Clouds, makeRng } from './Scenery';
+import WorldLife from './WorldLife';
+import { makeInfinityTexture } from './quest/emojiTexture';
 
 function Island({ isl }: { isl: IslandDef }) {
   return (
@@ -120,18 +123,24 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
     );
   }
   if (isl.id === 'mountain') {
+    // The peak sits at the BACK edge of the island (away from the bridge), so it
+    // reads as a scenic backdrop and never blocks the spot where Belu meets a
+    // friend and the answer orbs appear (which is the island centre, front side).
+    const len = Math.hypot(isl.cx, isl.cz) || 1;
+    const bx = (isl.cx / len) * 6.5; // toward the far edge (away from home)
+    const bz = (isl.cz / len) * 6.5;
     return (
       <group position={[isl.cx, 0, isl.cz]}>
-        <mesh position={[0, y + 1.8, -1]}>
-          <coneGeometry args={[3, 4.5, 5]} />
+        <mesh position={[bx, y + 2.0, bz]}>
+          <coneGeometry args={[2.6, 5.0, 5]} />
           <meshStandardMaterial color="#9aa6b5" roughness={0.9} />
         </mesh>
-        <mesh position={[0, y + 3.4, -1]}>
-          <coneGeometry args={[1.3, 1.6, 5]} />
+        <mesh position={[bx, y + 3.7, bz]}>
+          <coneGeometry args={[1.1, 1.5, 5]} />
           <meshStandardMaterial color="#ffffff" roughness={0.7} />
         </mesh>
         {items.slice(0, 3).map((it, i) => (
-          <mesh key={i} position={[it.x, y + 0.2, it.z]}>
+          <mesh key={i} position={[bx * 0.7 + it.x * 0.4, y + 0.2, bz * 0.7 + it.z * 0.4]}>
             <dodecahedronGeometry args={[0.5 + it.r * 0.4, 0]} />
             <meshStandardMaterial color="#aeb8c4" roughness={1} />
           </mesh>
@@ -155,11 +164,31 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
   );
 }
 
+// The multicolour autism-acceptance infinity symbol, floating over home as a
+// gentle welcoming landmark (and a quiet nod to what Belu's World is for).
+function AutismInfinity() {
+  const grp = useRef<THREE.Group>(null);
+  const tex = useMemo(() => makeInfinityTexture(), []);
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (grp.current) grp.current.position.y = 7.6 + Math.sin(t.current * 1.2) * 0.3;
+  });
+  return (
+    <group ref={grp} position={[0, 7.6, 0]}>
+      <sprite scale={[5, 2.5, 1]}>
+        <spriteMaterial map={tex} transparent depthWrite={false} />
+      </sprite>
+    </group>
+  );
+}
+
 function HomeDecor() {
   const isl = ISLANDS.home;
   const y = isl.top;
   return (
     <group position={[isl.cx, 0, isl.cz]}>
+      <AutismInfinity />
       {/* cozy hut */}
       <mesh position={[0, y + 0.9, -2]}>
         <boxGeometry args={[3, 1.8, 2.6]} />
@@ -216,6 +245,7 @@ export default function World({ activeZone, reduceMotion, islandLevels }: Props)
   return (
     <group>
       <Clouds reduceMotion={reduceMotion} />
+      <WorldLife reduceMotion={reduceMotion} />
       <RainbowBridges />
       {ISLAND_LIST.map((isl) => (
         <Island key={isl.id} isl={isl} />
@@ -227,11 +257,6 @@ export default function World({ activeZone, reduceMotion, islandLevels }: Props)
           <group key={isl.id}>
             <ZoneDecor isl={isl} bloom={bloom} />
             {bloom >= MAX_BLOOM && <Landmark isl={isl} />}
-            <Crystal
-              position={[isl.cx, isl.top + 2.2, isl.cz]}
-              color={isl.accent}
-              active={activeZone === isl.id}
-            />
           </group>
         );
       })}

@@ -1,134 +1,87 @@
 // ---------------------------------------------------------------------------
-// On-screen controls for touch devices: a thumb-joystick (move) plus jump and
-// action buttons. Feeds the same global `input` object the keyboard uses, so
-// the player controller doesn't care where movement came from.
+// On-screen controls — shown for EVERYONE (mouse or touch), so the whole game
+// is playable without a keyboard. A big friendly D-pad moves Belu up / down /
+// left / right (hold or tap), and a jump button hops. Diagonals work by holding
+// two arrows. Everything feeds the same global `input` the keyboard uses.
 // ---------------------------------------------------------------------------
 
-import { useRef, useState } from 'react';
-import { setJoystick, clearJoystick, queueJump, input } from '../three/input';
+import { useRef } from 'react';
+import { setJoystick, clearJoystick, queueJump } from '../three/input';
 
-const BASE = 130; // px diameter of the joystick base
-const KNOB = 58;
-const MAXR = (BASE - KNOB) / 2;
+type Dir = 'up' | 'down' | 'left' | 'right';
 
-export default function TouchControls() {
-  const baseRef = useRef<HTMLDivElement>(null);
-  const center = useRef({ x: 0, y: 0 });
-  const pointerId = useRef<number | null>(null);
-  const [knob, setKnob] = useState({ x: 0, y: 0 });
+export default function ScreenControls() {
+  const held = useRef<Set<Dir>>(new Set());
 
-  function start(e: React.PointerEvent) {
-    const rect = baseRef.current!.getBoundingClientRect();
-    center.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    pointerId.current = e.pointerId;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    move(e);
-  }
-
-  function move(e: React.PointerEvent) {
-    if (pointerId.current !== e.pointerId) return;
-    let dx = e.clientX - center.current.x;
-    let dy = e.clientY - center.current.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > MAXR) {
-      dx = (dx / dist) * MAXR;
-      dy = (dy / dist) * MAXR;
+  function apply() {
+    const h = held.current;
+    let x = (h.has('right') ? 1 : 0) - (h.has('left') ? 1 : 0);
+    let z = (h.has('down') ? 1 : 0) - (h.has('up') ? 1 : 0); // up = forward = -z
+    const len = Math.hypot(x, z);
+    if (len > 0) {
+      x /= len;
+      z /= len;
+      setJoystick(x, z);
+    } else {
+      clearJoystick();
     }
-    setKnob({ x: dx, y: dy });
-    // normalise to -1..1; screen-up (negative dy) = forward (negative z)
-    setJoystick(dx / MAXR, dy / MAXR);
   }
 
-  function end(e: React.PointerEvent) {
-    if (pointerId.current !== e.pointerId) return;
-    pointerId.current = null;
-    setKnob({ x: 0, y: 0 });
-    clearJoystick();
+  function press(d: Dir, e: React.PointerEvent) {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    held.current.add(d);
+    apply();
   }
+  function release(d: Dir, e: React.PointerEvent) {
+    e.preventDefault();
+    held.current.delete(d);
+    apply();
+  }
+
+  const padBtn = (d: Dir, glyph: string, style: React.CSSProperties) => (
+    <button
+      onPointerDown={(e) => press(d, e)}
+      onPointerUp={(e) => release(d, e)}
+      onPointerCancel={(e) => release(d, e)}
+      onPointerLeave={(e) => { if (held.current.has(d)) release(d, e); }}
+      className="pointer-events-auto absolute flex items-center justify-center touch-none select-none active:scale-95"
+      style={{
+        width: 58, height: 58, borderRadius: 16, fontSize: 24, color: '#2b517d',
+        background: 'rgba(255,255,255,0.82)', border: '2px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.22)', transition: 'transform 0.08s',
+        ...style,
+      }}
+      aria-label={d}
+    >
+      {glyph}
+    </button>
+  );
 
   return (
     <div className="pointer-events-none fixed inset-0 z-20 select-none">
-      {/* joystick — bottom left */}
-      <div
-        ref={baseRef}
-        onPointerDown={start}
-        onPointerMove={move}
-        onPointerUp={end}
-        onPointerCancel={end}
-        className="pointer-events-auto absolute touch-none"
-        style={{
-          left: 24,
-          bottom: 28,
-          width: BASE,
-          height: BASE,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,0.35), rgba(255,255,255,0.12))',
-          border: '2px solid rgba(255,255,255,0.5)',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.25), inset 0 2px 10px rgba(255,255,255,0.4)',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: KNOB,
-            height: KNOB,
-            marginLeft: -KNOB / 2,
-            marginTop: -KNOB / 2,
-            transform: `translate(${knob.x}px, ${knob.y}px)`,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 40% 35%, #ffffff, #cfe4ff)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-          }}
-        />
+      {/* D-pad — bottom left */}
+      <div className="absolute" style={{ left: 22, bottom: 26, width: 182, height: 182 }}>
+        {padBtn('up', '▲', { left: 62, top: 0 })}
+        {padBtn('left', '◀', { left: 0, top: 62 })}
+        {padBtn('right', '▶', { left: 124, top: 62 })}
+        {padBtn('down', '▼', { left: 62, top: 124 })}
       </div>
 
-      {/* jump button — bottom right */}
+      {/* Jump — bottom right */}
       <button
-        onPointerDown={(e) => {
-          e.preventDefault();
-          queueJump();
-        }}
-        className="pointer-events-auto absolute touch-none active:scale-90 transition-transform"
+        onPointerDown={(e) => { e.preventDefault(); queueJump(); }}
+        className="pointer-events-auto absolute touch-none select-none active:scale-90"
         style={{
-          right: 28,
-          bottom: 96,
-          width: 84,
-          height: 84,
-          borderRadius: '50%',
+          right: 30, bottom: 40, width: 88, height: 88, borderRadius: '50%', fontSize: 26,
+          fontWeight: 800, color: '#0b4419',
           background: 'radial-gradient(circle at 40% 35%, #b6f0a8, #6fcf6a)',
-          border: '2px solid rgba(255,255,255,0.7)',
-          boxShadow: '0 8px 22px rgba(0,0,0,0.25)',
-          fontSize: 30,
+          border: '3px solid rgba(255,255,255,0.85)',
+          boxShadow: '0 6px 0 #2f9e44, 0 10px 18px rgba(0,0,0,0.2)', transition: 'transform 0.08s',
         }}
         aria-label="Jump"
       >
-        ⬆️
-      </button>
-
-      {/* action button — bottom right lower */}
-      <button
-        onPointerDown={(e) => {
-          e.preventDefault();
-          input.interactQueued = true;
-        }}
-        className="pointer-events-auto absolute touch-none active:scale-90 transition-transform"
-        style={{
-          right: 120,
-          bottom: 32,
-          width: 72,
-          height: 72,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle at 40% 35%, #ffe08a, #ffb74d)',
-          border: '2px solid rgba(255,255,255,0.7)',
-          boxShadow: '0 8px 22px rgba(0,0,0,0.25)',
-          fontSize: 28,
-        }}
-        aria-label="Action"
-      >
-        ✋
+        Jump
       </button>
     </div>
   );
