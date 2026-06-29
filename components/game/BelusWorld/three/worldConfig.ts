@@ -5,7 +5,7 @@
 // the ground-collision math, and the gameplay all read from one source.
 // ---------------------------------------------------------------------------
 
-export type ZoneId = 'home' | 'meadow' | 'mountain' | 'cove' | 'forest';
+export type ZoneId = 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'rainbow';
 
 export interface IslandDef {
   id: ZoneId;
@@ -98,19 +98,44 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'Friendship Forest',
     emoji: '🌳',
   },
+  // A reward island that only FORMS once the child masters their first island.
+  // It's a free-play playground (no lesson) Belu can walk to and explore — a
+  // visible "the world grew because of you" payoff. Sits out beyond home.
+  rainbow: {
+    id: 'rainbow',
+    cx: 0,
+    cz: -42,
+    radius: 10,
+    top: 3,
+    grass: '#b6e3ff',
+    rock: '#9a86c4',
+    accent: '#ff9ed8',
+    label: 'Rainbow Playground',
+    emoji: '🌈',
+  },
 };
 
 export const ISLAND_LIST = Object.values(ISLANDS);
 
+const RAINBOW_STRIPES = ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'];
+
 export const BRIDGES: BridgeDef[] = [
-  { from: 'home', to: 'meadow', halfWidth: 2.2, colors: ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'] },
-  { from: 'home', to: 'mountain', halfWidth: 2.2, colors: ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'] },
-  { from: 'home', to: 'cove', halfWidth: 2.2, colors: ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'] },
-  { from: 'home', to: 'forest', halfWidth: 2.2, colors: ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'] },
+  { from: 'home', to: 'meadow', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'mountain', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'cove', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'forest', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  // bridge to the reward island — only walkable once it's unlocked
+  { from: 'home', to: 'rainbow', halfWidth: 2.4, colors: RAINBOW_STRIPES },
 ];
 
-// The zone islands that host a learning activity (everything except home).
+// The zone islands that host a learning activity (everything except home + the
+// reward island). The rainbow playground has no lesson — it's just to explore.
 export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest'];
+
+// Runtime flag: the reward island (and its bridge) only physically exist once
+// the child has finished their first level. Rendering AND ground-collision both
+// read this so a locked island is neither visible nor walkable.
+export const worldRuntime = { rainbowUnlocked: false };
 
 // Where the interaction crystal sits on each zone island (offset from centre)
 // and how close Belu must be to trigger the "Play!" prompt.

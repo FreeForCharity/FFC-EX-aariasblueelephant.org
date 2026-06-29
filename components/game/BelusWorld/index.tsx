@@ -14,7 +14,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BeluEmotion } from './BeluCharacter';
-import { ISLANDS, type ZoneId } from './three/worldConfig';
+import { ISLANDS, worldRuntime, type ZoneId } from './three/worldConfig';
 import { attachKeyboard, queueGoHome } from './three/input';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
@@ -38,6 +38,7 @@ import {
   equipCosmetic,
   getGrowth,
   completedLevels,
+  totalCompletedLevels,
   nextLevel,
   totalStars,
   type GameProgress,
@@ -113,6 +114,9 @@ export default function BelusWorldGame() {
     () => Object.fromEntries(ZONES.map((z) => [z, nextLevel(progress, z)])) as Record<ActivityZone, number>,
     [progress],
   );
+  // the reward island forms once the child finishes their very first level
+  const rainbowUnlocked = useMemo(() => totalCompletedLevels(progress) >= 1, [progress]);
+  worldRuntime.rainbowUnlocked = rainbowUnlocked;
 
   // Belu speaks: speech bubble + (optional) read-aloud narration.
   const speak = useCallback((line: string) => {
@@ -218,6 +222,7 @@ export default function BelusWorldGame() {
           growthStage={growth.stage}
           equipped={progress.equipped}
           islandLevels={islandLevels}
+          rainbowUnlocked={rainbowUnlocked}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
           onProximity={handleProximity}

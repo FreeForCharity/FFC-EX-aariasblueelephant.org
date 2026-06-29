@@ -6,7 +6,7 @@
 // ASD audience — completely predictable. No tunnelling, no jitter.
 // ---------------------------------------------------------------------------
 
-import { ISLAND_LIST, BRIDGES, ISLANDS, type ZoneId } from './worldConfig';
+import { ISLAND_LIST, BRIDGES, ISLANDS, worldRuntime, type ZoneId } from './worldConfig';
 
 export interface GroundSample {
   /** ground height at this point */
@@ -25,6 +25,7 @@ interface Segment {
   bz: number;
   by: number;
   halfWidth: number;
+  to: ZoneId;
 }
 
 // Precompute bridge segments (island-edge to island-edge) once.
@@ -41,7 +42,7 @@ export const BRIDGE_SEGMENTS: Segment[] = BRIDGES.map((b) => {
   const az = A.cz + uz * (A.radius - 1.5);
   const bx = B.cx - ux * (B.radius - 1.5);
   const bz = B.cz - uz * (B.radius - 1.5);
-  return { ax, az, ay: A.top, bx, bz, by: B.top, halfWidth: b.halfWidth };
+  return { ax, az, ay: A.top, bx, bz, by: B.top, halfWidth: b.halfWidth, to: b.to };
 });
 
 const EDGE_FALLOFF = 1.4; // soft margin past the rim before you actually fall
@@ -59,6 +60,7 @@ export function sampleGround(x: number, z: number): GroundSample {
 
   // Islands
   for (const isl of ISLAND_LIST) {
+    if (isl.id === 'rainbow' && !worldRuntime.rainbowUnlocked) continue; // not formed yet
     const d = Math.hypot(x - isl.cx, z - isl.cz);
     if (d <= isl.radius + EDGE_FALLOFF) {
       const y = islandHeightAt(Math.min(d, isl.radius), isl.radius, isl.top);
@@ -68,6 +70,7 @@ export function sampleGround(x: number, z: number): GroundSample {
 
   // Bridges
   for (const s of BRIDGE_SEGMENTS) {
+    if (s.to === 'rainbow' && !worldRuntime.rainbowUnlocked) continue; // bridge not formed yet
     const dx = s.bx - s.ax;
     const dz = s.bz - s.az;
     const len2 = dx * dx + dz * dz || 1;
