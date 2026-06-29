@@ -6,7 +6,8 @@ ABC.world = (function () {
      geometry and renderer setting is built for the chosen skin. Classic is the
      default and is left byte-for-byte unchanged (the `else` branch everywhere). */
   const SMOOTH = (function () {
-    try { return localStorage.getItem('abcSkin') === 'smooth'; } catch (e) { return false; }
+    // Smooth is the DEFAULT look now; only an explicit 'classic' opts out.
+    try { return localStorage.getItem('abcSkin') !== 'classic'; } catch (e) { return true; }
   })();
   ABC.SMOOTH = SMOOTH;        // expose so main.js / ui.js read the SAME value
 

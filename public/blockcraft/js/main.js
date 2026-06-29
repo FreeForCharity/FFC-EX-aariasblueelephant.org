@@ -887,18 +887,22 @@
   /* ---------------- skin picker (title screen) ----------------
      The smooth skin rebuilds materials/geometry/renderer at startup, so flipping
      it writes the choice and reloads — calmer than a mid-session visual pop. */
-  function currentSkin() { try { return localStorage.getItem('abcSkin') === 'smooth' ? 'smooth' : 'classic'; } catch (e) { return 'classic'; } }
+  // Smooth is the default; only an explicit 'classic' opts out.
+  function currentSkin() { try { return localStorage.getItem('abcSkin') === 'classic' ? 'classic' : 'smooth'; } catch (e) { return 'smooth'; } }
   function labelSkinBtn() {
     const b = $('skinBtn'); if (!b) return;
-    b.textContent = currentSkin() === 'smooth' ? '✨ Look: Smooth' : '🧱 Look: Classic';
+    b.textContent = currentSkin() === 'smooth' ? '🎨 Look: Smooth' : '🎨 Look: Classic';
   }
   ABC.setSkin = (skin) => {
-    try { localStorage.setItem('abcSkin', skin === 'smooth' ? 'smooth' : 'classic'); } catch (e) {}
+    try { localStorage.setItem('abcSkin', skin === 'classic' ? 'classic' : 'smooth'); } catch (e) {}
     location.reload();
   };
-  if ($('skinBtn')) {
-    $('skinBtn').onclick = () => ABC.setSkin(currentSkin() === 'smooth' ? 'classic' : 'smooth');
-    labelSkinBtn();
+  const toggleSkin = () => ABC.setSkin(currentSkin() === 'smooth' ? 'classic' : 'smooth');
+  if ($('skinBtn')) { $('skinBtn').onclick = toggleSkin; labelSkinBtn(); }
+  // one-tap in-game skin switch (🎨, always visible — distinct from the 🧱/⛏️ build-dig button)
+  if ($('skinToggleBtn')) {
+    $('skinToggleBtn').onclick = toggleSkin;
+    $('skinToggleBtn').title = currentSkin() === 'smooth' ? 'Switch to Classic look 🧱' : 'Switch to Smooth look ✨';
   }
 
   /* emotion spawner: gentle pace */
