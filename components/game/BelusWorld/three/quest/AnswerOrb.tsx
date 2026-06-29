@@ -9,6 +9,9 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { makeLabelTexture } from './emojiTexture';
+import { beluPos } from '../playerState';
+
+const NEAR_DIST = 2.4; // matches QuestLayer PICK_RADIUS
 
 export type OrbStatus = 'idle' | 'right' | 'wrong' | 'chosen';
 
@@ -28,6 +31,7 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
   const sphere = useRef<THREE.Mesh>(null);
   const t = useRef(bobSeed);
   const shake = useRef(0);
+  const nearRef = useRef(false);
   const tex = useMemo(() => makeLabelTexture(emoji, caption), [emoji, caption]);
 
   useEffect(() => {
@@ -46,8 +50,13 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
       grp.current.scale.setScalar(s);
       grp.current.rotation.y += dt * 3;
     } else {
-      // idle bob
-      const bob = Math.sin(t.current * 2) * 0.12;
+      // is Belu close enough to choose me? → swell + brighten so it's obvious
+      const near =
+        Math.hypot(beluPos.x - position[0], beluPos.z - position[2]) < NEAR_DIST;
+      const targetScale = near ? 1.28 : 1;
+      const s = grp.current.scale.x + (targetScale - grp.current.scale.x) * Math.min(1, dt * 8);
+      // idle bob (a little livelier when Belu is near)
+      const bob = Math.sin(t.current * 2) * (near ? 0.2 : 0.12);
       grp.current.position.y = baseY + bob;
       let x = position[0];
       if (shake.current > 0) {
@@ -55,12 +64,13 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
         x += Math.sin(t.current * 40) * shake.current * 0.4;
       }
       grp.current.position.x = x;
-      grp.current.scale.setScalar(1);
+      grp.current.scale.setScalar(s);
+      nearRef.current = near;
     }
 
     if (sphere.current) {
       const m = sphere.current.material as THREE.MeshStandardMaterial;
-      const want = status === 'idle' ? 0.7 : 1.4;
+      const want = status !== 'idle' ? 1.5 : nearRef.current ? 1.3 : 0.7;
       m.emissiveIntensity += (want - m.emissiveIntensity) * Math.min(1, dt * 6);
     }
   });

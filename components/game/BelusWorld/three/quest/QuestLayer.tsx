@@ -31,9 +31,10 @@ const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
   forest: { face: '🦊', mood: 'happy' },
 };
 
-const PICK_RADIUS = 1.5; // how close Belu must walk to choose an orb
-const ORB_DIST = 3.4; // orb arc distance out in front of the friend
-const ORB_H = 1.25; // orb float height above the island top
+const PICK_RADIUS = 2.4; // how close Belu must walk to choose an orb (generous +
+//                          overlapping so you can never thread between orbs)
+const ORB_DIST = 3.0; // orb arc distance out in front of the friend
+const ORB_H = 1.0; // orb float height above the island top (near Belu's body)
 
 interface Layout {
   positions: [number, number, number][];
@@ -56,7 +57,9 @@ function layoutOrbs(zone: ActivityZone, n: number): Layout {
   // perpendicular (for spreading orbs left/right)
   const px = -az;
   const pz = ax;
-  const spacing = n <= 3 ? 2.9 : n <= 4 ? 2.5 : 2.2;
+  // wider fan = easier to reach from any approach angle; pick radius (2.4) is
+  // bigger than half the spacing so coverage never has a gap to walk through.
+  const spacing = n <= 2 ? 3.8 : n <= 3 ? 3.4 : n <= 4 ? 3.0 : 2.6;
   const positions: [number, number, number][] = [];
   for (let i = 0; i < n; i++) {
     const frac = n === 1 ? 0 : i / (n - 1) - 0.5;
@@ -135,7 +138,9 @@ export default function QuestLayer(props: Props) {
     S.current.roundIdx = 0;
     S.current.slips = 0;
     resetRound();
-    S.current.lockUntil = S.current.clock + 1.0;
+    // short arm delay only — long enough not to fire on the arrival step, short
+    // enough that walking up to an orb registers immediately (no "dead" window).
+    S.current.lockUntil = S.current.clock + 0.35;
     props.setEmotion('curious');
     props.speak(q.intro);
     S.current.pendingSay = q.rounds[0].say;

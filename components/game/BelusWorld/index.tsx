@@ -209,7 +209,7 @@ export default function BelusWorldGame() {
         onOpenMap={() => setShowMap(true)}
       />
 
-      {isTouch.current && !paused && <TouchControls />}
+      {!paused && <TouchControls />}
 
       {/* Reward / celebration */}
       <AnimatePresence>
@@ -264,20 +264,61 @@ function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; gro
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-2 text-5xl font-black text-sky-700 drop-shadow-sm"
+        className="mt-2 text-5xl font-black drop-shadow-sm sm:text-6xl"
+        style={{
+          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}
       >
         Belu's World
       </motion.h1>
+
+      {/* multicolour autism-acceptance infinity symbol */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.35, type: 'spring' }}
+        className="mt-1 text-4xl font-black leading-none"
+        style={{
+          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}
+        aria-label="autism acceptance infinity symbol"
+      >
+        ∞
+      </motion.div>
+
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-2 max-w-md text-lg font-semibold text-sky-900/70"
+        transition={{ delay: 0.45 }}
+        className="mt-2 text-lg font-extrabold text-sky-800"
+      >
+        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖
+      </motion.p>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55 }}
+        className="mt-1 max-w-md text-base font-semibold text-sky-900/70"
       >
         {returning
           ? `Welcome back! ${growthLabel} is waiting on the sky islands. Earn stars to help Belu grow!`
-          : 'Explore floating islands, learn amazing skills, and help baby Belu grow up big and strong!'}
+          : 'Explore floating islands, meet friendly faces, and help baby Belu grow up big and strong!'}
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="mt-3 text-3xl tracking-[0.3em]"
+      >
+        🐘🌸⛰️🌊🌳🌈
+      </motion.div>
 
       <motion.button
         initial={{ opacity: 0, y: 20 }}
@@ -286,13 +327,16 @@ function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; gro
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="mt-8 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
+        className="mt-7 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
       >
-        {returning ? 'Continue ✨' : 'Start Adventure ✨'}
+        {returning ? 'Continue ✨' : 'Calling all friends of Aaria ✨'}
       </motion.button>
 
-      <p className="mt-6 text-sm font-medium text-sky-900/50">
-        Move with arrow keys or the joystick · Meet friends · Walk into glowing orbs · No way to lose 💙
+      <p className="mt-5 text-sm font-medium text-sky-900/50">
+        Move with the arrows or joystick · Meet friends · Walk into glowing orbs · No way to lose 💙
+      </p>
+      <p className="mt-4 rounded-full bg-white/55 px-5 py-2 text-xs font-semibold text-sky-900/70">
+        A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org
       </p>
     </div>
   );
