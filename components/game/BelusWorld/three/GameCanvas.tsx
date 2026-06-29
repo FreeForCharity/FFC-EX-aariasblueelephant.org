@@ -15,8 +15,11 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World from './World';
-import QuestLayer, { type QuestStatus } from './quest/QuestLayer';
+import { type QuestStatus } from './quest/QuestLayer';
 import StoryLayer from './quest/StoryLayer';
+import ForestLayer from './quest/ForestLayer';
+import MountainLayer from './quest/MountainLayer';
+import CoveLayer from './quest/CoveLayer';
 import { PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { ActivityZone } from '../belu/progress';
@@ -146,8 +149,10 @@ export default function GameCanvas({
           growthStage={growthStage}
           equipped={equipped}
         />
-        {/* Feelings Meadow is caring-play (StoryLayer); the other islands use
-            the quest/orb layer. */}
+        {/* Each island now has its own bespoke play layer: Feelings Meadow is
+            caring-play (StoryLayer), Friendship Forest is magic words
+            (ForestLayer), Morning Mountain is do-the-routine (MountainLayer),
+            and Calm Cove is calm-the-storm breathing (CoveLayer). */}
         <StoryLayer
           level={islandNextLevel.meadow}
           paused={paused}
@@ -157,12 +162,27 @@ export default function GameCanvas({
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
         />
-        <QuestLayer
-          islandNextLevel={islandNextLevel}
-          zones={['mountain', 'cove', 'forest']}
+        <ForestLayer
+          level={islandNextLevel.forest}
           paused={paused}
-          reduceMotion={reduceMotion}
-          sound={sound}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={playSound}
+          onComplete={onQuestComplete}
+          onStatus={onQuestStatus}
+        />
+        <MountainLayer
+          level={islandNextLevel.mountain}
+          paused={paused}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={playSound}
+          onComplete={onQuestComplete}
+          onStatus={onQuestStatus}
+        />
+        <CoveLayer
+          level={islandNextLevel.cove}
+          paused={paused}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}

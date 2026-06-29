@@ -1,0 +1,438 @@
+// ---------------------------------------------------------------------------
+// Friendship Forest — MAGIC WORDS (the expressive-language island).
+//   • 3D animal friends (Animal3D) each show a thought bubble of what they WANT
+//     or SEE (a picture, on a soft thought card).
+//   • Walk Belu up to a friend and LINGER a moment → word bubbles (AnswerOrb,
+//     word as caption + matching picture) appear in an arc around them.
+//   • Walk Belu into the words IN THE RIGHT ORDER to "say" the phrase. Each
+//     correct word lights up; the wanted thing then magically appears (a
+//     Sparkles burst + the item pops) and the friend cheers.
+//   • Wrong word = a gentle wiggle + a kind nudge ("try the first word"),
+//     never a buzzer, never a fail. Single-word levels just have a 1-word order.
+// This teaches expressive language as CASTING WORD-SPELLS — using your words to
+// make real things happen — not as an abstract quiz.
+//
+// Mirrors StoryLayer's lifecycle exactly: arm on the island, abort if Belu
+// leaves, finish → disarm → re-arm only after Belu wanders off again.
+// ---------------------------------------------------------------------------
+
+import { useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Sparkles } from '@react-three/drei';
+import * as THREE from 'three';
+import { ISLANDS } from '../worldConfig';
+import { beluPos, dynamicSolids } from '../playerState';
+import type { BeluEmotion } from '../../BeluCharacter';
+import Animal3D from './Animal3D';
+import AnswerOrb, { type OrbStatus } from './AnswerOrb';
+import { makeLabelTexture } from './emojiTexture';
+import { FOREST_STORY, type SpellWord } from './forestContent';
+import type { QuestStatus } from './QuestLayer';
+
+const ZONE = 'forest' as const;
+const APPROACH = 4.8; // stay this close to a friend while it listens & you cast
+const LINGER = 1.4; // seconds close before the word bubbles appear
+const WORD_DIST = 3.0; // how far the word bubbles sit in front of the friend
+const WORD_SPREAD = 2.6; // sideways gap between word bubbles (no overlap)
+const WORD_PICK = 1.5; // walk this close to a word bubble to "say" it
+
+// Deterministic shuffle (no Math.random at render/module time — like the rest of
+// the world). Same friend always lays its words out the same way.
+function ordered(spell: SpellWord[], decoys: SpellWord[], seed: number): SpellWord[] {
+  const all = [...spell, ...decoys];
+  // a tiny seeded sort: score each word by a hash of (seed, index) so the order
+  // is stable per friend but mixes the correct words among the decoys.
+  return all
+    .map((wd, i) => ({ wd, k: Math.sin((seed + 1) * 12.9898 + i * 78.233) }))
+    .sort((a, b) => a.k - b.k)
+    .map((o) => o.wd);
+}
+
+interface FriendRT {
+  done: boolean;
+  doneAt: number;
+}
+interface State {
+  clock: number;
+  active: boolean;
+  level: number;
+  friends: FriendRT[];
+  finished: number; // how many friends have completed their spell
+  disarmed: boolean;
+  // the friend currently being talked to
+  activeFriend: number;
+  lingerStart: number;
+  listening: boolean; // true once the word bubbles are showing
+  progress: number; // how many words of the current spell have been cast
+  wrongIdx: number; // word bubble showing a wiggle, or -1
+  wrongUntil: number;
+  lockUntil: number;
+  finishAt: number;
+}
+
+interface Props {
+  level: number;
+  paused: boolean;
+  speak: (line: string) => void;
+  setEmotion: (e: BeluEmotion) => void;
+  playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
+  onComplete: (zone: 'forest', level: number, stars: number, moment: string) => void;
+  onStatus: (s: QuestStatus | null) => void;
+}
+
+function clampLevel(level: number) {
+  return Math.max(0, Math.min(FOREST_STORY.length - 1, level - 1));
+}
+
+export default function ForestLayer(props: Props) {
+  const [, force] = useState(0);
+  const bump = () => force((v) => (v + 1) % 1_000_000);
+  const S = useRef<State>({
+    clock: 0, active: false, level: props.level,
+    friends: FOREST_STORY[clampLevel(props.level)].friends.map(() => ({ done: false, doneAt: -99 })),
+    finished: 0, disarmed: false, activeFriend: -1, lingerStart: 0, listening: false,
+    progress: 0, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+  });
+  const frame = useRef<(dt: number) => void>(() => {});
+  const isl = ISLANDS[ZONE];
+
+  const friendWorld = (i: number): [number, number] => {
+    const fr = FOREST_STORY[clampLevel(S.current.level)].friends[i];
+    return [isl.cx + fr.pos[0], isl.cz + fr.pos[1]];
+  };
+
+  // the laid-out word bubbles for a friend (correct words + decoys, mixed)
+  function wordsFor(i: number): SpellWord[] {
+    const fr = FOREST_STORY[clampLevel(S.current.level)].friends[i];
+    return ordered(fr.spell, fr.decoys, i + 1);
+  }
+
+  // arc of word bubbles on the home-facing side of a friend (same math as
+  // StoryLayer's help layout so it reads from any approach angle)
+  function wordLayout(i: number): [number, number, number][] {
+    const [fx, fz] = friendWorld(i);
+    const words = wordsFor(i);
+    const n = words.length;
+    const len = Math.hypot(fx, fz) || 1;
+    const dx = -fx / len; // toward home (0,0)
+    const dz = -fz / len;
+    const px = -dz;
+    const pz = dx;
+    const out: [number, number, number][] = [];
+    for (let k = 0; k < n; k++) {
+      const frac = n === 1 ? 0 : k / (n - 1) - 0.5;
+      const off = frac * (n - 1) * WORD_SPREAD;
+      out.push([
+        fx + dx * WORD_DIST + px * off,
+        isl.top + 1.0,
+        fz + dz * WORD_DIST + pz * off,
+      ]);
+    }
+    return out;
+  }
+
+  function emitStatus(phase: 'question' | 'correct', instruction: string, hint?: string) {
+    const lvl = FOREST_STORY[clampLevel(S.current.level)];
+    props.onStatus({
+      zone: ZONE, title: isl.label, emoji: isl.emoji, accent: isl.accent,
+      level: S.current.level, instruction, step: S.current.finished,
+      total: lvl.friends.length, phase, hint,
+    });
+  }
+
+  function startStory() {
+    const lvl = FOREST_STORY[clampLevel(props.level)];
+    S.current.active = true;
+    S.current.level = props.level;
+    S.current.friends = lvl.friends.map(() => ({ done: false, doneAt: -99 }));
+    S.current.finished = 0;
+    S.current.activeFriend = -1;
+    S.current.listening = false;
+    S.current.progress = 0;
+    props.setEmotion('curious');
+    props.speak(lvl.intro);
+    emitStatus('question', lvl.intro, 'Walk up to a friend to hear their wish 💜');
+    bump();
+  }
+
+  function stopStory() {
+    S.current.active = false;
+    S.current.activeFriend = -1;
+    S.current.listening = false;
+    S.current.progress = 0;
+    props.setEmotion('happy');
+    props.onStatus(null);
+    bump();
+  }
+
+  function finish() {
+    const lvl = FOREST_STORY[clampLevel(S.current.level)];
+    // errorless & no-fail: every completed level is worth a full 3 stars
+    props.onComplete(ZONE, S.current.level, 3, lvl.moment);
+    props.speak(lvl.outro);
+    S.current.active = false;
+    S.current.disarmed = true;
+    S.current.activeFriend = -1;
+    S.current.listening = false;
+    props.onStatus(null);
+    bump();
+  }
+
+  // the phrase, spaced out, for the on-screen hint ("apple" or "want ball")
+  function phraseOf(i: number): string {
+    return FOREST_STORY[clampLevel(S.current.level)].friends[i].spell.map((s) => s.word).join(' ');
+  }
+
+  // Belu walked into the word bubble at layout index `k`.
+  function castWord(i: number, k: number) {
+    const st = S.current;
+    if (st.clock < st.lockUntil) return;
+    const fr = FOREST_STORY[clampLevel(st.level)].friends[i];
+    const words = wordsFor(i);
+    const said = words[k].word;
+    const expected = fr.spell[st.progress].word;
+
+    if (said === expected) {
+      st.progress += 1;
+      props.playSound('correct');
+      if (st.progress >= fr.spell.length) {
+        // the whole spell landed → the wanted thing magically appears
+        st.friends[i].done = true;
+        st.friends[i].doneAt = st.clock;
+        st.finished += 1;
+        st.listening = false;
+        st.lockUntil = st.clock + 0.8;
+        props.playSound('star');
+        props.setEmotion('excited');
+        emitStatus('correct', fr.cheer);
+        const total = FOREST_STORY[clampLevel(st.level)].friends.length;
+        if (st.finished >= total) st.finishAt = st.clock + 1.6;
+        else {
+          // move on: let Belu wander to the next friend
+          st.activeFriend = -1;
+        }
+      } else {
+        // partway through a multi-word spell — keep going to the next word
+        st.lockUntil = st.clock + 0.3;
+        props.setEmotion('happy');
+        const next = fr.spell[st.progress].word;
+        emitStatus('question', `Say "${phraseOf(i)}"`, `Now walk into "${next}" 💜`);
+      }
+      bump();
+    } else {
+      // gentle wiggle — never a fail. Nudge toward the right next word.
+      st.wrongIdx = k;
+      st.wrongUntil = st.clock + 0.5;
+      st.lockUntil = st.clock + 0.5;
+      props.playSound('tap');
+      props.setEmotion('curious');
+      props.speak(st.progress === 0 ? `Try the first word — "${expected}".` : `Almost! Next is "${expected}".`);
+      bump();
+    }
+  }
+
+  frame.current = (dt: number) => {
+    const st = S.current;
+    // keep the forest animals registered as solid (Belu walks around them)
+    const lvlFriends = FOREST_STORY[clampLevel(st.level)].friends;
+    dynamicSolids.forest = lvlFriends.map((_, i) => {
+      const [fx, fz] = friendWorld(i);
+      return { x: fx, z: fz, r: 1.05 };
+    });
+    if (props.paused) return;
+    st.clock += dt;
+
+    if (st.finishAt > 0 && st.clock >= st.finishAt) {
+      st.finishAt = 0;
+      finish();
+      return;
+    }
+    if (st.wrongIdx >= 0 && st.clock > st.wrongUntil) {
+      st.wrongIdx = -1;
+      bump();
+    }
+
+    const dCenter = Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz);
+    const onIsland = dCenter < isl.radius * 0.82;
+    if (st.disarmed && dCenter > isl.radius + 1.5) {
+      st.disarmed = false;
+      bump();
+    }
+    if (!st.active) {
+      if (onIsland && !st.disarmed) startStory();
+      return;
+    }
+    if (dCenter > isl.radius + 1.5) {
+      stopStory();
+      return;
+    }
+
+    const friends = FOREST_STORY[clampLevel(st.level)].friends;
+
+    // which unfinished friend is Belu nearest to?
+    let near = -1;
+    let nearD = APPROACH;
+    for (let i = 0; i < friends.length; i++) {
+      if (st.friends[i].done) continue;
+      const [fx, fz] = friendWorld(i);
+      const d = Math.hypot(beluPos.x - fx, beluPos.z - fz);
+      if (d < nearD) {
+        nearD = d;
+        near = i;
+      }
+    }
+
+    if (near === -1) {
+      if (st.activeFriend !== -1) {
+        st.activeFriend = -1;
+        st.listening = false;
+        st.progress = 0;
+        emitStatus('question', 'Walk up to a friend to hear their wish.', 'Stay close to help them cast words 💜');
+        bump();
+      }
+      return;
+    }
+
+    if (near !== st.activeFriend) {
+      st.activeFriend = near;
+      st.lingerStart = st.clock;
+      st.listening = false;
+      st.progress = 0;
+      props.setEmotion('curious');
+      bump();
+    }
+
+    if (!st.listening && st.clock - st.lingerStart >= LINGER) {
+      st.listening = true;
+      st.progress = 0;
+      const first = friends[near].spell[0].word;
+      props.speak(`Help me say "${phraseOf(near)}"!`);
+      emitStatus(
+        'question',
+        `Say "${phraseOf(near)}"`,
+        friends[near].spell.length > 1 ? `Walk into the words in order — start with "${first}" 💜` : `Walk into "${first}" 💜`,
+      );
+      st.lockUntil = st.clock + 0.4;
+      bump();
+    }
+
+    // once listening, let Belu walk into a word bubble (in order)
+    if (st.listening) {
+      const layout = wordLayout(near);
+      let best = -1;
+      let bestD = WORD_PICK;
+      for (let k = 0; k < layout.length; k++) {
+        const d = Math.hypot(beluPos.x - layout[k][0], beluPos.z - layout[k][2]);
+        if (d < bestD) {
+          bestD = d;
+          best = k;
+        }
+      }
+      if (best >= 0) castWord(near, best);
+    }
+  };
+
+  // ---- render ----
+  const friends = FOREST_STORY[clampLevel(S.current.level)].friends;
+  return (
+    <group>
+      <Ticker fnRef={frame} />
+      {friends.map((fr, i) => {
+        const rt = S.current.friends[i] ?? { done: false, doneAt: -99 };
+        const [fx, fz] = friendWorld(i);
+        const isActive = S.current.active && S.current.activeFriend === i && !rt.done;
+        const justDone = rt.done && S.current.clock - rt.doneAt < 2.5;
+        const layout = isActive && S.current.listening ? wordLayout(i) : [];
+        const words = isActive && S.current.listening ? wordsFor(i) : [];
+        return (
+          <group key={`${S.current.level}-${i}`}>
+            <Animal3D
+              species={fr.species}
+              mood={rt.done ? 'happy' : 'happy'}
+              position={[fx, isl.top, fz]}
+              seed={i * 1.7}
+            />
+            {/* thought bubble above the friend: what they want / see */}
+            {isActive && !S.current.listening && (
+              <Bubble emoji={fr.thought} position={[fx, isl.top + 1.9, fz]} />
+            )}
+            {/* the word bubbles (AnswerOrb) — walk into them in order to "say" them */}
+            {isActive && S.current.listening &&
+              layout.map((p, k) => {
+                const wd = words[k];
+                // is this bubble the word the spell wants next? (stays live & glowing)
+                const isNextExpected =
+                  S.current.progress < fr.spell.length && wd.word === fr.spell[S.current.progress].word;
+                // has a word like this already been cast earlier in the phrase?
+                const alreadyCast =
+                  fr.spell.findIndex((s, si) => si < S.current.progress && s.word === wd.word) >= 0;
+                let status: OrbStatus = 'idle';
+                if (S.current.wrongIdx === k) status = 'wrong';
+                else if (alreadyCast && !isNextExpected) status = 'chosen';
+                return (
+                  <AnswerOrb
+                    key={k}
+                    position={p}
+                    emoji={wd.emoji}
+                    caption={wd.word}
+                    color={isl.accent}
+                    status={status}
+                    bobSeed={k * 0.7}
+                    onPick={() => castWord(i, k)}
+                  />
+                );
+              })}
+            {/* the spell lands: sparkles burst + the wanted thing pops up */}
+            {justDone && (
+              <>
+                <Sparkles count={26} scale={3.2} size={7} speed={0.7} color={isl.accent} position={[fx, isl.top + 1.2, fz]} />
+                <Reward emoji={fr.reward} position={[fx, isl.top + 2.1, fz]} born={rt.doneAt} clock={S.current.clock} />
+              </>
+            )}
+            {/* the wanted thing stays as a little keepsake by the happy friend */}
+            {rt.done && !justDone && (
+              <Bubble emoji={fr.reward} position={[fx + 1.2, isl.top + 0.6, fz + 0.4]} scale={0.9} />
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+// A picture sprite on a thought card (what a friend wants / a kept reward).
+function Bubble({ emoji, position, scale = 1.4 }: { emoji: string; position: [number, number, number]; scale?: number }) {
+  const tex = useRef<THREE.CanvasTexture>(makeLabelTexture(emoji, undefined, true));
+  if ((tex.current as unknown as { __e?: string }).__e !== emoji) {
+    tex.current = makeLabelTexture(emoji, undefined, true);
+    (tex.current as unknown as { __e?: string }).__e = emoji;
+  }
+  return (
+    <sprite position={position} scale={[scale, scale, 1]} renderOrder={12}>
+      <spriteMaterial map={tex.current} transparent depthWrite={false} depthTest={false} />
+    </sprite>
+  );
+}
+
+// The reward item that magically appears — pops up and grows for a beat.
+function Reward({ emoji, position, born, clock }: { emoji: string; position: [number, number, number]; born: number; clock: number }) {
+  const tex = useRef<THREE.CanvasTexture>(makeLabelTexture(emoji));
+  if ((tex.current as unknown as { __e?: string }).__e !== emoji) {
+    tex.current = makeLabelTexture(emoji);
+    (tex.current as unknown as { __e?: string }).__e = emoji;
+  }
+  // simple grow-and-rise driven by how long ago it was born (no Date.now)
+  const age = Math.max(0, clock - born);
+  const s = 0.4 + Math.min(1, age * 4) * 1.4; // 0.4 → ~1.8
+  const y = position[1] + Math.min(1, age * 3) * 0.5;
+  return (
+    <sprite position={[position[0], y, position[2]]} scale={[s, s, 1]} renderOrder={13}>
+      <spriteMaterial map={tex.current} transparent depthWrite={false} depthTest={false} />
+    </sprite>
+  );
+}
+
+function Ticker({ fnRef }: { fnRef: React.MutableRefObject<(dt: number) => void> }) {
+  useFrame((_, dt) => fnRef.current(Math.min(dt, 0.05)));
+  return null;
+}
