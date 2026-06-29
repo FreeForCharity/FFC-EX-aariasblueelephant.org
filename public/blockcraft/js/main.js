@@ -437,7 +437,7 @@
 
   /* ---------------- spawn an animal friend from the bag ---------------- */
   function placeAnimal(type, x, z) {
-    if (ABC.animals.list.length > 40) { ABC.ui.toast('🐾 The meadow is full of friends! Maybe dig some space first!', 3200); return; }
+    if (ABC.animals.list.length > 14) { ABC.ui.toast('🐾 The meadow is full of friends! Maybe send one home before adding more!', 3200); return; }
     const a = ABC.animals.spawn(type, x, z);
     ABC.state.friends = ABC.state.friends || [];
     ABC.state.friends.push({ kind: type, x, z, name: a.name });

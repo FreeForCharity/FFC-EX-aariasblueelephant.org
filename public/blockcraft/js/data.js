@@ -726,7 +726,7 @@ ABC.QUEST_DEFS = [
 /* Wormhole portal — the reward for using expressive language 🌀 */
 ABC.PORTAL = {
   NEED: 5,                                  // expressive successes to open it
-  homePos: { x:-7, z:-10 },                 // near spawn
+  homePos: { x:-22, z:-18 },                // off to the side so spawn stays open
   islandPos: { x:36, y:25, z:40 },          // secret Sky Island (south edge, clear of the rainbow)
 };
 

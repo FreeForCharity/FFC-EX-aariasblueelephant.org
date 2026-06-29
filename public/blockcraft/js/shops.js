@@ -50,8 +50,8 @@ ABC.shops = (function () {
 
   function init(sc) { scene = sc; }
   function placeAll() {
-    // 🏘️ home village — a cozy cluster of stalls near spawn
-    ['home1', 'home2', 'home3'].forEach(k => {
+    // 🏘️ home village — two stalls near spawn (kept light so it's not crowded)
+    ['home1', 'home2'].forEach(k => {
       const s = ABC.SHOPS[k]; if (!s) return;
       vendor(s, s.at.x + 1, s.at.z + 1);
       place(s.at.x, s.at.z, s.name, 0xff6b6b, 0xffffff);
