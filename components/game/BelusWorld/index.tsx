@@ -28,6 +28,7 @@ import {
   recordZoneVisit,
   recordMoment,
   addAchievement,
+  setPlayerName,
   type BeluMemory,
 } from './belu/memory';
 import { getDialogue } from './belu/dialogue';
@@ -126,8 +127,9 @@ export default function BelusWorldGame() {
     lineTimer.current = setTimeout(() => setBeluLine(null), 5000);
   }, []);
 
-  function start() {
-    const m = recordVisit(memory);
+  function start(name: string) {
+    let m = setPlayerName(memory, name);   // personalize Belu's greetings
+    m = recordVisit(m);
     saveMemory(m);
     setMemory(m);
     setPhase('world');
@@ -281,18 +283,24 @@ export default function BelusWorldGame() {
 
 // ---------------------------------------------------------------------------
 
-function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { memory: BeluMemory; growthLabel: string; onStart: () => void; onToggleFullscreen: () => void }) {
+function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { memory: BeluMemory; growthLabel: string; onStart: (name: string) => void; onToggleFullscreen: () => void }) {
   const returning = memory.visitCount > 0;
+  const [name, setName] = useState(memory.playerName ?? 'Aaria');
+  const [showHow, setShowHow] = useState(false);
+  const RAINBOW = 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)';
+  const play = () => onStart(name.trim() || 'friend');
+
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto p-6 text-center"
-      style={{ background: 'linear-gradient(180deg,#aee0ff 0%,#d8f0ff 55%,#fff6e0 100%)' }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 overflow-y-auto p-6 text-center"
+      style={{ background: 'linear-gradient(180deg,#7ec8ff 0%,#b9e7ff 45%,#baf2bb 100%)' }}
     >
+      {/* drifting clouds */}
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="absolute text-6xl opacity-80"
-          style={{ top: `${12 + i * 22}%` }}
+          className="pointer-events-none absolute text-6xl opacity-80"
+          style={{ top: `${10 + i * 24}%` }}
           initial={{ left: '-20%' }}
           animate={{ left: '120%' }}
           transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
@@ -301,105 +309,143 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         </motion.div>
       ))}
 
+      {/* org logo — gentle pop-in, then a soft float */}
       <motion.div
-        initial={{ scale: 0, rotate: -10 }}
+        initial={{ scale: 0, rotate: -8 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 14 }}
-        className="text-[110px] leading-none drop-shadow-lg"
       >
-        🐘
+        <motion.img
+          src="/abe-logo.png"
+          alt="Aaria's Blue Elephant — Building a New Inclusive World"
+          className="w-[min(30vh,180px)] rounded-full"
+          style={{ boxShadow: '0 10px 28px rgba(20,40,90,.3)' }}
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </motion.div>
 
+      {/* rainbow bouncing title */}
       <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mt-2 text-5xl font-black drop-shadow-sm sm:text-6xl"
-        style={{
-          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
+        className="text-5xl font-black drop-shadow-sm sm:text-6xl"
+        style={{ backgroundImage: RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
       >
         Belu's World
       </motion.h1>
 
-      {/* multicolour autism-acceptance infinity symbol */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.35, type: 'spring' }}
-        className="mt-1 text-4xl font-black leading-none"
-        style={{
-          backgroundImage: 'linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }}
-        aria-label="autism acceptance infinity symbol"
-      >
-        ∞
-      </motion.div>
-
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.45 }}
-        className="mt-2 text-lg font-extrabold text-sky-800"
+        transition={{ delay: 0.3 }}
+        className="max-w-xl text-base font-extrabold text-sky-800 sm:text-lg"
       >
-        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖
-      </motion.p>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.55 }}
-        className="mt-1 max-w-md text-base font-semibold text-sky-900/70"
-      >
-        {returning
-          ? `Welcome back! ${growthLabel} is waiting on the sky islands. Earn stars to help Belu grow!`
-          : 'Explore floating islands, meet friendly faces, and help baby Belu grow up big and strong!'}
+        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Belu grow!
       </motion.p>
 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-3 text-3xl tracking-[0.3em]"
+        transition={{ delay: 0.4 }}
+        className="text-3xl tracking-[0.25em] sm:text-4xl"
       >
         🐘🌸⛰️🌊🌳🌈
       </motion.div>
 
+      {returning && (
+        <p className="max-w-md text-sm font-semibold text-sky-900/70">
+          Welcome back! {growthLabel} is waiting on the sky islands. 🌈
+        </p>
+      )}
+
+      {/* who is playing? — personalizes Belu's greetings */}
+      <div className="mt-1 flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-2.5">
+        <label htmlFor="beluName" className="text-base font-bold text-sky-900">Who is playing?</label>
+        <input
+          id="beluName"
+          value={name}
+          maxLength={20}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') play(); }}
+          className="w-44 rounded-xl border-[3px] border-sky-300 bg-white px-3 py-1.5 text-center text-lg font-bold text-blue-700 outline-none focus:border-sky-400"
+        />
+      </div>
+
+      {/* big Play */}
       <motion.button
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        whileHover={{ scale: 1.05 }}
+        transition={{ delay: 0.5 }}
+        whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.95 }}
-        onClick={onStart}
-        className="mt-7 rounded-full bg-gradient-to-b from-amber-400 to-orange-500 px-12 py-4 text-2xl font-black text-white shadow-xl"
+        onClick={play}
+        className="mt-2 rounded-full bg-gradient-to-b from-green-300 to-green-500 px-14 py-4 text-2xl font-black text-green-950 shadow-[0_6px_0_#2f9e44,0_10px_18px_rgba(0,0,0,0.18)] active:translate-y-1"
       >
-        {returning ? 'Continue ✨' : 'Calling all friends of Aaria ✨'}
+        {returning ? 'Continue ✨' : '▶ Play!'}
       </motion.button>
 
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onToggleFullscreen}
-        className="mt-3 rounded-full border-2 border-sky-300 bg-white/70 px-7 py-2.5 text-base font-bold text-sky-700 shadow-md"
-      >
-        ⛶ Full Screen
-      </motion.button>
+      {/* secondary buttons */}
+      <div className="mt-1 flex flex-wrap justify-center gap-3">
+        <button
+          onClick={() => setShowHow(true)}
+          className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-7 py-2.5 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-1"
+        >
+          ❓ How to Play
+        </button>
+        <button
+          onClick={onToggleFullscreen}
+          className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-7 py-2.5 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-1"
+        >
+          ⛶ Full Screen
+        </button>
+      </div>
 
-      <p className="mt-5 text-sm font-medium text-sky-900/50">
-        Move with the arrows or joystick · Meet friends · Walk into glowing orbs · No way to lose 💙
-      </p>
-      <p className="mt-4 rounded-full bg-white/55 px-5 py-2 text-xs font-semibold text-sky-900/70">
+      <p className="mt-2 rounded-full bg-white/55 px-5 py-2 text-xs font-semibold text-sky-900/70">
         A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org
       </p>
+
+      <AnimatePresence>{showHow && <HowToPlay onClose={() => setShowHow(false)} />}</AnimatePresence>
     </div>
+  );
+}
+
+// Friendly "How to Play" card for the landing page — controls + the no-fail promise.
+function HowToPlay({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,40,80,0.45)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.85, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9 }}
+        className="w-full max-w-md rounded-[26px] bg-gradient-to-b from-white to-sky-50 p-7 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-5xl">🐘💙</div>
+        <h2 className="mt-2 text-2xl font-black text-sky-700">How to Play</h2>
+        <div className="mt-4 space-y-2 text-left text-base font-semibold text-slate-700">
+          <p>🕹️ <b>Arrows or the joystick</b> — walk Belu around</p>
+          <p>⬆️ <b>Jump button</b> — hop over things</p>
+          <p>✋ <b>Drag</b> the world to look around</p>
+          <p>🫧 <b>Walk into glowing orbs</b> (or tap them) to help your friends</p>
+          <p>⭐ Earn stars to help <b>Belu grow up</b> and bloom the islands</p>
+          <p>💙 There is <b>no way to lose</b> — just explore and have fun!</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-6 rounded-full bg-green-500 px-9 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
+        >
+          Let's play! 🎮
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
 
