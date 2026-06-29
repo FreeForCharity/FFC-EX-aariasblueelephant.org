@@ -14,7 +14,7 @@ import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
 import { beluPos, beluState } from './playerState';
-import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, type ZoneId } from './worldConfig';
+import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 
 const SPEED = 7.5;
@@ -90,6 +90,17 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
 
     pos.current.x += vel.current.x * dt;
     pos.current.z += vel.current.z * dt;
+
+    // ---- solid obstacles (walk around, not through) ----
+    for (const o of OBSTACLES) {
+      const dx = pos.current.x - o.x;
+      const dz = pos.current.z - o.z;
+      const d = Math.hypot(dx, dz);
+      if (d < o.r && d > 1e-4) {
+        pos.current.x = o.x + (dx / d) * o.r;
+        pos.current.z = o.z + (dz / d) * o.r;
+      }
+    }
 
     // ---- jump + gravity ----
     if (input.jumpQueued) {

@@ -94,6 +94,18 @@ interface State {
   sayAt: number;
 }
 
+export interface QuestStatus {
+  zone: ActivityZone;
+  title: string;
+  emoji: string;
+  accent: string;
+  level: number;
+  instruction: string;
+  step: number;
+  total: number;
+  phase: 'question' | 'correct';
+}
+
 interface Props {
   islandNextLevel: Record<ActivityZone, number>;
   paused: boolean;
@@ -103,6 +115,7 @@ interface Props {
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
   onComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
+  onStatus: (s: QuestStatus | null) => void;
 }
 
 export default function QuestLayer(props: Props) {
@@ -130,6 +143,22 @@ export default function QuestLayer(props: Props) {
     S.current.wrongIdx = -1;
   }
 
+  // tell the DOM HUD what the player should be doing right now (persistent card)
+  function emitStatus(phase: 'question' | 'correct', instruction: string) {
+    const z = S.current.zone;
+    if (!z) {
+      props.onStatus(null);
+      return;
+    }
+    const q = getQuest(z, S.current.level);
+    const isl = ISLANDS[z];
+    props.onStatus({
+      zone: z, title: isl.label, emoji: isl.emoji, accent: isl.accent,
+      level: S.current.level, instruction, step: S.current.roundIdx,
+      total: q.rounds.length, phase,
+    });
+  }
+
   function startQuest(zone: ActivityZone) {
     const level = props.islandNextLevel[zone];
     const q = getQuest(zone, level);
@@ -145,6 +174,7 @@ export default function QuestLayer(props: Props) {
     props.speak(q.intro);
     S.current.pendingSay = q.rounds[0].say;
     S.current.sayAt = S.current.clock + 2.6;
+    emitStatus('question', q.rounds[0].say);
     bump();
   }
 
@@ -153,6 +183,7 @@ export default function QuestLayer(props: Props) {
     resetRound();
     S.current.pendingSay = null;
     props.setEmotion('happy');
+    props.onStatus(null);
     bump();
   }
 
@@ -167,6 +198,7 @@ export default function QuestLayer(props: Props) {
     S.current.zone = null;
     resetRound();
     S.current.pendingSay = null;
+    props.onStatus(null);
     bump();
   }
 
@@ -181,6 +213,7 @@ export default function QuestLayer(props: Props) {
     resetRound();
     props.setEmotion(q.rounds[next].kind === 'breathe' ? 'calm' : 'curious');
     props.speak(q.rounds[next].say);
+    emitStatus('question', q.rounds[next].say);
     bump();
   }
 
@@ -189,6 +222,7 @@ export default function QuestLayer(props: Props) {
     props.setEmotion('excited');
     props.playSound('star');
     if (line) props.speak(line);
+    emitStatus('correct', line ?? 'Yes! You got it!');
     S.current.advanceAt = S.current.clock + 1.0;
     S.current.lockUntil = S.current.clock + 1.0;
     bump();
