@@ -44,10 +44,11 @@ function Island({ isl }: { isl: IslandDef }) {
   );
 }
 
-function RainbowBridges() {
+function RainbowBridges({ rainbowUnlocked }: { rainbowUnlocked: boolean }) {
   const planks = useMemo(() => {
     const all: { pos: [number, number, number]; rot: number; color: string; w: number }[] = [];
     BRIDGE_SEGMENTS.forEach((s, bi) => {
+      if (s.to === 'rainbow' && !rainbowUnlocked) return; // bridge not formed yet
       const colors = BRIDGES[bi].colors;
       const SEGS = 14;
       const dx = s.bx - s.ax;
@@ -62,7 +63,7 @@ function RainbowBridges() {
       }
     });
     return all;
-  }, []);
+  }, [rainbowUnlocked]);
 
   return (
     <group>
@@ -239,19 +240,22 @@ interface Props {
   activeZone: ZoneId | null;
   reduceMotion: boolean;
   islandLevels: Partial<Record<ZoneId, number>>;
+  /** has the reward island formed yet? (first level completed) */
+  rainbowUnlocked: boolean;
 }
 
-export default function World({ activeZone, reduceMotion, islandLevels }: Props) {
+export default function World({ activeZone, reduceMotion, islandLevels, rainbowUnlocked }: Props) {
   return (
     <group>
       <Clouds reduceMotion={reduceMotion} />
       <WorldLife reduceMotion={reduceMotion} />
-      <RainbowBridges />
-      {ISLAND_LIST.map((isl) => (
-        <Island key={isl.id} isl={isl} />
-      ))}
+      <RainbowBridges rainbowUnlocked={rainbowUnlocked} />
+      {ISLAND_LIST.map((isl) =>
+        isl.id === 'rainbow' && !rainbowUnlocked ? null : <Island key={isl.id} isl={isl} />,
+      )}
       <HomeDecor />
-      {ISLAND_LIST.filter((i) => i.id !== 'home').map((isl) => {
+      {rainbowUnlocked && <RainbowDecor />}
+      {ISLAND_LIST.filter((i) => i.id !== 'home' && i.id !== 'rainbow').map((isl) => {
         const bloom = islandLevels[isl.id] ?? 0;
         return (
           <group key={isl.id}>
@@ -260,6 +264,42 @@ export default function World({ activeZone, reduceMotion, islandLevels }: Props)
           </group>
         );
       })}
+    </group>
+  );
+}
+
+// The reward island's playful decor — a free-play spot the child earns. A
+// bouncy castle dome, a slide, balloons and a big rainbow arch overhead.
+function RainbowDecor() {
+  const isl = ISLANDS.rainbow;
+  const y = isl.top;
+  const arc = ['#ff6b6b', '#ffd166', '#7ec850', '#5fd0e0', '#8a7bff'];
+  return (
+    <group position={[isl.cx, 0, isl.cz]}>
+      {/* big rainbow arch */}
+      {arc.map((c, i) => (
+        <mesh key={i} position={[0, y + 1.5, -1]} rotation={[0, 0, 0]}>
+          <torusGeometry args={[5.2 - i * 0.45, 0.22, 10, 40, Math.PI]} />
+          <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.3} roughness={0.5} />
+        </mesh>
+      ))}
+      {/* bouncy dome */}
+      <mesh position={[-2.5, y + 0.6, 1]} scale={[1.4, 0.9, 1.4]}>
+        <sphereGeometry args={[1.4, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#ff9ed8" roughness={0.5} />
+      </mesh>
+      {/* slide */}
+      <mesh position={[2.8, y + 0.8, 1]} rotation={[0.5, 0, 0]}>
+        <boxGeometry args={[0.9, 0.12, 2.6]} />
+        <meshStandardMaterial color="#5fd0e0" roughness={0.4} />
+      </mesh>
+      {/* floating balloons */}
+      {[['#ff6b6b', -3, 2.6], ['#ffd166', 3, 3.2], ['#8a7bff', 0.5, 3.6]].map((b, i) => (
+        <mesh key={i} position={[b[1] as number, y + (b[2] as number), -2]}>
+          <sphereGeometry args={[0.5, 14, 12]} />
+          <meshStandardMaterial color={b[0] as string} roughness={0.4} />
+        </mesh>
+      ))}
     </group>
   );
 }

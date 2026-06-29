@@ -38,6 +38,8 @@ interface Props {
   equipped?: import('../belu/progress').EquippedCosmetics;
   /** completed-level count per zone island (drives the bloom) */
   islandLevels: Partial<Record<ZoneId, number>>;
+  /** has the reward island formed? */
+  rainbowUnlocked: boolean;
   /** which level to play next on each zone island */
   islandNextLevel: Record<ActivityZone, number>;
   sound: boolean;
@@ -85,6 +87,7 @@ export default function GameCanvas({
   growthStage,
   equipped,
   islandLevels,
+  rainbowUnlocked,
   islandNextLevel,
   sound,
   onProximity,
@@ -138,7 +141,7 @@ export default function GameCanvas({
       <Lighting calmMode={calmMode} />
 
       <Suspense fallback={null}>
-        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} />
+        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} />
         <Player
           ref={player}
           emotion={emotion}
