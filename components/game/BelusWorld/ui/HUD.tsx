@@ -18,10 +18,11 @@ interface Props {
   onOpenMap: () => void;
   onOpenWardrobe: () => void;
   onToggleFullscreen: () => void;
+  onGoHome: () => void;
   onExit: () => void;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onExit }: Props) {
+export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
 
   return (
@@ -62,6 +63,14 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
             </span>
           )}
         </div>
+        <button
+          onClick={onGoHome}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label="Go to home island"
+          title="Home base"
+        >
+          🏡
+        </button>
         <button
           onClick={onOpenWardrobe}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"

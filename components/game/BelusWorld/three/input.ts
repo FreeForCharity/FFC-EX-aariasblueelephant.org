@@ -13,6 +13,8 @@ export interface InputState {
   jumpQueued: boolean;
   /** edge-triggered interact request (E / tap action) */
   interactQueued: boolean;
+  /** edge-triggered "warp back to home island" request */
+  goHomeQueued: boolean;
 }
 
 export const input: InputState = {
@@ -20,7 +22,12 @@ export const input: InputState = {
   moveZ: 0,
   jumpQueued: false,
   interactQueued: false,
+  goHomeQueued: false,
 };
+
+export function queueGoHome() {
+  input.goHomeQueued = true;
+}
 
 const keys = new Set<string>();
 

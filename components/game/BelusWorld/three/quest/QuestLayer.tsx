@@ -13,7 +13,7 @@
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { ISLANDS } from '../worldConfig';
-import { beluPos } from '../playerState';
+import { beluPos, dynamicSolids } from '../playerState';
 import type { ActivityZone } from '../../belu/progress';
 import type { BeluEmotion } from '../../BeluCharacter';
 import { getQuest, starsFromSlips, type Quest, type QuestRound } from './quests';
@@ -286,6 +286,11 @@ export default function QuestLayer(props: Props) {
   // ---- per-frame logic ----
   frame.current = (dt: number) => {
     const st = S.current;
+    // keep each island's friend registered as a solid thing (walk around them)
+    dynamicSolids.quest = zones.map((z) => {
+      const isl = ISLANDS[z];
+      return { x: isl.cx, z: isl.cz, r: 1.05 };
+    });
     if (import.meta.env.DEV) {
       (window as unknown as { __quest?: unknown }).__quest = {
         zone: st.zone, roundIdx: st.roundIdx, picked: st.picked.size,
