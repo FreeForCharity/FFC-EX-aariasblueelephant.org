@@ -109,16 +109,16 @@ export default function QuestNPC({ position, face, mood, color, thought, beckon,
           <meshStandardMaterial color={color} roughness={0.7} />
         </mesh>
         {/* face */}
-        <sprite position={[0, 0.7, 0.62]} scale={[0.85, 0.85, 1]}>
-          <spriteMaterial map={faceTex} transparent depthWrite={false} />
+        <sprite position={[0, 0.7, 0.62]} scale={[0.95, 0.95, 1]} renderOrder={11}>
+          <spriteMaterial map={faceTex} transparent depthWrite={false} depthTest={false} />
         </sprite>
       </group>
 
       {/* thought bubble */}
       {thoughtTex && (
         <group position={[0.6, 2.0, 0]}>
-          <sprite scale={[1.5, 1.5, 1]}>
-            <spriteMaterial map={thoughtTex} transparent depthWrite={false} />
+          <sprite scale={[1.5, 1.5, 1]} renderOrder={12}>
+            <spriteMaterial map={thoughtTex} transparent depthWrite={false} depthTest={false} />
           </sprite>
           <mesh position={[-0.55, -0.7, 0]}>
             <sphereGeometry args={[0.12, 12, 10]} />

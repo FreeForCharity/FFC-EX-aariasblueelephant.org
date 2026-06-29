@@ -87,7 +87,7 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
         onPointerOut={() => (document.body.style.cursor = 'auto')}
       >
-        <sphereGeometry args={[0.95, 24, 18]} />
+        <sphereGeometry args={[0.85, 24, 18]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -95,12 +95,13 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
           roughness={0.25}
           metalness={0.1}
           transparent
-          opacity={0.55}
+          opacity={0.4}
+          depthWrite={false}
         />
       </mesh>
-      {/* picture + word, always facing the camera */}
-      <sprite position={[0, 0, 0]} scale={[1.7, 1.7, 1]}>
-        <spriteMaterial map={tex} transparent depthWrite={false} />
+      {/* picture + word — always on top of the bubble & facing the camera */}
+      <sprite position={[0, 0, 0]} scale={[1.9, 1.9, 1]} renderOrder={10}>
+        <spriteMaterial map={tex} transparent depthWrite={false} depthTest={false} />
       </sprite>
       {/* soft glow ring under it on the ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.05, 0]}>

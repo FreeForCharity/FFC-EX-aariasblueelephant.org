@@ -103,8 +103,8 @@ export default function BreatheOrb({ position, cycles, color, reduceMotion, onDo
           opacity={0.5}
         />
       </mesh>
-      <sprite ref={labelRef} position={[0, 2.6, 0]} scale={[2.4, 2.4, 1]}>
-        <spriteMaterial map={textures[0]} transparent depthWrite={false} />
+      <sprite ref={labelRef} position={[0, 2.6, 0]} scale={[2.4, 2.4, 1]} renderOrder={10}>
+        <spriteMaterial map={textures[0]} transparent depthWrite={false} depthTest={false} />
       </sprite>
       <pointLight color={color} intensity={2} distance={10} />
     </group>
