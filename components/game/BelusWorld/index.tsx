@@ -149,10 +149,13 @@ export default function BelusWorldGame() {
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else el.requestFullscreen?.().catch(() => {});
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+      return;
+    }
+    // rootRef exists in the world; on the intro menu fall back to the whole page
+    const el = rootRef.current ?? document.documentElement;
+    el.requestFullscreen?.().catch(() => {});
   }, []);
 
   const handleQuestComplete = useCallback(
@@ -184,7 +187,7 @@ export default function BelusWorldGame() {
   );
 
   if (phase === 'intro') {
-    return <IntroScreen memory={memory} growthLabel={growth.label} onStart={start} />;
+    return <IntroScreen memory={memory} growthLabel={growth.label} onStart={start} onToggleFullscreen={toggleFullscreen} />;
   }
 
   return (
@@ -249,7 +252,7 @@ export default function BelusWorldGame() {
 
 // ---------------------------------------------------------------------------
 
-function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; growthLabel: string; onStart: () => void }) {
+function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { memory: BeluMemory; growthLabel: string; onStart: () => void; onToggleFullscreen: () => void }) {
   const returning = memory.visitCount > 0;
   return (
     <div
@@ -350,6 +353,17 @@ function IntroScreen({ memory, growthLabel, onStart }: { memory: BeluMemory; gro
         {returning ? 'Continue ✨' : 'Calling all friends of Aaria ✨'}
       </motion.button>
 
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onToggleFullscreen}
+        className="mt-3 rounded-full border-2 border-sky-300 bg-white/70 px-7 py-2.5 text-base font-bold text-sky-700 shadow-md"
+      >
+        ⛶ Full Screen
+      </motion.button>
+
       <p className="mt-5 text-sm font-medium text-sky-900/50">
         Move with the arrows or joystick · Meet friends · Walk into glowing orbs · No way to lose 💙
       </p>
@@ -424,7 +438,7 @@ function QuestPanel({ status }: { status: QuestStatus }) {
 
         {!correct && (
           <p className="mt-1 text-xs font-semibold text-slate-500">
-            Walk Belu into the matching glowing orb 🫧 (or tap it)
+            {status.hint ?? 'Walk Belu into the matching glowing orb 🫧 (or tap it)'}
           </p>
         )}
       </div>

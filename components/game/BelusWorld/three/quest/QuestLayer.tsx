@@ -21,7 +21,7 @@ import AnswerOrb, { type OrbStatus } from './AnswerOrb';
 import QuestNPC, { type Mood } from './QuestNPC';
 import BreatheOrb from './BreatheOrb';
 
-const ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest'];
+const ALL_ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest'];
 
 // idle "host" friends so each island feels inhabited before you arrive
 const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
@@ -104,6 +104,8 @@ export interface QuestStatus {
   step: number;
   total: number;
   phase: 'question' | 'correct';
+  /** optional override for the small hint line under the instruction */
+  hint?: string;
 }
 
 interface Props {
@@ -116,11 +118,14 @@ interface Props {
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
   onComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
   onStatus: (s: QuestStatus | null) => void;
+  /** which islands this layer owns (others are handled elsewhere, e.g. StoryLayer) */
+  zones?: ActivityZone[];
 }
 
 export default function QuestLayer(props: Props) {
   const [, force] = useState(0);
   const bump = () => force((v) => (v + 1) % 1_000_000);
+  const zones = props.zones ?? ALL_ZONES;
 
   const S = useRef<State>({
     clock: 0, zone: null, level: 1, roundIdx: 0, slips: 0,
@@ -312,7 +317,7 @@ export default function QuestLayer(props: Props) {
     // which zone island is Belu standing on?
     let onZone: ActivityZone | null = null;
     let onDist = Infinity;
-    for (const z of ZONES) {
+    for (const z of zones) {
       const isl = ISLANDS[z];
       const d = Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz);
       if (d < isl.radius * 0.82 && d < onDist) {
@@ -397,7 +402,7 @@ export default function QuestLayer(props: Props) {
       <Ticker fnRef={frame} />
 
       {/* idle host friends on islands you're not currently questing */}
-      {ZONES.map((z) => {
+      {zones.map((z) => {
         if (S.current.zone === z) return null;
         const p = npcPosition(z);
         const host = HOSTS[z];

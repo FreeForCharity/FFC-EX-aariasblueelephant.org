@@ -16,6 +16,7 @@ import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World from './World';
 import QuestLayer, { type QuestStatus } from './quest/QuestLayer';
+import StoryLayer from './quest/StoryLayer';
 import { PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { ActivityZone } from '../belu/progress';
@@ -142,8 +143,20 @@ export default function GameCanvas({
           growthScale={growthScale}
           growthStage={growthStage}
         />
+        {/* Feelings Meadow is caring-play (StoryLayer); the other islands use
+            the quest/orb layer. */}
+        <StoryLayer
+          level={islandNextLevel.meadow}
+          paused={paused}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={playSound}
+          onComplete={onQuestComplete}
+          onStatus={onQuestStatus}
+        />
         <QuestLayer
           islandNextLevel={islandNextLevel}
+          zones={['mountain', 'cove', 'forest']}
           paused={paused}
           reduceMotion={reduceMotion}
           sound={sound}
