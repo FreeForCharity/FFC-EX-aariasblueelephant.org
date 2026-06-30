@@ -470,6 +470,9 @@
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
           pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
           collapseCheck(info.cell);                              // 🌳 unsupported parts fall
+          // 🪙 dig up buried treasure — the dug marker block IS the reward (no random roll)
+          const treasureKind = ABC.dig && ABC.dig.kindForBlock(t);
+          if (treasureKind) ABC.dig.reward(treasureKind, info.cell);
         } else if (info.cell.y === ABC.world.MIN_Y) {
           ABC.ui.toast('🪨 That is the super-strong bottom rock!', 2400);
         }
@@ -727,8 +730,9 @@
         placedCount: ABC.state.placedCount || 0,
         friends: ABC.state.friends || [],
         pocket: ABC.state.pocket || null,
-        stars: ABC.state.stars, hearts: ABC.state.hearts,
+        stars: ABC.state.stars, hearts: ABC.state.hearts, coins: ABC.state.coins,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
+        foundShapes: [...ABC.state.foundShapes],
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
                     theme: s.theme, voiceName: s.voiceName },
@@ -769,6 +773,8 @@
       });
       ABC.state.stars = d.stars || 0;
       ABC.state.hearts = d.hearts || 0;
+      ABC.state.coins = d.coins || 0;
+      (d.foundShapes || []).forEach(s => ABC.state.foundShapes.add(s));
       (d.unlocked || []).forEach(b => ABC.state.unlocked.add(b));
       (d.completed || []).forEach(p => ABC.state.completed.add(p));
       ABC.state.tutorialDone = !!d.tutorialDone;

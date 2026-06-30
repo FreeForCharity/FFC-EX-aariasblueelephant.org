@@ -1,8 +1,9 @@
 /* Aaria's Block Craft 3D — UI: HUD, dialogs, the expressive-communication engine */
 ABC.state = {
   playerName: 'Aaria',
-  stars: 0, hearts: 0,
+  stars: 0, hearts: 0, coins: 0,
   unlocked: new Set(),        // unlocked block ids (locked blocks)
+  foundShapes: new Set(),     // shapes hatched/unlocked via digging
   completed: new Set(),       // completed project ids
   tutorialDone: false,
 };
@@ -84,6 +85,29 @@ ABC.ui = (function () {
   function refreshScore() {
     $('starChip').textContent = '⭐ ' + ABC.state.stars;
     $('heartChip').textContent = '💖 ' + ABC.state.hearts;
+    const coinEl = $('coinChip');
+    if (coinEl) {
+      coinEl.textContent = '🪙 ' + ABC.state.coins;
+      // show the First-Then goal so the next shape is always predictable
+      const next = ABC.SHAPE_UNLOCKS.findIndex((id) => !ABC.state.unlocked.has(id));
+      coinEl.title = next >= 0
+        ? `Dig up coins! ${Math.max(0, ABC.COIN_THRESHOLDS[next] - ABC.state.coins)} more to unlock the ${ABC.BLOCK_DEFS[ABC.SHAPE_UNLOCKS[next]].name} ${ABC.BLOCK_DEFS[ABC.SHAPE_UNLOCKS[next]].emoji}!`
+        : 'You found every shape! 🎉';
+    }
+  }
+  // coins come ONLY from digging up treasure; thresholds auto-unlock shapes (predictable)
+  function addCoins(n) {
+    ABC.state.coins += n;
+    refreshScore();
+    ABC.audio.sfx.ding();
+    for (let i = 0; i < ABC.SHAPE_UNLOCKS.length; i++) {
+      const id = ABC.SHAPE_UNLOCKS[i];
+      if (ABC.state.coins >= ABC.COIN_THRESHOLDS[i] && !ABC.state.unlocked.has(id)) {
+        ABC.state.foundShapes.add(id);
+        unlockBlock(id);   // adds + rebuilds hotbar + celebratory toast + saveSoon
+      }
+    }
+    ABC.saveSoon && ABC.saveSoon();
   }
   function addStars(n) {
     const before = ABC.state.stars;
@@ -598,7 +622,7 @@ ABC.ui = (function () {
   }
 
   return { openDialog, closeDialog, isOpen, toast, bellaSays, confetti, floatHearts,
-           refreshScore, addStars, addHearts, askExpressive, askBuilder, pickCard, message,
+           refreshScore, addStars, addHearts, addCoins, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
            getHand, setHand, openBag, openQuickMenu,
            showSettings, showHelp, pick, pick3, esc };
