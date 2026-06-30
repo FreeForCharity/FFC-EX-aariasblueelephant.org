@@ -406,7 +406,7 @@
     g.strokeStyle = '#fff'; g.lineWidth = 2;
     g.beginPath(); g.moveTo(R * SC + SC/2, R * SC + SC/2);
     g.lineTo(R * SC + SC/2 - Math.sin(yaw) * SC * 3.2, R * SC + SC/2 - Math.cos(yaw) * SC * 3.2); g.stroke();
-    ABC.audio.say('Look — your world from the sky! The blue dot is you.');
+    ABC.audio.say('Look — your world from the sky! The blue dot is you.', { force: true });
     $('mapOk').onclick = () => ABC.ui.closeDialog();
   }
 
@@ -735,7 +735,7 @@
         foundShapes: [...ABC.state.foundShapes],
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
-                    theme: s.theme, voiceName: s.voiceName },
+                    theme: s.theme, voiceName: s.voiceName, speed: s.speed },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }
@@ -889,6 +889,24 @@
     }
   };
   $('howBtn').onclick = () => ABC.ui.showHelp();
+
+  /* ---------------- game speed (🐢 more time · 🐇 normal · 🚀 faster) ---------------- */
+  ABC.refreshSpeedBtn = () => {
+    const b = $('speedBtn'); if (!b) return;
+    const info = ABC.audio.speedInfo();
+    b.textContent = '🎛️';                     // a dial — the speed control
+    b.title = `Game speed: ${info.label} — tap for more time 🐢 or faster 🚀`;
+  };
+  if ($('speedBtn')) {
+    $('speedBtn').onclick = () => {
+      const info = ABC.audio.cycleSpeed();
+      ABC.refreshSpeedBtn();
+      ABC.audio.sfx.pop();
+      saveSoon();
+      ABC.ui.toast(`${info.ico} Game speed: <b>${info.label}</b>`, 2600, false);
+    };
+    ABC.refreshSpeedBtn();
+  }
 
   /* ---------------- skin picker (title screen) ----------------
      The smooth skin rebuilds materials/geometry/renderer at startup, so flipping

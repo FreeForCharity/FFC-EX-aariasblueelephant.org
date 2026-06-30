@@ -1,7 +1,24 @@
 /* Aaria's Block Craft 3D — audio: WebAudio synth SFX, gentle music, and text-to-speech */
 ABC.audio = (function () {
   let ctx = null, musicGain = null, musicTimer = null;
-  const S = { sound:true, music:false, readAloud:true, voiceMode:false };
+  const S = { sound:true, music:false, readAloud:true, voiceMode:false, speed:'normal' };
+
+  /* Game pace 🐢🐇🚀 — kids who need more time stay Relaxed; kids who want it
+     snappier go Fast. Scales how long messages linger AND the read-aloud rate.
+     Default 'normal' is already generous so nothing feels cut short. */
+  const SPEED = {
+    relaxed: { ico:'🐢', label:'Relaxed', dur:1.5,  rate:0.82 },
+    normal:  { ico:'🐇', label:'Normal',  dur:1.0,  rate:0.98 },
+    fast:    { ico:'🚀', label:'Fast',    dur:0.55, rate:1.35 },
+  };
+  const SPEED_ORDER = ['relaxed', 'normal', 'fast'];
+  function speedInfo() { return SPEED[S.speed] || SPEED.normal; }
+  function cycleSpeed() {
+    const i = SPEED_ORDER.indexOf(S.speed);
+    S.speed = SPEED_ORDER[(i + 1) % SPEED_ORDER.length];
+    return speedInfo();
+  }
+  function durMul() { return speedInfo().dur; }
 
   function ensureCtx() {
     if (!ctx) {
@@ -148,12 +165,17 @@ ABC.audio = (function () {
     if (!S.readAloud && !(opts && opts.force)) return;
     const clean = String(text).replace(/<[^>]*>/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}✨⭐]/gu, '');
     if (!clean.trim()) return;
+    // DON'T cut a line short: if we're already reading something aloud and this
+    // isn't a forced read (a button the child tapped, or a dialog they opened),
+    // skip it — let the current line finish so the child can listen fully.
+    const force = opts && opts.force;
+    if (speechSynthesis.speaking && !force) return;
     speechSynthesis.cancel();
     // Chrome quirk: speaking immediately after cancel() silently drops the
     // utterance — queue it a tick later. Speak sentence-by-sentence with
     // natural micro-pauses, the way a person reads to a child.
     const useVoice = (opts && opts.voiceObj) || voice;
-    const baseRate = (opts && opts.rate) || 0.92;
+    const baseRate = ((opts && opts.rate) || 0.92) * speedInfo().rate;   // game-speed aware
     const basePitch = (opts && opts.pitch) || 1.0;
     setTimeout(() => {
       if (!voice) pickVoice();          // voices sometimes load late
@@ -247,5 +269,6 @@ ABC.audio = (function () {
 
   return { settings:S, ensureCtx, sfx, startMusic, say, sayBella, stopSay, listen, hasSR:!!SR,
            cycleVoice, animalCall, regionSound, voiceFor, seedFor,
+           speedInfo, cycleSpeed, durMul, SPEED_ORDER,
            voiceName: () => voice ? voice.name : 'default' };
 })();

@@ -45,8 +45,12 @@ ABC.ui = (function () {
     t.className = 'toast';
     t.innerHTML = msg;
     $('toasts').appendChild(t);
+    // Give the child enough time to read: linger in proportion to length, with a
+    // generous floor — then scale by the chosen game speed (🐢 longer / 🚀 shorter).
+    const plain = msg.replace(/<[^>]*>/g, '');
+    const ms = Math.max(dur || 0, 3200, plain.length * 70 + 1800) * (ABC.audio.durMul ? ABC.audio.durMul() : 1);
     setTimeout(() => { t.style.transition = 'opacity .5s'; t.style.opacity = '0';
-      setTimeout(()=>t.remove(), 500); }, dur || 3200);
+      setTimeout(()=>t.remove(), 500); }, ms);
     if (speak) ABC.audio.say(msg);
   }
   function bellaSays(msg, dur) {
@@ -166,7 +170,7 @@ ABC.ui = (function () {
         <span class="speakIco" data-say="${i}">🔊</span></button>`;
     });
     openDialog(html);
-    ABC.audio.say(prompt.scene);
+    ABC.audio.say(prompt.scene, { force: true });
 
     box().querySelectorAll('.speakIco').forEach(s => {
       s.addEventListener('click', (e) => {
@@ -218,7 +222,7 @@ ABC.ui = (function () {
       <div id="vStatus" class="scene" style="min-height:28px; font-size:17px; color:#666;">Press the microphone, then say the sentence!</div>
       <div class="dlgRow"><button class="bigBtn" id="vChoices" style="font-size:16px; padding:10px 18px; background:linear-gradient(180deg,#d0ebff,#a5d8ff); color:#1864ab; box-shadow:0 4px 0 #4dabf7;">📋 Show choices instead</button></div>`;
     openDialog(html);
-    ABC.audio.say(prompt.scene + ' ... Press the microphone and say: ' + best.t);
+    ABC.audio.say(prompt.scene + ' ... Press the microphone and say: ' + best.t, { force: true });
 
     $('vSayIt').onclick = () => ABC.audio.say(best.t, { force: true });
     $('vChoices').onclick = () => choiceRound(prompt, onSuccess, opts, 0);
@@ -306,7 +310,7 @@ ABC.ui = (function () {
     });
     html += '</div>';
     openDialog(html);
-    ABC.audio.say(sceneText + ' ... Tap the words in order: ' + sentence);
+    ABC.audio.say(sceneText + ' ... Tap the words in order: ' + sentence, { force: true });
     $('sbHear').onclick = () => ABC.audio.say(sentence, { force: true });
 
     let missCount = 0;
@@ -355,7 +359,7 @@ ABC.ui = (function () {
     });
     html += '</div>';
     openDialog(html);
-    ABC.audio.say(sceneText, speakOpts);   // a vendor's greeting speaks in their own voice
+    ABC.audio.say(sceneText, Object.assign({ force: true }, speakOpts));   // a vendor's greeting speaks in their own voice
     box().querySelectorAll('.pickCard').forEach(b => {
       b.addEventListener('click', () => {
         ABC.audio.sfx.pop();
@@ -370,7 +374,7 @@ ABC.ui = (function () {
     openDialog(`<div class="bigEmoji">${emoji || '💬'}</div><h2>${title}</h2>
       <div class="scene">${bodyHtml}</div>
       <div class="dlgRow"><button class="bigBtn green" id="msgOk">${btnLabel || 'OK! 👍'}</button></div>`);
-    ABC.audio.say(title + '. ' + bodyHtml);
+    ABC.audio.say(title + '. ' + bodyHtml, { force: true });
     $('msgOk').onclick = () => { ABC.audio.sfx.pop(); closeDialog(); onClose && onClose(); };
   }
 
@@ -455,7 +459,7 @@ ABC.ui = (function () {
     html += '</div>';
     openDialog(ABC.tpl(html));
     ABC.audio.say(pocketOpened() ? 'What will you take out of your school bag?'
-                                 : 'Ooh — something is hiding in the surprise pocket!');
+                                 : 'Ooh — something is hiding in the surprise pocket!', { force: true });
     const pb = $('pocketBtn');
     if (pb && !pocketOpened()) pb.addEventListener('click', openPocket);
     box().querySelectorAll('.bagItem[data-kind]').forEach(b => {
@@ -552,8 +556,10 @@ ABC.ui = (function () {
     const s = ABC.audio.settings;
     const chk = (v) => v ? '✅' : '⬜';
     const skinNow = ABC.SMOOTH ? '✨ Smooth' : '🧱 Classic';
+    const sp = ABC.audio.speedInfo();
     openDialog(`<img src="logo.png" style="width:90px;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.2);" alt=""><h2>Settings</h2>
       <button class="choiceBtn" id="setName">✏️ Player name: <b>${esc(ABC.state.playerName)}</b> — tap to change</button>
+      <button class="choiceBtn" id="setSpeed">🎛️ Game speed: <b>${sp.ico} ${sp.label}</b> — tap to change (🐢 more time · 🚀 faster)</button>
       <button class="choiceBtn" id="setSkin">🎨 Block look: <b>${skinNow}</b> — tap to switch (Smooth = soft, rounded, gentle shadows)</button>
       <button class="choiceBtn" id="setVoice">${chk(s.voiceMode)} 🎤 Voice Mode — say sentences out loud ${ABC.audio.hasSR ? '' : '(needs Chrome/Edge)'}</button>
       <button class="choiceBtn" id="setRead">${chk(s.readAloud)} 🔊 Read everything aloud</button>
@@ -579,6 +585,14 @@ ABC.ui = (function () {
         toast(`Hi, <b>${esc(ABC.state.playerName)}</b>! 👋`, 3000, true);
         showSettings();
       };
+    });
+    wire('setSpeed', () => {
+      const info = ABC.audio.cycleSpeed();
+      ABC.saveSoon && ABC.saveSoon();
+      if (ABC.refreshSpeedBtn) ABC.refreshSpeedBtn();
+      ABC.audio.sfx.pop();
+      toast(`${info.ico} Game speed: <b>${info.label}</b>`, 2600, true);
+      showSettings();
     });
     wire('setSkin', () => {
       const next = ABC.SMOOTH ? 'classic' : 'smooth';
