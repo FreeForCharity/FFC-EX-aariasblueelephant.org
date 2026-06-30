@@ -84,14 +84,17 @@ function pickVoice(): SpeechSynthesisVoice | null {
   return voice;
 }
 
-export function speakAloud(text: string, enabled: boolean) {
+export function speakAloud(text: string, enabled: boolean, opts?: { rate?: number; force?: boolean }) {
   if (!enabled || typeof window === 'undefined' || !window.speechSynthesis) return;
   try {
+    // Don't cut Belu off mid-sentence: let the current line finish unless this is
+    // a forced read. (The old unconditional cancel() chopped every line short.)
+    if (window.speechSynthesis.speaking && !(opts && opts.force)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const v = pickVoice();
     if (v) u.voice = v;
-    u.rate = 0.95; // a touch slower — clearer for kids
+    u.rate = (opts && opts.rate) || 0.95; // a touch slower — clearer for kids (game-speed aware)
     u.pitch = 1.15; // friendly
     u.volume = 0.9;
     window.speechSynthesis.speak(u);
