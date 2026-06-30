@@ -277,6 +277,11 @@ ABC.world = (function () {
         return g;
       }
       case 'knob':   return new THREE.BoxGeometry(0.3, 0.3, 0.3);
+      case 'hexagon':  return new THREE.CylinderGeometry(0.5, 0.5, 1, 6);
+      case 'pentagon': return new THREE.CylinderGeometry(0.5, 0.5, 1, 5);
+      case 'triprism': return new THREE.CylinderGeometry(0.58, 0.58, 1, 3);
+      case 'cone':     return new THREE.ConeGeometry(0.5, 1, 18);
+      case 'ball':     return new THREE.SphereGeometry(0.5, 18, 14);
       default:       return blockGeo;
     }
   }
@@ -671,6 +676,17 @@ ABC.world = (function () {
     h = Math.imul(h ^ (h >>> 13), 1274126177);
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   }
+  /* Buried-treasure "tell": which VISIBLE marker (if any) sits on this cell.
+     Deterministic from hash2, so the same spot always holds the same thing — the
+     child SEES the glint/egg/mound and digs it (no random rolls). Rare, mostly silver. */
+  function treasureMarkerAt(x, z) {
+    const h = hash2(x * 31 + 5, z * 31 + 7);
+    if (h < 0.0012) return 'moundTell';    // rarest — a sleepy animal friend
+    if (h < 0.0032) return 'eggTell';      // a shape egg
+    if (h < 0.0070) return 'goldGlint';    // gold coin (+5)
+    if (h < 0.0180) return 'silverGlint';  // silver coin (+1)
+    return null;
+  }
   function vnoise(x, z, s) {
     const fx = x / s, fz = z / s, x0 = Math.floor(fx), z0 = Math.floor(fz);
     const tx = fx - x0, tz = fz - z0, sm = (t) => t * t * (3 - 2 * t);
@@ -711,6 +727,8 @@ ABC.world = (function () {
   function genHome(keys, x, z) {             // calm flat home meadow
     gset(keys, x, 0, z, 'grass');
     const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
+    const tk = sp > 10 ? treasureMarkerAt(x, z) : null;   // off the spawn pad
+    if (tk) { gset(keys, x, 1, z, tk); return; }          // a visible treasure to dig up 🪙
     if (sp > 16 && treeCell(x, z, 13) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
     else if (h < 0.007) gset(keys, x, 1, z, 'flower');
   }
@@ -722,7 +740,9 @@ ABC.world = (function () {
     else gset(keys, x, 0, z, 'grass');
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     if (hh === 0) {
-      if (treeCell(x, z, 14) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
+      const tk = treasureMarkerAt(x, z);
+      if (tk) gset(keys, x, 1, z, tk);                    // visible treasure to dig up 🪙
+      else if (treeCell(x, z, 14) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
       else if (hsh < 0.004) gset(keys, x, 1, z, 'flower');
     }
   }

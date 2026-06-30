@@ -54,14 +54,38 @@ ABC.BLOCK_DEFS = {
   lava:      { name:'Lava',         emoji:'🌋', color:'#ff6a2b', pat:'plain', glow:true },
   blackrock: { name:'Black Rock',   emoji:'⬛', color:'#2f2a2b', pat:'speck', speck:'#1d1a1b' },
   canvas:    { name:'Tent Cloth',   emoji:'⛺', color:'#e8584e', pat:'plain' },
+  /* ✨ Fun shapes — unlocked by digging up treasure (coins / shape-eggs) */
+  hexBlock:  { name:'Hexagon',  emoji:'⬡', color:'#74c0fc', pat:'plain', shape:'hexagon',  locked:true },
+  coneBlock: { name:'Cone',     emoji:'🔻', color:'#ffd43b', pat:'plain', shape:'cone',     locked:true },
+  ballBlock: { name:'Ball',     emoji:'🔵', color:'#69db7c', pat:'plain', shape:'ball',     locked:true },
+  pentBlock: { name:'Pentagon', emoji:'⬠', color:'#b197fc', pat:'plain', shape:'pentagon', locked:true },
+  triBlock:  { name:'Triangle', emoji:'🔺', color:'#ff922b', pat:'plain', shape:'triprism', locked:true },
+  /* 🪙 Buried treasure "tells" — VISIBLE glowing markers placed in the world; dig
+     them to get the reward. NOT in HOTBAR_ORDER, so kids can never place them. */
+  silverGlint:{ name:'Silver Coin', emoji:'🪙', color:'#dfe6ec', pat:'plain', shape:'knob', glow:true },
+  goldGlint:  { name:'Gold Coin',   emoji:'🪙', color:'#ffd43b', pat:'plain', shape:'knob', glow:true },
+  eggTell:    { name:'Shape Egg',   emoji:'🥚', color:'#eaf2ff', pat:'plain', shape:'knob', glow:true },
+  moundTell:  { name:'Sleepy Mound',emoji:'🌱', color:'#8fce6a', pat:'plain', shape:'knob' },
 };
 
-/* Hotbar order (unlocked-by-default first) */
+/* Hotbar order (unlocked-by-default first) — treasure markers are intentionally absent */
 ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass','sand','snow',
   'leaf','flower','rainbow','star','water','red','blue','yellow','black','white',
   'redrock','sandstone','granite','moss','ice','lava','blackrock','canvas',
   'slab','wedge','stair','pillar','door','pane','knob',
+  'hexBlock','coneBlock','ballBlock','pentBlock','triBlock',
   'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
+
+/* Shapes unlock in this fixed order (predictable: dig a 🥚 or fill the 🪙 bar) */
+ABC.SHAPE_UNLOCKS = ['hexBlock','coneBlock','ballBlock','pentBlock','triBlock'];
+ABC.COIN_THRESHOLDS = [6, 12, 20, 30, 42];     // coins needed to auto-unlock each (index-matched)
+/* what each dug treasure means (1:1, never random) */
+ABC.DIG_FIND = {
+  coin:   { emoji:'🪙', word:'a shiny silver coin' },
+  gold:   { emoji:'🪙', word:'a shiny GOLD coin' },
+  egg:    { emoji:'🥚', word:'a magic shape egg' },
+  friend: { emoji:'🌱', word:'a sleepy little friend' },
+};
 
 /* Color themes 🎨 — sky & world moods */
 ABC.THEMES = [
