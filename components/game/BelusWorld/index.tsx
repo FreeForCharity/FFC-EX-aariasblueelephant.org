@@ -53,11 +53,33 @@ const GameCanvas = lazy(() => import('./three/GameCanvas'));
 
 type Phase = 'intro' | 'world';
 
+// Game pace 🐢🐇🚀 — kids who need more time stay Relaxed; kids who want it snappier
+// go Fast. Scales how long Belu's speech bubble lingers AND the read-aloud rate.
+const SPEED = {
+  relaxed: { ico: '🐢', label: 'Relaxed', dur: 1.5, rate: 0.82 },
+  normal: { ico: '🐇', label: 'Normal', dur: 1.0, rate: 0.98 },
+  fast: { ico: '🚀', label: 'Fast', dur: 0.55, rate: 1.35 },
+} as const;
+type SpeedKey = keyof typeof SPEED;
+const SPEED_ORDER: SpeedKey[] = ['relaxed', 'normal', 'fast'];
+
 interface Settings {
   reduceMotion: boolean;
   calmMode: boolean;
   sound: boolean;
   narration: boolean;
+  speed: SpeedKey;
+}
+
+const SETTINGS_KEY = 'belus_world_settings_v1';
+const DEFAULT_SETTINGS: Settings = { reduceMotion: false, calmMode: false, sound: true, narration: true, speed: 'normal' };
+function loadSettings(): Settings {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_KEY) : null;
+    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
 const STICKER_KEYS: Record<ActivityZone, string> = {
@@ -89,12 +111,7 @@ export default function BelusWorldGame() {
   const [showWardrobe, setShowWardrobe] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [reward, setReward] = useState<RewardInfo | null>(null);
-  const [settings, setSettings] = useState<Settings>({
-    reduceMotion: false,
-    calmMode: false,
-    sound: true,
-    narration: true,
-  });
+  const [settings, setSettings] = useState<Settings>(loadSettings);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -122,9 +139,25 @@ export default function BelusWorldGame() {
   // Belu speaks: speech bubble + (optional) read-aloud narration.
   const speak = useCallback((line: string) => {
     setBeluLine(line);
-    speakAloud(line, settingsRef.current.narration);
+    const sp = SPEED[settingsRef.current.speed] || SPEED.normal;
+    speakAloud(line, settingsRef.current.narration, { rate: 0.95 * sp.rate });
     if (lineTimer.current) clearTimeout(lineTimer.current);
-    lineTimer.current = setTimeout(() => setBeluLine(null), 5000);
+    // keep the bubble up long enough to read — by length, scaled by game speed
+    const ms = Math.max(4000, line.length * 95) * sp.dur;
+    lineTimer.current = setTimeout(() => setBeluLine(null), ms);
+  }, []);
+
+  // persist comfort + speed settings so they don't reset each visit
+  useEffect(() => {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
+  }, [settings]);
+
+  const cycleSpeed = useCallback(() => {
+    setSettings((s) => {
+      const next = SPEED_ORDER[(SPEED_ORDER.indexOf(s.speed) + 1) % SPEED_ORDER.length];
+      playSound('tap', s.sound);
+      return { ...s, speed: next };
+    });
   }, []);
 
   function start(name: string) {
@@ -248,6 +281,8 @@ export default function BelusWorldGame() {
         onToggleFullscreen={toggleFullscreen}
         onGoHome={() => { queueGoHome(); sfx('tap'); }}
         onExit={() => { stopSpeaking(); window.history.back(); }}
+        onCycleSpeed={cycleSpeed}
+        speedLabel={SPEED[settings.speed].label}
       />
 
       <AnimatePresence>
@@ -641,6 +676,23 @@ function SettingsPanel({
           </button>
         </div>
         <p className="mb-4 text-sm text-slate-500">Make Belu's World feel just right for you. 💙</p>
+
+        {/* Game speed — more time to read/listen 🐢 or snappier 🚀 */}
+        <div className="mb-3 rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
+          <div className="mb-2 flex items-center gap-2 font-bold text-slate-700">🎛️ Game speed</div>
+          <div className="flex gap-2">
+            {SPEED_ORDER.map((k) => (
+              <button
+                key={k}
+                onClick={() => onChange({ ...settings, speed: k })}
+                className={`flex-1 rounded-xl px-2 py-2 text-sm font-bold transition ${settings.speed === k ? 'bg-sky-500 text-white shadow' : 'bg-white text-slate-600'}`}
+              >
+                {SPEED[k].ico} {SPEED[k].label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-1.5 text-xs text-slate-400">🐢 more time to read &amp; listen · 🚀 faster</div>
+        </div>
 
         <Toggle label="Calm mode" hint="Softer glow, gentler colors" on={settings.calmMode} onClick={() => onChange({ ...settings, calmMode: !settings.calmMode })} />
         <Toggle label="Reduce motion" hint="Slow down drifting clouds & effects" on={settings.reduceMotion} onClick={() => onChange({ ...settings, reduceMotion: !settings.reduceMotion })} />

@@ -20,9 +20,11 @@ interface Props {
   onToggleFullscreen: () => void;
   onGoHome: () => void;
   onExit: () => void;
+  onCycleSpeed: () => void;
+  speedLabel: string;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit }: Props) {
+export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onCycleSpeed, speedLabel }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
 
   return (
@@ -85,6 +87,14 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           aria-label="Growth map"
         >
           🗺️
+        </button>
+        <button
+          onClick={onCycleSpeed}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label="Game speed"
+          title={`Game speed: ${speedLabel} — tap for more time 🐢 or faster 🚀`}
+        >
+          🎛️
         </button>
         <button
           onClick={onToggleFullscreen}
