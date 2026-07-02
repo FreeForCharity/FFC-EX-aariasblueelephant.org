@@ -35,11 +35,31 @@
 
   /* ---------- joystick ---------- */
   #stick{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:9;
-    width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.28);
+    width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.28);
     border:3px solid rgba(255,255,255,.55);backdrop-filter:blur(2px);touch-action:none;}
   #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;
     background:rgba(255,255,255,.92);box-shadow:0 4px 12px rgba(58,58,90,.3);
     transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:26px;}
+  .stickArrow{position:absolute;font-size:18px;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.4);
+    pointer-events:none;font-weight:900;}
+  .sa-u{top:4px;left:50%;transform:translateX(-50%);} .sa-d{bottom:4px;left:50%;transform:translateX(-50%);}
+  .sa-l{left:7px;top:50%;transform:translateY(-50%);} .sa-r{right:7px;top:50%;transform:translateY(-50%);}
+
+  /* jump / duck buttons */
+  #jumpCol{position:absolute;right:18px;bottom:max(108px,calc(env(safe-area-inset-bottom)+94px));z-index:9;
+    display:flex;flex-direction:column;gap:10px;}
+  .jbtn{cursor:pointer;border:none;width:70px;height:70px;border-radius:50%;
+    background:rgba(255,255,255,.9);box-shadow:0 5px 0 #cfd6ee,0 8px 16px rgba(58,58,90,.25);
+    font-size:30px;touch-action:none;}
+  .jbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #cfd6ee;}
+
+  /* fun action bar (trumpet / spray / dance) */
+  #funRow{position:absolute;left:50%;transform:translateX(-50%);
+    bottom:max(18px,env(safe-area-inset-bottom));z-index:9;display:flex;gap:10px;}
+  .fbtn{cursor:pointer;border:none;width:62px;height:62px;border-radius:22px;
+    background:rgba(255,255,255,.9);box-shadow:0 5px 0 #cfd6ee,0 8px 16px rgba(58,58,90,.25);
+    font-size:28px;touch-action:none;}
+  .fbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #cfd6ee;}
 
   /* ---------- context action button ---------- */
   #actBtn{position:absolute;right:18px;bottom:max(26px,calc(env(safe-area-inset-bottom) + 8px));z-index:9;
@@ -128,7 +148,19 @@
     <button class="speed" data-sp="fast">🚀</button>
   </div>
 
-  <div id="stick"><div id="knob">🐘</div></div>
+  <div id="stick"><div id="knob">🐘</div>
+    <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
+    <span class="stickArrow sa-l">◀</span><span class="stickArrow sa-r">▶</span>
+  </div>
+  <div id="jumpCol">
+    <button class="jbtn" id="jumpBtn" title="Jump">🦘</button>
+    <button class="jbtn" id="duckBtn" title="Duck">🙈</button>
+  </div>
+  <div id="funRow">
+    <button class="fbtn" id="trumpBtn" title="Trumpet">🎺</button>
+    <button class="fbtn" id="sprayBtn" title="Water rainbow">💦</button>
+    <button class="fbtn" id="danceBtn" title="Dance party">💃</button>
+  </div>
   <button id="actBtn">Play! 💜</button>
 
   <div id="moves"></div>
@@ -147,7 +179,8 @@
       <div class="tub"><div class="dot" style="background:#ffd94d">📺</div>Sunny</div>
       <div class="tub"><div class="dot" style="background:#ff8fb1">📺</div>Rosy</div>
     </div>
-    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), collect <b>✨ sparkle seeds</b>, and play with every friend to earn <b>⭐ stars</b>.</p>
+    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b>, and try <b>🎺 💦 💃</b> for silly surprises! Collect <b>✨ sparkle seeds</b> and play with every friend to earn <b>⭐ stars</b>.</p>
+    <p style="font-size:clamp(13px,3.6vw,16px)">Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b></p>
     <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
     <button class="big" id="startBtn">Let's Play! ▶</button>
   </div></div>
@@ -299,6 +332,8 @@ const sfx={tap(){tone(520,.09,'sine',.08);},
   soft(){tone(300,.18,'sine',.09);tone(240,.22,'sine',.07,.08);},
   star(){[880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'triangle',.09,i*.07));},
   boing(){tone(180,.16,'sine',.14);tone(420,.22,'sine',.1,.06);},
+  trumpet(){[[392,.22],[523,.18],[659,.3],[784,.5]].forEach(([f,d],i)=>tone(f,d,'sawtooth',.11,i*.14));},
+  splash(){[900,700,520,380].forEach((f,i)=>tone(f,.12,'triangle',.07,i*.05));},
   win(){[523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,.4,'sine',.12,i*.12));}};
 
 // gentle read-aloud
@@ -536,6 +571,16 @@ const kitchenG=addProp('kitchen',...POI.sunny,Math.PI);
 const hillsG=addProp('hills',...POI.rosy);
 addProp('arch',...POI.arch);
 
+/* -------- solid-structure colliders (cylinders) -------- */
+const COLLIDERS=[
+  {x:POI.dome[0], z:POI.dome[1], r:4.8},                  // Trunk Dome
+  {x:POI.mill[0], z:POI.mill[1], r:1.1},                  // windmill tower
+  {x:POI.pond[0], z:POI.pond[1], r:4.5},                  // pond (no walking on water!)
+  {x:POI.sunny[0],z:POI.sunny[1],r:3.4},                  // kitchen table
+];
+hillsG.userData.bushes.forEach(b=>{                        // Rosy's big bushes
+  COLLIDERS.push({x:POI.rosy[0]+b.position.x, z:POI.rosy[1]+b.position.z, r:2.0});});
+
 // scattered flowers & bushes
 (function scatter(){
   ['#ff8fb1','#b8a4ff','#ffd23f','#ffffff'].forEach(col=>{
@@ -551,7 +596,8 @@ addProp('arch',...POI.arch);
   for(let k=0;k<24;k++){const a=rnd()*Math.PI*2,r=12+rnd()*(ISLAND-14);
     const x=Math.cos(a)*r,z=Math.sin(a)*r;
     bs.set(1+rnd()*0.6,0.8+rnd()*0.5,1+rnd()*0.6);
-    bm.compose(new T.Vector3(x,terrainH(x,z)+0.4,z),q,bs);bush.setMatrixAt(bn++,bm);}
+    bm.compose(new T.Vector3(x,terrainH(x,z)+0.4,z),q,bs);bush.setMatrixAt(bn++,bm);
+    COLLIDERS.push({x,z,r:1.25});}
   bush.count=bn;bush.castShadow=true;scene.add(bush);
 })();
 
@@ -617,17 +663,62 @@ function drawSunBaby(g,w,h,mood,blink){
   g.save();g.beginPath();g.arc(cx,cy,dr,0,7);g.clip();
   g.drawImage(girlImg,dx,dy,dw,dh);
   const eye=e=>({x:dx+e.x*dw,y:dy+e.y*dh,rx:e.rx*dw,ry:e.ry*dh});
-  const closed=mood==='sleepy'?1:blink;
-  if(closed>0){EYES.forEach(E=>{const p=eye(E);const lidH=p.ry*2*closed;
-    g.fillStyle=LID;g.beginPath();g.ellipse(p.x,p.y-p.ry+lidH/2,p.rx*1.14,lidH/2,0,0,7);g.fill();
-    g.strokeStyle=NAVY;g.lineWidth=Math.max(1,p.ry*0.3);g.lineCap='round';
-    g.beginPath();g.moveTo(p.x-p.rx,p.y-p.ry+lidH);g.quadraticCurveTo(p.x,p.y-p.ry+lidH+p.ry*0.4,p.x+p.rx,p.y-p.ry+lidH);g.stroke();});}
-  if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=dw*0.03;g.lineCap='round';
-    const l=eye(EYES[0]),r=eye(EYES[1]);
-    g.beginPath();g.moveTo(l.x-l.rx*0.8,l.y-l.ry*2.2);g.quadraticCurveTo(l.x,l.y-l.ry*1.4,l.x+l.rx*0.8,l.y-l.ry*1.8);g.stroke();
-    g.beginPath();g.moveTo(r.x+r.rx*0.8,r.y-r.ry*2.2);g.quadraticCurveTo(r.x,r.y-r.ry*1.4,r.x-r.rx*0.8,r.y-r.ry*1.8);g.stroke();}
-  if(mood==='cheer'){g.fillStyle='rgba(255,120,160,.5)';
-    CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.1,dh*0.055,0,0,7);g.fill();});}
+  /* ---- big cute anime eyes with lashes, drawn OVER her printed eyes ---- */
+  const open=(mood==='sleepy')?0:1-blink;
+  EYES.forEach((E,ei)=>{
+    const p=eye(E),sx=ei===0?-1:1;         // sx: lash direction (outward)
+    const rx=p.rx*1.05, ryFull=p.ry*1.45;
+    // cover the original printed eye with skin
+    g.fillStyle=LID;g.beginPath();g.ellipse(p.x,p.y,rx*1.3,ryFull*1.15,0,0,7);g.fill();
+    const lashW=Math.max(1.6,ryFull*0.16);
+    if(open<0.18){
+      // closed: sweet curved lash-line with 3 long lashes
+      g.strokeStyle=NAVY;g.lineWidth=lashW*1.25;g.lineCap='round';
+      g.beginPath();g.moveTo(p.x-rx,p.y);g.quadraticCurveTo(p.x,p.y+ryFull*0.75,p.x+rx,p.y);g.stroke();
+      [[-0.75,0.4],[0,0.75],[0.75,0.4]].forEach(([fx2,fy])=>{
+        const bx2=p.x+fx2*rx,by=p.y+fy*ryFull*0.75;
+        g.beginPath();g.moveTo(bx2,by);g.lineTo(bx2+fx2*rx*0.28+sx*rx*0.1,by+ryFull*0.42);g.stroke();});
+    }else{
+      const ry=ryFull*open;
+      // sclera
+      g.fillStyle='#ffffff';g.beginPath();g.ellipse(p.x,p.y,rx,ry,0,0,7);g.fill();
+      // big shiny iris
+      const ir=Math.min(rx*0.72,ryFull*0.8)*Math.max(0.55,open);
+      const grad=g.createRadialGradient(p.x,p.y-ir*0.25,ir*0.15,p.x,p.y,ir);
+      grad.addColorStop(0,'#4a6bc4');grad.addColorStop(0.7,'#233a75');grad.addColorStop(1,'#12244f');
+      g.save();g.beginPath();g.ellipse(p.x,p.y,rx,ry,0,0,7);g.clip();
+      if(mood==='cheer'){                   // heart eyes when she cheers!
+        g.fillStyle='#ff5f8f';heart(g,p.x,p.y-ir*0.55,ir*0.72);
+      }else{
+        g.fillStyle=grad;g.beginPath();g.arc(p.x,p.y+ry*0.08,ir,0,7);g.fill();
+        g.fillStyle=NAVY;g.beginPath();g.arc(p.x,p.y+ry*0.08,ir*0.45,0,7);g.fill();
+        // sparkle highlights
+        g.fillStyle='#ffffff';
+        g.beginPath();g.arc(p.x-ir*0.35,p.y-ir*0.28,ir*0.3,0,7);g.fill();
+        g.beginPath();g.arc(p.x+ir*0.38,p.y+ir*0.4,ir*0.14,0,7);g.fill();
+        g.fillStyle='rgba(255,255,255,.75)';
+        g.beginPath();g.arc(p.x+ir*0.15,p.y-ir*0.55,ir*0.09,0,7);g.fill();
+      }
+      g.restore();
+      // upper lid line + curly lashes
+      g.strokeStyle=NAVY;g.lineWidth=lashW*1.2;g.lineCap='round';
+      g.beginPath();g.moveTo(p.x-rx,p.y-ry*0.15);
+      g.quadraticCurveTo(p.x,p.y-ry*1.45,p.x+rx,p.y-ry*0.15);g.stroke();
+      g.lineWidth=lashW;
+      [[-0.85,-0.62],[-0.35,-1.02],[0.35,-1.02],[0.85,-0.62]].forEach(([fx2,fy],li)=>{
+        const bx2=p.x+fx2*rx,by=p.y+fy*ry;
+        const ox=fx2*rx*0.3+sx*rx*0.14, oy=-ry*(0.42+((li%2)?0.12:0));
+        g.beginPath();g.moveTo(bx2,by);
+        g.quadraticCurveTo(bx2+ox*0.6,by+oy*0.7,bx2+ox,by+oy);g.stroke();});
+    }
+    // worried brows
+    if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=lashW*1.3;g.lineCap='round';
+      g.beginPath();g.moveTo(p.x-sx*rx*0.9,p.y-ryFull*1.9);
+      g.quadraticCurveTo(p.x,p.y-ryFull*1.45,p.x+sx*rx*0.9,p.y-ryFull*1.7);g.stroke();}
+  });
+  // rosy cheeks — always on, stronger when cheering
+  g.fillStyle=mood==='cheer'?'rgba(255,120,160,.55)':'rgba(255,150,180,.32)';
+  CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.1,dh*0.05,0,0,7);g.fill();});
   g.restore();
   if(mood==='cheer'){g.fillStyle='#ff5f8f';
     [[cx-R*1.7,cy-R*1.15,0.6],[cx+R*1.7,cy-R*0.85,0.85],[cx-R*0.1,cy-R*2.1,1.05],[cx+R*1.95,cy+R*0.6,0.5]]
@@ -687,6 +778,145 @@ function burst(pos,n=16,col='#ffd23f'){
   scene.add(pts);bursts.push({pts,v,t:0});
 }
 
+/* ===================== FX / TWEEN / GIGGLE HELPERS ======================= */
+const fx=[];   // {t,dur,fn,res} — fn(k) called each frame with k 0→1
+function tween(dur,fn){return new Promise(res=>fx.push({t:0,dur,fn,res}));}
+function giggle(){if(S.muted)return;
+  tone(700,.08,'sine',.1);tone(950,.1,'sine',.09,.08);tone(1250,.12,'sine',.08,.16);}
+/* floating one-shot sprites (music notes, splashes…) */
+function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
+  const s=emojiSprite(ch,scale);s.position.copy(pos);scene.add(s);
+  tween(dur,k=>{s.position.y=pos.y+k*rise;s.material.opacity=1-k;}).then(()=>scene.remove(s));}
+
+/* ========================= FUN ACTIONS (Belu!) =========================== */
+let actionBusy=false;
+async function actTrumpet(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.trumpet();doMove(player,'stomp',0.9);
+  const p=player.group.position;
+  ['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>
+    floatSprite(n,new T.Vector3(p.x+(i-1)*0.9,p.y+3.4,p.z),3,1.6),i*220));
+  // nearby tubbies jump with joy
+  for(const id in tubbies){const t=tubbies[id];
+    if(!t.busy&&t.group.position.distanceTo(p)<15)doMove(t,'jump',0.9);}
+  await wait(900);actionBusy=false;
+}
+async function actSpray(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.splash();doMove(player,'wave',1);
+  const p=player.group.position.clone();
+  for(let i=0;i<3;i++){setTimeout(()=>{burst(new T.Vector3(p.x,p.y+2,p.z),14,'#6fd0ff');},i*260);}
+  ['💧','💦','💧'].forEach((n,i)=>setTimeout(()=>
+    floatSprite(n,new T.Vector3(p.x+(i-1)*1.1,p.y+3,p.z),2.5,1.3),i*180));
+  // a magical rainbow blooms over Belu!
+  const rb=new T.Mesh(new T.TorusGeometry(4.5,0.5,10,40,Math.PI),
+    new T.MeshStandardMaterial({color:'#ffffff',roughness:.6,transparent:true,opacity:0,
+      emissive:new T.Color('#ff9ecf'),emissiveIntensity:.35}));
+  // stripe it with vertex colors
+  {const geo=rb.geometry,pos=geo.attributes.position,col=[];
+   const cols=['#ff5f6d','#ffa53f','#ffd23f','#6dd47e','#5fb4ff','#a78bfa'].map(c=>new T.Color(c));
+   // stripes = concentric rings: band by distance from the torus centerline (4.0 … 5.0)
+   for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);
+     const r=Math.hypot(x,y);                       // torus lies in XY before placement
+     const band=cols[Math.min(5,Math.max(0,Math.floor((r-4.0)/1.0*6)))];
+     col.push(band.r,band.g,band.b);}
+   geo.setAttribute('color',new T.Float32BufferAttribute(col,3));
+   rb.material.vertexColors=true;rb.material.color.set('#ffffff');}
+  rb.position.set(p.x,p.y+1.2,p.z+2);scene.add(rb);
+  await tween(0.8,k=>{rb.material.opacity=k*0.92;rb.scale.setScalar(0.4+k*0.6);});
+  reactSun();giggle();
+  await wait(3200);
+  await tween(0.9,k=>{rb.material.opacity=0.92*(1-k);rb.position.y=p.y+1.2+k*2;});
+  scene.remove(rb);actionBusy=false;
+}
+async function actDance(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  giggle();
+  const p=player.group.position;
+  const crowd=Object.values(tubbies).filter(t=>!t.busy&&t.group.position.distanceTo(p)<16);
+  for(let i=0;i<3;i++){
+    const mv=MOVES[Math.floor(Math.random()*MOVES.length)];
+    doMove(player,mv.k,0.85);sfx.boing();
+    crowd.forEach((t,j)=>setTimeout(()=>doMove(t,mv.k,0.85),120+j*90));
+    await wait(950);
+  }
+  burst(p,18,'#ff8fb1');if(crowd.length)reactSun();
+  actionBusy=false;
+}
+
+/* ================= MISCHIEF! holes, disappearing & BOO! ================== */
+function makeHole(){
+  const g=new T.Group();
+  const rim=new T.Mesh(new T.TorusGeometry(1.1,0.18,10,26),matStd('#8a5a33',.9));
+  rim.rotation.x=Math.PI/2;rim.position.y=0.1;g.add(rim);
+  const dark=new T.Mesh(new T.CircleGeometry(1.06,26),new T.MeshBasicMaterial({color:0x241505}));
+  dark.rotation.x=-Math.PI/2;dark.position.y=0.06;g.add(dark);
+  g.scale.setScalar(0.01);scene.add(g);return g;
+}
+async function diveInHole(t,x,z){          // tubby squishes down into a hole
+  const h=makeHole();h.position.set(x,terrainH(x,z)+0.02,z);
+  sfx.pop();
+  await tween(0.35,k=>h.scale.setScalar(k*1.5));
+  doMove(t,'spin',0.5);giggle();
+  const y0=t.group.position.y;
+  await tween(0.55,k=>{t.group.position.y=y0-k*3.2;t.group.scale.setScalar(1-k*0.4);});
+  t.group.visible=false;t.group.scale.setScalar(1);
+  await tween(0.3,k=>h.scale.setScalar(1.5*(1-k)));
+  scene.remove(h);
+}
+async function popFromHole(t,x,z,boo){     // tubby springs out of a hole
+  const h=makeHole();h.position.set(x,terrainH(x,z)+0.02,z);
+  await tween(0.35,k=>h.scale.setScalar(k*1.5));
+  t.group.position.set(x,terrainH(x,z)-3.2,z);t.group.visible=true;
+  const pp=player.group.position;t.group.lookAt(pp.x,t.group.position.y,pp.z);
+  sfx.boing();
+  await tween(0.45,k=>{t.group.position.y=terrainH(x,z)-3.2+k*3.2;});
+  t.group.position.y=terrainH(x,z);
+  doMove(t,'jump',0.8);giggle();
+  if(boo){const b=bannerSprite('Boo! 🤭',t.cfg.dark,0.85);
+    b.position.set(x,terrainH(x,z)+5.2,z);scene.add(b);
+    setTimeout(()=>scene.remove(b),2400);}
+  await tween(0.3,k=>h.scale.setScalar(1.5*(1-k)));
+  scene.remove(h);
+}
+let mischiefT=12;
+async function runMischief(){
+  const ids=Object.keys(tubbies).filter(id=>{const t=tubbies[id];
+    return !t.busy&&t.group.visible&&t.group.position.distanceTo(player.group.position)>9;});
+  if(!ids.length||mode!=='roam')return;
+  const id=ids[Math.floor(Math.random()*ids.length)];
+  const t=tubbies[id];t.busy=true;
+  try{
+    if(Math.random()<0.35){                        // just a silly solo wiggle
+      doMove(t,Math.random()<0.5?'spin':'happy',1.4);giggle();
+    }else{                                         // the full hole-dive BOO!
+      const hp=t.group.position;
+      await diveInHole(t,hp.x,hp.z);
+      await wait(1200+Math.random()*1400);
+      if(mode!=='roam')throw 0;
+      const pp=player.group.position,a=Math.random()*Math.PI*2;
+      let bx=pp.x+Math.cos(a)*5.5,bz=pp.z+Math.sin(a)*5.5;
+      const rr=Math.hypot(bx,bz);if(rr>ISLAND-2){bx*=(ISLAND-2)/rr;bz*=(ISLAND-2)/rr;}
+      // don't pop out inside a structure
+      for(const c of COLLIDERS){const d=Math.hypot(bx-c.x,bz-c.z);
+        if(d<c.r+1.5){const nx=(bx-c.x)/(d||1),nz=(bz-c.z)/(d||1);
+          bx=c.x+nx*(c.r+1.6);bz=c.z+nz*(c.r+1.6);}}
+      await popFromHole(t,bx,bz,true);
+      await wait(2400);
+      if(mode!=='roam')throw 0;
+      await diveInHole(t,t.group.position.x,t.group.position.z);
+      await wait(600);
+      const [hx,hz]=TUBBY_POS[id];
+      await popFromHole(t,hx,hz,false);
+    }
+  }catch(e){}
+  // always restore home pose
+  const [hx,hz]=TUBBY_POS[id];
+  t.group.visible=true;t.group.scale.setScalar(1);t.group.rotation.set(0,0,0);
+  t.group.position.set(hx,terrainH(hx,hz),hz);
+  t.busy=false;
+}
+
 /* ====================== TAPPABLE 3D CHOICE SYSTEM ======================== */
 /* Choices are enacted in the world: a figure (big emoji) standing on a disc
    with a short label — never a quiz card. */
@@ -725,9 +955,12 @@ function pumpNarr(){
   if(narrBusy||!narrQ.length)return;narrBusy=true;
   const {who,txt,res}=narrQ.shift();
   $('narrWho').textContent=who;$('narrTxt').textContent=txt;
-  $('narr').classList.add('show');speak(txt);
+  $('narr').classList.add('show');$('funRow').classList.add('hidden');speak(txt);
   const done=()=>{if(narrResolve!==done)return;narrResolve=null;
-    narrBusy=false;res();if(!narrQ.length)$('narr').classList.remove('show');else pumpNarr();};
+    narrBusy=false;res();
+    if(!narrQ.length){$('narr').classList.remove('show');
+      if(mode==='roam')$('funRow').classList.remove('hidden');}
+    else pumpNarr();};
   narrResolve=done;
   // auto-advance slowly (kids can also tap ▶) — scaled by speed setting
   const ms=(2600+txt.length*65)*SPEED[S.speed];
@@ -779,22 +1012,63 @@ addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 
 let nearThing=null;   // {kind:'tubby'|'dome', id}
+/* ---- tumble physics (Teletubby knockdown!) ---- */
+let kd=null, duck=false, jumpY=0, jumpV=0, jumping=false;
+function knockdown(nx,nz){
+  if(kd)return;
+  kd={t:0,dur:1.3,vx:nx*7.5,vz:nz*7.5};
+  sfx.boing();careSun();burst(player.group.position,10,'#ffd23f');giggle();
+  knockdown.n=(knockdown.n||0)+1;
+  if(knockdown.n<=2)say('☀️','Whoopsie-daisy! Bonk! 🤭');
+}
+function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();}}
 function updateRoam(dt,time){
+  const p=player.group.position;
+  // --- knocked down: roll like a teletubby, no control ---
+  if(kd){
+    kd.t+=dt;const k=kd.t/kd.dur;
+    p.x+=kd.vx*dt;p.z+=kd.vz*dt;
+    const dk=Math.pow(0.04,dt);kd.vx*=dk;kd.vz*=dk;
+    const rr=Math.hypot(p.x,p.z);if(rr>ISLAND){p.x*=ISLAND/rr;p.z*=ISLAND/rr;}
+    const roll=k*Math.PI*2;
+    player.group.rotation.x=-roll;
+    p.y=terrainH(p.x,p.z)+Math.abs(Math.sin(roll))*0.95;
+    if(k>=1){kd=null;player.group.rotation.x=0;p.y=terrainH(p.x,p.z);
+      doMove(player,'jump',0.45);sfx.pop();}
+    animEllie(player,time,dt,false);
+    return;
+  }
   let mx=stickVec.x,mz=-stickVec.y;
   if(keys['arrowleft']||keys['a'])mx-=1;if(keys['arrowright']||keys['d'])mx+=1;
   if(keys['arrowup']||keys['w'])mz+=1;if(keys['arrowdown']||keys['s'])mz-=1;
   const m=Math.hypot(mx,mz);
-  const p=player.group.position;
   if(m>0.15){
-    const spd=7.5*Math.min(1,m);
+    const spd=(duck?4:7.5)*Math.min(1,m);
     p.x+=mx/m*spd*dt;p.z+=mz/m*spd*dt;
     const rr=Math.hypot(p.x,p.z);if(rr>ISLAND){p.x*=ISLAND/rr;p.z*=ISLAND/rr;}
     player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
     player.group.userData.st=(player.group.userData.st||0)+dt;
     if(player.group.userData.st>0.28){player.group.userData.st=0;tone(180,.05,'sine',.03);}
   }
-  p.y=terrainH(p.x,p.z);player.anim.baseY=p.y;
+  // --- jump physics ---
+  if(keys[' ']&&!jumping)tryJump();
+  if(jumping){jumpV-=24*dt;jumpY+=jumpV*dt;
+    if(jumpY<=0){jumpY=0;jumping=false;tone(220,.07,'sine',.05);}}
+  // --- solid structures: bonk & tumble! (a high jump clears small bushes) ---
+  for(const c of COLLIDERS){
+    if(jumpY>1.1&&c.r<1.5)continue;
+    const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz);
+    if(d<c.r+0.55){const nx=dx/(d||1),nz=dz/(d||1);
+      p.x=c.x+nx*(c.r+0.6);p.z=c.z+nz*(c.r+0.6);
+      if(m>0.15)knockdown(nx,nz);
+      break;}}
+  // --- soft bump against tubbies (gentle push, giggle) ---
+  for(const id in tubbies){const t=tubbies[id];if(t.busy||!t.group.visible)continue;
+    const tp2=t.group.position;const dx=p.x-tp2.x,dz=p.z-tp2.z,d=Math.hypot(dx,dz);
+    if(d<1.8&&d>0.01){p.x=tp2.x+dx/d*1.8;p.z=tp2.z+dz/d*1.8;}}
+  p.y=terrainH(p.x,p.z)+jumpY;player.anim.baseY=p.y;
   animEllie(player,time,dt,m>0.15);
+  if(duck){player.anim.inner.scale.y*=0.55;player.anim.inner.scale.x*=1.18;player.anim.inner.scale.z*=1.18;}
   // seeds pickup
   for(let i=seeds.length-1;i>=0;i--){const s=seeds[i];
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
@@ -802,7 +1076,8 @@ function updateRoam(dt,time){
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
   // nearest interactive
   let best=null,bd=4.2;
-  for(const id in tubbies){const t=tubbies[id].group.position;
+  for(const id in tubbies){if(tubbies[id].busy)continue;
+    const t=tubbies[id].group.position;
     const d=Math.hypot(p.x-t.x,p.z-t.z);if(d<bd){bd=d;best={kind:'tubby',id};}}
   {const d=Math.hypot(p.x-POI.dome[0],p.z-POI.dome[1]);
    if(d<7&&(!best||d<bd))best={kind:'dome'};}
@@ -825,9 +1100,12 @@ $('actBtn').onclick=()=>{sfx.tap();
 
 /* ============================ GAME FLOW ================================== */
 function enterScene(){mode='scene';$('actBtn').classList.remove('show');
-  $('stick').classList.add('hidden');$('moves').classList.remove('show');}
+  $('stick').classList.add('hidden');$('jumpCol').classList.add('hidden');
+  $('funRow').classList.add('hidden');$('moves').classList.remove('show');
+  duck=false;jumping=false;jumpY=0;kd=null;player.group.rotation.x=0;}
 function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
-  $('stick').classList.remove('hidden');nearThing=null;updateActBtn();}
+  $('stick').classList.remove('hidden');$('jumpCol').classList.remove('hidden');
+  $('funRow').classList.remove('hidden');nearThing=null;updateActBtn();}
 
 async function giveStar(id,tub){
   const first=!S.today.stars[id];
@@ -1087,7 +1365,8 @@ $('bookClose').onclick=()=>{sfx.tap();$('book').classList.remove('show');};
 let finaleStart=0;
 async function showFinale(){
   mode='finale';clearChoices();clearNarr();
-  $('stick').classList.add('hidden');$('actBtn').classList.remove('show');$('moves').classList.remove('show');
+  $('stick').classList.add('hidden');$('jumpCol').classList.add('hidden');
+  $('funRow').classList.add('hidden');$('actBtn').classList.remove('show');$('moves').classList.remove('show');
   finaleStart=performance.now();freeCam();sfx.win();
   // all tubbies gather round for a goodnight bounce
   const p=player.group.position;
@@ -1110,6 +1389,7 @@ $('newDay').onclick=()=>{
   for(const id in tubbies){const [x,z]=TUBBY_POS[id];
     tubbies[id].group.position.set(x,terrainH(x,z),z);tubbies[id].group.rotation.y=0;}
   spawnSeeds();refreshMarks();mode='roam';$('stick').classList.remove('hidden');
+  $('jumpCol').classList.remove('hidden');$('funRow').classList.remove('hidden');
   say('☀️',`Good morning! Day ${S.day} in Trunkland! ${todayStories().length} new stories and fresh sparkles await!`);
 };
 
@@ -1136,6 +1416,14 @@ function frame(now){
       g.scale.setScalar(Math.max(0.01,k*over));}
     if(g.userData.wob){g.userData.wob=Math.max(0,g.userData.wob-dt*2);
       g.rotation.z=Math.sin(g.userData.wob*20)*0.12*g.userData.wob;}});
+  // tweened fx
+  for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.t+=dt;
+    const k=Math.min(1,f.t/f.dur);
+    try{f.fn(k);}catch(e){}
+    if(k>=1){fx.splice(i,1);f.res();}}
+  // mischief timer (roam only)
+  if(mode==='roam'){mischiefT-=dt;
+    if(mischiefT<=0){mischiefT=15+Math.random()*18;runMischief();}}
   // bursts
   for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t+=dt;
     const pos=b.pts.geometry.attributes.position;
@@ -1187,6 +1475,17 @@ $('soundBtn').onclick=()=>{S.muted=!S.muted;save();
 $('voiceBtn').classList.toggle('off',!S.voice);
 $('voiceBtn').onclick=()=>{S.voice=!S.voice;save();$('voiceBtn').classList.toggle('off',!S.voice);
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+// jump / duck / fun buttons
+$('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();tryJump();});
+$('duckBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();duck=true;});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>
+  $('duckBtn').addEventListener(ev,()=>{duck=false;}));
+addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
+addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
+$('trumpBtn').onclick=()=>{ac();actTrumpet();};
+$('sprayBtn').onclick=()=>{ac();actSpray();};
+$('danceBtn').onclick=()=>{ac();actDance();};
+
 document.querySelectorAll('.speed').forEach(b=>{
   b.classList.toggle('sel',b.dataset.sp===S.speed);
   b.onclick=()=>{S.speed=b.dataset.sp;save();sfx.tap();
@@ -1196,7 +1495,9 @@ document.querySelectorAll('.speed').forEach(b=>{
 window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)t.onTap(t);},
   get state(){return {mode,stars:starCount(),sparks:S.sparks,day:S.day};},info:{},
   dir(id){const t=id==='dome'?{x:POI.dome[0],z:POI.dome[1]}:tubbies[id].group.position;
-    const p=player.group.position;return {x:t.x-p.x,z:t.z-p.z,d:Math.hypot(t.x-p.x,t.z-p.z)};}};
+    const p=player.group.position;return {x:t.x-p.x,z:t.z-p.z,d:Math.hypot(t.x-p.x,t.z-p.z)};},
+  mischief:runMischief,jump:tryJump,
+  get phys(){return {kd:!!kd,jumpY,duck,rotX:player.group.rotation.x};}};
 
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();refreshStickers();
