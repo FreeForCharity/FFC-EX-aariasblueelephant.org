@@ -218,15 +218,17 @@ const $=id=>document.getElementById(id);
 const SPEED={relaxed:1.7, normal:1.0, fast:0.62};       // multiplies every wait
 
 /* ========================== CONTENT (EXPAND ME!) ========================= */
+/* Four blue elephant friends of Aaria's Blue Elephant. (Internal keys kept as
+   tinko/minty/sunny/rosy so all the scenario wiring stays intact.) */
 const TUBBIES={
-  tinko:{name:'Tinko', body:'#a78bfa', dark:'#7c5ce0', antenna:'triangle', antCol:'#ffd447',
-    zone:'Dance Meadow', likes:'dancing', game:'dance', hello:'Tinko loves to dance! Copy my moves?'},
-  minty:{name:'Minty', body:'#6dd47e', dark:'#3fa35b', antenna:'circle', antCol:'#ff8fb1',
-    zone:'Feelings Garden', likes:'feelings', game:'feelings', hello:'Minty\'s Tummy-TV shows feelings! Can you guess them?'},
-  sunny:{name:'Sunny', body:'#ffd94d', dark:'#e0a92e', antenna:'squiggle', antCol:'#7ec7ef',
-    zone:'Custard Kitchen', likes:'cooking', game:'kitchen', hello:'Sunny is cooking! Help me do the steps in order?'},
-  rosy:{name:'Rosy', body:'#ff8fb1', dark:'#e06a92', antenna:'star', antCol:'#b8ffdd',
-    zone:'Hide-y Hills', likes:'hide & seek', game:'hide', hello:'Rosy loves hide and seek! Come find me?'},
+  tinko:{name:'Bluebo', body:'#2f57cf', dark:'#1e3aa0', antenna:'circle', antCol:'#FFD447',
+    zone:'Bounce Meadow', likes:'dancing', game:'dance', hello:'Bluebo the leader loves to bounce! Copy my moves?'},
+  minty:{name:'Lulla', body:'#b8a4ff', dark:'#8f79e0', antenna:'squiggle', antCol:'#ff8fb1',
+    zone:'Feelings Garden', likes:'feelings', game:'feelings', hello:'Lulla\'s Tummy-TV shows feelings! Can you guess them?'},
+  sunny:{name:'Pebbo', body:'#5cc98a', dark:'#3fa368', antenna:'triangle', antCol:'#9BE7C4',
+    zone:'Tidy Kitchen', likes:'tidying', game:'kitchen', hello:'Pebbo keeps things tidy! Help me do the steps in order?'},
+  rosy:{name:'Skydah', body:'#f5c542', dark:'#d9a52e', antenna:'star', antCol:'#ffe68a',
+    zone:'Dreamy Hills', likes:'hide & seek', game:'hide', hello:'Skydah the dreamer loves hide and seek! Come find me?'},
 };
 const BELU={name:'Belu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
 
@@ -419,11 +421,13 @@ function bannerSprite(text,fg='#3a3a5a',scale=1){
 /* ============================ ELEPHANT TUBBY ============================= */
 function makeEllie(cfg,scaleAll=1){
   const g=new T.Group();
+  // pyjama = the character colour (a onesie); skin = the blue elephant underneath
   const body=matStd(cfg.body,0.7),dark=matStd(cfg.dark||cfg.body,0.7);
+  const skin=matStd(cfg.skin||'#7db0e8',0.72),skinD=matStd(cfg.skinD||'#5b8fc9',0.72);
   const anim={ears:[],legs:[],baseY:0,bounce:0,move:null,moveT:0};
   const legGeo=new T.CylinderGeometry(0.26,0.3,0.7,12);
   [[-0.42,-0.5],[0.42,-0.5],[-0.42,0.55],[0.42,0.55]].forEach(([lx,lz])=>{
-    const leg=new T.Mesh(legGeo,dark);leg.castShadow=true;
+    const leg=new T.Mesh(legGeo,dark);leg.castShadow=true;   // pyjama legs
     const pivot=new T.Group();pivot.position.set(lx,0.7,lz);
     leg.position.set(0,-0.35,0);pivot.add(leg);g.add(pivot);anim.legs.push({pivot,lz});});
   const inner=new T.Group();g.add(inner);anim.inner=inner;   // squash+stretch target
@@ -444,13 +448,13 @@ function makeEllie(cfg,scaleAll=1){
   anim.tv=tv;
   // head
   const head=new T.Group();head.position.set(0,2.55,-0.1);inner.add(head);anim.head=head;
-  const skull=new T.Mesh(new T.SphereGeometry(0.95,24,20),body);skull.castShadow=true;head.add(skull);
+  const skull=new T.Mesh(new T.SphereGeometry(0.95,24,20),skin);skull.castShadow=true;head.add(skull);
   const earGeo=new T.SphereGeometry(0.55,18,14);
-  [-1,1].forEach(sx=>{const ear=new T.Mesh(earGeo,body);ear.scale.set(0.55,1,0.28);
+  [-1,1].forEach(sx=>{const ear=new T.Mesh(earGeo,skin);ear.scale.set(0.55,1,0.28);
     ear.position.set(sx*0.95,0.05,0.15);ear.castShadow=true;head.add(ear);anim.ears.push({ear,sx});
-    const ein=new T.Mesh(earGeo,dark);ein.scale.set(0.34,0.66,0.18);ein.position.set(sx*1.02,0.05,0.02);head.add(ein);});
+    const ein=new T.Mesh(earGeo,skinD);ein.scale.set(0.34,0.66,0.18);ein.position.set(sx*1.02,0.05,0.02);head.add(ein);});
   const curve=new T.QuadraticBezierCurve3(new T.Vector3(0,-0.2,-0.85),new T.Vector3(0,-0.9,-1.25),new T.Vector3(0.05,-1.15,-0.85));
-  const trunk=new T.Mesh(new T.TubeGeometry(curve,16,0.22,10,false),body);trunk.castShadow=true;head.add(trunk);
+  const trunk=new T.Mesh(new T.TubeGeometry(curve,16,0.22,10,false),skin);trunk.castShadow=true;head.add(trunk);
   const eyeW=new T.MeshStandardMaterial({color:0xffffff,roughness:.4});
   const eyeD=new T.MeshStandardMaterial({color:0x20305e,roughness:.3});
   [-1,1].forEach(sx=>{
@@ -460,14 +464,27 @@ function makeEllie(cfg,scaleAll=1){
   const cheekMat=new T.MeshStandardMaterial({color:0xff8fb1,roughness:.8,transparent:true,opacity:.7});
   [-1,1].forEach(sx=>{const ch=new T.Mesh(new T.SphereGeometry(0.16,12,10),cheekMat);
     ch.scale.set(1,0.7,0.4);ch.position.set(sx*0.62,-0.1,-0.78);head.add(ch);});
-  const stalk=new T.Mesh(new T.CylinderGeometry(0.04,0.04,0.7,8),eyeD);stalk.position.set(0,1.25,0.05);head.add(stalk);
-  const antMat=matStd(cfg.antCol,0.5);antMat.emissive=new T.Color(cfg.antCol);antMat.emissiveIntensity=0.3;
+  // iconic Teletubby antenna on a thin stalk (ring / triangle / curl / star)
+  const stalk=new T.Mesh(new T.CylinderGeometry(0.045,0.05,0.72,8),skinD);stalk.position.set(0,1.25,0.05);head.add(stalk);
+  const antMat=matStd(cfg.antCol,0.45);antMat.emissive=new T.Color(cfg.antCol);antMat.emissiveIntensity=0.28;
+  const EX={depth:0.07,bevelEnabled:true,bevelThickness:0.02,bevelSize:0.02,bevelSegments:1};
   let tip;
-  if(cfg.antenna==='star')tip=new T.Mesh(new T.OctahedronGeometry(0.22,0),antMat);
-  else if(cfg.antenna==='triangle')tip=new T.Mesh(new T.ConeGeometry(0.22,0.34,4),antMat);
-  else if(cfg.antenna==='squiggle')tip=new T.Mesh(new T.TorusGeometry(0.16,0.07,10,18),antMat);
-  else tip=new T.Mesh(new T.SphereGeometry(0.2,16,14),antMat);
-  tip.position.set(0,1.72,0.05);tip.castShadow=true;head.add(tip);anim.tip=tip;
+  if(cfg.antenna==='triangle'){                                   // Tinky-Winky triangle outline
+    const s=new T.Shape();s.moveTo(0,0.3);s.lineTo(0.27,-0.2);s.lineTo(-0.27,-0.2);s.closePath();
+    const hole=new T.Path();hole.moveTo(0,0.12);hole.lineTo(0.12,-0.1);hole.lineTo(-0.12,-0.1);hole.closePath();s.holes.push(hole);
+    tip=new T.Mesh(new T.ExtrudeGeometry(s,EX),antMat);tip.geometry.center();
+  }else if(cfg.antenna==='star'){                                 // 5-point star
+    const s=new T.Shape();for(let i=0;i<10;i++){const r=i%2?0.11:0.27,a=Math.PI/5*i-Math.PI/2;
+      const x=Math.cos(a)*r,y=Math.sin(a)*r;i?s.lineTo(x,y):s.moveTo(x,y);}s.closePath();
+    tip=new T.Mesh(new T.ExtrudeGeometry(s,EX),antMat);tip.geometry.center();
+  }else if(cfg.antenna==='squiggle'){                             // Laa-Laa curly swirl
+    const pts=[];for(let i=0;i<=26;i++){const t=i/26,a=t*Math.PI*3.2,r=0.19*(1-t*0.45);
+      pts.push(new T.Vector3(Math.cos(a)*r,t*0.5,Math.sin(a)*r));}
+    tip=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),34,0.05,8),antMat);
+  }else{                                                          // Po ring
+    tip=new T.Mesh(new T.TorusGeometry(0.2,0.055,12,26),antMat);
+  }
+  tip.position.set(0,1.78,0.05);tip.castShadow=true;head.add(tip);anim.tip=tip;
   g.scale.setScalar(scaleAll);
   return {group:g,anim,cfg};
 }
@@ -529,13 +546,13 @@ function addProp(kind,x,z,ry=0){
       const bulb=new T.Mesh(new T.SphereGeometry(0.22,10,8),matStd(i%2?'#ffd447':'#ff8fb1',.4));
       bulb.material.emissive=new T.Color(i%2?'#ffd447':'#ff8fb1');bulb.material.emissiveIntensity=.5;
       bulb.position.set(Math.cos(a)*4.7,0.55,Math.sin(a)*4.7);g.add(bulb);}
-    const b=bannerSprite('Dance Meadow','#7c5ce0');b.position.y=6;g.add(b);
+    const b=bannerSprite('Bounce Meadow','#1e3aa0');b.position.y=6;g.add(b);
   }else if(kind==='garden'){                                   // Minty's feelings garden
     const arch=new T.Mesh(new T.TorusGeometry(2.6,0.3,12,28,Math.PI),matStd('#6dd47e',.6));
     arch.position.y=0.1;g.add(arch);
     [['😊',-3,1],['😢',3,1],['😌',0,-3]].forEach(([e,fx,fz])=>{
       const s=emojiSprite(e,1.2);s.position.set(fx,1.1,fz);g.add(s);spinners.push({mesh:s,bob:true});});
-    const b=bannerSprite('Feelings Garden','#3fa35b');b.position.y=5.6;g.add(b);
+    const b=bannerSprite('Feelings Garden','#8f79e0');b.position.y=5.6;g.add(b);
   }else if(kind==='kitchen'){                                  // Sunny's kitchen
     const table=new T.Mesh(new T.BoxGeometry(6.4,0.4,2.4),matStd('#e8b04a',.8));
     table.position.y=1.4;table.castShadow=true;g.add(table);
@@ -545,7 +562,7 @@ function addProp(kind,x,z,ry=0){
     pot.position.set(0,2.1,0);pot.castShadow=true;g.add(pot);g.userData.pot=pot;
     const roofPole=new T.Mesh(new T.CylinderGeometry(0.12,0.12,3.4,8),matStd('#c98a2e'));roofPole.position.set(0,1.7,1.6);g.add(roofPole);
     const roof=new T.Mesh(new T.ConeGeometry(4,1.4,6),matStd('#ffd94d',.7));roof.position.set(0,4,0.4);roof.castShadow=true;g.add(roof);
-    const b=bannerSprite('Custard Kitchen','#e0a92e');b.position.y=5.8;g.add(b);
+    const b=bannerSprite('Tidy Kitchen','#3fa368');b.position.y=5.8;g.add(b);
   }else if(kind==='hills'){                                    // Rosy's hide-y hills
     g.userData.bushes=[];
     [[-4,1],[-1.4,-2.5],[1.6,1.6],[4.4,-1]].forEach(([bx,bz],i)=>{
@@ -554,7 +571,7 @@ function addProp(kind,x,z,ry=0){
       s1.position.y=1.1;s1.scale.set(1.25,1,1.1);s1.castShadow=true;bush.add(s1);
       const s2=new T.Mesh(new T.SphereGeometry(0.9,12,10),matStd('#5cb356',.9));s2.position.set(0.9,1.7,0.2);bush.add(s2);
       g.add(bush);g.userData.bushes.push(bush);});
-    const b=bannerSprite('Hide-y Hills','#e06a92');b.position.y=5.6;g.add(b);
+    const b=bannerSprite('Dreamy Hills','#d9a52e');b.position.y=5.6;g.add(b);
   }else if(kind==='arch'){
     const arch=new T.Mesh(new T.TorusGeometry(3,0.35,12,30,Math.PI),matStd('#ff8fb1',.6));
     arch.position.y=0.1;g.add(arch);
@@ -626,7 +643,7 @@ for(const id in TUBBIES){
   const t=makeEllie(TUBBIES[id]);
   const [x,z]=TUBBY_POS[id];
   t.group.position.set(x,terrainH(x,z),z);
-  t.anim.tv(['💜','💚','💛','💗'][Object.keys(TUBBIES).indexOf(id)]);
+  t.anim.tv(['💗','🌈','🧩','⭐'][Object.keys(TUBBIES).indexOf(id)]);   // Bluebo/Lulla/Pebbo/Skydah
   scene.add(t.group);tubbies[id]=t;
   const nb=bannerSprite(TUBBIES[id].name,TUBBIES[id].dark,0.8);nb.position.y=4.6;t.group.add(nb);
   t.mark=emojiSprite('⭐',1.3);t.mark.position.y=5.6;t.group.add(t.mark);
