@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Elly-Tubbies 🐘 — Aaria's Blue Elephant</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐘</text></svg>" />
+<style>
+  :root{--belu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#7cc4ff;
+    font-family:'Baloo 2','Comic Sans MS','Chalkboard SE','Segoe UI',system-ui,sans-serif;
+    color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;}
+  canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .hidden{display:none!important;}
+
+  /* ---------- HUD ---------- */
+  #topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:8;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none;}
+  .chip{background:rgba(255,255,255,.92);border-radius:22px;padding:7px 13px;
+    box-shadow:0 4px 14px rgba(58,58,90,.18);font-weight:800;font-size:clamp(13px,3.6vw,17px);
+    display:flex;align-items:center;gap:6px;}
+  #menu{display:flex;gap:6px;pointer-events:auto;}
+  .mbtn{pointer-events:auto;cursor:pointer;border:none;background:rgba(255,255,255,.92);
+    border-radius:18px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
+    color:var(--ink);box-shadow:0 4px 12px rgba(58,58,90,.18);line-height:1;}
+  .mbtn:active{transform:scale(.94);}
+  .mbtn.off{opacity:.45;}
+  #speedRow{position:absolute;top:max(64px,calc(env(safe-area-inset-top) + 54px));right:10px;
+    display:flex;flex-direction:column;gap:6px;pointer-events:auto;z-index:8;}
+  .speed{cursor:pointer;border:none;background:rgba(255,255,255,.85);border-radius:18px;
+    padding:6px 12px;font-weight:800;font-size:clamp(11px,3vw,14px);color:var(--ink);
+    box-shadow:0 3px 10px rgba(58,58,90,.16);opacity:.55;transition:.2s;}
+  .speed.sel{opacity:1;background:var(--sun);transform:scale(1.06);}
+
+  /* ---------- joystick ---------- */
+  #stick{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:9;
+    width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.28);
+    border:3px solid rgba(255,255,255,.55);backdrop-filter:blur(2px);touch-action:none;}
+  #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;
+    background:rgba(255,255,255,.92);box-shadow:0 4px 12px rgba(58,58,90,.3);
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:26px;}
+
+  /* ---------- context action button ---------- */
+  #actBtn{position:absolute;right:18px;bottom:max(26px,calc(env(safe-area-inset-bottom) + 8px));z-index:9;
+    display:none;cursor:pointer;border:none;background:var(--belu);color:#fff;font-weight:900;
+    font-size:clamp(17px,4.8vw,22px);border-radius:28px;padding:16px 26px;
+    box-shadow:0 7px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);animation:bob 1.3s ease-in-out infinite;
+    font-family:inherit;}
+  #actBtn.show{display:block;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  /* ---------- narration bubble (bottom-center, never blocks the world) ---------- */
+  #narr{position:absolute;left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom)+4px));transform:translateX(-50%);
+    z-index:12;width:min(620px,92vw);display:none;pointer-events:auto;}
+  #narr.show{display:block;animation:pop .3s ease;}
+  @keyframes pop{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+  #narrCard{background:rgba(255,255,255,.96);border-radius:24px;padding:14px 18px;
+    box-shadow:0 12px 34px rgba(58,58,90,.3);display:flex;gap:12px;align-items:center;}
+  #narrWho{font-size:clamp(30px,9vw,44px);flex:0 0 auto;}
+  #narrTxt{font-weight:800;font-size:clamp(15px,4.4vw,20px);line-height:1.35;flex:1;text-align:left;}
+  #narrNext{flex:0 0 auto;cursor:pointer;border:none;background:var(--sun);border-radius:50%;
+    width:52px;height:52px;font-size:24px;box-shadow:0 4px 0 #d9a800;font-weight:900;}
+  #narrNext:active{transform:translateY(3px);box-shadow:0 1px 0 #d9a800;}
+
+  /* ---------- dance move buttons ---------- */
+  #moves{position:absolute;left:50%;bottom:max(108px,calc(env(safe-area-inset-bottom)+92px));transform:translateX(-50%);
+    z-index:11;display:none;gap:12px;}
+  #moves.show{display:flex;}
+  .mv{cursor:pointer;border:none;border-radius:24px;width:clamp(64px,17vw,86px);height:clamp(64px,17vw,86px);
+    background:rgba(255,255,255,.95);box-shadow:0 6px 0 #cfd6ee,0 10px 20px rgba(58,58,90,.25);
+    font-size:clamp(30px,8vw,42px);transition:.1s;}
+  .mv:active{transform:translateY(4px);box-shadow:0 2px 0 #cfd6ee;}
+
+  /* ---------- overlays (intro / book / finale only) ---------- */
+  .overlay{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+    padding:16px;pointer-events:auto;background:rgba(40,60,120,.25);}
+  .overlay.show{display:flex;animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .panel{background:rgba(255,255,255,.97);border-radius:30px;max-width:620px;width:100%;
+    padding:22px;box-shadow:0 20px 60px rgba(58,58,90,.35);text-align:center;max-height:92vh;overflow:auto;}
+  .panel h1{font-size:clamp(26px,7.5vw,42px);margin:.1em 0;color:var(--belu);}
+  .panel p{font-size:clamp(15px,4.3vw,19px);line-height:1.45;margin:.45em 0;}
+  .big{cursor:pointer;border:none;border-radius:24px;padding:15px 28px;margin:8px 5px 2px;
+    font-size:clamp(17px,4.8vw,23px);font-weight:900;color:#fff;background:var(--belu);
+    box-shadow:0 8px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);transition:.12s;font-family:inherit;}
+  .big:active{transform:translateY(4px);box-shadow:0 4px 0 #1a4bbf;}
+  .tubRow{display:flex;justify-content:center;gap:8px;margin:8px 0;flex-wrap:wrap;}
+  .tub{display:flex;flex-direction:column;align-items:center;font-weight:800;font-size:13px;}
+  .tub .dot{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.12),0 4px 10px rgba(58,58,90,.2);margin-bottom:3px;}
+
+  /* sticker book */
+  #bookGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;margin:10px 0;}
+  .stk{background:#f2f5ff;border-radius:18px;padding:10px 6px;font-weight:800;font-size:12px;text-align:center;}
+  .stk .ico{font-size:30px;}
+  .stk.locked{opacity:.35;filter:grayscale(1);}
+  .stk button{margin-top:4px;cursor:pointer;border:none;border-radius:12px;background:var(--sun);
+    font-weight:900;padding:4px 10px;font-family:inherit;font-size:12px;box-shadow:0 3px 0 #d9a800;}
+  .stk .own{color:#2f9e44;font-weight:900;}
+
+  #loading{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:14px;background:linear-gradient(160deg,#6cbcff,#9fd4ff,#d6f0ff);color:#fff;}
+  #loading .lbl{font-weight:900;font-size:clamp(20px,6vw,30px);text-shadow:0 3px 10px rgba(58,58,90,.3);}
+  #loading .ele{font-size:clamp(52px,16vw,90px);animation:bob 1.2s ease-in-out infinite;}
+</style>
+</head>
+<body>
+  <canvas id="cv"></canvas>
+  <div id="loading"><div class="ele">🐘</div><div class="lbl">Waking up Trunkland…</div></div>
+
+  <div id="topbar">
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+      <div class="chip">🌞 Day <span id="dayN">1</span></div>
+      <div class="chip">✨ <span id="sparkN">0</span></div>
+      <div class="chip">⭐ <span id="starN">0</span>/<span id="starGoal">5</span></div>
+    </div>
+    <div id="menu">
+      <button class="mbtn" id="bookBtn" title="Sticker garden">📖</button>
+      <button class="mbtn" id="voiceBtn" title="Read aloud">🗣️</button>
+      <button class="mbtn" id="soundBtn" title="Sound">🔊</button>
+      <button class="mbtn" id="helpBtn" title="How to play">❔</button>
+    </div>
+  </div>
+  <div id="speedRow">
+    <button class="speed" data-sp="relaxed">🐢</button>
+    <button class="speed sel" data-sp="normal">🐇</button>
+    <button class="speed" data-sp="fast">🚀</button>
+  </div>
+
+  <div id="stick"><div id="knob">🐘</div></div>
+  <button id="actBtn">Play! 💜</button>
+
+  <div id="moves"></div>
+
+  <div id="narr"><div id="narrCard">
+    <div id="narrWho">☀️</div><div id="narrTxt"></div><button id="narrNext">▶</button>
+  </div></div>
+
+  <!-- Intro -->
+  <div class="overlay" id="intro"><div class="panel">
+    <h1>Elly-Tubbies</h1>
+    <p>Over the hills and far away, in sunny <b>Trunkland</b>, live four bouncy elephant friends with magic <b>Tummy-TVs</b>:</p>
+    <div class="tubRow">
+      <div class="tub"><div class="dot" style="background:#a78bfa">📺</div>Tinko</div>
+      <div class="tub"><div class="dot" style="background:#6dd47e">📺</div>Minty</div>
+      <div class="tub"><div class="dot" style="background:#ffd94d">📺</div>Sunny</div>
+      <div class="tub"><div class="dot" style="background:#ff8fb1">📺</div>Rosy</div>
+    </div>
+    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), collect <b>✨ sparkle seeds</b>, and play with every friend to earn <b>⭐ stars</b>.</p>
+    <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
+    <button class="big" id="startBtn">Let's Play! ▶</button>
+  </div></div>
+
+  <!-- Sticker garden book -->
+  <div class="overlay" id="book"><div class="panel">
+    <h1>🌸 Sticker Garden</h1>
+    <p>Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.</p>
+    <div class="chip" style="display:inline-flex">✨ <span id="sparkN2">0</span></div>
+    <div id="bookGrid"></div>
+    <button class="big" id="bookClose">Back to play ▶</button>
+  </div></div>
+
+  <!-- Finale -->
+  <div class="overlay" id="finale"><div class="panel" style="background:linear-gradient(160deg,#ffd7a8,#ffb4c6,#b8a4ff)">
+    <h1 style="color:#fff;text-shadow:0 3px 10px rgba(58,58,90,.35)">Goodnight, Trunkland 🌙</h1>
+    <p style="font-weight:800">You earned every star today! The tubbies hug you goodnight. 🤗</p>
+    <p>The Sun Baby yawns and slides behind the hills… stars bloom in the sky…</p>
+    <p style="font-weight:900">Tomorrow brings NEW sparkles, NEW games and NEW surprises! ☀️</p>
+    <button class="big" id="newDay">Start Day <span id="nextDayN">2</span> ☀️</button>
+  </div></div>
+
+<script src="lib/three.min.js"></script>
+<script>
+"use strict";
+/* ============================================================================
+   ELLY-TUBBIES — a free-roam 3D Trunkland for Aaria's Blue Elephant.
+   Everything is enacted IN the 3D world: choices are tappable characters and
+   bubbles, never quiz cards. All content lives in the data blocks below —
+   add more feelings / dances / recipes / stories / stickers any time and the
+   game grows. Days rotate content automatically so every day feels new.
+   ========================================================================== */
+
+const $=id=>document.getElementById(id);
+const SPEED={relaxed:1.7, normal:1.0, fast:0.62};       // multiplies every wait
+
+/* ========================== CONTENT (EXPAND ME!) ========================= */
+const TUBBIES={
+  tinko:{name:'Tinko', body:'#a78bfa', dark:'#7c5ce0', antenna:'triangle', antCol:'#ffd447',
+    zone:'Dance Meadow', likes:'dancing', game:'dance', hello:'Tinko loves to dance! Copy my moves?'},
+  minty:{name:'Minty', body:'#6dd47e', dark:'#3fa35b', antenna:'circle', antCol:'#ff8fb1',
+    zone:'Feelings Garden', likes:'feelings', game:'feelings', hello:'Minty\'s Tummy-TV shows feelings! Can you guess them?'},
+  sunny:{name:'Sunny', body:'#ffd94d', dark:'#e0a92e', antenna:'squiggle', antCol:'#7ec7ef',
+    zone:'Custard Kitchen', likes:'cooking', game:'kitchen', hello:'Sunny is cooking! Help me do the steps in order?'},
+  rosy:{name:'Rosy', body:'#ff8fb1', dark:'#e06a92', antenna:'star', antCol:'#b8ffdd',
+    zone:'Hide-y Hills', likes:'hide & seek', game:'hide', hello:'Rosy loves hide and seek! Come find me?'},
+};
+const BELU={name:'Belu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
+
+const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
+  {e:'😊',w:'Happy',   hint:'A big smile means happy!'},
+  {e:'😢',w:'Sad',     hint:'Tears mean sad. A hug helps!'},
+  {e:'😠',w:'Angry',   hint:'Frowny brows mean angry. Deep breaths help!'},
+  {e:'😨',w:'Scared',  hint:'Wide eyes mean scared. A grown-up can help!'},
+  {e:'😮',w:'Surprised',hint:'A big round mouth means surprised!'},
+  {e:'🥱',w:'Sleepy',  hint:'A yawn means sleepy. Time to rest!'},
+  {e:'🤪',w:'Silly',   hint:'A wiggly face means silly and playful!'},
+  {e:'🥳',w:'Proud',   hint:'A party face means proud — you did it!'},
+  {e:'😳',w:'Shy',     hint:'Pink cheeks can mean shy. That\'s okay!'},
+  {e:'😌',w:'Calm',    hint:'Soft eyes and a little smile mean calm.'},
+];
+const MOVES=[      // Tinko's dance moves (each has a 3D animation)
+  {k:'jump', e:'🦘', w:'Jump'},
+  {k:'spin', e:'🌀', w:'Spin'},
+  {k:'wave', e:'👋', w:'Wave'},
+  {k:'stomp',e:'🦶', w:'Stomp'},
+];
+const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
+  {name:'Tubby Custard', steps:[{e:'🧼',w:'Wash hands'},{e:'🥣',w:'Get the bowl'},{e:'🥛',w:'Pour the milk'},{e:'🥄',w:'Stir it round'},{e:'💞',w:'Share with friends'}]},
+  {name:'Fruit Salad', steps:[{e:'🧼',w:'Wash hands'},{e:'🍎',w:'Wash the fruit'},{e:'🔪',w:'Grown-up cuts'},{e:'🥗',w:'Mix it up'},{e:'💞',w:'Share with friends'}]},
+  {name:'Bedtime', steps:[{e:'🛁',w:'Warm bath'},{e:'🪥',w:'Brush teeth'},{e:'📖',w:'Story time'},{e:'🤗',w:'Big hug'},{e:'😴',w:'Sleep tight'}]},
+  {name:'Morning Time', steps:[{e:'⏰',w:'Wake up'},{e:'🚽',w:'Go potty'},{e:'🪥',w:'Brush teeth'},{e:'🥣',w:'Eat breakfast'},{e:'🎒',w:'Ready to go'}]},
+  {name:'Tidy Up', steps:[{e:'🧸',w:'Pick up toys'},{e:'📚',w:'Books on shelf'},{e:'🧺',w:'Clothes in basket'},{e:'🧹',w:'Sweep sweep'},{e:'🌟',w:'All done!'}]},
+];
+/* Story scenes — enacted in 3D: each choice becomes a character/bubble standing
+   in the world. `s` = short label under the figure. 3 stories star each day. */
+const STORIES=[
+ {id:'doctor',tub:'minty',setup:'Belu\'s tummy hurts. Look — three helpers are here!',prompt:'Tap the DOCTOR who can help a sore tummy.',
+  choices:[{e:'🧑‍⚕️',s:'White coat',ok:1,fb:'Yes! A white coat and stethoscope means doctor. Well spotted!'},{e:'🍦',s:'Ice cream seller',fb:'Yummy, but ice cream can\'t fix tummies. Find the white coat!'},{e:'🚶‍🐕',s:'Dog walker',fb:'So kind, but not a doctor. Look for the stethoscope!'}]},
+ {id:'nurse',tub:'minty',setup:'Belu scraped a knee and needs a bandage.',prompt:'Tap the NURSE who can help.',
+  choices:[{e:'🧑‍⚕️',s:'Scrubs + badge',ok:1,fb:'Yes! Nurses wear scrubs and a name badge. They love to help!'},{e:'📬',s:'Mail carrier',fb:'They bring letters, not bandages. Find the scrubs!'},{e:'🎨',s:'Painter',fb:'They paint walls! A nurse wears scrubs. Look again!'}]},
+ {id:'firefighter',tub:'tinko',setup:'Smoke! Someone needs a brave helper at the fire station.',prompt:'Tap the FIREFIGHTER.',
+  choices:[{e:'🧑‍🚒',s:'Helmet + coat',ok:1,fb:'Yes! The big helmet and yellow coat keep firefighters safe!'},{e:'🧑‍🍳',s:'Chef',fb:'Chefs cook food! Firefighters wear a helmet. Try again!'},{e:'🤿',s:'Swimmer',fb:'Swimmers wear goggles. Look for the helmet!'}]},
+ {id:'police',tub:'rosy',setup:'Belu feels lost in Friendly Town and wants a safe helper.',prompt:'Tap the POLICE OFFICER who keeps people safe.',
+  choices:[{e:'👮',s:'Blue + badge',ok:1,fb:'Yes! Blue uniform and a shiny badge — a safe helper!'},{e:'🤹',s:'Juggler',fb:'Fun! But for safety, find the shiny badge.'},{e:'🎈',s:'Balloon seller',fb:'Balloons are lovely, but the officer has the badge!'}]},
+ {id:'nameplate',tub:'sunny',setup:'A sign at the help desk says: “HELP DESK — MISS ROSA”.',prompt:'Who do you ask for help?',
+  choices:[{e:'🪧',s:'Ask Miss Rosa',ok:1,fb:'Yes! The sign tells you Miss Rosa helps here. Reading signs is a superpower!'},{e:'🚶',s:'A far stranger',fb:'They\'re busy and far away. The sign says Miss Rosa!'},{e:'🤫',s:'Wait quietly',fb:'Waiting forever is tricky. The sign says ask Miss Rosa!'}]},
+ {id:'crossing',tub:'tinko',setup:'Belu needs to cross the street.',prompt:'What is the SAFE way to cross?',
+  choices:[{e:'🚦',s:'Stop, look, green',ok:1,fb:'Yes! Stop, look both ways, wait for green, then walk!'},{e:'🏃',s:'Run across',fb:'Running without looking is not safe. Stop and look first!'},{e:'🙈',s:'Eyes closed',fb:'Eyes stay open to stay safe! Stop, look, then go!'}]},
+ {id:'private',tub:'rosy',setup:'Someone Belu does not know asks where Belu lives.',prompt:'What should Belu say?',
+  choices:[{e:'🔒',s:'“No thank you” + tell grown-up',ok:1,fb:'Yes! Home and name are private. Tell a trusted grown-up!'},{e:'🏠',s:'Tell the address',fb:'Where you live is private — we keep it safe!'},{e:'📱',s:'Give phone number',fb:'Phone numbers are private too! Say no thank you.'}]},
+ {id:'friend',tub:'minty',setup:'A new bunny sits alone on the hill. Belu wants to play together.',prompt:'How do you make a new friend?',
+  choices:[{e:'👋',s:'Smile, say hi + name',ok:1,fb:'Yes! A friendly hi and your name is how friendship begins!'},{e:'🧸',s:'Grab their toy',fb:'Grabbing can upset a friend. Say hi and ask first!'},{e:'👀',s:'Stare quietly',fb:'Staring feels funny. A warm hi is friendlier!'}]},
+ {id:'words',tub:'sunny',setup:'Belu\'s shoe hurts, but nobody knows!',prompt:'How does Belu get help?',
+  choices:[{e:'🗣️',s:'“My shoe hurts, help?”',ok:1,fb:'Yes! Using your words lets people help you. Super talking!'},{e:'🤫',s:'Stay quiet',fb:'If we stay quiet, nobody knows. Use your words!'},{e:'👟',s:'Throw the shoe',fb:'Throwing doesn\'t explain. Words work best!'}]},
+ {id:'kind',tub:'tinko',setup:'Oh no — a friend dropped a basket and apples rolled everywhere!',prompt:'What is the KIND thing to do?',
+  choices:[{e:'🍎',s:'Help pick up',ok:1,fb:'Yes! Helping and asking “are you okay?” is so kind!'},{e:'😆',s:'Laugh, walk away',fb:'Laughing can hurt feelings. Helping is kinder!'},{e:'🤏',s:'Take one apple',fb:'Those are your friend\'s apples. Let\'s help instead!'}]},
+ {id:'wash',tub:'sunny',setup:'Lunch time! But Belu\'s hands are muddy from playing.',prompt:'What comes FIRST before eating?',
+  choices:[{e:'🧼',s:'Wash with soap',ok:1,fb:'Yes! Soap, water, scrub and dry — germs all gone!'},{e:'👕',s:'Wipe on shirt',fb:'Shirts don\'t wash away germs. Soap does!'},{e:'🍽️',s:'Just eat',fb:'Muddy hands carry germs. Wash first!'}]},
+ {id:'lost',tub:'rosy',setup:'Belu can\'t find a grown-up at the park and feels worried.',prompt:'What is a good thing to do?',
+  choices:[{e:'🙋',s:'Ask a park helper',ok:1,fb:'Yes! Stay put and tell a safe helper — they\'ll help you find your grown-up!'},{e:'🏃',s:'Run everywhere',fb:'Running can get you more lost. Ask a helper!'},{e:'🌳',s:'Hide behind tree',fb:'Hiding makes it hard to be found. Ask a helper!'}]},
+ {id:'turn',tub:'minty',setup:'One swing. Another kid is on it right now.',prompt:'What do you do while you wait?',
+  choices:[{e:'⏳',s:'Wait + deep breaths',ok:1,fb:'Yes! Waiting your turn is calm and kind. Your turn comes soon!'},{e:'😠',s:'Push them off',fb:'Pushing hurts. We wait our turn!'},{e:'😭',s:'Cry loudly',fb:'It\'s okay to feel impatient — calm waiting works best!'}]},
+ {id:'stranger',tub:'rosy',setup:'A grown-up Belu does NOT know says: “Come to my car for candy.”',prompt:'What is the SAFE thing to do?',
+  choices:[{e:'🚫',s:'Say NO + tell grown-up',ok:1,fb:'Yes! Never go with strangers. Say no and tell a safe grown-up. So brave!'},{e:'🍬',s:'Go get candy',fb:'We never go with strangers, even for candy!'},{e:'🤐',s:'Keep it secret',fb:'Never a secret! Safe grown-ups need to know.'}]},
+ {id:'calm',tub:'tinko',setup:'CRASH! Belu\'s block tower fell down. Belu feels a BIG mad feeling.',prompt:'What helps the mad feeling get smaller?',
+  choices:[{e:'🌬️',s:'Slow deep breaths',ok:1,fb:'Yes! Breathe in soft, breathe out kind — big feelings get smaller!'},{e:'🧱',s:'Throw the blocks',fb:'Throwing can hurt. Deep breaths help more!'},{e:'📢',s:'Yell at a friend',fb:'Yelling hurts feelings. Slow breaths help!'}]},
+];
+const STICKERS=[   // Sticker Garden — persistent world decorations
+  {id:'flowers', e:'🌸', name:'Flower Patch', cost:8,  at:[6,-6]},
+  {id:'bunny',   e:'🐇', name:'Bunny Friend', cost:12, at:[-7,-5]},
+  {id:'duck',    e:'🦆', name:'Pond Duck',    cost:12, at:[2,29]},
+  {id:'balloon', e:'🎈', name:'Balloon Tree', cost:16, at:[8,6]},
+  {id:'bfly',    e:'🦋', name:'Butterflies',  cost:16, at:[-9,7]},
+  {id:'seesaw',  e:'🛝', name:'Slide',        cost:20, at:[12,-2]},
+  {id:'rainbow', e:'🌈', name:'Big Rainbow',  cost:28, at:[0,14]},
+  {id:'crown',   e:'👑', name:'Belu\'s Crown',cost:35, at:null},   // wearable!
+];
+const SUN_CHEER=['You did it! Hooray!','I\'m so proud of you!','What a superstar!','That was kind and brave!','Wonderful try!','Yay! Amazing!'];
+const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm, kind one!','I\'m right here with you!'];
+
+/* ============================== SAVE STATE =============================== */
+const KEY='ellyTubbies.v3';
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,
+       stickers:{},                         // id -> true
+       today:{stars:{},seeds:{},stories:{}} // reset each day
+      };
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
+S.today=Object.assign({stars:{},seeds:{},stories:{}},S.today);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const STAR_GOAL=5;
+const starCount=()=>Object.keys(S.today.stars).length;
+function hud(){$('dayN').textContent=S.day;$('sparkN').textContent=S.sparks;
+  $('sparkN2').textContent=S.sparks;$('starN').textContent=starCount();$('starGoal').textContent=STAR_GOAL;}
+
+// deterministic per-day random (so each day's layout is fresh but stable)
+function dayRnd(salt){let s=(S.day*2654435761+salt*97+11)>>>0;
+  return()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
+
+/* ================================ AUDIO ================================== */
+let AC=null;const ac=()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return AC;};
+function tone(f,d,type='sine',v=.13,delay=0){if(S.muted)return;const a=ac();if(!a)return;const t=a.currentTime+delay;
+  const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(a.destination);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d+.02);}
+const sfx={tap(){tone(520,.09,'sine',.08);},
+  pop(){tone(660,.1,'triangle',.1);tone(990,.12,'sine',.06,.05);},
+  seed(){tone(880,.12,'triangle',.09);tone(1320,.2,'sine',.07,.05);},
+  good(){[523,659,784,1046].forEach((f,i)=>tone(f,.28,'sine',.12,i*.09));},
+  soft(){tone(300,.18,'sine',.09);tone(240,.22,'sine',.07,.08);},
+  star(){[880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'triangle',.09,i*.07));},
+  boing(){tone(180,.16,'sine',.14);tone(420,.22,'sine',.1,.06);},
+  win(){[523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,.4,'sine',.12,i*.12));}};
+
+// gentle read-aloud
+let voiceOK='speechSynthesis' in window;
+function speak(txt){if(!S.voice||!voiceOK||S.muted)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.replace(/[✨⭐🌈☀️🐘💙💜]/g,''));
+  u.rate=S.speed==='relaxed'?0.78:S.speed==='fast'?1.05:0.9;u.pitch=1.15;speechSynthesis.speak(u);}catch(e){}}
+
+/* ============================== 3D WORLD ================================= */
+const T=window.THREE;
+const canvas=$('cv');
+const renderer=new T.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.outputEncoding=T.sRGBEncoding;
+
+const scene=new T.Scene();
+const DAY_SKY=new T.Color('#8ecbff'),DAY_FOG=new T.Color('#bfe4ff');
+const SUNSET_SKY=new T.Color('#ffb680'),SUNSET_FOG=new T.Color('#e7a6c8');
+scene.background=DAY_SKY.clone();
+scene.fog=new T.Fog(DAY_FOG.clone(),46,140);
+
+const camera=new T.PerspectiveCamera(52,1,0.1,400);
+const hemi=new T.HemisphereLight(0xdff1ff,0x74c46a,0.7);scene.add(hemi);
+const sunLight=new T.DirectionalLight(0xfff3d6,0.95);
+sunLight.position.set(-14,26,-10);sunLight.castShadow=true;
+sunLight.shadow.mapSize.set(2048,2048);
+Object.assign(sunLight.shadow.camera,{near:1,far:90,left:-30,right:30,top:30,bottom:-30});
+sunLight.shadow.bias=-0.0004;scene.add(sunLight);scene.add(sunLight.target);
+const fillLight=new T.DirectionalLight(0xffffff,0.25);fillLight.position.set(10,12,16);scene.add(fillLight);
+
+const ISLAND=44;
+// points of interest — terrain flattens around each
+const POI={dome:[0,0], tinko:[24,-13], minty:[-25,-11], sunny:[19,19], rosy:[-19,21],
+           pond:[1,30], mill:[-33,5], arch:[32,4]};
+const FLAT=Object.values(POI);
+function terrainH(x,z){
+  let h=Math.sin(x*0.16)*0.9+Math.cos(z*0.14)*1.0+Math.sin((x+z)*0.07)*0.7;
+  let f=1;
+  for(const [fx,fz] of FLAT){const d=Math.hypot(x-fx,z-fz);f=Math.min(f,Math.max(0,(d-6.5)/5));}
+  const edge=Math.min(1,Math.max(0,(Math.hypot(x,z)-4)/10));
+  return h*f*edge;
+}
+let _seed=1337;function rnd(){_seed=(_seed*1103515245+12345)&0x7fffffff;return _seed/0x7fffffff;}
+const matStd=(c,r=0.75)=>new T.MeshStandardMaterial({color:new T.Color(c),roughness:r,metalness:0});
+
+(function ground(){
+  const geo=new T.CircleGeometry(ISLAND+26,110);geo.rotateX(-Math.PI/2);
+  // subdivided plane gives better hills:
+  const g2=new T.PlaneGeometry((ISLAND+26)*2,(ISLAND+26)*2,110,110);g2.rotateX(-Math.PI/2);
+  const pos=g2.attributes.position,col=[];
+  const cLow=new T.Color('#54ad45'),cHigh=new T.Color('#8ed46e');
+  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);
+    const y=terrainH(x,z);pos.setY(i,y);
+    const c=cLow.clone().lerp(cHigh,Math.min(1,(y+1)/2.6));col.push(c.r,c.g,c.b);}
+  g2.setAttribute('color',new T.Float32BufferAttribute(col,3));g2.computeVertexNormals();
+  const m=new T.Mesh(g2,new T.MeshStandardMaterial({vertexColors:true,roughness:1}));
+  m.receiveShadow=true;scene.add(m);
+  // soft blue "sea" ring far out
+  const sea=new T.Mesh(new T.RingGeometry(ISLAND+18,ISLAND+90,64),
+    new T.MeshStandardMaterial({color:'#57b9e8',roughness:.2}));
+  sea.rotation.x=-Math.PI/2;sea.position.y=-0.4;scene.add(sea);
+})();
+
+/* ---- sprite helpers ---- */
+function makeCanvasTex(draw,w=256,h=256){const c=document.createElement('canvas');c.width=w;c.height=h;
+  draw(c.getContext('2d'),w,h);const tx=new T.CanvasTexture(c);tx.anisotropy=4;tx.encoding=T.sRGBEncoding;return tx;}
+function emojiSprite(ch,scale=2){
+  const tex=makeCanvasTex((g,w,h)=>{g.clearRect(0,0,w,h);g.font='190px serif';g.textAlign='center';g.textBaseline='middle';g.fillText(ch,w/2,h/2+8);});
+  const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+  sp.scale.set(scale,scale,1);return sp;}
+function roundRectC(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function bannerSprite(text,fg='#3a3a5a',scale=1){
+  const w=512,h=128;
+  const tex=makeCanvasTex((g)=>{g.clearRect(0,0,w,h);
+    g.fillStyle='rgba(255,255,255,.95)';roundRectC(g,14,24,w-28,h-48,32);g.fill();
+    g.fillStyle=fg;let fs=52;g.font='bold '+fs+'px "Baloo 2",sans-serif';
+    while(g.measureText(text).width>w-70&&fs>22){fs-=3;g.font='bold '+fs+'px "Baloo 2",sans-serif';}
+    g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2);},w,h);
+  const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+  sp.scale.set(5.4*scale,1.35*scale,1);return sp;}
+
+/* ============================ ELEPHANT TUBBY ============================= */
+function makeEllie(cfg,scaleAll=1){
+  const g=new T.Group();
+  const body=matStd(cfg.body,0.7),dark=matStd(cfg.dark||cfg.body,0.7);
+  const anim={ears:[],legs:[],baseY:0,bounce:0,move:null,moveT:0};
+  const legGeo=new T.CylinderGeometry(0.26,0.3,0.7,12);
+  [[-0.42,-0.5],[0.42,-0.5],[-0.42,0.55],[0.42,0.55]].forEach(([lx,lz])=>{
+    const leg=new T.Mesh(legGeo,dark);leg.castShadow=true;
+    const pivot=new T.Group();pivot.position.set(lx,0.7,lz);
+    leg.position.set(0,-0.35,0);pivot.add(leg);g.add(pivot);anim.legs.push({pivot,lz});});
+  const inner=new T.Group();g.add(inner);anim.inner=inner;   // squash+stretch target
+  const belly=new T.Mesh(new T.SphereGeometry(1,24,20),body);
+  belly.scale.set(1.05,0.95,1.15);belly.position.y=1.35;belly.castShadow=true;inner.add(belly);
+  // ---- Tummy-TV (updatable canvas screen!) ----
+  const tvC=document.createElement('canvas');tvC.width=tvC.height=128;
+  const tvTex=new T.CanvasTexture(tvC);tvTex.encoding=T.sRGBEncoding;
+  function tv(ch){const gg=tvC.getContext('2d');gg.clearRect(0,0,128,128);
+    gg.fillStyle='#fff';roundRectC(gg,6,6,116,116,26);gg.fill();
+    gg.strokeStyle='rgba(0,0,0,.12)';gg.lineWidth=5;roundRectC(gg,6,6,116,116,26);gg.stroke();
+    if(ch){gg.font='78px serif';gg.textAlign='center';gg.textBaseline='middle';gg.fillText(ch,64,70);}
+    tvTex.needsUpdate=true;}
+  tv('');
+  const screen=new T.Mesh(new T.PlaneGeometry(0.95,0.95),
+    new T.MeshStandardMaterial({map:tvTex,transparent:true,roughness:.5,emissive:new T.Color('#666666'),emissiveMap:tvTex}));
+  screen.position.set(0,1.32,-1.06);screen.rotation.y=Math.PI;inner.add(screen);
+  anim.tv=tv;
+  // head
+  const head=new T.Group();head.position.set(0,2.55,-0.1);inner.add(head);anim.head=head;
+  const skull=new T.Mesh(new T.SphereGeometry(0.95,24,20),body);skull.castShadow=true;head.add(skull);
+  const earGeo=new T.SphereGeometry(0.55,18,14);
+  [-1,1].forEach(sx=>{const ear=new T.Mesh(earGeo,body);ear.scale.set(0.55,1,0.28);
+    ear.position.set(sx*0.95,0.05,0.15);ear.castShadow=true;head.add(ear);anim.ears.push({ear,sx});
+    const ein=new T.Mesh(earGeo,dark);ein.scale.set(0.34,0.66,0.18);ein.position.set(sx*1.02,0.05,0.02);head.add(ein);});
+  const curve=new T.QuadraticBezierCurve3(new T.Vector3(0,-0.2,-0.85),new T.Vector3(0,-0.9,-1.25),new T.Vector3(0.05,-1.15,-0.85));
+  const trunk=new T.Mesh(new T.TubeGeometry(curve,16,0.22,10,false),body);trunk.castShadow=true;head.add(trunk);
+  const eyeW=new T.MeshStandardMaterial({color:0xffffff,roughness:.4});
+  const eyeD=new T.MeshStandardMaterial({color:0x20305e,roughness:.3});
+  [-1,1].forEach(sx=>{
+    const w=new T.Mesh(new T.SphereGeometry(0.24,16,14),eyeW);w.position.set(sx*0.34,0.12,-0.82);head.add(w);
+    const p=new T.Mesh(new T.SphereGeometry(0.13,14,12),eyeD);p.position.set(sx*0.36,0.1,-0.98);head.add(p);
+    const sh=new T.Mesh(new T.SphereGeometry(0.045,8,8),eyeW);sh.position.set(sx*0.31,0.17,-1.04);head.add(sh);});
+  const cheekMat=new T.MeshStandardMaterial({color:0xff8fb1,roughness:.8,transparent:true,opacity:.7});
+  [-1,1].forEach(sx=>{const ch=new T.Mesh(new T.SphereGeometry(0.16,12,10),cheekMat);
+    ch.scale.set(1,0.7,0.4);ch.position.set(sx*0.62,-0.1,-0.78);head.add(ch);});
+  const stalk=new T.Mesh(new T.CylinderGeometry(0.04,0.04,0.7,8),eyeD);stalk.position.set(0,1.25,0.05);head.add(stalk);
+  const antMat=matStd(cfg.antCol,0.5);antMat.emissive=new T.Color(cfg.antCol);antMat.emissiveIntensity=0.3;
+  let tip;
+  if(cfg.antenna==='star')tip=new T.Mesh(new T.OctahedronGeometry(0.22,0),antMat);
+  else if(cfg.antenna==='triangle')tip=new T.Mesh(new T.ConeGeometry(0.22,0.34,4),antMat);
+  else if(cfg.antenna==='squiggle')tip=new T.Mesh(new T.TorusGeometry(0.16,0.07,10,18),antMat);
+  else tip=new T.Mesh(new T.SphereGeometry(0.2,16,14),antMat);
+  tip.position.set(0,1.72,0.05);tip.castShadow=true;head.add(tip);anim.tip=tip;
+  g.scale.setScalar(scaleAll);
+  return {group:g,anim,cfg};
+}
+/* per-frame tubby animation: bouncy idle / walk / special moves */
+function animEllie(e,time,dt,walking){
+  const a=e.anim;
+  // squash & stretch bounce (Teletubby wobble!)
+  const rate=walking?7:2.4;
+  const s=Math.sin(time*rate+(a.ph||(a.ph=rnd()*6)));
+  a.inner.scale.set(1-s*0.03,1+s*0.045,1-s*0.03);
+  a.head.rotation.z=Math.sin(time*2+((a.ph)||0))*0.05;
+  a.ears.forEach(({ear,sx})=>{ear.rotation.z=sx*(0.25+Math.sin(time*4+(a.ph||0))*(walking?0.3:0.12));});
+  a.legs.forEach((L,i)=>{L.pivot.rotation.x=walking?Math.sin(time*9+(i%2)*Math.PI)*0.55:0;});
+  if(a.tip)a.tip.rotation.y+=dt*2;
+  // one-shot moves (dance!)
+  if(a.move){a.moveT+=dt/a.moveDur;const t=Math.min(1,a.moveT),p=Math.sin(t*Math.PI);
+    if(a.move==='jump')e.group.position.y=a.baseY+p*1.6;
+    else if(a.move==='spin')a.inner.rotation.y=t*Math.PI*2;
+    else if(a.move==='wave')a.head.rotation.z=Math.sin(t*Math.PI*4)*0.3;
+    else if(a.move==='stomp'){a.inner.scale.y*=1-p*0.25;a.inner.scale.x*=1+p*0.18;e.group.position.y=a.baseY+(t>0.5?0:p*0.5);}
+    else if(a.move==='happy'){e.group.position.y=a.baseY+Math.abs(Math.sin(t*Math.PI*3))*1.1;a.inner.rotation.y=Math.sin(t*Math.PI*2)*0.4;}
+    else if(a.move==='sad'){a.head.rotation.x=p*0.4;}
+    if(t>=1){a.move=null;a.inner.rotation.y=0;a.head.rotation.x=0;e.group.position.y=a.baseY;}}
+}
+function doMove(e,k,dur=0.9){e.anim.move=k;e.anim.moveT=0;e.anim.moveDur=dur;e.anim.baseY=e.group.position.y;}
+
+/* ============================== WORLD PROPS ============================== */
+const spinners=[];
+function addProp(kind,x,z,ry=0){
+  const g=new T.Group();const y=terrainH(x,z);g.position.set(x,y,z);g.rotation.y=ry;scene.add(g);
+  const NAVY=matStd('#20305e',.6),WHITE=matStd('#f4f8ff',.9);
+  if(kind==='dome'){
+    const dome=new T.Mesh(new T.SphereGeometry(4.2,30,20,0,Math.PI*2,0,Math.PI/2),matStd('#3f86e8',.5));
+    dome.castShadow=true;g.add(dome);
+    const door=new T.Mesh(new T.CylinderGeometry(1,1,2.4,16,1,false,0,Math.PI),matStd('#1a4bbf'));
+    door.rotation.z=Math.PI/2;door.rotation.y=Math.PI/2;door.position.set(0,1.2,-4);g.add(door);
+    const ball=new T.Mesh(new T.SphereGeometry(0.4,16,12),matStd('#FFD447',.4));
+    ball.material.emissive=new T.Color('#FFD447');ball.material.emissiveIntensity=.35;ball.position.y=4.8;g.add(ball);
+    const b=bannerSprite('Trunk Dome');b.position.y=6.4;g.add(b);
+  }else if(kind==='mill'){
+    const tower=new T.Mesh(new T.CylinderGeometry(0.4,0.62,8,14),WHITE);tower.position.y=4;tower.castShadow=true;g.add(tower);
+    const hub=new T.Group();hub.position.set(0,7.6,-0.7);g.add(hub);
+    hub.add(new T.Mesh(new T.SphereGeometry(0.34,12,10),NAVY));
+    for(let i=0;i<3;i++){const blade=new T.Mesh(new T.BoxGeometry(0.55,3.8,0.12),WHITE);blade.position.y=1.9;
+      const arm=new T.Group();arm.rotation.z=i*Math.PI*2/3;arm.add(blade);hub.add(arm);}
+    spinners.push({mesh:hub,speed:0.8});
+  }else if(kind==='pond'){
+    const water=new T.Mesh(new T.CircleGeometry(4.4,32),
+      new T.MeshStandardMaterial({color:'#49b3c9',roughness:.15,metalness:.3,transparent:true,opacity:.85}));
+    water.rotation.x=-Math.PI/2;water.position.y=0.05;g.add(water);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+      const reed=new T.Mesh(new T.CylinderGeometry(0.05,0.09,1+rnd(),6),matStd('#5ea15a'));
+      reed.position.set(Math.cos(a)*4.4,0.5,Math.sin(a)*4.4);g.add(reed);}
+    const lily=emojiSprite('🪷',1);lily.position.set(1.3,0.35,0.8);g.add(lily);
+  }else if(kind==='stage'){                                    // Tinko's dance stage
+    const disc=new T.Mesh(new T.CylinderGeometry(4.6,5,0.5,28),matStd('#c9a5ff',.5));
+    disc.position.y=0.25;disc.receiveShadow=true;g.add(disc);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
+      const bulb=new T.Mesh(new T.SphereGeometry(0.22,10,8),matStd(i%2?'#ffd447':'#ff8fb1',.4));
+      bulb.material.emissive=new T.Color(i%2?'#ffd447':'#ff8fb1');bulb.material.emissiveIntensity=.5;
+      bulb.position.set(Math.cos(a)*4.7,0.55,Math.sin(a)*4.7);g.add(bulb);}
+    const b=bannerSprite('Dance Meadow','#7c5ce0');b.position.y=6;g.add(b);
+  }else if(kind==='garden'){                                   // Minty's feelings garden
+    const arch=new T.Mesh(new T.TorusGeometry(2.6,0.3,12,28,Math.PI),matStd('#6dd47e',.6));
+    arch.position.y=0.1;g.add(arch);
+    [['😊',-3,1],['😢',3,1],['😌',0,-3]].forEach(([e,fx,fz])=>{
+      const s=emojiSprite(e,1.2);s.position.set(fx,1.1,fz);g.add(s);spinners.push({mesh:s,bob:true});});
+    const b=bannerSprite('Feelings Garden','#3fa35b');b.position.y=5.6;g.add(b);
+  }else if(kind==='kitchen'){                                  // Sunny's kitchen
+    const table=new T.Mesh(new T.BoxGeometry(6.4,0.4,2.4),matStd('#e8b04a',.8));
+    table.position.y=1.4;table.castShadow=true;g.add(table);
+    [[-2.8,0],[2.8,0]].forEach(([lx,lz])=>{const leg=new T.Mesh(new T.BoxGeometry(0.4,1.4,2),matStd('#c98a2e'));
+      leg.position.set(lx,0.7,lz);g.add(leg);});
+    const pot=new T.Mesh(new T.CylinderGeometry(0.9,0.7,1,18),matStd('#ff6f91',.4));
+    pot.position.set(0,2.1,0);pot.castShadow=true;g.add(pot);g.userData.pot=pot;
+    const roofPole=new T.Mesh(new T.CylinderGeometry(0.12,0.12,3.4,8),matStd('#c98a2e'));roofPole.position.set(0,1.7,1.6);g.add(roofPole);
+    const roof=new T.Mesh(new T.ConeGeometry(4,1.4,6),matStd('#ffd94d',.7));roof.position.set(0,4,0.4);roof.castShadow=true;g.add(roof);
+    const b=bannerSprite('Custard Kitchen','#e0a92e');b.position.y=5.8;g.add(b);
+  }else if(kind==='hills'){                                    // Rosy's hide-y hills
+    g.userData.bushes=[];
+    [[-4,1],[-1.4,-2.5],[1.6,1.6],[4.4,-1]].forEach(([bx,bz],i)=>{
+      const bush=new T.Group();bush.position.set(bx,0,bz);
+      const s1=new T.Mesh(new T.SphereGeometry(1.5,14,12),matStd(['#4fa24a','#5cb356','#47935f','#63bd52'][i],.9));
+      s1.position.y=1.1;s1.scale.set(1.25,1,1.1);s1.castShadow=true;bush.add(s1);
+      const s2=new T.Mesh(new T.SphereGeometry(0.9,12,10),matStd('#5cb356',.9));s2.position.set(0.9,1.7,0.2);bush.add(s2);
+      g.add(bush);g.userData.bushes.push(bush);});
+    const b=bannerSprite('Hide-y Hills','#e06a92');b.position.y=5.6;g.add(b);
+  }else if(kind==='arch'){
+    const arch=new T.Mesh(new T.TorusGeometry(3,0.35,12,30,Math.PI),matStd('#ff8fb1',.6));
+    arch.position.y=0.1;g.add(arch);
+    const bun=emojiSprite('🐇',1.4);bun.position.set(-2.2,0.8,-0.5);g.add(bun);
+  }
+  return g;
+}
+const domeG=addProp('dome',...POI.dome);
+addProp('mill',...POI.mill);
+addProp('pond',...POI.pond);
+const stageG=addProp('stage',...POI.tinko);
+const gardenG=addProp('garden',...POI.minty);
+const kitchenG=addProp('kitchen',...POI.sunny,Math.PI);
+const hillsG=addProp('hills',...POI.rosy);
+addProp('arch',...POI.arch);
+
+// scattered flowers & bushes
+(function scatter(){
+  ['#ff8fb1','#b8a4ff','#ffd23f','#ffffff'].forEach(col=>{
+    const geo=new T.SphereGeometry(0.16,8,6);const mat=matStd(col,.6);
+    mat.emissive=new T.Color(col);mat.emissiveIntensity=.15;
+    const inst=new T.InstancedMesh(geo,mat,50);const m=new T.Matrix4();let n=0;
+    for(let k=0;k<50;k++){const a=rnd()*Math.PI*2,r=8+rnd()*(ISLAND-10);
+      const x=Math.cos(a)*r,z=Math.sin(a)*r;m.makeTranslation(x,terrainH(x,z)+0.2,z);inst.setMatrixAt(n++,m);}
+    inst.count=n;scene.add(inst);});
+  const bushGeo=new T.SphereGeometry(0.9,12,10),bushMat=matStd('#4fa24a',.9);
+  const bush=new T.InstancedMesh(bushGeo,bushMat,24);
+  const bm=new T.Matrix4(),bs=new T.Vector3(),q=new T.Quaternion();let bn=0;
+  for(let k=0;k<24;k++){const a=rnd()*Math.PI*2,r=12+rnd()*(ISLAND-14);
+    const x=Math.cos(a)*r,z=Math.sin(a)*r;
+    bs.set(1+rnd()*0.6,0.8+rnd()*0.5,1+rnd()*0.6);
+    bm.compose(new T.Vector3(x,terrainH(x,z)+0.4,z),q,bs);bush.setMatrixAt(bn++,bm);}
+  bush.count=bn;bush.castShadow=true;scene.add(bush);
+})();
+
+/* -------- persistent sticker decorations -------- */
+const stickerNodes={};
+function placeSticker(st){
+  if(stickerNodes[st.id]||!st.at)return;
+  const [x,z]=st.at;const s=emojiSprite(st.e,st.id==='rainbow'?7:2.6);
+  s.position.set(x,terrainH(x,z)+(st.id==='rainbow'?4:1.3),z);
+  scene.add(s);spinners.push({mesh:s,bob:true});stickerNodes[st.id]=s;
+}
+function refreshStickers(){STICKERS.forEach(st=>{if(S.stickers[st.id])placeSticker(st);});
+  // crown is wearable
+  if(S.stickers.crown&&!stickerNodes.crown){const c=emojiSprite('👑',0.9);
+    c.position.set(0,4.6,0.05);player.anim.head.add(c);stickerNodes.crown=c;}}
+
+/* ============================ CHARACTERS ================================= */
+const player=makeEllie(BELU);
+player.group.position.set(0,0,-9);scene.add(player.group);
+player.anim.tv('💙');
+
+const tubbies={};
+const TUBBY_POS={tinko:[POI.tinko[0]-1,POI.tinko[1]-4],minty:[POI.minty[0]+1,POI.minty[1]-4],
+                 sunny:[POI.sunny[0],POI.sunny[1]-4.5],rosy:[POI.rosy[0]+1,POI.rosy[1]-4]};
+for(const id in TUBBIES){
+  const t=makeEllie(TUBBIES[id]);
+  const [x,z]=TUBBY_POS[id];
+  t.group.position.set(x,terrainH(x,z),z);
+  t.anim.tv(['💜','💚','💛','💗'][Object.keys(TUBBIES).indexOf(id)]);
+  scene.add(t.group);tubbies[id]=t;
+  const nb=bannerSprite(TUBBIES[id].name,TUBBIES[id].dark,0.8);nb.position.y=4.6;t.group.add(nb);
+  t.mark=emojiSprite('⭐',1.3);t.mark.position.y=5.6;t.group.add(t.mark);
+}
+function refreshMarks(){for(const id in tubbies){
+  const done=S.today.stars[id];tubbies[id].mark.material.opacity=done?1:0.9;
+  tubbies[id].mark.material.map=makeCanvasTex((g,w,h)=>{g.clearRect(0,0,w,h);
+    g.font='170px serif';g.textAlign='center';g.textBaseline='middle';
+    g.globalAlpha=done?1:0.9;g.fillText(done?'⭐':'❕',w/2,h/2+8);});
+  tubbies[id].mark.material.needsUpdate=true;}}
+
+/* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
+const NAVY='#12244f';
+const girlImg=new Image();let girlReady=false;
+girlImg.onload=()=>{girlReady=true;repaintSun();};girlImg.src='girl.png';
+const GW=172,GH=240;
+const EYES=[{x:70/GW,y:126/GH,rx:27/GW,ry:19/GH},{x:117/GW,y:120/GH,rx:28/GW,ry:18/GH}];
+const CHEEKS=[{x:44/GW,y:150/GH},{x:132/GW,y:146/GH}];
+const LID='#f7f0e7';
+function heart(g,px,py,s){g.beginPath();g.moveTo(px,py+s*0.3);
+  g.bezierCurveTo(px+s,py-s*0.6,px+s*1.7,py+s*0.5,px,py+s*1.35);
+  g.bezierCurveTo(px-s*1.7,py+s*0.5,px-s,py-s*0.6,px,py+s*0.3);g.fill();}
+function drawSunBaby(g,w,h,mood,blink){
+  mood=mood||'happy';blink=blink||0;g.clearRect(0,0,w,h);
+  const cx=w*0.5,cy=h*0.5,R=w*0.2;
+  g.save();g.translate(cx,cy);
+  for(let i=0;i<16;i++){g.rotate(Math.PI*2/16);g.fillStyle='rgba(255,205,55,.92)';
+    g.beginPath();g.moveTo(-13,-R*1.72);g.lineTo(13,-R*1.72);g.lineTo(0,-R*2.35);g.closePath();g.fill();}
+  g.restore();
+  g.beginPath();g.arc(cx,cy,R*1.62,0,7);g.fillStyle='rgba(255,243,176,.92)';g.fill();
+  g.beginPath();g.arc(cx,cy,R*1.46,0,7);g.fillStyle='#ffd23f';g.fill();
+  if(!girlReady)return;
+  const dr=R*1.36,dh=dr*2.15,dw=dh*GW/GH,dx=cx-dw/2,dy=cy-dh/2+dr*0.02;
+  g.save();g.beginPath();g.arc(cx,cy,dr,0,7);g.clip();
+  g.drawImage(girlImg,dx,dy,dw,dh);
+  const eye=e=>({x:dx+e.x*dw,y:dy+e.y*dh,rx:e.rx*dw,ry:e.ry*dh});
+  const closed=mood==='sleepy'?1:blink;
+  if(closed>0){EYES.forEach(E=>{const p=eye(E);const lidH=p.ry*2*closed;
+    g.fillStyle=LID;g.beginPath();g.ellipse(p.x,p.y-p.ry+lidH/2,p.rx*1.14,lidH/2,0,0,7);g.fill();
+    g.strokeStyle=NAVY;g.lineWidth=Math.max(1,p.ry*0.3);g.lineCap='round';
+    g.beginPath();g.moveTo(p.x-p.rx,p.y-p.ry+lidH);g.quadraticCurveTo(p.x,p.y-p.ry+lidH+p.ry*0.4,p.x+p.rx,p.y-p.ry+lidH);g.stroke();});}
+  if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=dw*0.03;g.lineCap='round';
+    const l=eye(EYES[0]),r=eye(EYES[1]);
+    g.beginPath();g.moveTo(l.x-l.rx*0.8,l.y-l.ry*2.2);g.quadraticCurveTo(l.x,l.y-l.ry*1.4,l.x+l.rx*0.8,l.y-l.ry*1.8);g.stroke();
+    g.beginPath();g.moveTo(r.x+r.rx*0.8,r.y-r.ry*2.2);g.quadraticCurveTo(r.x,r.y-r.ry*1.4,r.x-r.rx*0.8,r.y-r.ry*1.8);g.stroke();}
+  if(mood==='cheer'){g.fillStyle='rgba(255,120,160,.5)';
+    CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.1,dh*0.055,0,0,7);g.fill();});}
+  g.restore();
+  if(mood==='cheer'){g.fillStyle='#ff5f8f';
+    [[cx-R*1.7,cy-R*1.15,0.6],[cx+R*1.7,cy-R*0.85,0.85],[cx-R*0.1,cy-R*2.1,1.05],[cx+R*1.95,cy+R*0.6,0.5]]
+      .forEach(([px,py,sc])=>heart(g,px,py,R*0.18*sc));}
+  if(mood==='care'){const sx=cx+dr*0.86,sy=cy-dr*0.32,s=R*0.17;
+    g.fillStyle='#7ec7ef';g.beginPath();g.moveTo(sx,sy-s);
+    g.bezierCurveTo(sx+s*0.95,sy+s*0.25,sx+s*0.5,sy+s,sx,sy+s);
+    g.bezierCurveTo(sx-s*0.5,sy+s,sx-s*0.95,sy+s*0.25,sx,sy-s);g.fill();
+    g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.arc(sx-s*0.22,sy+s*0.2,s*0.22,0,7);g.fill();}
+  if(mood==='sleepy'){g.fillStyle=NAVY;g.textAlign='center';g.textBaseline='middle';
+    [[0.82,-0.5,0.34],[1.04,-0.78,0.24],[1.2,-1.02,0.17]].forEach(([ox,oy,sc])=>{
+      g.font='bold '+Math.round(R*sc)+'px "Baloo 2",sans-serif';g.fillText('z',cx+dr*ox,cy+dr*oy);});}
+}
+const sunGroup=new T.Group();scene.add(sunGroup);
+let sunMood='happy',sunBlink=0,sunReactUntil=0,sunReactDur=1900,sunBounce=false;
+const sunTex=makeCanvasTex((g,w,h)=>drawSunBaby(g,w,h,sunMood,sunBlink),512,512);
+function repaintSun(){const c=sunTex.image.getContext('2d');
+  drawSunBaby(c,c.canvas.width,c.canvas.height,sunMood,sunBlink);sunTex.needsUpdate=true;}
+const sunSprite=new T.Sprite(new T.SpriteMaterial({map:sunTex,transparent:true,depthWrite:false,fog:false}));
+sunSprite.scale.set(15,15,1);sunGroup.add(sunSprite);
+function reactSun(){sunMood='cheer';repaintSun();sunReactUntil=performance.now()+1900;sunReactDur=1900;sunBounce=true;}
+function careSun(){if(mode==='finale')return;sunMood='care';repaintSun();sunReactUntil=performance.now()+1700;sunReactDur=1700;sunBounce=false;}
+sunGroup.add(new T.PointLight(0xfff0c0,0.35,140));
+
+/* ---------- stars for night ---------- */
+let stars;
+(function(){const g=new T.BufferGeometry();const pts=[];
+  for(let i=0;i<240;i++){const a=rnd()*Math.PI*2,r=40+rnd()*90;pts.push(Math.cos(a)*r,10+rnd()*60,Math.sin(a)*r);}
+  g.setAttribute('position',new T.Float32BufferAttribute(pts,3));
+  stars=new T.Points(g,new T.PointsMaterial({color:0xffffff,size:0.8,transparent:true,opacity:0}));
+  scene.add(stars);})();
+
+/* ========================= SPARKLE SEEDS (daily) ========================= */
+const seeds=[];
+function spawnSeeds(){
+  seeds.forEach(s=>scene.remove(s.g));seeds.length=0;
+  const R=dayRnd(7);
+  for(let i=0;i<14;i++){
+    if(S.today.seeds[i])continue;
+    const a=R()*Math.PI*2,r=7+R()*(ISLAND-11);
+    const x=Math.cos(a)*r,z=Math.sin(a)*r;
+    const g=new T.Group();g.position.set(x,terrainH(x,z)+1,z);
+    const mat=matStd('#ffe066',.3);mat.emissive=new T.Color('#ffd23f');mat.emissiveIntensity=.7;
+    const gem=new T.Mesh(new T.OctahedronGeometry(0.42,0),mat);g.add(gem);
+    scene.add(g);seeds.push({g,i,x,z});
+  }
+}
+/* burst of celebration sparkles at a world point */
+const bursts=[];
+function burst(pos,n=16,col='#ffd23f'){
+  const geo=new T.BufferGeometry();const p=[],v=[];
+  for(let i=0;i<n;i++){p.push(pos.x,pos.y+1,pos.z);
+    const a=Math.random()*Math.PI*2,e2=Math.random()*Math.PI;
+    v.push(Math.cos(a)*Math.sin(e2)*4,Math.random()*5+2,Math.sin(a)*Math.sin(e2)*4);}
+  geo.setAttribute('position',new T.Float32BufferAttribute(p,3));
+  const pts=new T.Points(geo,new T.PointsMaterial({color:new T.Color(col),size:0.34,transparent:true,opacity:1}));
+  scene.add(pts);bursts.push({pts,v,t:0});
+}
+
+/* ====================== TAPPABLE 3D CHOICE SYSTEM ======================== */
+/* Choices are enacted in the world: a figure (big emoji) standing on a disc
+   with a short label — never a quiz card. */
+const raycaster=new T.Raycaster();
+let tappables=[];   // {root, hit(mesh), onTap}
+function clearChoices(){tappables.forEach(t=>{if(t.own)scene.remove(t.root);});tappables=[];}
+function addTappable(root,onTap,own){ tappables.push({root,onTap,own}); }
+function makeChoiceFigure(ch,label,pos,onTap){
+  const g=new T.Group();g.position.copy(pos);
+  const disc=new T.Mesh(new T.CylinderGeometry(1.15,1.3,0.3,20),matStd('#ffffff',.5));
+  disc.position.y=0.15;g.add(disc);
+  const fig=emojiSprite(ch,2.6);fig.position.y=1.8;g.add(fig);
+  const lab=bannerSprite(label,'#3a3a5a',0.72);lab.position.y=3.4;g.add(lab);
+  // invisible fat hit cylinder so little fingers can't miss
+  const hit=new T.Mesh(new T.CylinderGeometry(1.6,1.6,4.4,10),
+    new T.MeshBasicMaterial({visible:false}));
+  hit.position.y=2;g.add(hit);
+  g.userData.spawnT=0;g.userData.label=label;g.scale.setScalar(0.01);
+  scene.add(g);addTappable(g,onTap,true);
+  return g;
+}
+canvas.addEventListener('pointerdown',e=>{
+  const r=canvas.getBoundingClientRect();
+  const ndc=new T.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc,camera);
+  for(const t of tappables){
+    const hits=raycaster.intersectObject(t.root,true);
+    if(hits.length){t.onTap(t);return;}
+  }
+});
+
+/* =========================== NARRATION SYSTEM ============================ */
+let narrQ=[],narrBusy=false,narrResolve=null;
+function say(who,txt){return new Promise(res=>{narrQ.push({who,txt,res});pumpNarr();});}
+function pumpNarr(){
+  if(narrBusy||!narrQ.length)return;narrBusy=true;
+  const {who,txt,res}=narrQ.shift();
+  $('narrWho').textContent=who;$('narrTxt').textContent=txt;
+  $('narr').classList.add('show');speak(txt);
+  const done=()=>{if(narrResolve!==done)return;narrResolve=null;
+    narrBusy=false;res();if(!narrQ.length)$('narr').classList.remove('show');else pumpNarr();};
+  narrResolve=done;
+  // auto-advance slowly (kids can also tap ▶) — scaled by speed setting
+  const ms=(2600+txt.length*65)*SPEED[S.speed];
+  setTimeout(()=>{if(narrResolve===done)done();},ms);
+}
+$('narrNext').onclick=()=>{sfx.tap();if(narrResolve)narrResolve();};
+function clearNarr(){narrQ=[];narrResolve=null;narrBusy=false;$('narr').classList.remove('show');
+  if(voiceOK)try{speechSynthesis.cancel();}catch(e){}}
+const wait=ms=>new Promise(r=>setTimeout(r,ms*SPEED[S.speed]));
+
+/* ============================ CAMERA & INPUT ============================= */
+let mode='intro';         // intro | roam | scene | finale
+const camState={pos:new T.Vector3(0,9,-22),look:new T.Vector3(0,2,0)};
+let camTarget=null;       // {pos,look} tween target during scenes
+function camFollow(dt){
+  let wantPos,wantLook;
+  if(camTarget){wantPos=camTarget.pos;wantLook=camTarget.look;}
+  else{const p=player.group.position;
+    wantPos=new T.Vector3(p.x,p.y+8.5,p.z-12.5);
+    wantLook=new T.Vector3(p.x,p.y+2,p.z+5);}
+  const k=Math.min(1,dt*3);
+  camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
+  camera.position.copy(camState.pos);camera.lookAt(camState.look);
+  sunGroup.position.set(camState.pos.x-8,mode==='finale'?sunGroup.position.y:13,camState.pos.z+52);
+  sunLight.position.set(player.group.position.x-12,26,player.group.position.z-8);
+  sunLight.target.position.copy(player.group.position);
+}
+function sceneCam(cx,cz,dist=11,height=7){
+  camTarget={pos:new T.Vector3(cx,terrainH(cx,cz)+height,cz-dist),
+             look:new T.Vector3(cx,terrainH(cx,cz)+2,cz)};}
+function freeCam(){camTarget=null;}
+
+// joystick
+const stickEl=$('stick'),knob=$('knob');
+let stickVec={x:0,y:0},stickId=null;
+function setKnob(dx,dy){knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;}
+stickEl.addEventListener('pointerdown',e=>{stickId=e.pointerId;stickEl.setPointerCapture(e.pointerId);stickMove(e);ac();});
+stickEl.addEventListener('pointermove',e=>{if(e.pointerId===stickId)stickMove(e);});
+['pointerup','pointercancel'].forEach(ev=>stickEl.addEventListener(ev,e=>{
+  if(e.pointerId===stickId){stickId=null;stickVec={x:0,y:0};setKnob(0,0);}}));
+function stickMove(e){const r=stickEl.getBoundingClientRect();
+  let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+  const m=Math.hypot(dx,dy),max=r.width/2-14;
+  if(m>max){dx*=max/m;dy*=max/m;}
+  setKnob(dx,dy);stickVec={x:dx/max,y:dy/max};}
+// keyboard
+const keys={};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+
+let nearThing=null;   // {kind:'tubby'|'dome', id}
+function updateRoam(dt,time){
+  let mx=stickVec.x,mz=-stickVec.y;
+  if(keys['arrowleft']||keys['a'])mx-=1;if(keys['arrowright']||keys['d'])mx+=1;
+  if(keys['arrowup']||keys['w'])mz+=1;if(keys['arrowdown']||keys['s'])mz-=1;
+  const m=Math.hypot(mx,mz);
+  const p=player.group.position;
+  if(m>0.15){
+    const spd=7.5*Math.min(1,m);
+    p.x+=mx/m*spd*dt;p.z+=mz/m*spd*dt;
+    const rr=Math.hypot(p.x,p.z);if(rr>ISLAND){p.x*=ISLAND/rr;p.z*=ISLAND/rr;}
+    player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
+    player.group.userData.st=(player.group.userData.st||0)+dt;
+    if(player.group.userData.st>0.28){player.group.userData.st=0;tone(180,.05,'sine',.03);}
+  }
+  p.y=terrainH(p.x,p.z);player.anim.baseY=p.y;
+  animEllie(player,time,dt,m>0.15);
+  // seeds pickup
+  for(let i=seeds.length-1;i>=0;i--){const s=seeds[i];
+    if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
+      S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
+      burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
+  // nearest interactive
+  let best=null,bd=4.2;
+  for(const id in tubbies){const t=tubbies[id].group.position;
+    const d=Math.hypot(p.x-t.x,p.z-t.z);if(d<bd){bd=d;best={kind:'tubby',id};}}
+  {const d=Math.hypot(p.x-POI.dome[0],p.z-POI.dome[1]);
+   if(d<7&&(!best||d<bd))best={kind:'dome'};}
+  if(JSON.stringify(best)!==JSON.stringify(nearThing)){nearThing=best;updateActBtn();
+    if(best&&best.kind==='tubby'){sfx.pop();doMove(tubbies[best.id],'wave',0.8);}}
+}
+function updateActBtn(){
+  const b=$('actBtn');
+  if(mode!=='roam'||!nearThing){b.classList.remove('show');return;}
+  if(nearThing.kind==='dome'){b.textContent='Sticker Garden 📖';}
+  else{const t=TUBBIES[nearThing.id];
+    b.textContent=(S.today.stars[nearThing.id]?'Play again with ':'Play with ')+t.name+'! 💜';}
+  b.classList.add('show');
+}
+$('actBtn').onclick=()=>{sfx.tap();
+  if(!nearThing)return;
+  if(nearThing.kind==='dome'){openBook();return;}
+  startVisit(nearThing.id);
+};
+
+/* ============================ GAME FLOW ================================== */
+function enterScene(){mode='scene';$('actBtn').classList.remove('show');
+  $('stick').classList.add('hidden');$('moves').classList.remove('show');}
+function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
+  $('stick').classList.remove('hidden');nearThing=null;updateActBtn();}
+
+async function giveStar(id,tub){
+  const first=!S.today.stars[id];
+  if(first){S.today.stars[id]=1;save();hud();refreshMarks();sfx.star();}
+  S.sparks+=first?5:2;save();hud();
+  reactSun();sfx.good();
+  doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
+  burst(tub.group.position,22,'#ffd23f');burst(player.group.position,18,'#ff8fb1');
+  await say('☀️',SUN_CHEER[Math.floor(Math.random()*SUN_CHEER.length)]+(first?' You earned a ⭐ and ✨5!':' ✨2 more sparkles!'));
+  if(starCount()>=STAR_GOAL){showFinale();return true;}
+  return false;
+}
+
+async function startVisit(id){
+  enterScene();
+  const tub=tubbies[id],cfg=TUBBIES[id];
+  const tp=tub.group.position;
+  sceneCam(tp.x,tp.z,12,7.5);
+  doMove(tub,'jump',0.9);sfx.boing();
+  await say(cfg.name[0]==='T'?'💜':cfg.name[0]==='M'?'💚':cfg.name[0]==='S'?'💛':'💗',
+    `${cfg.name} giggles! "${cfg.hello}"`);
+  // choose: their game, or a story
+  const stories=todayStories().filter(s=>s.tub===id&&!S.today.stories[s.id]);
+  const opts=[];
+  const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
+  const mk=(dx,ch,label,fn)=>{
+    const pos=base.clone();pos.x+=dx;pos.z-=3.4;pos.y=terrainH(pos.x,pos.z);
+    makeChoiceFigure(ch,label,pos,()=>{sfx.tap();clearChoices();fn();});};
+  if(stories.length){mk(-3.2,'🎭','Story time',()=>runStory(stories[0],tub));
+    mk(3.2,{dance:'💃',feelings:'📺',kitchen:'🍲',hide:'🙈'}[cfg.game],
+      {dance:'Dance game',feelings:'Feelings TV',kitchen:'Cooking game',hide:'Hide & seek'}[cfg.game],
+      ()=>GAMES[cfg.game](tub));}
+  else GAMES[cfg.game](tub);
+}
+
+/* -------- today's featured stories (3/day, rotating) -------- */
+function todayStories(){
+  const start=((S.day-1)*3)%STORIES.length;
+  return [0,1,2].map(i=>STORIES[(start+i)%STORIES.length]);
+}
+
+/* ====================== ACTIVITY 1: STORY SCENES ========================= */
+/* Enacted: the choices stand IN the world as characters; kid taps one. */
+async function runStory(st,tub){
+  const tp=tub.group.position;
+  sceneCam(tp.x,tp.z,13,8);
+  await say('🎭',st.setup);
+  await say('☀️',st.prompt);
+  const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
+  // shuffle choice placement
+  const order=st.choices.map((c,i)=>i).sort(()=>Math.random()-0.5);
+  const xs=[-4.6,0,4.6];
+  order.forEach((ci,k)=>{
+    const c=st.choices[ci];
+    const pos=base.clone();pos.x+=xs[k];pos.z-=4.2;pos.y=terrainH(pos.x,pos.z);
+    const fig=makeChoiceFigure(c.e,c.s,pos,async(t)=>{
+      sfx.tap();
+      if(c.ok){
+        clearChoices();
+        burst(pos,16,'#8fd0ff');
+        await say('🎉',c.fb);
+        S.today.stories[st.id]=1;save();
+        const over=await giveStar('story-'+st.id,tub);
+        if(!over){await say('☀️','Keep exploring, little friend!');exitScene();}
+      }else{
+        sfx.soft();careSun();
+        // figure wobbles + gentle coaching, then try again
+        fig.userData.wob=1;
+        doMove(tub,'sad',1);
+        await say('☀️',c.fb);
+        await say('☀️',SUN_NUDGE[Math.floor(Math.random()*SUN_NUDGE.length)]);
+      }
+    });
+  });
+}
+
+/* ====================== ACTIVITY 2: FEELINGS TV ========================== */
+async function gameFeelings(tub){
+  const tp=tub.group.position;
+  sceneCam(tp.x,tp.z,10,6);
+  await say('💚','Watch my Tummy-TV! What feeling do you see?');
+  const R=dayRnd(21);const pool=[...FEELINGS].sort(()=>R()-0.5);
+  let round=0,wins=0;
+  const next=async()=>{
+    if(round>=3){
+      tub.anim.tv('💚');
+      const over=await giveStar('minty',tub);
+      if(!over){await say('💚','You know so many feelings! Come back tomorrow for more!');exitScene();}
+      return;}
+    const f=pool[round%pool.length];round++;
+    if(window.__ET)window.__ET.info.feel=f.w;
+    tub.anim.tv(f.e);doMove(tub,'jump',0.8);sfx.pop();
+    // 3 word bubbles in the world
+    const others=FEELINGS.filter(x=>x.w!==f.w).sort(()=>Math.random()-0.5).slice(0,2);
+    const opts=[f,...others].sort(()=>Math.random()-0.5);
+    const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
+    const xs=[-4.4,0,4.4];
+    opts.forEach((o,k)=>{
+      const pos=base.clone();pos.x+=xs[k];pos.z-=4;pos.y=terrainH(pos.x,pos.z);
+      makeChoiceFigure(o.e===f.e?'💭':'💭',o.w,pos,async()=>{
+        if(o.w===f.w){sfx.good();clearChoices();wins++;
+          burst(tub.group.position,14,'#6dd47e');
+          await say('💚',`Yes! ${f.e} means ${f.w}! ${f.hint}`);
+          next();
+        }else{sfx.soft();careSun();
+          await say('☀️',`Hmm, look again at the Tummy-TV! ${f.hint}`);}
+      });
+    });
+  };
+  next();
+}
+
+/* ====================== ACTIVITY 3: COPY-ME DANCE ======================== */
+async function gameDance(tub){
+  const tp=tub.group.position;
+  sceneCam(tp.x,tp.z,12,6.5);
+  // player hops onto the stage
+  const px=tp.x+3,pz=tp.z+1;
+  player.group.position.set(px,terrainH(px,pz),pz);
+  player.group.rotation.y=Math.PI;
+  await say('💜','Watch Tinko dance… then copy the moves with the big buttons!');
+  const R=dayRnd(33);
+  const len=Math.min(2+Math.floor(S.day/2),4);          // sequences grow over days!
+  let seq=[];for(let i=0;i<len;i++)seq.push(MOVES[Math.floor(R()*MOVES.length)]);
+  if(window.__ET)window.__ET.info.seq=seq.map(m=>m.e);
+  // show sequence
+  for(const mv of seq){
+    tub.anim.tv(mv.e);doMove(tub,mv.k,1);sfx.boing();
+    await say('💜',mv.e+' '+mv.w+'!');
+  }
+  tub.anim.tv('❓');
+  await say('💜','Your turn! Tap the moves in order!');
+  // move buttons
+  const mvEl=$('moves');mvEl.innerHTML='';mvEl.classList.add('show');
+  let idx=0;
+  MOVES.forEach(mv=>{
+    const b=document.createElement('button');b.className='mv';b.textContent=mv.e;
+    b.onclick=async()=>{
+      sfx.tap();doMove(player,mv.k,0.8);
+      if(mv.k===seq[idx].k){idx++;sfx.pop();
+        if(idx>=seq.length){mvEl.classList.remove('show');
+          tub.anim.tv('🎉');doMove(tub,'happy',1.6);
+          await wait(700);
+          const over=await giveStar('tinko',tub);
+          if(!over){await say('💜','We danced together! Tomorrow the dance gets LONGER!');exitScene();}}
+      }else{sfx.soft();careSun();idx=0;
+        say('☀️','Oopsie! Watch once more…').then(async()=>{
+          for(const m2 of seq){tub.anim.tv(m2.e);doMove(tub,m2.k,1);sfx.boing();await wait(1100);}
+          tub.anim.tv('❓');});
+      }};
+    mvEl.appendChild(b);});
+}
+
+/* ====================== ACTIVITY 4: CUSTARD KITCHEN ====================== */
+async function gameKitchen(tub){
+  const tp=tub.group.position;
+  sceneCam(tp.x,tp.z,12,7);
+  const rec=RECIPES[(S.day-1)%RECIPES.length];
+  await say('💛',`Today we make ${rec.name}! Tap the steps in the RIGHT order!`);
+  const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
+  let idx=0;
+  const shuffled=rec.steps.map((s,i)=>i).sort(()=>Math.random()-0.5);
+  const xs=[-6,-3,0,3,6];
+  const figs=[];
+  shuffled.forEach((si,k)=>{
+    const stp=rec.steps[si];
+    const pos=base.clone();pos.x+=xs[k]||0;pos.z-=4.5;pos.y=terrainH(pos.x,pos.z);
+    const fig=makeChoiceFigure(stp.e,stp.w,pos,async()=>{
+      if(window.__ET)window.__ET.info.tapped=stp.w;
+      if(si===idx){sfx.pop();idx++;
+        burst(pos,8,'#ffd94d');
+        scene.remove(fig);tappables=tappables.filter(t=>t.root!==fig);
+        doMove(tub,'jump',0.7);
+        await say('💛',`${stp.e} ${stp.w}! ${idx<rec.steps.length?'What\'s next?':''}`);
+        if(idx>=rec.steps.length){
+          tub.anim.tv('🍲');
+          const over=await giveStar('sunny',tub);
+          if(!over){await say('💛',`Mmm, ${rec.name} is ready! A NEW recipe tomorrow!`);exitScene();}}
+      }else{sfx.soft();careSun();fig.userData.wob=1;
+        const need=rec.steps[idx];
+        say('☀️',`Not yet! First we need: ${need.e} ${need.w}.`);}
+    });
+    figs.push(fig);
+  });
+}
+
+/* ====================== ACTIVITY 5: HIDE & SEEK ========================== */
+async function gameHide(tub){
+  const [hx,hz]=POI.rosy;
+  sceneCam(hx,hz,14,9);
+  await say('💗','Rosy giggles: "Close your eyes… I\'ll hide behind a bush! Come find me!"');
+  const bushes=hillsG.userData.bushes;
+  const target=Math.floor(Math.random()*bushes.length);
+  // rosy "hides": shrink + move behind target bush (antenna peeks out!)
+  const b=bushes[target];
+  const wp=new T.Vector3();b.getWorldPosition(wp);
+  tub.group.position.set(wp.x,terrainH(wp.x,wp.z),wp.z+1.6);   // behind (further from camera)
+  tub.group.visible=false;
+  const peek=emojiSprite('⭐',0.7);peek.position.set(wp.x,terrainH(wp.x,wp.z)+2.9,wp.z+0.6);scene.add(peek);
+  let tries=0;
+  bushes.forEach((bush,i)=>{
+    const bp=new T.Vector3();bush.getWorldPosition(bp);
+    const q=emojiSprite('❓',1.5);q.position.set(bp.x,bp.y+3.6,bp.z);scene.add(q);
+    spinners.push({mesh:q,bob:true});
+    const hit=new T.Mesh(new T.CylinderGeometry(2,2,4,8),new T.MeshBasicMaterial({visible:false}));
+    hit.position.copy(bp);hit.position.y+=1.5;scene.add(hit);
+    const marker={root:hit,q};
+    addTappable(hit,async()=>{
+      if(i===target){
+        sfx.boing();tub.group.visible=true;scene.remove(peek);
+        tub.group.position.set(bp.x,terrainH(bp.x,bp.z),bp.z-1.8);
+        doMove(tub,'jump',1);
+        // clean q markers
+        tappables.filter(t=>t.q).forEach(t=>scene.remove(t.q));
+        tappables.filter(t=>!t.own).forEach(t=>scene.remove(t.root));
+        tappables=tappables.filter(t=>t.own);
+        burst(bp,20,'#ff8fb1');
+        await say('💗','"You FOUND me! Hee hee!" Rosy bounces with joy!');
+        const over=await giveStar('rosy',tub);
+        if(!over){await say('💗','Rosy will find a sneakier spot tomorrow!');exitScene();}
+      }else{
+        tries++;sfx.soft();
+        scene.remove(q);scene.remove(hit);              // this bush is done — can't re-guess it
+        tappables=tappables.filter(t=>t.root!==hit);
+        const bp2=new T.Vector3();bushes[target].getWorldPosition(bp2);
+        const d=Math.hypot(bp.x-bp2.x,bp.z-bp2.z);
+        say('☀️',d<4?'Not here… but you are SO warm! 🔥':'Not here… try a bush further away! ❄️');
+      }
+    },false);
+    tappables[tappables.length-1].q=q;
+  });
+  await say('☀️','Tap a bush! Psst… look for a peeking antenna ⭐!');
+}
+
+const GAMES={feelings:gameFeelings,dance:gameDance,kitchen:gameKitchen,hide:gameHide};
+
+/* ====================== STICKER GARDEN (shop) ============================ */
+function openBook(){
+  hud();
+  const grid=$('bookGrid');grid.innerHTML='';
+  STICKERS.forEach(st=>{
+    const d=document.createElement('div');d.className='stk'+(S.stickers[st.id]?'':S.sparks>=st.cost?'':' locked');
+    d.innerHTML=`<div class="ico">${st.e}</div>${st.name}<br>`;
+    if(S.stickers[st.id]){d.innerHTML+='<span class="own">Planted! ✓</span>';}
+    else{const b=document.createElement('button');b.textContent='✨'+st.cost;
+      b.onclick=()=>{if(S.sparks<st.cost){sfx.soft();say('☀️','Collect more ✨ sparkles first — they\'re hiding all over Trunkland!');$('book').classList.remove('show');return;}
+        S.sparks-=st.cost;S.stickers[st.id]=true;save();hud();refreshStickers();sfx.star();
+        openBook();};
+      d.appendChild(b);}
+    grid.appendChild(d);});
+  $('book').classList.add('show');
+}
+$('bookBtn').onclick=()=>{sfx.tap();openBook();};
+$('bookClose').onclick=()=>{sfx.tap();$('book').classList.remove('show');};
+
+/* ============================ FINALE / NEW DAY =========================== */
+let finaleStart=0;
+async function showFinale(){
+  mode='finale';clearChoices();clearNarr();
+  $('stick').classList.add('hidden');$('actBtn').classList.remove('show');$('moves').classList.remove('show');
+  finaleStart=performance.now();freeCam();sfx.win();
+  // all tubbies gather round for a goodnight bounce
+  const p=player.group.position;
+  Object.values(tubbies).forEach((t,i)=>{
+    const a=i/4*Math.PI*2;
+    t.group.position.set(p.x+Math.cos(a)*4,0,p.z+Math.sin(a)*4);
+    t.group.position.y=terrainH(t.group.position.x,t.group.position.z);
+    t.group.lookAt(p.x,t.group.position.y,p.z);
+    doMove(t,'happy',2.2);});
+  $('nextDayN').textContent=S.day+1;
+  setTimeout(()=>$('finale').classList.add('show'),2600*SPEED[S.speed]);
+}
+$('newDay').onclick=()=>{
+  sfx.tap();S.day++;S.today={stars:{},seeds:{},stories:{}};save();hud();
+  $('finale').classList.remove('show');
+  // reset world to morning
+  scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
+  hemi.intensity=0.95;sunLight.intensity=1.15;sunLight.color.set(0xfff3d6);
+  stars.material.opacity=0;sunMood='happy';repaintSun();sunGroup.position.y=13;
+  for(const id in tubbies){const [x,z]=TUBBY_POS[id];
+    tubbies[id].group.position.set(x,terrainH(x,z),z);tubbies[id].group.rotation.y=0;}
+  spawnSeeds();refreshMarks();mode='roam';$('stick').classList.remove('hidden');
+  say('☀️',`Good morning! Day ${S.day} in Trunkland! ${todayStories().length} new stories and fresh sparkles await!`);
+};
+
+/* ============================== RENDER LOOP ============================== */
+let lastT=performance.now(),t0=lastT;
+function frame(now){
+  const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+  const time=(now-t0)/1000;
+
+  if(mode==='roam')updateRoam(dt,time);
+  else animEllie(player,time,dt,false);
+  for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
+
+  // ambient spinners / bobbers
+  spinners.forEach(s=>{if(s.speed)s.mesh.rotation.z-=s.speed*dt;
+    if(s.bob)s.mesh.position.y=(s.mesh.userData.by||(s.mesh.userData.by=s.mesh.position.y))+Math.sin(time*2+(s.mesh.id%7))*0.25;});
+  // seeds float+spin
+  seeds.forEach(s=>{s.g.rotation.y+=dt*2;s.g.position.y=terrainH(s.x,s.z)+1+Math.sin(time*2.4+s.i)*0.25;});
+  // choice figures pop in + wobble
+  tappables.forEach(t=>{const g=t.root;if(!g.userData)return;
+    if(g.userData.spawnT!==undefined&&g.userData.spawnT<1){
+      g.userData.spawnT=Math.min(1,g.userData.spawnT+dt*3);
+      const k=g.userData.spawnT,over=1+Math.sin(k*Math.PI)*0.15;
+      g.scale.setScalar(Math.max(0.01,k*over));}
+    if(g.userData.wob){g.userData.wob=Math.max(0,g.userData.wob-dt*2);
+      g.rotation.z=Math.sin(g.userData.wob*20)*0.12*g.userData.wob;}});
+  // bursts
+  for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t+=dt;
+    const pos=b.pts.geometry.attributes.position;
+    for(let k=0;k<pos.count;k++){
+      pos.setXYZ(k,pos.getX(k)+b.v[k*3]*dt,pos.getY(k)+(b.v[k*3+1]-=9*dt)*dt,pos.getZ(k)+b.v[k*3+2]*dt);}
+    pos.needsUpdate=true;b.pts.material.opacity=Math.max(0,1-b.t*1.2);
+    if(b.t>1){scene.remove(b.pts);bursts.splice(i,1);}}
+
+  // sun baby life
+  const breathe=1+Math.sin(time*1.6)*0.03;
+  sunSprite.material.rotation=Math.sin(time*0.6)*0.05+(sunMood==='care'?0.13:0);
+  if(sunMood!=='sleepy'){const cyc=time%4;let nb=cyc<0.16?1-Math.abs(cyc-0.08)/0.08:0;
+    nb=Math.max(0,Math.min(1,nb));
+    if(Math.abs(nb-sunBlink)>0.06){sunBlink=nb;repaintSun();}}
+  let pop=1;
+  if(sunReactUntil){const left=sunReactUntil-now;
+    pop=sunBounce?1+Math.max(0,Math.sin((1-left/sunReactDur)*Math.PI))*0.22:1;
+    if(left<=0){sunReactUntil=0;if(mode!=='finale'){sunMood='happy';repaintSun();}}}
+  sunSprite.scale.set(15*breathe*pop,15*breathe*pop,1);
+
+  if(mode==='finale'){
+    if(sunMood!=='sleepy'){sunMood='sleepy';repaintSun();}
+    const fe=(now-finaleStart)/1000;
+    scene.background.lerpColors(DAY_SKY,SUNSET_SKY,Math.min(1,fe/4));
+    scene.fog.color.lerpColors(DAY_FOG,SUNSET_FOG,Math.min(1,fe/4));
+    hemi.intensity=Math.max(0.35,0.95-fe*0.12);
+    sunLight.intensity=Math.max(0.35,1.15-fe*0.16);
+    sunLight.color.lerpColors(new T.Color(0xfff3d6),new T.Color(0xffb27a),Math.min(1,fe/4));
+    sunGroup.position.y=Math.max(2,13-fe*2.2);
+    stars.material.opacity=Math.min(0.9,Math.max(0,(fe-2)/3));
+  }
+
+  camFollow(dt);
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+
+/* ================================ UI wire ================================ */
+$('startBtn').onclick=()=>{ac();sfx.meet?sfx.meet():sfx.pop();
+  $('intro').classList.remove('show');mode='roam';
+  say('☀️','Hello little friend! Walk with the joystick and find a bouncy tubby! ✨');};
+$('helpBtn').onclick=()=>{$('intro').classList.add('show');};
+$('soundBtn').textContent=S.muted?'🔇':'🔊';
+$('soundBtn').onclick=()=>{S.muted=!S.muted;save();
+  $('soundBtn').textContent=S.muted?'🔇':'🔊';if(!S.muted)sfx.tap();};
+$('voiceBtn').classList.toggle('off',!S.voice);
+$('voiceBtn').onclick=()=>{S.voice=!S.voice;save();$('voiceBtn').classList.toggle('off',!S.voice);
+  if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+document.querySelectorAll('.speed').forEach(b=>{
+  b.classList.toggle('sel',b.dataset.sp===S.speed);
+  b.onclick=()=>{S.speed=b.dataset.sp;save();sfx.tap();
+    document.querySelectorAll('.speed').forEach(x=>x.classList.toggle('sel',x.dataset.sp===S.speed));};});
+
+/* debug/testing hook (harmless in production) */
+window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)t.onTap(t);},
+  get state(){return {mode,stars:starCount(),sparks:S.sparks,day:S.day};},info:{},
+  dir(id){const t=id==='dome'?{x:POI.dome[0],z:POI.dome[1]}:tubbies[id].group.position;
+    const p=player.group.position;return {x:t.x-p.x,z:t.z-p.z,d:Math.hypot(t.x-p.x,t.z-p.z)};}};
+
+/* ================================= BOOT ================================== */
+hud();spawnSeeds();refreshMarks();refreshStickers();
+$('loading').classList.add('hidden');
+$('intro').classList.add('show');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
