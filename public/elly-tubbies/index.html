@@ -663,62 +663,40 @@ function drawSunBaby(g,w,h,mood,blink){
   g.save();g.beginPath();g.arc(cx,cy,dr,0,7);g.clip();
   g.drawImage(girlImg,dx,dy,dw,dh);
   const eye=e=>({x:dx+e.x*dw,y:dy+e.y*dh,rx:e.rx*dw,ry:e.ry*dh});
-  /* ---- big cute anime eyes with lashes, drawn OVER her printed eyes ---- */
-  const open=(mood==='sleepy')?0:1-blink;
+  /* ---- her REAL printed eyes stay untouched; animate gently on top ---- */
+  const closed=(mood==='sleepy')?1:blink;
   EYES.forEach((E,ei)=>{
-    const p=eye(E),sx=ei===0?-1:1;         // sx: lash direction (outward)
-    const rx=p.rx*1.05, ryFull=p.ry*1.45;
-    // cover the original printed eye with skin
-    g.fillStyle=LID;g.beginPath();g.ellipse(p.x,p.y,rx*1.3,ryFull*1.15,0,0,7);g.fill();
-    const lashW=Math.max(1.6,ryFull*0.16);
-    if(open<0.18){
-      // closed: sweet curved lash-line with 3 long lashes
-      g.strokeStyle=NAVY;g.lineWidth=lashW*1.25;g.lineCap='round';
-      g.beginPath();g.moveTo(p.x-rx,p.y);g.quadraticCurveTo(p.x,p.y+ryFull*0.75,p.x+rx,p.y);g.stroke();
-      [[-0.75,0.4],[0,0.75],[0.75,0.4]].forEach(([fx2,fy])=>{
-        const bx2=p.x+fx2*rx,by=p.y+fy*ryFull*0.75;
-        g.beginPath();g.moveTo(bx2,by);g.lineTo(bx2+fx2*rx*0.28+sx*rx*0.1,by+ryFull*0.42);g.stroke();});
-    }else{
-      const ry=ryFull*open;
-      // sclera
-      g.fillStyle='#ffffff';g.beginPath();g.ellipse(p.x,p.y,rx,ry,0,0,7);g.fill();
-      // big shiny iris
-      const ir=Math.min(rx*0.72,ryFull*0.8)*Math.max(0.55,open);
-      const grad=g.createRadialGradient(p.x,p.y-ir*0.25,ir*0.15,p.x,p.y,ir);
-      grad.addColorStop(0,'#4a6bc4');grad.addColorStop(0.7,'#233a75');grad.addColorStop(1,'#12244f');
-      g.save();g.beginPath();g.ellipse(p.x,p.y,rx,ry,0,0,7);g.clip();
-      if(mood==='cheer'){                   // heart eyes when she cheers!
-        g.fillStyle='#ff5f8f';heart(g,p.x,p.y-ir*0.55,ir*0.72);
-      }else{
-        g.fillStyle=grad;g.beginPath();g.arc(p.x,p.y+ry*0.08,ir,0,7);g.fill();
-        g.fillStyle=NAVY;g.beginPath();g.arc(p.x,p.y+ry*0.08,ir*0.45,0,7);g.fill();
-        // sparkle highlights
-        g.fillStyle='#ffffff';
-        g.beginPath();g.arc(p.x-ir*0.35,p.y-ir*0.28,ir*0.3,0,7);g.fill();
-        g.beginPath();g.arc(p.x+ir*0.38,p.y+ir*0.4,ir*0.14,0,7);g.fill();
-        g.fillStyle='rgba(255,255,255,.75)';
-        g.beginPath();g.arc(p.x+ir*0.15,p.y-ir*0.55,ir*0.09,0,7);g.fill();
+    const p=eye(E),sx=ei===0?-1:1;         // sx: outward side of this eye
+    const lashW=Math.max(1.5,p.ry*0.22);
+    if(closed>0){
+      // eyelid slides down over her real eye, lash-line on its edge
+      const lidH=p.ry*2*closed;
+      g.fillStyle=LID;g.beginPath();
+      g.ellipse(p.x,p.y-p.ry+lidH/2,p.rx*1.12,lidH/2,0,0,7);g.fill();
+      g.strokeStyle=NAVY;g.lineWidth=lashW;g.lineCap='round';
+      g.beginPath();g.moveTo(p.x-p.rx,p.y-p.ry+lidH);
+      g.quadraticCurveTo(p.x,p.y-p.ry+lidH+p.ry*0.4,p.x+p.rx,p.y-p.ry+lidH);g.stroke();
+      if(closed>0.85){                     // fully closed: tiny lashes on the lid curve
+        [[-0.6,0.32],[0,0.44],[0.6,0.32]].forEach(([fx2,fy])=>{
+          const bx2=p.x+fx2*p.rx,by=p.y-p.ry+lidH+fy*p.ry;
+          g.beginPath();g.moveTo(bx2,by);g.lineTo(bx2+fx2*p.rx*0.2,by+p.ry*0.3);g.stroke();});
       }
-      g.restore();
-      // upper lid line + curly lashes
-      g.strokeStyle=NAVY;g.lineWidth=lashW*1.2;g.lineCap='round';
-      g.beginPath();g.moveTo(p.x-rx,p.y-ry*0.15);
-      g.quadraticCurveTo(p.x,p.y-ry*1.45,p.x+rx,p.y-ry*0.15);g.stroke();
-      g.lineWidth=lashW;
-      [[-0.85,-0.62],[-0.35,-1.02],[0.35,-1.02],[0.85,-0.62]].forEach(([fx2,fy],li)=>{
-        const bx2=p.x+fx2*rx,by=p.y+fy*ry;
-        const ox=fx2*rx*0.3+sx*rx*0.14, oy=-ry*(0.42+((li%2)?0.12:0));
+    }else{
+      // eyes open: just dainty little lashes at the upper-outer corner
+      g.strokeStyle=NAVY;g.lineWidth=lashW*0.8;g.lineCap='round';
+      [[0.95,-0.45,0.4,-0.42],[0.75,-0.78,0.28,-0.62],[0.45,-1.0,0.14,-0.78]].forEach(([ax,ay,ox,oy])=>{
+        const bx2=p.x+sx*ax*p.rx,by=p.y+ay*p.ry;
         g.beginPath();g.moveTo(bx2,by);
-        g.quadraticCurveTo(bx2+ox*0.6,by+oy*0.7,bx2+ox,by+oy);g.stroke();});
+        g.lineTo(bx2+sx*ox*p.rx,by+oy*p.ry*0.5);g.stroke();});
     }
     // worried brows
-    if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=lashW*1.3;g.lineCap='round';
-      g.beginPath();g.moveTo(p.x-sx*rx*0.9,p.y-ryFull*1.9);
-      g.quadraticCurveTo(p.x,p.y-ryFull*1.45,p.x+sx*rx*0.9,p.y-ryFull*1.7);g.stroke();}
+    if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=lashW*1.2;g.lineCap='round';
+      g.beginPath();g.moveTo(p.x-sx*p.rx*0.8,p.y-p.ry*2.2);
+      g.quadraticCurveTo(p.x,p.y-p.ry*1.4,p.x+sx*p.rx*0.8,p.y-p.ry*1.8);g.stroke();}
   });
-  // rosy cheeks — always on, stronger when cheering
-  g.fillStyle=mood==='cheer'?'rgba(255,120,160,.55)':'rgba(255,150,180,.32)';
-  CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.1,dh*0.05,0,0,7);g.fill();});
+  // soft blush — subtle normally, glowing when she cheers
+  g.fillStyle=mood==='cheer'?'rgba(255,120,160,.5)':'rgba(255,150,180,.2)';
+  CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.09,dh*0.045,0,0,7);g.fill();});
   g.restore();
   if(mood==='cheer'){g.fillStyle='#ff5f8f';
     [[cx-R*1.7,cy-R*1.15,0.6],[cx+R*1.7,cy-R*0.85,0.85],[cx-R*0.1,cy-R*2.1,1.05],[cx+R*1.95,cy+R*0.6,0.5]]
