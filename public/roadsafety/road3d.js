@@ -211,24 +211,46 @@ window.GL3D = (function(){
     evObjs = []; kidObjs = []; coneObjs = [];
     for (const ev of S.events){
       if (ev.type === "light"){
-        const p = rp(ev.at, HWf() + 10);
-        const pole = new T.Mesh(new T.CylinderGeometry(.12, .14, 6, 6), mat("#3c454f"));
-        pole.position.set(p.x, 3, p.z); pole.castShadow = true; grpStatic.add(pole);
-        const box = new T.Mesh(new T.BoxGeometry(.9, 2.3, .5), mat("#242c34"));
-        box.position.set(p.x, 5.6, p.z); grpStatic.add(box);
+        // US-style mast arm: pole at the right curb, arm reaching over the
+        // road, signal head hanging above the lane and FACING the driver.
+        const s2 = sample(S.rt, ev.at);
+        const yaw = Math.atan2(s2.fx, s2.fy);
+        const g = new T.Group();
+        const armLen = (HWf() + 14) * M;                 // curb → over the lanes
+        const pole = new T.Mesh(new T.CylinderGeometry(.14, .17, 7.2, 8), mat("#3c454f"));
+        pole.position.set(armLen, 3.6, 0); pole.castShadow = true;
+        const arm = new T.Mesh(new T.CylinderGeometry(.09, .09, armLen, 6), mat("#3c454f"));
+        arm.rotation.z = Math.PI / 2; arm.position.set(armLen / 2, 6.9, 0);
+        const box = new T.Mesh(new T.BoxGeometry(.8, 2.2, .45), mat("#242c34"));
+        box.position.set(0, 5.7, 0);
+        g.add(pole, arm, box);
         const balls = ["#3a1114", "#3a2e10", "#0f3315"].map((c, i) => {
-          const b = new T.Mesh(new T.SphereGeometry(.3, 10, 8), em(c, .25));
-          b.position.set(p.x, 6.35 - i * .72, p.z + .3); grpDyn.add(b); return b;
+          const b = new T.Mesh(new T.SphereGeometry(.28, 10, 8), em(c, .25));
+          b.position.set(0, 6.4 - i * .72, -.26);        // front face of the head
+          g.add(b); return b;
         });
+        const pp = rp(ev.at, 0);
+        g.position.set(pp.x, 0, pp.z);
+        g.rotation.y = yaw + Math.PI;                    // face oncoming traffic
+        grpDyn.add(g);
         evObjs.push({ ev, kind: "light", balls });
       }
       if (ev.type === "stopsign"){
-        const p = rp(ev.at, HWf() + 8);
-        const pole = new T.Mesh(new T.CylinderGeometry(.07, .09, 3, 6), mat("#8a9296"));
-        pole.position.set(p.x, 1.5, p.z); grpStatic.add(pole);
-        const oct = new T.Mesh(new T.CylinderGeometry(.75, .75, .1, 8), em("#d62828", .35));
-        oct.rotation.x = Math.PI / 2; oct.rotation.y = Math.PI / 8;
-        oct.position.set(p.x, 3.1, p.z); grpStatic.add(oct);
+        const s2 = sample(S.rt, ev.at - 18);
+        const yaw = Math.atan2(s2.fx, s2.fy);
+        const g = new T.Group();
+        const pole = new T.Mesh(new T.CylinderGeometry(.06, .08, 2.6, 6), mat("#8a9296"));
+        pole.position.y = 1.3;
+        const oct = new T.Mesh(new T.CylinderGeometry(.62, .62, .08, 8), em("#d62828", .45));
+        oct.rotation.x = Math.PI / 2;                    // face flat toward traffic
+        oct.position.y = 2.85;
+        const rim = new T.Mesh(new T.CylinderGeometry(.66, .66, .06, 8), mat("#f4f6f8"));
+        rim.rotation.x = Math.PI / 2; rim.position.set(0, 2.85, .02);
+        g.add(pole, rim, oct);
+        const pp = rp(ev.at - 18, HWf() + 9);
+        g.position.set(pp.x, 0, pp.z);
+        g.rotation.y = yaw + Math.PI;
+        grpStatic.add(g);
       }
       if (ev.type === "construction"){
         for (const c of ev.cones){
@@ -341,9 +363,19 @@ window.GL3D = (function(){
       player.add(frame, w1, w2, bars, kid);
       P.wheels.push(w1, w2);
       if (isE){
-        const bat = new T.Mesh(new T.BoxGeometry(.14, .34, .5), em("#183020", .1)); bat.position.y = .72;
-        const led = new T.Mesh(new T.BoxGeometry(.15, .1, .32), em("#7ae582", .9)); led.position.y = .78;
-        player.add(bat, led);
+        // chunky e-bike: BIG glowing battery, rear rack + orange panniers,
+        // hi-vis stripes on the rider, and a headlight beam on the road
+        const bat = new T.Mesh(new T.BoxGeometry(.2, .44, .6), std("#1d2a22", .5)); bat.position.y = .7;
+        const led = new T.Mesh(new T.BoxGeometry(.22, .14, .5), em("#54f08a", 1.4)); led.position.y = .95;
+        const rack = new T.Mesh(new T.BoxGeometry(.5, .05, .5), mat("#23262b")); rack.position.set(0, .82, .55);
+        const pan1 = new T.Mesh(new T.BoxGeometry(.18, .34, .42), std("#f3722c", .6)); pan1.position.set(-.3, .6, .55);
+        const pan2 = pan1.clone(); pan2.position.x = .3;
+        const stripe1 = new T.Mesh(new T.BoxGeometry(.52, .07, .34), em("#f4f6f8", .7)); stripe1.position.set(0, 1.28, .12);
+        const lamp = new T.Mesh(new T.SphereGeometry(.09, 8, 6), em("#fff6c8", 2)); lamp.position.set(0, .95, -.72);
+        const beam = new T.Mesh(new T.CircleGeometry(.9, 20),
+          new T.MeshBasicMaterial({ color: 0xfff3b8, transparent: true, opacity: .3 }));
+        beam.rotation.x = -Math.PI / 2; beam.position.set(0, .02, -2.4); beam.scale.z = 2.2;
+        player.add(bat, led, rack, pan1, pan2, stripe1, lamp, beam);
       } else {
         const pl = new T.Mesh(new T.BoxGeometry(.3, .05, .12), mat("#f4f6f8")); pl.position.set(-.2, .34, 0);
         const pr = pl.clone(); pr.position.x = .2;
