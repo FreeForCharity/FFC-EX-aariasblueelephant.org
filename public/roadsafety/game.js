@@ -9,15 +9,19 @@
 /* ---------- canvas & constants ---------- */
 const cvs = document.getElementById("game");
 const ctx = cvs.getContext("2d");
-const W = 520, H = 760;
-/* render at device resolution (all drawing stays in 520x760 logical coords) */
-let VIEW_SCALE = 1;
+/* TRUE FULLSCREEN: logical height is fixed at 760, logical width follows the
+   window's aspect — widescreen shows MORE world left & right, like a real
+   racing game. All drawing code positions off W/2, so it adapts live. */
+let W = 520; const H = 760;
+let VIEW_SCALE = 1, VIEW_OFFX = 0;
 function fitCanvas(){
   const r = cvs.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
-  if (cvs.width !== w || cvs.height !== h){ cvs.width = w; cvs.height = h; }
-  VIEW_SCALE = w / W;
+  const cw = Math.max(1, Math.round(r.width * dpr)), ch = Math.max(1, Math.round(r.height * dpr));
+  if (cvs.width !== cw || cvs.height !== ch){ cvs.width = cw; cvs.height = ch; }
+  VIEW_SCALE = ch / H;
+  W = clamp(cw / VIEW_SCALE, 430, 1500);
+  VIEW_OFFX = (cw / VIEW_SCALE - W) / 2;   // center if the aspect is clamped
 }
 addEventListener("resize", fitCanvas);
 setTimeout(fitCanvas, 0);
@@ -884,7 +888,7 @@ function setCam(){
 }
 function w2s(wx, wy){
   const dx = wx - cam.x, dy = wy - cam.y;
-  return [260 + dx * cam.rx + dy * cam.ry, PLAYER_Y - (dx * cam.fx + dy * cam.fy)];
+  return [W/2 + dx * cam.rx + dy * cam.ry, PLAYER_Y - (dx * cam.fx + dy * cam.fy)];
 }
 function routePt(d, lat){
   const s = sample(S.rt, d);
@@ -908,7 +912,7 @@ function drawAerialGround(){
   if (!rec || !img || img === false || !img.complete || !img.naturalWidth) return false;
   const sxx = rec.w / img.naturalWidth, syy = rec.h / img.naturalHeight;
   const a = sxx * cam.rx, b = -sxx * cam.fx, c = syy * cam.ry, d = -syy * cam.fy;
-  const e = 260 + (rec.x0 - cam.x) * cam.rx + (rec.y0 - cam.y) * cam.ry;
+  const e = W/2 + (rec.x0 - cam.x) * cam.rx + (rec.y0 - cam.y) * cam.ry;
   const f = PLAYER_Y - ((rec.x0 - cam.x) * cam.fx + (rec.y0 - cam.y) * cam.fy);
   ctx.save();
   ctx.transform(a, b, c, d, e, f);         // composes with the shake translate
@@ -1284,7 +1288,7 @@ function drawPlayerTop(){
   const v = S.veh;
   const airS = S.air ? 1 + .45 * Math.sin(Math.PI * S.air.p) : 1;
   ctx.save();
-  ctx.translate(260 + S.o, PLAYER_Y);
+  ctx.translate(W/2 + S.o, PLAYER_Y);
   // shadow
   ctx.fillStyle = "rgba(0,0,0,.25)";
   const so = S.air ? 10 * Math.sin(Math.PI * S.air.p) : 3;
@@ -1338,7 +1342,7 @@ function drawFP(){
   ctx.fillStyle = sky; ctx.fillRect(0, 0, W, HORIZON + 2);
   const hshift = ((-cam.h * 260) % W + W) % W;       // parallax with heading
   // sun + glow
-  const sunx = 408, suny = 78;
+  const sunx = W - 112, suny = 78;
   const glow = ctx.createRadialGradient(sunx, suny, 6, sunx, suny, 90);
   glow.addColorStop(0, TH.sun); glow.addColorStop(1, "rgba(255,243,176,0)");
   ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sunx, suny, 90, 0, 7); ctx.fill();
@@ -1355,7 +1359,7 @@ function drawFP(){
   for (let r = -1; r <= 2; r++){
     const ox = hshift * .6 + r * W;
     ctx.beginPath(); ctx.moveTo(ox, HORIZON);
-    ctx.quadraticCurveTo(ox + 150, HORIZON - 34, ox + 300, HORIZON - 6);
+    ctx.quadraticCurveTo(ox + W * .29, HORIZON - 34, ox + W * .577, HORIZON - 6);
     ctx.quadraticCurveTo(ox + 420, HORIZON - 40, ox + 560, HORIZON - 4);
     ctx.lineTo(ox + 560, HORIZON); ctx.closePath(); ctx.fill();
   }
@@ -1365,13 +1369,16 @@ function drawFP(){
     const ox = hshift + r * W;
     ctx.beginPath(); ctx.moveTo(ox, HORIZON);
     ctx.quadraticCurveTo(ox + 110, HORIZON - 58, ox + 240, HORIZON - 14);
-    ctx.quadraticCurveTo(ox + 360, HORIZON - 72, ox + 520, HORIZON - 8);
-    ctx.lineTo(ox + 520, HORIZON); ctx.closePath(); ctx.fill();
+    ctx.quadraticCurveTo(ox + W * .69, HORIZON - 72, ox + W, HORIZON - 8);
+    ctx.lineTo(ox + W, HORIZON); ctx.closePath(); ctx.fill();
   }
   for (let r = -1; r <= 1; r++){
     const ox = hshift + r * W;
-    for (const tx of [120, 330, 455]) drawTurbineFP(ox + tx, HORIZON - (tx % 47) * .8 - 22);
+    for (const tf2 of [.23, .63, .875]){ const tx = W * tf2;
+      drawTurbineFP(ox + tx, HORIZON - (Math.floor(tx) % 47) * .8 - 22); }
   }
+  // far ground shelf — seals the gap between the horizon and the first road row
+  ctx.fillStyle = TH.g2; ctx.fillRect(0, HORIZON, W, 40);
   // horizon haze
   ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(0, HORIZON - 4, W, 6);
 
@@ -1387,7 +1394,7 @@ function drawFP(){
     const latr = dx * cam.rx + dy * cam.ry;
     const z = Z0 + fwd;
     const LF = (300 * Z0) / (HW * z);        // px per lateral unit
-    rows.push({ d2, z, cx: 260 + latr * LF, sy: HORIZON + KY / z, hw: 300 * Z0 / z, LF });
+    rows.push({ d2, z, cx: W/2 + latr * LF, sy: HORIZON + KY / z, hw: 300 * Z0 / z, LF });
   }
   // PASS 1: all grass bands (painted before any road so they can't smear over it)
   for (let j = rows.length - 1; j > 0; j--){
@@ -1458,7 +1465,7 @@ function drawFP(){
     const latr = dx * cam.rx + dy * cam.ry;
     const z = Z0 + fwd;
     const LF = (300 * Z0) / (HW * z);
-    return { x: 260 + latr * LF, y: HORIZON + KY / z, sc: CAMD / z, LF, fwd };
+    return { x: W/2 + latr * LF, y: HORIZON + KY / z, sc: CAMD / z, LF, fwd };
   };
   const add = (d, lat, fn) => { const p = proj(d, lat); if (p) spr.push({ p, fn }); };
 
@@ -1741,7 +1748,7 @@ function drawPlayerFP(jump){
   const twoWheel = !(v.id === "ev" || v.id === "car" || v.id === "monster");
   const vs = twoWheel ? 1.55 : 1.0;       // bikes/scooters are small — scale them up
   ctx.save();
-  ctx.translate(260 + lean * 6, (twoWheel ? 686 : 700) - jump + bob);
+  ctx.translate(W/2 + lean * 6, (twoWheel ? 686 : 700) - jump + bob);
   ctx.rotate(tilt);
   ctx.scale(vs, vs);
   // contact shadow (tighter & darker when grounded, big & soft mid-air)
@@ -1787,36 +1794,82 @@ function drawPlayerFP(jump){
       ctx.fillStyle = "rgba(180,180,180," + (0.18 + 0.12*Math.sin(S.time*20)) + ")";
       ctx.beginPath(); ctx.arc(-50, by + 52, 7 + 2*Math.sin(S.time*15), 0, 7); ctx.fill();
     }
+  } else if (v.id === "scooter"){
+    /* ----- E-SCOOTER: standing rider, tall stem, small wheel — instantly reads "scooter" ----- */
+    const deckY = 18;
+    // small rear wheel
+    ctx.fillStyle = "#15171a"; rounded(-8, deckY + 2, 16, 20, 7); ctx.fill();
+    ctx.fillStyle = "#2b2f34"; rounded(-10, deckY + 18, 20, 6, 3); ctx.fill();
+    // wide deck with grip tape
+    ctx.fillStyle = "#9b5de5"; rounded(-24, deckY - 6, 48, 10, 4); ctx.fill();
+    ctx.fillStyle = "#2a2a33"; rounded(-20, deckY - 4, 40, 4, 2); ctx.fill();
+    // tall narrow stem up to high handlebars
+    ctx.fillStyle = "#7b3fd0"; rounded(-3, -58, 6, deckY + 52, 3); ctx.fill();
+    ctx.strokeStyle = "#333"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-20, -56); ctx.lineTo(20, -56); ctx.stroke();     // high bars
+    // STANDING rider — both sneakers on the deck, tall silhouette
+    ctx.fillStyle = "#fff"; rounded(-18, deckY - 12, 13, 7, 3); ctx.fill(); rounded(5, deckY - 12, 13, 7, 3); ctx.fill();
+    ctx.fillStyle = "#31577f"; rounded(-13, -18, 10, deckY + 8, 4); ctx.fill();   // legs
+    ctx.fillStyle = "#31577f"; rounded(3, -18, 10, deckY + 8, 4); ctx.fill();
+    ctx.fillStyle = "#43a5a0"; rounded(-14, -46, 28, 32, 10); ctx.fill();         // teal jacket
+    ctx.fillStyle = "#37847f"; rounded(-14, -24, 28, 10, 5); ctx.fill();
+    ctx.fillStyle = "#ff8fa3"; rounded(-9, -42, 18, 22, 7); ctx.fill();           // little backpack
+    ctx.strokeStyle = "#43a5a0"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(-11, -40); ctx.lineTo(-19, -54); ctx.moveTo(11, -40); ctx.lineTo(19, -54); ctx.stroke();
+    // red helmet
+    ctx.fillStyle = "#e63946"; ctx.beginPath(); ctx.arc(0, -56, 13, 0, 7); ctx.fill();
+    ctx.fillStyle = "#b8232f"; ctx.beginPath(); ctx.arc(0, -52, 13, Math.PI*.1, Math.PI*.9); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.arc(-5, -60, 3.5, 0, 7); ctx.fill();
   } else {
-    // ----- two-wheeler, viewed from behind -----
-    const frameCol = v.id === "scooter" ? "#9b5de5" : v.id === "ebike" ? "#f3722c" : "#e63946";
-    // rear wheel
+    /* ----- BICYCLE / E-BIKE: seated rider — the e-bike is chunkier, carries a
+       glowing battery + rack, and casts a headlight pool on the road ----- */
+    const isE = v.id === "ebike";
+    const frameCol = isE ? "#f3722c" : "#e63946";
+    if (isE){                                            // headlight pool ahead
+      const hl = ctx.createRadialGradient(0, -74, 4, 0, -74, 30);
+      hl.addColorStop(0, "rgba(255,250,200,.5)"); hl.addColorStop(1, "rgba(255,250,200,0)");
+      ctx.fillStyle = hl; ctx.beginPath(); ctx.ellipse(0, -74, 30, 14, 0, 0, 7); ctx.fill();
+    }
+    // rear wheel (fatter tyre on the e-bike)
     ctx.fillStyle = "#15171a";
-    rounded(-11, -2, 22, 40, 9); ctx.fill();
+    rounded(isE ? -14 : -11, -2, isE ? 28 : 22, 40, 9); ctx.fill();
     if (moving){ ctx.strokeStyle = "#444"; ctx.lineWidth = 2;
       const a = S.time * 24;
       for (let i = 0; i < 3; i++){ const an = a + i*2.1;
         ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(Math.cos(an)*9, 16 + Math.sin(an)*9); ctx.stroke(); } }
-    ctx.fillStyle = "#2b2f34"; rounded(-13, 30, 26, 8, 3); ctx.fill();  // tyre contact
-    if (v.id === "scooter"){
-      ctx.fillStyle = frameCol; rounded(-7, -6, 14, 22, 5); ctx.fill();       // deck stem
-      ctx.fillStyle = "#333"; rounded(-16, -8, 32, 6, 3); ctx.fill();         // deck
-    } else {
-      ctx.fillStyle = frameCol; rounded(-7, -18, 14, 30, 6); ctx.fill();      // seat/frame
-      if (v.id === "ebike"){ ctx.fillStyle = "#222"; rounded(-5, -6, 10, 14, 2); ctx.fill();
-        ctx.fillStyle = "#7ae582"; ctx.fillRect(-3, -2, 6, 3); }              // battery + charge LED
+    ctx.fillStyle = "#2b2f34"; rounded(isE ? -16 : -13, 30, isE ? 32 : 26, 8, 3); ctx.fill();
+    // frame / seat post
+    ctx.fillStyle = frameCol; rounded(isE ? -9 : -7, -18, isE ? 18 : 14, 30, 6); ctx.fill();
+    if (isE){
+      ctx.fillStyle = "#23262b"; rounded(-24, -14, 48, 7, 3); ctx.fill();       // rear rack
+      ctx.fillStyle = "#1d2024"; rounded(-8, -8, 16, 20, 3); ctx.fill();        // battery pack
+      const chg = .35 + .3 * Math.sin(S.time * 3);
+      ctx.fillStyle = "#7ae582"; ctx.fillRect(-5, 8 - 13 * chg, 10, 13 * chg);  // charge level
+      ctx.strokeStyle = "#7ae582"; ctx.lineWidth = 1.5; rounded(-8, -8, 16, 20, 3); ctx.stroke();
     }
-    // rider torso (jacket, back view)
-    ctx.fillStyle = "#3a6ea5"; rounded(-15, -40, 30, 34, 11); ctx.fill();
-    ctx.fillStyle = "#315d8c"; rounded(-15, -16, 30, 12, 6); ctx.fill();      // lower back shadow
-    // arms reaching to handlebars
-    ctx.strokeStyle = "#3a6ea5"; ctx.lineWidth = 7; ctx.lineCap = "round";
+    // pedalling feet (bicycle only — e-bike cruises)
+    if (!isE && moving){
+      const pa = S.time * 9;
+      ctx.fillStyle = "#fff";
+      rounded(-16, 2 + Math.sin(pa) * 7, 10, 7, 3); ctx.fill();
+      rounded(6, 2 - Math.sin(pa) * 7, 10, 7, 3); ctx.fill();
+    }
+    // rider torso (bike: blue jersey · e-bike: hi-vis orange vest)
+    ctx.fillStyle = isE ? "#f8961e" : "#3a6ea5"; rounded(-15, -40, 30, 34, 11); ctx.fill();
+    ctx.fillStyle = isE ? "#e07c0c" : "#315d8c"; rounded(-15, -16, 30, 12, 6); ctx.fill();
+    if (isE){ ctx.fillStyle = "#fff"; rounded(-15, -34, 30, 4, 2); ctx.fill(); rounded(-15, -26, 30, 4, 2); ctx.fill();
+      ctx.fillStyle = "#1d2024"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("⚡", 0, -20); }
+    // arms + handlebars
+    ctx.strokeStyle = isE ? "#f8961e" : "#3a6ea5"; ctx.lineWidth = 7; ctx.lineCap = "round";
     ctx.beginPath(); ctx.moveTo(-12, -34); ctx.lineTo(-22, -20); ctx.moveTo(12, -34); ctx.lineTo(22, -20); ctx.stroke();
-    ctx.strokeStyle = "#333"; ctx.lineWidth = 4;                              // handlebars
+    ctx.strokeStyle = "#333"; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(-24, -20); ctx.lineTo(24, -20); ctx.stroke();
-    // helmet
-    ctx.fillStyle = "#ffd23f"; ctx.beginPath(); ctx.arc(0, -48, 14, 0, 7); ctx.fill();
-    ctx.fillStyle = "#e0b400"; ctx.beginPath(); ctx.arc(0, -44, 14, Math.PI*.1, Math.PI*.9); ctx.fill();
+    if (isE){ ctx.fillStyle = "#ffd7a0";                                        // bar-end mirrors
+      ctx.beginPath(); ctx.arc(-26, -22, 3, 0, 7); ctx.arc(26, -22, 3, 0, 7); ctx.fill(); }
+    // helmet (bike: yellow · e-bike: white w/ orange stripe)
+    ctx.fillStyle = isE ? "#f4f6f8" : "#ffd23f"; ctx.beginPath(); ctx.arc(0, -48, 14, 0, 7); ctx.fill();
+    ctx.fillStyle = isE ? "#f3722c" : "#e0b400"; ctx.beginPath(); ctx.arc(0, -44, 14, Math.PI*.1, Math.PI*.9); ctx.fill();
+    if (isE){ ctx.fillStyle = "#f3722c"; rounded(-3, -61, 6, 14, 3); ctx.fill(); }
     ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.arc(-5, -52, 4, 0, 7); ctx.fill();
   }
   ctx.restore();
@@ -1931,8 +1984,8 @@ function drawHUD(){
   if (S.banner && S.time < S.banner.until){
     ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
     const bw2 = ctx.measureText(S.banner.text).width + 28;
-    ctx.fillStyle = "rgba(214,40,40,.93)"; rounded(260 - bw2/2, 96, bw2, 30, 15); ctx.fill();
-    ctx.fillStyle = "#fff"; ctx.fillText(S.banner.text, 260, 116);
+    ctx.fillStyle = "rgba(214,40,40,.93)"; rounded(W/2 - bw2/2, 96, bw2, 30, 15); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.fillText(S.banner.text, W/2, 116);
   }
   // hint
   if (S.t < 90 && S.speed < 1){
@@ -1940,8 +1993,8 @@ function drawHUD(){
     ctx.fillStyle = "rgba(255,255,255,.9)";
     const hint = "Hold ▲ (or GO) to start riding!";
     const hw2 = ctx.measureText(hint).width + 24;
-    rounded(260 - hw2/2, PLAYER_Y + 76, hw2, 28, 14); ctx.fill();
-    ctx.fillStyle = "#1d3461"; ctx.fillText(hint, 260, PLAYER_Y + 95);
+    rounded(W/2 - hw2/2, PLAYER_Y + 76, hw2, 28, 14); ctx.fill();
+    ctx.fillStyle = "#1d3461"; ctx.fillText(hint, W/2, PLAYER_Y + 95);
   }
   drawSpeedo(lim);
   drawToasts();
@@ -2021,9 +2074,9 @@ function drawToasts(){
     ctx.fillStyle = "rgba(255,255,255,.85)";
     const w = ctx.measureText(t.text).width + 16;
     const y = PLAYER_Y - 96 - (1.8 - t.t) * 40 - i * 24;
-    rounded(260 - w/2, y - 15, w, 22, 11); ctx.fill();
+    rounded(W/2 - w/2, y - 15, w, 22, 11); ctx.fill();
     ctx.fillStyle = t.color;
-    ctx.fillText(t.text, 260, y + 2);
+    ctx.fillText(t.text, W/2, y + 2);
     ctx.globalAlpha = 1;
   });
 }
@@ -2445,7 +2498,7 @@ document.getElementById("certMenu").addEventListener("click", () => { S.screen =
 
 /* ---------- main loop ---------- */
 function draw(){
-  ctx.setTransform(VIEW_SCALE, 0, 0, VIEW_SCALE, 0, 0);
+  ctx.setTransform(VIEW_SCALE, 0, 0, VIEW_SCALE, VIEW_OFFX * VIEW_SCALE, 0);
   setCam();
   // NFS camera lean: the world banks gently into your steering at speed
   const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
