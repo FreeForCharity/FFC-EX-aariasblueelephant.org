@@ -678,31 +678,22 @@ function drawSunBaby(g,w,h,mood,blink){
   if(!girlReady)return;
   const dr=R*1.36,dh=dr*2.15,dw=dh*GW/GH,dx=cx-dw/2,dy=cy-dh/2+dr*0.02;
   g.save();g.beginPath();g.arc(cx,cy,dr,0,7);g.clip();
+  const SKIN='#e9ebf3';                    // her pale face tone (sampled near the eyes)
+  // skin-colored backing behind her face: extraction left some face shading
+  // transparent, and without this the sun's yellow leaks through her skin
+  g.fillStyle=SKIN;
+  g.beginPath();g.ellipse(dx+0.55*dw,dy+0.62*dh,dw*0.36,dh*0.28,0,0,7);g.fill();
   g.drawImage(girlImg,dx,dy,dw,dh);
   const eye=e=>({x:dx+e.x*dw,y:dy+e.y*dh,rx:e.rx*dw,ry:e.ry*dh});
-  /* ---- hide her printed eyes with matching skin, draw clean animated eyes on top ---- */
-  const SKIN='#e9ebf3';                    // her pale face tone (sampled near the eyes)
-  const open=(mood==='sleepy')?0:(1-blink)*(mood==='care'?0.9:1);
-  EYES.forEach((E,ei)=>{
-    const p=eye(E),sx=ei===0?-1:1;
-    const ey=p.y+p.ry*0.45;                 // sit the drawn eye a touch lower on her face
-    const erx=p.rx*0.72, ery=p.ry*1.28;    // drawn eye size (big & round like the logo)
-    // cover the original printed eye (kept clear of her smile below)
-    g.fillStyle=SKIN;g.beginPath();g.ellipse(p.x,p.y+p.ry*0.15,p.rx*1.15,p.ry*1.45,0,0,7);g.fill();
-    if(open<0.12){                          // closed → soft downward lash curve
-      g.strokeStyle=NAVY;g.lineWidth=Math.max(2.2,ery*0.34);g.lineCap='round';
-      g.beginPath();g.moveTo(p.x-erx,ey-ery*0.1);g.quadraticCurveTo(p.x,ey+ery*0.55,p.x+erx,ey-ery*0.1);g.stroke();
-    }else{                                  // open → navy eyeball + sparkles, blinks by shrinking height
-      const h=ery*open;
-      g.fillStyle=NAVY;g.beginPath();g.ellipse(p.x,ey,erx,h,0,0,7);g.fill();
-      g.fillStyle='#fff';
-      g.beginPath();g.ellipse(p.x+erx*0.34,ey-h*0.4,erx*0.34,h*0.34,0,0,7);g.fill();
-      g.beginPath();g.ellipse(p.x-erx*0.32,ey+h*0.34,erx*0.17,h*0.17,0,0,7);g.fill();
-    }
-    // worried brows for care
-    if(mood==='care'){g.strokeStyle=NAVY;g.lineWidth=Math.max(2.2,p.ry*0.3);g.lineCap='round';
-      g.beginPath();g.moveTo(p.x-sx*erx*0.95,ey-ery*2.0);g.quadraticCurveTo(p.x,ey-ery*1.15,p.x+sx*erx*0.95,ey-ery*1.7);g.stroke();}
-  });
+  /* ---- her REAL printed logo eyes stay 100% untouched (every cover/redraw
+     attempt chopped her hair linework into artifacts). Emotion is expressed
+     with safe cues around them instead. ---- */
+  if(mood==='care'){ // worried brows, drawn safely ABOVE her printed eyes
+    g.strokeStyle=NAVY;g.lineWidth=Math.max(2.2,dw*0.028);g.lineCap='round';
+    EYES.forEach((E,ei)=>{const p=eye(E),sx=ei===0?-1:1;
+      g.beginPath();g.moveTo(p.x-sx*p.rx*0.8,p.y-p.ry*2.3);
+      g.quadraticCurveTo(p.x,p.y-p.ry*1.55,p.x+sx*p.rx*0.8,p.y-p.ry*2.0);g.stroke();});
+  }
   // soft blush — subtle normally, glowing when she cheers
   g.fillStyle=mood==='cheer'?'rgba(255,120,160,.5)':'rgba(255,150,180,.2)';
   CHEEKS.forEach(c=>{g.beginPath();g.ellipse(dx+c.x*dw,dy+c.y*dh,dw*0.09,dh*0.045,0,0,7);g.fill();});
