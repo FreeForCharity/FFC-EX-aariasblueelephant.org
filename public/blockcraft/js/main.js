@@ -570,16 +570,45 @@
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  /* ---------------- on-screen control pad (always visible) ---------------- */
+  /* ------- on-screen analog joystick (same feel as Elly-Tubbies) -------
+     Drag the knob any direction; it drives the same key flags the keyboard
+     uses, so all movement/physics code is untouched. Push forward twice
+     quickly for the classic double-tap sprint. */
   const holdBtn = (id, code) => {
     const el = $(id);
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.setPointerCapture(e.pointerId); keys[code] = true; });
     el.addEventListener('pointerup',   (e) => { e.preventDefault(); keys[code] = false; });
     el.addEventListener('pointercancel', () => { keys[code] = false; });
   };
-  holdBtn('tUp', 'KeyW'); holdBtn('tDown', 'KeyS'); holdBtn('tLeft', 'KeyA'); holdBtn('tRight', 'KeyD');
   holdBtn('tDesc', 'ShiftLeft');                                    // ⬇ fly down
-  $('tUp').addEventListener('pointerdown', fwdTap);                 // double-tap ▲ = sprint
+  (function joystick() {
+    const pad = $('touchPad'), knob = $('padKnob');
+    let pid = null, fwdWas = false;
+    const MAXR = () => pad.clientWidth / 2 - 34;
+    const setKnob = (dx, dy) =>
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const apply = (dx, dy, maxR) => {
+      const x = dx / maxR, y = dy / maxR;
+      keys.KeyW = y < -0.35; keys.KeyS = y > 0.35;
+      keys.KeyA = x < -0.35; keys.KeyD = x > 0.35;
+      if (keys.KeyW && !fwdWas) fwdTap();     // forward-push edge = sprint double-tap
+      fwdWas = keys.KeyW;
+    };
+    const track = (e) => {
+      const r = pad.getBoundingClientRect();
+      let dx = e.clientX - (r.left + r.width / 2);
+      let dy = e.clientY - (r.top + r.height / 2);
+      const len = Math.hypot(dx, dy), maxR = MAXR();
+      if (len > maxR) { dx = dx / len * maxR; dy = dy / len * maxR; }
+      setKnob(dx, dy); apply(dx, dy, maxR);
+    };
+    pad.addEventListener('pointerdown', (e) => { e.preventDefault(); pid = e.pointerId; pad.setPointerCapture(pid); track(e); });
+    pad.addEventListener('pointermove', (e) => { if (e.pointerId === pid) track(e); });
+    const end = (e) => { if (e.pointerId !== pid) return; pid = null; setKnob(0, 0);
+      keys.KeyW = keys.KeyS = keys.KeyA = keys.KeyD = false; fwdWas = false; };
+    pad.addEventListener('pointerup', end);
+    pad.addEventListener('pointercancel', end);
+  })();
   const jb = $('tJump');
   jb.addEventListener('pointerdown', (e) => { e.preventDefault(); tapSpace(); keys.Space = true; });
   jb.addEventListener('pointerup',   (e) => { e.preventDefault(); keys.Space = false; });

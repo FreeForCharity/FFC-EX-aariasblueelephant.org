@@ -1,71 +1,100 @@
 // ---------------------------------------------------------------------------
 // On-screen controls — shown for EVERYONE (mouse or touch), so the whole game
-// is playable without a keyboard. A big friendly D-pad moves Belu up / down /
-// left / right (hold or tap), and a jump button hops. Diagonals work by holding
-// two arrows. Everything feeds the same global `input` the keyboard uses.
+// is playable without a keyboard. The same soft analog joystick as Elly-Tubbies:
+// drag the elephant knob in any direction to walk Belu (true analog — gentle
+// push = slow stroll, big push = trot). A jump button hops. Everything feeds
+// the same global `input` the keyboard uses.
 // ---------------------------------------------------------------------------
 
 import { useRef } from 'react';
 import { setJoystick, clearJoystick, queueJump } from '../three/input';
 
-type Dir = 'up' | 'down' | 'left' | 'right';
+const RING = 144;           // joystick ring diameter (px)
+const KNOB = 60;            // knob diameter (px)
+const MAX = (RING - KNOB) / 2 - 4; // how far the knob may travel
 
 export default function ScreenControls() {
-  const held = useRef<Set<Dir>>(new Set());
+  const ringRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activeId = useRef<number | null>(null);
 
-  function apply() {
-    const h = held.current;
-    let x = (h.has('right') ? 1 : 0) - (h.has('left') ? 1 : 0);
-    let z = (h.has('down') ? 1 : 0) - (h.has('up') ? 1 : 0); // up = forward = -z
-    const len = Math.hypot(x, z);
-    if (len > 0) {
-      x /= len;
-      z /= len;
-      setJoystick(x, z);
-    } else {
-      clearJoystick();
-    }
+  function setKnob(dx: number, dy: number) {
+    if (knobRef.current)
+      knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
   }
 
-  function press(d: Dir, e: React.PointerEvent) {
+  function track(e: React.PointerEvent) {
+    if (!ringRef.current) return;
+    const r = ringRef.current.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2);
+    let dy = e.clientY - (r.top + r.height / 2);
+    const len = Math.hypot(dx, dy);
+    if (len > MAX) { dx = (dx / len) * MAX; dy = (dy / len) * MAX; }
+    setKnob(dx, dy);
+    // analog vector: x right+, z down+ (screen-down = toward camera = +z)
+    setJoystick(dx / MAX, dy / MAX);
+  }
+
+  function onDown(e: React.PointerEvent) {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    held.current.add(d);
-    apply();
+    activeId.current = e.pointerId;
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    track(e);
   }
-  function release(d: Dir, e: React.PointerEvent) {
-    e.preventDefault();
-    held.current.delete(d);
-    apply();
+  function onMove(e: React.PointerEvent) {
+    if (activeId.current === e.pointerId) track(e);
+  }
+  function onUp(e: React.PointerEvent) {
+    if (activeId.current !== e.pointerId) return;
+    activeId.current = null;
+    setKnob(0, 0);
+    clearJoystick();
   }
 
-  const padBtn = (d: Dir, glyph: string, style: React.CSSProperties) => (
-    <button
-      onPointerDown={(e) => press(d, e)}
-      onPointerUp={(e) => release(d, e)}
-      onPointerCancel={(e) => release(d, e)}
-      onPointerLeave={(e) => { if (held.current.has(d)) release(d, e); }}
-      className="pointer-events-auto absolute flex items-center justify-center touch-none select-none active:scale-95"
-      style={{
-        width: 58, height: 58, borderRadius: 16, fontSize: 24, color: '#2b517d',
-        background: 'rgba(255,255,255,0.82)', border: '2px solid rgba(255,255,255,0.9)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.22)', transition: 'transform 0.08s',
-        ...style,
-      }}
-      aria-label={d}
+  const arrow = (glyph: string, style: React.CSSProperties) => (
+    <span
+      className="absolute font-black pointer-events-none"
+      style={{ fontSize: 15, color: '#fff', textShadow: '0 2px 5px rgba(58,58,90,.45)', ...style }}
     >
       {glyph}
-    </button>
+    </span>
   );
 
   return (
     <div className="pointer-events-none fixed inset-0 z-20 select-none">
-      {/* D-pad — bottom left */}
-      <div className="absolute" style={{ left: 22, bottom: 26, width: 182, height: 182 }}>
-        {padBtn('up', '▲', { left: 62, top: 0 })}
-        {padBtn('left', '◀', { left: 0, top: 62 })}
-        {padBtn('right', '▶', { left: 124, top: 62 })}
-        {padBtn('down', '▼', { left: 62, top: 124 })}
+      {/* analog joystick — bottom left (same feel as Elly-Tubbies) */}
+      <div
+        ref={ringRef}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        className="pointer-events-auto absolute touch-none"
+        style={{
+          left: 20, bottom: 24, width: RING, height: RING, borderRadius: '50%',
+          background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,.18))',
+          border: '4px solid rgba(255,255,255,.85)',
+          boxShadow: '0 6px 18px rgba(58,58,90,.18), inset 0 0 24px rgba(184,164,255,.25)',
+          backdropFilter: 'blur(2px)',
+        }}
+        aria-label="Move Belu"
+      >
+        {arrow('▲', { top: 5, left: '50%', transform: 'translateX(-50%)' })}
+        {arrow('▼', { bottom: 5, left: '50%', transform: 'translateX(-50%)' })}
+        {arrow('◀', { left: 8, top: '50%', transform: 'translateY(-50%)' })}
+        {arrow('▶', { right: 8, top: '50%', transform: 'translateY(-50%)' })}
+        <div
+          ref={knobRef}
+          className="absolute flex items-center justify-center pointer-events-none"
+          style={{
+            left: '50%', top: '50%', width: KNOB, height: KNOB, borderRadius: '50%',
+            transform: 'translate(-50%, -50%)', fontSize: 28,
+            background: 'linear-gradient(160deg,#ffffff,#ffe9f2)', border: '3px solid #fff',
+            boxShadow: '0 5px 0 #f3c1d6, 0 8px 16px rgba(58,58,90,.25)',
+          }}
+        >
+          🐘
+        </div>
       </div>
 
       {/* Jump — bottom right */}
