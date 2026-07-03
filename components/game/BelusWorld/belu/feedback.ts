@@ -76,11 +76,17 @@ function pickVoice(): SpeechSynthesisVoice | null {
   if (voice) return voice;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-  // prefer a warm English voice if available
-  voice =
-    voices.find((v) => /en/i.test(v.lang) && /(female|samantha|karen|moira|tessa|google uk english female)/i.test(v.name)) ||
-    voices.find((v) => /en/i.test(v.lang)) ||
-    voices[0];
+  // prefer the most natural voice on this device (same ranking as Block Craft):
+  // Edge "Online Natural" > neural > premium > enhanced > known-warm > Samantha
+  const en = voices.filter((v) => /en/i.test(v.lang));
+  const ranks = [/online.*natural/i, /natural/i, /neural/i, /premium/i, /enhanced/i,
+    /Ava|Zoe|Allison|Joelle|Aria|Jenny/i, /Samantha/i, /Google US English/i,
+    /(female|karen|moira|tessa|google uk english female)/i];
+  for (const r of ranks) {
+    const match = en.find((v) => r.test(v.name));
+    if (match) { voice = match; return voice; }
+  }
+  voice = en[0] || voices[0];
   return voice;
 }
 
