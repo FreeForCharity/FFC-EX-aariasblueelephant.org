@@ -426,9 +426,27 @@ const sfx={tap(){tone(520,.09,'sine',.08);},
 
 // gentle read-aloud
 let voiceOK='speechSynthesis' in window;
-function speak(txt){if(!S.voice||!voiceOK||S.muted)return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt.replace(/[✨⭐🌈☀️🐘💙💜]/g,''));
-  u.rate=S.speed==='relaxed'?0.78:S.speed==='fast'?1.05:0.9;u.pitch=1.15;speechSynthesis.speak(u);}catch(e){}}
+/* natural voices: use the best Apple voice on this device (Premium > Enhanced >
+   default), with a real cast — Sun Baby speaks warmly, tubbies sound like kids */
+let VOICES={narrator:null,kid:null};
+function pickVoices(){
+  const vs=speechSynthesis.getVoices();if(!vs.length)return;
+  const en=vs.filter(v=>v.lang&&v.lang.toLowerCase().startsWith('en'));
+  const byName=n=>en.find(v=>v.name===n);
+  VOICES.narrator=en.find(v=>/premium/i.test(v.name))||en.find(v=>/enhanced/i.test(v.name))
+    ||byName('Samantha')||en[0]||null;
+  VOICES.kid=byName('Junior')||VOICES.narrator;
+}
+if(voiceOK){pickVoices();speechSynthesis.onvoiceschanged=pickVoices;}
+const TUBBY_PITCH={'💗':1.35,'💜':1.15,'💚':1.25,'💛':1.05,'🥚':1.4,'🎭':1.2,'🎉':1.25};
+function speak(txt,who){if(!S.voice||!voiceOK||S.muted)return;
+  try{speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s+/g,' ').trim());
+  const kid=who&&TUBBY_PITCH[who]!==undefined;
+  u.voice=kid?VOICES.kid:VOICES.narrator;
+  u.pitch=kid?TUBBY_PITCH[who]:1.12;
+  u.rate=(S.speed==='relaxed'?0.82:S.speed==='fast'?1.08:0.95)*(kid?1.02:1);
+  speechSynthesis.speak(u);}catch(e){}}
 
 /* ============================== 3D WORLD ================================= */
 const T=window.THREE;
@@ -1455,7 +1473,7 @@ function pumpNarr(){
   if(narrBusy||!narrQ.length)return;narrBusy=true;
   const {who,txt,res}=narrQ.shift();
   $('narrWho').textContent=who;$('narrTxt').textContent=txt;
-  $('narr').classList.add('show');$('funRow').classList.add('hidden');speak(txt);
+  $('narr').classList.add('show');$('funRow').classList.add('hidden');speak(txt,who);
   const done=()=>{if(narrResolve!==done)return;narrResolve=null;
     narrBusy=false;res();
     if(!narrQ.length){$('narr').classList.remove('show');
