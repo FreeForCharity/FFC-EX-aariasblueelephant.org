@@ -28,6 +28,7 @@ import { PLAYER_SPAWN, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { ActivityZone } from '../belu/progress';
 import type { Sound } from '../belu/feedback';
+import { nudgeZoom, CAM_ZOOM_STEP } from './playerState';
 
 interface Props {
   emotion: BeluEmotion;
@@ -135,6 +136,8 @@ export default function GameCanvas({
   return (
     <Canvas
       shadows
+      // mouse-wheel zoom over the world (same channel as the 🔍 HUD buttons)
+      onWheel={(e) => nudgeZoom(e.deltaY > 0 ? CAM_ZOOM_STEP : -CAM_ZOOM_STEP)}
       dpr={dpr}
       gl={{
         antialias: false, // the composer + dpr handle edges; saves fill-rate

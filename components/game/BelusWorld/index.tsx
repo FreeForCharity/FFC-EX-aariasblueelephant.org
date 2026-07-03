@@ -440,7 +440,7 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         <motion.img
           src="/abe-logo.png"
           alt="Aaria's Blue Elephant — Building a New Inclusive World"
-          className="w-[min(30vh,180px)] rounded-full"
+          className="w-[min(36vh,210px)] rounded-full"
           style={{ boxShadow: '0 10px 28px rgba(20,40,90,.3)' }}
           animate={{ y: [0, -8, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
@@ -461,7 +461,8 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="max-w-xl text-base font-extrabold text-sky-800 sm:text-lg"
+        className="max-w-xl text-base font-extrabold sm:text-lg"
+        style={{ color: '#246' }}
       >
         Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Belu grow!
       </motion.p>

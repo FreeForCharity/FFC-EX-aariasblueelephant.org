@@ -13,6 +13,31 @@
     color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;}
   canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;}
   .hidden{display:none!important;}
+
+  /* ---------- Title screen (uniform with Block Craft) ---------- */
+  #title{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:20px;text-align:center;padding:16px;
+    background:linear-gradient(180deg,#7ec8ff 0%,#b9e7ff 45%,#baf2bb 100%);}
+  #title.hiddenT{display:none;}
+  #logoImg{width:min(30vh,190px);border-radius:50%;
+    box-shadow:0 10px 28px rgba(20,40,90,.3);animation:bounceTitle 3s ease-in-out infinite;}
+  .rainbowTitle{font-size:min(9vw,60px);line-height:1.15;font-weight:900;
+    background:linear-gradient(90deg,#ff5e7e,#ffa94d,#ffd43b,#69db7c,#4dabf7,#b197fc);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 4px 0 rgba(255,255,255,.35);animation:bounceTitle 2.4s ease-in-out infinite;}
+  @keyframes bounceTitle{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .tSubtitle{font-size:min(3.6vw,22px);color:#246;}
+  .tEmojis{font-size:min(7vw,42px);letter-spacing:10px;animation:bounceTitle 3s .4s ease-in-out infinite;}
+  .bigBtn{font-family:inherit;font-size:26px;padding:16px 44px;border:none;border-radius:30px;
+    background:linear-gradient(180deg,#ffd43b,#ffa94d);color:#5c3c00;cursor:pointer;
+    box-shadow:0 6px 0 #e8920c,0 10px 18px rgba(0,0,0,.18);transition:transform .12s;font-weight:900;}
+  .bigBtn:hover{transform:scale(1.06);}
+  .bigBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #e8920c;}
+  .bigBtn.green{background:linear-gradient(180deg,#8ce99a,#51cf66);color:#0b4419;
+    box-shadow:0 6px 0 #2f9e44,0 10px 18px rgba(0,0,0,.18);}
+  .bigBtn.green:active{box-shadow:0 2px 0 #2f9e44;}
+  #orgFooter{font-size:15px;color:#2b517d;background:rgba(255,255,255,.55);
+    padding:8px 20px;border-radius:18px;}
   /* Fix-It merge board */
   #fxGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:420px;margin:0 auto;}
   .fxCell{aspect-ratio:1;border-radius:18px;background:#f0f4ff;border:3px solid #dce4f7;
@@ -172,6 +197,8 @@
     <button class="speed" data-sp="relaxed">🐢</button>
     <button class="speed sel" data-sp="normal">🐇</button>
     <button class="speed" data-sp="fast">🚀</button>
+    <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in">🔍＋</button>
+    <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out">🔍−</button>
   </div>
 
   <div id="stick"><div id="knob">🐘</div>
@@ -195,8 +222,22 @@
   </div></div>
 
   <!-- Intro -->
+  <!-- Title screen — uniform with Block Craft across all ABE games -->
+  <div id="title">
+    <img id="logoImg" src="/abe-logo.png" alt="Aaria's Blue Elephant — Building a New Inclusive World">
+    <h1 class="rainbowTitle">Elly-Tubbies</h1>
+    <div class="tSubtitle">Built for <b>Aaria and Her Friends</b> 💖 — bouncy elephant friends in sunny Trunkland!</div>
+    <div class="tEmojis">🐘☀️🌈🌊✈️🚗⭐💙</div>
+    <button class="bigBtn green" id="titlePlayBtn">▶ Play!</button>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+      <button class="bigBtn" id="titleHowBtn" style="font-size:20px;padding:12px 30px;">❓ How to Play</button>
+      <button class="bigBtn" id="titleFsBtn" style="font-size:20px;padding:12px 30px;">⛶ Full Screen</button>
+    </div>
+    <div id="orgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA</div>
+  </div>
+
   <div class="overlay" id="intro"><div class="panel">
-    <h1>Elly-Tubbies</h1>
+    <h1>How to Play 🐘</h1>
     <p>Over the hills and far away, in sunny <b>Trunkland</b>, live four bouncy elephant friends with magic <b>Tummy-TVs</b>:</p>
     <div class="tubRow">
       <div class="tub"><div class="dot" style="background:#a78bfa">📺</div>Tinko</div>
@@ -208,7 +249,7 @@
     <p>🌊 <b>Swim</b> the sea, ✈️ <b>fly</b> the sky, 🚗 <b>zoom</b> a bumper car — find <b>Splash Cove</b>, <b>Sky Hill</b> and the <b>Zoomy Garage</b>, and pick the <b>right gear</b> to unlock each one! Collect <b>✨ sparkles</b>, find <b>secret wonders</b>, and play with every friend to earn <b>⭐ stars</b>.</p>
     <p style="font-size:clamp(13px,3.6vw,16px)">Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b></p>
     <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
-    <button class="big" id="startBtn">Let's Play! ▶</button>
+    <button class="big" id="startBtn">Got it! ▶</button>
   </div></div>
 
   <!-- Sticker garden book -->
@@ -1430,7 +1471,7 @@ function camFollow(dt){
   let wantPos,wantLook;
   if(camTarget){wantPos=camTarget.pos;wantLook=camTarget.look;}
   else{const p=player.group.position;
-    wantPos=new T.Vector3(p.x,p.y+8.5,p.z-12.5);
+    wantPos=new T.Vector3(p.x,p.y+8.5*camZoom,p.z-12.5*camZoom);
     wantLook=new T.Vector3(p.x,p.y+2,p.z+5);}
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
@@ -2140,9 +2181,20 @@ function resize(){renderer.setSize(innerWidth,innerHeight,false);
 addEventListener('resize',resize);resize();
 
 /* ================================ UI wire ================================ */
-$('startBtn').onclick=()=>{ac();sfx.meet?sfx.meet():sfx.pop();
-  $('intro').classList.remove('show');mode='roam';
-  wakeRitual();};
+/* title screen (uniform across ABE games) */
+$('titlePlayBtn').onclick=()=>{ac();sfx.pop();
+  $('title').classList.add('hiddenT');mode='roam';wakeRitual();};
+$('titleHowBtn').onclick=()=>{sfx.tap();$('intro').classList.add('show');};
+$('titleFsBtn').onclick=()=>{
+  if(document.fullscreenElement)document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(()=>{});};
+$('startBtn').onclick=()=>{ac();sfx.pop();$('intro').classList.remove('show');};
+/* camera zoom (uniform across ABE games) */
+let camZoom=1;
+function setCamZoom(d){camZoom=Math.max(0.55,Math.min(2.1,camZoom+d));sfx.tap();}
+$('zoomInBtn').onclick=()=>setCamZoom(-0.18);
+$('zoomOutBtn').onclick=()=>setCamZoom(+0.18);
+addEventListener('wheel',e=>{if(mode==='roam')setCamZoom(e.deltaY>0?0.1:-0.1);},{passive:true});
 $('helpBtn').onclick=()=>{$('intro').classList.add('show');};
 $('soundBtn').textContent=S.muted?'🔇':'🔊';
 $('soundBtn').onclick=()=>{S.muted=!S.muted;save();
@@ -2181,10 +2233,10 @@ $('fsBtn').onclick=()=>{sfx.tap();
   if(document.fullscreenElement)document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});};
 
-document.querySelectorAll('.speed').forEach(b=>{
+document.querySelectorAll('.speed[data-sp]').forEach(b=>{
   b.classList.toggle('sel',b.dataset.sp===S.speed);
   b.onclick=()=>{S.speed=b.dataset.sp;save();sfx.tap();
-    document.querySelectorAll('.speed').forEach(x=>x.classList.toggle('sel',x.dataset.sp===S.speed));};});
+    document.querySelectorAll('.speed[data-sp]').forEach(x=>x.classList.toggle('sel',x.dataset.sp===S.speed));};});
 
 /* debug/testing hook (harmless in production) */
 window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)t.onTap(t);},
@@ -2197,8 +2249,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();refreshStickers();refreshSecrets();
 renderSched();setupWants();spawnEggNode();renderNest();
-$('loading').classList.add('hidden');
-$('intro').classList.add('show');
+$('loading').classList.add('hidden');   // title screen (#title) greets first
 requestAnimationFrame(frame);
 </script>
 </body>

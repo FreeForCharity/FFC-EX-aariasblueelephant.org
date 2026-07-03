@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
-import { beluPos, beluState, dynamicSolids, playerImpulse, playerBoost } from './playerState';
+import { beluPos, beluState, dynamicSolids, playerImpulse, playerBoost, camZoom } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
@@ -53,6 +53,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
   const facing = useRef(0);
   const nearZone = useRef<ZoneId | null>(null);
   const camInit = useRef(false);
+  const zoomSmooth = useRef(1); // eased copy of camZoom.v — no snapping
 
   const { camera } = useThree();
 
@@ -216,7 +217,9 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
   });
 
   function followCamera(lerp: number) {
-    const desired = pos.current.clone().add(CAM_OFFSET);
+    // zoom in/out (🔍 buttons + mouse wheel): scale the follow offset smoothly
+    zoomSmooth.current += (camZoom.v - zoomSmooth.current) * 0.1;
+    const desired = pos.current.clone().addScaledVector(CAM_OFFSET, zoomSmooth.current);
     if (!camInit.current) {
       camera.position.copy(desired);
       camInit.current = true;
