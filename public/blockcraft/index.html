@@ -104,7 +104,17 @@
     background:rgba(255,255,255,.78); font-size:22px; box-shadow:0 3px 8px rgba(0,0,0,.25);
     cursor:pointer; touch-action:none; user-select:none; }
   .tBtn:active { background:#ffe066; transform:scale(1.08); }
-  #tUp{left:57px;top:0} #tLeft{left:0;top:57px} #tRight{left:114px;top:57px} #tDown{left:57px;top:114px}
+  #touchPad { border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,.18));
+    border:4px solid rgba(255,255,255,.85);
+    box-shadow:0 6px 18px rgba(0,0,0,.18), inset 0 0 24px rgba(184,164,255,.25);
+    touch-action:none; }
+  .padArrow { position:absolute; font-size:15px; font-weight:900; color:#fff;
+    text-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none; }
+  #padKnob { position:absolute; left:50%; top:50%; width:58px; height:58px; border-radius:50%;
+    transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center;
+    font-size:27px; background:linear-gradient(160deg,#ffffff,#ffe9f2); border:3px solid #fff;
+    box-shadow:0 5px 0 #f3c1d6, 0 8px 16px rgba(0,0,0,.25); pointer-events:none; }
   #touchActs .tBtn { position:static; width:64px; height:64px; font-size:28px; }
   #tMode { box-shadow:0 0 0 3px #51cf66, 0 3px 8px rgba(0,0,0,.25); }
   #tMode.digMode { box-shadow:0 0 0 3px #ff922b, 0 3px 8px rgba(0,0,0,.25); }
@@ -358,6 +368,7 @@
     <button class="menuBtn deskOnly" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn deskOnly" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
+    <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
     <button class="menuBtn" id="skinToggleBtn" title="Switch Smooth / Classic look">🎨</button>
     <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>
@@ -388,12 +399,14 @@
   <div id="hotbar"></div>
   <div id="lookHint">✋ Drag the world to look around · 👆 Click to build! (🧱/⛏️ button on the right)</div>
 
-  <!-- on-screen controls: arrows move, ⬆ jumps (double-tap = fly), 🧱/⛏️ switches build & dig -->
+  <!-- on-screen controls: analog joystick moves (same feel as Elly-Tubbies),
+       ⬆ jumps (double-tap = fly), 🧱/⛏️ switches build & dig -->
   <div id="touchPad">
-    <button class="tBtn" id="tUp">▲</button>
-    <button class="tBtn" id="tLeft">◀</button>
-    <button class="tBtn" id="tRight">▶</button>
-    <button class="tBtn" id="tDown">▼</button>
+    <span class="padArrow" style="top:6px;left:50%;transform:translateX(-50%)">▲</span>
+    <span class="padArrow" style="bottom:6px;left:50%;transform:translateX(-50%)">▼</span>
+    <span class="padArrow" style="left:9px;top:50%;transform:translateY(-50%)">◀</span>
+    <span class="padArrow" style="right:9px;top:50%;transform:translateY(-50%)">▶</span>
+    <div id="padKnob">🐘</div>
   </div>
   <div id="touchActs">
     <button class="tBtn" id="tJump" title="Jump / fly up (double-tap = fly)">⬆</button>
@@ -407,24 +420,25 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=33"></script>
-<script src="js/audio.js?v=33"></script>
-<script src="js/world.js?v=33"></script>
-<script src="js/animals.js?v=33"></script>
-<script src="js/squishy.js?v=33"></script>
-<script src="js/weather.js?v=33"></script>
-<script src="js/parks.js?v=33"></script>
-<script src="js/shops.js?v=33"></script>
-<script src="js/signs.js?v=33"></script>
-<script src="js/portal.js?v=33"></script>
-<script src="js/ui.js?v=33"></script>
-<script src="js/activities.js?v=33"></script>
-<script src="js/music.js?v=33"></script>
-<script src="js/pet.js?v=33"></script>
-<script src="js/stickers.js?v=33"></script>
-<script src="js/overnight.js?v=33"></script>
-<script src="js/photo.js?v=33"></script>
-<script src="js/dig.js?v=33"></script>
-<script src="js/main.js?v=33"></script>
+<script src="js/data.js?v=34"></script>
+<script src="js/audio.js?v=34"></script>
+<script src="js/world.js?v=34"></script>
+<script src="js/animals.js?v=34"></script>
+<script src="js/squishy.js?v=34"></script>
+<script src="js/weather.js?v=34"></script>
+<script src="js/parks.js?v=34"></script>
+<script src="js/shops.js?v=34"></script>
+<script src="js/signs.js?v=34"></script>
+<script src="js/portal.js?v=34"></script>
+<script src="js/ui.js?v=34"></script>
+<script src="js/activities.js?v=34"></script>
+<script src="js/music.js?v=34"></script>
+<script src="js/pet.js?v=34"></script>
+<script src="js/stickers.js?v=34"></script>
+<script src="js/friends.js?v=34"></script>
+<script src="js/overnight.js?v=34"></script>
+<script src="js/photo.js?v=34"></script>
+<script src="js/dig.js?v=34"></script>
+<script src="js/main.js?v=34"></script>
 </body>
 </html>

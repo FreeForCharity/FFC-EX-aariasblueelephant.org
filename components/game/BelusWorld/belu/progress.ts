@@ -52,12 +52,32 @@ export function cosmeticById(id: string): Cosmetic | undefined {
   return COSMETICS.find((c) => c.id === id);
 }
 
+/** A seed planted in the Home garden. It only ever GROWS (one stage per real
+ *  day, up to a flower) — plants never wilt, never decay, never need care. */
+export interface GardenPlant {
+  plantedDate: string; // local YYYY-MM-DD
+}
+export const GARDEN_SLOTS = 4;
+export const PLANT_MAX_STAGE = 3; // 0 sprout → 1 leaves → 2 bud → 3 flower
+
 export interface GameProgress {
   islands: Record<ActivityZone, IslandProgress>;
   /** cosmetic accessories the child has unlocked for Belu */
   unlocked: string[];
   /** which cosmetic is worn in each slot */
   equipped: EquippedCosmetics;
+  /** lifetime sparkles + petals collected — fills the glass jar at Home */
+  jarSparkles: number;
+  /** seeds ready to plant in the Home garden */
+  seeds: number;
+  /** the Home garden plots (each plant only grows, never wilts) */
+  garden: GardenPlant[];
+  /** today's hidden-sparkle hunt: which sparkle ids were found on `date` */
+  dailySparkles: { date: string; found: string[] };
+  /** animal friends the child has helped/healed — they remember the child */
+  healedFriends: string[];
+  /** local date of the last once-a-day friend "visit moment" (petal gift) */
+  lastVisitMomentDate: string | null;
 }
 
 const KEY = 'belus_world_progress_v1';
@@ -76,6 +96,12 @@ function defaults(): GameProgress {
     },
     unlocked: [],
     equipped: {},
+    jarSparkles: 0,
+    seeds: 0,
+    garden: [],
+    dailySparkles: { date: '', found: [] },
+    healedFriends: [],
+    lastVisitMomentDate: null,
   };
 }
 
@@ -99,6 +125,18 @@ export function loadProgress(): GameProgress {
     }
     if (Array.isArray(parsed.unlocked)) base.unlocked = parsed.unlocked;
     if (parsed.equipped && typeof parsed.equipped === 'object') base.equipped = parsed.equipped;
+    if (typeof parsed.jarSparkles === 'number') base.jarSparkles = Math.max(0, parsed.jarSparkles);
+    if (typeof parsed.seeds === 'number') base.seeds = Math.max(0, parsed.seeds);
+    if (Array.isArray(parsed.garden)) {
+      base.garden = parsed.garden
+        .filter((g): g is GardenPlant => !!g && typeof g.plantedDate === 'string')
+        .slice(0, GARDEN_SLOTS);
+    }
+    if (parsed.dailySparkles && typeof parsed.dailySparkles.date === 'string' && Array.isArray(parsed.dailySparkles.found)) {
+      base.dailySparkles = { date: parsed.dailySparkles.date, found: parsed.dailySparkles.found };
+    }
+    if (Array.isArray(parsed.healedFriends)) base.healedFriends = parsed.healedFriends;
+    if (typeof parsed.lastVisitMomentDate === 'string') base.lastVisitMomentDate = parsed.lastVisitMomentDate;
     return base;
   } catch {
     return defaults();
@@ -193,6 +231,77 @@ export function getGrowth(p: GameProgress): GrowthInfo {
   return growthFromStars(totalStars(p));
 }
 
+// ---- Home garden + sparkle jar + friendships (all additive, never decay) ----
+
+/** Local calendar date as YYYY-MM-DD (real days drive sparkles + plant growth). */
+export function todayKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = `${d.getMonth() + 1}`.padStart(2, '0');
+  const day = `${d.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Whole days between two YYYY-MM-DD keys (b - a), never negative. */
+export function daysBetween(a: string, b: string): number {
+  const pa = a.split('-').map(Number);
+  const pb = b.split('-').map(Number);
+  if (pa.length !== 3 || pb.length !== 3 || pa.some(Number.isNaN) || pb.some(Number.isNaN)) return 0;
+  const ta = Date.UTC(pa[0], pa[1] - 1, pa[2]);
+  const tb = Date.UTC(pb[0], pb[1] - 1, pb[2]);
+  return Math.max(0, Math.floor((tb - ta) / 86400000));
+}
+
+/** Growth stage of a plant on a given date: one stage per real day, capped at
+ *  the flower. Plants only grow — a stage is never lost. */
+export function plantStage(plantedDate: string, onDate: string = todayKey()): number {
+  return Math.min(PLANT_MAX_STAGE, daysBetween(plantedDate, onDate));
+}
+
+/** The sparkle ids found so far TODAY (empty if the hunt reset overnight). */
+export function sparklesFoundToday(p: GameProgress, date: string = todayKey()): string[] {
+  return p.dailySparkles.date === date ? p.dailySparkles.found : [];
+}
+
+/** Collect one of today's hidden sparkles: feeds the jar AND yields a seed. */
+export function collectSparkle(p: GameProgress, id: string): GameProgress {
+  const date = todayKey();
+  const found = sparklesFoundToday(p, date);
+  if (found.includes(id)) return p;
+  return {
+    ...p,
+    dailySparkles: { date, found: [...found, id] },
+    jarSparkles: p.jarSparkles + 1,
+    seeds: p.seeds + 1,
+  };
+}
+
+/** Plant one seed in the next free garden slot (no-op if none free / no seed). */
+export function plantSeed(p: GameProgress): GameProgress {
+  if (p.seeds <= 0 || p.garden.length >= GARDEN_SLOTS) return p;
+  return { ...p, seeds: p.seeds - 1, garden: [...p.garden, { plantedDate: todayKey() }] };
+}
+
+/** Remember an animal friend the child healed — friendships are forever. */
+export function recordHealedFriend(p: GameProgress, species: string): GameProgress {
+  if (p.healedFriends.includes(species)) return p;
+  return { ...p, healedFriends: [...p.healedFriends, species] };
+}
+
+/** The once-a-day visit-moment petal: feeds the jar, marks today as done. */
+export function givePetal(p: GameProgress): GameProgress {
+  return { ...p, jarSparkles: p.jarSparkles + 1, lastVisitMomentDate: todayKey() };
+}
+
+/** Which healed friend has today's optional visit moment (date-seeded), or null
+ *  if there are no healed friends yet / today's moment already happened. */
+export function todaysVisitor(p: GameProgress): string | null {
+  const date = todayKey();
+  if (p.healedFriends.length === 0 || p.lastVisitMomentDate === date) return null;
+  let h = 0;
+  for (let i = 0; i < date.length; i++) h = (h * 31 + date.charCodeAt(i)) >>> 0;
+  return p.healedFriends[h % p.healedFriends.length];
+}
+
 // ---- mutations (return a new object) ----
 
 export interface AwardResult {
@@ -221,6 +330,8 @@ export function awardLevel(
   };
   const prevBest = next.islands[zone].levelStars[levelIdx] ?? 0;
   const wasIncomplete = prevBest === 0;
+  // every finished level also yields a seed for the Home garden
+  next.seeds = (p.seeds ?? 0) + 1;
   next.islands[zone].levelStars[levelIdx] = Math.max(prevBest, Math.min(MAX_STARS_PER_LEVEL, stars));
   const growthAfter = getGrowth(next).stage;
 

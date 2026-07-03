@@ -28,6 +28,8 @@ import AnswerOrb, { type OrbStatus } from './AnswerOrb';
 import { makeLabelTexture } from './emojiTexture';
 import { FOREST_STORY, FOREST_TWINKLES, TWINKLE_FINDS, type SpellWord } from './forestContent';
 import { Twinkle, Wisp, GlowMushroom, WishTree, WordTrail, seeded } from './forestExtras';
+import { TrotGroup, GreetBurst } from './meadowExtras';
+import InviteBubble from './InviteBubble';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'forest' as const;
@@ -37,6 +39,8 @@ const WORD_DIST = 3.0; // how far the word bubbles sit in front of the friend
 const WORD_SPREAD = 2.6; // sideways gap between word bubbles (no overlap)
 const WORD_PICK = 1.5; // walk this close to a word bubble to "say" it
 const TWINKLE_PICK = 1.9; // walk this close to a hidden twinkle to collect it
+const INVITE_START = 2.4; // walk this close to the waving host to BEGIN (consent)
+const GREET_DIST = 4.0; // a healed friend recognises Belu from this far
 
 // A ring of glow-mushrooms around the forest heart that light up one by one as
 // the child helps friends — the world visibly waking because of them.
@@ -82,16 +86,22 @@ interface State {
   twinkles: TwinkleRT[]; // hidden collectibles found so far
   found: number; // count of twinkles collected this level
   trail: { emoji: string; pos: [number, number, number]; born: number } | null; // last word-cast puff
+  // healed friends remember you — greet time per friend this session (-1 = not yet)
+  greetAt: number[];
 }
 
 interface Props {
   level: number;
   paused: boolean;
+  /** animal species the child has healed before (they remember!) */
+  healedFriends: string[];
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
   onComplete: (zone: 'forest', level: number, stars: number, moment: string) => void;
   onStatus: (s: QuestStatus | null) => void;
+  /** the child just helped this species — remember the friendship */
+  onFriendHealed: (species: string) => void;
 }
 
 function clampLevel(level: number) {
@@ -111,6 +121,7 @@ export default function ForestLayer(props: Props) {
     progress: 0, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
     twinkles: twinklesOf(props.level).map(() => ({ found: false, foundAt: -99 })),
     found: 0, trail: null,
+    greetAt: FOREST_STORY[clampLevel(props.level)].friends.map(() => -1),
   });
   const frame = useRef<(dt: number) => void>(() => {});
   const isl = ISLANDS[ZONE];
@@ -176,6 +187,7 @@ export default function ForestLayer(props: Props) {
     S.current.twinkles = twinklesOf(props.level).map(() => ({ found: false, foundAt: -99 }));
     S.current.found = 0;
     S.current.trail = null;
+    S.current.greetAt = lvl.friends.map(() => -1);
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, 'Walk up to a friend to hear their wish 💜');
@@ -230,6 +242,7 @@ export default function ForestLayer(props: Props) {
         st.friends[i].done = true;
         st.friends[i].doneAt = st.clock;
         st.finished += 1;
+        props.onFriendHealed(fr.species); // this friend will remember Belu forever
         st.listening = false;
         st.lockUntil = st.clock + 0.8;
         props.playSound('star');
@@ -271,6 +284,19 @@ export default function ForestLayer(props: Props) {
     });
     if (props.paused) return;
     st.clock += dt;
+
+    // --- healed friends remember you: a happy trot-loop + hearts on return ---
+    for (let i = 0; i < lvlFriends.length; i++) {
+      if ((st.greetAt[i] ?? -1) >= 0) continue;
+      if (!props.healedFriends.includes(lvlFriends[i].species)) continue;
+      const [fx, fz] = friendWorld(i);
+      if (Math.hypot(beluPos.x - fx, beluPos.z - fz) < GREET_DIST) {
+        st.greetAt[i] = st.clock;
+        props.playSound('correct');
+        bump();
+      }
+    }
+    if (st.greetAt.some((g) => g >= 0 && st.clock - g > 2.2 && st.clock - g < 2.2 + dt * 2)) bump();
 
     if (st.finishAt > 0 && st.clock >= st.finishAt) {
       st.finishAt = 0;
@@ -316,7 +342,11 @@ export default function ForestLayer(props: Props) {
       bump();
     }
     if (!st.active) {
-      if (onIsland && !st.disarmed) startStory();
+      // NO quest ambush: begin only when the child walks right up to the host
+      if (onIsland && !st.disarmed) {
+        const [hx, hz] = friendWorld(0);
+        if (Math.hypot(beluPos.x - hx, beluPos.z - hz) < INVITE_START) startStory();
+      }
       return;
     }
     if (dCenter > isl.radius + 1.5) {
@@ -458,6 +488,15 @@ export default function ForestLayer(props: Props) {
       {/* the big finale: a glowing wish-tree aura once every friend is helped */}
       <WishTree position={[isl.cx, isl.top, isl.cz]} color={isl.accent} on={allDone} clock={S.current.clock} />
 
+      {/* the host friend waves you over — walk right up to them to begin */}
+      {!S.current.active && !S.current.disarmed && (
+        <InviteBubble
+          position={[isl.cx + friends[0].pos[0], isl.top + 2.7, isl.cz + friends[0].pos[1]]}
+          ground={[isl.cx + friends[0].pos[0], isl.top, isl.cz + friends[0].pos[1]]}
+          color={isl.accent}
+        />
+      )}
+
       {friends.map((fr, i) => {
         const rt = S.current.friends[i] ?? { done: false, doneAt: -99 };
         const [fx, fz] = friendWorld(i);
@@ -465,14 +504,19 @@ export default function ForestLayer(props: Props) {
         const justDone = rt.done && S.current.clock - rt.doneAt < 2.5;
         const layout = isActive && S.current.listening ? wordLayout(i) : [];
         const words = isActive && S.current.listening ? wordsFor(i) : [];
+        const greetAt = S.current.greetAt[i] ?? -1;
+        const greeting = greetAt >= 0 && S.current.clock - greetAt < 2.2;
         return (
           <group key={`${S.current.level}-${i}`}>
-            <Animal3D
-              species={fr.species}
-              mood={rt.done ? 'happy' : 'happy'}
-              position={[fx, isl.top, fz]}
-              seed={i * 1.7}
-            />
+            <TrotGroup active={greeting}>
+              <Animal3D
+                species={fr.species}
+                mood={rt.done ? 'happy' : 'happy'}
+                position={[fx, isl.top, fz]}
+                seed={i * 1.7}
+              />
+            </TrotGroup>
+            {greeting && <GreetBurst position={[fx, isl.top + 1.0, fz]} />}
             {/* thought bubble above the friend: what they want / see */}
             {isActive && !S.current.listening && (
               <Bubble emoji={fr.thought} position={[fx, isl.top + 1.9, fz]} />

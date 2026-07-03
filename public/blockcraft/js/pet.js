@@ -1,10 +1,112 @@
 /* Aaria's Block Craft 3D — My Pet 🐾: adopt, name, feed daily, watch it grow */
 ABC.pet = (function () {
   const $ = (id) => document.getElementById(id);
-  let st = { adopted: false, kind: null, name: null, level: 0, lastFed: null };
+  let st = { adopted: false, kind: null, name: null, level: 0, lastFed: null, tricks: 0 };
   let a = null;            // the live animal entity
   let askedOnce = false;
   const today = () => new Date().toISOString().slice(0, 10);
+
+  /* ---------- tricks 🎪 — every 5 hearts teaches the next one ---------- */
+  const TRICKS = [
+    { key:'spin',     label:'SPIN',              ico:'🌀' },
+    { key:'backflip', label:'BACKFLIP',          ico:'🤸' },
+    { key:'chase',    label:'CHASE ITS TAIL',    ico:'💫' },
+    { key:'sing',     label:'SING',              ico:'🎵' },
+    { key:'carry',    label:'BALANCE A BLOCK',   ico:'🧱' },
+    { key:'dance',    label:'DANCE ALONG',       ico:'🕺' },
+  ];
+  let trick = null;        // { key, t } — the trick playing right now
+
+  function checkTricks() {
+    if (!st.adopted) return;
+    const should = Math.min(TRICKS.length, Math.floor(ABC.state.hearts / 5));
+    while ((st.tricks || 0) < should) {
+      st.tricks = (st.tricks || 0) + 1;
+      const tr = TRICKS[st.tricks - 1];
+      ABC.ui.confetti(40);
+      ABC.audio.sfx.fanfare();
+      ABC.ui.bellaSays(`${tr.ico} ${st.name} learned to ${tr.label}! Tap ${st.name} to see it!`, 5600);
+      ABC.saveSoon && ABC.saveSoon();
+    }
+  }
+
+  function playTrick() {
+    const known = TRICKS.slice(0, st.tricks || 0);
+    const tr = known[Math.floor(Math.random() * known.length)];
+    trick = { key: tr.key, t: 0 };
+    ABC.animals.celebrate(a, performance.now() / 1000);
+    ABC.ui.floatHearts(4);
+    if (tr.key === 'sing') [523, 659, 784].forEach((f, i) =>
+      setTimeout(() => ABC.audio.sfx.gentle(), i * 260));
+    else ABC.audio.sfx.ding();
+    ABC.ui.toast(`${tr.ico} ${st.name} does a ${tr.label.toLowerCase()}! 💕`, 3200, true);
+  }
+  function updateTrick(dt) {
+    if (!trick || !a) return;
+    trick.t += dt;
+    const g = a.group, t = trick.t, D = 2.2;
+    if (trick.key === 'spin')      g.rotation.y += dt * 9;
+    if (trick.key === 'backflip')  { g.rotation.x = -Math.min(1, t / 1.4) * Math.PI * 2;
+                                     g.position.y = a.groundY + Math.sin(Math.min(1, t / 1.4) * Math.PI) * 1.4; }
+    if (trick.key === 'chase')     { g.rotation.y += dt * 6;
+                                     g.position.x += Math.cos(g.rotation.y) * dt * 1.5;
+                                     g.position.z += Math.sin(g.rotation.y) * dt * 1.5; }
+    if (trick.key === 'sing')      g.rotation.z = Math.sin(t * 7) * 0.18;
+    if (trick.key === 'dance')     { g.rotation.z = Math.sin(t * 9) * 0.25;
+                                     g.position.y = a.groundY + Math.abs(Math.sin(t * 6)) * 0.4; }
+    if (trick.key === 'carry') {
+      if (!g.getObjectByName('trickBlock')) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),
+          new THREE.MeshLambertMaterial({ color: 0xffd43b }));
+        m.name = 'trickBlock';
+        m.position.y = new THREE.Box3().setFromObject(g).max.y / (a.def.size * 0.55) - g.position.y + .4;
+        g.add(m);
+      }
+    }
+    if (t >= D) {
+      g.rotation.x = 0; g.rotation.z = 0;
+      const b = g.getObjectByName('trickBlock'); if (b) g.remove(b);
+      trick = null;
+    }
+  }
+
+  /* ---------- naps on the kid's own builds 🛏️ ---------- */
+  let napT = 20, napping = 0, napSpot = null, napSaid = false, napWalkT = 0;
+  function maybeNap(dt, feet) {
+    if (napping > 0) {          // zzz… flopped over next to the kid's build 💤
+      napping -= dt;
+      a.target = null; a.group.rotation.z = 1.35;
+      if (napping <= 0) { ABC.animals.clearEmotion(a); a.group.rotation.z = 0; }
+      return;
+    }
+    if (napSpot) {              // ambling over to the cozy spot
+      a.target = napSpot;
+      napWalkT += dt;
+      if (napWalkT > 12) { napSpot = null; return; }   // too tricky to reach — wander on
+      if (a.group.position.distanceTo(napSpot) < 1.6) {
+        napSpot = null; napping = 9;
+        ABC.animals.setEmotion(a, { emoji: '😴' });
+        if (!napSaid) { napSaid = true; ABC.ui.bellaSays(`Look — ${st.name} loves what you built! Cozy nap time. 💤`, 4800); }
+        else ABC.ui.toast(`💤 ${st.name} is napping next to your build!`, 3200);
+      }
+      return;
+    }
+    napT -= dt;
+    if (napT > 0) return;
+    napT = 40 + Math.random() * 50;
+    if (trick || Math.random() < 0.5) return;
+    // find a kid-placed block near the player (the pet stays close anyway)
+    const edits = (ABC.world.serialize().d || []);
+    const near = [];
+    for (const e of edits) {
+      const [x, , z] = e.split(':')[0].split(',').map(Number);
+      if (Math.hypot(x - feet.x, z - feet.z) < 10) near.push({ x, z });
+    }
+    if (!near.length) return;
+    const b = near[Math.floor(Math.random() * near.length)];
+    napSpot = new THREE.Vector3(b.x + 0.5, a.group.position.y, b.z + 1.6);
+    napWalkT = 0;
+  }
 
   const SPECIES = [
     { kind: 'bunny', ico: '🐰', label: 'Bunny' },
@@ -130,6 +232,9 @@ ABC.pet = (function () {
   }
   function update(dt, feet) {
     if (!a) return;
+    updateTrick(dt);
+    maybeNap(dt, feet);
+    if (napSpot || napping > 0) return;   // heading for (or having) a nap — don't tug the leash
     // loyal follow: amble to a spot near the player when too far
     const d = Math.hypot(a.group.position.x - feet.x, a.group.position.z - feet.z);
     if (d > 6) {
@@ -144,6 +249,7 @@ ABC.pet = (function () {
   function tryInteract(animal) {
     if (!animal.isPet) return false;
     if (needsFood()) feedFlow();
+    else if ((st.tricks || 0) > 0) playTrick();   // 🎪 tapping always shows a trick
     else {
       ABC.animals.celebrate(animal, performance.now() / 1000);
       ABC.ui.floatHearts(4);
@@ -154,9 +260,9 @@ ABC.pet = (function () {
   }
 
   function serialize() { return { ...st }; }
-  function deserialize(d) { if (d && d.adopted) st = d; }
+  function deserialize(d) { if (d && d.adopted) { st = d; st.tricks = st.tricks || 0; } }
 
-  return { maybeAdoptPrompt, onLogin, update, tryInteract, feedFlow,
+  return { maybeAdoptPrompt, onLogin, update, tryInteract, feedFlow, checkTricks,
            serialize, deserialize,
            isAdopted: () => st.adopted, level: () => st.level };
 })();

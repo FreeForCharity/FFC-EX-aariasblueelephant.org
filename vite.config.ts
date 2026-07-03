@@ -11,7 +11,21 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        // Serve the static game at /game/ (bare dir) not just /game/index.html,
+        // so trailing-slash links don't fall through to the SPA shell.
+        name: 'game-dir-index',
+        configureServer(server) {
+          server.middlewares.use((req, _res, next) => {
+            const m = req.url && req.url.match(/^\/(blockcraft|craft3d|elly-tubbies|roadsafety|doughlab)\/(\?.*)?$/);
+            if (m) req.url = `/${m[1]}/index.html`;
+            next();
+          });
+        },
+      },
+    ],
     base: '/',
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),

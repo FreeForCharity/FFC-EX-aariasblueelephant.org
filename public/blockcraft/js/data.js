@@ -60,6 +60,9 @@ ABC.BLOCK_DEFS = {
   ballBlock: { name:'Ball',     emoji:'🔵', color:'#69db7c', pat:'plain', shape:'ball',     locked:true },
   pentBlock: { name:'Pentagon', emoji:'⬠', color:'#b197fc', pat:'plain', shape:'pentagon', locked:true },
   triBlock:  { name:'Triangle', emoji:'🔺', color:'#ff922b', pat:'plain', shape:'triprism', locked:true },
+  /* ☁️ Sky Island specials — unlocked by visiting; placeable only up in the sky */
+  cloud:     { name:'Bouncy Cloud',  emoji:'☁️', color:'#ffffff', pat:'speck', speck:'#dbeeff', locked:true, skyOnly:true, bouncy:true },
+  prism:     { name:'Rainbow Prism', emoji:'🌈', color:'#d0bfff', pat:'rainbow', glow:true, locked:true, skyOnly:true },
   /* 🪙 Buried treasure "tells" — VISIBLE glowing markers placed in the world; dig
      them to get the reward. NOT in HOTBAR_ORDER, so kids can never place them. */
   silverGlint:{ name:'Silver Coin', emoji:'🪙', color:'#dfe6ec', pat:'plain', shape:'knob', glow:true },
@@ -74,7 +77,7 @@ ABC.HOTBAR_ORDER = ['grass','dirt','wood','plank','brick','gold','stone','glass'
   'redrock','sandstone','granite','moss','ice','lava','blackrock','canvas',
   'slab','wedge','stair','pillar','door','pane','knob',
   'hexBlock','coneBlock','ballBlock','pentBlock','triBlock',
-  'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink'];
+  'slimeGreen','slimePink','slimePurple','slimeBlue','oreo','oreoPink','cloud','prism'];
 
 /* Shapes unlock in this fixed order (predictable: dig a 🥚 or fill the 🪙 bar) */
 ABC.SHAPE_UNLOCKS = ['hexBlock','coneBlock','ballBlock','pentBlock','triBlock'];

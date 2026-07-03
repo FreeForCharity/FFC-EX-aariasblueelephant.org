@@ -24,10 +24,17 @@ function audio(): AudioContext | null {
   }
 }
 
-/** A soft sine "ping". freq in Hz, when = offset seconds, dur seconds. */
+/** A soft sine "ping". freq in Hz, when = offset seconds, dur seconds.
+ *  Polite audio: pings never pile up, and they duck under Belu's voice. */
+const _pingLog: number[] = [];
 function ping(freq: number, when: number, dur: number, gain: number) {
   const ac = audio();
   if (!ac) return;
+  const nowMs = performance.now();
+  while (_pingLog.length && nowMs - _pingLog[0] > 350) _pingLog.shift();
+  if (_pingLog.length >= 6) return;
+  _pingLog.push(nowMs);
+  if (typeof window !== 'undefined' && window.speechSynthesis?.speaking) gain *= 0.45;
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = 'sine';
@@ -76,11 +83,17 @@ function pickVoice(): SpeechSynthesisVoice | null {
   if (voice) return voice;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-  // prefer a warm English voice if available
-  voice =
-    voices.find((v) => /en/i.test(v.lang) && /(female|samantha|karen|moira|tessa|google uk english female)/i.test(v.name)) ||
-    voices.find((v) => /en/i.test(v.lang)) ||
-    voices[0];
+  // prefer the most natural voice on this device (same ranking as Block Craft):
+  // Edge "Online Natural" > neural > premium > enhanced > known-warm > Samantha
+  const en = voices.filter((v) => /en/i.test(v.lang));
+  const ranks = [/online.*natural/i, /natural/i, /neural/i, /premium/i, /enhanced/i,
+    /Ava|Zoe|Allison|Joelle|Aria|Jenny/i, /Samantha/i, /Google US English/i,
+    /(female|karen|moira|tessa|google uk english female)/i];
+  for (const r of ranks) {
+    const match = en.find((v) => r.test(v.name));
+    if (match) { voice = match; return voice; }
+  }
+  voice = en[0] || voices[0];
   return voice;
 }
 

@@ -7,6 +7,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { ISLANDS, type ZoneId } from '../three/worldConfig';
+import { nudgeZoom, CAM_ZOOM_STEP } from '../three/playerState';
 
 interface Props {
   beluLine: string | null;
@@ -118,6 +119,28 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           aria-label="Settings"
         >
           ⚙️
+        </button>
+      </div>
+
+      {/* Camera zoom — under the top-right menu, clear of the bottom controls */}
+      <div className="absolute right-4 top-16 flex flex-col gap-2">
+        <button
+          onClick={() => nudgeZoom(-CAM_ZOOM_STEP)}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white active:scale-90"
+          aria-label="Zoom in"
+          title="Zoom in"
+          data-zoom="in"
+        >
+          🔍＋
+        </button>
+        <button
+          onClick={() => nudgeZoom(CAM_ZOOM_STEP)}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white active:scale-90"
+          aria-label="Zoom out"
+          title="Zoom out"
+          data-zoom="out"
+        >
+          🔍−
         </button>
       </div>
 

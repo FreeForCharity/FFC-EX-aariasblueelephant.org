@@ -140,6 +140,7 @@ ABC.ui = (function () {
         ABC.animals.spawn('puzzleEle', Math.round(p.x) + 4, Math.round(p.z) + 4);
       }
     }
+    if (ABC.pet && ABC.pet.checkTricks) setTimeout(() => ABC.pet.checkTricks(), 900);   // 🎪 every 5 hearts = new trick
     ABC.saveSoon && ABC.saveSoon();
   }
 
@@ -528,6 +529,7 @@ ABC.ui = (function () {
       { ico: '🍪', label: 'Oreo',       go: press('oreoBtn') },
       { ico: '💌', label: 'Kind Words', go: press('kindBtn') },
       { ico: '🏅', label: 'Stickers',   go: press('stickersBtn') },
+      { ico: '📖', label: 'Friends',    go: press('friendsBtn') },
       { ico: '📋', label: 'Adventures', go: () => { closeDialog(); ABC.quests.showBoard(); } },
       { ico: '🌻', label: 'Sunflower',  go: () => { closeDialog(); ABC.overnight.showFlower(); } },
       { ico: '🗺️', label: 'Map',        go: press('mapBtn') },

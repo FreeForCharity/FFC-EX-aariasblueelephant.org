@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
-import { beluPos, beluState, dynamicSolids } from './playerState';
+import { beluPos, beluState, dynamicSolids, playerImpulse, playerBoost, camZoom } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
@@ -53,6 +53,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
   const facing = useRef(0);
   const nearZone = useRef<ZoneId | null>(null);
   const camInit = useRef(false);
+  const zoomSmooth = useRef(1); // eased copy of camZoom.v — no snapping
 
   const { camera } = useThree();
 
@@ -101,6 +102,12 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     pos.current.x += vel.current.x * dt;
     pos.current.z += vel.current.z * dt;
 
+    // ---- external horizontal push (Rainbow slide) — consumed each frame ----
+    pos.current.x += playerBoost.x * dt;
+    pos.current.z += playerBoost.z * dt;
+    playerBoost.x = 0;
+    playerBoost.z = 0;
+
     // ---- solid things (walk around, not through): static obstacles +
     //      animals/friends that each layer registers as dynamic solids ----
     const pushOut = (ox: number, oz: number, r: number) => {
@@ -116,6 +123,13 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     for (const key in dynamicSolids) {
       const list = dynamicSolids[key];
       for (let i = 0; i < list.length; i++) pushOut(list[i].x, list[i].z, list[i].r);
+    }
+
+    // ---- external vertical impulse (Rainbow bouncy dome) ----
+    if (playerImpulse.vy > 0) {
+      vy.current = playerImpulse.vy;
+      playerImpulse.vy = 0;
+      grounded.current = false;
     }
 
     // ---- jump + gravity ----
@@ -203,7 +217,9 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
   });
 
   function followCamera(lerp: number) {
-    const desired = pos.current.clone().add(CAM_OFFSET);
+    // zoom in/out (🔍 buttons + mouse wheel): scale the follow offset smoothly
+    zoomSmooth.current += (camZoom.v - zoomSmooth.current) * 0.1;
+    const desired = pos.current.clone().addScaledVector(CAM_OFFSET, zoomSmooth.current);
     if (!camInit.current) {
       camera.position.copy(desired);
       camInit.current = true;

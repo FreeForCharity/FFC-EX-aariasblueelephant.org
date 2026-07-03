@@ -24,6 +24,7 @@ import BreatheOrb from './BreatheOrb';
 import { makeLabelTexture } from './emojiTexture';
 import { COVE_LEVELS, SHELL_FINDS, DOLPHIN_JOKES, type CoveLevel, type CoveTotem } from './coveContent';
 import { shellLayout, Shell, StormWaves, DolphinBuddy, PopBubbles, type ShellSpot } from './coveExtras';
+import InviteBubble from './InviteBubble';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'cove' as const;
@@ -31,6 +32,7 @@ const TOTEM_DIST = 3.0; // how far the totems sit out in front, toward home
 const TOTEM_SPREAD = 2.9; // sideways gap between totems (no overlap)
 const TOTEM_PICK = 1.6; // walk this close to a totem to choose it
 const SHELL_FIND = 1.5; // walk this close to a hidden shell to discover it
+const INVITE_START = 2.6; // walk this close to the calm-friend to BEGIN (consent)
 
 // stormy → calm colours the water lerps between as breaths complete
 const STORM_COLOR = new THREE.Color('#3a4a5e'); // dark, choppy grey-blue
@@ -329,7 +331,11 @@ export default function CoveLayer(props: Props) {
       bump();
     }
     if (!st.active) {
-      if (onIsland && !st.disarmed) startSession();
+      // NO quest ambush: the calm session begins only when the child walks
+      // Belu right up to the calm-friend at the cove centre (consent).
+      if (onIsland && !st.disarmed) {
+        if (Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz) < INVITE_START) startSession();
+      }
       return;
     }
     if (dCenter > isl.radius + 1.5) {
@@ -390,6 +396,15 @@ export default function CoveLayer(props: Props) {
           opacity={Math.max(0, 0.7 - calm) }
           color="#bcd4e6"
           position={[isl.cx, isl.top + 3, isl.cz]}
+        />
+      )}
+
+      {/* the calm-friend waves you over — walk right up to it to begin */}
+      {!S.current.active && !S.current.disarmed && (
+        <InviteBubble
+          position={[isl.cx, isl.top + 2.8, isl.cz]}
+          ground={[isl.cx, isl.top, isl.cz]}
+          color={isl.accent}
         />
       )}
 

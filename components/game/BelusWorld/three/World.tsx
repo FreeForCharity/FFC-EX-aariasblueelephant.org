@@ -268,8 +268,9 @@ export default function World({ activeZone, reduceMotion, islandLevels, rainbowU
   );
 }
 
-// The reward island's playful decor — a free-play spot the child earns. A
-// bouncy castle dome, a slide, balloons and a big rainbow arch overhead.
+// The reward island's landmark decor — the big rainbow arch overhead. The
+// PLAYABLE gear (bouncy dome, slide, balloons) lives in RainbowPlay.tsx, which
+// owns the touch/bounce/pop interactions.
 function RainbowDecor() {
   const isl = ISLANDS.rainbow;
   const y = isl.top;
@@ -281,23 +282,6 @@ function RainbowDecor() {
         <mesh key={i} position={[0, y + 1.5, -1]} rotation={[0, 0, 0]}>
           <torusGeometry args={[5.2 - i * 0.45, 0.22, 10, 40, Math.PI]} />
           <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.3} roughness={0.5} />
-        </mesh>
-      ))}
-      {/* bouncy dome */}
-      <mesh position={[-2.5, y + 0.6, 1]} scale={[1.4, 0.9, 1.4]}>
-        <sphereGeometry args={[1.4, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#ff9ed8" roughness={0.5} />
-      </mesh>
-      {/* slide */}
-      <mesh position={[2.8, y + 0.8, 1]} rotation={[0.5, 0, 0]}>
-        <boxGeometry args={[0.9, 0.12, 2.6]} />
-        <meshStandardMaterial color="#5fd0e0" roughness={0.4} />
-      </mesh>
-      {/* floating balloons */}
-      {[['#ff6b6b', -3, 2.6], ['#ffd166', 3, 3.2], ['#8a7bff', 0.5, 3.6]].map((b, i) => (
-        <mesh key={i} position={[b[1] as number, y + (b[2] as number), -2]}>
-          <sphereGeometry args={[0.5, 14, 12]} />
-          <meshStandardMaterial color={b[0] as string} roughness={0.4} />
         </mesh>
       ))}
     </group>
