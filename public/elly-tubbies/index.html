@@ -187,19 +187,27 @@
     </div>
     <div id="menu">
       <button class="mbtn" id="bookBtn" title="Sticker garden">📖</button>
-      <button class="mbtn" id="voiceBtn" title="Read aloud">🗣️</button>
-      <button class="mbtn" id="soundBtn" title="Sound">🔊</button>
+      <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
+      <button class="mbtn" id="settingsBtn" title="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play">❔</button>
-      <button class="mbtn" id="fsBtn" title="Full screen">⛶</button>
     </div>
   </div>
   <div id="speedRow">
-    <button class="speed" data-sp="relaxed">🐢</button>
-    <button class="speed sel" data-sp="normal">🐇</button>
-    <button class="speed" data-sp="fast">🚀</button>
     <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in">🔍＋</button>
     <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out">🔍−</button>
   </div>
+
+  <!-- Settings panel (uniform across ABE games) -->
+  <div class="overlay" id="settings"><div class="panel" style="max-width:430px">
+    <h1>⚙️ Settings</h1>
+    <div style="display:flex;flex-direction:column;gap:10px;margin:12px 0">
+      <button class="big" id="setSpeed" style="font-size:17px"></button>
+      <button class="big" id="setSound" style="font-size:17px"></button>
+      <button class="big" id="setVoice" style="font-size:17px"></button>
+      <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
+    </div>
+    <button class="big" id="setClose">Done ▶</button>
+  </div></div>
 
   <div id="stick"><div id="knob">🐘</div>
     <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
@@ -2196,12 +2204,26 @@ $('zoomInBtn').onclick=()=>setCamZoom(-0.18);
 $('zoomOutBtn').onclick=()=>setCamZoom(+0.18);
 addEventListener('wheel',e=>{if(mode==='roam')setCamZoom(e.deltaY>0?0.1:-0.1);},{passive:true});
 $('helpBtn').onclick=()=>{$('intro').classList.add('show');};
-$('soundBtn').textContent=S.muted?'🔇':'🔊';
-$('soundBtn').onclick=()=>{S.muted=!S.muted;save();
-  $('soundBtn').textContent=S.muted?'🔇':'🔊';if(!S.muted)sfx.tap();};
-$('voiceBtn').classList.toggle('off',!S.voice);
-$('voiceBtn').onclick=()=>{S.voice=!S.voice;save();$('voiceBtn').classList.toggle('off',!S.voice);
+/* ---- ⚙️ settings + 🎛️ speed (uniform across ABE games; Block Craft canon) ---- */
+const SPEED_META={relaxed:{ico:'🐢',label:'More time'},normal:{ico:'🐇',label:'Just right'},fast:{ico:'🚀',label:'Faster'}};
+function cycleSpeed(){const order=['relaxed','normal','fast'];
+  S.speed=order[(order.indexOf(S.speed)+1)%3];save();sfx.tap();
+  renderSettings();
+  say('☀️',`${SPEED_META[S.speed].ico} Game speed: ${SPEED_META[S.speed].label}!`);}
+function renderSettings(){
+  $('setSpeed').innerHTML=`🎛️ Game speed: <b>${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}</b>`;
+  $('setSound').textContent=S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on';
+  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';}
+$('speedBtn').onclick=cycleSpeed;
+$('settingsBtn').onclick=()=>{sfx.tap();renderSettings();$('settings').classList.add('show');};
+$('setClose').onclick=()=>{sfx.tap();$('settings').classList.remove('show');};
+$('setSpeed').onclick=cycleSpeed;
+$('setSound').onclick=()=>{S.muted=!S.muted;save();renderSettings();if(!S.muted)sfx.tap();};
+$('setVoice').onclick=()=>{S.voice=!S.voice;save();renderSettings();
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+$('setFs').onclick=()=>{sfx.tap();
+  if(document.fullscreenElement)document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(()=>{});};
 // jump / duck / fun buttons
 $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();
   if(trav==='fly')flyRise=true; else tryJump();});
@@ -2229,14 +2251,6 @@ $('surpriseBtn').onclick=()=>{ac();sfx.tap();
     burst(player.group.position,16,'#b8a4ff');sfx.star();
     say('☀️',`Surprise! You discovered the ${m.name}! ${m.e}`);}
   m.fn();};
-$('fsBtn').onclick=()=>{sfx.tap();
-  if(document.fullscreenElement)document.exitFullscreen();
-  else document.documentElement.requestFullscreen().catch(()=>{});};
-
-document.querySelectorAll('.speed[data-sp]').forEach(b=>{
-  b.classList.toggle('sel',b.dataset.sp===S.speed);
-  b.onclick=()=>{S.speed=b.dataset.sp;save();sfx.tap();
-    document.querySelectorAll('.speed[data-sp]').forEach(x=>x.classList.toggle('sel',x.dataset.sp===S.speed));};});
 
 /* debug/testing hook (harmless in production) */
 window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)t.onTap(t);},
