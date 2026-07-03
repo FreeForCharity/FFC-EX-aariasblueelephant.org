@@ -174,7 +174,7 @@
 </style>
 </head>
 <body>
-  <canvas id="cv"></canvas>
+  <canvas id="cv" role="application" aria-label="Trunkland — a 3D world you explore as Belu the elephant"></canvas>
   <div id="loading"><div class="ele">🐘</div><div class="lbl">Waking up Trunkland…</div></div>
 
   <div id="topbar">
@@ -186,15 +186,15 @@
       <div class="chip" id="sched" style="pointer-events:auto;gap:4px" title="Today's plan"></div>
     </div>
     <div id="menu">
-      <button class="mbtn" id="bookBtn" title="Sticker garden">📖</button>
-      <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
-      <button class="mbtn" id="settingsBtn" title="Settings">⚙️</button>
-      <button class="mbtn" id="helpBtn" title="How to play">❔</button>
+      <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖</button>
+      <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
+      <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+      <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
     </div>
   </div>
   <div id="speedRow">
-    <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in">🔍＋</button>
-    <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out">🔍−</button>
+    <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in" aria-label="Zoom in">🔍＋</button>
+    <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out" aria-label="Zoom out">🔍−</button>
   </div>
 
   <!-- Settings panel (uniform across ABE games) -->
@@ -209,17 +209,17 @@
     <button class="big" id="setClose">Done ▶</button>
   </div></div>
 
-  <div id="stick"><div id="knob">🐘</div>
+  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Belu"><div id="knob">🐘</div>
     <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
     <span class="stickArrow sa-l">◀</span><span class="stickArrow sa-r">▶</span>
   </div>
   <div id="jumpCol">
-    <button class="jbtn" id="jumpBtn" title="Jump">🦘</button>
-    <button class="jbtn" id="duckBtn" title="Duck">🙈</button>
+    <button class="jbtn" id="jumpBtn" title="Jump" aria-label="Jump">🦘</button>
+    <button class="jbtn" id="duckBtn" title="Duck" aria-label="Duck">🙈</button>
   </div>
   <div id="funRow">
-    <button class="fbtn" id="trumpetBtn" title="Trumpet!" style="background:linear-gradient(160deg,#fff6d5,#ffd97a);box-shadow:0 5px 0 #e0a92e,0 10px 20px rgba(224,169,46,.35);animation:none">🎺</button>
-    <button class="fbtn" id="surpriseBtn" title="Mystery surprise!">❓</button>
+    <button class="fbtn" id="trumpetBtn" title="Trumpet!" aria-label="Trumpet" style="background:linear-gradient(160deg,#fff6d5,#ffd97a);box-shadow:0 5px 0 #e0a92e,0 10px 20px rgba(224,169,46,.35);animation:none">🎺</button>
+    <button class="fbtn" id="surpriseBtn" title="Mystery surprise!" aria-label="Mystery surprise">❓</button>
   </div>
   <button id="actBtn">Play! 💜</button>
 
@@ -1008,9 +1008,11 @@ for(const id in TUBBIES){
 }
 function refreshMarks(){for(const id in tubbies){
   const done=S.today.stars[id];tubbies[id].mark.material.opacity=done?1:0.9;
+  const old=tubbies[id].mark.material.map;             // dispose the replaced texture (no GPU leak)
   tubbies[id].mark.material.map=makeCanvasTex((g,w,h)=>{g.clearRect(0,0,w,h);
     g.font='170px serif';g.textAlign='center';g.textBaseline='middle';
     g.globalAlpha=done?1:0.9;g.fillText(done?'⭐':'❕',w/2,h/2+8);});
+  if(old)old.dispose();
   tubbies[id].mark.material.needsUpdate=true;}}
 
 /* ===================== DAILY LIFE: eggs, ritual, schedule, wants =========
@@ -1708,7 +1710,8 @@ function updateRoam(dt,time){
     const [sx,sz]=POI[STATIONS[k].poi];
     const d=Math.hypot(p.x-sx,p.z-sz);
     if(d<6.5&&(!best||d<bd)){bd=d;best={kind:'station',id:k};}}
-  if(JSON.stringify(best)!==JSON.stringify(nearThing)){nearThing=best;updateActBtn();
+  const changed=(!best)!==(!nearThing)||(best&&nearThing&&(best.kind!==nearThing.kind||best.id!==nearThing.id));
+  if(changed){nearThing=best;updateActBtn();
     if(best&&best.kind==='tubby'){sfx.pop();doMove(tubbies[best.id],'wave',0.8);}}
 }
 function updateActBtn(){
@@ -2160,7 +2163,11 @@ function frame(now){
   else animEllie(player,time,dt,false);
   for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
 
-  // ambient spinners / bobbers
+  // ambient spinners / bobbers (sweep out removed meshes every ~5s — no leak)
+  if(!frame._sw||now-frame._sw>5000){frame._sw=now;
+    for(let i=spinners.length-1;i>=0;i--){let n=spinners[i].mesh,att=false;
+      while(n){if(n===scene){att=true;break;}n=n.parent;}
+      if(!att)spinners.splice(i,1);}}
   spinners.forEach(s=>{if(s.speed)s.mesh.rotation.z-=s.speed*dt;
     if(s.bob)s.mesh.position.y=(s.mesh.userData.by||(s.mesh.userData.by=s.mesh.position.y))+Math.sin(time*2+(s.mesh.id%7))*0.25;});
   // seeds float+spin
