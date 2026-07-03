@@ -152,6 +152,13 @@ const App: React.FC = () => {
                 <Route path="/belus-world" element={<BelusWorld />} />
                 <Route path="/buddy" element={<Navigate to="/circle-of-friends" replace />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
+
+                {/* Short game links — aariasblueelephant.org/1, /2, … */}
+                <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message="Loading Elly-Tubbies… 🐘☀️" />} />
+                <Route path="/2" element={<ExternalRedirect url="/blockcraft/index.html" message="Loading Aaria's Block Craft 3D… 🧱🌈" />} />
+                <Route path="/3" element={<Navigate to="/belus-world" replace />} />
+                <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Road Safety Heroes… 🚲" />} />
+                <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Dough Lab… 🍪" />} />
                 
                 {/* External Redirects */}
                 <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />
