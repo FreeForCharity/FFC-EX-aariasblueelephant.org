@@ -8,11 +8,29 @@
 </head>
 <body>
 <div id="wrap">
-  <canvas id="game" width="520" height="760"></canvas>
+  <canvas id="game" width="520" height="760" role="application" aria-label="Road Safety Heroes — drive the real streets of Mountain House"></canvas>
   <div id="topbtns">
-    <button id="viewBtn" title="Toggle first-person view (V)">👁 View</button>
-    <button id="mapBtn" title="Toggle minimap (M)">🗺</button>
-    <button id="muteBtn" title="Sound on/off">🔊</button>
+    <button id="viewBtn" title="Toggle first-person view (V)" aria-label="Toggle view">👁</button>
+    <button id="mapBtn" title="Toggle minimap (M)" aria-label="Minimap">🗺</button>
+    <button id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
+    <button id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+    <button id="muteBtn" title="Sound on/off" aria-label="Sound">🔊</button>
+  </div>
+
+  <!-- Race HUD (DOM overlay — streak, boost & reward popups) -->
+  <div id="raceHud" class="hidden">
+    <button id="boostBtn" class="hidden" aria-label="Green Wave boost">⚡<small>GREEN<br>WAVE</small></button>
+  </div>
+  <div id="popupLayer"></div>
+
+  <!-- 3·2·1·GO light tree -->
+  <div id="count" class="hidden">
+    <div id="lvlSlam"></div>
+    <div id="tree">
+      <div class="tl" id="tl1"></div><div class="tl" id="tl2"></div>
+      <div class="tl" id="tl3"></div><div class="tl green" id="tlG"></div>
+    </div>
+    <div id="countN"></div>
   </div>
 
   <!-- Touch controls -->
@@ -27,17 +45,78 @@
     </div>
   </div>
 
-  <!-- MAIN MENU -->
-  <div id="menu" class="screen">
-    <img id="logoImg" alt="Aaria's Blue Elephant logo">
-    <h1>Mountain House<br>Road Safety Heroes</h1>
-    <p class="tagline">Ride &amp; drive the REAL streets of Mountain House, CA — map data © OpenStreetMap</p>
+  <!-- TITLE (uniform ABE canon + racing garnish) -->
+  <div id="title" class="screen">
+    <div id="titleRoad"><i></i><i></i><i></i><i></i></div>
+    <div id="titleCar">🚙</div>
+    <img id="logoImg" src="/abe-logo.png" alt="Aaria's Blue Elephant logo">
+    <h1 class="rainbow">Road Safety<br>Heroes</h1>
+    <p class="tagline">Ride &amp; drive the <b>REAL streets</b> of Mountain House, CA 🏁</p>
+    <div class="temojis">🚲🛴🚦🛑🚸🚙🏁</div>
     <div class="namebox">
-      <label for="playerName">Your name (for your certificates!):</label>
-      <input id="playerName" maxlength="24" placeholder="Type your name">
+      <input id="playerName" maxlength="24" placeholder="Who is driving?" aria-label="Your name">
     </div>
-    <div id="levelGrid"></div>
-    <p class="footer">Aaria's Blue Elephant • Building a New Inclusive World • aariasblueelephant.org</p>
+    <button class="bigbtn green" id="titlePlay">▶ Start Your Engines!</button>
+    <div class="btnrow">
+      <button class="smallbtn2" id="titleFs">⛶ Full Screen</button>
+    </div>
+    <p class="footer">A game from Aaria's Blue Elephant 🐘💙 • aariasblueelephant.org • map © OpenStreetMap</p>
+  </div>
+
+  <!-- GARAGE (vehicle + level select) -->
+  <div id="menu" class="screen garage hidden">
+    <h1 class="garageTitle">🏁 THE GARAGE</h1>
+    <div id="totStars" class="garStars"></div>
+    <div id="podiumRow">
+      <button id="garPrev" class="garArrow" aria-label="Previous vehicle">◀</button>
+      <div id="podium">
+        <div id="podLight"></div>
+        <div id="garVeh">🚲</div>
+        <div id="podDisc"></div>
+      </div>
+      <button id="garNext" class="garArrow" aria-label="Next vehicle">▶</button>
+    </div>
+    <div id="garPlate">BICYCLE</div>
+    <div id="garLevel" class="garSub"></div>
+    <div id="garMedal" class="garSub"></div>
+    <div id="specs">
+      <div class="spec"><span>TOP SPEED</span><div class="bar"><i id="spd1"></i></div></div>
+      <div class="spec"><span>ACCEL</span><div class="bar"><i id="spd2"></i></div></div>
+      <div class="spec"><span>BRAKES</span><div class="bar"><i id="spd3"></i></div></div>
+    </div>
+    <button class="bigbtn green" id="garGo">🚦 RIDE!</button>
+    <div id="garLock" class="garSub hidden"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="screen dark hidden">
+    <div id="gradeStamp">A</div>
+    <div id="resTitle">RUN COMPLETE</div>
+    <div id="resRows">
+      <div class="resRow"><span>🛡️ Safety Score</span><b id="resScore"></b></div>
+      <div class="resRow"><span>🔥 Best Streak</span><b id="resStreak"></b></div>
+      <div class="resRow"><span>⏱️ Time</span><b id="resTime"></b></div>
+      <div class="resRow"><span>⭐ Medal</span><b id="resMedal"></b></div>
+    </div>
+    <div id="resRecord" class="hidden">🎉 NEW RECORD!</div>
+    <div id="resGhost" class="hidden">👑 You beat your Safety Star!</div>
+    <div class="btnrow">
+      <button class="bigbtn green" id="resCert">🎓 My Certificate</button>
+      <button class="bigbtn" id="resRetry">🔄 Retry</button>
+      <button class="smallbtn2" id="resGarage">🏁 Garage</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="screen hidden">
+    <div class="card">
+      <h2>⚙️ Settings</h2>
+      <button class="bigbtn" id="setSpeed"></button>
+      <button class="bigbtn" id="setSound"></button>
+      <button class="bigbtn" id="setVoice"></button>
+      <button class="bigbtn" id="setFs">⛶ Full screen</button>
+      <button class="smallbtn" id="setClose">Done ▶</button>
+    </div>
   </div>
 
   <!-- LEVEL INTRO / BRIEFING -->
