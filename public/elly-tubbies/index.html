@@ -28,49 +28,61 @@
   /* ---------- HUD ---------- */
   #topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:8;
     display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none;}
-  .chip{background:rgba(255,255,255,.92);border-radius:22px;padding:7px 13px;
-    box-shadow:0 4px 14px rgba(58,58,90,.18);font-weight:800;font-size:clamp(13px,3.6vw,17px);
+  .chip{background:linear-gradient(160deg,#ffffff,#f2f6ff);border-radius:999px;padding:7px 14px;
+    border:2.5px solid #fff;box-shadow:0 4px 0 rgba(184,164,255,.35),0 8px 18px rgba(58,58,90,.14);
+    font-weight:800;font-size:clamp(13px,3.6vw,17px);
     display:flex;align-items:center;gap:6px;}
-  #menu{display:flex;gap:6px;pointer-events:auto;}
-  .mbtn{pointer-events:auto;cursor:pointer;border:none;background:rgba(255,255,255,.92);
-    border-radius:18px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
-    color:var(--ink);box-shadow:0 4px 12px rgba(58,58,90,.18);line-height:1;}
-  .mbtn:active{transform:scale(.94);}
+  #menu{display:flex;gap:7px;pointer-events:auto;}
+  .mbtn{pointer-events:auto;cursor:pointer;border:2.5px solid #fff;
+    background:linear-gradient(160deg,#ffffff,#eef3ff);
+    border-radius:16px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
+    color:var(--ink);box-shadow:0 4px 0 #d5ddf5,0 8px 16px rgba(58,58,90,.15);line-height:1;transition:.12s;}
+  .mbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #d5ddf5;}
   .mbtn.off{opacity:.45;}
   #speedRow{position:absolute;top:max(64px,calc(env(safe-area-inset-top) + 54px));right:10px;
-    display:flex;flex-direction:column;gap:6px;pointer-events:auto;z-index:8;}
-  .speed{cursor:pointer;border:none;background:rgba(255,255,255,.85);border-radius:18px;
-    padding:6px 12px;font-weight:800;font-size:clamp(11px,3vw,14px);color:var(--ink);
-    box-shadow:0 3px 10px rgba(58,58,90,.16);opacity:.55;transition:.2s;}
-  .speed.sel{opacity:1;background:var(--sun);transform:scale(1.06);}
+    display:flex;flex-direction:column;gap:7px;pointer-events:auto;z-index:8;}
+  .speed{cursor:pointer;border:2.5px solid #fff;background:linear-gradient(160deg,#ffffff,#eef3ff);
+    border-radius:16px;padding:6px 12px;font-weight:800;font-size:clamp(11px,3vw,14px);color:var(--ink);
+    box-shadow:0 3px 0 #d5ddf5;opacity:.55;transition:.2s;}
+  .speed.sel{opacity:1;background:linear-gradient(160deg,#fff6d5,#ffd23f);transform:scale(1.08);
+    box-shadow:0 3px 0 #e0a92e;}
 
-  /* ---------- joystick ---------- */
+  /* ---------- joystick: a soft candy ring ---------- */
   #stick{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:9;
-    width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.28);
-    border:3px solid rgba(255,255,255,.55);backdrop-filter:blur(2px);touch-action:none;}
-  #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;
-    background:rgba(255,255,255,.92);box-shadow:0 4px 12px rgba(58,58,90,.3);
-    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:26px;}
-  .stickArrow{position:absolute;font-size:18px;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.4);
+    width:144px;height:144px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),rgba(255,255,255,.18));
+    border:4px solid rgba(255,255,255,.85);
+    box-shadow:0 6px 18px rgba(58,58,90,.18),inset 0 0 24px rgba(184,164,255,.25);
+    backdrop-filter:blur(2px);touch-action:none;}
+  #knob{position:absolute;left:50%;top:50%;width:60px;height:60px;border-radius:50%;
+    background:linear-gradient(160deg,#ffffff,#ffe9f2);border:3px solid #fff;
+    box-shadow:0 5px 0 #f3c1d6,0 8px 16px rgba(58,58,90,.25);
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:28px;}
+  .stickArrow{position:absolute;font-size:17px;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.45);
     pointer-events:none;font-weight:900;}
-  .sa-u{top:4px;left:50%;transform:translateX(-50%);} .sa-d{bottom:4px;left:50%;transform:translateX(-50%);}
-  .sa-l{left:7px;top:50%;transform:translateY(-50%);} .sa-r{right:7px;top:50%;transform:translateY(-50%);}
+  .sa-u{top:5px;left:50%;transform:translateX(-50%);} .sa-d{bottom:5px;left:50%;transform:translateX(-50%);}
+  .sa-l{left:8px;top:50%;transform:translateY(-50%);} .sa-r{right:8px;top:50%;transform:translateY(-50%);}
 
-  /* jump / duck buttons */
-  #jumpCol{position:absolute;right:18px;bottom:max(108px,calc(env(safe-area-inset-bottom)+94px));z-index:9;
-    display:flex;flex-direction:column;gap:10px;}
-  .jbtn{cursor:pointer;border:none;width:70px;height:70px;border-radius:50%;
-    background:rgba(255,255,255,.9);box-shadow:0 5px 0 #cfd6ee,0 8px 16px rgba(58,58,90,.25);
-    font-size:30px;touch-action:none;}
-  .jbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #cfd6ee;}
+  /* jump / duck buttons — candy macarons */
+  #jumpCol{position:absolute;right:18px;bottom:max(108px, calc(env(safe-area-inset-bottom) + 94px));z-index:9;
+    display:flex;flex-direction:column;gap:12px;}
+  .jbtn{cursor:pointer;border:3px solid #fff;width:72px;height:72px;border-radius:50%;
+    font-size:31px;touch-action:none;transition:.12s;
+    box-shadow:0 5px 0 rgba(58,58,90,.14),0 10px 18px rgba(58,58,90,.2);}
+  #jumpBtn{background:linear-gradient(160deg,#e8ffef,#a8ecc2);box-shadow:0 5px 0 #6fcf94,0 10px 18px rgba(58,58,90,.2);}
+  #duckBtn{background:linear-gradient(160deg,#fff3e2,#ffd9a8);box-shadow:0 5px 0 #e8b06a,0 10px 18px rgba(58,58,90,.2);}
+  .jbtn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(58,58,90,.2);}
 
-  /* fun action bar (trumpet / spray / dance) */
+  /* the ONE mystery surprise button — a sparkly gift that begs to be tapped */
   #funRow{position:absolute;left:50%;transform:translateX(-50%);
     bottom:max(18px,env(safe-area-inset-bottom));z-index:9;display:flex;gap:10px;}
-  .fbtn{cursor:pointer;border:none;width:62px;height:62px;border-radius:22px;
-    background:rgba(255,255,255,.9);box-shadow:0 5px 0 #cfd6ee,0 8px 16px rgba(58,58,90,.25);
-    font-size:28px;touch-action:none;}
-  .fbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #cfd6ee;}
+  .fbtn{cursor:pointer;border:3px solid #fff;width:70px;height:70px;border-radius:24px;
+    background:linear-gradient(160deg,#f3e8ff,#d9c2ff);
+    box-shadow:0 5px 0 #a583e8,0 10px 20px rgba(124,92,224,.35);
+    font-size:32px;touch-action:none;animation:sparklePulse 2s ease-in-out infinite;}
+  .fbtn:active{transform:translateY(4px) scale(.96);box-shadow:0 1px 0 #a583e8;animation:none;}
+  @keyframes sparklePulse{0%,100%{transform:scale(1);box-shadow:0 5px 0 #a583e8,0 10px 20px rgba(124,92,224,.35);}
+    50%{transform:scale(1.07);box-shadow:0 5px 0 #a583e8,0 10px 28px rgba(124,92,224,.55);}}
 
   /* ---------- context action button ---------- */
   #actBtn{position:absolute;right:18px;bottom:max(26px,calc(env(safe-area-inset-bottom) + 8px));z-index:9;
@@ -82,7 +94,7 @@
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 
   /* ---------- narration bubble (bottom-center, never blocks the world) ---------- */
-  #narr{position:absolute;left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom)+4px));transform:translateX(-50%);
+  #narr{position:absolute;left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom) + 4px));transform:translateX(-50%);
     z-index:12;width:min(620px,92vw);display:none;pointer-events:auto;}
   #narr.show{display:block;animation:pop .3s ease;}
   @keyframes pop{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
@@ -95,7 +107,7 @@
   #narrNext:active{transform:translateY(3px);box-shadow:0 1px 0 #d9a800;}
 
   /* ---------- dance move buttons ---------- */
-  #moves{position:absolute;left:50%;bottom:max(108px,calc(env(safe-area-inset-bottom)+92px));transform:translateX(-50%);
+  #moves{position:absolute;left:50%;bottom:max(108px,calc(env(safe-area-inset-bottom) + 92px));transform:translateX(-50%);
     z-index:11;display:none;gap:12px;}
   #moves.show{display:flex;}
   .mv{cursor:pointer;border:none;border-radius:24px;width:clamp(64px,17vw,86px);height:clamp(64px,17vw,86px);
@@ -170,9 +182,7 @@
     <button class="jbtn" id="duckBtn" title="Duck">🙈</button>
   </div>
   <div id="funRow">
-    <button class="fbtn" id="trumpBtn" title="Mystery!">❓</button>
-    <button class="fbtn" id="sprayBtn" title="Mystery!">❓</button>
-    <button class="fbtn" id="danceBtn" title="Mystery!">❓</button>
+    <button class="fbtn" id="surpriseBtn" title="Mystery surprise!">❓</button>
   </div>
   <button id="actBtn">Play! 💜</button>
 
@@ -919,13 +929,17 @@ function drawSunBaby(g,w,h,mood,blink){
     [[0.82,-0.5,0.34],[1.04,-0.78,0.24],[1.2,-1.02,0.17]].forEach(([ox,oy,sc])=>{
       g.font='bold '+Math.round(R*sc)+'px "Baloo 2",sans-serif';g.fillText('z',cx+dr*ox,cy+dr*oy);});}
 }
-const sunGroup=new T.Group();scene.add(sunGroup);
+/* the sun lives in CAMERA space — same cosy top-left screen spot on every
+   screen size, never clipped and never behind the bottom dialog */
+const sunGroup=new T.Group();scene.add(camera);camera.add(sunGroup);
+sunGroup.position.set(-8.4,5.2,-24);
 let sunMood='happy',sunBlink=0,sunReactUntil=0,sunReactDur=1900,sunBounce=false;
 const sunTex=makeCanvasTex((g,w,h)=>drawSunBaby(g,w,h,sunMood,sunBlink),512,512);
 function repaintSun(){const c=sunTex.image.getContext('2d');
   drawSunBaby(c,c.canvas.width,c.canvas.height,sunMood,sunBlink);sunTex.needsUpdate=true;}
-const sunSprite=new T.Sprite(new T.SpriteMaterial({map:sunTex,transparent:true,depthWrite:false,fog:false}));
-sunSprite.scale.set(15,15,1);sunGroup.add(sunSprite);
+const sunSprite=new T.Sprite(new T.SpriteMaterial({map:sunTex,transparent:true,depthWrite:false,depthTest:false,fog:false}));
+sunSprite.renderOrder=999;                       // she draws over everything, like a HUD
+sunSprite.scale.set(8,8,1);sunGroup.add(sunSprite);
 function reactSun(){sunMood='cheer';repaintSun();sunReactUntil=performance.now()+1900;sunReactDur=1900;sunBounce=true;}
 function careSun(){if(mode==='finale')return;sunMood='care';repaintSun();sunReactUntil=performance.now()+1700;sunReactDur=1700;sunBounce=false;}
 sunGroup.add(new T.PointLight(0xfff0c0,0.35,140));
@@ -1172,7 +1186,7 @@ function camFollow(dt){
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
   camera.position.copy(camState.pos);camera.lookAt(camState.look);
-  sunGroup.position.set(camState.pos.x+17,mode==='finale'?sunGroup.position.y:17.5,camState.pos.z+52);
+  // (sun is parented to the camera - no per-frame repositioning needed)
   sunLight.position.set(player.group.position.x-12,26,player.group.position.z-8);
   sunLight.target.position.copy(player.group.position);
 }
@@ -1559,11 +1573,12 @@ async function gameKitchen(tub){
   const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
   let idx=0;
   const shuffled=rec.steps.map((s,i)=>i).sort(()=>Math.random()-0.5);
-  const xs=[-6,-3,0,3,6];
+  const xs=[-6.6,-3.3,0,3.3,6.6];
   const figs=[];
   shuffled.forEach((si,k)=>{
     const stp=rec.steps[si];
-    const pos=base.clone();pos.x+=xs[k]||0;pos.z-=4.5;pos.y=terrainH(pos.x,pos.z);
+    // zigzag two rows so five figures + labels never overlap
+    const pos=base.clone();pos.x+=xs[k]||0;pos.z-=(k%2?6.2:3.8);pos.y=terrainH(pos.x,pos.z);
     const fig=makeChoiceFigure(stp.e,stp.w,pos,async()=>{
       if(window.__ET)window.__ET.info.tapped=stp.w;
       if(si===idx){sfx.pop();idx++;
@@ -1644,7 +1659,7 @@ async function startGearVisit(k){
   await say(st.e,st.setup);
   const base=new T.Vector3(sx,terrainH(sx,sz),sz);
   st.choices.forEach((c,i)=>{
-    const pos=base.clone();pos.x+=(i-1)*3.6;pos.z-=3.4;pos.y=terrainH(pos.x,pos.z);
+    const pos=base.clone();pos.x+=(i-1)*4.8;pos.z-=(i===1?5.2:3.4);pos.y=terrainH(pos.x,pos.z);
     makeChoiceFigure(c.e,c.s,pos,async()=>{
       if(c.ok){
         clearChoices();sfx.good();
@@ -1793,7 +1808,7 @@ $('newDay').onclick=()=>{
   // reset world to morning
   scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
   hemi.intensity=0.95;sunLight.intensity=1.15;sunLight.color.set(0xfff3d6);
-  stars.material.opacity=0;sunMood='happy';repaintSun();sunGroup.position.y=13;
+  stars.material.opacity=0;sunMood='happy';repaintSun();sunGroup.position.y=4.6;
   for(const id in tubbies){const [x,z]=TUBBY_POS[id];
     tubbies[id].group.position.set(x,terrainH(x,z),z);tubbies[id].group.rotation.y=0;}
   spawnSeeds();refreshMarks();mode='roam';$('stick').classList.remove('hidden');
@@ -1850,7 +1865,7 @@ function frame(now){
   if(sunReactUntil){const left=sunReactUntil-now;
     pop=sunBounce?1+Math.max(0,Math.sin((1-left/sunReactDur)*Math.PI))*0.22:1;
     if(left<=0){sunReactUntil=0;if(mode!=='finale'){sunMood='happy';repaintSun();}}}
-  sunSprite.scale.set(15*breathe*pop,15*breathe*pop,1);
+  sunSprite.scale.set(8*breathe*pop,8*breathe*pop,1);
 
   if(mode==='finale'){
     if(sunMood!=='sleepy'){sunMood='sleepy';repaintSun();}
@@ -1860,7 +1875,7 @@ function frame(now){
     hemi.intensity=Math.max(0.35,0.95-fe*0.12);
     sunLight.intensity=Math.max(0.35,1.15-fe*0.16);
     sunLight.color.lerpColors(new T.Color(0xfff3d6),new T.Color(0xffb27a),Math.min(1,fe/4));
-    sunGroup.position.y=Math.max(2,13-fe*2.2);
+    sunGroup.position.y=Math.max(-7,4.6-fe*1.6);   // she sinks below the view for goodnight
     stars.material.opacity=Math.min(0.9,Math.max(0,(fe-2)/3));
   }
 
@@ -1897,17 +1912,19 @@ $('duckBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();duck=tru
   $('duckBtn').addEventListener(ev,()=>{duck=false;}));
 addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
 addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
-/* mystery buttons — kids discover what each one does! */
-const MYSTERY={trump:{btn:'trumpBtn',e:'🎺',name:'Trumpet',fn:actTrumpet},
-               spray:{btn:'sprayBtn',e:'💦',name:'Water Rainbow',fn:actSpray},
-               dance:{btn:'danceBtn',e:'💃',name:'Dance Party',fn:actDance}};
-for(const k in MYSTERY){const m=MYSTERY[k];
-  if(S.found[k])$(m.btn).textContent=m.e;
-  $(m.btn).onclick=()=>{ac();
-    if(!S.found[k]){S.found[k]=1;save();$(m.btn).textContent=m.e;
-      burst(player.group.position,16,'#b8a4ff');sfx.star();
-      say('☀️',`You discovered the ${m.name}! ${m.e}`);}
-    m.fn();};}
+/* ONE mystery button — every tap a surprise! Undiscovered tricks come first
+   (with a celebration), then it keeps shuffling them forever. */
+const MYSTERY=[{k:'trump',e:'🎺',name:'Trumpet',fn:actTrumpet},
+               {k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
+               {k:'dance',e:'💃',name:'Dance Party',fn:actDance}];
+$('surpriseBtn').onclick=()=>{ac();sfx.tap();
+  const fresh=MYSTERY.filter(m=>!S.found[m.k]);
+  const m=fresh.length?fresh[Math.floor(Math.random()*fresh.length)]
+                      :MYSTERY[Math.floor(Math.random()*MYSTERY.length)];
+  if(!S.found[m.k]){S.found[m.k]=1;save();
+    burst(player.group.position,16,'#b8a4ff');sfx.star();
+    say('☀️',`Surprise! You discovered the ${m.name}! ${m.e}`);}
+  m.fn();};
 $('fsBtn').onclick=()=>{sfx.tap();
   if(document.fullscreenElement)document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});};
