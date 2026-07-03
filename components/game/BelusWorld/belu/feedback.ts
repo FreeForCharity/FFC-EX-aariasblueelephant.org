@@ -24,10 +24,17 @@ function audio(): AudioContext | null {
   }
 }
 
-/** A soft sine "ping". freq in Hz, when = offset seconds, dur seconds. */
+/** A soft sine "ping". freq in Hz, when = offset seconds, dur seconds.
+ *  Polite audio: pings never pile up, and they duck under Belu's voice. */
+const _pingLog: number[] = [];
 function ping(freq: number, when: number, dur: number, gain: number) {
   const ac = audio();
   if (!ac) return;
+  const nowMs = performance.now();
+  while (_pingLog.length && nowMs - _pingLog[0] > 350) _pingLog.shift();
+  if (_pingLog.length >= 6) return;
+  _pingLog.push(nowMs);
+  if (typeof window !== 'undefined' && window.speechSynthesis?.speaking) gain *= 0.45;
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = 'sine';

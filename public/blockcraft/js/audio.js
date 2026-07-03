@@ -28,8 +28,15 @@ ABC.audio = (function () {
     return ctx;
   }
 
+  /* polite audio: cap how many beeps can stack, and duck under Bella's voice */
+  const _toneLog = [];
   function tone(freq, dur, type, vol, when, slideTo) {
     if (!S.sound) return;
+    const nowMs = performance.now();
+    while (_toneLog.length && nowMs - _toneLog[0] > 350) _toneLog.shift();
+    if (_toneLog.length >= 6) return;
+    _toneLog.push(nowMs);
+    if (window.speechSynthesis && speechSynthesis.speaking) vol = (vol || 0.15) * 0.45;
     const c = ensureCtx();
     const t = c.currentTime + (when || 0);
     const o = c.createOscillator(), g = c.createGain();

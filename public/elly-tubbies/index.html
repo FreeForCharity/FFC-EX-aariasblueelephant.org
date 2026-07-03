@@ -410,7 +410,15 @@ function dayRnd(salt){let s=(S.day*2654435761+salt*97+11)>>>0;
 
 /* ================================ AUDIO ================================== */
 let AC=null;const ac=()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return AC;};
-function tone(f,d,type='sine',v=.13,delay=0){if(S.muted)return;const a=ac();if(!a)return;const t=a.currentTime+delay;
+/* polite audio: never let effect-beeps pile up or drown the voice */
+const _toneLog=[];
+function tone(f,d,type='sine',v=.13,delay=0){if(S.muted)return;const a=ac();if(!a)return;
+  const nowMs=performance.now();
+  while(_toneLog.length&&nowMs-_toneLog[0]>350)_toneLog.shift();
+  if(_toneLog.length>=6)return;                     // enough beeps already — stay calm
+  _toneLog.push(nowMs);
+  if(voiceOK&&speechSynthesis.speaking)v*=0.45;     // duck under the voice
+  const t=a.currentTime+delay;
   const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(a.destination);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d+.02);}
 const sfx={tap(){tone(520,.09,'sine',.08);},
@@ -439,14 +447,19 @@ function pickVoices(){
 }
 if(voiceOK){pickVoices();speechSynthesis.onvoiceschanged=pickVoices;}
 const TUBBY_PITCH={'💗':1.35,'💜':1.15,'💚':1.25,'💛':1.05,'🥚':1.4,'🎭':1.2,'🎉':1.25};
-function speak(txt,who){if(!S.voice||!voiceOK||S.muted)return;
+function speak(txt,who,onend){if(!S.voice||!voiceOK||S.muted)return false;
+  if(!VOICES.narrator)pickVoices();
+  if(!VOICES.narrator)return false;               // no voices on this device — timer mode
   try{speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s+/g,' ').trim());
+  const clean=txt.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s+/g,' ').trim();
+  if(!clean)return false;
+  const u=new SpeechSynthesisUtterance(clean);
   const kid=who&&TUBBY_PITCH[who]!==undefined;
   u.voice=kid?VOICES.kid:VOICES.narrator;
   u.pitch=kid?TUBBY_PITCH[who]:1.12;
   u.rate=(S.speed==='relaxed'?0.82:S.speed==='fast'?1.08:0.95)*(kid?1.02:1);
-  speechSynthesis.speak(u);}catch(e){}}
+  if(onend){u.onend=onend;u.onerror=onend;}
+  speechSynthesis.speak(u);return true;}catch(e){return false;}}
 
 /* ============================== 3D WORLD ================================= */
 const T=window.THREE;
@@ -1473,16 +1486,18 @@ function pumpNarr(){
   if(narrBusy||!narrQ.length)return;narrBusy=true;
   const {who,txt,res}=narrQ.shift();
   $('narrWho').textContent=who;$('narrTxt').textContent=txt;
-  $('narr').classList.add('show');$('funRow').classList.add('hidden');speak(txt,who);
+  $('narr').classList.add('show');$('funRow').classList.add('hidden');
   const done=()=>{if(narrResolve!==done)return;narrResolve=null;
     narrBusy=false;res();
     if(!narrQ.length){$('narr').classList.remove('show');
       if(mode==='roam')$('funRow').classList.remove('hidden');}
     else pumpNarr();};
   narrResolve=done;
-  // auto-advance briskly (kids can also tap ▶) — scaled by speed setting
+  // the voice finishes the line, THEN we advance (plus a small beat to breathe);
+  // silent mode / no-voice falls back to a reading-time timer. Tap ▶ any time.
+  const spoke=speak(txt,who,()=>setTimeout(()=>{if(narrResolve===done)done();},450*SPEED[S.speed]));
   const ms=(1300+txt.length*30)*SPEED[S.speed];
-  setTimeout(()=>{if(narrResolve===done)done();},ms);
+  setTimeout(()=>{if(narrResolve===done)done();},spoke?ms*2.5:ms);   // fallback safety only
 }
 $('narrNext').onclick=()=>{sfx.tap();if(narrResolve)narrResolve();};
 function clearNarr(){narrQ=[];narrResolve=null;narrBusy=false;$('narr').classList.remove('show');
