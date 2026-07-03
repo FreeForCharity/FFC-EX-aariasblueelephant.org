@@ -10,6 +10,17 @@
 const cvs = document.getElementById("game");
 const ctx = cvs.getContext("2d");
 const W = 520, H = 760;
+/* render at device resolution (all drawing stays in 520x760 logical coords) */
+let VIEW_SCALE = 1;
+function fitCanvas(){
+  const r = cvs.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cvs.width !== w || cvs.height !== h){ cvs.width = w; cvs.height = h; }
+  VIEW_SCALE = w / W;
+}
+addEventListener("resize", fitCanvas);
+setTimeout(fitCanvas, 0);
 const PLAYER_Y = 590;          // player screen y (top-down)
 const LANE_W = 64;             // gameplay lane width, px
 const PXM = 6;                 // px per meter (world scale)
@@ -213,7 +224,7 @@ const QUIZ = {
 
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
-let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true };
+let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(save, s); } catch(e){}
 // one-time migration: default everyone into the new chase view
 if (!save.chaseDefault){ save.view = "fp"; save.chaseDefault = true; }
@@ -225,6 +236,7 @@ const S = {
   t:0, o:0, speed:0, score:100, time:0,
   events:[], amb:null, toasts:[], banner:null,
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
+  streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1,
   air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
 };
 let cam = null;
@@ -235,11 +247,19 @@ const laneC = i => -HWf() + LANE_W * (i + .5);
 /* ---------- audio ---------- */
 let AC = null, muted = false, sirenOsc = null, sirenInt = null;
 function ensureAudio(){ if (!AC) { try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } }
+/* polite audio: beeps never pile up, and they duck under the voice */
+const _toneLog = [];
 function tone(freq, dur, type, vol){
   if (!AC || muted) return;
+  const nowMs = performance.now();
+  while (_toneLog.length && nowMs - _toneLog[0] > 350) _toneLog.shift();
+  if (_toneLog.length >= 6) return;
+  _toneLog.push(nowMs);
+  vol = vol || 0.12;
+  if (window.speechSynthesis && speechSynthesis.speaking) vol *= 0.45;
   const o = AC.createOscillator(), g = AC.createGain();
   o.type = type||"sine"; o.frequency.value = freq;
-  g.gain.setValueAtTime(vol||0.12, AC.currentTime);
+  g.gain.setValueAtTime(vol, AC.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
   o.connect(g); g.connect(AC.destination);
   o.start(); o.stop(AC.currentTime + dur);
@@ -258,6 +278,49 @@ function sirenStart(){
 function sirenStop(){
   if (sirenInt) clearInterval(sirenInt), sirenInt = null;
   if (sirenOsc) { try{sirenOsc.stop();}catch(e){} sirenOsc = null; }
+}
+
+/* engine hum — pitch rises with speed; the feel of motion (polite: soft, ducks) */
+let engOsc = null, engGain = null;
+function engineUpdate(){
+  if (!AC || muted || S.screen !== "playing"){ engineStop(); return; }
+  if (!engOsc){
+    engOsc = AC.createOscillator(); engGain = AC.createGain();
+    engOsc.type = "sawtooth"; engGain.gain.value = 0;
+    const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 320;
+    engOsc.connect(f); f.connect(engGain); engGain.connect(AC.destination);
+    engOsc.start();
+  }
+  const frac = S.speed / S.veh.max;
+  engOsc.frequency.value = 46 + frac * 150;
+  const duck = (window.speechSynthesis && speechSynthesis.speaking) ? 0.4 : 1;
+  engGain.gain.value = (0.006 + frac * 0.022) * duck;
+}
+function engineStop(){
+  if (engOsc){ try { engOsc.stop(); } catch(e){} engOsc = null; engGain = null; }
+}
+
+/* natural voice coaching (premium Apple voice when the device has one) */
+let COACH_VOICE = null;
+function pickCoach(){
+  if (!window.speechSynthesis) return;
+  const en = speechSynthesis.getVoices().filter(v => v.lang && /en/i.test(v.lang));
+  if (!en.length) return;
+  const ranks = [/premium/i, /enhanced/i, /natural/i, /Ava|Samantha/i];
+  for (const r of ranks){ const v = en.find(v => r.test(v.name)); if (v){ COACH_VOICE = v; return; } }
+  COACH_VOICE = en[0];
+}
+if (window.speechSynthesis){ pickCoach(); speechSynthesis.onvoiceschanged = pickCoach; }
+function speak(txt){
+  if (!save.voice || muted || !window.speechSynthesis || !COACH_VOICE) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(
+      txt.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, "").replace(/\s+/g, " ").trim());
+    u.voice = COACH_VOICE; u.pitch = 1.08;
+    u.rate = save.gspeed === "relaxed" ? 0.85 : save.gspeed === "fast" ? 1.05 : 0.95;
+    speechSynthesis.speak(u);
+  } catch(e){}
 }
 
 /* ---------- top buttons ---------- */
@@ -286,6 +349,7 @@ addEventListener("keydown", e => {
   ensureAudio();
   if ((e.key === "v" || e.key === "V") && !e.repeat) { toggleView(); return; }
   if ((e.key === "m" || e.key === "M") && !e.repeat) { save.minimap = !save.minimap; persist(); return; }
+  if ((e.key === "b" || e.key === "B") && !e.repeat) { fireBoost(); return; }
   const k = KEYMAP[e.key];
   if (k) { input[k] = true; if (S.screen === "playing") e.preventDefault(); }
 });
@@ -311,18 +375,30 @@ function lightPhase(ev){
 }
 function currentLimit(){
   let lim = S.cfg.base;
+  let zone = false;
   for (const ev of S.events)
     if ((ev.type === "school" || ev.type === "festival" || ev.type === "construction")
-        && S.t >= ev.from - 350 && S.t <= ev.to) lim = Math.min(lim, ev.limit);
+        && S.t >= ev.from - 350 && S.t <= ev.to){ lim = Math.min(lim, ev.limit); zone = true; }
+  // Green Wave boost: a LEGAL surge on open road only — never inside slow zones
+  if (S.boost > 0 && !zone) lim += 8;
   return lim;
 }
+function fireBoost(){
+  if (S.boostCharge < 3 || S.boost > 0 || S.screen !== "playing") return;
+  S.boostCharge = 0; S.boost = 5;
+  document.getElementById("boostBtn").classList.add("hidden");
+  whoosh(); rewardPopup("⚡ GREEN WAVE!", "");
+}
+document.getElementById("boostBtn").addEventListener("click", () => { ensureAudio(); fireBoost(); });
 
 /* ---------- screens ---------- */
-const SCREENS = ["menu","intro","tip","quiz","cert","retry"];
+const SCREENS = ["title","menu","intro","tip","quiz","cert","retry","results","settings"];
 function show(id){
   for (const s of SCREENS) document.getElementById(s).classList.toggle("hidden", s !== id);
   document.getElementById("touch").classList.toggle("hidden",
     !(id === null && ("ontouchstart" in window)));
+  document.getElementById("raceHud").classList.toggle("hidden", id !== null);
+  if (id !== null) document.getElementById("count").classList.add("hidden");
 }
 
 /* ============================================================
@@ -523,6 +599,8 @@ function beginRun(){
   S.t = 24; S.speed = 0; S.score = 100; S.time = 0;
   S.amb = null; S.toasts = []; S.banner = null; S.shake = 0;
   S.speedTimer = 0; S.quizBonus = 0; S.air = null; S.airPts = 0;
+  S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0;
+  refreshStreakChip(); document.getElementById("boostBtn").classList.add("hidden");
   S.events = genEvents(S.li).map(e => initEvent(e, S.cfg));
   S.o = laneC(S.cfg.lanes - 1);
   S.houses = genHouses(S.li);
@@ -530,14 +608,38 @@ function beginRun(){
   S.mm = buildMinimap(S.li);
   loadAerial(S.li);
   sirenStop();
-  S.screen = "playing";
   show(null);
-  setBanner(`${S.veh.emoji} ${S.rt.streets[0][1]} — ride safely!`);
+  startCountdown();
+}
+/* 3·2·1·GO light tree */
+function startCountdown(){
+  S.screen = "count";
+  const el = document.getElementById("count");
+  el.classList.remove("hidden");
+  document.getElementById("lvlSlam").textContent = `LEVEL ${S.li + 1} — ${S.cfg.title.toUpperCase()}`;
+  const n = document.getElementById("countN");
+  const tls = ["tl1", "tl2", "tl3"].map(id => document.getElementById(id));
+  const tg = document.getElementById("tlG");
+  tls.forEach(t => t.classList.remove("on")); tg.classList.remove("on");
+  n.textContent = ""; n.classList.remove("go");
+  [0, 1, 2].forEach(i => setTimeout(() => {
+    tls[i].classList.add("on"); n.textContent = 3 - i; tone(330, .18, "square", .1);
+  }, 700 + i * 750));
+  setTimeout(() => {
+    tg.classList.add("on"); n.textContent = "GO!"; n.classList.add("go");
+    tone(660, .4, "square", .12);
+    setTimeout(() => {
+      el.classList.add("hidden");
+      S.screen = "playing";
+      setBanner(`${S.veh.emoji} ${S.rt.streets[0][1]} — ride safely!`);
+    }, 550);
+  }, 700 + 3 * 750);
 }
 
 /* ---------- violations & bonuses ---------- */
 function violation(key){
   const v = TIPS[key];
+  breakStreak();
   S.score = Math.max(0, S.score - v.pts);
   buzz(); S.shake = 10;
   document.getElementById("tipIcon").textContent = v.icon;
@@ -546,18 +648,49 @@ function violation(key){
   document.getElementById("tipPts").textContent = `−${v.pts} Safety Points (Score: ${S.score})`;
   S.screen = "tip";
   show("tip");
+  speak(v.title + ". " + v.text);
 }
 document.getElementById("tipBtn").addEventListener("click", () => {
   if (S.score <= 0){ showRetry("Too many oopsies this time — and that's OK! Every safety hero practices. Let's ride it again, nice and careful."); return; }
   S.screen = "playing";
   show(null);
 });
-function bonus(pts, msg){ S.score = Math.min(100, S.score + pts); ding(); toast(`${msg} +${pts}`); }
+const POPNAME = {
+  "Perfect stop!":"PERFECT STOP", "Waited for green!":"WAITED FOR GREEN",
+  "You waited — kind & safe!":"SMOOTH YIELD", "You pulled over — hero move!":"HERO PULL-OVER",
+  "Big Air! Clean landing!":"BIG AIR",
+};
+function rewardPopup(text, sub){
+  const el = document.createElement("div");
+  el.className = "rpop";
+  el.textContent = text + (sub ? "  " + sub : "");
+  el.style.top = (26 + Math.random() * 14) + "%";
+  document.getElementById("popupLayer").appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+function refreshStreakChip(){ /* streak now drawn on the canvas top bar */ }
+function bonus(pts, msg){
+  S.score = Math.min(100, S.score + pts); ding();
+  // Hero Streak: consecutive safe moves raise the multiplier (max x4)
+  S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+  S.mult = Math.min(4, 1 + (S.streak >> 1));
+  refreshStreakChip();
+  rewardPopup((POPNAME[msg] || msg.replace(/!.*/, "").toUpperCase()) + ` +${pts * S.mult}!`,
+              S.mult > 1 ? `×${S.mult}` : "");
+  // Green Wave: safe moves charge the boost
+  if (S.boostCharge < 3){
+    S.boostCharge++;
+    if (S.boostCharge >= 3) document.getElementById("boostBtn").classList.remove("hidden");
+  }
+}
+function breakStreak(){ S.streak = 0; S.mult = 1; refreshStreakChip(); }
 
 /* ============================================================
    SIMULATION
    ============================================================ */
 function update(dt){
+  if (S.boost > 0) S.boost = Math.max(0, S.boost - dt);
+  engineUpdate();
   S.time += dt;
   const v = S.veh;
 
@@ -586,7 +719,7 @@ function update(dt){
   const lim = currentLimit();
   if (S.speed > lim + 3){
     S.speedTimer += dt;
-    if (S.speedTimer > 1){ S.speedTimer = 0; S.score = Math.max(0, S.score - 1); toast("Slow down! −1", "#d62828"); }
+    if (S.speedTimer > 1){ S.speedTimer = 0; S.score = Math.max(0, S.score - 1); breakStreak(); toast("Slow down! −1", "#d62828"); }
   } else S.speedTimer = 0;
 
   for (const ev of S.events) updateEvent(ev, dt);
@@ -1692,7 +1825,55 @@ function drawPlayerFP(jump){
 /* ============================================================
    HUD: glass top bar, speedometer, minimap, street pill
    ============================================================ */
+function drawSpeedStreaks(){
+  const frac = S.speed / S.veh.max;
+  ctx.save();
+  // Green Wave aura: electric side glow while the legal boost is alive
+  if (S.boost > 0){
+    const pulse = .16 + Math.sin(S.time * 9) * .06;
+    for (const side of [0, 1]){
+      const g = ctx.createLinearGradient(side ? W : 0, 0, side ? W - 90 : 90, 0);
+      g.addColorStop(0, `rgba(81,207,102,${pulse})`);
+      g.addColorStop(1, "rgba(81,207,102,0)");
+      ctx.fillStyle = g; ctx.fillRect(side ? W - 90 : 0, 0, 90, H);
+    }
+  }
+  if (frac >= 0.5){
+    const a = (frac - 0.5) / 0.5;
+    // speed vignette — the classic racing tunnel-focus
+    const vg = ctx.createRadialGradient(W/2, H*.55, H*.34, W/2, H*.55, H*.78);
+    vg.addColorStop(0, "rgba(13,27,42,0)");
+    vg.addColorStop(1, `rgba(13,27,42,${0.30 * a})`);
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    // edge motion streaks
+    ctx.strokeStyle = `rgba(255,255,255,${0.30 * a})`;
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < 10; i++){
+      const sy2 = hash(i * 3.7 + Math.floor(S.time * 14)) * H;
+      const side = i % 2 ? 1 : -1;
+      const x0 = side < 0 ? 0 : W;
+      const ln = 40 + hash(i + 9) * 90 * a;
+      ctx.beginPath(); ctx.moveTo(x0, sy2); ctx.lineTo(x0 - side * ln, sy2 + 6); ctx.stroke();
+    }
+    // near top speed: faint radial rush lines from the vanishing point
+    if (frac > 0.78){
+      const b = (frac - 0.78) / 0.22;
+      ctx.strokeStyle = `rgba(255,255,255,${0.14 * b})`;
+      ctx.lineWidth = 1.6;
+      for (let i = 0; i < 12; i++){
+        const ang2 = hash(i * 7.3 + Math.floor(S.time * 10)) * Math.PI * 2;
+        const r1 = H * .30, r2 = r1 + 60 + hash(i + 4) * 120 * b;
+        ctx.beginPath();
+        ctx.moveTo(W/2 + Math.cos(ang2) * r1, H*.5 + Math.sin(ang2) * r1);
+        ctx.lineTo(W/2 + Math.cos(ang2) * r2, H*.5 + Math.sin(ang2) * r2);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
 function drawHUD(){
+  drawSpeedStreaks();
   const sc = Math.round(S.score), lim = currentLimit();
 
   // glass top bar
@@ -1715,9 +1896,20 @@ function drawHUD(){
     ctx.beginPath(); ctx.arc(bx + bw * p, 25, 2.4, 0, 7); ctx.fill();
   }
   ctx.font = "11px sans-serif"; ctx.fillStyle = "#fff"; ctx.fillText("🏁", bx + bw + 5, 29);
+  const _best = save.best[S.li];
+  if (_best && _best.time > 0){    // Safety Star ghost — its pace to beat
+    const gp = clamp(S.time / _best.time, 0, 1);
+    ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("⭐", bx + bw * gp, 17);
+  }
   ctx.font = "9px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#9fb3c8";
   ctx.fillText(`LEVEL ${S.li + 1} • ${S.cfg.title.toUpperCase()}`, bx + bw / 2, 46);
 
+  // Hero Streak multiplier — right beside the score, never under the buttons
+  if (S.mult > 1){
+    ctx.textAlign = "left"; ctx.font = "bold 15px sans-serif"; ctx.fillStyle = "#ffd23f";
+    ctx.fillText(`🔥×${S.mult}`, 66, 30);
+  }
   // stunt pts (monster)
   if (S.cfg.bumps){
     ctx.textAlign = "right"; ctx.font = "bold 13px sans-serif"; ctx.fillStyle = "#c77dff";
@@ -1762,15 +1954,29 @@ function drawSpeedo(lim){
   const a0 = Math.PI * .75, a1 = Math.PI * 2.25;
   const ang = m => a0 + (a1 - a0) * clamp(m / vmax, 0, 1);
   ctx.save();
+  const speeding = S.speed > lim + 3, boosting = S.boost > 0;
+  // bezel — glows red when speeding, electric green on a Green Wave
   ctx.fillStyle = "rgba(13,27,42,.85)";
+  if (speeding){ ctx.shadowColor = "#ff4d4d"; ctx.shadowBlur = 16 + Math.sin(S.time * 12) * 6; }
+  else if (boosting){ ctx.shadowColor = "#51cf66"; ctx.shadowBlur = 18 + Math.sin(S.time * 9) * 6; }
   ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 7); ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 2;
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = speeding ? "rgba(255,107,107,.65)" : boosting ? "rgba(81,207,102,.7)" : "rgba(255,255,255,.25)";
+  ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 7); ctx.stroke();
-  // limit→max red arc
-  ctx.strokeStyle = "#ff6b6b"; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 4, ang(lim), a1); ctx.stroke();
-  ctx.strokeStyle = "#7ae582";
-  ctx.beginPath(); ctx.arc(cx, cy, r - 4, a0, ang(lim)); ctx.stroke();
+  // zoned arc: green (safe) → amber (near limit) → red (over)
+  ctx.lineCap = "round"; ctx.lineWidth = 6;
+  const aAmber = ang(Math.max(0, lim - 4)), aLim = ang(lim);
+  ctx.strokeStyle = boosting ? "#69f0ae" : "#7ae582";
+  ctx.beginPath(); ctx.arc(cx, cy, r - 4, a0, aAmber); ctx.stroke();
+  ctx.strokeStyle = "#ffd166";
+  ctx.beginPath(); ctx.arc(cx, cy, r - 4, aAmber, aLim); ctx.stroke();
+  ctx.strokeStyle = "#ff6b6b";
+  ctx.beginPath(); ctx.arc(cx, cy, r - 4, aLim, a1); ctx.stroke();
+  // your speed, painted onto the dial rim
+  ctx.strokeStyle = speeding ? "#ff4d4d" : "rgba(255,255,255,.85)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, r + 3, a0, ang(S.speed)); ctx.stroke();
+  ctx.lineCap = "butt";
   // ticks
   ctx.fillStyle = "#dfe7ee"; ctx.font = "bold 9px sans-serif"; ctx.textAlign = "center";
   for (let m = 0; m <= vmax; m += 10){
@@ -1793,6 +1999,12 @@ function drawSpeedo(lim){
   ctx.fillText(Math.round(S.speed), cx, cy + 26);
   ctx.font = "8px sans-serif"; ctx.fillStyle = "#9fb3c8";
   ctx.fillText("MPH", cx, cy + 36);
+  if (boosting){
+    ctx.font = "13px sans-serif"; ctx.fillStyle = "#69f0ae";
+    ctx.fillText("⚡", cx, cy - 14);
+    ctx.strokeStyle = "rgba(105,240,174,.9)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, r + 8, -Math.PI/2, -Math.PI/2 + (S.boost / 5) * Math.PI * 2); ctx.stroke();
+  }
   // limit chip
   ctx.fillStyle = "#fff"; rounded(cx - 17, cy - r - 24, 34, 24, 4); ctx.fill();
   ctx.strokeStyle = "#1d3461"; ctx.lineWidth = 2; rounded(cx - 17, cy - r - 24, 34, 24, 4); ctx.stroke();
@@ -1957,33 +2169,97 @@ nameInput.value = save.name || "";
 nameInput.addEventListener("input", () => { save.name = nameInput.value.trim(); persist(); });
 document.getElementById("logoImg").src = LOGO_DATA_URI;
 
-function buildMenu(){
-  const grid = document.getElementById("levelGrid");
-  grid.innerHTML = "";
-  VEHICLES.forEach((v, i) => {
-    const locked = i >= save.unlocked;
-    const secretLocked = v.secret && locked;
-    const cert = save.certs[v.id];
-    const card = document.createElement("button");
-    card.className = "lvlcard" + (locked ? " locked" : "");
-    // built with textContent (never innerHTML) — save data comes from localStorage
-    const stars = cert ? clamp(Math.round(Number(cert.stars) || 0), 0, 3) : 0;
-    const score = cert ? clamp(Math.round(Number(cert.score) || 0), 0, 100) : 0;
-    const parts = secretLocked
-      ? [["vemoji","❓"], ["vname","???"], ["vsub","Secret! Earn all 5 certificates to unlock…"], ["vstars",""]]
-      : [["vemoji", locked ? "🔒" : v.emoji],
-         ["vname", v.name],
-         ["vsub", locked ? "Finish the level before to unlock!" : "Lv " + (i+1) + " • " + CFG[i].title],
-         ["vstars", cert ? "⭐".repeat(stars) + ` ${score}/100` : ""]];
-    for (const [cls, text] of parts){
-      const div = document.createElement("div");
-      div.className = cls; div.textContent = text;
-      card.appendChild(div);
-    }
-    if (!locked) card.addEventListener("click", () => { ensureAudio(); openIntro(i); });
-    grid.appendChild(card);
-  });
+let garIdx = 0;
+function garageMedal(cert){
+  if (!cert) return "";
+  const sc = clamp(Math.round(Number(cert.score) || 0), 0, 100);
+  const g = sc >= 95 ? "S" : sc >= 85 ? "A" : "B";
+  const medal = sc >= 95 ? "🥇" : sc >= 85 ? "🥈" : "🥉";
+  return `${medal} Best: ${sc}/100 · Grade ${g} ${"⭐".repeat(clamp(Math.round(Number(cert.stars)||0),0,3))}`;
 }
+function buildMenu(){          // the GARAGE
+  const v = VEHICLES[garIdx], locked = garIdx >= save.unlocked;
+  const secretLocked = v.secret && locked;
+  const cert = save.certs[v.id];
+  const totStars = Object.values(save.certs)
+    .reduce((a, c) => a + clamp(Math.round(Number(c.stars) || 0), 0, 3), 0);
+  document.getElementById("totStars").textContent = totStars ? `⭐ ${totStars} stars earned` : "Ride safely to earn ⭐!";
+  document.getElementById("garVeh").textContent = secretLocked ? "❓" : locked ? "🔒" : v.emoji;
+  document.getElementById("garVeh").style.filter = locked ? "grayscale(1) drop-shadow(0 14px 16px rgba(0,0,0,.55))" : "";
+  document.getElementById("garPlate").textContent = secretLocked ? "? ? ?" : v.name.toUpperCase();
+  document.getElementById("garLevel").textContent =
+    secretLocked ? "A secret machine sleeps here…" : `LEVEL ${garIdx + 1} — ${CFG[garIdx].title}`;
+  document.getElementById("garMedal").textContent = garageMedal(cert);
+  const mx = Math.max(...VEHICLES.map(x => x.max));
+  const ax = Math.max(...VEHICLES.map(x => x.accel));
+  const bx = Math.max(...VEHICLES.map(x => x.brake));
+  requestAnimationFrame(() => {   // let the width transition animate
+    document.getElementById("spd1").style.width = (secretLocked ? 0 : v.max   / mx * 100) + "%";
+    document.getElementById("spd2").style.width = (secretLocked ? 0 : v.accel / ax * 100) + "%";
+    document.getElementById("spd3").style.width = (secretLocked ? 0 : v.brake / bx * 100) + "%";
+  });
+  const lock = document.getElementById("garLock");
+  document.getElementById("garGo").classList.toggle("hidden", locked);
+  lock.classList.toggle("hidden", !locked);
+  lock.textContent = secretLocked ? "🔒 Earn all 5 certificates to wake it up!"
+    : locked ? `🔒 Finish Level ${garIdx} to unlock` : "";
+}
+document.getElementById("garPrev").addEventListener("click", () => {
+  ensureAudio(); tone(400, .06); garIdx = (garIdx + VEHICLES.length - 1) % VEHICLES.length; buildMenu(); });
+document.getElementById("garNext").addEventListener("click", () => {
+  ensureAudio(); tone(480, .06); garIdx = (garIdx + 1) % VEHICLES.length; buildMenu(); });
+document.getElementById("garGo").addEventListener("click", () => {
+  if (garIdx >= save.unlocked) return; ensureAudio(); openIntro(garIdx); });
+
+/* title screen */
+document.getElementById("titlePlay").addEventListener("click", () => {
+  ensureAudio(); ding();
+  S.screen = "menu"; buildMenu(); show("menu");
+});
+document.getElementById("titleFs").addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
+
+/* settings + game speed (uniform across ABE games) */
+const GS_META = { relaxed:{ico:"🐢",label:"More time"}, normal:{ico:"🐇",label:"Just right"}, fast:{ico:"🚀",label:"Faster"} };
+function renderSettings(){
+  document.getElementById("setSpeed").textContent = `🎛️ Game speed: ${GS_META[save.gspeed].ico} ${GS_META[save.gspeed].label}`;
+  document.getElementById("setSound").textContent = muted ? "🔇 Sound: off — tap to turn on" : "🔊 Sound: on";
+  document.getElementById("setVoice").textContent = save.voice ? "🗣️ Voice coach: on" : "🤫 Voice coach: off — tap to turn on";
+}
+function cycleSpeed(){
+  const order = ["relaxed", "normal", "fast"];
+  save.gspeed = order[(order.indexOf(save.gspeed) + 1) % 3]; persist();
+  ding(); toast(`${GS_META[save.gspeed].ico} ${GS_META[save.gspeed].label}`);
+  renderSettings();
+}
+let settingsFrom = "menu";
+document.getElementById("speedBtn").addEventListener("click", cycleSpeed);
+document.getElementById("setSpeed").addEventListener("click", cycleSpeed);
+document.getElementById("settingsBtn").addEventListener("click", () => {
+  if (S.screen === "playing" || S.screen === "count") return;
+  settingsFrom = S.screen; S.screen = "settings"; renderSettings(); show("settings");
+});
+document.getElementById("setSound").addEventListener("click", () => {
+  muted = !muted; if (muted) sirenStop();
+  document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔊";
+  renderSettings();
+});
+document.getElementById("setVoice").addEventListener("click", () => {
+  save.voice = !save.voice; persist(); renderSettings();
+  if (save.voice) speak("Hi! I am your safety coach!"); else if (window.speechSynthesis) speechSynthesis.cancel();
+});
+document.getElementById("setFs").addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
+document.getElementById("setClose").addEventListener("click", () => {
+  S.screen = settingsFrom === "settings" ? "menu" : settingsFrom;
+  if (S.screen === "menu") buildMenu();
+  show(S.screen);
+});
+
 document.getElementById("introBack").addEventListener("click", () => { S.screen = "menu"; buildMenu(); show("menu"); });
 document.getElementById("startBtn").addEventListener("click", beginRun);
 
@@ -2021,6 +2297,7 @@ function showQuizQ(){
       const why = document.getElementById("quizWhy");
       if (i === q.a){ S.quizBonus += 4; ding(); why.textContent = "✅ Correct! +4 — " + q.why; }
       else { b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why; }
+      speak(q.why);
       why.classList.remove("hidden");
       const next = document.getElementById("quizNext");
       next.textContent = quizIdx < quizQs.length - 1 ? "Next →" : "See my results! 🎉";
@@ -2036,20 +2313,51 @@ document.getElementById("quizNext").addEventListener("click", () => {
   else finishLevel();
 });
 
+function gradeOf(sc){ return sc >= 95 ? "S" : sc >= 85 ? "A" : sc >= 70 ? "B" : "C"; }
 function finishLevel(){
   S.finalScore = clamp(Math.round(S.score + S.quizBonus), 0, 100);
   if (S.finalScore >= 70){
     const stars = S.finalScore >= 90 ? 3 : S.finalScore >= 78 ? 2 : 1;
+    S.lastStars = stars;
     save.unlocked = Math.max(save.unlocked, S.li + 2);
     const old = save.certs[S.veh.id];
     if (!old || S.finalScore > old.score)
       save.certs[S.veh.id] = { score: S.finalScore, stars, date: new Date().toLocaleDateString() };
+    // Safety Star ghost record (best score; its pace haunts the progress bar)
+    const prev = save.best[S.li];
+    const newRecord = !prev || S.finalScore > prev.score;
+    const beatGhost = prev && gradeOf(S.finalScore) < gradeOf(prev.score);   // "S"<"A"<"B"<"C" lexicographic
+    if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time) };
     persist();
-    showCert(stars);
+    showResults(stars, newRecord && !!prev, beatGhost);
   } else {
     showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate. You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
   }
 }
+function showResults(stars, newRecord, beatGhost){
+  S.screen = "results";
+  engineStop();
+  document.getElementById("popupLayer").innerHTML = "";
+  const g = gradeOf(S.finalScore);
+  const stamp = document.getElementById("gradeStamp");
+  stamp.textContent = g;
+  stamp.classList.toggle("gS", g === "S");
+  stamp.style.animation = "none"; void stamp.offsetWidth; stamp.style.animation = "";
+  document.getElementById("resScore").textContent = S.finalScore + " / 100";
+  document.getElementById("resStreak").textContent = "×" + Math.min(4, 1 + (S.bestStreak >> 1)) + `  (${S.bestStreak} safe moves)`;
+  const m = Math.floor(S.time / 60), sec = Math.round(S.time % 60);
+  document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
+  document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
+  document.getElementById("resRecord").classList.toggle("hidden", !newRecord);
+  document.getElementById("resGhost").classList.toggle("hidden", !beatGhost);
+  show("results");
+  tone(523, .2); setTimeout(() => tone(659, .2), 150); setTimeout(() => tone(784, .35), 300);
+  speak(g === "S" ? "Perfect run! You are a true safety hero!" : "Great riding! Level complete!");
+}
+document.getElementById("resCert").addEventListener("click", () => showCert(S.lastStars));
+document.getElementById("resRetry").addEventListener("click", () => openIntro(S.li));
+document.getElementById("resGarage").addEventListener("click", () => {
+  S.screen = "menu"; garIdx = Math.min(S.li + 1, save.unlocked - 1, VEHICLES.length - 1); buildMenu(); show("menu"); });
 function showRetry(text){
   sirenStop();
   S.screen = "retry";
@@ -2137,19 +2445,33 @@ document.getElementById("certMenu").addEventListener("click", () => { S.screen =
 
 /* ---------- main loop ---------- */
 function draw(){
+  ctx.setTransform(VIEW_SCALE, 0, 0, VIEW_SCALE, 0, 0);
   setCam();
-  if (S.view === "fp") drawFP();
-  else drawTop();
+  // NFS camera lean: the world banks gently into your steering at speed
+  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const leanT = (S.screen === "playing" && S.view === "fp")
+    ? steer * Math.min(1, S.speed / Math.max(1, S.veh.max)) * 0.055 : 0;
+  S.lean = lerp(S.lean || 0, leanT, 0.07);
+  if (S.view === "fp"){
+    ctx.save();
+    ctx.translate(W / 2, H); ctx.rotate(S.lean); ctx.translate(-W / 2, -H);
+    const sc = 1 + Math.abs(S.lean) * 0.9;          // hide corners the tilt reveals
+    ctx.translate(W / 2, H * .62); ctx.scale(sc, sc); ctx.translate(-W / 2, -H * .62);
+    drawFP();
+    ctx.restore();
+  } else drawTop();
   drawHUD();
 }
 let last = 0;
+const GS_X = { relaxed: 0.8, normal: 1, fast: 1.22 };
 function frame(ts){
-  const dt = clamp((ts - last) / 1000, 0, .05);
+  const dt = clamp((ts - last) / 1000, 0, .05) * (GS_X[save.gspeed] || 1);
   last = ts;
   if (S.screen === "playing"){ update(dt); if (S.screen === "playing" || S.screen === "tip") draw(); }
-  else if (S.screen === "tip" || S.screen === "quiz") draw();
+  else if (S.screen === "tip" || S.screen === "quiz" || S.screen === "count") draw();
+  else engineStop();
   requestAnimationFrame(frame);
 }
-buildMenu();
-show("menu");
+S.screen = "title";
+show("title");
 requestAnimationFrame(frame);
