@@ -612,6 +612,7 @@ function beginRun(){
   S.mm = buildMinimap(S.li);
   loadAerial(S.li);
   sirenStop();
+  if (window.GL3D && GL3D.active()) try { GL3D.build(S.li); } catch(e){ console.warn("3D off:", e); }
   show(null);
   startCountdown();
 }
@@ -2505,7 +2506,13 @@ function draw(){
   const leanT = (S.screen === "playing" && S.view === "fp")
     ? steer * Math.min(1, S.speed / Math.max(1, S.veh.max)) * 0.055 : 0;
   S.lean = lerp(S.lean || 0, leanT, 0.07);
-  if (S.view === "fp"){
+  const use3d = S.view === "fp" && window.GL3D && GL3D.active();
+  let drew3d = false;
+  if (use3d){
+    drew3d = GL3D.render() !== false;
+    if (drew3d) ctx.clearRect(-VIEW_OFFX - 4, 0, W + VIEW_OFFX * 2 + 8, H);  // transparent → 3D beneath
+  }
+  if (!drew3d) if (S.view === "fp"){
     ctx.save();
     ctx.translate(W / 2, H); ctx.rotate(S.lean); ctx.translate(-W / 2, -H);
     const sc = 1 + Math.abs(S.lean) * 0.9;          // hide corners the tilt reveals
