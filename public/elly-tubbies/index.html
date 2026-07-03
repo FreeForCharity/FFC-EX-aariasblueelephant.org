@@ -145,6 +145,7 @@
       <div class="chip">🌞 Day <span id="dayN">1</span></div>
       <div class="chip">✨ <span id="sparkN">0</span></div>
       <div class="chip">⭐ <span id="starN">0</span>/<span id="starGoal">5</span></div>
+      <div class="chip" id="modeChip" style="cursor:pointer" title="Tap to walk">🚶</div>
     </div>
     <div id="menu">
       <button class="mbtn" id="bookBtn" title="Sticker garden">📖</button>
@@ -191,7 +192,8 @@
       <div class="tub"><div class="dot" style="background:#ffd94d">📺</div>Sunny</div>
       <div class="tub"><div class="dot" style="background:#ff8fb1">📺</div>Rosy</div>
     </div>
-    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises! Collect <b>✨ sparkle seeds</b>, find <b>secret wonders</b> hiding far across Trunkland, and play with every friend to earn <b>⭐ stars</b>.</p>
+    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises!</p>
+    <p>🌊 <b>Swim</b> the sea, ✈️ <b>fly</b> the sky, 🚗 <b>zoom</b> a bumper car — find <b>Splash Cove</b>, <b>Sky Hill</b> and the <b>Zoomy Garage</b>, and pick the <b>right gear</b> to unlock each one! Collect <b>✨ sparkles</b>, find <b>secret wonders</b>, and play with every friend to earn <b>⭐ stars</b>.</p>
     <p style="font-size:clamp(13px,3.6vw,16px)">Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b></p>
     <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
     <button class="big" id="startBtn">Let's Play! ▶</button>
@@ -329,7 +331,7 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
@@ -394,15 +396,49 @@ const ISLAND=120;              // big! the edge is far, far away — keep explor
 const HOME_R=44;               // the cosy home area where the friends live
 // points of interest — terrain flattens around each
 const POI={dome:[0,0], tinko:[24,-13], minty:[-25,-11], sunny:[19,19], rosy:[-19,21],
-           pond:[1,30], mill:[-33,5], arch:[32,4], fixit:[10,-27]};
+           pond:[1,30], mill:[-33,5], arch:[32,4], fixit:[10,-27],
+           cove:[0,104], skyhill:[-62,-58], garage:[66,-18]};
+
+/* ============ TRAVEL: swim / fly / drive — pick the right gear! ============
+   Each station poses a real-life gear choice. The correct gear unlocks a whole
+   new way to travel (and a whole new layer of Trunkland to explore). */
+const STATIONS={
+  swim:{poi:'cove', name:'Splash Cove', e:'🌊', btn:'Splash Cove 🌊',
+    setup:'The sparkly sea! Belu wants to swim. But wait — what should Belu wear to stay safe in the water?',
+    choices:[
+      {e:'🦺',s:'Floaty vest',ok:1,fb:'Yes! A floaty keeps you safe and bobbing on top of the water!'},
+      {e:'⛑️',s:'Bike helmet',fb:'A helmet is for riding, not swimming. What helps you float?'},
+      {e:'🧤',s:'Wooly mittens',fb:'Mittens are for snow! Soggy mittens can\'t help you swim.'}],
+    win:'Belu puts on the floaty! Now you can SWIM in the sea! 🏊 Look for sea friends out there…'},
+  fly:{poi:'skyhill', name:'Sky Hill', e:'🪁', btn:'Sky Hill 🪁',
+    setup:'Whoosh! The wind on Sky Hill is strong enough to fly! What does a safe little flyer need?',
+    choices:[
+      {e:'🥽',s:'Goggles + cape',ok:1,fb:'Yes! Goggles keep the wind out of your eyes, and the cape catches the breeze!'},
+      {e:'🩴',s:'Flip-flops',fb:'Flip-flops would blow right off! What protects your eyes up high?'},
+      {e:'🎒',s:'Heavy backpack',fb:'Too heavy to fly! Light and safe is the way.'}],
+    win:'Goggles on, cape flapping! Hold 🦘 to rise — you can FLY over Trunkland! ✈️'},
+  drive:{poi:'garage', name:'Zoomy Garage', e:'🚗', btn:'Zoomy Garage 🚗',
+    setup:'A bouncy bumper car! Belu wants to zoom. What must every driver put on FIRST?',
+    choices:[
+      {e:'⛑️',s:'Helmet, buckled',ok:1,fb:'Yes! Helmet first, every time. Safe heads have the most fun!'},
+      {e:'👑',s:'Sparkly crown',fb:'A crown is fancy but it won\'t protect your head. What\'s made for safety?'},
+      {e:'🧦',s:'Extra socks',fb:'Socks keep toes cosy, not heads safe! Think about your head.'}],
+    win:'Helmet clicked! Hop in and ZOOM — the bumper car loves gentle bumps! 🚗💨'},
+};
+let trav='walk';           // walk | swim | fly | drive
+let flyY=0, flyRise=false;
 const FLAT=Object.values(POI);
 function terrainH(x,z){
   let h=Math.sin(x*0.16)*0.9+Math.cos(z*0.14)*1.0+Math.sin((x+z)*0.07)*0.7;
   let f=1;
   for(const [fx,fz] of FLAT){const d=Math.hypot(x-fx,z-fz);f=Math.min(f,Math.max(0,(d-6.5)/5));}
-  const edge=Math.min(1,Math.max(0,(Math.hypot(x,z)-4)/10));
-  return h*f*edge;
+  const r=Math.hypot(x,z);
+  const edge=Math.min(1,Math.max(0,(r-4)/10));
+  h=h*f*edge;
+  if(r>ISLAND-2)h-=(r-(ISLAND-2))*0.5;      // beach slides down into the sea
+  return h;
 }
+const SEA_Y=-0.5, SEA_MAX=ISLAND+30;          // water level & how far you may swim
 let _seed=1337;function rnd(){_seed=(_seed*1103515245+12345)&0x7fffffff;return _seed/0x7fffffff;}
 const matStd=(c,r=0.75)=>new T.MeshStandardMaterial({color:new T.Color(c),roughness:r,metalness:0});
 
@@ -417,10 +453,10 @@ const matStd=(c,r=0.75)=>new T.MeshStandardMaterial({color:new T.Color(c),roughn
   g2.setAttribute('color',new T.Float32BufferAttribute(col,3));g2.computeVertexNormals();
   const m=new T.Mesh(g2,new T.MeshStandardMaterial({vertexColors:true,roughness:1}));
   m.receiveShadow=true;scene.add(m);
-  // soft blue "sea" ring far out
-  const sea=new T.Mesh(new T.RingGeometry(ISLAND+18,ISLAND+90,64),
-    new T.MeshStandardMaterial({color:'#57b9e8',roughness:.2}));
-  sea.rotation.x=-Math.PI/2;sea.position.y=-0.4;scene.add(sea);
+  // the real swimmable sea — a big glassy disc the beach slides into
+  const sea=new T.Mesh(new T.CircleGeometry(ISLAND+80,72),
+    new T.MeshStandardMaterial({color:'#3fa9dc',roughness:.15,metalness:.25,transparent:true,opacity:.92}));
+  sea.rotation.x=-Math.PI/2;sea.position.y=SEA_Y;scene.add(sea);
 })();
 
 /* ---- sprite helpers ---- */
@@ -599,6 +635,35 @@ function addProp(kind,x,z,ry=0){
     const arch=new T.Mesh(new T.TorusGeometry(3,0.35,12,30,Math.PI),matStd('#ff8fb1',.6));
     arch.position.y=0.1;g.add(arch);
     const bun=emojiSprite('🐇',1.4);bun.position.set(-2.2,0.8,-0.5);g.add(bun);
+  }else if(kind==='cove'){                                     // Splash Cove — swim station
+    const dock=new T.Mesh(new T.BoxGeometry(2.2,0.3,6),matStd('#c98a2e',.9));
+    dock.position.set(0,0.55,2.5);dock.castShadow=true;g.add(dock);
+    [[-0.8,0],[0.8,0],[-0.8,4.6],[0.8,4.6]].forEach(([px,pz])=>{
+      const pole=new T.Mesh(new T.CylinderGeometry(0.12,0.12,1.3,8),matStd('#9a6b3f'));
+      pole.position.set(px,0.4,pz);g.add(pole);});
+    const ring=new T.Mesh(new T.TorusGeometry(0.55,0.18,10,20),matStd('#ff6f61',.5));
+    ring.position.set(1.6,1.1,1);ring.rotation.y=0.6;g.add(ring);       // life ring on a post
+    const b=bannerSprite('Splash Cove','#2E8BC0');b.position.y=5.2;g.add(b);
+  }else if(kind==='skyhill'){                                  // Sky Hill — fly station
+    const pad=new T.Mesh(new T.CylinderGeometry(2.6,3,0.5,20),matStd('#b8a4ff',.7));
+    pad.position.y=0.25;pad.receiveShadow=true;g.add(pad);
+    const sock=new T.Mesh(new T.ConeGeometry(0.4,1.4,10,1,true),matStd('#ff8f4d',.6));
+    sock.rotation.z=Math.PI/2;sock.position.set(0,3.4,0);g.add(sock);   // windsock
+    const pole2=new T.Mesh(new T.CylinderGeometry(0.08,0.08,3.4,8),matStd('#9a6b3f'));
+    pole2.position.set(0,1.7,0);g.add(pole2);
+    spinners.push({mesh:sock,speed:0.6});
+    const kite=emojiSprite('🪁',2);kite.position.set(1.8,4.5,0.6);g.add(kite);
+    spinners.push({mesh:kite,bob:true});
+    const b=bannerSprite('Sky Hill','#7c5ce0');b.position.y=6;g.add(b);
+  }else if(kind==='garage'){                                   // Zoomy Garage — drive station
+    const gb=new T.Mesh(new T.BoxGeometry(4.6,2.6,3.4),matStd('#8fcbe6',.85));
+    gb.position.set(0,1.3,1.2);gb.castShadow=true;g.add(gb);
+    const roof=new T.Mesh(new T.CylinderGeometry(1.8,1.8,4.8,14,1,false,0,Math.PI),matStd('#e85d75',.7));
+    roof.rotation.z=Math.PI/2;roof.position.set(0,2.6,1.2);g.add(roof);
+    const door=new T.Mesh(new T.BoxGeometry(2.6,1.7,0.15),matStd('#456'));
+    door.position.set(0,0.9,-0.55);g.add(door);
+    const cone1=emojiSprite('🚧',1.3);cone1.position.set(-2.6,0.8,-1.6);g.add(cone1);
+    const b=bannerSprite('Zoomy Garage','#e06a92');b.position.y=5.4;g.add(b);
   }else if(kind==='fixit'){                                    // the Fix-It corner (merge game)
     const bench=new T.Mesh(new T.BoxGeometry(2.6,0.3,0.9),matStd('#c98a2e',.9));
     bench.position.set(-1.6,0.7,0);bench.rotation.z=0.35;bench.castShadow=true;g.add(bench);   // tipped-over bench
@@ -621,6 +686,9 @@ const kitchenG=addProp('kitchen',...POI.sunny,Math.PI);
 const hillsG=addProp('hills',...POI.rosy);
 addProp('arch',...POI.arch);
 const fixitG=addProp('fixit',...POI.fixit);
+addProp('cove',...POI.cove);
+addProp('skyhill',...POI.skyhill);
+addProp('garage',...POI.garage);
 
 /* -------- solid-structure colliders (cylinders) -------- */
 const COLLIDERS=[
@@ -628,6 +696,7 @@ const COLLIDERS=[
   {x:POI.mill[0], z:POI.mill[1], r:1.1},                  // windmill tower
   {x:POI.pond[0], z:POI.pond[1], r:4.5},                  // pond (no walking on water!)
   {x:POI.sunny[0],z:POI.sunny[1],r:3.4},                  // kitchen table
+  {x:POI.garage[0],z:POI.garage[1]+1.2,r:2.6},            // Zoomy Garage building
 ];
 hillsG.userData.bushes.forEach(b=>{                        // Rosy's big bushes
   COLLIDERS.push({x:POI.rosy[0]+b.position.x, z:POI.rosy[1]+b.position.z, r:2.0});});
@@ -673,14 +742,36 @@ const SECRETS=[
   {id:'frog',   e:'🐸', x:-92, z:-8,  fact:'Frogs drink water through their skin — no cup needed!'},
   {id:'cactus', e:'🌵', x:95,  z:14,  fact:'A cactus stores water in its body like a big green bottle!'},
   {id:'stars',  e:'🌟', x:30,  z:92,  fact:'The sun is a star — the closest one to your home!'},
+  // in the SEA — only swimmers meet them 🏊
+  {id:'dolphin',e:'🐬', x:8,   z:132, need:'swim', fact:'Dolphins sleep with one eye open — half their brain naps at a time!'},
+  {id:'octopus',e:'🐙', x:-96, z:82,  need:'swim', fact:'An octopus has THREE hearts and can taste with its arms!'},
+  {id:'whale',  e:'🐳', x:112, z:-64, need:'swim', fact:'A blue whale\'s heart is as big as a bumper car!'},
+  // in the SKY — only flyers reach them ✈️
+  {id:'balloon',e:'🎈', x:26,  z:-48, need:'fly', hy:11, fact:'Hot-air balloons fly because warm air floats up — like a happy sigh!'},
+  {id:'rainbow',e:'🌈', x:-52, z:34,  need:'fly', hy:12, fact:'Rainbows are sunlight split into every colour by tiny raindrops!'},
+  {id:'eagle',  e:'🦅', x:64,  z:56,  need:'fly', hy:13, fact:'Eagles can spot a bunny from three whole kilometres away!'},
 ];
 SECRETS.forEach(sc=>{
-  const g=new T.Group();g.position.set(sc.x,terrainH(sc.x,sc.z),sc.z);
+  const g=new T.Group();
+  const y=sc.need==='swim'?SEA_Y+0.4 : sc.need==='fly'?sc.hy : terrainH(sc.x,sc.z);
+  g.position.set(sc.x,y,sc.z);
   const sp=emojiSprite(sc.e,2.2);sp.position.y=1.4;g.add(sp);
   const q=emojiSprite('❓',1.2);q.position.y=3.2;g.add(q);sc.q=q;
   spinners.push({mesh:sp,bob:true});
+  if(sc.need==='fly'){ // a puffy cloud perch
+    const cl=new T.Group();
+    [[0,0,0,1.4],[1.2,-0.2,0.4,1.0],[-1.2,-0.2,-0.3,1.0],[0.3,-0.4,-0.9,0.8]].forEach(([cx2,cy2,cz2,s])=>{
+      const puff=new T.Mesh(new T.SphereGeometry(s,12,10),new T.MeshStandardMaterial({color:'#ffffff',roughness:.95}));
+      puff.position.set(cx2,cy2,cz2);cl.add(puff);});
+    cl.position.y=-0.6;g.add(cl);
+  }
   scene.add(g);sc.node=g;
 });
+// little fish hopping along the shore — a wink that the sea is a place to BE
+for(let i=0;i<5;i++){const a=i/5*Math.PI*2+0.4;
+  const f=emojiSprite(['🐠','🐟','🦑','🐡','🐢'][i],1.4);
+  f.position.set(Math.cos(a)*(ISLAND+8),SEA_Y+0.5,Math.sin(a)*(ISLAND+8));
+  spinners.push({mesh:f,bob:true});scene.add(f);}
 function refreshSecrets(){SECRETS.forEach(sc=>{sc.q.visible=!(S.secrets&&S.secrets[sc.id]);});}
 
 /* -------- persistent sticker decorations -------- */
@@ -700,6 +791,59 @@ function refreshStickers(){STICKERS.forEach(st=>{if(S.stickers[st.id])placeStick
 const player=makeEllie(BELU);
 player.group.position.set(0,0,-9);scene.add(player.group);
 player.anim.tv('💙');
+
+/* -------- Belu's travel gear (visible when the mode is active) -------- */
+const GEAR={};
+(function makeGearMeshes(){
+  // 🦺 floaty: candy-striped ring around the belly
+  const fl=new T.Group();
+  const ringM=new T.Mesh(new T.TorusGeometry(1.35,0.34,12,24),matStd('#ff6f61',.55));
+  ringM.rotation.x=Math.PI/2;fl.add(ringM);
+  for(let i=0;i<6;i++){const seg=new T.Mesh(new T.TorusGeometry(1.35,0.35,10,6,Math.PI/9),matStd('#fff',.55));
+    seg.rotation.x=Math.PI/2;seg.rotation.z=i*Math.PI/3;fl.add(seg);}
+  fl.position.y=1.15;player.anim.inner.add(fl);GEAR.swim=fl;
+  // 🥽 goggles + superhero cape
+  const fy=new T.Group();
+  const gogM=matStd('#7ec7ef',.25);gogM.transparent=true;gogM.opacity=.85;
+  [-1,1].forEach(sx=>{const lens=new T.Mesh(new T.TorusGeometry(0.28,0.07,10,18),matStd('#ffd23f',.4));
+    lens.position.set(sx*0.34,0.12,-0.86);fy.add(lens);
+    const glass=new T.Mesh(new T.CircleGeometry(0.26,16),gogM);
+    glass.position.set(sx*0.34,0.12,-0.9);fy.add(glass);});
+  const strap=new T.Mesh(new T.CylinderGeometry(0.96,0.96,0.14,20,1,true,0,Math.PI),matStd('#ffd23f',.5));
+  strap.rotation.z=Math.PI/2;strap.rotation.y=Math.PI/2;strap.position.y=0.12;fy.add(strap);
+  player.anim.head.add(fy);
+  const cape=new T.Mesh(new T.PlaneGeometry(1.9,2.1,4,4),new T.MeshStandardMaterial({color:'#e85d75',roughness:.7,side:T.DoubleSide}));
+  cape.position.set(0,1.6,1.15);cape.rotation.x=0.35;
+  player.anim.inner.add(cape);
+  GEAR.fly={grp:fy,cape};
+  // ⛑️ helmet + bumper car
+  const dv=new T.Group();
+  const helm=new T.Mesh(new T.SphereGeometry(1.02,20,14,0,Math.PI*2,0,Math.PI/2),matStd('#ff4d63',.5));
+  helm.position.y=0.18;dv.add(helm);
+  const stripe=new T.Mesh(new T.TorusGeometry(1.02,0.07,8,24,Math.PI),matStd('#fff',.4));
+  stripe.rotation.z=Math.PI;stripe.position.y=0.18;dv.add(stripe);
+  player.anim.head.add(dv);
+  const car=new T.Group();
+  const shell=new T.Mesh(new T.CylinderGeometry(1.7,1.9,1.1,20),matStd('#ffd23f',.5));
+  shell.position.y=0.72;car.add(shell);
+  const rim=new T.Mesh(new T.TorusGeometry(1.8,0.22,10,24),matStd('#e85d75',.5));
+  rim.rotation.x=Math.PI/2;rim.position.y=1.25;car.add(rim);
+  [[-1.35,-1.1],[1.35,-1.1],[-1.35,1.1],[1.35,1.1]].forEach(([wx,wz])=>{
+    const wheel=new T.Mesh(new T.CylinderGeometry(0.42,0.42,0.3,14),matStd('#2b2b3d',.8));
+    wheel.rotation.z=Math.PI/2;wheel.position.set(wx,0.42,wz);car.add(wheel);});
+  player.group.add(car);
+  GEAR.drive={helm:dv,car};
+})();
+function setTrav(m){
+  trav=m;flyY=0;flyRise=false;
+  GEAR.swim.visible=(m==='swim');
+  GEAR.fly.grp.visible=GEAR.fly.cape.visible=(m==='fly');
+  GEAR.drive.helm.visible=GEAR.drive.car.visible=(m==='drive');
+  player.anim.legs.forEach(L=>L.pivot.visible=(m!=='drive'));   // legs paddle in water, hide inside the car
+  $('modeChip').textContent={walk:'🚶',swim:'🏊',fly:'✈️',drive:'🚗'}[m];
+  player.group.rotation.x=0;player.group.rotation.z=0;
+}
+setTrav('walk');
 
 const tubbies={};
 const TUBBY_POS={tinko:[POI.tinko[0]-1,POI.tinko[1]-4],minty:[POI.minty[0]+1,POI.minty[1]-4],
@@ -1028,7 +1172,7 @@ function camFollow(dt){
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
   camera.position.copy(camState.pos);camera.lookAt(camState.look);
-  sunGroup.position.set(camState.pos.x+17,mode==='finale'?sunGroup.position.y:12.5,camState.pos.z+52);
+  sunGroup.position.set(camState.pos.x+17,mode==='finale'?sunGroup.position.y:17.5,camState.pos.z+52);
   sunLight.position.set(player.group.position.x-12,26,player.group.position.z-8);
   sunLight.target.position.copy(player.group.position);
 }
@@ -1115,49 +1259,91 @@ function updateRoam(dt,time){
   if(keys['arrowleft']||keys['a'])mx-=1;if(keys['arrowright']||keys['d'])mx+=1;
   if(keys['arrowup']||keys['w'])mz+=1;if(keys['arrowdown']||keys['s'])mz-=1;
   const m=Math.hypot(mx,mz);
+  const SPD={walk:duck?4:7.5, swim:5.5, fly:11, drive:13}[trav];
   if(m>0.15){
-    const spd=(duck?4:7.5)*Math.min(1,m);
-    p.x+=mx/m*spd*dt;p.z+=mz/m*spd*dt;
-    const rr=Math.hypot(p.x,p.z);
-    if(rr>ISLAND){ // toes in the sea! splash and bounce back toward the meadow
-      p.x*=ISLAND/rr;p.z*=ISLAND/rr;
-      sfx.splash();floatSprite('💦',p,2.5,1.2,1.5);
-      knockdown(-p.x/ISLAND,-p.z/ISLAND,'bounce');
-      if(!updateRoam.seaSaid){updateRoam.seaSaid=1;say('☀️','Splash! That\'s the sparkly sea — Trunkland\'s big blue blanket! 🌊');}
-      return;
-    }
+    p.x+=mx/m*SPD*Math.min(1,m)*dt;p.z+=mz/m*SPD*Math.min(1,m)*dt;
     player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
     player.group.userData.st=(player.group.userData.st||0)+dt;
-    if(player.group.userData.st>0.28){player.group.userData.st=0;tone(180,.05,'sine',.03);}
+    if(player.group.userData.st>0.28){player.group.userData.st=0;
+      if(trav==='walk')tone(180,.05,'sine',.03);
+      else if(trav==='drive')tone(90,.08,'sawtooth',.03);
+      else if(trav==='swim'){tone(400,.06,'sine',.03);burst(p,3,'#bfe9ff');}}
   }
-  // --- jump physics ---
-  if(keys[' ']&&!jumping)tryJump();
-  if(jumping){jumpV-=24*dt;jumpY+=jumpV*dt;
-    if(jumpY<=0){jumpY=0;jumping=false;tone(220,.07,'sine',.05);}}
-  // --- solid structures: bonk & tumble! (a high jump clears small bushes) ---
-  for(const c of COLLIDERS){
-    if(jumpY>1.1&&c.r<1.5)continue;
-    const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz);
-    if(d<c.r+0.55){const nx=dx/(d||1),nz=dz/(d||1);
-      p.x=c.x+nx*(c.r+0.6);p.z=c.z+nz*(c.r+0.6);
-      if(m>0.15)knockdown(nx,nz);
-      break;}}
+  const rr=Math.hypot(p.x,p.z);
+  /* ---------- boundaries & mode transitions ---------- */
+  if(trav==='fly'){
+    if(rr>SEA_MAX+14){p.x*=(SEA_MAX+14)/rr;p.z*=(SEA_MAX+14)/rr;}   // gentle sky fence
+  }else if(trav==='swim'){
+    if(rr>SEA_MAX){p.x*=SEA_MAX/rr;p.z*=SEA_MAX/rr;
+      if(!updateRoam.deepSaid){updateRoam.deepSaid=1;say('☀️','That\'s the deep-deep sea — even brave swimmers turn back here! 🌊');}}
+    if(rr<ISLAND-1){setTrav('walk');sfx.pop();floatSprite('💦',p,2,1,1.2);}  // waded ashore
+  }else{ // walk / drive at the shoreline
+    if(rr>ISLAND){
+      if(trav==='walk'&&S.gear.swim){setTrav('swim');sfx.splash();floatSprite('💦',p,2.5,1.2,1.6);}
+      else{
+        p.x*=ISLAND/rr;p.z*=ISLAND/rr;
+        sfx.splash();floatSprite('💦',p,2.5,1.2,1.5);
+        knockdown(-p.x/ISLAND,-p.z/ISLAND,'bounce');
+        if(!updateRoam.seaSaid){updateRoam.seaSaid=1;
+          say('☀️',trav==='drive'?'Beep beep — bumper cars can\'t swim! 🚗🌊':'Splash! To swim in the sparkly sea, visit Splash Cove and pick the right gear! 🌊');}
+        return;
+      }
+    }
+  }
+  /* ---------- vertical motion per mode ---------- */
+  if(trav==='fly'){
+    if((keys[' ']||flyRise))flyY+=9*dt; else flyY-=4.5*dt;
+    flyY=Math.max(0,Math.min(15,flyY));
+    const gy=Math.max(terrainH(p.x,p.z),SEA_Y+0.6);
+    p.y=gy+1.2+flyY;
+    if(flyY<=0&&rr<ISLAND&&!(keys[' ']||flyRise)){setTrav('walk');sfx.pop();burst(p,10,'#b8a4ff');}
+    GEAR.fly.cape.rotation.x=0.5+Math.sin(time*7)*0.25;
+    player.group.rotation.x=-0.18-Math.min(0.25,m*0.25);
+  }else if(trav==='swim'){
+    p.y=SEA_Y+0.35+Math.sin(time*2.2)*0.15;   // bobbing on the surface
+    player.group.rotation.x=-0.25;
+  }else{
+    // --- jump physics (walk & drive hop) ---
+    if(keys[' ']&&!jumping)tryJump();
+    if(jumping){jumpV-=24*dt;jumpY+=jumpV*dt;
+      if(jumpY<=0){jumpY=0;jumping=false;tone(220,.07,'sine',.05);}}
+    p.y=terrainH(p.x,p.z)+jumpY;
+    player.group.rotation.x=0;
+  }
+  /* ---------- solid structures: bonk & tumble! (fliers soar over) ---------- */
+  if(!(trav==='fly'&&flyY>2.5)&&trav!=='swim'){
+    for(const c of COLLIDERS){
+      if(jumpY>1.1&&c.r<1.5)continue;
+      const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz);
+      if(d<c.r+0.55){const nx=dx/(d||1),nz=dz/(d||1);
+        p.x=c.x+nx*(c.r+0.6);p.z=c.z+nz*(c.r+0.6);
+        if(m>0.15){
+          if(trav==='drive'){ // bumper car! big happy bounce + confetti, car keeps you safe
+            knockdown(nx,nz,'bounce');burst(p,18,'#ffd23f');burst(p,12,'#ff8fb1');
+            tone(600,.15,'square',.06);tone(400,.2,'square',.05,.1);
+          }else knockdown(nx,nz);
+        }
+        break;}}
+  }
   // --- soft bump against tubbies (gentle push, giggle) ---
-  for(const id in tubbies){const t=tubbies[id];if(t.busy||!t.group.visible)continue;
+  if(trav!=='fly')for(const id in tubbies){const t=tubbies[id];if(t.busy||!t.group.visible)continue;
     const tp2=t.group.position;const dx=p.x-tp2.x,dz=p.z-tp2.z,d=Math.hypot(dx,dz);
     if(d<1.8&&d>0.01){p.x=tp2.x+dx/d*1.8;p.z=tp2.z+dz/d*1.8;}}
-  p.y=terrainH(p.x,p.z)+jumpY;player.anim.baseY=p.y;
-  animEllie(player,time,dt,m>0.15);
+  player.anim.baseY=p.y;
+  animEllie(player,time,dt,m>0.15&&trav!=='fly'&&trav!=='drive');
+  if(trav==='swim')player.anim.legs.forEach(L=>L.pivot.rotation.x=Math.sin(time*6)*0.6); // paddle!
   if(duck){player.anim.inner.scale.y*=0.55;player.anim.inner.scale.x*=1.18;player.anim.inner.scale.z*=1.18;}
   // seeds pickup
   for(let i=seeds.length-1;i>=0;i--){const s=seeds[i];
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
       S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
-  // secret discovery spots — wander far, find wonders, learn something!
+  // secret discovery spots — wander far (or swim! or fly!), learn something
   for(const sc of SECRETS){
     if(S.secrets[sc.id])continue;
-    if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.2){
+    if(sc.need&&sc.need!==trav)continue;
+    if(sc.need==='fly'&&Math.abs(p.y-sc.hy)>4)continue;
+    if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.6){
       S.secrets[sc.id]=1;S.sparks+=5;save();hud();refreshSecrets();
       burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
       say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
@@ -1171,6 +1357,10 @@ function updateRoam(dt,time){
    if(d<7&&(!best||d<bd))best={kind:'dome'};}
   {const d=Math.hypot(p.x-POI.fixit[0],p.z-POI.fixit[1]);
    if(d<6&&(!best||d<bd))best={kind:'fixit'};}
+  if(trav==='walk')for(const k in STATIONS){
+    const [sx,sz]=POI[STATIONS[k].poi];
+    const d=Math.hypot(p.x-sx,p.z-sz);
+    if(d<6.5&&(!best||d<bd)){bd=d;best={kind:'station',id:k};}}
   if(JSON.stringify(best)!==JSON.stringify(nearThing)){nearThing=best;updateActBtn();
     if(best&&best.kind==='tubby'){sfx.pop();doMove(tubbies[best.id],'wave',0.8);}}
 }
@@ -1179,6 +1369,11 @@ function updateActBtn(){
   if(mode!=='roam'||!nearThing){b.classList.remove('show');return;}
   if(nearThing.kind==='dome'){b.textContent='Sticker Garden 📖';}
   else if(nearThing.kind==='fixit'){b.textContent='Fix it up! 🔨';}
+  else if(nearThing.kind==='station'){
+    const st=STATIONS[nearThing.id];
+    b.textContent=S.gear[nearThing.id]
+      ?{swim:'Splash in! 🏊',fly:'Take off! ✈️',drive:'Hop in! 🚗'}[nearThing.id]
+      :st.btn;}
   else{const t=TUBBIES[nearThing.id];
     b.textContent=(S.today.stars[nearThing.id]?'Play again with ':'Play with ')+t.name+'! 💜';}
   b.classList.add('show');
@@ -1187,6 +1382,10 @@ $('actBtn').onclick=()=>{sfx.tap();
   if(!nearThing)return;
   if(nearThing.kind==='dome'){openBook();return;}
   if(nearThing.kind==='fixit'){openFixit();return;}
+  if(nearThing.kind==='station'){
+    const k=nearThing.id;
+    if(S.gear[k])startTravel(k); else startGearVisit(k);
+    return;}
   startVisit(nearThing.id);
 };
 
@@ -1434,6 +1633,46 @@ async function gameHide(tub){
 
 const GAMES={feelings:gameFeelings,dance:gameDance,kitchen:gameKitchen,hide:gameHide};
 
+/* ==================== TRAVEL STATIONS: pick the right gear ================
+   The life skill: matching the right safety gear to the activity. Choices are
+   3D figures in the world (never cards). Correct pick = gear unlocks forever. */
+async function startGearVisit(k){
+  const st=STATIONS[k];
+  enterScene();
+  const [sx,sz]=POI[st.poi];
+  sceneCam(sx,sz,12,7.5);
+  await say(st.e,st.setup);
+  const base=new T.Vector3(sx,terrainH(sx,sz),sz);
+  st.choices.forEach((c,i)=>{
+    const pos=base.clone();pos.x+=(i-1)*3.6;pos.z-=3.4;pos.y=terrainH(pos.x,pos.z);
+    makeChoiceFigure(c.e,c.s,pos,async()=>{
+      if(c.ok){
+        clearChoices();sfx.good();
+        S.gear[k]=1;
+        const first=!S.today.stars['gear_'+k];
+        if(first){S.today.stars['gear_'+k]=1;S.sparks+=5;save();hud();sfx.star();}
+        else save();
+        reactSun();burst(player.group.position,22,'#ffd23f');
+        doMove(player,'happy',1.4);
+        await say('☀️',st.win+(first?' ⭐ ✨+5':''));
+        exitScene();
+        startTravel(k);
+        if(starCount()>=STAR_GOAL)showFinale();
+      }else{sfx.soft();careSun();say(c.e,c.fb);}
+    });
+  });
+}
+function startTravel(k){
+  const p=player.group.position;
+  if(k==='drive'){setTrav('drive');sfx.boing();burst(p,14,'#ffd23f');}
+  else if(k==='fly'){setTrav('fly');flyY=3;flyRise=false;sfx.boing();burst(p,14,'#b8a4ff');}
+  else{ // swim: hop off the end of the dock into the water
+    const a=Math.atan2(p.z,p.x)||Math.PI/2;
+    p.x=Math.cos(a)*(ISLAND+2.5);p.z=Math.sin(a)*(ISLAND+2.5);
+    setTrav('swim');sfx.splash();floatSprite('💦',p,2.5,1.2,1.8);
+  }
+}
+
 /* ====================== STICKER GARDEN (shop) ============================ */
 function openBook(){
   hud();
@@ -1645,7 +1884,14 @@ $('voiceBtn').classList.toggle('off',!S.voice);
 $('voiceBtn').onclick=()=>{S.voice=!S.voice;save();$('voiceBtn').classList.toggle('off',!S.voice);
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
 // jump / duck / fun buttons
-$('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();tryJump();});
+$('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();
+  if(trav==='fly')flyRise=true; else tryJump();});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>
+  $('jumpBtn').addEventListener(ev,()=>{flyRise=false;}));
+$('modeChip').onclick=()=>{if(mode!=='roam'||trav==='walk')return;sfx.tap();
+  const p=player.group.position;
+  if(trav==='swim'){const a=Math.atan2(p.z,p.x)||0;p.x=Math.cos(a)*(ISLAND-4);p.z=Math.sin(a)*(ISLAND-4);}
+  setTrav('walk');floatSprite('🚶',p,2,1,1.1);};
 $('duckBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();duck=true;});
 ['pointerup','pointerleave','pointercancel'].forEach(ev=>
   $('duckBtn').addEventListener(ev,()=>{duck=false;}));
