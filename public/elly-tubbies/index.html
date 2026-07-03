@@ -1844,7 +1844,7 @@ async function gameFeelings(tub){
     const xs=[-4.4,0,4.4];
     opts.forEach((o,k)=>{
       const pos=base.clone();pos.x+=xs[k];pos.z-=4;pos.y=terrainH(pos.x,pos.z);
-      makeChoiceFigure(o.e===f.e?'💭':'💭',o.w,pos,async()=>{
+      makeChoiceFigure('💭',o.w,pos,async()=>{
         if(o.w===f.w){sfx.good();clearChoices();wins++;
           burst(tub.group.position,14,'#6dd47e');
           await say('💚',`Yes! ${f.e} means ${f.w}! ${f.hint}`);
