@@ -148,6 +148,73 @@ function heartTex(): THREE.CanvasTexture {
 }
 
 // ---------------------------------------------------------------------------
+// TrotGroup — a healed friend "remembers you": when `active` flips on, the
+// wrapped animal trots a happy little loop (out, around, and back) with tiny
+// hops. Fully self-animating (own useFrame) so it never churns React state.
+// ---------------------------------------------------------------------------
+export function TrotGroup({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const g = useRef<THREE.Group>(null);
+  const t = useRef(99);
+  const wasActive = useRef(false);
+  const DUR = 1.8;
+
+  useFrame((_, dt) => {
+    if (active && !wasActive.current) t.current = 0;
+    wasActive.current = active;
+    t.current = Math.min(t.current + dt, 99);
+    const grp = g.current;
+    if (!grp) return;
+    const p = Math.min(1, t.current / DUR);
+    if (p >= 1) {
+      grp.position.set(0, 0, 0);
+      return;
+    }
+    // a small closed loop toward Belu's side and back, with happy hops
+    const a = p * Math.PI * 2;
+    grp.position.x = Math.sin(a) * 0.55;
+    grp.position.z = (1 - Math.cos(a)) * 0.5;
+    grp.position.y = Math.abs(Math.sin(t.current * 9)) * 0.14;
+  });
+
+  return <group ref={g}>{children}</group>;
+}
+
+// ---------------------------------------------------------------------------
+// GreetBurst — a short self-animating flurry of hearts over a friend who just
+// recognised you. Mounted for ~2s by the caller; animates on its own clock.
+// ---------------------------------------------------------------------------
+export function GreetBurst({ position }: { position: [number, number, number] }) {
+  const g = useRef<THREE.Group>(null);
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
+    const grp = g.current;
+    if (!grp) return;
+    const fade = Math.max(0, 1 - t.current / 2.2);
+    grp.children.forEach((c, i) => {
+      const s = c as THREE.Sprite;
+      const ph = seeded(i) * Math.PI * 2;
+      s.position.set(
+        Math.sin(t.current * 1.4 + ph) * 0.5,
+        0.6 + t.current * 0.8 + i * 0.25,
+        Math.cos(t.current * 1.1 + ph) * 0.4,
+      );
+      const m = s.material as THREE.SpriteMaterial;
+      m.opacity = fade;
+    });
+  });
+  return (
+    <group ref={g} position={position}>
+      {[0, 1, 2].map((i) => (
+        <sprite key={i} scale={[0.7, 0.7, 1]} renderOrder={13}>
+          <spriteMaterial map={heartTex()} transparent depthWrite={false} depthTest={false} />
+        </sprite>
+      ))}
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // A big gentle finale burst — a rainbow shimmer over the whole meadow once
 // every friend has been helped. Calm, slow, never strobing.
 // ---------------------------------------------------------------------------

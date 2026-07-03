@@ -82,6 +82,7 @@ ABC.audio = (function () {
     stretchy() { wet(0.35, 140, 520, 0.16); },                                  // pulling taffy upward
     plop()     { wet(0.16, 300, 90, 0.2); tone(70, .2, 'sine', .15, .04, 45); },// lands back down
     stamp()    { wet(0.12, 600, 250, 0.2); tone(660, .18, 'triangle', .12, .08); tone(990, .25, 'sine', .1, .14); },
+    boing()    { tone(160, .3, 'sine', .16, 0, 520); tone(320, .22, 'triangle', .1, .06, 760); }, // ☁️ cloud trampoline
     grow()     { [330,392,494,587].forEach((f,i)=>tone(f,.22,'triangle',.09,i*.12)); },
     honk()     { tone(330, .25, 'square', .12); tone(415, .3, 'square', .12, .25); },
     whoosh()   { tone(220, 1.4, 'sawtooth', .07, 0, 1100); tone(110, 1.6, 'triangle', .08, 0, 700); },

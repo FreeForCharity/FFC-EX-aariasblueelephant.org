@@ -42,11 +42,20 @@ import {
   totalCompletedLevels,
   nextLevel,
   totalStars,
+  todayKey,
+  collectSparkle,
+  plantSeed,
+  recordHealedFriend,
+  givePetal,
+  todaysVisitor,
+  sparklesFoundToday,
+  plantStage,
   type GameProgress,
   type ActivityZone,
   type CosmeticSlot,
   ZONES,
 } from './belu/progress';
+import type { AnimalSpecies } from './three/quest/Animal3D';
 import { speakAloud, playSound, stopSpeaking } from './belu/feedback';
 
 const GameCanvas = lazy(() => import('./three/GameCanvas'));
@@ -136,6 +145,11 @@ export default function BelusWorldGame() {
   const rainbowUnlocked = useMemo(() => totalCompletedLevels(progress) >= 1, [progress]);
   worldRuntime.rainbowUnlocked = rainbowUnlocked;
 
+  // ---- Home life: daily sparkles, garden, jar, remembered friends ----
+  const dateKey = todayKey();
+  const sparklesFound = useMemo(() => sparklesFoundToday(progress, dateKey), [progress, dateKey]);
+  const visitor = useMemo(() => todaysVisitor(progress) as AnimalSpecies | null, [progress]);
+
   // Belu speaks: speech bubble + (optional) read-aloud narration.
   const speak = useCallback((line: string) => {
     setBeluLine(line);
@@ -161,6 +175,21 @@ export default function BelusWorldGame() {
   }, []);
 
   function start(name: string) {
+    // did the garden grow while the child was away? (checked BEFORE the visit
+    // stamp updates, so "away" means since the previous session)
+    const prevDate = memory.lastVisit ? memory.lastVisit.slice(0, 10) : null;
+    let gardenLine: string | null = null;
+    if (prevDate) {
+      const opened = progress.garden.some(
+        (pl) => plantStage(pl.plantedDate, dateKey) >= 3 && plantStage(pl.plantedDate, prevDate) < 3,
+      );
+      const grew = progress.garden.some(
+        (pl) => plantStage(pl.plantedDate, dateKey) > plantStage(pl.plantedDate, prevDate),
+      );
+      if (opened) gardenLine = 'Our flower opened while you were away! 🌸 Come see — it even has a butterfly!';
+      else if (grew) gardenLine = 'Psst — our garden grew while you were away! 🌱 Come look!';
+    }
+
     let m = setPlayerName(memory, name);   // personalize Belu's greetings
     m = recordVisit(m);
     saveMemory(m);
@@ -168,6 +197,7 @@ export default function BelusWorldGame() {
     setPhase('world');
     const greetKey = m.visitCount <= 1 ? 'greeting_first' : 'greeting_return';
     setTimeout(() => speak(getDialogue(greetKey, { memory: m })), 700);
+    if (gardenLine) setTimeout(() => speak(gardenLine!), 7000);
   }
 
   useEffect(() => {
@@ -199,6 +229,52 @@ export default function BelusWorldGame() {
       return next;
     });
     playSound('tap', settingsRef.current.sound);
+  }, []);
+
+  // ---- Home life handlers (all additive, all persisted via progress) ----
+  const sparkleLine = useRef(0);
+  const handleCollectSparkle = useCallback((id: string) => {
+    setProgress((p) => {
+      const next = collectSparkle(p, id);
+      if (next !== p) saveProgress(next);
+      return next;
+    });
+    playSound('star', settingsRef.current.sound);
+    setEmotion('excited');
+    // the flavor varies, the outcome never does: sparkle → jar glow + a seed
+    const lines = [
+      'A sparkle! ✨ Into our jar it goes — and look, a seed for the garden!',
+      'Ooh, you found a sparkle! ✨ Our jar glows a little brighter.',
+      'A hidden sparkle! ✨ That earns us a garden seed too!',
+    ];
+    speak(lines[sparkleLine.current++ % lines.length]);
+  }, [speak]);
+
+  const handlePlant = useCallback(() => {
+    // HomeLife only calls this when a seed + a free plot are available
+    setProgress((p) => {
+      const next = plantSeed(p);
+      if (next !== p) saveProgress(next);
+      return next;
+    });
+    playSound('correct', settingsRef.current.sound);
+    speak('We planted a seed! 🌱 Come back tomorrow and see it grow.');
+  }, [speak]);
+
+  const handleFriendHealed = useCallback((species: string) => {
+    setProgress((p) => {
+      const next = recordHealedFriend(p, species);
+      if (next !== p) saveProgress(next);
+      return next;
+    });
+  }, []);
+
+  const handlePetal = useCallback(() => {
+    setProgress((p) => {
+      const next = givePetal(p);
+      saveProgress(next);
+      return next;
+    });
   }, []);
 
   const toggleFullscreen = useCallback(() => {
@@ -260,6 +336,17 @@ export default function BelusWorldGame() {
           rainbowUnlocked={rainbowUnlocked}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
+          dateKey={dateKey}
+          jarCount={progress.jarSparkles}
+          seeds={progress.seeds}
+          garden={progress.garden}
+          sparklesFound={sparklesFound}
+          healedFriends={progress.healedFriends}
+          visitor={visitor}
+          onCollectSparkle={handleCollectSparkle}
+          onPlant={handlePlant}
+          onPetal={handlePetal}
+          onFriendHealed={handleFriendHealed}
           onProximity={handleProximity}
           speak={speak}
           setEmotion={setEmotion}

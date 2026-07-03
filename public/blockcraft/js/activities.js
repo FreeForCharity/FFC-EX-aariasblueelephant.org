@@ -274,10 +274,12 @@ ABC.activities = (function () {
     if (a.isGuide) { bellaChat(a); return; }
     if (a.isVendor) { shop(a); return; }
     if (ABC.pet && ABC.pet.tryInteract(a)) return;   // your own pet 💕
-    if (!a.emotion) {
-      // half the time the animal has a treasure — practice ASKING for it!
+    ABC.friends && ABC.friends.record && ABC.friends.record(a);
+    if (!a.emotion || !a.emotion.sceneTpl) {   // plain bubbles (🌟/😴) aren't help scenarios
+      // half the time it's a pure celebration — no quiz, just joy 🎉
+      if (Math.random() < 0.5) { animalHello(a); return; }
+      // otherwise: a treasure to ask for, or a describing prompt
       if (Math.random() < 0.5) { animalRequest(a); return; }
-      // otherwise: friendly hello + describing prompt about the animal
       const d = a.def;
       ui().askExpressive({
         emoji: d.emoji,
@@ -315,6 +317,19 @@ ABC.activities = (function () {
           }, '💖');
       }, 400);
     }, { stars: 1 });
+  }
+
+  /* pure celebration hello — hearts, confetti, happy sound, NO quiz 🎉 */
+  const HELLO_LINES = [
+    '{name} wiggles with joy to see you!', '{name} does a happy little dance!',
+    '{name} nuzzles you hello!', '{name} is SO glad you came to say hi!',
+  ];
+  function animalHello(a) {
+    ABC.animals.celebrate(a, performance.now() / 1000);
+    ui().floatHearts(5);
+    ui().confetti(14);
+    ABC.audio.sfx.ding();
+    ui().toast(a.def.emoji + ' ' + fillTpl(ui().pick(HELLO_LINES), a), 3200, true);
   }
 
   /* the animal found something — asking nicely gets it! (requesting practice) */
@@ -551,7 +566,7 @@ ABC.activities = (function () {
   let lastShowTell = 0;
   function initShowTell(count) { lastShowTell = count || 0; }
   function maybeShowTell(placedCount) {
-    if (placedCount - lastShowTell < 25) return;
+    if (placedCount - lastShowTell < 80) return;
     lastShowTell = placedCount;
     const sentence = ui().pick(ABC.SHOWTELL_SENTENCES);
     setTimeout(() => {

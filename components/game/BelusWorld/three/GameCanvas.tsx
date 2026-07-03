@@ -15,6 +15,10 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World from './World';
+import HomeLife from './HomeLife';
+import RainbowPlay from './RainbowPlay';
+import type { AnimalSpecies } from './quest/Animal3D';
+import type { GardenPlant } from '../belu/progress';
 import { type QuestStatus } from './quest/QuestLayer';
 import StoryLayer from './quest/StoryLayer';
 import ForestLayer from './quest/ForestLayer';
@@ -43,12 +47,28 @@ interface Props {
   /** which level to play next on each zone island */
   islandNextLevel: Record<ActivityZone, number>;
   sound: boolean;
+  // ---- Home life: sparkle jar, daily sparkle hunt, garden, visit moments ----
+  /** today's local date key (YYYY-MM-DD) — drives daily sparkles + plant growth */
+  dateKey: string;
+  jarCount: number;
+  seeds: number;
+  garden: GardenPlant[];
+  /** ids of today's hidden sparkles already found */
+  sparklesFound: string[];
+  /** animal species the child has healed (they remember the child) */
+  healedFriends: string[];
+  /** today's date-seeded visiting healed friend, or null */
+  visitor: AnimalSpecies | null;
   onProximity: (zone: ZoneId | null) => void;
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: Sound) => void;
   onQuestComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
   onQuestStatus: (s: QuestStatus | null) => void;
+  onCollectSparkle: (id: string) => void;
+  onPlant: () => void;
+  onPetal: () => void;
+  onFriendHealed: (species: string) => void;
 }
 
 function Lighting({ calmMode }: { calmMode: boolean }) {
@@ -90,12 +110,23 @@ export default function GameCanvas({
   rainbowUnlocked,
   islandNextLevel,
   sound,
+  dateKey,
+  jarCount,
+  seeds,
+  garden,
+  sparklesFound,
+  healedFriends,
+  visitor,
   onProximity,
   speak,
   setEmotion,
   playSound,
   onQuestComplete,
   onQuestStatus,
+  onCollectSparkle,
+  onPlant,
+  onPetal,
+  onFriendHealed,
 }: Props) {
   const player = useRef<PlayerHandle>(null);
   // start at a safe-ish ratio and let the monitor scale it to the device
@@ -156,9 +187,30 @@ export default function GameCanvas({
             caring-play (StoryLayer), Friendship Forest is magic words
             (ForestLayer), Morning Mountain is do-the-routine (MountainLayer),
             and Calm Cove is calm-the-storm breathing (CoveLayer). */}
+        {/* Belu's Home comes alive: sparkle jar, daily sparkle hunt, the garden
+            and the once-a-day visiting healed friend. */}
+        <HomeLife
+          paused={paused}
+          dateKey={dateKey}
+          jarCount={jarCount}
+          seeds={seeds}
+          garden={garden}
+          sparklesFound={sparklesFound}
+          visitor={visitor}
+          speak={speak}
+          playSound={playSound}
+          onCollectSparkle={onCollectSparkle}
+          onPlant={onPlant}
+          onPetal={onPetal}
+        />
+        {/* The Rainbow Playground actually plays: bouncy dome, balloons, slide.
+            Deliberately silent — it doubles as a sensory/regulation corner. */}
+        {rainbowUnlocked && <RainbowPlay paused={paused} playSound={playSound} />}
         <StoryLayer
           level={islandNextLevel.meadow}
           paused={paused}
+          healedFriends={healedFriends}
+          onFriendHealed={onFriendHealed}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}
@@ -168,6 +220,8 @@ export default function GameCanvas({
         <ForestLayer
           level={islandNextLevel.forest}
           paused={paused}
+          healedFriends={healedFriends}
+          onFriendHealed={onFriendHealed}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}

@@ -925,6 +925,10 @@ ABC.world = (function () {
     [[-2,1],[-2,2],[-1,3],[0,3],[1,3],[2,2],[2,1]].forEach(([dx,dy]) => ss(IC+dx, IY+dy, IC, 'rainbow'));
     [[-3,-3],[3,-3],[-3,3],[3,3]].forEach(([dx,dz]) => ss(IC+dx, IY+1, IC+dz, 'star'));
     ss(IC, IY+1, IC-3, 'oreo'); ss(IC-1, IY+1, IC-3, 'slimePink');
+    [[5,0],[-5,0],[0,5]].forEach(([dx,dz]) => ss(IC+dx, IY+1, IC+dz, 'cloud'));   // ☁️ bouncy trampolines
+    [[-3,2],[-2,2],[-1,2],[-3,3],[-1,3],[-3,4],[-2,4],[-1,4]]
+      .forEach(([dx,dz]) => ss(IC+dx, IY+1, IC+dz, 'wood'));   // 🪺 nest ring — egg glows in the middle
+
     for (let x=0;x<=3;x++) ss(44+x,1,58,'plank');                       // Mrs. Cocoa's stall
     for (let x=-1;x<=4;x++) for (let z=-1;z<=2;z++) ss(44+x,3,57+z,(x+z)%2?'blue':'white');
     ss(44,2,58,'wood'); ss(47,2,58,'wood'); ss(45,2,58,'star');

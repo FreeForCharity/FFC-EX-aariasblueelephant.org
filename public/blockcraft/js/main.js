@@ -18,7 +18,7 @@
   /* player body state (feet position; camera derives from it) */
   const EYE = 1.62;
   const feet = new THREE.Vector3(0, 1, 6);
-  let vy = 0, grounded = false, flying = false, lastSpaceTap = 0;
+  let vy = 0, grounded = false, flying = false, lastSpaceTap = 0, squashT = 0;
   let sprint = false, lastFwdTap = 0;
   function fwdTap() {                      // double-tap forward = sprint! 🏃
     const now = performance.now();
@@ -487,6 +487,11 @@
           p.y + 1 > feet.y && p.y < feet.y + 1.8) return;
       const id = hand.kind === 'block' ? hand.id : ABC.ui.getSelected();
       const def = ABC.BLOCK_DEFS[id];
+      // ☁️ sky blocks are extra magical — they only work way up in the sky
+      if (def.skyOnly && p.y < 15) {
+        ABC.ui.bellaSays('That magic block only works up in the SKY! Take it to the Sky Island! ☁️🌈', 4200);
+        return;
+      }
       const rot = def.rotates ? ((Math.round(yaw / (Math.PI / 2)) % 4) + 4) % 4 : 0;
       if (ABC.world.set(p.x, p.y, p.z, id, rot)) {
         ABC.world.flush(); ABC.audio.sfx.pop(); saveSoon();
@@ -678,8 +683,16 @@
       vy -= 22 * dt;
       feet.y += vy * dt;
       const gy = surfaceY(feet.x, feet.z, feet.y + 0.5);
-      if (feet.y <= gy) { feet.y = gy; vy = 0; grounded = true; }
-      else grounded = false;
+      if (feet.y <= gy) {
+        // ☁️ bouncy cloud! landing flings you WAY up with a boing
+        const under = ABC.world.get(Math.floor(feet.x), gy - 1, Math.floor(feet.z));
+        if (vy < -3 && under && (ABC.BLOCK_DEFS[under] || {}).bouncy) {
+          feet.y = gy; vy = 18.75;   // ~2.5x jump impulse
+          grounded = false;
+          ABC.audio.sfx.boing();
+          squashT = 0.35;            // squash & stretch!
+        } else { feet.y = gy; vy = 0; grounded = true; }
+      } else grounded = false;
     }
 
     // animals are solid friends — you bump into them, not through them
@@ -697,6 +710,13 @@
     feet.x = Math.max(-S, Math.min(S, feet.x));
     feet.z = Math.max(-S, Math.min(S, feet.z));
     feet.y = Math.max(ABC.world.MIN_Y, Math.min(38, feet.y));
+
+    // ☁️ squash & stretch after a cloud bounce (avatar squishes, camera dips)
+    if (squashT > 0) {
+      squashT = Math.max(0, squashT - dt);
+      const k = squashT / 0.35;                      // 1 → 0
+      avatar.scale.set(1 + 0.35 * k, 1 - 0.4 * k, 1 + 0.35 * k);
+    } else avatar.scale.set(1, 1, 1);
 
     // camera follows feet (1st person) or trails behind (3rd person)
     camera.rotation.set(0, 0, 0);
@@ -759,6 +779,8 @@
         placedCount: ABC.state.placedCount || 0,
         friends: ABC.state.friends || [],
         pocket: ABC.state.pocket || null,
+        skyEgg: ABC.state.skyEgg || null,
+        friendBook: ABC.state.friendBook || null,
         stars: ABC.state.stars, hearts: ABC.state.hearts, coins: ABC.state.coins,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         foundShapes: [...ABC.state.foundShapes],
@@ -797,6 +819,8 @@
       ABC.state.placedCount = d.placedCount || 0;
       ABC.state.friends = d.friends || [];
       ABC.state.pocket = d.pocket || null;
+      ABC.state.skyEgg = d.skyEgg || null;
+      ABC.state.friendBook = d.friendBook || null;
       ABC.state.friends.forEach(f => {
         if (ABC.ANIMAL_DEFS[f.kind]) ABC.animals.spawn(f.kind, f.x, f.z, f.name);
       });
@@ -831,6 +855,7 @@
   $('photoBtn').onclick    = () => ABC.photo.takePhoto();
   $('albumBtn').onclick    = () => ABC.photo.openAlbum();
   $('stickersBtn').onclick = () => ABC.stickers.openBook();
+  $('friendsBtn').onclick  = () => ABC.friends.openBook();
   $('flowerChip').onclick  = () => ABC.overnight.showFlower();
   $('moreBtn').onclick     = () => ABC.ui.openQuickMenu();
   $('tFly').addEventListener('click', () => $('flyBtn').click());
@@ -909,6 +934,10 @@
       }, 900);
     } else {
       ABC.ui.bellaSays('Welcome back, {player}! Your world missed you! 💙', 4500);
+      // 🥚 the sky egg remembers your warm taps — a little mystery for a new day
+      const egg = ABC.state.skyEgg;
+      if (egg && !egg.hatched && egg.days.length && !egg.days.includes(new Date().toISOString().slice(0, 10)))
+        setTimeout(() => { if (!ABC.ui.isOpen()) ABC.ui.bellaSays('Psst… I heard tap-tap-tapping up in the sky! I think the egg misses you! 🥚☁️', 5600); }, 24000);
       ABC.pet.onLogin();
       ABC.overnight.onLogin();
       // show today's three adventures for a focused start

@@ -158,6 +158,7 @@
       <div class="chip">✨ <span id="sparkN">0</span></div>
       <div class="chip">⭐ <span id="starN">0</span>/<span id="starGoal">5</span></div>
       <div class="chip" id="modeChip" style="cursor:pointer" title="Tap to walk">🚶</div>
+      <div class="chip" id="sched" style="pointer-events:auto;gap:4px" title="Today's plan"></div>
     </div>
     <div id="menu">
       <button class="mbtn" id="bookBtn" title="Sticker garden">📖</button>
@@ -182,6 +183,7 @@
     <button class="jbtn" id="duckBtn" title="Duck">🙈</button>
   </div>
   <div id="funRow">
+    <button class="fbtn" id="trumpetBtn" title="Trumpet!" style="background:linear-gradient(160deg,#fff6d5,#ffd97a);box-shadow:0 5px 0 #e0a92e,0 10px 20px rgba(224,169,46,.35);animation:none">🎺</button>
     <button class="fbtn" id="surpriseBtn" title="Mystery surprise!">❓</button>
   </div>
   <button id="actBtn">Play! 💜</button>
@@ -341,12 +343,12 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
-S.today=Object.assign({stars:{},seeds:{},stories:{}},S.today);
+S.today=Object.assign({stars:{},seeds:{},stories:{},wantsDone:{}},S.today);if(!S.today.wantsDone)S.today.wantsDone={};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const STAR_GOAL=5;
 const starCount=()=>Object.keys(S.today.stars).length;
@@ -784,13 +786,70 @@ for(let i=0;i<5;i++){const a=i/5*Math.PI*2+0.4;
   spinners.push({mesh:f,bob:true});scene.add(f);}
 function refreshSecrets(){SECRETS.forEach(sc=>{sc.q.visible=!(S.secrets&&S.secrets[sc.id]);});}
 
-/* -------- persistent sticker decorations -------- */
+/* ============== LIVING STICKER GARDEN ==============
+   Everything the kid plants is ALIVE: it reacts when Belu walks near, wakes up
+   with a gift on the first hello of each day, and grows bigger when watered
+   (one watering per day, 3 growth stages). Never wilts — only ever grows.   */
 const stickerNodes={};
+const todayKey=()=>new Date().toISOString().slice(0,10);
+if(!S.garden)S.garden={};                        // id -> {stage,lastWater,lastGreet}
+function stickerScale(st){
+  const g=S.garden[st.id]||{};const stage=g.stage||0;
+  return (st.id==='rainbow'?7:2.6)*(1+stage*0.28);
+}
 function placeSticker(st){
   if(stickerNodes[st.id]||!st.at)return;
-  const [x,z]=st.at;const s=emojiSprite(st.e,st.id==='rainbow'?7:2.6);
+  const [x,z]=st.at;const s=emojiSprite(st.e,stickerScale(st));
   s.position.set(x,terrainH(x,z)+(st.id==='rainbow'?4:1.3),z);
   scene.add(s);spinners.push({mesh:s,bob:true});stickerNodes[st.id]=s;
+  // tappable: one "watering" per real day -> grows a stage (max 3)
+  addTappable(s,()=>{
+    const g=S.garden[st.id]||(S.garden[st.id]={stage:0});
+    if(g.lastWater===todayKey()){stickerReact(st);return;}    // already watered: just play
+    g.lastWater=todayKey();
+    if(g.stage<3){g.stage++;const sc=stickerScale(st);
+      s.scale.set(sc,sc,1);burst(s.position,14,'#7ec7ef');sfx.good();
+      floatSprite('💧',s.position,3,1.2,1.2);
+      if(g.stage===3){burst(s.position,24,'#ffd23f');sfx.star();
+        say('☀️',`Your ${st.name} is FULLY grown! Look how happy it is! 🌟`);}
+    }else{stickerReact(st);}
+    save();
+  },true,true);   // persist: survives scene transitions
+}
+/* each sticker has its own little "hello" animation */
+function stickerReact(st){
+  const s=stickerNodes[st.id];if(!s)return;
+  const g=S.garden[st.id]||{};
+  const fancy=g.stage>=3;
+  if(st.id==='bunny'){        // hops toward Belu
+    const p=player.group.position,dir=new T.Vector3().subVectors(p,s.position).setY(0).normalize();
+    tween(0.7,k=>{s.position.x+=dir.x*0.02;s.position.z+=dir.z*0.02;
+      s.position.y=terrainH(s.position.x,s.position.z)+1.3+Math.abs(Math.sin(k*Math.PI*3))*0.8;});
+    sfx.pop();
+  }else if(st.id==='duck'){   // quacks + waddle circle
+    tone(600,.1,'square',.07);tone(500,.12,'square',.06,.13);
+    const c=s.position.clone();
+    tween(1.2,k=>{const a=k*Math.PI*2;s.position.x=c.x+Math.cos(a)*0.9;s.position.z=c.z+Math.sin(a)*0.9;});
+  }else if(st.id==='flowers'){burst(s.position,fancy?12:5,'#ff8fb1');sfx.tap();}
+  else if(st.id==='bfly'){tween(1.4,k=>{s.position.y=terrainH(st.at[0],st.at[1])+1.3+Math.sin(k*Math.PI*4)*1.2;});}
+  else if(st.id==='balloon'){tween(1.0,k=>{s.position.y=terrainH(st.at[0],st.at[1])+1.3+Math.sin(k*Math.PI)*2.2;});sfx.boing();}
+  else{tween(0.8,k=>{s.material.rotation=Math.sin(k*Math.PI*2)*0.5;});sfx.tap();}   // spin/wiggle
+  if(fancy)burst(s.position,8,'#b8a4ff');
+}
+/* garden greets Belu: react in proximity + first-hello-of-the-day gift */
+function gardenProximity(){
+  const p=player.group.position;
+  STICKERS.forEach(st=>{
+    const s=stickerNodes[st.id];if(!s||!st.at)return;
+    const d=Math.hypot(p.x-st.at[0],p.z-st.at[1]);
+    const g=S.garden[st.id]||(S.garden[st.id]={});
+    if(d<3.2){
+      if(g.lastGreet!==todayKey()){                 // first hello today: wake + tiny gift
+        g.lastGreet=todayKey();save();
+        stickerReact(st);S.sparks++;hud();save();
+        floatSprite('✨',s.position,3,1.4,1.1);sfx.seed();
+      }else if(!g._cool||performance.now()-g._cool>6000){g._cool=performance.now();stickerReact(st);}
+    }});
 }
 function refreshStickers(){STICKERS.forEach(st=>{if(S.stickers[st.id])placeSticker(st);});
   // crown is wearable
@@ -873,6 +932,168 @@ function refreshMarks(){for(const id in tubbies){
     g.font='170px serif';g.textAlign='center';g.textBaseline='middle';
     g.globalAlpha=done?1:0.9;g.fillText(done?'⭐':'❕',w/2,h/2+8);});
   tubbies[id].mark.material.needsUpdate=true;}}
+
+/* ===================== DAILY LIFE: eggs, ritual, schedule, wants =========
+   The engines that make Trunkland a place that REMEMBERED you.            */
+
+/* ---- overnight eggs: first star of the day drops one; it hatches TOMORROW ---- */
+const CRITTERS=['🐣','🐸','🦋','🐞','🐿️','🦔','🐌','🐢','🦆','🐰','🌟','🐘'];
+const NEST_AT=[3,-12];
+let eggNode=null;
+function spawnEggNode(){
+  if(eggNode||!S.egg)return;
+  eggNode=emojiSprite('🥚',1.8);
+  eggNode.position.set(NEST_AT[0],terrainH(...NEST_AT)+1.1,NEST_AT[1]);
+  scene.add(eggNode);
+  spinners.push({mesh:eggNode,bob:true});
+}
+function renderNest(){
+  (S.hatched||[]).forEach((ci,i)=>{
+    if(renderNest.done&&renderNest.done[i])return;
+    (renderNest.done=renderNest.done||{})[i]=1;
+    const a=i/6*Math.PI*2;
+    const c=emojiSprite(CRITTERS[ci%CRITTERS.length],1.5);
+    c.position.set(NEST_AT[0]+Math.cos(a)*(2+i*0.3),terrainH(NEST_AT[0],NEST_AT[1])+1,NEST_AT[1]+Math.sin(a)*(2+i*0.3));
+    scene.add(c);spinners.push({mesh:c,bob:true});});
+}
+function maybeDropEgg(){                       // called from giveStar
+  if(S.egg||starCount()!==1)return;
+  S.egg={date:todayKey()};save();spawnEggNode();
+  say('☀️','Oh! A little egg appeared by the nest! 🥚 Keep it warm — it will hatch TOMORROW!');
+}
+async function maybeHatch(){                   // called during the morning ritual
+  if(!S.egg||S.egg.date===todayKey())return;
+  let seed=0;for(const ch of S.egg.date)seed=seed*31+ch.charCodeAt(0);
+  const ci=seed%CRITTERS.length;
+  S.hatched=(S.hatched||[]);S.hatched.push(ci);S.egg=null;save();
+  if(eggNode){burst(eggNode.position,26,'#ffd23f');scene.remove(eggNode);eggNode=null;}
+  renderNest();sfx.win();reactSun();
+  await say('🥚',`CRACK! Your egg hatched into a little ${CRITTERS[ci]}! It lives by the nest now — go say hello!`);
+}
+
+/* ---- morning ritual: identical every day (comfort!), memory on a new day ---- */
+async function wakeRitual(){
+  const order=['tinko','minty','sunny','rosy'];
+  order.forEach((id,i)=>setTimeout(()=>{doMove(tubbies[id],'jump',0.9);sfx.pop();},i*380));
+  await say('☀️','Elly-elly… TUBBIES! Good morning, Trunkland! ☀️');
+  if(S.lastDay!==todayKey()){
+    const newDayReal=S.lastDay!=='';S.lastDay=todayKey();save();
+    if(newDayReal){
+      // the nearest friend runs over for a hug + remembers yesterday
+      const p=player.group.position;
+      let nid=order[0],nd=1e9;
+      order.forEach(id=>{const d=tubbies[id].group.position.distanceTo(p);if(d<nd){nd=d;nid=id;}});
+      const t=tubbies[nid],from=t.group.position.clone();
+      const to=p.clone().add(new T.Vector3(1.6,0,-1.2));
+      await tween(1.1,k=>{t.group.position.lerpVectors(from,to,k);
+        t.group.position.y=terrainH(t.group.position.x,t.group.position.z);});
+      doMove(t,'happy',1.4);doMove(player,'happy',1.4);burst(p,16,'#ff8fb1');
+      const mem=Object.keys(S.secrets).length?`You found the ${SECRETS.find(s=>S.secrets[s.id])?.e||'✨'} secret!`
+        :S.gear.swim?'You learned to SWIM!':S.gear.fly?'You learned to FLY!':'You played so nicely!';
+      await say('💗',`${TUBBIES[nid].name} hugs Belu! "You came back!! ${mem}"`);
+      await maybeHatch();
+      const t2=tubbies[nid],back=t2.group.position.clone();
+      tween(1.1,k=>{t2.group.position.lerpVectors(back,from,k);
+        t2.group.position.y=terrainH(t2.group.position.x,t2.group.position.z);});
+    }
+  }
+}
+
+/* ---- picture schedule: 5 emoji tiles, tap for a sparkle trail ---- */
+function renderSched(){
+  const el=$('sched');el.innerHTML='';
+  const order=['tinko','minty','sunny','rosy'];
+  order.forEach(id=>{
+    const done=!!S.today.stars[id]||!!S.today.stars['story-'+todayStories().find(s=>s.tub===id)?.id];
+    const b=document.createElement('span');
+    b.style.cssText='cursor:pointer;font-size:16px;'+(done?'':'filter:grayscale(1) opacity(.45);');
+    b.textContent=done?'⭐':{tinko:'💜',minty:'💚',sunny:'💛',rosy:'💗'}[id];
+    b.onclick=()=>{sfx.tap();breadcrumbTo(tubbies[id].group.position);};
+    el.appendChild(b);});
+  const q=document.createElement('span');                    // the one novelty slot
+  q.style.cssText='cursor:pointer;font-size:16px;';
+  q.textContent='❔';q.title='Today\'s special!';
+  q.onclick=()=>{sfx.tap();
+    const spots=[POI.cove,POI.skyhill,POI.garage,POI.fixit,NEST_AT];
+    const s=spots[(S.day+new Date().getDate())%spots.length];
+    breadcrumbTo(new T.Vector3(s[0],0,s[1]));
+    say('☀️','Follow the sparkles to today\'s special place! ✨');};
+  el.appendChild(q);
+}
+function breadcrumbTo(target){
+  const p=player.group.position;
+  for(let i=1;i<=9;i++){const k=i/9;
+    const x=p.x+(target.x-p.x)*k,z=p.z+(target.z-p.z)*k;
+    const d=emojiSprite('✨',0.9);d.position.set(x,terrainH(x,z)+1+i*0.05,z);
+    scene.add(d);
+    setTimeout(()=>scene.remove(d),5200+i*180);}
+}
+
+/* ---- Tubby Wants: daily fetch friendship ---- */
+const WANT_POOL=[
+  {e:'🐚',name:'a seashell', src:'cove'},
+  {e:'🫐',name:'a berry',    src:'skyhill'},
+  {e:'🌻',name:'a sunflower',src:'mill'},
+  {e:'🪷',name:'a lily',     src:'pond'},
+];
+let wants={},wantPickups=[],carried=null,carrySprite=null;
+function setupWants(){
+  wantPickups.forEach(w=>scene.remove(w.g));wantPickups=[];wants={};
+  for(const id in tubbies){const t=tubbies[id];
+    if(t.bubble){t.group.remove(t.bubble);t.bubble=null;}}
+  const R=dayRnd(21);const ids=Object.keys(TUBBIES);
+  ids.forEach((id,i)=>{
+    if(S.today.wantsDone[id])return;
+    const w=WANT_POOL[(i+Math.floor(R()*4))%WANT_POOL.length];
+    wants[id]=w;
+    // thought bubble over the tubby
+    const bub=emojiSprite('💭',2.1);bub.position.set(0.9,5.6,0);
+    const item=emojiSprite(w.e,1.0);item.position.set(1.0,5.7,-0.1);
+    const grp=new T.Group();grp.add(bub);grp.add(item);
+    tubbies[id].group.add(grp);tubbies[id].bubble=grp;
+    // two pickups near the source POI
+    for(let k=0;k<2;k++){
+      const [sx,sz]=POI[w.src];
+      const x=sx+(R()-0.5)*8,z=sz+(R()-0.5)*8;
+      const g=emojiSprite(w.e,1.5);g.position.set(x,terrainH(x,z)+1.1,z);
+      scene.add(g);spinners.push({mesh:g,bob:true});
+      wantPickups.push({g,e:w.e,x,z});}
+  });
+}
+function tubbyWantsUpdate(){
+  const p=player.group.position;
+  // pick up
+  if(!carried)for(let i=wantPickups.length-1;i>=0;i--){const w=wantPickups[i];
+    if(Math.hypot(p.x-w.x,p.z-w.z)<2.2){
+      carried=w.e;scene.remove(w.g);wantPickups.splice(i,1);
+      carrySprite=emojiSprite(w.e,1.2);carrySprite.position.set(0,5.2,0);
+      player.group.add(carrySprite);sfx.seed();burst(p,8,'#ffd23f');
+      break;}}
+  // deliver
+  if(carried)for(const id in wants){
+    if(S.today.wantsDone[id]||wants[id].e!==carried)continue;
+    const t=tubbies[id];
+    if(t.group.position.distanceTo(p)<3.4){
+      S.today.wantsDone[id]=1;
+      S.friend[id]=(S.friend[id]||0)+1;S.sparks+=3;save();hud();
+      player.group.remove(carrySprite);carrySprite=null;carried=null;
+      if(t.bubble){t.group.remove(t.bubble);t.bubble=null;}
+      doMove(t,'happy',1.5);doMove(player,'happy',1.5);
+      burst(t.group.position,22,'#ff8fb1');sfx.good();reactSun();
+      const lvl=S.friend[id];
+      if(lvl>=5&&!t.follow){t.follow=true;
+        say('💗',`${TUBBIES[id].name} LOVES you! Best friends — ${TUBBIES[id].name} will follow you all day! 💕`);}
+      else say('💗',`${TUBBIES[id].name} wanted ${wants[id].name}! +💕 (${Math.min(lvl,5)}/5) ✨+3`);
+      break;}}
+  // best friends follow Belu around
+  for(const id in tubbies){const t=tubbies[id];
+    if(!t.follow||t.busy||mode!=='roam')continue;
+    const d=t.group.position.distanceTo(p);
+    if(d>4){const dir=new T.Vector3().subVectors(p,t.group.position).setY(0).normalize();
+      t.group.position.x+=dir.x*5.5*(1/60);t.group.position.z+=dir.z*5.5*(1/60);
+      t.group.position.y=terrainH(t.group.position.x,t.group.position.z);
+      t.group.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;}}
+}
 
 /* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
 const NAVY='#12244f';
@@ -992,16 +1213,43 @@ function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
 
 /* ========================= FUN ACTIONS (Belu!) =========================== */
 let actionBusy=false;
+let trumpetTimes=[];
 async function actTrumpet(){
-  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  if(actionBusy)return;actionBusy=true;
   sfx.trumpet();doMove(player,'stomp',0.9);
   const p=player.group.position;
   ['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>
     floatSprite(n,new T.Vector3(p.x+(i-1)*0.9,p.y+3.4,p.z),3,1.6),i*220));
-  // nearby tubbies jump with joy
+  // a visible sound-ring rolls outward — everything inside reacts!
+  const ring=new T.Mesh(new T.RingGeometry(0.8,1.1,40),
+    new T.MeshBasicMaterial({color:'#ffd23f',transparent:true,opacity:.8,side:T.DoubleSide}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(p.x,Math.max(terrainH(p.x,p.z),SEA_Y)+0.25,p.z);
+  scene.add(ring);
+  tween(1.1,k=>{const s=1+k*14;ring.scale.set(s,s,1);ring.material.opacity=0.8*(1-k);}).then(()=>scene.remove(ring));
+  const R=16;
   for(const id in tubbies){const t=tubbies[id];
-    if(!t.busy&&t.group.position.distanceTo(p)<15)doMove(t,'jump',0.9);}
-  await wait(900);actionBusy=false;
+    if(!t.busy&&t.group.visible&&t.group.position.distanceTo(p)<R)doMove(t,'spin',1);}
+  STICKERS.forEach(st=>{if(st.at&&stickerNodes[st.id]&&
+    Math.hypot(p.x-st.at[0],p.z-st.at[1])<R)stickerReact(st);});
+  reactSun();
+  // hide & seek: the right bush wiggles (honest, playful hint)
+  if(gameHide.targetBush!=null&&hillsG.userData.bushes[gameHide.targetBush]){
+    const b=hillsG.userData.bushes[gameHide.targetBush];
+    tween(0.8,k=>{b.rotation.z=Math.sin(k*Math.PI*6)*0.18;});
+  }
+  // trumpet 3x fast = off-key honk, everyone falls over laughing!
+  const now=performance.now();trumpetTimes.push(now);
+  trumpetTimes=trumpetTimes.filter(t=>now-t<2200);
+  if(trumpetTimes.length>=3){trumpetTimes=[];
+    tone(180,.5,'sawtooth',.1);tone(170,.55,'sawtooth',.08,.1);   // honk!
+    giggle();
+    for(const id in tubbies){const t=tubbies[id];if(!t.group.visible)continue;
+      doMove(t,'stomp',1.2);
+      tween(1.2,k=>{t.group.rotation.z=Math.sin(Math.min(1,k*1.4)*Math.PI/2)*1.3;})
+        .then(()=>tween(0.5,k=>{t.group.rotation.z=1.3*(1-k);}));
+      floatSprite('😂',t.group.position,3,1.6,1.2);}
+  }
+  await wait(700);actionBusy=false;
 }
 async function actSpray(){
   if(actionBusy||mode!=='roam')return;actionBusy=true;
@@ -1124,8 +1372,9 @@ async function runMischief(){
    with a short label — never a quiz card. */
 const raycaster=new T.Raycaster();
 let tappables=[];   // {root, hit(mesh), onTap}
-function clearChoices(){tappables.forEach(t=>{if(t.own)scene.remove(t.root);});tappables=[];}
-function addTappable(root,onTap,own){ tappables.push({root,onTap,own}); }
+function clearChoices(){tappables.forEach(t=>{if(t.own&&!t.persist)scene.remove(t.root);});
+  tappables=tappables.filter(t=>t.persist);}
+function addTappable(root,onTap,own,persist){ tappables.push({root,onTap,own,persist}); }
 function makeChoiceFigure(ch,label,pos,onTap){
   const g=new T.Group();g.position.copy(pos);
   const disc=new T.Mesh(new T.CylinderGeometry(1.15,1.3,0.3,20),matStd('#ffffff',.5));
@@ -1164,8 +1413,8 @@ function pumpNarr(){
       if(mode==='roam')$('funRow').classList.remove('hidden');}
     else pumpNarr();};
   narrResolve=done;
-  // auto-advance slowly (kids can also tap ▶) — scaled by speed setting
-  const ms=(2600+txt.length*65)*SPEED[S.speed];
+  // auto-advance briskly (kids can also tap ▶) — scaled by speed setting
+  const ms=(1300+txt.length*30)*SPEED[S.speed];
   setTimeout(()=>{if(narrResolve===done)done();},ms);
 }
 $('narrNext').onclick=()=>{sfx.tap();if(narrResolve)narrResolve();};
@@ -1352,6 +1601,8 @@ function updateRoam(dt,time){
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
       S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
+  gardenProximity();               // living stickers say hello
+  tubbyWantsUpdate();              // fetch-quest pickups & delivery
   // secret discovery spots — wander far (or swim! or fly!), learn something
   for(const sc of SECRETS){
     if(S.secrets[sc.id])continue;
@@ -1414,12 +1665,13 @@ function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
 
 async function giveStar(id,tub){
   const first=!S.today.stars[id];
-  if(first){S.today.stars[id]=1;save();hud();refreshMarks();sfx.star();}
+  if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();}
   S.sparks+=first?5:2;save();hud();
   reactSun();sfx.good();
   doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
   burst(tub.group.position,22,'#ffd23f');burst(player.group.position,18,'#ff8fb1');
   await say('☀️',SUN_CHEER[Math.floor(Math.random()*SUN_CHEER.length)]+(first?' You earned a ⭐ and ✨5!':' ✨2 more sparkles!'));
+  maybeDropEgg();
   if(starCount()>=STAR_GOAL){showFinale();return true;}
   return false;
 }
@@ -1474,7 +1726,7 @@ async function runStory(st,tub){
         await say('🎉',c.fb);
         S.today.stories[st.id]=1;save();
         const over=await giveStar('story-'+st.id,tub);
-        if(!over){await say('☀️','Keep exploring, little friend!');exitScene();}
+        if(!over)exitScene();
       }else{
         sfx.soft();careSun();
         // figure wobbles + gentle coaching, then try again
@@ -1498,7 +1750,7 @@ async function gameFeelings(tub){
     if(round>=3){
       tub.anim.tv('💚');
       const over=await giveStar('minty',tub);
-      if(!over){await say('💚','You know so many feelings! Come back tomorrow for more!');exitScene();}
+      if(!over)exitScene();
       return;}
     const f=pool[round%pool.length];round++;
     if(window.__ET)window.__ET.info.feel=f.w;
@@ -1555,7 +1807,7 @@ async function gameDance(tub){
           tub.anim.tv('🎉');doMove(tub,'happy',1.6);
           await wait(700);
           const over=await giveStar('tinko',tub);
-          if(!over){await say('💜','We danced together! Tomorrow the dance gets LONGER!');exitScene();}}
+          if(!over)exitScene();}
       }else{sfx.soft();careSun();idx=0;
         say('☀️','Oopsie! Watch once more…').then(async()=>{
           for(const m2 of seq){tub.anim.tv(m2.e);doMove(tub,m2.k,1);sfx.boing();await wait(1100);}
@@ -1589,7 +1841,7 @@ async function gameKitchen(tub){
         if(idx>=rec.steps.length){
           tub.anim.tv('🍲');
           const over=await giveStar('sunny',tub);
-          if(!over){await say('💛',`Mmm, ${rec.name} is ready! A NEW recipe tomorrow!`);exitScene();}}
+          if(!over)exitScene();}
       }else{sfx.soft();careSun();fig.userData.wob=1;
         const need=rec.steps[idx];
         say('☀️',`Not yet! First we need: ${need.e} ${need.w}.`);}
@@ -1610,7 +1862,7 @@ async function gameHide(tub){
   const wp=new T.Vector3();b.getWorldPosition(wp);
   tub.group.position.set(wp.x,terrainH(wp.x,wp.z),wp.z+1.6);   // behind (further from camera)
   tub.group.visible=false;
-  const peek=emojiSprite('⭐',0.7);peek.position.set(wp.x,terrainH(wp.x,wp.z)+2.9,wp.z+0.6);scene.add(peek);
+  gameHide.targetBush=target;      // trumpet can shake the right bush (honest hint, no giveaway star)
   let tries=0;
   bushes.forEach((bush,i)=>{
     const bp=new T.Vector3();bush.getWorldPosition(bp);
@@ -1621,7 +1873,7 @@ async function gameHide(tub){
     const marker={root:hit,q};
     addTappable(hit,async()=>{
       if(i===target){
-        sfx.boing();tub.group.visible=true;scene.remove(peek);
+        sfx.boing();tub.group.visible=true;gameHide.targetBush=null;
         tub.group.position.set(bp.x,terrainH(bp.x,bp.z),bp.z-1.8);
         doMove(tub,'jump',1);
         // clean q markers
@@ -1631,7 +1883,7 @@ async function gameHide(tub){
         burst(bp,20,'#ff8fb1');
         await say('💗','"You FOUND me! Hee hee!" Rosy bounces with joy!');
         const over=await giveStar('rosy',tub);
-        if(!over){await say('💗','Rosy will find a sneakier spot tomorrow!');exitScene();}
+        if(!over)exitScene();
       }else{
         tries++;sfx.soft();
         scene.remove(q);scene.remove(hit);              // this bush is done — can't re-guess it
@@ -1643,7 +1895,7 @@ async function gameHide(tub){
     },false);
     tappables[tappables.length-1].q=q;
   });
-  await say('☀️','Tap a bush! Psst… look for a peeking antenna ⭐!');
+  await say('☀️','Tap a bush! Psst… a trumpet toot 🎺 might make the right bush wiggle!');
 }
 
 const GAMES={feelings:gameFeelings,dance:gameDance,kitchen:gameKitchen,hide:gameHide};
@@ -1811,7 +2063,7 @@ $('newDay').onclick=()=>{
   stars.material.opacity=0;sunMood='happy';repaintSun();sunGroup.position.y=4.6;
   for(const id in tubbies){const [x,z]=TUBBY_POS[id];
     tubbies[id].group.position.set(x,terrainH(x,z),z);tubbies[id].group.rotation.y=0;}
-  spawnSeeds();refreshMarks();mode='roam';$('stick').classList.remove('hidden');
+  spawnSeeds();refreshMarks();renderSched();setupWants();mode='roam';$('stick').classList.remove('hidden');
   $('jumpCol').classList.remove('hidden');$('funRow').classList.remove('hidden');
   say('☀️',`Good morning! Day ${S.day} in Trunkland! ${todayStories().length} new stories and fresh sparkles await!`);
 };
@@ -1890,7 +2142,7 @@ addEventListener('resize',resize);resize();
 /* ================================ UI wire ================================ */
 $('startBtn').onclick=()=>{ac();sfx.meet?sfx.meet():sfx.pop();
   $('intro').classList.remove('show');mode='roam';
-  say('☀️','Hello little friend! Walk with the joystick and find a bouncy tubby! ✨');};
+  wakeRitual();};
 $('helpBtn').onclick=()=>{$('intro').classList.add('show');};
 $('soundBtn').textContent=S.muted?'🔇':'🔊';
 $('soundBtn').onclick=()=>{S.muted=!S.muted;save();
@@ -1914,9 +2166,9 @@ addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
 addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
 /* ONE mystery button — every tap a surprise! Undiscovered tricks come first
    (with a celebration), then it keeps shuffling them forever. */
-const MYSTERY=[{k:'trump',e:'🎺',name:'Trumpet',fn:actTrumpet},
-               {k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
+const MYSTERY=[{k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
                {k:'dance',e:'💃',name:'Dance Party',fn:actDance}];
+$('trumpetBtn').onclick=()=>{ac();actTrumpet();};   // Belu's signature — always right there
 $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   const fresh=MYSTERY.filter(m=>!S.found[m.k]);
   const m=fresh.length?fresh[Math.floor(Math.random()*fresh.length)]
@@ -1944,6 +2196,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
 
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();refreshStickers();refreshSecrets();
+renderSched();setupWants();spawnEggNode();renderNest();
 $('loading').classList.add('hidden');
 $('intro').classList.add('show');
 requestAnimationFrame(frame);

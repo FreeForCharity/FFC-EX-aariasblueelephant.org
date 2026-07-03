@@ -22,6 +22,7 @@ import type { BeluEmotion } from '../../BeluCharacter';
 import { makeLabelTexture } from './emojiTexture';
 import { MOUNTAIN_ROUTINE, NIMBUS_LINES, type Station } from './mountainContent';
 import { MorningSun, Nimbus, StepStone, StarSpark } from './mountainExtras';
+import InviteBubble from './InviteBubble';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'mountain' as const;
@@ -29,6 +30,7 @@ const REACH = 1.7; // walk this close to a station to "do" it
 const NUDGE_AT = 1.7; // walking this close to a wrong station triggers the nudge
 const STATION_SOLID_R = 0.85; // keep-out radius so Belu walks around the objects
 const STAR_PICK = 1.5; // walk this close to a hidden star to collect it
+const INVITE_START = 2.4; // walk this close to Nimbus's spot to BEGIN (consent)
 
 interface StationRT {
   done: boolean;
@@ -257,7 +259,13 @@ export default function MountainLayer(props: Props) {
       bump();
     }
     if (!st.active) {
-      if (onIsland && !st.disarmed) startRoutine();
+      // NO quest ambush: the routine begins only when the child walks Belu up
+      // to Nimbus the cloud buddy (a deliberate approach = consent).
+      if (onIsland && !st.disarmed) {
+        const hx = isl.cx - 5.4; // the ground under Nimbus
+        const hz = isl.cz - 4.6;
+        if (Math.hypot(beluPos.x - hx, beluPos.z - hz) < INVITE_START) startRoutine();
+      }
       return;
     }
     if (dCenter > isl.radius + 1.5) {
@@ -314,6 +322,15 @@ export default function MountainLayer(props: Props) {
 
       {/* the morning sun rises + brightens as the routine progresses */}
       <MorningSun center={[isl.cx, isl.cz]} top={isl.top} progress={prog} />
+
+      {/* Nimbus waves you over — walk right up to begin the morning routine */}
+      {!S.current.active && !S.current.disarmed && (
+        <InviteBubble
+          position={[isl.cx - 5.4, isl.top + 4.6, isl.cz - 4.6]}
+          ground={[isl.cx - 5.4, isl.top, isl.cz - 4.6]}
+          color={isl.accent}
+        />
+      )}
 
       {/* Nimbus the sleepy cloud buddy — wakes + cheers Belu on */}
       <Nimbus

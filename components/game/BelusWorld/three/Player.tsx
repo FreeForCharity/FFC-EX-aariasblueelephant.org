@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
-import { beluPos, beluState, dynamicSolids } from './playerState';
+import { beluPos, beluState, dynamicSolids, playerImpulse, playerBoost } from './playerState';
 import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
@@ -101,6 +101,12 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     pos.current.x += vel.current.x * dt;
     pos.current.z += vel.current.z * dt;
 
+    // ---- external horizontal push (Rainbow slide) — consumed each frame ----
+    pos.current.x += playerBoost.x * dt;
+    pos.current.z += playerBoost.z * dt;
+    playerBoost.x = 0;
+    playerBoost.z = 0;
+
     // ---- solid things (walk around, not through): static obstacles +
     //      animals/friends that each layer registers as dynamic solids ----
     const pushOut = (ox: number, oz: number, r: number) => {
@@ -116,6 +122,13 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     for (const key in dynamicSolids) {
       const list = dynamicSolids[key];
       for (let i = 0; i < list.length; i++) pushOut(list[i].x, list[i].z, list[i].r);
+    }
+
+    // ---- external vertical impulse (Rainbow bouncy dome) ----
+    if (playerImpulse.vy > 0) {
+      vy.current = playerImpulse.vy;
+      playerImpulse.vy = 0;
+      grounded.current = false;
     }
 
     // ---- jump + gravity ----
