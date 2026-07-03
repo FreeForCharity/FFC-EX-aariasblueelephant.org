@@ -13,6 +13,17 @@
     color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;}
   canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;}
   .hidden{display:none!important;}
+  /* Fix-It merge board */
+  #fxGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:420px;margin:0 auto;}
+  .fxCell{aspect-ratio:1;border-radius:18px;background:#f0f4ff;border:3px solid #dce4f7;
+    display:flex;align-items:center;justify-content:center;font-size:clamp(26px,7vw,42px);
+    cursor:pointer;transition:.15s;user-select:none;}
+  .fxCell.sel{border-color:var(--sun);background:#fff8dd;transform:scale(1.08);
+    box-shadow:0 0 0 4px rgba(255,210,63,.35);}
+  .fxCell.pop{animation:fxpop .35s ease;}
+  @keyframes fxpop{0%{transform:scale(.4)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .fxCell.shake{animation:fxshake .3s ease;}
+  @keyframes fxshake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
   /* ---------- HUD ---------- */
   #topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:8;
@@ -140,6 +151,7 @@
       <button class="mbtn" id="voiceBtn" title="Read aloud">🗣️</button>
       <button class="mbtn" id="soundBtn" title="Sound">🔊</button>
       <button class="mbtn" id="helpBtn" title="How to play">❔</button>
+      <button class="mbtn" id="fsBtn" title="Full screen">⛶</button>
     </div>
   </div>
   <div id="speedRow">
@@ -157,9 +169,9 @@
     <button class="jbtn" id="duckBtn" title="Duck">🙈</button>
   </div>
   <div id="funRow">
-    <button class="fbtn" id="trumpBtn" title="Trumpet">🎺</button>
-    <button class="fbtn" id="sprayBtn" title="Water rainbow">💦</button>
-    <button class="fbtn" id="danceBtn" title="Dance party">💃</button>
+    <button class="fbtn" id="trumpBtn" title="Mystery!">❓</button>
+    <button class="fbtn" id="sprayBtn" title="Mystery!">❓</button>
+    <button class="fbtn" id="danceBtn" title="Mystery!">❓</button>
   </div>
   <button id="actBtn">Play! 💜</button>
 
@@ -179,13 +191,24 @@
       <div class="tub"><div class="dot" style="background:#ffd94d">📺</div>Sunny</div>
       <div class="tub"><div class="dot" style="background:#ff8fb1">📺</div>Rosy</div>
     </div>
-    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b>, and try <b>🎺 💦 💃</b> for silly surprises! Collect <b>✨ sparkle seeds</b> and play with every friend to earn <b>⭐ stars</b>.</p>
+    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises! Collect <b>✨ sparkle seeds</b>, find <b>secret wonders</b> hiding far across Trunkland, and play with every friend to earn <b>⭐ stars</b>.</p>
     <p style="font-size:clamp(13px,3.6vw,16px)">Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b></p>
     <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
     <button class="big" id="startBtn">Let's Play! ▶</button>
   </div></div>
 
   <!-- Sticker garden book -->
+  <!-- Fix-It Garden: merge two matching items to make something better! -->
+  <div class="overlay" id="fixit"><div class="panel" style="max-width:560px">
+    <h1>🔨 Fix-It Garden</h1>
+    <p id="fxGoal" style="margin:.2em 0 .6em">Merge two matching things to make something better!</p>
+    <div id="fxGrid"></div>
+    <div style="display:flex;gap:10px;justify-content:center;align-items:center;margin-top:12px">
+      <button class="big" id="fxBasket" style="padding:12px 22px">🧺 Get a piece</button>
+      <button class="big pink" id="fxClose" style="padding:12px 22px">Done ▶</button>
+    </div>
+  </div></div>
+
   <div class="overlay" id="book"><div class="panel">
     <h1>🌸 Sticker Garden</h1>
     <p>Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.</p>
@@ -306,7 +329,7 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
@@ -367,10 +390,11 @@ Object.assign(sunLight.shadow.camera,{near:1,far:90,left:-30,right:30,top:30,bot
 sunLight.shadow.bias=-0.0004;scene.add(sunLight);scene.add(sunLight.target);
 const fillLight=new T.DirectionalLight(0xffffff,0.25);fillLight.position.set(10,12,16);scene.add(fillLight);
 
-const ISLAND=44;
+const ISLAND=120;              // big! the edge is far, far away — keep exploring
+const HOME_R=44;               // the cosy home area where the friends live
 // points of interest — terrain flattens around each
 const POI={dome:[0,0], tinko:[24,-13], minty:[-25,-11], sunny:[19,19], rosy:[-19,21],
-           pond:[1,30], mill:[-33,5], arch:[32,4]};
+           pond:[1,30], mill:[-33,5], arch:[32,4], fixit:[10,-27]};
 const FLAT=Object.values(POI);
 function terrainH(x,z){
   let h=Math.sin(x*0.16)*0.9+Math.cos(z*0.14)*1.0+Math.sin((x+z)*0.07)*0.7;
@@ -383,9 +407,8 @@ let _seed=1337;function rnd(){_seed=(_seed*1103515245+12345)&0x7fffffff;return _
 const matStd=(c,r=0.75)=>new T.MeshStandardMaterial({color:new T.Color(c),roughness:r,metalness:0});
 
 (function ground(){
-  const geo=new T.CircleGeometry(ISLAND+26,110);geo.rotateX(-Math.PI/2);
   // subdivided plane gives better hills:
-  const g2=new T.PlaneGeometry((ISLAND+26)*2,(ISLAND+26)*2,110,110);g2.rotateX(-Math.PI/2);
+  const g2=new T.PlaneGeometry((ISLAND+30)*2,(ISLAND+30)*2,150,150);g2.rotateX(-Math.PI/2);
   const pos=g2.attributes.position,col=[];
   const cLow=new T.Color('#54ad45'),cHigh=new T.Color('#8ed46e');
   for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);
@@ -576,6 +599,16 @@ function addProp(kind,x,z,ry=0){
     const arch=new T.Mesh(new T.TorusGeometry(3,0.35,12,30,Math.PI),matStd('#ff8fb1',.6));
     arch.position.y=0.1;g.add(arch);
     const bun=emojiSprite('🐇',1.4);bun.position.set(-2.2,0.8,-0.5);g.add(bun);
+  }else if(kind==='fixit'){                                    // the Fix-It corner (merge game)
+    const bench=new T.Mesh(new T.BoxGeometry(2.6,0.3,0.9),matStd('#c98a2e',.9));
+    bench.position.set(-1.6,0.7,0);bench.rotation.z=0.35;bench.castShadow=true;g.add(bench);   // tipped-over bench
+    g.userData.bench=bench;
+    const sign=new T.Mesh(new T.BoxGeometry(1.6,1.1,0.12),matStd('#f4e1a0',.8));
+    sign.position.set(1.6,1.5,0);sign.castShadow=true;g.add(sign);
+    const post=new T.Mesh(new T.CylinderGeometry(0.09,0.09,1.5,8),matStd('#9a6b3f'));post.position.set(1.6,0.7,0);g.add(post);
+    const ham=emojiSprite('🔨',1.5);ham.position.set(1.6,1.55,-0.12);g.add(ham);
+    const b=bannerSprite('Fix-It Garden','#c9702e');b.position.y=5.4;g.add(b);
+    g.userData.spots={};   // filled by refreshFixit with completed rewards
   }
   return g;
 }
@@ -587,6 +620,7 @@ const gardenG=addProp('garden',...POI.minty);
 const kitchenG=addProp('kitchen',...POI.sunny,Math.PI);
 const hillsG=addProp('hills',...POI.rosy);
 addProp('arch',...POI.arch);
+const fixitG=addProp('fixit',...POI.fixit);
 
 /* -------- solid-structure colliders (cylinders) -------- */
 const COLLIDERS=[
@@ -603,20 +637,51 @@ hillsG.userData.bushes.forEach(b=>{                        // Rosy's big bushes
   ['#ff8fb1','#b8a4ff','#ffd23f','#ffffff'].forEach(col=>{
     const geo=new T.SphereGeometry(0.16,8,6);const mat=matStd(col,.6);
     mat.emissive=new T.Color(col);mat.emissiveIntensity=.15;
-    const inst=new T.InstancedMesh(geo,mat,50);const m=new T.Matrix4();let n=0;
-    for(let k=0;k<50;k++){const a=rnd()*Math.PI*2,r=8+rnd()*(ISLAND-10);
+    const inst=new T.InstancedMesh(geo,mat,140);const m=new T.Matrix4();let n=0;
+    for(let k=0;k<140;k++){const a=rnd()*Math.PI*2,r=8+rnd()*(ISLAND-12);
       const x=Math.cos(a)*r,z=Math.sin(a)*r;m.makeTranslation(x,terrainH(x,z)+0.2,z);inst.setMatrixAt(n++,m);}
     inst.count=n;scene.add(inst);});
   const bushGeo=new T.SphereGeometry(0.9,12,10),bushMat=matStd('#4fa24a',.9);
-  const bush=new T.InstancedMesh(bushGeo,bushMat,24);
+  const bush=new T.InstancedMesh(bushGeo,bushMat,64);
   const bm=new T.Matrix4(),bs=new T.Vector3(),q=new T.Quaternion();let bn=0;
-  for(let k=0;k<24;k++){const a=rnd()*Math.PI*2,r=12+rnd()*(ISLAND-14);
+  for(let k=0;k<64;k++){const a=rnd()*Math.PI*2,r=12+rnd()*(ISLAND-16);
     const x=Math.cos(a)*r,z=Math.sin(a)*r;
     bs.set(1+rnd()*0.6,0.8+rnd()*0.5,1+rnd()*0.6);
     bm.compose(new T.Vector3(x,terrainH(x,z)+0.4,z),q,bs);bush.setMatrixAt(bn++,bm);
     COLLIDERS.push({x,z,r:1.25});}
   bush.count=bn;bush.castShadow=true;scene.add(bush);
+  // friendly trees dot the far hills so the horizon invites exploring
+  const trunkG=new T.CylinderGeometry(0.22,0.3,1.6,8),leafG=new T.SphereGeometry(1.5,12,10);
+  const trunkM=matStd('#9a6b3f',.9);
+  const leafCols=['#4fa24a','#63bd52','#3f8f5e','#7ac95c'];
+  for(let k=0;k<26;k++){const a=rnd()*Math.PI*2,r=HOME_R+4+rnd()*(ISLAND-HOME_R-10);
+    const x=Math.cos(a)*r,z=Math.sin(a)*r,y=terrainH(x,z);
+    const tr=new T.Mesh(trunkG,trunkM);tr.position.set(x,y+0.8,z);tr.castShadow=true;scene.add(tr);
+    const lf=new T.Mesh(leafG,matStd(leafCols[k%4],.85));const s=0.8+rnd()*0.7;
+    lf.scale.set(s,s*(0.9+rnd()*0.4),s);lf.position.set(x,y+1.9+s*0.8,z);lf.castShadow=true;scene.add(lf);
+    COLLIDERS.push({x,z,r:1.0});}
 })();
+
+/* -------- secret discovery spots, far out in the hills --------
+   Kids who wander find surprises: sparkles + a friendly fun fact. */
+const SECRETS=[
+  {id:'turtle', e:'🐢', x:62,  z:38,  fact:'Sea turtles can nap underwater, holding their breath for hours!'},
+  {id:'shells', e:'🐚', x:-70, z:52,  fact:'If you hold a big shell to your ear, it whispers like the sea!'},
+  {id:'mush',   e:'🍄', x:-58, z:-62, fact:'Mushrooms are not plants — they are their own living kingdom, fungi!'},
+  {id:'owl',    e:'🦉', x:78,  z:-40, fact:'Owls can turn their heads almost all the way around. Whooo!'},
+  {id:'geode',  e:'💎', x:12,  z:-88, fact:'Some plain-looking rocks hide sparkly crystals inside. Surprises everywhere!'},
+  {id:'frog',   e:'🐸', x:-92, z:-8,  fact:'Frogs drink water through their skin — no cup needed!'},
+  {id:'cactus', e:'🌵', x:95,  z:14,  fact:'A cactus stores water in its body like a big green bottle!'},
+  {id:'stars',  e:'🌟', x:30,  z:92,  fact:'The sun is a star — the closest one to your home!'},
+];
+SECRETS.forEach(sc=>{
+  const g=new T.Group();g.position.set(sc.x,terrainH(sc.x,sc.z),sc.z);
+  const sp=emojiSprite(sc.e,2.2);sp.position.y=1.4;g.add(sp);
+  const q=emojiSprite('❓',1.2);q.position.y=3.2;g.add(q);sc.q=q;
+  spinners.push({mesh:sp,bob:true});
+  scene.add(g);sc.node=g;
+});
+function refreshSecrets(){SECRETS.forEach(sc=>{sc.q.visible=!(S.secrets&&S.secrets[sc.id]);});}
 
 /* -------- persistent sticker decorations -------- */
 const stickerNodes={};
@@ -734,9 +799,10 @@ const seeds=[];
 function spawnSeeds(){
   seeds.forEach(s=>scene.remove(s.g));seeds.length=0;
   const R=dayRnd(7);
-  for(let i=0;i<14;i++){
+  for(let i=0;i<20;i++){
     if(S.today.seeds[i])continue;
-    const a=R()*Math.PI*2,r=7+R()*(ISLAND-11);
+    // half sprinkle near home, half far out — a reason to wander
+    const a=R()*Math.PI*2,r=i<10?7+R()*(HOME_R-11):HOME_R+R()*(ISLAND-HOME_R-8);
     const x=Math.cos(a)*r,z=Math.sin(a)*r;
     const g=new T.Group();g.position.set(x,terrainH(x,z)+1,z);
     const mat=matStd('#ffe066',.3);mat.emissive=new T.Color('#ffd23f');mat.emissiveIntensity=.7;
@@ -962,7 +1028,7 @@ function camFollow(dt){
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
   camera.position.copy(camState.pos);camera.lookAt(camState.look);
-  sunGroup.position.set(camState.pos.x-8,mode==='finale'?sunGroup.position.y:13,camState.pos.z+52);
+  sunGroup.position.set(camState.pos.x+17,mode==='finale'?sunGroup.position.y:12.5,camState.pos.z+52);
   sunLight.position.set(player.group.position.x-12,26,player.group.position.z-8);
   sunLight.target.position.copy(player.group.position);
 }
@@ -992,10 +1058,21 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let nearThing=null;   // {kind:'tubby'|'dome', id}
 /* ---- tumble physics (Teletubby knockdown!) ---- */
 let kd=null, duck=false, jumpY=0, jumpV=0, jumping=false;
-function knockdown(nx,nz){
+/* Four silly tumble styles — every bonk feels a little different, so bumping
+   into things is its own game. */
+const KD_STYLES=['roll','bounce','spin','flop'];
+function knockdown(nx,nz,style){
   if(kd)return;
-  kd={t:0,dur:1.3,vx:nx*7.5,vz:nz*7.5};
-  sfx.boing();careSun();burst(player.group.position,10,'#ffd23f');giggle();
+  style=style||KD_STYLES[Math.floor(Math.random()*KD_STYLES.length)];
+  const dur={roll:1.35,bounce:1.7,spin:1.5,flop:1.15}[style];
+  const pow={roll:7.5,bounce:9.5,spin:6,flop:5}[style];
+  kd={t:0,dur,vx:nx*pow,vz:nz*pow,style};
+  ({roll:()=>sfx.boing(),bounce:()=>{sfx.boing();tone(300,.2,'square',.05,.12);},
+    spin:()=>{[500,700,900].forEach((f,i)=>tone(f,.1,'sine',.06,i*.07));},
+    flop:()=>tone(140,.25,'square',.08)})[style]();
+  careSun();burst(player.group.position,10,'#ffd23f');giggle();
+  if(style==='spin')floatSprite('💫',player.group.position,3.5,1.6,1.4);
+  if(style==='bounce')floatSprite('🤸',player.group.position,3,1.4,1.2);
   knockdown.n=(knockdown.n||0)+1;
   if(knockdown.n<=2)say('☀️','Whoopsie-daisy! Bonk! 🤭');
 }
@@ -1004,14 +1081,32 @@ function updateRoam(dt,time){
   const p=player.group.position;
   // --- knocked down: roll like a teletubby, no control ---
   if(kd){
-    kd.t+=dt;const k=kd.t/kd.dur;
+    kd.t+=dt;const k=Math.min(1,kd.t/kd.dur);
     p.x+=kd.vx*dt;p.z+=kd.vz*dt;
     const dk=Math.pow(0.04,dt);kd.vx*=dk;kd.vz*=dk;
     const rr=Math.hypot(p.x,p.z);if(rr>ISLAND){p.x*=ISLAND/rr;p.z*=ISLAND/rr;}
-    const roll=k*Math.PI*2;
-    player.group.rotation.x=-roll;
-    p.y=terrainH(p.x,p.z)+Math.abs(Math.sin(roll))*0.95;
-    if(k>=1){kd=null;player.group.rotation.x=0;p.y=terrainH(p.x,p.z);
+    const gy=terrainH(p.x,p.z);
+    if(kd.style==='roll'){          // full somersault — body arcs UP over the pivot so it never clips the ground
+      const roll=k*Math.PI*2;
+      player.group.rotation.x=-roll;
+      p.y=gy+Math.abs(Math.sin(roll/2))*2.8;
+    }else if(kd.style==='bounce'){  // boing-boing-boing, three shrinking hops
+      player.group.rotation.x=0;
+      player.group.rotation.z=Math.sin(k*Math.PI*6)*0.35*(1-k);
+      p.y=gy+Math.abs(Math.sin(k*Math.PI*3))*2.0*(1-k*0.55);
+      player.anim.inner.scale.y=1-Math.abs(Math.cos(k*Math.PI*3))*0.25;
+    }else if(kd.style==='spin'){    // dizzy top-spin
+      player.group.rotation.y+=dt*14*(1-k*0.6);
+      player.group.rotation.z=Math.sin(k*Math.PI)*0.25;
+      p.y=gy+Math.sin(k*Math.PI)*0.8;
+    }else{                          // flop: face-plant forward, then peel back up
+      const fl=k<0.4?(k/0.4):(1-(k-0.4)/0.6);
+      player.group.rotation.x=-fl*Math.PI/2*0.9;
+      p.y=gy+fl*0.4;
+    }
+    if(k>=1){kd=null;
+      player.group.rotation.x=0;player.group.rotation.z=0;
+      p.y=gy;
       doMove(player,'jump',0.45);sfx.pop();}
     animEllie(player,time,dt,false);
     return;
@@ -1023,7 +1118,14 @@ function updateRoam(dt,time){
   if(m>0.15){
     const spd=(duck?4:7.5)*Math.min(1,m);
     p.x+=mx/m*spd*dt;p.z+=mz/m*spd*dt;
-    const rr=Math.hypot(p.x,p.z);if(rr>ISLAND){p.x*=ISLAND/rr;p.z*=ISLAND/rr;}
+    const rr=Math.hypot(p.x,p.z);
+    if(rr>ISLAND){ // toes in the sea! splash and bounce back toward the meadow
+      p.x*=ISLAND/rr;p.z*=ISLAND/rr;
+      sfx.splash();floatSprite('💦',p,2.5,1.2,1.5);
+      knockdown(-p.x/ISLAND,-p.z/ISLAND,'bounce');
+      if(!updateRoam.seaSaid){updateRoam.seaSaid=1;say('☀️','Splash! That\'s the sparkly sea — Trunkland\'s big blue blanket! 🌊');}
+      return;
+    }
     player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
     player.group.userData.st=(player.group.userData.st||0)+dt;
     if(player.group.userData.st>0.28){player.group.userData.st=0;tone(180,.05,'sine',.03);}
@@ -1052,6 +1154,14 @@ function updateRoam(dt,time){
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
       S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
+  // secret discovery spots — wander far, find wonders, learn something!
+  for(const sc of SECRETS){
+    if(S.secrets[sc.id])continue;
+    if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.2){
+      S.secrets[sc.id]=1;S.sparks+=5;save();hud();refreshSecrets();
+      burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
+      say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
+    }}
   // nearest interactive
   let best=null,bd=4.2;
   for(const id in tubbies){if(tubbies[id].busy)continue;
@@ -1059,6 +1169,8 @@ function updateRoam(dt,time){
     const d=Math.hypot(p.x-t.x,p.z-t.z);if(d<bd){bd=d;best={kind:'tubby',id};}}
   {const d=Math.hypot(p.x-POI.dome[0],p.z-POI.dome[1]);
    if(d<7&&(!best||d<bd))best={kind:'dome'};}
+  {const d=Math.hypot(p.x-POI.fixit[0],p.z-POI.fixit[1]);
+   if(d<6&&(!best||d<bd))best={kind:'fixit'};}
   if(JSON.stringify(best)!==JSON.stringify(nearThing)){nearThing=best;updateActBtn();
     if(best&&best.kind==='tubby'){sfx.pop();doMove(tubbies[best.id],'wave',0.8);}}
 }
@@ -1066,6 +1178,7 @@ function updateActBtn(){
   const b=$('actBtn');
   if(mode!=='roam'||!nearThing){b.classList.remove('show');return;}
   if(nearThing.kind==='dome'){b.textContent='Sticker Garden 📖';}
+  else if(nearThing.kind==='fixit'){b.textContent='Fix it up! 🔨';}
   else{const t=TUBBIES[nearThing.id];
     b.textContent=(S.today.stars[nearThing.id]?'Play again with ':'Play with ')+t.name+'! 💜';}
   b.classList.add('show');
@@ -1073,6 +1186,7 @@ function updateActBtn(){
 $('actBtn').onclick=()=>{sfx.tap();
   if(!nearThing)return;
   if(nearThing.kind==='dome'){openBook();return;}
+  if(nearThing.kind==='fixit'){openFixit();return;}
   startVisit(nearThing.id);
 };
 
@@ -1339,6 +1453,83 @@ function openBook(){
 $('bookBtn').onclick=()=>{sfx.tap();openBook();};
 $('bookClose').onclick=()=>{sfx.tap();$('book').classList.remove('show');};
 
+/* ====================== FIX-IT GARDEN (merge game) =======================
+   Merge-Mansion-style, made little-kid simple: tap 🧺 for a piece, tap two
+   MATCHING pieces to merge them into something better. Finish a chain and it
+   fixes up the corner in the world, with a little story. Teaches matching,
+   planning ahead (you need FOUR seeds to grow one bouquet!) and helping.   */
+const FX_CHAINS=[
+  {id:'garden',tiers:['🌱','🌷','💐'],name:'Flower Bed',
+   story:'The flower bed is blooming! Now the butterflies have a home. 🦋'},
+  {id:'picnic',tiers:['🍞','🥪','🧺'],name:'Picnic Basket',
+   story:'A picnic basket! Now every friend can share lunch together. 💞'},
+  {id:'music', tiers:['🎵','🎶','🎻'],name:'Music Corner',
+   story:'A music corner! Trunkland hums with happy songs now. 🎶'},
+];
+if(!S.fixit)S.fixit={cells:Array(12).fill(null),done:{}};
+let fxSel=-1;
+function fxTier(e){for(const ch of FX_CHAINS){const i=ch.tiers.indexOf(e);if(i>=0)return{ch,i};}return null;}
+function renderFixit(){
+  const grid=$('fxGrid');grid.innerHTML='';fxSel=-1;
+  S.fixit.cells.forEach((e,i)=>{
+    const d=document.createElement('div');d.className='fxCell';d.textContent=e||'';
+    d.onclick=()=>fxTap(i,d);grid.appendChild(d);});
+  const left=FX_CHAINS.filter(c=>!S.fixit.done[c.id]);
+  $('fxGoal').innerHTML=left.length
+    ?`Merge two matching pieces! Still to fix: ${left.map(c=>c.tiers[c.tiers.length-1]+' '+c.name).join(' · ')}`
+    :'Everything is fixed! You are Trunkland\'s hero! 🌟';
+}
+function fxTap(i,el){
+  const cells=S.fixit.cells;
+  if(fxSel===i){fxSel=-1;el.classList.remove('sel');return;}
+  if(!cells[i]&&fxSel<0)return;
+  if(fxSel<0){fxSel=i;el.classList.add('sel');sfx.tap();return;}
+  const a=cells[fxSel],b=cells[i];
+  const gridEls=[...$('fxGrid').children];
+  gridEls[fxSel].classList.remove('sel');
+  if(a&&a===b&&fxSel!==i){                       // MERGE!
+    const t=fxTier(a);const next=t.ch.tiers[t.i+1];
+    cells[fxSel]=null;cells[i]=next;save();
+    renderFixit();
+    const el2=[...$('fxGrid').children][i];el2.classList.add('pop');
+    sfx.good();
+    if(t.i+1===t.ch.tiers.length-1){             // chain complete!
+      S.fixit.done[t.ch.id]=1;cells[i]=null;S.sparks+=8;save();hud();
+      renderFixit();refreshFixit();reactSun();sfx.star();
+      $('fxGoal').innerHTML=`<b style="color:#2f9e44">${t.ch.tiers[t.ch.tiers.length-1]} ${t.ch.story} ✨+8</b>`;
+      if(FX_CHAINS.every(c=>S.fixit.done[c.id])){S.sparks+=20;save();hud();
+        setTimeout(()=>{$('fixit').classList.remove('show');say('☀️','You fixed the WHOLE garden! Trunkland is so happy! ✨+20 🌟');exitScene();},1400);}
+    }
+  }else{el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),350);sfx.soft();}
+  fxSel=-1;
+}
+$('fxBasket').onclick=()=>{
+  const cells=S.fixit.cells;
+  const left=FX_CHAINS.filter(c=>!S.fixit.done[c.id]);
+  if(!left.length){sfx.soft();return;}
+  const empty=cells.map((c,i)=>c?null:i).filter(v=>v!==null);
+  if(!empty.length){sfx.soft();$('fxBasket').classList.add('shake');
+    setTimeout(()=>$('fxBasket').classList.remove('shake'),350);
+    $('fxGoal').textContent='The board is full! Merge two matching pieces to make room.';return;}
+  const ch=left[Math.floor(Math.random()*left.length)];
+  const slot=empty[Math.floor(Math.random()*empty.length)];
+  cells[slot]=ch.tiers[0];save();renderFixit();
+  [...$('fxGrid').children][slot].classList.add('pop');sfx.pop();
+};
+$('fxClose').onclick=()=>{sfx.tap();$('fixit').classList.remove('show');exitScene();};
+function openFixit(){enterScene();renderFixit();$('fixit').classList.add('show');}
+/* completed fixes appear (and stay!) in the world at the Fix-It corner */
+function refreshFixit(){
+  FX_CHAINS.forEach((ch,i)=>{
+    if(!S.fixit.done[ch.id]||fixitG.userData.spots[ch.id])return;
+    const e=emojiSprite(ch.tiers[ch.tiers.length-1],2.2);
+    e.position.set(-2.5+i*2.5,1.3,2.2);fixitG.add(e);spinners.push({mesh:e,bob:true});
+    fixitG.userData.spots[ch.id]=e;});
+  if(S.fixit.done.picnic&&fixitG.userData.bench){       // bench pops upright once picnic is fixed
+    fixitG.userData.bench.rotation.z=0;fixitG.userData.bench.position.y=0.5;}
+}
+refreshFixit();
+
 /* ============================ FINALE / NEW DAY =========================== */
 let finaleStart=0;
 async function showFinale(){
@@ -1460,9 +1651,20 @@ $('duckBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();duck=tru
   $('duckBtn').addEventListener(ev,()=>{duck=false;}));
 addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
 addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
-$('trumpBtn').onclick=()=>{ac();actTrumpet();};
-$('sprayBtn').onclick=()=>{ac();actSpray();};
-$('danceBtn').onclick=()=>{ac();actDance();};
+/* mystery buttons — kids discover what each one does! */
+const MYSTERY={trump:{btn:'trumpBtn',e:'🎺',name:'Trumpet',fn:actTrumpet},
+               spray:{btn:'sprayBtn',e:'💦',name:'Water Rainbow',fn:actSpray},
+               dance:{btn:'danceBtn',e:'💃',name:'Dance Party',fn:actDance}};
+for(const k in MYSTERY){const m=MYSTERY[k];
+  if(S.found[k])$(m.btn).textContent=m.e;
+  $(m.btn).onclick=()=>{ac();
+    if(!S.found[k]){S.found[k]=1;save();$(m.btn).textContent=m.e;
+      burst(player.group.position,16,'#b8a4ff');sfx.star();
+      say('☀️',`You discovered the ${m.name}! ${m.e}`);}
+    m.fn();};}
+$('fsBtn').onclick=()=>{sfx.tap();
+  if(document.fullscreenElement)document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(()=>{});};
 
 document.querySelectorAll('.speed').forEach(b=>{
   b.classList.toggle('sel',b.dataset.sp===S.speed);
@@ -1478,7 +1680,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
   get phys(){return {kd:!!kd,jumpY,duck,rotX:player.group.rotation.x};}};
 
 /* ================================= BOOT ================================== */
-hud();spawnSeeds();refreshMarks();refreshStickers();
+hud();spawnSeeds();refreshMarks();refreshStickers();refreshSecrets();
 $('loading').classList.add('hidden');
 $('intro').classList.add('show');
 requestAnimationFrame(frame);
