@@ -134,6 +134,10 @@
   #tidyBanner { position:fixed; top:0; left:0; right:0; z-index:55; display:none; pointer-events:none;
     background:linear-gradient(90deg,#ffd43b,#ff922b); padding:12px; text-align:center;
     font-size:min(5vw,26px); color:#5c3c00; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  #tidyForMeBtn { pointer-events:auto; font-family:inherit; font-size:min(4vw,20px); margin-left:14px;
+    padding:8px 18px; border:none; border-radius:18px; cursor:pointer;
+    background:linear-gradient(180deg,#d0bfff,#9775fa); color:#fff; box-shadow:0 4px 0 #7048e8; }
+  #tidyForMeBtn:active { transform:translateY(3px); box-shadow:none; }
 
   /* photo flash + flying photo */
   #flash { position:fixed; inset:0; z-index:90; background:#fff; display:none; pointer-events:none; }
@@ -203,7 +207,7 @@
     <div id="joy"><div id="joyKnob"></div></div>
   </div>
 
-  <div id="tidyBanner">🧹 Tidy-up time! Tap the blocks on the floor to send them home! 🏡</div>
+  <div id="tidyBanner">🧹 Tidy-up time! Tap the flashing blocks! 🏡<button id="tidyForMeBtn">🪄 Tidy for me!</button></div>
 
   <div class="overlay" id="bagModal"><div class="card">
     <h2>🎒 My School Bag</h2>

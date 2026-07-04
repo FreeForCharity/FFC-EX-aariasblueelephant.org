@@ -307,6 +307,7 @@ window.MB = window.MB || {};
       $('soundBtn').textContent = ui.muted ? '🔇' : '🔊';
       if (ui.muted){ MB.Audio.bgm(false); MB.Audio.tidy(false); } else MB.Audio.bgm(true);
     });
+    $('tidyForMeBtn').addEventListener('click', () => MB.Cleanup.autoTidy());
     $('tidyNowBtn').addEventListener('click', () => {
       if (MB.Builder.strays().length) MB.Cleanup.start();
       else ui.toast('✨ The playroom is already tidy! Great job!', 2000);

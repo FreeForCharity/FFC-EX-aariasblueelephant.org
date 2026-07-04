@@ -30,7 +30,7 @@ window.MB = window.MB || {};
 
   function changed(){ if (B.onChange) B.onChange(); }
   B.placedCount = () => MB.Magnet.blocks.length;
-  B.strays = () => MB.Magnet.blocks.filter(b => !b.onTable && !isGrabbed(b));
+  B.strays = () => MB.Magnet.blocks.filter(b => !b.onTable && !isGrabbed(b) && !b._flying);
   function isGrabbed(inst){ return B.grabbed && B.grabbed.members.some(m => m.inst === inst); }
 
   // ---------- tweens ----------
@@ -303,6 +303,7 @@ window.MB = window.MB || {};
   B.flyToShelf = function(inst, thenRemove = true){
     const members = [...MB.Magnet.subtree(inst)];
     MB.Audio.whoosh();
+    for (const m of members) m._flying = true;
     for (const m of members){
       const bin = B.room.bins.find(b => b.blockId === m.def.id) || B.room.bins[0];
       const from = m.group.position.clone(), to = bin.pos.clone();
