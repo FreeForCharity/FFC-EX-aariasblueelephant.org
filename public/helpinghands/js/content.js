@@ -190,6 +190,7 @@ HH.SCENARIOS = [
     tellTo: ["teacher", "mom"], keepTelling: true,
     busyLine: "Ms. Lee is helping another kid and says 'one minute' — but the bell rings and everyone leaves.",
     keepLine: "The first try did not work. Keep telling! Who else is on your hand?",
+    goLine: "School is over. Time to go home. Let's find Mom and tell her!",
     tellPrompt: "Who can you tell at home?",
     resolve: "You tell Mom everything at home. Mom hugs you and calls the school. The poking stops. Telling twice worked!",
   },
@@ -251,6 +252,39 @@ HH.SCENARIOS = [
     resolve: "Nurse Joy sits with you and listens to every word. 'You are not bad. You are brave,' she says. 'Grown-ups will help now.' And they do.",
   },
 ];
+
+/* ---------------- in-world enactment data ----------------
+   Discovery "find & do" tasks replace quiz cards: Belu asks, the
+   child WALKS to the right room and taps the glowing target object.
+   task = { ask, roomId, objIndex, praise } */
+HH.FIND_TASKS = {
+  house: [
+    { ask: "Where do we sleep? Walk there and tap the bed!", roomId: "bedroom", objIndex: 0, praise: "Yes! We sleep in the bedroom! 😴" },
+    { ask: "Time to brush our teeth! Find the toothbrush!", roomId: "bathroom", objIndex: 1, praise: "Yes! We brush teeth in the bathroom! 🪥" },
+    { ask: "Grown-ups cook food somewhere. Find the stove!", roomId: "kitchen", objIndex: 0, praise: "Yes! Cooking happens in the kitchen! 🍳" },
+    { ask: "Where do we eat together? Tap the table!", roomId: "dining", objIndex: 0, praise: "Yes! We eat in the dining room! 🍽️" },
+    { ask: "Let's play a puzzle! Where do we play and rest?", roomId: "living", objIndex: 2, praise: "Yes! We play in the living room! 🧩" },
+  ],
+  school: [
+    { ask: "Where do we learn? Walk there and tap the books!", roomId: "classroom", objIndex: 1, praise: "Yes! We learn in the classroom! 📚" },
+    { ask: "It is lunch time! Find your lunch tray!", roomId: "cafeteria", objIndex: 1, praise: "Yes! We eat lunch in the cafeteria! 🍎" },
+    { ask: "Recess time! Find the slide!", roomId: "playground", objIndex: 0, praise: "Yes! We play on the playground! 🛝" },
+    { ask: "Where does Principal Rivera work? Find the front desk!", roomId: "office", objIndex: 0, praise: "Yes! The office is where the principal works! 🏢" },
+    { ask: "You feel sick. Where can you rest? Find the rest bed!", roomId: "nurseroom", objIndex: 1, praise: "Yes! Nurse Joy helps you in the nurse's office! 🩹" },
+  ],
+};
+
+/* short speech-bubble lines for scenario actors (in-world, ≤7 words) */
+HH.SCENARIO_ACTORS = {
+  ball:     { emoji: "🧒", name: "Kai",  bubble: "Give me the ball! You're too slow!" },
+  cookies:  { emoji: "👧", name: "Mia",  bubble: "Give me your cookies. Don't tell!" },
+  leftout:  { emoji: "🧒", name: "Kids", bubble: "You can't play with us!" },
+  poker:    { emoji: "🧒", name: "Leo",  bubble: "*poke poke* Don't be a tattletale!" },
+  follower: { emoji: "🧍", name: "Stranger", bubble: "Come closer! I have candy…" },
+  aide:     { emoji: "🧑", name: "The grown-up", bubble: "Hurry up! *grabs arm* Don't tell!" },
+  cousin:   { emoji: "🧒", name: "Cousin", bubble: "It's just a game! *hits*" },
+  scaryhome:{ emoji: "🌧️", name: "At home", bubble: "…yelling again…" },
+};
 
 /* which helper stands in which room (placeId -> roomId -> helperId) */
 HH.HELPER_SPOTS = {
