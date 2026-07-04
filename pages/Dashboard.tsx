@@ -38,7 +38,8 @@ import {
     Gamepad2,
     Bike,
     Cookie,
-    Sun
+    Sun,
+    Magnet
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -70,6 +71,7 @@ type ViewState =
     | 'blockcraft'
     | 'roadsafety'
     | 'doughlab'
+    | 'magnetblocks'
     | 'elly-tubbies'
     | 'history'
     | 'receipts' 
@@ -405,9 +407,10 @@ const Dashboard: React.FC = () => {
         { id: 'elly-tubbies', label: 'Elly-Tubbies', icon: Sun, role: 'all' },
         { id: 'roadsafety', label: 'Road Safety Heroes', icon: Bike, role: 'all' },
         { id: 'doughlab', label: 'Dough Lab', icon: Cookie, role: 'all' },
+        { id: 'magnetblocks', label: "Aaria's Magnet Blocks", icon: Magnet, role: 'all' },
     ].filter(item => {
         // Special case for the games/fun sections and buddy-up - always show
-        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'elly-tubbies' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'buddy-up' || item.id === 'belus-world') return true;
+        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'elly-tubbies' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'magnetblocks' || item.id === 'buddy-up' || item.id === 'belus-world') return true;
         
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)
@@ -2050,6 +2053,36 @@ const Dashboard: React.FC = () => {
     );
 
 
+    const renderMagnetBlocksSection = () => (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Magnet Blocks 🧲🧱</h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">
+                        A 3D magnetic building playroom — take blocks off the shelves, feel them click together, build cars, houses &amp; castles, snap a photo into your school bag and keep building later. Wheels drive, fans spin, windows open, and a magic wand can build surprises!
+                    </p>
+                </div>
+                <a
+                    href="/magnetblocks/index.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-purple text-white font-bold shadow-lg hover:opacity-90 transition-opacity shrink-0"
+                >
+                    <Magnet className="h-5 w-5" /> Play Full Screen
+                </a>
+            </div>
+            <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
+                <iframe
+                    src="/magnetblocks/index.html"
+                    title="Aaria's Magnet Blocks"
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                />
+            </div>
+        </div>
+    );
+
     const renderEllyTubbiesSection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -2177,6 +2210,7 @@ const Dashboard: React.FC = () => {
             case 'elly-tubbies': return renderEllyTubbiesSection();
             case 'roadsafety': return renderRoadSafetySection();
             case 'doughlab': return renderDoughLabSection();
+            case 'magnetblocks': return renderMagnetBlocksSection();
 
             case 'history': return renderHistorySection();
             case 'receipts': return renderReceiptsSection();

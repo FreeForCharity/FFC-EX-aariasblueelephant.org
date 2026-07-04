@@ -159,6 +159,7 @@ const App: React.FC = () => {
                 <Route path="/3" element={<Navigate to="/belus-world" replace />} />
                 <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Road Safety Heroes… 🚲" />} />
                 <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Dough Lab… 🍪" />} />
+                <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message="Loading Aaria's Magnet Blocks… 🧲🧱" />} />
                 
                 {/* External Redirects */}
                 <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />
