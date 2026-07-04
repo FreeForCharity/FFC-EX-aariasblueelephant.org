@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Belu's Helping Hands</title>
+<link rel="icon" href="logo.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Comic Sans MS","Chalkboard SE","Marker Felt","Segoe UI",sans-serif;
+    background: linear-gradient(180deg,#ffd6e0 0%,#fff3bf 45%,#c5f6fa 100%);
+    min-height: 100%; overflow-x: hidden;
+    user-select: none; -webkit-user-select: none;
+    color: #3b2a55;
+  }
+  button { font-family: inherit; }
+  img { -webkit-user-drag: none; }
+  .hidden, [hidden] { display: none !important; }
+
+  /* ---------- shared bits ---------- */
+  .screen { min-height: 100%; display: flex; flex-direction: column; }
+  .rainbow-text {
+    background: linear-gradient(90deg,#f03e3e,#f76707,#f59f00,#37b24d,#1c7ed6,#9c36b5);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  @keyframes bounceTitle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes shakeCard { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-8px)} 40%,60%{transform:translateX(8px)} }
+  @keyframes wiggleBtn { 15%{transform:rotate(-4deg)} 30%{transform:rotate(3deg)} 45%{transform:rotate(-3deg)} 60%{transform:rotate(2deg)} 75%{transform:rotate(-1deg)} 100%{transform:rotate(0)} }
+  @keyframes popIn { 0%{transform:scale(.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+  @keyframes glowGreen { 0%,100%{ box-shadow:0 4px 0 #2f9e44, 0 0 0 rgba(81,207,102,0)} 50%{ box-shadow:0 4px 0 #2f9e44, 0 0 22px rgba(81,207,102,.9)} }
+  .reduced-motion * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+
+  .shake { animation: shakeCard .5s; }
+  .wiggle { animation: wiggleBtn .5s; }
+
+  .btn-primary {
+    font-size: 20px; font-weight: 700; padding: 14px 32px; border: none; border-radius: 26px;
+    background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00; cursor: pointer;
+    box-shadow: 0 6px 0 #e8920c, 0 10px 16px rgba(0,0,0,.15); transition: transform .1s;
+    min-height: 48px;
+  }
+  .btn-primary:active { transform: translateY(4px); box-shadow: 0 2px 0 #e8920c; }
+  .btn-secondary {
+    font-size: 17px; font-weight: 700; padding: 11px 24px; border: none; border-radius: 22px;
+    background: linear-gradient(180deg,#a5d8ff,#74c0fc); color: #0b3866; cursor: pointer;
+    box-shadow: 0 5px 0 #1c7ed6, 0 8px 14px rgba(0,0,0,.13); transition: transform .1s;
+    min-height: 48px;
+  }
+  .btn-secondary:active { transform: translateY(3px); box-shadow: 0 2px 0 #1c7ed6; }
+  .btn-secondary:disabled, .btn-primary:disabled { opacity: .45; cursor: default; }
+  .link-btn {
+    background: rgba(255,255,255,.7); border: none; color: #7048e8; font-weight: 700; font-size: 14px;
+    padding: 9px 16px; border-radius: 16px; cursor: pointer; min-height: 40px;
+  }
+  .pill-btn {
+    border: 0; font: inherit; font-weight: 700; font-size: 15px; padding: 10px 18px; border-radius: 20px;
+    background: linear-gradient(180deg,#8ce99a,#51cf66); color: #0b4419; cursor: pointer;
+    box-shadow: 0 4px 0 #2f9e44, 0 6px 10px rgba(0,0,0,.12); min-height: 48px; transition: transform .08s;
+  }
+  .pill-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #2f9e44; }
+  .round-btn {
+    border: 0; width: 52px; height: 52px; border-radius: 50%; font-size: 22px; cursor: pointer;
+    background: #fff; color: #5c4a32; box-shadow: 0 4px 0 #adb5bd, 0 6px 10px rgba(0,0,0,.12);
+    transition: transform .08s; min-width: 48px; min-height: 48px;
+  }
+  .round-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #adb5bd; }
+  .btn-back {
+    border: 0; background: rgba(255,255,255,.75); color: #5f3dc4; font-weight: 700; font-size: 15px;
+    padding: 10px 16px; border-radius: 18px; cursor: pointer; min-height: 44px;
+  }
+  .mute-btn {
+    border: 0; background: rgba(255,255,255,.75); width: 44px; height: 44px; border-radius: 50%;
+    font-size: 18px; cursor: pointer; min-width: 44px;
+  }
+  .sticker-counter {
+    background: rgba(255,255,255,.8); border-radius: 20px; padding: 8px 16px; font-weight: 800;
+    color: #d9480f; font-size: 16px; white-space: nowrap;
+  }
+  .chrome-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; flex-wrap: wrap;
+  }
+  .speak-btn {
+    border: 0; background: rgba(255,255,255,.85); width: 40px; height: 40px; border-radius: 50%;
+    font-size: 17px; cursor: pointer; flex-shrink: 0; min-width: 40px;
+  }
+
+  /* ---------- password gate ---------- */
+  #gateScreen {
+    position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg,#dbe4ff 0%,#c5f6fa 100%);
+    padding: 20px;
+  }
+  .gate-card {
+    background: #fff; border-radius: 28px; padding: 34px 30px; max-width: 420px; width: 100%;
+    text-align: center; box-shadow: 0 14px 30px rgba(30,20,60,.22);
+  }
+  .gate-lock { font-size: 60px; margin-bottom: 6px; }
+  .gate-card h2 { font-size: 24px; margin-bottom: 10px; color: #4c3a8f; }
+  .gate-msg { font-size: 15px; color: #6a5a99; margin-bottom: 20px; line-height: 1.4; }
+  #gateInput {
+    width: 100%; font: inherit; font-size: 18px; padding: 13px 16px; border-radius: 16px;
+    border: 3px solid #d0c7f5; text-align: center; margin-bottom: 14px; min-height: 48px;
+  }
+  #gateInput:focus { outline: none; border-color: #7048e8; }
+  #gateBtn { width: 100%; }
+  .gate-error { color: #5f3dc4; font-weight: 700; margin-top: 14px; font-size: 15px; }
+
+  /* ---------- title screen ---------- */
+  #titleScreen {
+    align-items: center; justify-content: center; text-align: center; gap: 16px; padding: 30px 16px;
+  }
+  #logoImg { width: min(28vh,170px); border-radius: 50%; box-shadow: 0 10px 26px rgba(90,40,20,.28); animation: bounceTitle 3s ease-in-out infinite; }
+  #titleScreen h1 { font-size: min(9vw,54px); font-weight: 800; animation: bounceTitle 2.4s ease-in-out infinite; }
+  .byline { font-size: min(3.6vw,20px); color: #1864ab; font-weight: 700; background: rgba(255,255,255,.65); padding: 8px 22px; border-radius: 20px; max-width: 640px; }
+  .title-emojis { font-size: min(8vw,46px); letter-spacing: 12px; animation: bounceTitle 3s .3s ease-in-out infinite; }
+  #startBtn { font-size: 24px; padding: 16px 46px; }
+  .title-footer-row { display: flex; align-items: center; gap: 14px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+  .review-badge {
+    background: rgba(112,72,232,.14); color: #5f3dc4; font-size: 12px; font-weight: 700;
+    padding: 5px 12px; border-radius: 12px;
+  }
+  #orgFooter { font-size: 14px; color: #7048e8; background: rgba(255,255,255,.6); padding: 8px 20px; border-radius: 18px; margin-top: 4px; }
+
+  /* ---------- menu ---------- */
+  .menu-title { text-align: center; font-size: 24px; color: #4c3a8f; margin: 6px 0 18px; }
+  .menu-cards { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; padding: 0 18px; flex: 1; align-content: flex-start; }
+  .mode-card {
+    width: min(280px, 86vw); background: #fff; border-radius: 26px; padding: 26px 20px; text-align: center;
+    cursor: pointer; border: none; box-shadow: 0 8px 0 rgba(0,0,0,.08), 0 12px 22px rgba(60,40,100,.14);
+    transition: transform .12s; display: flex; flex-direction: column; align-items: center; gap: 10px;
+    min-height: 48px;
+  }
+  .mode-card:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.08), 0 6px 12px rgba(60,40,100,.14); }
+  .mode-card .icon { font-size: 54px; }
+  .mode-card .title { font-size: 20px; font-weight: 800; color: #4c3a8f; }
+  .mode-card .desc { font-size: 14px; color: #7a6aa8; }
+  #grownupsLinkMenu, #grownupsLinkTitle { display: block; margin: 18px auto 24px; }
+
+  /* ---------- explore ---------- */
+  #exploreScreen { padding: 0; }
+  .explore-topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; flex-wrap: wrap; position: relative; z-index: 5;
+  }
+  .room-header {
+    background: rgba(255,255,255,.85); border-radius: 18px; padding: 8px 18px; font-weight: 800;
+    color: #4c3a8f; font-size: 17px; display: flex; align-items: center; gap: 8px;
+  }
+  #stage3d { position: relative; flex: 1; margin: 0 12px; border-radius: 22px; overflow: hidden; min-height: 300px;
+    background: #dceeff; box-shadow: inset 0 0 0 6px #fff; }
+  #stage3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .loading-note {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 30px; font-size: 19px; font-weight: 700; color: #4c3a8f; background: rgba(255,255,255,.5);
+  }
+  .toast-note {
+    position: absolute; left: 50%; top: 16px; transform: translateX(-50%); background: #fff; color: #5c4a32;
+    font-size: 15px; font-weight: 700; padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.18);
+    max-width: 86%; text-align: center; z-index: 6;
+  }
+  .explore-bottombar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px; flex-wrap: wrap; }
+
+  /* ---------- belu mascot bubble (global) ---------- */
+  #beluBubble {
+    position: fixed; left: 12px; bottom: 12px; z-index: 60; display: flex; align-items: flex-end; gap: 8px;
+    max-width: min(92vw, 420px); animation: popIn .25s ease-out;
+  }
+  .belu-avatar { font-size: 44px; flex-shrink: 0; filter: drop-shadow(0 4px 5px rgba(0,0,0,.2)); }
+  .belu-content { background: #fff; border-radius: 20px 20px 20px 4px; padding: 12px 14px; box-shadow: 0 6px 16px rgba(60,40,100,.22); }
+  .belu-text { font-size: 15px; font-weight: 700; color: #3b2a55; line-height: 1.35; }
+  .belu-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .next-btn {
+    border: 0; background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00; font-weight: 800; font-size: 14px;
+    padding: 9px 16px; border-radius: 16px; cursor: pointer; box-shadow: 0 4px 0 #e8920c; min-height: 40px;
+  }
+  .next-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #e8920c; }
+
+  /* ---------- modal overlay (friend card, quiz) ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200; background: rgba(40,25,70,.4); display: flex;
+    align-items: center; justify-content: center; padding: 18px;
+  }
+  .modal-card {
+    background: #fff; border-radius: 26px; padding: 26px 24px; max-width: 420px; width: 100%;
+    text-align: center; box-shadow: 0 16px 32px rgba(0,0,0,.25); animation: popIn .22s ease-out;
+    max-height: 88vh; overflow-y: auto;
+  }
+  .friend-emoji { font-size: 64px; }
+  .friend-name { font-size: 22px; font-weight: 800; color: #4c3a8f; margin: 6px 0 10px; }
+  .friend-line { font-size: 15px; color: #5c4a7d; line-height: 1.4; margin-bottom: 18px; }
+  .modal-card .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+
+  .quiz-q-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .quiz-q { font-size: 18px; font-weight: 800; color: #4c3a8f; text-align: left; flex: 1; }
+  .quiz-answers { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    border: 0; background: #f1edff; color: #3b2a55; font-weight: 700; font-size: 16px; text-align: left;
+    padding: 13px 16px; border-radius: 16px; cursor: pointer; min-height: 48px; transition: transform .08s, background .15s;
+  }
+  .choice-btn:active { transform: scale(.98); }
+  .choice-btn.correct { background: linear-gradient(180deg,#b2f2bb,#8ce99a); animation: glowGreen .6s; }
+  .choice-btn.disabled { pointer-events: none; opacity: .55; }
+  .quiz-feedback { margin-top: 12px; font-weight: 700; color: #5f3dc4; min-height: 20px; font-size: 14px; }
+
+  /* ---------- hand mode ---------- */
+  .hand-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 18px; padding: 10px 18px 140px; text-align: center; }
+  .hand-graphic { position: relative; width: min(90vw, 320px); }
+  .hand-emoji-bg { font-size: min(40vw, 170px); }
+  .hand-slots { display: flex; justify-content: center; gap: 10px; margin-top: -12px; flex-wrap: wrap; }
+  .hand-slot {
+    width: 58px; height: 58px; border-radius: 50%; background: #fff; border: 3px dashed #c9baf5;
+    display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer;
+    box-shadow: 0 4px 8px rgba(60,40,100,.14); transition: transform .1s;
+  }
+  .hand-slot.filled { border-style: solid; border-color: #74c0fc; }
+  .hand-slot:active { transform: scale(.94); }
+  .helper-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 560px; }
+  .helper-chip {
+    background: #fff; border: none; border-radius: 18px; padding: 10px 14px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 74px; min-height: 48px;
+    box-shadow: 0 4px 10px rgba(60,40,100,.13); transition: transform .1s;
+  }
+  .helper-chip:active { transform: scale(.95); }
+  .helper-chip .em { font-size: 26px; }
+  .helper-chip .nm { font-size: 11px; font-weight: 700; color: #4c3a8f; }
+  .helper-chip.friend { box-shadow: 0 4px 10px rgba(60,40,100,.13), 0 0 0 3px #ffd43b; }
+  .helper-chip.used { opacity: .4; }
+  .lesson-card { background: #fff; border-radius: 24px; padding: 22px; max-width: 560px; box-shadow: 0 8px 20px rgba(60,40,100,.14); display: flex; flex-direction: column; gap: 14px; }
+  .signs-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .sign-chip { background: #fff7e0; border-radius: 16px; padding: 12px 14px; min-width: 100px; text-align: center; box-shadow: 0 3px 8px rgba(0,0,0,.08); }
+  .sign-chip .em { font-size: 32px; }
+  .sign-chip .tx { font-size: 12px; font-weight: 700; color: #7a5a10; margin-top: 4px; }
+  .secret-card { background: #fff; border-radius: 22px; padding: 20px; max-width: 520px; box-shadow: 0 8px 18px rgba(60,40,100,.14); display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .secret-emoji { font-size: 48px; }
+  .secret-text { font-size: 16px; font-weight: 700; color: #3b2a55; }
+  .secret-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
+  .secret-btn {
+    flex: 1; min-width: 150px; border: 0; font-weight: 800; font-size: 14px; padding: 14px 10px; border-radius: 18px;
+    cursor: pointer; min-height: 48px; box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  }
+  .secret-btn.safe { background: linear-gradient(180deg,#ffe08a,#ffd43b); color: #5c3c00; box-shadow: 0 4px 0 #e8920c; }
+  .secret-btn.tell { background: linear-gradient(180deg,#99e9f2,#66d9e8); color: #063a44; box-shadow: 0 4px 0 #1098ad; }
+  .secret-btn.correct-flash { animation: glowGreen .6s; }
+  .secret-why { font-size: 14px; color: #5f3dc4; font-weight: 700; background: #f1edff; padding: 10px 14px; border-radius: 14px; }
+
+  /* ---------- practice mode ---------- */
+  .practice-body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 8px 16px 150px; }
+  .scenario-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+  .scenario-card {
+    position: relative; width: 150px; background: #fff; border: none; border-radius: 20px; padding: 18px 10px;
+    text-align: center; cursor: pointer; box-shadow: 0 6px 14px rgba(60,40,100,.14); min-height: 48px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; transition: transform .1s;
+  }
+  .scenario-card:active { transform: scale(.96); }
+  .scenario-card .em { font-size: 38px; }
+  .scenario-card .tt { font-size: 13px; font-weight: 800; color: #4c3a8f; }
+  .review-ribbon {
+    position: absolute; top: -8px; right: -8px; background: #9c36b5; color: #fff; font-size: 10px; font-weight: 800;
+    padding: 4px 8px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.2); transform: rotate(8deg);
+  }
+  .step-card { background: #fff; border-radius: 24px; padding: 22px; max-width: 560px; width: 100%; box-shadow: 0 8px 20px rgba(60,40,100,.14); display: flex; flex-direction: column; gap: 14px; }
+  .step-label { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #9c36b5; text-transform: uppercase; }
+  .step-text-row { display: flex; align-items: flex-start; gap: 10px; }
+  .step-text { font-size: 17px; font-weight: 700; color: #3b2a55; line-height: 1.4; flex: 1; text-align: left; }
+  .tell-map { background: #eef7ff; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .tell-place-emoji { font-size: 40px; }
+  .tell-helpers { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .affirmation-big { font-size: 24px; font-weight: 800; color: #d9480f; text-align: center; padding: 10px; }
+  .resolve-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- grown-ups corner (sober) ---------- */
+  #grownupsScreen { background: #f4f6fb; font-family: "Segoe UI", system-ui, sans-serif; color: #1a2a4a; }
+  .gu-gate-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .gu-gate-card { background: #fff; border-radius: 16px; padding: 30px; max-width: 380px; width: 100%; box-shadow: 0 4px 18px rgba(0,0,0,.1); text-align: center; }
+  .gu-gate-card h3 { margin-bottom: 8px; }
+  #guAnswerInput { width: 100%; font-size: 18px; padding: 10px; border-radius: 8px; border: 2px solid #ccd6e8; text-align: center; margin: 14px 0; min-height: 44px; }
+  .gu-body { max-width: 720px; margin: 0 auto; padding: 10px 20px 50px; width: 100%; }
+  .gu-body h3 { margin: 22px 0 10px; color: #16325c; border-bottom: 2px solid #dbe4f3; padding-bottom: 6px; }
+  .gu-body ul, .gu-body ol { padding-left: 22px; margin-bottom: 10px; }
+  .gu-body li { margin-bottom: 8px; line-height: 1.5; }
+  .gu-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .gu-table td { padding: 10px; border-bottom: 1px solid #e2e8f5; font-size: 14px; vertical-align: top; }
+  .gu-table td:last-child { font-weight: 700; white-space: nowrap; text-align: right; }
+  .gu-note { margin-top: 18px; font-size: 13px; color: #445; background: #eef2fa; padding: 12px 16px; border-radius: 8px; }
+  .gu-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-plain { border: 1px solid #b9c6e0; background: #fff; color: #16325c; font-weight: 700; padding: 10px 18px; border-radius: 8px; cursor: pointer; min-height: 44px; }
+  @media print { .btn-back, .btn-plain, .chrome-header, .gu-actions { display: none !important; } }
+
+  /* ---------- confetti ---------- */
+  #confettiCanvas { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+
+  @media (max-width: 480px) {
+    .mode-card { padding: 20px 14px; }
+    .lesson-card, .step-card, .secret-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. PASSWORD GATE -->
+<div id="gateScreen">
+  <div class="gate-card" id="gateCard">
+    <div class="gate-lock">🔒</div>
+    <h2>Belu's Helping Hands</h2>
+    <p class="gate-msg">This game is being reviewed by our clinical team.<br>Please enter the password to continue.</p>
+    <input id="gateInput" type="password" placeholder="Password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="gateBtn" class="btn-primary">Unlock 🔓</button>
+    <p id="gateError" class="gate-error" hidden>Not quite — try again! 💙</p>
+  </div>
+</div>
+
+<!-- 2. TITLE -->
+<div id="titleScreen" class="screen" hidden>
+  <img id="logoImg" src="logo.png" alt="Aaria's Blue Elephant" onerror="this.style.display='none'">
+  <h1 class="rainbow-text">Belu's Helping Hands</h1>
+  <div class="byline">Built for <b>Aaria and Her Friends</b> 💖 — learn your world &amp; how to get help!</div>
+  <div class="title-emojis">🏠🏫🖐️💙🐘</div>
+  <button id="startBtn" class="btn-primary">Play! 🐘</button>
+  <div class="title-footer-row">
+    <button id="grownupsLinkTitle" class="link-btn">Grown-Ups Corner</button>
+    <span class="review-badge">Clinical review build</span>
+  </div>
+  <div id="orgFooter">Aaria's Blue Elephant 🐘💙 — play, learn &amp; grow</div>
+</div>
+
+<!-- 3. HOME MENU -->
+<div id="menuScreen" class="screen" hidden>
+  <header class="chrome-header">
+    <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
+    <button class="mute-btn" title="Mute sounds">🔊</button>
+  </header>
+  <h2 class="menu-title">What do you want to do?</h2>
+  <div id="menuCards" class="menu-cards"></div>
+  <button id="grownupsLinkMenu" class="link-btn">Grown-Ups Corner</button>
+</div>
+
+<!-- 4. EXPLORE MY WORLD -->
+<div id="exploreScreen" class="screen" hidden>
+  <div class="explore-topbar">
+    <button class="btn-back" data-target="menu">◀ Menu</button>
+    <div id="roomHeader" class="room-header" hidden></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
+      <button class="mute-btn" title="Mute sounds">🔊</button>
+    </div>
+  </div>
+  <div id="stage3d">
+    <canvas id="three"></canvas>
+    <div id="worldLoadingNote" class="loading-note">🌍 The world is loading…</div>
+    <div id="toastNote" class="toast-note" hidden></div>
+  </div>
+  <div class="explore-bottombar">
+    <button id="roomPrevBtn" class="round-btn" hidden>◀</button>
+    <button id="mapBtn" class="pill-btn" hidden>🏠 Map</button>
+    <button id="quizBtn" class="pill-btn" hidden>❓ Quiz</button>
+    <button id="roomNextBtn" class="round-btn" hidden>▶</button>
+  </div>
+</div>
+
+<!-- 5. MY HELPING HAND -->
+<div id="handScreen" class="screen" hidden>
+  <header class="chrome-header">
+    <button class="btn-back" data-target="menu">◀ Menu</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
+      <button class="mute-btn" title="Mute sounds">🔊</button>
+    </div>
+  </header>
+  <div id="handBody" class="hand-body"></div>
+</div>
+
+<!-- 6. PRACTICE BEING BRAVE -->
+<div id="practiceScreen" class="screen" hidden>
+  <header class="chrome-header">
+    <button class="btn-back" data-target="menu">◀ Menu</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
+      <button class="mute-btn" title="Mute sounds">🔊</button>
+    </div>
+  </header>
+  <div id="practiceBody" class="practice-body"></div>
+</div>
+
+<!-- 7. GROWN-UPS CORNER -->
+<div id="grownupsScreen" class="screen" hidden>
+  <header class="chrome-header">
+    <button class="btn-back" id="guBackBtn">◀ Back</button>
+  </header>
+  <div id="guGateWrap" class="gu-gate-wrap">
+    <div class="gu-gate-card">
+      <h3>Grown-Ups Corner</h3>
+      <p>Quick check — please solve to continue:</p>
+      <p id="guQuestion" style="font-size:22px;font-weight:800;margin-top:10px;"></p>
+      <input id="guAnswerInput" type="number" inputmode="numeric" placeholder="?">
+      <button id="guCheckBtn" class="btn-plain">Continue</button>
+      <p id="guError" class="gate-error" hidden>Not quite — try again.</p>
+    </div>
+  </div>
+  <div id="guBody" class="gu-body" hidden></div>
+</div>
+
+<!-- global belu mascot bubble -->
+<div id="beluBubble" hidden>
+  <div class="belu-avatar">🐘</div>
+  <div class="belu-content">
+    <div id="beluText" class="belu-text"></div>
+    <div class="belu-actions">
+      <button id="beluSpeakBtn" class="speak-btn" title="Read this aloud">🔊</button>
+      <button id="beluNextBtn" class="next-btn" hidden>Next ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- friend card modal -->
+<div id="friendModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div id="friendEmoji" class="friend-emoji"></div>
+    <div id="friendName" class="friend-name"></div>
+    <div id="friendLine" class="friend-line"></div>
+    <div class="modal-actions">
+      <button id="friendAddBtn" class="btn-primary">Add to my friends! 💙</button>
+      <button id="friendCloseBtn" class="link-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- generic quiz modal (room quizzes, feelings quiz) -->
+<div id="quizModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div class="quiz-q-row">
+      <div id="quizQ" class="quiz-q"></div>
+      <button id="quizSpeakBtn" class="speak-btn" title="Read aloud">🔊</button>
+    </div>
+    <div id="quizAnswers" class="quiz-answers"></div>
+    <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
+  </div>
+</div>
+
+<canvas id="confettiCanvas"></canvas>
+
+<script src="lib/three.min.js"></script>
+<script src="js/content.js"></script>
+<script src="js/world.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
