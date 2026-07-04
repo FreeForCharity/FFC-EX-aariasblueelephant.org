@@ -176,7 +176,7 @@
   var renderer = null, scene = null, camera = null, canvasEl = null;
   var raycaster = new THREE.Raycaster();
   var pointerV2 = new THREE.Vector2();
-  var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {} };
+  var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {}, onBump: function () {} };
   var animItems = []; // { obj, fn(t,dt), ownerId? }
   var tappables = []; // meshes/sprites registered for raycast
   var currentRoot = null; // Group currently in scene (hub or interior)
@@ -319,6 +319,7 @@
     var radius = 30;
     var arcSpan = Math.PI * 0.72;
     var startAngle = Math.PI / 2 + arcSpan / 2;
+    var schoolPos = null;
     order.forEach(function (placeId, idx) {
       var place = HH.PLACES[placeId];
       if (!place) return;
@@ -330,7 +331,49 @@
       bldg.position.set(x, 0, z);
       bldg.lookAt(0, 0, 6);
       root.add(bldg);
+      if (placeId === 'school') schoolPos = { x: x, z: z };
     });
+
+    // ---- extra trees of varied sizes, scattered further out for depth ----
+    [[-50, -18, 0.6], [50, -20, 0.65], [-10, -45, 1.6], [10, -46, 1.5], [-55, 20, 0.8], [55, 18, 0.75], [0, -55, 1.8], [-24, 22, 0.7]].forEach(function (t) {
+      addTree(t[0], t[1], t[2]);
+    });
+
+    // ---- fence flanking the entrance path (purely decorative — hub has no
+    // avatar/collision system, only the tappable buildings matter here) ----
+    for (var fz = 12; fz > -5; fz -= 2.3) {
+      [-3.0, 3.0].forEach(function (fx) {
+        var seg = buildFenceSegment(2.2);
+        seg.position.set(fx, 0, fz);
+        seg.rotation.y = Math.PI / 2;
+        root.add(seg);
+      });
+    }
+
+    // ---- benches on the lawn ----
+    [[-6.5, 9, Math.PI / 2], [6.5, 5, -Math.PI / 2], [-9, -2, Math.PI / 2]].forEach(function (b) {
+      var bench = buildBench();
+      bench.position.set(b[0], 0, b[1]);
+      bench.rotation.y = b[2];
+      root.add(bench);
+    });
+
+    // ---- flower beds ----
+    addFlowerBed(root, -14, 10, 3.2, 1.6);
+    addFlowerBed(root, 14, 8, 3.2, 1.6);
+    addFlowerBed(root, 0, 20, 4.0, 1.6);
+
+    // ---- pond + butterflies on the open lawn ----
+    addPond(root, 22, 16, 3.2);
+    addButterflies(root, -14, 9, 2);
+    addButterflies(root, 22, 15, 1);
+
+    // ---- a swing near the school building ----
+    if (schoolPos) {
+      var hubSwing = buildSwingSet(1.3);
+      hubSwing.position.set(schoolPos.x + 4, 0, schoolPos.z + 11);
+      root.add(hubSwing);
+    }
 
     root.add(new THREE.AmbientLight(0xfff6e0, 0.65));
     var hemi = new THREE.HemisphereLight(0xbfe3ff, 0x8fce6a, 0.55);
@@ -480,6 +523,289 @@
   }
 
   // =========================================================================
+  // DECOR HELPERS — cheap primitives + canvas textures, reused across rooms,
+  // hallways and the hub to fill empty floor/wall space. None of these are
+  // collidable unless explicitly registered by the caller with regCollider().
+  // =========================================================================
+  var decorTexCache = {};
+  function cachedTex(key, build) {
+    if (!decorTexCache[key]) decorTexCache[key] = build();
+    return decorTexCache[key];
+  }
+  function framedPictureTex(emoji, bg, border) {
+    return cachedTex('pic|' + emoji + '|' + bg + '|' + border, function () {
+      return canvasTex(function (ctx, w, h) {
+        ctx.fillStyle = border; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = bg; roundRect(ctx, 16, 16, w - 32, h - 32, 10); ctx.fill();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = Math.floor(h * 0.5) + 'px serif';
+        ctx.fillText(emoji, w / 2, h / 2 + 8);
+      }, 256, 256);
+    });
+  }
+  // wall decor: a small framed picture/poster, flush against a wall. rotY
+  // should point the plane's normal INTO the room (e.g. 0 for a zMin wall,
+  // Math.PI for a zMax wall, ±PI/2 for x walls).
+  function addFramedPicture(g, x, y, z, rotY, emoji, bg, border, size) {
+    size = size || 1.1;
+    var m = mesh(new THREE.PlaneGeometry(size, size), stdMat('#ffffff', { map: framedPictureTex(emoji, bg || '#fff7e6', border || '#8a5a26'), roughness: 0.7 }));
+    m.position.set(x, y, z);
+    m.rotation.y = rotY || 0;
+    g.add(m);
+    return m;
+  }
+  function clockTexture() {
+    return cachedTex('clock', function () {
+      return canvasTex(function (ctx, w, h) {
+        ctx.fillStyle = '#fffaf0'; ctx.beginPath(); ctx.arc(w / 2, h / 2, w * 0.46, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#4a3222'; ctx.lineWidth = 10; ctx.stroke();
+        ctx.fillStyle = '#4a3222';
+        for (var i = 0; i < 12; i++) {
+          var a = (i / 12) * Math.PI * 2;
+          ctx.beginPath(); ctx.arc(w / 2 + Math.sin(a) * w * 0.38, h / 2 - Math.cos(a) * w * 0.38, 6, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = '#e8574b'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(w / 2, h / 2); ctx.lineTo(w / 2 + w * 0.22, h / 2 - w * 0.1); ctx.stroke();
+        ctx.strokeStyle = '#2c2416'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(w / 2, h / 2); ctx.lineTo(w / 2, h / 2 - w * 0.28); ctx.stroke();
+      }, 160, 160);
+    });
+  }
+  function addWallClock(g, x, y, z, rotY, size) {
+    size = size || 0.72;
+    var m = mesh(new THREE.CircleGeometry(size / 2, 20), stdMat('#ffffff', { map: clockTexture(), roughness: 0.6 }));
+    m.position.set(x, y, z);
+    m.rotation.y = rotY || 0;
+    g.add(m);
+    return m;
+  }
+  function addWallShelf(g, x, y, z, rotY, w) {
+    w = w || 1.4;
+    var grp = new THREE.Group();
+    var shelf = mesh(new THREE.BoxGeometry(w, 0.08, 0.3), stdMat('#c8996a', { roughness: 0.6 }));
+    grp.add(shelf);
+    var itemColors = ['#ff6b6b', '#4dabf7', '#51cf66', '#ffd43b'];
+    var n = 2 + (Math.abs(hashStr('shelf' + x + z)) % 2);
+    for (var i = 0; i < n; i++) {
+      var it = mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), stdMat(itemColors[i % itemColors.length], { roughness: 0.6 }));
+      it.position.set(-w / 2 + 0.26 + i * 0.32, 0.15, 0);
+      grp.add(it);
+    }
+    grp.position.set(x, y, z);
+    grp.rotation.y = rotY || 0;
+    g.add(grp);
+    return grp;
+  }
+  // floor rug — never collidable, kids should walk freely over it
+  function addRug(g, x, z, w, d, color) {
+    var rug = mesh(new THREE.PlaneGeometry(w, d), stdMat(color, { roughness: 0.92 }));
+    rug.rotation.x = -Math.PI / 2;
+    rug.position.set(x, 0.02, z);
+    g.add(rug);
+    return rug;
+  }
+  function buildPottedPlant(scale) {
+    scale = scale || 1;
+    var grp = new THREE.Group();
+    var pot = mesh(new THREE.CylinderGeometry(0.22 * scale, 0.17 * scale, 0.32 * scale, 10), stdMat('#c96a4a', { roughness: 0.75 }));
+    pot.position.y = 0.16 * scale;
+    grp.add(pot);
+    var leafMat = stdMat('#4fb35c', { roughness: 0.85 });
+    for (var i = 0; i < 3; i++) {
+      var leaf = mesh(new THREE.SphereGeometry(0.24 * scale, 10, 8), leafMat);
+      leaf.position.set((i - 1) * 0.12 * scale, (0.42 + i * 0.14) * scale, (i % 2 ? 1 : -1) * 0.06 * scale);
+      grp.add(leaf);
+    }
+    return grp;
+  }
+  function addPottedPlant(parent, x, z, scale) {
+    var grp = buildPottedPlant(scale);
+    grp.position.x = x; grp.position.z = z;
+    parent.add(grp);
+    return grp;
+  }
+  function buildBench() {
+    var grp = new THREE.Group();
+    var woodMat = stdMat('#c8996a', { roughness: 0.7 });
+    var seat = mesh(new THREE.BoxGeometry(1.7, 0.12, 0.55), woodMat);
+    seat.position.y = 0.48;
+    grp.add(seat);
+    var back = mesh(new THREE.BoxGeometry(1.7, 0.5, 0.1), woodMat);
+    back.position.set(0, 0.74, -0.22);
+    grp.add(back);
+    var legMat = stdMat('#8a5a26', { roughness: 0.7 });
+    [-0.68, 0.68].forEach(function (lx) {
+      var leg = mesh(new THREE.BoxGeometry(0.1, 0.48, 0.5), legMat);
+      leg.position.set(lx, 0.24, 0);
+      grp.add(leg);
+    });
+    return grp;
+  }
+  function buildFenceSegment(len) {
+    len = len || 2.2;
+    var grp = new THREE.Group();
+    var railMat = stdMat('#ffffff', { roughness: 0.7 });
+    [0.24, 0.52].forEach(function (ry) {
+      var rail = mesh(new THREE.BoxGeometry(len, 0.07, 0.06), railMat);
+      rail.position.y = ry;
+      grp.add(rail);
+    });
+    var postMat = stdMat('#e8d9c0', { roughness: 0.7 });
+    [-len / 2, len / 2].forEach(function (px) {
+      var post = mesh(new THREE.BoxGeometry(0.09, 0.68, 0.09), postMat);
+      post.position.set(px, 0.34, 0);
+      grp.add(post);
+    });
+    return grp;
+  }
+  var flowerEmojis = ['🌸', '🌷', '🌼'];
+  function addFlowerBed(root, x, z, w, d) {
+    var soil = mesh(new THREE.BoxGeometry(w, 0.1, d), stdMat('#7a5230', { roughness: 0.9 }));
+    soil.position.set(x, 0.05, z);
+    root.add(soil);
+    var n = Math.max(4, Math.round(w * d * 1.6));
+    for (var i = 0; i < n; i++) {
+      var fx = x + (Math.random() - 0.5) * (w - 0.35);
+      var fz = z + (Math.random() - 0.5) * (d - 0.35);
+      var flower = makeEmojiSprite(flowerEmojis[i % flowerEmojis.length], 0.42);
+      flower.position.set(fx, 0.26, fz);
+      root.add(flower);
+    }
+  }
+  function addPond(root, x, z, r) {
+    var rim = mesh(new THREE.CircleGeometry(r + 0.3, 28), stdMat('#d8cba0', { roughness: 0.9 }));
+    rim.rotation.x = -Math.PI / 2; rim.position.set(x, 0.01, z);
+    root.add(rim);
+    var water = mesh(new THREE.CircleGeometry(r, 28), stdMat('#4fb3ff', { roughness: 0.2, metalness: 0.15, transparent: true, opacity: 0.92 }));
+    water.rotation.x = -Math.PI / 2; water.position.set(x, 0.03, z);
+    root.add(water);
+    var lily = makeEmojiSprite('🪷', 0.55);
+    lily.position.set(x + r * 0.35, 0.05, z - r * 0.15);
+    root.add(lily);
+  }
+  function addButterflies(root, x, z, count) {
+    for (var i = 0; i < count; i++) {
+      (function () {
+        var spr = makeEmojiSprite('🦋', 0.5);
+        var baseX = x + (Math.random() - 0.5) * 3, baseZ = z + (Math.random() - 0.5) * 3;
+        var baseY = 1.2 + Math.random() * 0.6;
+        spr.position.set(baseX, baseY, baseZ);
+        root.add(spr);
+        var phase = Math.random() * Math.PI * 2;
+        animItems.push({ fn: function (t) {
+          spr.position.x = baseX + Math.sin(t * 0.6 + phase) * 1.8;
+          spr.position.z = baseZ + Math.cos(t * 0.45 + phase) * 1.8;
+          spr.position.y = baseY + Math.sin(t * 3 + phase) * 0.22;
+        }});
+      })();
+    }
+  }
+  function buildSwingSet(scale) {
+    scale = scale || 1;
+    var grp = new THREE.Group();
+    var poleMat = stdMat('#4dabf7', { roughness: 0.6 });
+    var poleH = 2.5 * scale, spanW = 2.3 * scale;
+    [-spanW / 2, spanW / 2].forEach(function (px) {
+      var post = mesh(new THREE.CylinderGeometry(0.09 * scale, 0.09 * scale, poleH, 8), poleMat);
+      post.position.set(px, poleH / 2, 0);
+      grp.add(post);
+      var brace = mesh(new THREE.CylinderGeometry(0.07 * scale, 0.07 * scale, poleH * 0.8, 8), poleMat);
+      brace.position.set(px * 1.3, poleH * 0.42, -0.5 * scale);
+      brace.rotation.x = 0.55;
+      grp.add(brace);
+    });
+    var bar = mesh(new THREE.CylinderGeometry(0.09 * scale, 0.09 * scale, spanW + 0.3 * scale, 8), poleMat);
+    bar.rotation.z = Math.PI / 2;
+    bar.position.set(0, poleH, 0);
+    grp.add(bar);
+    var seatMat = stdMat('#ffd43b', { roughness: 0.6 });
+    var ropeMat = stdMat('#8a5a26', { roughness: 0.7 });
+    [-0.5 * scale, 0.5 * scale].forEach(function (sx) {
+      [-0.09, 0.09].forEach(function (rz) {
+        var rope = mesh(new THREE.CylinderGeometry(0.02 * scale, 0.02 * scale, poleH * 0.62, 6), ropeMat);
+        rope.position.set(sx, poleH - poleH * 0.31, rz);
+        grp.add(rope);
+      });
+      var seat = mesh(new THREE.BoxGeometry(0.5 * scale, 0.06 * scale, 0.22 * scale), seatMat);
+      seat.position.set(sx, poleH * 0.38, 0);
+      grp.add(seat);
+    });
+    return grp;
+  }
+  function buildSandbox(w, d) {
+    var grp = new THREE.Group();
+    var sand = mesh(new THREE.BoxGeometry(w, 0.08, d), stdMat('#e8c987', { roughness: 0.95 }));
+    sand.position.y = 0.04;
+    grp.add(sand);
+    var frameMat = stdMat('#a9784f', { roughness: 0.8 });
+    var t = 0.14;
+    [[w / 2 - t / 2, 0, t, d], [-w / 2 + t / 2, 0, t, d], [0, d / 2 - t / 2, w, t], [0, -d / 2 + t / 2, w, t]].forEach(function (s) {
+      var seg = mesh(new THREE.BoxGeometry(s[2], 0.18, s[3]), frameMat);
+      seg.position.set(s[0], 0.09, s[1]);
+      grp.add(seg);
+    });
+    return grp;
+  }
+  function pennantTexture() {
+    return cachedTex('pennant', function () {
+      return canvasTex(function (ctx, w, h) {
+        var colors = ['#ff6b6b', '#4dabf7', '#ffd43b', '#51cf66', '#c26bff'];
+        var n = 8, tw = w / n;
+        for (var i = 0; i < n; i++) {
+          ctx.fillStyle = colors[i % colors.length];
+          ctx.beginPath();
+          ctx.moveTo(i * tw, 0); ctx.lineTo((i + 1) * tw, 0); ctx.lineTo((i + 0.5) * tw, h); ctx.closePath(); ctx.fill();
+        }
+      }, 512, 128);
+    });
+  }
+  function addPennantString(parent, x1, z1, x2, z2, y) {
+    var len = Math.hypot(x2 - x1, z2 - z1);
+    var m = mesh(new THREE.PlaneGeometry(len, 0.32), stdMat('#ffffff', { map: pennantTexture(), transparent: true, side: THREE.DoubleSide }));
+    m.position.set((x1 + x2) / 2, y, (z1 + z2) / 2);
+    m.rotation.y = Math.atan2(x2 - x1, z2 - z1) + Math.PI / 2;
+    parent.add(m);
+  }
+  function alphabetPosterTex() {
+    return cachedTex('alphabet', function () {
+      return canvasTex(function (ctx, w, h) {
+        ctx.fillStyle = '#fff9e6'; ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#4a3222'; ctx.lineWidth = 8; ctx.strokeRect(6, 6, w - 12, h - 12);
+        ctx.fillStyle = '#2c2416'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = 'bold 42px "Comic Sans MS", sans-serif';
+        var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        var cols = 7, rows = 4;
+        for (var i = 0; i < letters.length; i++) {
+          var cx = 40 + (i % cols) * (w - 80) / (cols - 1);
+          var cy = 50 + Math.floor(i / cols) * (h - 100) / (rows - 1);
+          ctx.fillText(letters[i], cx, cy);
+        }
+      }, 512, 320);
+    });
+  }
+  function menuBoardTex() {
+    return cachedTex('menu', function () {
+      return canvasTex(function (ctx, w, h) {
+        ctx.fillStyle = '#2f7d4f'; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+        ctx.font = 'bold 38px "Comic Sans MS", sans-serif';
+        ctx.fillText("TODAY'S LUNCH", w / 2, 46);
+        ctx.font = '30px "Comic Sans MS", sans-serif';
+        ['🍎 Apple', '🥪 Sandwich', '🥛 Milk'].forEach(function (line, i) { ctx.fillText(line, w / 2, 104 + i * 46); });
+      }, 420, 260);
+    });
+  }
+  function eyeChartTex() {
+    return cachedTex('eyechart', function () {
+      return canvasTex(function (ctx, w, h) {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#bcdec4'; ctx.lineWidth = 6; ctx.strokeRect(4, 4, w - 8, h - 8);
+        ctx.fillStyle = '#2c2416'; ctx.textAlign = 'center';
+        var rows = ['E', 'F P', 'T O Z', 'L P E D'];
+        rows.forEach(function (r, i) { ctx.font = (60 - i * 11) + 'px monospace'; ctx.fillText(r, w / 2, 60 + i * 68); });
+      }, 300, 340);
+    });
+  }
+
+  // =========================================================================
   // ROOM PALETTES (also used for interior wall colors)
   // =========================================================================
   var ROOM_PALETTES = {
@@ -513,15 +839,59 @@
       bed.add(blanket);
       bed.position.set(-4.2, 0, -shell.roomD / 2 + 1.6);
       g.add(bed);
+      regCollider(bed);
+
+      var nightstand = new THREE.Group();
       var stand = mesh(new THREE.BoxGeometry(1.0, 1.0, 0.9), stdMat('#e8a659', { roughness: 0.6 }));
-      stand.position.set(-2.2, 0.5, -shell.roomD / 2 + 1.1);
-      g.add(stand);
+      stand.position.y = 0.5;
+      nightstand.add(stand);
       var lampBase = mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.4, 10), stdMat('#5c4326', { roughness: 0.6 }));
-      lampBase.position.set(-2.2, 1.2, -shell.roomD / 2 + 1.1);
-      g.add(lampBase);
+      lampBase.position.y = 1.2;
+      nightstand.add(lampBase);
       var lampShade = mesh(new THREE.ConeGeometry(0.35, 0.5, 12, 1, false), stdMat('#fff3bf', { emissive: true, emissiveHex: '#ffe066', emissiveIntensity: 0.5 }));
-      lampShade.position.set(-2.2, 1.6, -shell.roomD / 2 + 1.1);
-      g.add(lampShade);
+      lampShade.position.y = 1.6;
+      nightstand.add(lampShade);
+      nightstand.position.set(-2.2, 0, -shell.roomD / 2 + 1.1);
+      g.add(nightstand);
+      regCollider(nightstand);
+
+      addRug(g, -4.0, -shell.roomD / 2 + 2.1, 4.0, 2.8, '#ffb3c6');
+
+      // extra props: dresser + a second floor lamp, filling the open front half
+      var dresser = new THREE.Group();
+      var dbody = mesh(new THREE.BoxGeometry(2.0, 1.1, 0.7), stdMat('#e8a659', { roughness: 0.6 }));
+      dbody.position.y = 0.55;
+      dresser.add(dbody);
+      [-0.55, 0, 0.55].forEach(function (dx) {
+        var drawer = mesh(new THREE.BoxGeometry(0.55, 0.3, 0.05), stdMat('#c8996a', { roughness: 0.5 }));
+        drawer.position.set(dx, 0.75, 0.36);
+        dresser.add(drawer);
+        var knob = mesh(new THREE.SphereGeometry(0.04, 8, 8), stdMat('#5c4326', { roughness: 0.4 }));
+        knob.position.set(dx, 0.75, 0.4);
+        dresser.add(knob);
+      });
+      var mirrorTop = mesh(new THREE.PlaneGeometry(1.3, 0.9), stdMat('#cfefff', { emissive: true, emissiveHex: '#eaffff', emissiveIntensity: 0.2, roughness: 0.2 }));
+      mirrorTop.position.set(0, 1.55, 0.34);
+      dresser.add(mirrorTop);
+      dresser.position.set(4.4, 0, 1.7);
+      g.add(dresser);
+      regCollider(dresser);
+
+      var floorLamp = new THREE.Group();
+      var poleMesh = mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.5, 8), stdMat('#5c4326', { roughness: 0.6 }));
+      poleMesh.position.y = 0.75;
+      floorLamp.add(poleMesh);
+      var floorShade = mesh(new THREE.ConeGeometry(0.32, 0.45, 12, 1, false), stdMat('#fff3bf', { emissive: true, emissiveHex: '#ffe066', emissiveIntensity: 0.5 }));
+      floorShade.position.y = 1.7;
+      floorLamp.add(floorShade);
+      floorLamp.position.set(1.6, 0, 3.1);
+      g.add(floorLamp);
+      regCollider(floorLamp);
+
+      addFramedPicture(g, -1.4, 2.3, shell.roomD / 2 - 0.12, Math.PI, '🌙', '#e8f4ff', '#4f95dc');
+      addWallClock(g, 2.2, 2.6, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, 5.0, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.3);
+
       return { bed: new THREE.Vector3(-4.2, 1.5, -shell.roomD / 2 + 1.6), lamp: new THREE.Vector3(-2.2, 1.7, -shell.roomD / 2 + 1.1), teddy: new THREE.Vector3(-3.0, 1.15, -shell.roomD / 2 + 2.0) };
     },
     bathroom: function (g, shell) {
@@ -534,23 +904,51 @@
       toilet.add(tank);
       toilet.position.set(-5.2, 0, -shell.roomD / 2 + 1.2);
       g.add(toilet);
+      regCollider(toilet);
 
+      var sinkUnit = new THREE.Group();
       var sinkCounter = mesh(new THREE.BoxGeometry(1.6, 0.9, 0.7), stdMat('#ff9fb0', { roughness: 0.5 }));
-      sinkCounter.position.set(1.5, 0.45, -shell.roomD / 2 + 0.9);
-      g.add(sinkCounter);
+      sinkCounter.position.y = 0.45;
+      sinkUnit.add(sinkCounter);
       var basin = mesh(new THREE.CylinderGeometry(0.4, 0.35, 0.15, 16), stdMat('#ffffff', { roughness: 0.3 }));
-      basin.position.set(1.5, 0.95, -shell.roomD / 2 + 0.9);
-      g.add(basin);
+      basin.position.y = 0.95;
+      sinkUnit.add(basin);
+      sinkUnit.position.set(1.5, 0, -shell.roomD / 2 + 0.9);
+      g.add(sinkUnit);
+      regCollider(sinkUnit);
       var mirror = mesh(new THREE.PlaneGeometry(1.3, 1.0), stdMat('#cfefff', { emissive: true, emissiveHex: '#eaffff', emissiveIntensity: 0.2, roughness: 0.2 }));
       mirror.position.set(1.5, 2.0, -shell.roomD / 2 + 0.18);
       g.add(mirror);
 
+      var tubUnit = new THREE.Group();
       var tub = mesh(new THREE.BoxGeometry(2.6, 0.9, 1.4), stdMat('#ffe066', { roughness: 0.4 }));
-      tub.position.set(4.6, 0.45, -shell.roomD / 2 + 1.2);
-      g.add(tub);
+      tub.position.y = 0.45;
+      tubUnit.add(tub);
       var tubBasin = mesh(new THREE.BoxGeometry(2.2, 0.4, 1.0), stdMat('#ffffff', { roughness: 0.4 }));
-      tubBasin.position.set(4.6, 0.75, -shell.roomD / 2 + 1.2);
-      g.add(tubBasin);
+      tubBasin.position.y = 0.75;
+      tubUnit.add(tubBasin);
+      tubUnit.position.set(4.6, 0, -shell.roomD / 2 + 1.2);
+      g.add(tubUnit);
+      regCollider(tubUnit);
+
+      // extra props: bathmat + a full-length mirror over a small storage cabinet
+      addRug(g, 1.5, -shell.roomD / 2 + 2.3, 1.6, 1.0, '#ffe9a8');
+
+      var vanity = new THREE.Group();
+      var vbody = mesh(new THREE.BoxGeometry(1.0, 0.7, 0.5), stdMat('#7fcfd6', { roughness: 0.6 }));
+      vbody.position.y = 0.35;
+      vanity.add(vbody);
+      vanity.position.set(4.6, 0, 2.6);
+      g.add(vanity);
+      regCollider(vanity);
+      var fullMirror = mesh(new THREE.PlaneGeometry(0.9, 1.4), stdMat('#cfefff', { emissive: true, emissiveHex: '#eaffff', emissiveIntensity: 0.2, roughness: 0.2 }));
+      fullMirror.position.set(4.6, 1.7, shell.roomD / 2 - 0.14);
+      fullMirror.rotation.y = Math.PI;
+      g.add(fullMirror);
+
+      addFramedPicture(g, -1.0, 2.2, shell.roomD / 2 - 0.12, Math.PI, '🐳', '#e8fbff', '#29bfc2');
+      addWallClock(g, -3.4, 2.5, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, 0.4, 1.9, shell.roomD / 2 - 0.18, Math.PI, 1.1);
 
       return { toilet: new THREE.Vector3(-5.2, 1.2, -shell.roomD / 2 + 1.2), toothbrush: new THREE.Vector3(1.9, 1.3, -shell.roomD / 2 + 0.9), soap: new THREE.Vector3(1.1, 1.3, -shell.roomD / 2 + 0.9) };
     },
@@ -571,6 +969,7 @@
       stove.add(top);
       stove.position.set(-4.6, 0, -shell.roomD / 2 + 1.0);
       g.add(stove);
+      regCollider(stove);
 
       var fridge = new THREE.Group();
       var fbody = mesh(new THREE.BoxGeometry(1.3, 2.4, 1.1), stdMat('#dff6ff', { roughness: 0.4 }));
@@ -581,20 +980,57 @@
       fridge.add(handle);
       fridge.position.set(4.6, 0, -shell.roomD / 2 + 1.1);
       g.add(fridge);
+      regCollider(fridge);
 
       var counter = mesh(new THREE.BoxGeometry(2.6, 1.0, 0.8), stdMat('#ffd699', { roughness: 0.5 }));
       counter.position.set(0.3, 0.5, -shell.roomD / 2 + 0.9);
       g.add(counter);
+      regCollider(counter);
+
+      // extra prop: a second counter/island with a stack of pots, plus a
+      // hanging pot rack on the wall
+      var island = new THREE.Group();
+      var itop = mesh(new THREE.BoxGeometry(2.2, 0.9, 1.0), stdMat('#ffd699', { roughness: 0.5 }));
+      itop.position.y = 0.45;
+      island.add(itop);
+      var potColors = ['#c94f4f', '#5c8fd6', '#e0a53d'];
+      potColors.forEach(function (c, i) {
+        var pot = mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.28, 12), stdMat(c, { roughness: 0.5, metalness: 0.2 }));
+        pot.position.set(-0.6 + i * 0.6, 1.04, 0);
+        island.add(pot);
+      });
+      island.position.set(0.6, 0, 2.4);
+      g.add(island);
+      regCollider(island);
+
+      var rackMat = stdMat('#8a5a26', { roughness: 0.6 });
+      var rack = mesh(new THREE.BoxGeometry(1.4, 0.08, 0.1), rackMat);
+      rack.position.set(-2.6, 2.4, -shell.roomD / 2 + 0.16);
+      g.add(rack);
+      [-0.5, 0, 0.5].forEach(function (rx) {
+        var hook = mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.16, 10), stdMat('#e0a53d', { roughness: 0.5, metalness: 0.2 }));
+        hook.position.set(-2.6 + rx, 2.22, -shell.roomD / 2 + 0.16);
+        g.add(hook);
+      });
+
+      addFramedPicture(g, 3.0, 2.3, shell.roomD / 2 - 0.12, Math.PI, '🍎', '#fff3e0', '#f2a03d');
+      addWallClock(g, -0.6, 2.7, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, -4.0, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.2);
 
       return { stove: new THREE.Vector3(-4.6, 1.8, -shell.roomD / 2 + 1.0), fridge: new THREE.Vector3(4.6, 2.6, -shell.roomD / 2 + 1.1), bowl: new THREE.Vector3(0.3, 1.3, -shell.roomD / 2 + 0.9) };
     },
     dining: function (g, shell) {
+      var tableUnit = new THREE.Group();
       var table = mesh(new THREE.CylinderGeometry(1.6, 1.5, 0.15, 20), stdMat('#e8a659', { roughness: 0.5 }));
-      table.position.set(0, 1.1, -0.5);
-      g.add(table);
+      table.position.y = 1.1;
+      tableUnit.add(table);
       var leg = mesh(new THREE.CylinderGeometry(0.2, 0.25, 1.1, 10), stdMat('#c8996a', { roughness: 0.6 }));
-      leg.position.set(0, 0.55, -0.5);
-      g.add(leg);
+      leg.position.y = 0.55;
+      tableUnit.add(leg);
+      tableUnit.position.set(0, 0, -0.5);
+      g.add(tableUnit);
+      regCollider(tableUnit);
+
       var chairSpots = [];
       var chairColors = ['#ff9fb0', '#8fd6ff', '#ffe066', '#a9e34b'];
       for (var i = 0; i < 4; i++) {
@@ -609,8 +1045,28 @@
         chair.add(back);
         chair.position.set(cx, 0, cz);
         g.add(chair);
+        regCollider(chair);
         chairSpots.push(new THREE.Vector3(cx, 1.0, cz));
       }
+
+      addRug(g, 0, -0.5, 4.2, 3.6, '#ffe08a');
+
+      // extra prop: sideboard along the back wall with a bowl on top
+      var sideboard = new THREE.Group();
+      var sbody = mesh(new THREE.BoxGeometry(2.2, 0.9, 0.6), stdMat('#c8996a', { roughness: 0.6 }));
+      sbody.position.y = 0.45;
+      sideboard.add(sbody);
+      var vase = mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.4, 10), stdMat('#ef7360', { roughness: 0.5 }));
+      vase.position.set(0.5, 1.1, 0);
+      sideboard.add(vase);
+      sideboard.position.set(4.6, 0, -shell.roomD / 2 + 0.6);
+      g.add(sideboard);
+      regCollider(sideboard);
+
+      addFramedPicture(g, -3.2, 2.3, shell.roomD / 2 - 0.12, Math.PI, '🍽️', '#fff0ec', '#ef7360');
+      addWallClock(g, 1.0, 2.6, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, -5.4, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.1);
+
       return { table: new THREE.Vector3(0, 1.5, -0.5), chair: chairSpots[0], milk: new THREE.Vector3(0.5, 1.4, -0.7) };
     },
     living: function (g, shell) {
@@ -628,21 +1084,48 @@
       });
       sofa.position.set(-3.0, 0, -shell.roomD / 2 + 1.4);
       g.add(sofa);
+      regCollider(sofa);
 
+      var bookshelfUnit = new THREE.Group();
       var shelf = mesh(new THREE.BoxGeometry(1.6, 1.8, 0.4), stdMat('#c8996a', { roughness: 0.6 }));
-      shelf.position.set(4.6, 0.9, -shell.roomD / 2 + 0.5);
-      g.add(shelf);
+      shelf.position.y = 0.9;
+      bookshelfUnit.add(shelf);
       var bookCols = ['#ff6b6b', '#4dabf7', '#51cf66'];
       bookCols.forEach(function (c, i) {
         var bk = mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), stdMat(c, { roughness: 0.6 }));
-        bk.position.set(4.1 + i * 0.5, 1.6, -shell.roomD / 2 + 0.55);
-        g.add(bk);
+        bk.position.set(-0.5 + i * 0.5, 1.6, 0.05);
+        bookshelfUnit.add(bk);
       });
+      bookshelfUnit.position.set(4.6, 0, -shell.roomD / 2 + 0.5);
+      g.add(bookshelfUnit);
+      regCollider(bookshelfUnit);
 
       var rug = mesh(new THREE.CircleGeometry(1.8, 24), stdMat('#8fd6ff', { roughness: 0.9 }));
       rug.rotation.x = -Math.PI / 2;
       rug.position.set(0.5, 0.02, 1.0);
       g.add(rug);
+
+      // extra props: TV cabinet facing the sofa + a potted plant
+      var tvUnit = new THREE.Group();
+      var tvBody = mesh(new THREE.BoxGeometry(2.2, 0.6, 0.5), stdMat('#c8996a', { roughness: 0.6 }));
+      tvBody.position.y = 0.3;
+      tvUnit.add(tvBody);
+      var tvScreen = mesh(new THREE.BoxGeometry(1.8, 1.0, 0.08), stdMat('#2c2c34', { roughness: 0.3 }));
+      tvScreen.position.set(0, 1.1, 0);
+      tvUnit.add(tvScreen);
+      var tvGlow = mesh(new THREE.PlaneGeometry(1.6, 0.85), stdMat('#8fd6ff', { emissive: true, emissiveHex: '#bfe9ff', emissiveIntensity: 0.4, roughness: 0.3 }));
+      tvGlow.position.set(0, 1.1, 0.05);
+      tvUnit.add(tvGlow);
+      tvUnit.position.set(0.4, 0, 3.1);
+      tvUnit.rotation.y = Math.PI;
+      g.add(tvUnit);
+      regCollider(tvUnit);
+
+      addPottedPlant(g, 3.0, 3.0, 1.2);
+
+      addFramedPicture(g, -3.0, 2.4, shell.roomD / 2 - 0.12, Math.PI, '🖼️', '#fff9e6', '#f0c022');
+      addWallClock(g, 1.6, 2.7, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, -5.6, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.1);
 
       return { sofa: new THREE.Vector3(-3.0, 1.9, -shell.roomD / 2 + 1.4), books: new THREE.Vector3(4.5, 2.2, -shell.roomD / 2 + 0.55), puzzle: new THREE.Vector3(0.5, 0.3, 1.0) };
     },
@@ -651,7 +1134,7 @@
       board.position.set(0, 2.6, -shell.roomD / 2 + 0.2);
       g.add(board);
       var deskSpots = [];
-      var rows = 2, cols = 3;
+      var rows = 3, cols = 3;
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
           var dx = (c - 1) * 2.2;
@@ -668,25 +1151,57 @@
           });
           desk.position.set(dx, 0, dz);
           g.add(desk);
+          regCollider(desk);
           if (r === 0 && c === 1) deskSpots.push(new THREE.Vector3(dx, 1.0, dz));
         }
       }
+
+      addFramedPicture(g, -5.6, 2.3, shell.roomD / 2 - 0.12, Math.PI, '📐', '#eef7ff', '#4499e0', 1.0);
+      var alphaPoster = mesh(new THREE.PlaneGeometry(3.2, 2.0), stdMat('#ffffff', { map: alphabetPosterTex(), roughness: 0.7 }));
+      alphaPoster.position.set(1.0, 2.5, shell.roomD / 2 - 0.12);
+      alphaPoster.rotation.y = Math.PI;
+      g.add(alphaPoster);
+      addWallClock(g, -2.6, 2.7, shell.roomD / 2 - 0.12, Math.PI);
+
       return { crayons: new THREE.Vector3(-2.2, 1.0, -0.5), books: new THREE.Vector3(0, 1.0, -0.5), desk: deskSpots[0] || new THREE.Vector3(0, 1.0, 0.7) };
     },
     cafeteria: function (g, shell) {
       var tableSpots = [];
       for (var i = -1; i <= 1; i++) {
+        var tableUnit = new THREE.Group();
         var table = mesh(new THREE.BoxGeometry(3.4, 0.1, 0.9), stdMat('#ffdca3', { roughness: 0.6 }));
-        table.position.set(i * 3.6, 0.9, 0.5);
-        g.add(table);
+        table.position.y = 0.9;
+        tableUnit.add(table);
         var leg1 = mesh(new THREE.BoxGeometry(0.12, 0.9, 0.7), stdMat('#c8996a', { roughness: 0.6 }));
-        leg1.position.set(i * 3.6 - 1.5, 0.45, 0.5);
-        g.add(leg1);
+        leg1.position.set(-1.5, 0.45, 0);
+        tableUnit.add(leg1);
         var leg2 = leg1.clone();
-        leg2.position.set(i * 3.6 + 1.5, 0.45, 0.5);
-        g.add(leg2);
-        tableSpots.push(new THREE.Vector3(i * 3.6, 1.2, 0.5));
+        leg2.position.set(1.5, 0.45, 0);
+        tableUnit.add(leg2);
+        tableUnit.position.set(i * 3.6, 0, -1.3);
+        g.add(tableUnit);
+        regCollider(tableUnit);
+        tableSpots.push(new THREE.Vector3(i * 3.6, 1.2, -1.3));
       }
+
+      // extra props: serving counter + menu board
+      var serving = new THREE.Group();
+      var sctop = mesh(new THREE.BoxGeometry(3.0, 0.9, 0.8), stdMat('#efa03c', { roughness: 0.55 }));
+      sctop.position.y = 0.45;
+      serving.add(sctop);
+      var trayStack = mesh(new THREE.BoxGeometry(0.6, 0.1, 0.5), stdMat('#ffffff', { roughness: 0.5 }));
+      trayStack.position.set(-0.8, 0.96, 0);
+      serving.add(trayStack);
+      serving.position.set(0, 0, -shell.roomD / 2 + 0.7);
+      g.add(serving);
+      regCollider(serving);
+      var menuBoard = mesh(new THREE.PlaneGeometry(1.5, 0.9), stdMat('#ffffff', { map: menuBoardTex(), roughness: 0.7 }));
+      menuBoard.position.set(0, 2.1, -shell.roomD / 2 + 0.15);
+      g.add(menuBoard);
+
+      addFramedPicture(g, -5.6, 2.3, shell.roomD / 2 - 0.12, Math.PI, '🍎', '#fff3e0', '#efa03c');
+      addWallClock(g, 5.6, 2.5, shell.roomD / 2 - 0.12, Math.PI);
+
       return { apple: tableSpots[0], tray: tableSpots[1], chairs: tableSpots[2] };
     },
     playground: function (g, shell) {
@@ -703,6 +1218,7 @@
       slide.add(chute);
       slide.position.set(-2.0, 0, 4);
       g.add(slide);
+      regCollider(slide);
 
       var ball = mesh(new THREE.SphereGeometry(0.5, 16, 12), stdMat('#ff6b6b', { roughness: 0.4 }));
       ball.position.set(2.0, 0.5, 3.0);
@@ -720,16 +1236,36 @@
       }
       tree.position.set(4.5, 0, 5.5);
       g.add(tree);
+      regCollider(tree);
+
+      // extra props: swing set, sandbox, flower beds
+      var swings = buildSwingSet(1.1);
+      swings.position.set(-6.0, 0, 8.0);
+      g.add(swings);
+      regCollider(swings);
+
+      var sandbox = buildSandbox(3.0, 2.4);
+      sandbox.position.set(7.0, 0, 7.0);
+      g.add(sandbox);
+      regCollider(sandbox);
+
+      addFlowerBed(g, -7.0, 2.0, 2.6, 1.4);
+      addFlowerBed(g, 0.0, 9.5, 3.2, 1.4);
 
       return { slide: new THREE.Vector3(-1.2, 3.4, 4), ball: new THREE.Vector3(2.0, 1.9, 3.0), tree: new THREE.Vector3(4.5, 4.6, 5.5) };
     },
     office: function (g, shell) {
+      var deskUnit = new THREE.Group();
       var desk = mesh(new THREE.BoxGeometry(2.4, 0.9, 1.1), stdMat('#e6ddff', { roughness: 0.6 }));
-      desk.position.set(-2.0, 0.45, -shell.roomD / 2 + 1.2);
-      g.add(desk);
+      desk.position.y = 0.45;
+      deskUnit.add(desk);
       var monitor = mesh(new THREE.BoxGeometry(0.8, 0.6, 0.08), stdMat('#495057', { roughness: 0.4 }));
-      monitor.position.set(-2.0, 1.2, -shell.roomD / 2 + 0.9);
-      g.add(monitor);
+      monitor.position.set(0, 1.2, -0.3);
+      deskUnit.add(monitor);
+      deskUnit.position.set(-2.0, 0, -shell.roomD / 2 + 1.2);
+      g.add(deskUnit);
+      regCollider(deskUnit);
+
       var chair = new THREE.Group();
       var seat = mesh(new THREE.BoxGeometry(0.7, 0.15, 0.7), stdMat('#d9ccff', { roughness: 0.6 }));
       seat.position.y = 0.6;
@@ -739,10 +1275,32 @@
       chair.add(back);
       chair.position.set(-2.0, 0, -shell.roomD / 2 + 2.0);
       g.add(chair);
+      regCollider(chair);
 
       var cabinet = mesh(new THREE.BoxGeometry(1.2, 1.6, 0.6), stdMat('#c8996a', { roughness: 0.6 }));
       cabinet.position.set(4.4, 0.8, -shell.roomD / 2 + 0.6);
       g.add(cabinet);
+      regCollider(cabinet);
+
+      // extra props: tall bookshelf + potted plant
+      var bookshelf = new THREE.Group();
+      var bsBody = mesh(new THREE.BoxGeometry(1.6, 2.2, 0.5), stdMat('#8266d9', { roughness: 0.6 }));
+      bsBody.position.y = 1.1;
+      bookshelf.add(bsBody);
+      var bsColors = ['#ff6b6b', '#4dabf7', '#51cf66', '#ffd43b'];
+      for (var bi = 0; bi < 4; bi++) {
+        var bsBook = mesh(new THREE.BoxGeometry(0.35, 0.5, 0.4), stdMat(bsColors[bi], { roughness: 0.6 }));
+        bsBook.position.set(-0.55 + bi * 0.37, 1.85, 0.05);
+        bookshelf.add(bsBook);
+      }
+      bookshelf.position.set(4.6, 0, 2.4);
+      g.add(bookshelf);
+      regCollider(bookshelf);
+
+      addPottedPlant(g, 1.6, 3.1, 1.15);
+
+      addFramedPicture(g, -4.8, 2.3, shell.roomD / 2 - 0.12, Math.PI, '💼', '#f3f0ff', '#8266d9');
+      addWallClock(g, -1.0, 2.6, shell.roomD / 2 - 0.12, Math.PI);
 
       return { desk: new THREE.Vector3(-2.6, 1.5, -shell.roomD / 2 + 0.9), phone: new THREE.Vector3(-0.9, 1.0, -shell.roomD / 2 + 1.5), door: new THREE.Vector3(4.4, 1.9, -shell.roomD / 2 + 0.6) };
     },
@@ -759,13 +1317,34 @@
       cot.add(pillow);
       cot.position.set(-3.5, 0, -shell.roomD / 2 + 1.2);
       g.add(cot);
+      regCollider(cot);
 
-      var cabinet = mesh(new THREE.BoxGeometry(1.2, 1.4, 0.6), stdMat('#bdf0d3', { roughness: 0.6 }));
-      cabinet.position.set(3.8, 0.7, -shell.roomD / 2 + 0.6);
-      g.add(cabinet);
+      var cabinet = new THREE.Group();
+      var cbody = mesh(new THREE.BoxGeometry(1.2, 1.4, 0.6), stdMat('#bdf0d3', { roughness: 0.6 }));
+      cbody.position.y = 0.7;
+      cabinet.add(cbody);
       var cross = mesh(new THREE.PlaneGeometry(0.4, 0.4), stdMat('#ff6b6b', { roughness: 0.6 }));
-      cross.position.set(3.8, 1.1, -shell.roomD / 2 + 0.92);
-      g.add(cross);
+      cross.position.set(0, 0.4, 0.32);
+      cabinet.add(cross);
+      cabinet.position.set(3.8, 0, -shell.roomD / 2 + 0.6);
+      g.add(cabinet);
+      regCollider(cabinet);
+
+      // extra props: a second supply cabinet + wall eye chart
+      var supply = new THREE.Group();
+      var sbody = mesh(new THREE.BoxGeometry(1.3, 1.1, 0.55), stdMat('#3dc088', { roughness: 0.6 }));
+      sbody.position.y = 0.55;
+      supply.add(sbody);
+      supply.position.set(-5.2, 0, 2.6);
+      g.add(supply);
+      regCollider(supply);
+
+      var eyeChart = mesh(new THREE.PlaneGeometry(1.0, 1.3), stdMat('#ffffff', { map: eyeChartTex(), roughness: 0.7 }));
+      eyeChart.position.set(1.2, 2.1, shell.roomD / 2 - 0.12);
+      eyeChart.rotation.y = Math.PI;
+      g.add(eyeChart);
+      addWallClock(g, -1.2, 2.5, shell.roomD / 2 - 0.12, Math.PI);
+      addWallShelf(g, 4.0, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.1);
 
       return { bandaids: new THREE.Vector3(3.8, 1.5, -shell.roomD / 2 + 0.6), bed: new THREE.Vector3(-3.5, 1.4, -shell.roomD / 2 + 1.2), thermometer: new THREE.Vector3(2.6, 1.1, -shell.roomD / 2 + 0.9) };
     }
@@ -864,6 +1443,13 @@
     if (kind === 'actor') actorsRegistry[id] = { group: charGroup, roomId: null };
     else helpersRegistry[id] = { group: charGroup };
 
+    // give the character a collision footprint (body+arms only would be ideal,
+    // but the auto Box3 over the whole group is a fine, slightly generous
+    // "personal space" rect — tagged by id so actors can be un-registered
+    // on removeActor). The avatar bumps into helpers/actors; Belu never calls
+    // resolveCollision so she is unaffected by any of this.
+    regCollider(charGroup, id);
+
     return charGroup;
   }
 
@@ -954,6 +1540,30 @@
   function addInvisibleWall(xMin, xMax, zMin, zMax) {
     collisionRects.push({ xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax });
   }
+  // ---- furniture / character collider registration ----
+  // Auto-derives an axis-aligned footprint from the object's actual world-space
+  // geometry (Box3), shrunk ~15% on each axis so the avatar can brush past
+  // corners. Call AFTER the object has been added to its final parent so the
+  // world matrix chain is correct. Skips near-degenerate (flat/vertical) shapes
+  // like wall-mounted decor — those should simply not be passed in.
+  var SHRINK = 0.85;
+  function regCollider(obj, ownerId) {
+    if (!obj) return null;
+    obj.updateWorldMatrix(true, true);
+    var box = new THREE.Box3().setFromObject(obj);
+    if (box.isEmpty()) return null;
+    var w = box.max.x - box.min.x, d = box.max.z - box.min.z;
+    if (!isFinite(w) || !isFinite(d) || w < 0.12 || d < 0.12) return null;
+    var cx = (box.min.x + box.max.x) / 2, cz = (box.min.z + box.max.z) / 2;
+    var hw = (w / 2) * SHRINK, hd = (d / 2) * SHRINK;
+    var rect = { xMin: cx - hw, xMax: cx + hw, zMin: cz - hd, zMax: cz + hd };
+    if (ownerId) rect.ownerId = ownerId;
+    collisionRects.push(rect);
+    return rect;
+  }
+  function removeCollidersByOwner(ownerId) {
+    collisionRects = collisionRects.filter(function (r) { return r.ownerId !== ownerId; });
+  }
   function splitRangeWithGaps(start, end, gaps) {
     var segs = [];
     var cur = start;
@@ -977,6 +1587,7 @@
     });
   }
   function resolveCollision(pos, radius) {
+    var hit = false;
     for (var iter = 0; iter < 2; iter++) {
       for (var i = 0; i < collisionRects.length; i++) {
         var w = collisionRects[i];
@@ -985,6 +1596,7 @@
         var dx = pos.x - cx, dz = pos.z - cz;
         var distSq = dx * dx + dz * dz;
         if (distSq < radius * radius) {
+          hit = true;
           var dist = Math.sqrt(distSq);
           if (dist < 1e-4) { pos.x += radius; continue; }
           var push = (radius - dist) / dist;
@@ -993,6 +1605,7 @@
         }
       }
     }
+    return hit;
   }
 
   function buildLayoutRoom(root, placeId, place, room) {
@@ -1102,6 +1715,31 @@
 
     layout.rooms.forEach(function (room) { buildLayoutRoom(root, placeId, place, room); });
 
+    // ---- hallway decor: runner rug + potted plants + wall art (school also
+    // gets a pennant garland). Plant/picture z-spots are chosen strictly
+    // between door bands so nothing blocks a doorway or the walking channel.
+    addRug(root, 0, layout.hallLen / 2, layout.hallW - 0.7, Math.max(layout.hallLen - 3, 1), '#e8b23d');
+    var hallZones = [];
+    var sideRoomZs = layout.rooms.filter(function (r) { return r.side !== 'T'; }).map(function (r) { return r.cz; }).sort(function (a, b) { return a - b; });
+    var prevZ = 1.6;
+    sideRoomZs.forEach(function (z) {
+      if (z - prevZ > 3.5) hallZones.push((z + prevZ) / 2);
+      prevZ = z;
+    });
+    if (layout.hallLen - prevZ > 3.5) hallZones.push((prevZ + layout.hallLen) / 2);
+    hallZones.forEach(function (z, i) {
+      var plantSide = (i % 2 === 0) ? -1 : 1;
+      var plant = addPottedPlant(root, plantSide * (layout.hallW / 2 - 0.42), z, 1.0);
+      regCollider(plant);
+      var picSide = -plantSide;
+      addFramedPicture(root, picSide * (layout.hallW / 2 - 0.12), 2.3, z, picSide < 0 ? Math.PI / 2 : -Math.PI / 2, (place && place.emoji) || '🌟', '#fff7e6', '#8a5a26', 0.9);
+    });
+    if (placeId === 'school') {
+      for (var pz = 3.0; pz < layout.hallLen - 2; pz += 6) {
+        addPennantString(root, -layout.hallW / 2 + 0.2, pz, layout.hallW / 2 - 0.2, pz, 3.3);
+      }
+    }
+
     root.add(new THREE.AmbientLight(0xfff6e0, 0.6));
     var hemi = new THREE.HemisphereLight(0xbfe3ff, 0xffe8cc, 0.5);
     root.add(hemi);
@@ -1182,6 +1820,17 @@
   }
 
   var AVATAR_SPEED = 3.0, AVATAR_RADIUS = 0.4;
+  // ---- bump feedback: brief squash tween + throttled handlers.onBump() ----
+  var BUMP_THROTTLE = 0.6, BUMP_SQUASH_MS = 0.12;
+  var lastBumpAt = -999, bumpSquashStart = null;
+  function triggerBump() {
+    var t = elapsedTotal;
+    bumpSquashStart = t;
+    if (t - lastBumpAt >= BUMP_THROTTLE) {
+      lastBumpAt = t;
+      handlers.onBump();
+    }
+  }
   function updateAvatarMovement(dt) {
     var mv = { x: 0, z: 0 };
     if (keysDown['arrowup'] || keysDown['w']) mv.z += 1;
@@ -1198,7 +1847,8 @@
       var pos = avatar.pos.clone();
       pos.x += mv.x * AVATAR_SPEED * dt;
       pos.z += mv.z * AVATAR_SPEED * dt;
-      resolveCollision(pos, AVATAR_RADIUS);
+      var hit = resolveCollision(pos, AVATAR_RADIUS);
+      if (hit) triggerBump();
       avatar.pos.copy(pos);
       avatar.facing = Math.atan2(mv.x, mv.z);
     }
@@ -1210,6 +1860,17 @@
     var diff = Math.atan2(Math.sin(avatar.facing - cur), Math.cos(avatar.facing - cur));
     avatar.group.rotation.y = cur + diff * Math.min(1, dt * 10);
     avatar.group.rotation.x = moving ? 0.08 : 0;
+
+    if (bumpSquashStart !== null) {
+      var bAge = elapsedTotal - bumpSquashStart;
+      if (bAge <= BUMP_SQUASH_MS) {
+        var bp = bAge / BUMP_SQUASH_MS;
+        avatar.group.scale.set(1, 1 - 0.08 * Math.sin(bp * Math.PI), 1);
+      } else {
+        avatar.group.scale.set(1, 1, 1);
+        bumpSquashStart = null;
+      }
+    }
 
     var newRoom = computeRoom(avatar.pos);
     if (newRoom !== currentRoomId) {
@@ -1659,6 +2320,7 @@
       if (rec.group.parent) rec.group.parent.remove(rec.group);
       tappables = tappables.filter(function (o) { return !(o.userData && o.userData.actorId === actorId); });
       animItems = animItems.filter(function (a) { return a.ownerId !== actorId; });
+      removeCollidersByOwner(actorId);
       delete actorsRegistry[actorId];
     },
 
@@ -1669,6 +2331,7 @@
       handlers.onHelper = h.onHelper || function () {};
       handlers.onActor = h.onActor || function () {};
       handlers.onRoomEnter = h.onRoomEnter || function () {};
+      handlers.onBump = h.onBump || function () {};
     }
   };
 })();
