@@ -8,75 +8,95 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
   body {
-    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
-    background: #2e2620;
+    font-family: "Comic Sans MS","Chalkboard SE","Marker Felt","Segoe UI",sans-serif;
+    background: linear-gradient(180deg,#ffd6e0 0%,#fff3bf 45%,#c5f6fa 100%);
     display: flex; flex-direction: column;
     user-select: none; -webkit-user-select: none;
   }
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 8px; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px 10px; gap: 12px; flex-wrap: wrap;
   }
-  h1 { color: #f3e7d3; font-size: 18px; font-weight: 800; letter-spacing: .3px; }
-  h1 small { color: #a89377; font-weight: 600; font-size: 12px; margin-left: 8px; }
+  h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: .3px;
+    background: linear-gradient(90deg,#f03e3e,#f76707,#f59f00,#37b24d,#1c7ed6,#9c36b5);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 small { color: #7048e8; font-weight: 600; font-size: 13px; margin-left: 8px; }
 
-  .seg { display: flex; background: #1f1a15; border-radius: 12px; padding: 3px; }
+  .seg { display: flex; background: #fff; border-radius: 14px; padding: 4px; box-shadow: 0 3px 8px rgba(0,0,0,.12); }
   .seg button {
-    border: 0; background: transparent; color: #a89377; font: inherit; font-weight: 700;
-    font-size: 13px; padding: 6px 14px; border-radius: 9px; cursor: pointer;
+    border: 0; background: transparent; color: #7048e8; font: inherit; font-weight: 700;
+    font-size: 16px; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all .12s;
   }
-  .seg button.on { background: #f3e7d3; color: #2e2620; }
+  .seg button.on {
+    background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00;
+    box-shadow: 0 4px 0 #e8920c; transform: translateY(0);
+  }
+  .seg button.on:active { transform: translateY(2px); box-shadow: 0 2px 0 #e8920c; }
 
   #stage {
-    position: relative; flex: 1; margin: 0 12px; border-radius: 20px; overflow: hidden;
-    background:
-      radial-gradient(120% 90% at 50% 20%, #e9dcc2 0%, #ddcba6 55%, #cdb98f 100%);
-    box-shadow: inset 0 3px 14px rgba(80, 55, 20, .35), inset 0 -2px 6px rgba(255,255,255,.25);
+    position: relative; flex: 1; margin: 0 12px; border-radius: 24px; overflow: hidden;
+    background: linear-gradient(135deg,#f5d9a8 0%,#e9c184 100%);
+    box-shadow: inset 0 4px 12px rgba(100, 70, 30, .25), inset 0 -3px 8px rgba(255,255,255,.4), 0 8px 16px rgba(0,0,0,.12);
+    border: 8px solid #fff8f0;
     touch-action: none;
   }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #goo { filter: url(#gooey) drop-shadow(0 5px 7px rgba(80, 50, 10, .30)); }
+  #goo { filter: url(#gooey) drop-shadow(0 6px 8px rgba(90, 55, 15, .35)); }
+  #stage.slimeMode #goo { filter: url(#gooey) drop-shadow(0 7px 10px rgba(20, 80, 90, .32)) saturate(1.18) brightness(1.03); }
   #ui  { touch-action: none; cursor: crosshair; }
 
   #hint {
     position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
-    background: rgba(31, 26, 21, .75); color: #f3e7d3; font-size: 12.5px; font-weight: 600;
-    padding: 6px 14px; border-radius: 99px; pointer-events: none; white-space: nowrap;
-    transition: opacity .4s;
+    background: #fff; color: #5c4a32; font-size: 13px; font-weight: 600;
+    padding: 7px 16px; border-radius: 20px; pointer-events: none; white-space: nowrap;
+    transition: opacity .4s; box-shadow: 0 3px 8px rgba(0,0,0,.15);
   }
 
   footer { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
   .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
   .tool {
-    border: 0; width: 52px; height: 52px; border-radius: 16px; cursor: pointer;
-    font-size: 23px; line-height: 1; background: #4a3e31; color: #f3e7d3;
-    box-shadow: 0 3px 0 #1f1a15; transition: transform .06s;
+    border: 0; width: 58px; height: 58px; border-radius: 16px; cursor: pointer;
+    font-size: 26px; line-height: 1; background: #fff; color: #5c4a32;
+    box-shadow: 0 4px 0 #adb5bd, 0 6px 12px rgba(0,0,0,.12); transition: transform .06s;
     display: flex; align-items: center; justify-content: center;
   }
-  .tool:active { transform: translateY(2px); box-shadow: 0 1px 0 #1f1a15; }
-  .tool.on { background: #f3e7d3; box-shadow: 0 3px 0 #b09a73; }
-  .tool svg { width: 28px; height: 28px; display: block; }
-  .tool .ink { stroke: #f3e7d3; }
-  .tool.on .ink { stroke: #2e2620; }
-  .tool .inkf { fill: #f3e7d3; }
-  .tool.on .inkf { fill: #2e2620; }
+  .tool:active { transform: translateY(3px); box-shadow: 0 1px 0 #adb5bd; }
+  .tool.on { background: linear-gradient(180deg,#a5d8ff,#74c0fc); box-shadow: 0 4px 0 #1c7ed6, 0 6px 12px rgba(0,0,0,.12); }
+  .tool svg { width: 32px; height: 32px; display: block; }
+  .tool .ink { stroke: #5c4a32; }
+  .tool.on .ink { stroke: #1c7ed6; }
+  .tool .inkf { fill: #5c4a32; }
+  .tool.on .inkf { fill: #1c7ed6; }
 
   .swatch {
-    width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent;
-    cursor: pointer; box-shadow: inset 0 -4px 6px rgba(0,0,0,.22), inset 0 3px 4px rgba(255,255,255,.35);
+    width: 38px; height: 38px; border-radius: 50%; border: 4px solid transparent;
+    cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.18), inset 0 -3px 6px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.4);
+    transition: transform .1s;
   }
-  .swatch.on { border-color: #f3e7d3; }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.on { border-color: #5c4a32; box-shadow: 0 3px 8px rgba(0,0,0,.25), inset 0 -3px 6px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.4); }
 
   .pill {
-    border: 0; background: #1f1a15; color: #f3e7d3; font: inherit; font-weight: 700;
-    font-size: 13px; padding: 9px 16px; border-radius: 99px; cursor: pointer;
+    border: 0; background: linear-gradient(180deg,#8ce99a,#51cf66); color: #0b4419; font: inherit; font-weight: 700;
+    font-size: 16px; padding: 10px 20px; border-radius: 20px; cursor: pointer;
+    box-shadow: 0 4px 0 #2f9e44; transition: transform .1s;
   }
-  .pill:active { opacity: .8; }
+  .pill:active { transform: translateY(2px); box-shadow: 0 2px 0 #2f9e44; }
+  #resetBtn { background: linear-gradient(180deg,#ffa94d,#ff922b); color: #5c3c00; box-shadow: 0 4px 0 #e8590c; }
+  #resetBtn:active { box-shadow: 0 2px 0 #e8590c; }
 
   @media (max-width: 480px) {
     h1 small { display: none; }
-    .tool { width: 48px; height: 48px; }
+    .tool { width: 52px; height: 52px; font-size: 22px; }
+    .tool svg { width: 28px; height: 28px; }
+  }
+
+  #credit {
+    font-size: 12px; color: #7048e8; background: rgba(255,255,255,.65);
+    padding: 6px 14px; border-radius: 16px; text-align: center; margin-top: auto;
   }
 </style>
 </head>
@@ -98,17 +118,17 @@
 </svg>
 
 <header>
-  <h1>Dough Lab<small>squish it · slice it · stamp it</small></h1>
+  <h1>🧁 Dough Lab<small>squish it · stretch it · slice it 🌈</small></h1>
   <div class="seg" id="modeSeg">
-    <button data-mode="dough" class="on">Playdough</button>
-    <button data-mode="slime">Slime</button>
+    <button data-mode="dough" class="on">🫓 Playdough</button>
+    <button data-mode="slime">🫧 Slime</button>
   </div>
 </header>
 
 <div id="stage">
   <canvas id="goo"></canvas>
   <canvas id="ui"></canvas>
-  <div id="hint">Drag to squish, stretch &amp; tear</div>
+  <div id="hint">👐 Drag to squish, stretch &amp; tear!</div>
 </div>
 
 <footer>
@@ -140,6 +160,7 @@
     <button class="pill" id="addBtn">+ Add dough</button>
     <button class="pill" id="resetBtn">Start over</button>
   </div>
+  <div id="credit">Built by Aaria and her Friends 💙</div>
 </footer>
 
 <script>
@@ -213,10 +234,16 @@ window.addEventListener("resize", resize);
 const key = (a, b) => a < b ? a + "_" + b : b + "_" + a;
 const dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
 
-function shade(hex, amt) { // lighten/darken a hex color
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) + amt, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
-  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
+function shade(col, amt) { // lighten/darken a "#hex" or "rgb(r,g,b)" color
+  let r, g, b;
+  if (col[0] === "#") {
+    const n = parseInt(col.slice(1), 16);
+    r = n >> 16; g = (n >> 8) & 255; b = n & 255;
+  } else {
+    const m = col.match(/\d+/g);
+    r = +m[0]; g = +m[1]; b = +m[2];
+  }
+  r = Math.max(0, Math.min(255, r + amt)); g = Math.max(0, Math.min(255, g + amt)); b = Math.max(0, Math.min(255, b + amt));
   return `rgb(${r},${g},${b})`;
 }
 
@@ -470,7 +497,7 @@ function step() {
       const A = particles[c.a], B = particles[c.b];
       const dx = B.x - A.x, dy = B.y - A.y;
       const d = Math.hypot(dx, dy) || 1e-6;
-      if (d > c.rest * M.tearMul || d > S * 3.6) { killConstraint(c, 400); continue; }
+      if (d > c.rest * M.tearMul || d > S * 3.6) { killConstraint(c, 400); SND.pop(); continue; }
       const f = (d - c.rest) / d * M.stiff * 0.5;
       A.x += dx * f; A.y += dy * f;
       B.x -= dx * f; B.y -= dy * f;
@@ -495,24 +522,131 @@ function step() {
   }
 }
 
-/* ---------- rendering ---------- */
+/* ---------- rendering ----------
+   Squishy look = 4 sprite passes fused by the goo filter:
+   1 dark under-rim (drawn low)  → volume + contact shading
+   2 body disc with a 3D radial gradient (light from top-left)
+   3 material detail — clay speckles (dough) / drifting bubbles (slime)
+   4 specular highlight — soft matte sheen (dough) / wet gloss + sparkles (slime)
+*/
+const SPR_R = PR + 3, SPR_D = SPR_R * 2, SPR_SS = 2; // supersampled sprites
+const spriteCache = new Map();
+function spritesFor(color, slime) {
+  const k = color + (slime ? "s" : "d");
+  let s = spriteCache.get(k);
+  if (s) return s;
+  const mk = draw => {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = SPR_D * SPR_SS;
+    const c = cv.getContext("2d");
+    c.scale(SPR_SS, SPR_SS);
+    draw(c);
+    return cv;
+  };
+  const under = mk(c => {
+    c.fillStyle = shade(color, slime ? -75 : -55);
+    c.beginPath(); c.arc(SPR_R, SPR_R, SPR_R - 0.5, 0, 6.2832); c.fill();
+  });
+  const body = mk(c => {
+    const g = c.createRadialGradient(SPR_R * 0.62, SPR_R * 0.55, SPR_R * 0.1, SPR_R, SPR_R, SPR_R);
+    if (slime) {
+      g.addColorStop(0, shade(color, 72));
+      g.addColorStop(0.45, shade(color, 16));
+      g.addColorStop(1, shade(color, -30));
+    } else {
+      g.addColorStop(0, shade(color, 36));
+      g.addColorStop(0.62, color);
+      g.addColorStop(1, shade(color, -20));
+    }
+    c.fillStyle = g;
+    c.beginPath(); c.arc(SPR_R, SPR_R, SPR_R - 1, 0, 6.2832); c.fill();
+  });
+  const hi = mk(c => {
+    const g = c.createRadialGradient(SPR_R * 0.66, SPR_R * 0.56, 0, SPR_R * 0.66, SPR_R * 0.56, SPR_R * (slime ? 0.55 : 0.8));
+    g.addColorStop(0, slime ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)");
+    g.addColorStop(0.55, slime ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.10)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = g;
+    c.beginPath(); c.arc(SPR_R, SPR_R, SPR_R - 1, 0, 6.2832); c.fill();
+  });
+  s = { under, body, hi };
+  spriteCache.set(k, s);
+  return s;
+}
+const frac = i => { const s = Math.sin(i * 127.1) * 43758.545; return s - Math.floor(s); };
+
 function drawGoo() {
   gooX.clearRect(0, 0, W, H);
-  const gloss = MODES[mode].gloss;
+  const slime = mode === "slime";
+  const t = performance.now() / 1000;
+  const D = SPR_R;
+
+  // pass 1 — dark under-rim, sunk a little (volume + floor contact)
   for (const p of particles) {
-    gooX.fillStyle = p.color;
-    gooX.beginPath();
-    gooX.arc(p.x, p.y, PR, 0, 6.2832);
-    gooX.fill();
+    const s = p._spr || (p._spr = spritesFor(p.color, slime));
+    gooX.drawImage(s.under, p.x - D, p.y - D + 2.6, SPR_D, SPR_D);
   }
-  if (gloss) {
-    gooX.fillStyle = "rgba(255,255,255,0.30)";
-    for (const p of particles) {
+  // pass 2 — shaded body
+  for (const p of particles) gooX.drawImage(p._spr.body, p.x - D, p.y - D, SPR_D, SPR_D);
+
+  // pass 3 — material detail
+  if (slime) {
+    // drifting bubbles trapped in the slime
+    gooX.lineWidth = 1;
+    for (let i = 0; i < particles.length; i += 4) {
+      const p = particles[i], r1 = frac(i), r2 = frac(i * 3 + 7);
+      const br = 1.2 + r1 * 2.0;
+      const bx = p.x + (r1 - 0.5) * 9, by = p.y + (r2 - 0.5) * 9 + Math.sin(t * 1.4 + i) * 1.6;
+      gooX.strokeStyle = "rgba(255,255,255,0.34)";
+      gooX.beginPath(); gooX.arc(bx, by, br, 0, 6.2832); gooX.stroke();
+      gooX.fillStyle = "rgba(255,255,255,0.12)";
+      gooX.beginPath(); gooX.arc(bx, by, br * 0.7, 0, 6.2832); gooX.fill();
+    }
+  } else {
+    // clay grain speckles
+    gooX.fillStyle = "rgba(60,40,20,0.10)";
+    for (let i = 0; i < particles.length; i += 3) {
+      const p = particles[i], r1 = frac(i * 7 + 1), r2 = frac(i * 13 + 5);
       gooX.beginPath();
-      gooX.arc(p.x - 3, p.y - 3.5, 3.6, 0, 6.2832);
+      gooX.arc(p.x + (r1 - 0.5) * 12, p.y + (r2 - 0.5) * 12, 0.9 + r1, 0, 6.2832);
       gooX.fill();
+      gooX.fillRect(p.x + (r2 - 0.5) * 11, p.y + (r1 - 0.5) * 11, 1.3, 0.7);
     }
   }
+
+  // pass 4 — specular highlight (slime: additive, from one light direction → real wet sheen)
+  if (slime) {
+    gooX.globalCompositeOperation = "lighter";
+    gooX.globalAlpha = 0.34;
+    for (const p of particles) gooX.drawImage(p._spr.hi, p.x - D - 2.5, p.y - D - 3.5, SPR_D, SPR_D);
+    gooX.globalCompositeOperation = "source-over";
+    // wet sparkles that twinkle
+    for (let i = 0; i < particles.length; i += 17) {
+      const p = particles[i];
+      const tw = 0.5 + 0.5 * Math.sin(t * 3 + i * 1.7);
+      gooX.globalAlpha = tw * 0.85;
+      gooX.fillStyle = "#ffffff";
+      gooX.beginPath();
+      gooX.ellipse(p.x - 3, p.y - 3.6, 1.7, 0.9, -0.6, 0, 6.2832);
+      gooX.fill();
+    }
+    gooX.globalAlpha = 1;
+  } else {
+    gooX.globalAlpha = 0.28;
+    for (const p of particles) gooX.drawImage(p._spr.hi, p.x - D, p.y - D, SPR_D, SPR_D);
+    gooX.globalAlpha = 1;
+  }
+}
+
+// sprites depend on mode → drop them when the mode flips; also retune the goo filter
+const blurEl = document.querySelector("#gooey feGaussianBlur");
+function tuneMode() {
+  const slime = mode === "slime";
+  spriteCache.clear();
+  for (const p of particles) p._spr = null;
+  blurEl.setAttribute("stdDeviation", slime ? 7 : 5.5);
+  gooC.style.opacity = slime ? 0.93 : 1;
+  stage.classList.toggle("slimeMode", slime);
 }
 
 function drawUI() {
@@ -575,6 +709,60 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
+/* ---------- squishy sounds (tiny WebAudio synth, gentle for little ears) ---------- */
+const SND = (() => {
+  let ctx = null, master = null;
+  const last = {};
+  const gate = (name, ms) => {
+    const now = performance.now();
+    if (now - (last[name] || 0) < ms) return false;
+    last[name] = now; return true;
+  };
+  function init() {
+    if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.4; master.connect(ctx.destination);
+    } catch (e) { ctx = null; }
+  }
+  const ok = () => ctx && ctx.state === "running";
+  function noise(dur, f0, f1, vol, q) {
+    if (!ok()) return;
+    const n = ctx.sampleRate * dur, buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = q || 1.2;
+    bp.frequency.setValueAtTime(f0, ctx.currentTime);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(40, f1), ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(bp); bp.connect(g); g.connect(master);
+    src.start(); src.stop(ctx.currentTime + dur);
+  }
+  function tone(f0, f1, dur, vol, type) {
+    if (!ok()) return;
+    const o = ctx.createOscillator(); o.type = type || "sine";
+    o.frequency.setValueAtTime(f0, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(Math.max(30, f1), ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(ctx.currentTime + dur);
+  }
+  return {
+    init,
+    squish() { if (gate("sq", 120)) { noise(0.10, 500, 150, 0.16, 1.0); tone(140, 90, 0.08, 0.05); } },
+    stretch() { if (gate("st", 130)) noise(0.14, 900, 350, 0.13, 2.2); },   // wetter, for slime
+    pop()    { if (gate("pop", 110)) { tone(300, 90, 0.07, 0.12, "triangle"); noise(0.05, 1400, 700, 0.08, 1.5); } },
+    snip()   { if (gate("sn", 140)) noise(0.05, 2400, 1200, 0.09, 3); },
+    stamp()  { tone(180, 70, 0.12, 0.14, "triangle"); noise(0.08, 700, 250, 0.12, 1); },
+    plop()   { tone(320, 80, 0.16, 0.14); },
+  };
+})();
+
 /* ---------- input ---------- */
 function localXY(e) {
   const r = stage.getBoundingClientRect();
@@ -583,9 +771,12 @@ function localXY(e) {
 
 uiC.addEventListener("pointerdown", e => {
   uiC.setPointerCapture(e.pointerId);
+  SND.init();
   const p = localXY(e);
   pointer.x = pointer.lx = p.x; pointer.y = pointer.ly = p.y;
   pointer.down = true; pointer.has = true;
+  if (isCutter(tool)) SND.stamp();
+  else if (tool !== "knife") SND.squish();
 
   if (tool === "grab") {
     grabbed = [];
@@ -612,6 +803,10 @@ uiC.addEventListener("pointermove", e => {
   if (pointer.down && tool === "knife") {
     knifeCut(pointer.lx, pointer.ly, pointer.x, pointer.y);
     trail.push({ x: p.x, y: p.y, t: performance.now() });
+    SND.snip();
+  } else if (pointer.down && (tool === "poke" || (tool === "grab" && grabbed.length))) {
+    if (dist(pointer.lx, pointer.ly, pointer.x, pointer.y) > 3)
+      mode === "slime" ? SND.stretch() : SND.squish();
   }
 });
 
@@ -644,6 +839,8 @@ document.getElementById("modeSeg").addEventListener("click", e => {
   const btn = e.target.closest("button");
   if (!btn) return;
   mode = btn.dataset.mode;
+  tuneMode();
+  SND.init(); SND.plop();
   document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b === btn));
   hint.textContent = mode === "slime"
     ? "Slime: wobbly, stretchy, snaps back"
@@ -669,13 +866,15 @@ document.getElementById("addBtn").addEventListener("click", () => {
   const x = R + 20 + Math.random() * (W - 2 * R - 40);
   const y = R + 20 + Math.random() * (H - 2 * R - 40);
   spawnBlob(x, y, R, currentColor);
+  SND.init(); SND.plop();
 });
 
-document.getElementById("resetBtn").addEventListener("click", reset);
+document.getElementById("resetBtn").addEventListener("click", () => { reset(); SND.init(); SND.plop(); });
 
 /* ---------- go ---------- */
 resize();
 reset();
+tuneMode();
 frame();
 })();
 </script>
