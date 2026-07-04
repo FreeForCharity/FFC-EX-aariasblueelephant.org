@@ -217,6 +217,14 @@ window.GL3D = (function(){
     grpStatic.add(arch);
   }
 
+  /* canvas → texture helper for signs & road paint */
+  function texPlane(w, h, draw, opts){
+    const c = document.createElement("canvas"); c.width = 256; c.height = 256;
+    draw(c.getContext("2d"));
+    return new T.Mesh(new T.PlaneGeometry(w, h),
+      new T.MeshBasicMaterial(Object.assign({ map: new T.CanvasTexture(c), transparent: true, side: T.DoubleSide }, opts)));
+  }
+
   /* ---------- EVENT OBJECTS (lights, signs, cones, kids) ---------- */
   function buildEvents(){
     evObjs = []; kidObjs = []; coneObjs = [];
@@ -283,18 +291,144 @@ window.GL3D = (function(){
         for (const c of ev.cones){
           const p = rp(c.w, c.jitter * 2);
           const cone = new T.Group();
-          const k = new T.Mesh(new T.ConeGeometry(.32, .85, 10), em("#ff7f2a", .3));
-          k.position.y = .45;
-          const band2 = new T.Mesh(new T.CylinderGeometry(.24, .28, .16, 10), mat("#ffffff"));
-          band2.position.y = .5;
+          const k = new T.Mesh(new T.ConeGeometry(.44, 1.15, 10), em("#ff7f2a", .35));
+          k.position.y = .6;
+          const band2 = new T.Mesh(new T.CylinderGeometry(.32, .37, .2, 10), mat("#ffffff"));
+          band2.position.y = .66;
           cone.add(k, band2); cone.position.set(p.x, 0, p.z);
           cone.castShadow = true; grpDyn.add(cone);
           coneObjs.push({ c, obj: cone });
         }
-        // work sign + digger blob
-        const p2 = rp(ev.from - 40, HWf() + 9);
-        const sign = new T.Mesh(new T.BoxGeometry(1.4, 1.4, .1), em("#ffa14a", .3));
-        sign.rotation.z = Math.PI / 4; sign.position.set(p2.x, 1.6, p2.z); grpStatic.add(sign);
+        // ROAD WORK gantry sign + flashing beacon at the entrance
+        const s3 = sample(S.rt, ev.from - 35);
+        const cy = Math.atan2(s3.fx, s3.fy);
+        const cg = new T.Group();
+        const cp = new T.Mesh(new T.CylinderGeometry(.07, .09, 3, 6), mat("#8a9296")); cp.position.y = 1.5;
+        const cf = texPlane(1.9, 1.9, g2 => {
+          g2.save(); g2.translate(128, 128); g2.rotate(Math.PI / 4);
+          g2.fillStyle = "#ff8f2a"; g2.fillRect(-86, -86, 172, 172);
+          g2.strokeStyle = "#111"; g2.lineWidth = 10; g2.strokeRect(-86, -86, 172, 172);
+          g2.restore();
+          g2.fillStyle = "#111"; g2.textAlign = "center"; g2.font = "bold 40px sans-serif";
+          g2.fillText("ROAD", 128, 116); g2.fillText("WORK", 128, 160);
+        });
+        cf.position.y = 3.1;
+        const cb = new T.Mesh(new T.SphereGeometry(.18, 10, 8), em("#ffb400", .2)); cb.position.y = 4.35;
+        cg.add(cp, cf, cb);
+        const cpp = rp(ev.from - 35, HWf() + 9);
+        cg.position.set(cpp.x, 0, cpp.z); cg.rotation.y = cy + Math.PI;
+        grpDyn.add(cg);
+        evObjs.push({ ev, kind: "beacon", beacon: cb });
+        // "SLOW" painted at the entrance
+        const slow = texPlane(HWf() * 2 * M * .8, 5.5, g2 => {
+          g2.fillStyle = "#ffe873"; g2.textAlign = "center"; g2.textBaseline = "middle";
+          g2.font = "bold 96px sans-serif"; g2.fillText("SLOW", 128, 128);
+        });
+        slow.rotation.x = -Math.PI / 2; slow.rotation.z = cy + Math.PI;
+        const sp2 = rp(ev.from + 40, 0);
+        slow.position.set(sp2.x, .03, sp2.z);
+        grpStatic.add(slow);
+        // striped barriers closing the work side + a digger + hi-vis worker
+        for (const bd of [ev.from + 60, (ev.from + ev.to) / 2, ev.to - 60]){
+          const bs = sample(S.rt, bd);
+          const bar = new T.Group();
+          const board = texPlane(2.6, .7, g2 => {
+            for (let k = 0; k < 8; k++){ g2.fillStyle = k % 2 ? "#fff" : "#ff8f2a";
+              g2.save(); g2.translate(k * 32, 0); g2.transform(1, 0, -.5, 1, 0, 0);
+              g2.fillRect(96, 96, 32, 64); g2.restore(); }
+          }, {});
+          board.position.y = .95;
+          for (const lx of [-1, 1]){
+            const leg = new T.Mesh(new T.CylinderGeometry(.05, .05, 1, 6), mat("#5d6570"));
+            leg.position.set(lx, .5, 0); bar.add(leg);
+          }
+          bar.add(board);
+          const bp = rp(bd, HWf() * .5);
+          bar.position.set(bp.x, 0, bp.z);
+          bar.rotation.y = Math.atan2(bs.fx, bs.fy) + Math.PI;
+          grpStatic.add(bar);
+        }
+        const wm = (ev.from + ev.to) / 2;
+        const ws = sample(S.rt, wm);
+        const dig = new T.Group();
+        const digB = new T.Mesh(new T.BoxGeometry(2.6, 1.6, 1.8), mat("#f2a516")); digB.position.y = 1.3; digB.castShadow = true;
+        const digC = new T.Mesh(new T.BoxGeometry(1.3, 1.1, 1.4), mat("#e08a00")); digC.position.set(-.4, 2.6, 0);
+        const arm = new T.Mesh(new T.BoxGeometry(.35, .35, 2.6), mat("#c97a00"));
+        arm.position.set(.9, 2.1, -1.4); arm.rotation.x = .5;
+        for (const wz2 of [-.7, .7]) for (const wx2 of [-1, 1]){
+          const ww2 = new T.Mesh(new T.CylinderGeometry(.4, .4, .3, 10), mat("#1d2126"));
+          ww2.rotation.z = Math.PI / 2; ww2.position.set(wx2, .4, wz2); dig.add(ww2);
+        }
+        dig.add(digB, digC, arm);
+        const dp = rp(wm, HWf() * .45);
+        dig.position.set(dp.x, 0, dp.z);
+        dig.rotation.y = Math.atan2(ws.fx, ws.fy) + Math.PI / 2;
+        grpStatic.add(dig);
+        const worker = new T.Group();
+        const wb = new T.Mesh(new T.CylinderGeometry(.26, .3, .9, 8), em("#ffb400", .35)); wb.position.y = .95;
+        const wh = new T.Mesh(new T.SphereGeometry(.2, 10, 8), mat("#ffd9b0")); wh.position.y = 1.6;
+        const hat = new T.Mesh(new T.SphereGeometry(.23, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), em("#ffd430", .3));
+        hat.position.y = 1.62;
+        worker.add(wb, wh, hat);
+        const wp2 = rp(wm - 90, HWf() * .55);
+        worker.position.set(wp2.x, 0, wp2.z);
+        grpStatic.add(worker);
+      }
+      if (ev.type === "school"){
+        const s2 = sample(S.rt, ev.from - 30);
+        const yaw = Math.atan2(s2.fx, s2.fy);
+        // yellow SCHOOL 15 sign at the curb with a flashing amber beacon
+        const g = new T.Group();
+        const pole = new T.Mesh(new T.CylinderGeometry(.07, .09, 3, 6), mat("#8a9296")); pole.position.y = 1.5;
+        const face = texPlane(1.7, 1.7, g2 => {
+          g2.fillStyle = "#ffd430";
+          g2.beginPath(); g2.moveTo(128, 6); g2.lineTo(246, 96); g2.lineTo(246, 246);
+          g2.lineTo(10, 246); g2.lineTo(10, 96); g2.closePath(); g2.fill();
+          g2.strokeStyle = "#111"; g2.lineWidth = 10; g2.stroke();
+          g2.fillStyle = "#111"; g2.textAlign = "center"; g2.font = "bold 52px sans-serif";
+          g2.fillText("SCHOOL", 128, 130);
+          g2.font = "bold 64px sans-serif"; g2.fillText("15", 128, 196);
+          g2.font = "bold 30px sans-serif"; g2.fillText("MPH", 128, 232);
+        });
+        face.position.y = 3.2;
+        const beacon = new T.Mesh(new T.SphereGeometry(.18, 10, 8), em("#ffb400", .2));
+        beacon.position.y = 4.25;
+        g.add(pole, face, beacon);
+        const pp = rp(ev.from - 30, HWf() + 9);
+        g.position.set(pp.x, 0, pp.z); g.rotation.y = yaw + Math.PI;
+        grpDyn.add(g);
+        evObjs.push({ ev, kind: "beacon", beacon });
+        // "SCHOOL ZONE" painted on the road at the zone entrance
+        const paint = texPlane(HWf() * 2 * M * .9, 7, g2 => {
+          g2.fillStyle = "#ffe873"; g2.textAlign = "center"; g2.textBaseline = "middle";
+          g2.font = "bold 64px sans-serif";
+          g2.fillText("SCHOOL", 128, 92); g2.fillText("ZONE", 128, 170);
+        });
+        const rpP = rp(ev.from + 55, 0);
+        paint.rotation.x = -Math.PI / 2; paint.rotation.z = yaw + Math.PI;
+        paint.position.set(rpP.x, .03, rpP.z);
+        grpStatic.add(paint);
+        // the schoolhouse itself, so kids SEE why they slow down
+        const mid = (ev.from + ev.to) / 2;
+        const sm = sample(S.rt, mid);
+        const sy = Math.atan2(sm.fx, sm.fy);
+        const sh = new T.Group();
+        const bod = new T.Mesh(new T.BoxGeometry(11, 5.4, 8), mat("#c9584a")); bod.position.y = 2.7; bod.castShadow = true;
+        const roof = new T.Mesh(new T.ConeGeometry(8, 3, 4), mat("#f4f6f8")); roof.rotation.y = Math.PI / 4; roof.position.y = 6.9;
+        const door = new T.Mesh(new T.BoxGeometry(1.6, 2.6, .2), mat("#5b3a24")); door.position.set(0, 1.3, -4.05);
+        const ban = texPlane(7, 1.6, g2 => {
+          g2.fillStyle = "#fff"; g2.fillRect(0, 70, 256, 90);
+          g2.fillStyle = "#c9584a"; g2.textAlign = "center"; g2.textBaseline = "middle";
+          g2.font = "bold 60px sans-serif"; g2.fillText("SCHOOL", 128, 116);
+        });
+        ban.position.set(0, 4.4, -4.06);
+        const fp = new T.Mesh(new T.CylinderGeometry(.06, .06, 7, 6), mat("#9aa2ab")); fp.position.set(6.4, 3.5, -3);
+        const flag = new T.Mesh(new T.PlaneGeometry(1.6, 1), new T.MeshBasicMaterial({ color: 0xd62828, side: T.DoubleSide }));
+        flag.position.set(7.3, 6.6, -3);
+        sh.add(bod, roof, door, ban, fp, flag);
+        const shp = rp(mid, HWf() + 78);
+        sh.position.set(shp.x, 0, shp.z); sh.rotation.y = sy + Math.PI;
+        grpStatic.add(sh);
       }
       if (ev.type === "kids" || ev.type === "festival"){
         const cw = ev.type === "kids" ? ev.at : (ev.from + ev.to) / 2;
@@ -471,6 +605,9 @@ window.GL3D = (function(){
     sunL.target.position.set(px, 0, pz);
     // traffic lights
     for (const o of evObjs){
+      if (o.kind === "beacon"){
+        o.beacon.material.emissiveIntensity = Math.floor(S.time * 2.4) % 2 ? 2 : .15;
+      }
       if (o.kind === "light"){
         const ph = lightPhase(o.ev);
         const on = ph === "red" ? 0 : ph === "yellow" ? 1 : 2;
