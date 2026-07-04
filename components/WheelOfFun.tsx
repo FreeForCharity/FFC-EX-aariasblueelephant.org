@@ -185,8 +185,8 @@ const WheelOfFun: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-36 sm:h-36 z-30">
                     <div className="w-full h-full rounded-full bg-gradient-to-br from-white via-slate-50 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-[0_15px_35px_rgba(0,0,0,0.3),_inset_0_2px_5px_rgba(255,255,255,0.8),_inset_0_-5px_15px_rgba(0,0,0,0.2)] flex items-center justify-center relative overflow-hidden ring-4 ring-slate-800/10 dark:ring-white/5">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_60%)] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-center w-full h-full p-2">
-                            <img src="/abe-logo-badge.png" alt="Aaria's Blue Elephant" className={`h-20 w-20 sm:h-24 sm:w-24 aspect-square object-contain transition-all duration-500 ${isSpinning ? 'scale-110' : 'scale-100'}`} />
+                        <div className="relative z-10 flex items-center justify-center w-full h-full p-1">
+                            <img src="/abe-logo-badge.png" alt="Aaria's Blue Elephant" className={`h-28 w-28 sm:h-32 sm:w-32 aspect-square object-contain transition-all duration-500 ${isSpinning ? 'scale-110' : 'scale-100'}`} />
                             {isSpinning && <div className="absolute inset-0 bg-brand-cyan/20 blur-3xl rounded-full animate-pulse" />}
                         </div>
                     </div>
