@@ -186,6 +186,7 @@
       <div class="chip" id="sched" style="pointer-events:auto;gap:4px" title="Today's plan"></div>
     </div>
     <div id="menu">
+      <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
       <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖</button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
@@ -196,6 +197,14 @@
     <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in" aria-label="Zoom in">🔍＋</button>
     <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out" aria-label="Zoom out">🔍−</button>
   </div>
+
+  <!-- World map: tap a place to FLY there (recharges every 5 minutes) -->
+  <div class="overlay" id="wmap"><div class="panel" style="max-width:470px">
+    <h1>🗺️ Trunkland Map</h1>
+    <p id="wmapHint" style="font-size:15px"></p>
+    <div id="wmapGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0"></div>
+    <button class="big" id="wmapClose">Back ▶</button>
+  </div></div>
 
   <!-- Settings panel (uniform across ABE games) -->
   <div class="overlay" id="settings"><div class="panel" style="max-width:430px">
@@ -307,13 +316,13 @@ const SPEED={relaxed:1.7, normal:1.0, fast:0.62};       // multiplies every wait
 /* Four blue elephant friends of Aaria's Blue Elephant. (Internal keys kept as
    tinko/minty/sunny/rosy so all the scenario wiring stays intact.) */
 const TUBBIES={
-  tinko:{name:'Bluebo', body:'#2f57cf', dark:'#1e3aa0', antenna:'circle', antCol:'#FFD447',
+  tinko:{name:'Bluebo', body:'#8b3af0', dark:'#6a1fd0', antenna:'circle', antCol:'#FFD447',
     zone:'Bounce Meadow', likes:'dancing', game:'dance', hello:'Bluebo the leader loves to bounce! Copy my moves?'},
-  minty:{name:'Lulla', body:'#b8a4ff', dark:'#8f79e0', antenna:'squiggle', antCol:'#ff8fb1',
+  minty:{name:'Lulla', body:'#ff4136', dark:'#d3261c', antenna:'squiggle', antCol:'#ff8fb1',
     zone:'Feelings Garden', likes:'feelings', game:'feelings', hello:'Lulla\'s Tummy-TV shows feelings! Can you guess them?'},
-  sunny:{name:'Pebbo', body:'#5cc98a', dark:'#3fa368', antenna:'triangle', antCol:'#9BE7C4',
+  sunny:{name:'Pebbo', body:'#2ecc40', dark:'#1fa030', antenna:'triangle', antCol:'#9BE7C4',
     zone:'Tidy Kitchen', likes:'tidying', game:'kitchen', hello:'Pebbo keeps things tidy! Help me do the steps in order?'},
-  rosy:{name:'Skydah', body:'#f5c542', dark:'#d9a52e', antenna:'star', antCol:'#ffe68a',
+  rosy:{name:'Skydah', body:'#ffdc00', dark:'#e0b800', antenna:'star', antCol:'#ffe68a',
     zone:'Dreamy Hills', likes:'hide & seek', game:'hide', hello:'Skydah the dreamer loves hide and seek! Come find me?'},
 };
 const BELU={name:'Belu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
@@ -488,7 +497,7 @@ const ISLAND=120;              // big! the edge is far, far away — keep explor
 const HOME_R=44;               // the cosy home area where the friends live
 // points of interest — terrain flattens around each
 const POI={dome:[0,0], tinko:[24,-13], minty:[-25,-11], sunny:[19,19], rosy:[-19,21],
-           pond:[1,30], mill:[-33,5], arch:[32,4], fixit:[10,-27],
+           pond:[1,30], mill:[-33,5], arch:[32,4], fixit:[10,-27], tramp:[-11,-14],
            cove:[0,104], skyhill:[-62,-58], garage:[66,-18]};
 
 /* ============ TRAVEL: swim / fly / drive — pick the right gear! ============
@@ -583,6 +592,15 @@ function makeEllie(cfg,scaleAll=1){
     leg.position.set(0,-0.35,0);pivot.add(leg);g.add(pivot);anim.legs.push({pivot,lz});});
   const inner=new T.Group();g.add(inner);anim.inner=inner;   // squash+stretch target
   const belly=new T.Mesh(new T.SphereGeometry(1,24,20),body);
+  // stubby Teletubby arms — held out wide, they swing & wave!
+  const armGeo=new T.CylinderGeometry(0.13,0.16,0.72,10);
+  anim.arms=[];
+  [[-1],[1]].forEach(([sx])=>{
+    const piv=new T.Group();piv.position.set(sx*0.86,1.86,-0.1);
+    const arm=new T.Mesh(armGeo,body);arm.position.y=-0.36;arm.castShadow=true;
+    const hand=new T.Mesh(new T.SphereGeometry(0.17,10,8),body);hand.position.y=-0.74;
+    piv.add(arm,hand);piv.rotation.z=sx*0.85;inner.add(piv);
+    anim.arms.push({piv,sx});});
   belly.scale.set(1.05,0.95,1.15);belly.position.y=1.35;belly.castShadow=true;inner.add(belly);
   // ---- Tummy-TV (updatable canvas screen!) ----
   const tvC=document.createElement('canvas');tvC.width=tvC.height=128;
@@ -649,6 +667,10 @@ function animEllie(e,time,dt,walking){
   a.head.rotation.z=Math.sin(time*2+((a.ph)||0))*0.05;
   a.ears.forEach(({ear,sx})=>{ear.rotation.z=sx*(0.25+Math.sin(time*4+(a.ph||0))*(walking?0.3:0.12));});
   a.legs.forEach((L,i)=>{L.pivot.rotation.x=walking?Math.sin(time*9+(i%2)*Math.PI)*0.55:0;});
+  a.arms&&a.arms.forEach(({piv,sx},i)=>{
+    const up=(a.move==='happy'||a.move==='dance')?1.4:0;
+    piv.rotation.z=sx*(0.85+up)+Math.sin(time*(walking?7:2.5)+i*2)*(walking?0.35:0.15)*sx;
+    piv.rotation.x=walking?Math.sin(time*7+i*Math.PI)*0.3:0;});
   if(a.tip)a.tip.rotation.y+=dt*2;
   // one-shot moves (dance!)
   if(a.move){a.moveT+=dt/a.moveDur;const t=Math.min(1,a.moveT),p=Math.sin(t*Math.PI);
@@ -674,7 +696,7 @@ function addProp(kind,x,z,ry=0){
     door.rotation.z=Math.PI/2;door.rotation.y=Math.PI/2;door.position.set(0,1.2,-4);g.add(door);
     const ball=new T.Mesh(new T.SphereGeometry(0.4,16,12),matStd('#FFD447',.4));
     ball.material.emissive=new T.Color('#FFD447');ball.material.emissiveIntensity=.35;ball.position.y=4.8;g.add(ball);
-    const b=bannerSprite('Trunk Dome');b.position.y=6.4;g.add(b);
+    const b=bannerSprite('Trunk Dome','#3a3a5a',0.8);b.position.y=6.2;g.add(b);
   }else if(kind==='mill'){
     const tower=new T.Mesh(new T.CylinderGeometry(0.4,0.62,8,14),WHITE);tower.position.y=4;tower.castShadow=true;g.add(tower);
     const hub=new T.Group();hub.position.set(0,7.6,-0.7);g.add(hub);
@@ -778,6 +800,19 @@ const kitchenG=addProp('kitchen',...POI.sunny,Math.PI);
 const hillsG=addProp('hills',...POI.rosy);
 addProp('arch',...POI.arch);
 const fixitG=addProp('fixit',...POI.fixit);
+(function tramp(){
+  const g=new T.Group();
+  const rim=new T.Mesh(new T.TorusGeometry(2.2,0.32,12,28),matStd('#ff4136',.5));
+  rim.rotation.x=Math.PI/2;rim.position.y=0.75;g.add(rim);
+  const bed=new T.Mesh(new T.CircleGeometry(2.0,24),new T.MeshStandardMaterial({color:'#22304a',roughness:.6}));
+  bed.rotation.x=-Math.PI/2;bed.position.y=0.72;g.add(bed);g.userData.bed=bed;
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2;
+    const leg=new T.Mesh(new T.CylinderGeometry(0.07,0.09,0.75,6),matStd('#8a9296'));
+    leg.position.set(Math.cos(a)*2.0,0.37,Math.sin(a)*2.0);g.add(leg);}
+  const b=bannerSprite('Boing! Trampoline','#d3261c',0.8);b.position.y=4.6;g.add(b);
+  const [tx,tz]=POI.tramp;g.position.set(tx,terrainH(tx,tz),tz);
+  scene.add(g);window._trampG=g;
+})();
 addProp('cove',...POI.cove);
 addProp('skyhill',...POI.skyhill);
 addProp('garage',...POI.garage);
@@ -1004,8 +1039,20 @@ for(const id in TUBBIES){
   t.anim.tv(['💗','🌈','🧩','⭐'][Object.keys(TUBBIES).indexOf(id)]);   // Bluebo/Lulla/Pebbo/Skydah
   scene.add(t.group);tubbies[id]=t;
   const nb=bannerSprite(TUBBIES[id].name,TUBBIES[id].dark,0.55);nb.position.y=4.5;t.group.add(nb);
-  t.mark=emojiSprite('⭐',1.3);t.mark.position.y=5.6;t.group.add(t.mark);
+  t.mark=emojiSprite('⭐',1.0);t.mark.position.y=5.35;t.group.add(t.mark);
 }
+const tickles={};
+function registerTickles(){for(const id in tubbies){
+  (id=>{addTappable(tubbies[id].group,()=>{
+    if(mode!=='roam'||tubbies[id].busy)return;
+    const t=tubbies[id];giggle();
+    doMove(t,['jump','spin','wave','stomp'][Math.floor(Math.random()*4)],0.9);
+    floatSprite('💕',t.group.position,3,1.2,1.1);
+    tickles[id]=(tickles[id]||0)+1;
+    if(tickles[id]%3===0){burst(t.group.position,20,'#ffdc00');sfx.star();
+      S.sparks++;save();hud();floatSprite('✨',t.group.position,3.5,1.5,1.4);}
+  },true,true);})(id);
+}}
 function refreshMarks(){for(const id in tubbies){
   const done=S.today.stars[id];tubbies[id].mark.material.opacity=done?1:0.9;
   const old=tubbies[id].mark.material.map;             // dispose the replaced texture (no GPU leak)
@@ -1129,8 +1176,8 @@ function setupWants(){
     const w=WANT_POOL[(i+Math.floor(R()*4))%WANT_POOL.length];
     wants[id]=w;
     // thought bubble over the tubby
-    const bub=emojiSprite('💭',2.1);bub.position.set(0.9,5.6,0);
-    const item=emojiSprite(w.e,1.0);item.position.set(1.0,5.7,-0.1);
+    const bub=emojiSprite('💭',1.35);bub.position.set(0.7,5.0,0);
+    const item=emojiSprite(w.e,0.62);item.position.set(0.78,5.05,-0.1);
     const grp=new T.Group();grp.add(bub);grp.add(item);
     tubbies[id].group.add(grp);tubbies[id].bubble=grp;
     // two pickups near the source POI
@@ -1668,7 +1715,7 @@ function updateRoam(dt,time){
           if(trav==='drive'){ // bumper car! big happy bounce + confetti, car keeps you safe
             knockdown(nx,nz,'bounce');burst(p,18,'#ffd23f');burst(p,12,'#ff8fb1');
             tone(600,.15,'square',.06);tone(400,.2,'square',.05,.1);
-          }else knockdown(nx,nz);
+          }else knockdown(mx/(m||1),mz/(m||1));   // tumble FORWARD past the blocker — keep moving!
         }
         break;}}
   }
@@ -1685,6 +1732,12 @@ function updateRoam(dt,time){
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
       S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
+  // trampoline: land on it -> BOING sky-high!
+  {const [tx,tz]=POI.tramp;
+   if(trav==='walk'&&Math.hypot(p.x-tx,p.z-tz)<2.1&&jumpY<=0.02&&!kd){
+     jumping=true;jumpV=16;sfx.boing();burst(p,10,'#ff4136');
+     if(window._trampG)tween(0.35,k=>{_trampG.userData.bed.position.y=0.72-Math.sin(k*Math.PI)*0.3;});
+     floatSprite('🤸',p,4,1.4,1.3);}}
   gardenProximity();               // living stickers say hello
   tubbyWantsUpdate();              // fetch-quest pickups & delivery
   // secret discovery spots — wander far (or swim! or fly!), learn something
@@ -2281,6 +2334,35 @@ $('duckBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();duck=tru
   $('duckBtn').addEventListener(ev,()=>{duck=false;}));
 addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
 addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
+/* map + fly-to (recharges every 5 min — anticipation!) */
+const MAP_SPOTS=[
+  ['dome','🏠 Trunk Dome'],['tinko','💜 Bluebo'],['minty','❤️ Lulla'],
+  ['sunny','💚 Pebbo'],['rosy','💛 Skydah'],['tramp','🤸 Trampoline'],
+  ['fixit','🔨 Fix-It'],['cove','🌊 Splash Cove'],['skyhill','🪁 Sky Hill'],['garage','🚗 Garage']];
+const FLY_CD=5*60*1000;
+function flyReady(){return !S.lastFly||Date.now()-S.lastFly>FLY_CD;}
+function renderWmap(){
+  const g=$('wmapGrid');g.innerHTML='';
+  const ready=flyReady();
+  $('wmapHint').textContent=ready?'Where shall we fly, little friend? ✈️'
+    :('Belu\'s wings are resting… ready in '+Math.ceil((FLY_CD-(Date.now()-S.lastFly))/60000)+' min! Walk for now 🚶');
+  MAP_SPOTS.forEach(([k,label])=>{
+    const b=document.createElement('button');b.className='big';
+    b.style.cssText='font-size:15px;padding:11px 8px;margin:0'+(ready?'':';opacity:.45');
+    b.textContent=label;
+    b.onclick=()=>{if(!flyReady()){sfx.soft();return;}
+      const pos=POI[k]||TUBBY_POS[k];const x=pos[0],z=pos[1];
+      S.lastFly=Date.now();save();
+      $('wmap').classList.remove('show');
+      setTrav('walk');player.group.position.set(x+2,terrainH(x+2,z+3),z+3);
+      burst(player.group.position,24,'#8fd0ff');sfx.win();
+      floatSprite('✈️',player.group.position,4,1.6,1.6);
+      say('☀️','Wheee! Belu flew to '+label+'! ✈️');};
+    g.appendChild(b);});
+}
+$('mapBtn').onclick=()=>{sfx.tap();renderWmap();$('wmap').classList.add('show');};
+$('wmapClose').onclick=()=>{sfx.tap();$('wmap').classList.remove('show');};
+
 /* ONE mystery button — every tap a surprise! Undiscovered tricks come first
    (with a celebration), then it keeps shuffling them forever. */
 const MYSTERY=[{k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
@@ -2304,7 +2386,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
   get phys(){return {kd:!!kd,jumpY,duck,rotX:player.group.rotation.x};}};
 
 /* ================================= BOOT ================================== */
-hud();spawnSeeds();refreshMarks();refreshStickers();refreshSecrets();
+hud();spawnSeeds();refreshMarks();registerTickles();refreshStickers();refreshSecrets();
 renderSched();setupWants();spawnEggNode();renderNest();
 $('loading').classList.add('hidden');   // title screen (#title) greets first
 requestAnimationFrame(frame);
