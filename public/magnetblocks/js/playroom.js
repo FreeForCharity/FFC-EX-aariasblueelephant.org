@@ -80,19 +80,19 @@
       ctx.fillStyle = hex; ctx.fillRect(0, 0, w, h);
       var studsAcross = 16; // ~ visual stud pitch across the buildable square
       var cell = w / studsAcross;
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
       ctx.lineWidth = 1;
       for (var i = 0; i <= studsAcross; i++) {
         ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, h); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(w, i * cell); ctx.stroke();
         // finer 4x subdivisions, very subtle
         for (var s = 1; s < 4; s++) {
-          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.15)';
           ctx.beginPath(); ctx.moveTo(i * cell + s * cell / 4, 0); ctx.lineTo(i * cell + s * cell / 4, h); ctx.stroke();
-          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)';
         }
       }
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
       for (var x = 0; x <= studsAcross; x++) {
         for (var y = 0; y <= studsAcross; y++) {
           ctx.beginPath(); ctx.arc(x * cell, y * cell, 2, 0, Math.PI * 2); ctx.fill();
@@ -228,6 +228,11 @@
   }
 
   // ===========================================================================
+  // module-scope variables for runtime updates
+  var _tableTop = null;
+  var _lamps = [];
+
+  // ===========================================================================
   MB.Playroom = {
     build: function (scene) {
       var CATALOG = MB.CATALOG || { categories: [], blocks: {} };
@@ -247,7 +252,7 @@
       root.add(floorMesh);
 
       // ---- walls ----
-      var wallColors = { n: '#ffe8d6', s: '#ffe8d6', w: '#d9edf8', e: '#fde3ef' };
+      var wallColors = { n: '#f7d9ba', s: '#f7d9ba', w: '#c3e0f2', e: '#f6cfe0' };
       function addWall(w, h, d, x, y, z, hex) {
         var wm = mesh(new THREE.BoxGeometry(w, h, d), stdMat(hex, { roughness: 0.85 }));
         wm.position.set(x, y, z);
@@ -259,6 +264,11 @@
       addWall(ROOM_W, ROOM_H, WALL_T, 0, ROOM_H / 2, HALF_D, wallColors.s);
       addWall(WALL_T, ROOM_H, ROOM_D, -HALF_W, ROOM_H / 2, 0, wallColors.w);
       addWall(WALL_T, ROOM_H, ROOM_D, HALF_W, ROOM_H / 2, 0, wallColors.e);
+      // ceiling — a warm lid so looking up never shows a blank void
+      var ceil = mesh(new THREE.BoxGeometry(ROOM_W, WALL_T, ROOM_D), stdMat('#f6dfc8', { roughness: 0.9 }));
+      ceil.position.set(0, ROOM_H + WALL_T / 2, 0);
+      ceil.receiveShadow = false; ceil.castShadow = false;
+      root.add(ceil);
       // skirting boards
       var skirtMat = stdMat('#c8996a', { roughness: 0.6 });
       [-HALF_D, HALF_D].forEach(function (z) {
@@ -306,8 +316,9 @@
       var tablePhysHalf = tableHalf + 0.9; // physical rim beyond buildable area
       var TOP_THICK = 0.4;
       var tableTop = mesh(new THREE.BoxGeometry(tablePhysHalf * 2, TOP_THICK, tablePhysHalf * 2),
-        stdMat('#ffd8a8', { map: tabletopTexture('#ffd8a8'), roughness: 0.5 }));
+        stdMat('#ffffff', { map: tabletopTexture('#7cb85c'), roughness: 0.5 }));
       tableTop.position.set(0, tableTopY - TOP_THICK / 2, 0);
+      _tableTop = tableTop;
       root.add(tableTop);
       var legH = tableTopY - TOP_THICK;
       var legGeo = new THREE.CylinderGeometry(0.55, 0.65, legH, 14);
@@ -321,18 +332,21 @@
       var tableCenter = new THREE.Vector3(0, tableTopY, 0);
 
       // ---- ceiling pendant lamps over the table ----
-      var lampMat = stdMat('#fff3bf', { emissive: true, emissiveHex: '#ffe066', emissiveIntensity: 1.0, roughness: 0.4 });
       [[-3, -2], [3, 2]].forEach(function (p) {
-        var cordH = ROOM_H - 6.8;
+        var cordH = 4.4; // bulbs at y ≈ 9.6 — in easy view over the table, above the camera ceiling
         var cord = mesh(new THREE.CylinderGeometry(0.05, 0.05, cordH, 6), stdMat('#5c4326', { roughness: 0.8 }), false);
         cord.position.set(p[0], ROOM_H - cordH / 2, p[1]);
         root.add(cord);
-        var bulb = mesh(new THREE.SphereGeometry(0.55, 14, 10), lampMat, false);
+        var lampMat = stdMat('#fff3bf', { emissive: true, emissiveHex: '#ffe066', emissiveIntensity: 1.0, roughness: 0.4 });
+        var bulb = mesh(new THREE.SphereGeometry(0.7, 14, 10), lampMat, false);
         bulb.position.set(p[0], ROOM_H - cordH, p[1]);
         root.add(bulb);
         var pl = new THREE.PointLight(0xffdd99, 0.5, 14, 2);
         pl.position.copy(bulb.position);
         root.add(pl);
+        var lampObj = { mesh: bulb, light: pl, on: true };
+        bulb.userData.mbLamp = lampObj;
+        _lamps.push(lampObj);
       });
 
       // ---- fairy lights along the south wall (near ceiling) ----
@@ -604,6 +618,14 @@
         bins: bins,
         floorY: floorY
       };
-    }
+    },
+    setTableColor: function (hex) {
+      if (_tableTop) {
+        if (_tableTop.material.map) _tableTop.material.map.dispose();
+        _tableTop.material.map = tabletopTexture(hex);
+        _tableTop.material.needsUpdate = true;
+      }
+    },
+    lamps: _lamps
   };
 })();

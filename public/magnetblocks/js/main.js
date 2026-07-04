@@ -47,15 +47,30 @@ window.MB = window.MB || {};
   };
 
   // ---------- camera orbit ----------
-  const orbit = { theta: 0.5, phi: 0.95, radius: 17, target: new V3(0, 4, 0), drag: null };
+  // room is 46×30×14 — keep the camera INSIDE it (never through walls = no white screen)
+  const CAM_BOX = { x: 20.5, z: 12.5, yMin: 1.6, yMax: 8.7 }; // yMax below the bulbs (9.6)
+  const orbit = { theta: 0.5, phi: 0.95, radius: 16, target: new V3(0, 4, 0), drag: null };
   function applyCamera(){
-    orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.18, 1.35);
-    orbit.radius = THREE.MathUtils.clamp(orbit.radius, 6, 26);
+    orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.32, 1.35);
+    orbit.radius = THREE.MathUtils.clamp(orbit.radius, 5, 22);
     camera.position.set(
       orbit.target.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
       orbit.target.y + orbit.radius * Math.cos(orbit.phi),
       orbit.target.z + orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta));
+    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -CAM_BOX.x, CAM_BOX.x);
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -CAM_BOX.z, CAM_BOX.z);
+    camera.position.y = THREE.MathUtils.clamp(camera.position.y, CAM_BOX.yMin, CAM_BOX.yMax);
     camera.lookAt(orbit.target);
+  }
+  function nudgeZoom(d){
+    const from = orbit.radius, to = THREE.MathUtils.clamp(from + d, 5, 22);
+    MB.Builder.addTween(0.3, k => { orbit.radius = from + (to - from) * (1 - Math.pow(1-k, 3)); });
+    MB.Audio.pick();
+  }
+  function nudgeTurn(d){
+    const from = orbit.theta, to = from + d;
+    MB.Builder.addTween(0.45, k => { orbit.theta = from + (to - from) * (1 - Math.pow(1-k, 3)); });
+    MB.Audio.pick();
   }
 
   // ---------- input ----------
@@ -78,6 +93,23 @@ window.MB = window.MB || {};
     hidePalette();
     const ray = rayFrom(ev);
     if (MB.Cleanup.active){ MB.Cleanup.pointerDown(ray); return; }
+    // lamp bulbs: tap to switch on/off (works in any mode)
+    {
+      const hits = ray.intersectObjects(scene.children, true);
+      if (hits.length){
+        let o = hits[0].object;
+        while (o && !o.userData.mbLamp) o = o.parent;
+        if (o){
+          const lamp = o.userData.mbLamp;
+          lamp.on = !lamp.on;
+          lamp.mesh.material.emissiveIntensity = lamp.on ? 1.0 : 0.02;
+          if (lamp.light) lamp.light.intensity = lamp.on ? 0.5 : 0;
+          MB.Audio.pick();
+          ui.toast(lamp.on ? '💡 Light on!' : '🌙 Light off!', 1200);
+          return;
+        }
+      }
+    }
     if (MB.Animate.on){ // playtime: taps open doors / flip switches, otherwise orbit
       const hits = ray.intersectObjects(scene.children, true);
       for (const h of hits){
@@ -214,6 +246,7 @@ window.MB = window.MB || {};
     if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
 
     scene = new THREE.Scene();
+    scene.background = new THREE.Color('#dff0ff'); // safety: never a stark white flash
     camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 200);
     room = MB.Playroom.build(scene);
     orbit.target.copy(room.tableCenter).add(new V3(0, 1.2, 0));
@@ -235,7 +268,14 @@ window.MB = window.MB || {};
     cv.addEventListener('pointermove', onMove);
     cv.addEventListener('pointerup', onUp);
     cv.addEventListener('pointercancel', onUp);
-    cv.addEventListener('wheel', ev => { orbit.radius += ev.deltaY * 0.02; ev.preventDefault(); }, { passive:false });
+    let wheelAcc = 0;
+    cv.addEventListener('wheel', ev => {
+      if (MB.Builder.grabbed){ // scrolling while holding a block turns it
+        wheelAcc += ev.deltaY;
+        if (Math.abs(wheelAcc) > 80){ MB.Builder.rotateSel(); wheelAcc = 0; }
+      } else orbit.radius += ev.deltaY * 0.02;
+      ev.preventDefault();
+    }, { passive:false });
     document.addEventListener('contextmenu', ev => ev.preventDefault());
     window.addEventListener('keydown', ev => {
       MB.Animate.keys[ev.code] = true;
@@ -284,6 +324,37 @@ window.MB = window.MB || {};
     $('helpBtn').addEventListener('click', () => MB.Help.openPicker());
     $('helpClose').addEventListener('click', () => ui.hide('helpModal'));
     $('rotBtn').addEventListener('click', () => MB.Builder.rotateSel());
+    // view controls
+    $('zoomInBtn').addEventListener('click', () => nudgeZoom(-3));
+    $('zoomOutBtn').addEventListener('click', () => nudgeZoom(3));
+    $('turnLBtn').addEventListener('click', () => nudgeTurn(Math.PI/4));
+    $('turnRBtn').addEventListener('click', () => nudgeTurn(-Math.PI/4));
+    // rotate the block in your hand (touch-friendly)
+    $('holdRotBtn').addEventListener('pointerdown', ev => { ev.stopPropagation(); MB.Builder.rotateSel(); });
+    // table colors
+    const TABLE_COLORS = [
+      { hex:'#7cb85c', chip:'🟩', name:'Grass Green' },
+      { hex:'#5fa8dc', chip:'🟦', name:'Sky Blue' },
+      { hex:'#a58fd8', chip:'🟪', name:'Lavender' },
+      { hex:'#e8b04e', chip:'🟨', name:'Sunshine' },
+      { hex:'#e08bb0', chip:'🌸', name:'Pink' },
+      { hex:'#8d99a6', chip:'⬜', name:'Cloud Gray' },
+      { hex:'#4f9d8c', chip:'🟢', name:'Deep Teal' },
+    ];
+    let tableIdx = Math.max(0, TABLE_COLORS.findIndex(c => c.hex === localStorage.getItem('mb_table_color')));
+    const applyTable = () => {
+      const c = TABLE_COLORS[tableIdx];
+      if (MB.Playroom.setTableColor) MB.Playroom.setTableColor(c.hex);
+      $('tableBtn').textContent = c.chip + ' Table';
+      localStorage.setItem('mb_table_color', c.hex);
+    };
+    applyTable();
+    $('tableBtn').addEventListener('click', () => {
+      tableIdx = (tableIdx + 1) % TABLE_COLORS.length;
+      applyTable();
+      MB.Audio.sparkle();
+      ui.toast('🛠️ Table color: ' + TABLE_COLORS[tableIdx].name + '!', 1500);
+    });
     $('paintBtn').addEventListener('click', () => { const p = $('palettePop'); p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; });
     $('hingeBtn').addEventListener('click', () => { MB.Builder.toggleHinge(); setTimeout(updateSelBar, 50); });
     $('dupBtn').addEventListener('click', () => MB.Builder.duplicateSel());
@@ -303,6 +374,9 @@ window.MB = window.MB || {};
         MB.Cleanup.tick(t);
         MB.Help.tickUI();
         applyCamera();
+        const hr = $('holdRotBtn');
+        const want = MB.Builder.grabbed ? 'block' : 'none';
+        if (hr.style.display !== want) hr.style.display = want;
       }
       renderer.render(scene, camera);
     })();
