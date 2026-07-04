@@ -124,19 +124,23 @@
   }
   #orgFooter { font-size: 14px; color: #7048e8; background: rgba(255,255,255,.6); padding: 8px 20px; border-radius: 18px; margin-top: 4px; }
 
-  /* ---------- menu ---------- */
-  .menu-title { text-align: center; font-size: 24px; color: #4c3a8f; margin: 6px 0 18px; }
-  .menu-cards { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; padding: 0 18px; flex: 1; align-content: flex-start; }
+  /* ---------- menu (fills + centers the whole screen) ---------- */
+  #menuScreen { display: flex; flex-direction: column; min-height: 100vh; }
+  #menuScreen[hidden] { display: none; }
+  .menu-middle { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: clamp(18px, 4vh, 40px); padding: 12px 0; }
+  .menu-title { text-align: center; font-size: clamp(26px, 4.2vw, 44px); color: #4c3a8f; margin: 0; }
+  .menu-cards { display: flex; flex-wrap: wrap; gap: clamp(18px, 3vw, 34px); justify-content: center; align-items: stretch; padding: 0 18px; width: 100%; max-width: 1500px; }
   .mode-card {
-    width: min(280px, 86vw); background: #fff; border-radius: 26px; padding: 26px 20px; text-align: center;
+    flex: 1 1 260px; max-width: 420px; min-width: min(260px, 86vw);
+    background: #fff; border-radius: 30px; padding: clamp(28px, 5vh, 52px) 24px; text-align: center;
     cursor: pointer; border: none; box-shadow: 0 8px 0 rgba(0,0,0,.08), 0 12px 22px rgba(60,40,100,.14);
-    transition: transform .12s; display: flex; flex-direction: column; align-items: center; gap: 10px;
-    min-height: 48px;
+    transition: transform .12s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   }
+  .mode-card:hover { transform: translateY(-4px) scale(1.02); }
   .mode-card:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.08), 0 6px 12px rgba(60,40,100,.14); }
-  .mode-card .icon { font-size: 54px; }
-  .mode-card .title { font-size: 20px; font-weight: 800; color: #4c3a8f; }
-  .mode-card .desc { font-size: 14px; color: #7a6aa8; }
+  .mode-card .icon { font-size: clamp(60px, 9vh, 96px); }
+  .mode-card .title { font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; color: #4c3a8f; }
+  .mode-card .desc { font-size: clamp(14px, 1.5vw, 19px); color: #7a6aa8; }
   #grownupsLinkMenu, #grownupsLinkTitle { display: block; margin: 18px auto 24px; }
 
   /* ---------- explore ---------- */
@@ -345,8 +349,10 @@
     <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
     <button class="mute-btn" title="Mute sounds">🔊</button>
   </header>
-  <h2 class="menu-title">What do you want to do?</h2>
-  <div id="menuCards" class="menu-cards"></div>
+  <div class="menu-middle">
+    <h2 class="menu-title">What do you want to do?</h2>
+    <div id="menuCards" class="menu-cards"></div>
+  </div>
   <button id="grownupsLinkMenu" class="link-btn">Grown-Ups Corner</button>
 </div>
 
