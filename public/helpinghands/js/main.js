@@ -72,6 +72,7 @@ const SND = (() => {
     chime() { tone(520, 780, 0.18, 0.16, "sine"); setTimeout(() => tone(700, 920, 0.16, 0.12, "sine"), 90); },
     pop() { tone(520, 320, 0.09, 0.14, "triangle"); },
     tryTone() { tone(220, 170, 0.24, 0.10, "sine"); },
+    bump() { tone(140, 80, 0.10, 0.10, "triangle"); },
   };
 })();
 
@@ -331,6 +332,7 @@ function initWorldOnce() {
       onHelper: handleHelper,
       onActor: handleActor,
       onRoomEnter: handleRoomEnter,
+      onBump: () => SND.bump(),
     });
     HH.World.showHub();
     HH.World.resize();
@@ -1192,7 +1194,7 @@ function boot() {
   wireGlobalBelu();
   wireGlobalChrome();
 
-  if (sessionStorage.getItem("hh_gate") === "1") {
+  if (HH.REQUIRE_GATE === false || sessionStorage.getItem("hh_gate") === "1") {
     $("gateScreen").hidden = true;
     showScreen("titleScreen");
   }

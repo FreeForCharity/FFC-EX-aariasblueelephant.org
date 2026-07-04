@@ -21,8 +21,11 @@ window.HH = window.HH || {};
 // clinical review. Flip to true to enable in the scenario picker.
 HH.ENABLE_TIER_B = false;
 
-// SHA-256 of the entry password. The game is unlisted + gated until
-// clinical review is complete.
+// Password gate. Tier A (peer scenarios + discovery + lessons) was
+// cleared for public release by AJ on 2026-07-04, so the gate is OFF.
+// Set REQUIRE_GATE = true to re-gate future review builds (e.g. when
+// enabling Tier B); hash is SHA-256 of the review password.
+HH.REQUIRE_GATE = false;
 HH.GATE_HASH = "d3d8d42d366ada9307d6eb08ba21c5ae7df56007fadbf07a44d23774e8a85170";
 
 /* ---------------- helper people (friend cards) ---------------- */
