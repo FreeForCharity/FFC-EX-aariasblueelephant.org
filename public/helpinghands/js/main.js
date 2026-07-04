@@ -294,10 +294,26 @@ function renderMenuCards() {
 function wireMenu() { renderMenuCards(); }
 
 /* ---------------------------------------------------------------
-   4. EXPLORE MY WORLD
+   4. EXPLORE MY WORLD (free-roam) + BELU'S GAME (find & do)
+   Quiz cards are gone — the child WALKS the world. Belu's Game asks
+   the child to find & tap the right object in the right room.
    --------------------------------------------------------------- */
 let worldReady = false;
-const exState = { place: null, roomIdx: 0 };
+const exState = { place: null, roomId: null };
+const visitedRoomsThisSession = new Set();
+let findState = { active: false, placeId: null, tasks: [], idx: 0, lastWrongAt: 0 };
+let scenarioState = null; // set while an in-world "Practice Being Brave" scenario is running
+
+function findRoomInfo(roomId) {
+  const placeIds = Object.keys(HH.PLACES);
+  for (let i = 0; i < placeIds.length; i++) {
+    const place = HH.PLACES[placeIds[i]];
+    if (!place.rooms) continue;
+    const room = place.rooms.find(r => r.id === roomId);
+    if (room) return { placeId: placeIds[i], room };
+  }
+  return null;
+}
 
 function initWorldOnce() {
   const note = $("worldLoadingNote");
@@ -309,7 +325,13 @@ function initWorldOnce() {
   HH.World.init({ canvas: $("three") }).then(() => {
     worldReady = true;
     note.hidden = true;
-    HH.World.setHandlers({ onBuilding: handleBuilding, onObject: handleObject, onHelper: handleHelper });
+    HH.World.setHandlers({
+      onBuilding: handleBuilding,
+      onObject: handleObject,
+      onHelper: handleHelper,
+      onActor: handleActor,
+      onRoomEnter: handleRoomEnter,
+    });
     HH.World.showHub();
     HH.World.resize();
   }).catch(err => {
@@ -323,17 +345,22 @@ function enterExplore() {
   goHub();
   if (window.HH && HH.World) HH.World.resize();
 }
+function exitOverlayModes() {
+  if (findState.active) quitFindGame();
+  if (scenarioState) { endScenario(); }
+}
 function goHub() {
-  exState.place = null; exState.roomIdx = 0;
+  exitOverlayModes();
+  exState.place = null; exState.roomId = null;
   if (window.HH && HH.World && worldReady) HH.World.showHub();
   $("roomHeader").hidden = true;
-  $("roomPrevBtn").hidden = true;
-  $("roomNextBtn").hidden = true;
-  $("quizBtn").hidden = true;
+  $("findGameBtn").hidden = true;
   $("mapBtn").hidden = true;
+  hideWorldBanner();
   setBelu("Tap a building to explore! 🏠🏫");
 }
 function handleBuilding(placeId) {
+  if (scenarioState) return;
   const place = HH.PLACES[placeId];
   if (!place) return;
   if (!place.unlocked) {
@@ -341,47 +368,49 @@ function handleBuilding(placeId) {
     setBelu(place.comingSoon || "Coming soon!");
     return;
   }
-  exState.place = placeId; exState.roomIdx = 0;
-  if (HH.World) HH.World.showRoom(placeId, 0);
-  renderRoom();
-}
-function renderRoom() {
-  const place = HH.PLACES[exState.place];
-  const room = place.rooms[exState.roomIdx];
-  const rh = $("roomHeader");
-  rh.hidden = false; rh.textContent = room.emoji + " " + room.name;
-  setBelu(room.action);
+  exState.place = placeId; exState.roomId = null;
+  if (window.HH && HH.World) HH.World.enterBuilding(placeId);
   $("mapBtn").hidden = false;
-  $("quizBtn").hidden = !room.quiz;
-  $("roomPrevBtn").hidden = false;
-  $("roomNextBtn").hidden = false;
+  const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
+  $("findGameBtn").hidden = !hasTasks || findState.active;
+  $("roomHeader").hidden = true;
 }
-function stepRoom(delta) {
-  const place = HH.PLACES[exState.place];
-  if (!place) return;
-  const n = place.rooms.length;
-  exState.roomIdx = (exState.roomIdx + delta + n) % n;
-  if (HH.World) HH.World.showRoom(exState.place, exState.roomIdx);
-  renderRoom();
+function handleRoomEnter(roomId) {
+  if (scenarioState) return; // scenarios control their own room chrome
+  exState.roomId = roomId;
+  const info = findRoomInfo(roomId);
+  const rh = $("roomHeader");
+  if (info) {
+    rh.hidden = false;
+    rh.textContent = info.room.emoji + " " + info.room.name;
+    if (!visitedRoomsThisSession.has(roomId)) {
+      visitedRoomsThisSession.add(roomId);
+      if (!findState.active) setBelu(info.room.action);
+    }
+  } else {
+    rh.hidden = true;
+    if (!findState.active) setBelu("Walk through a door! 🚪");
+  }
 }
-function handleObject(objIndex) {
-  const place = HH.PLACES[exState.place];
-  if (!place) return;
-  const room = place.rooms[exState.roomIdx];
-  const obj = room.objects && room.objects[objIndex];
+function handleObject(roomId, objIndex) {
+  if (scenarioState) return;
+  if (findState.active) { handleFindObjectTap(roomId, objIndex); return; }
+  const info = findRoomInfo(roomId);
+  const obj = info && info.room.objects && info.room.objects[objIndex];
   if (!obj) return;
-  setBelu(obj[0] + " " + obj[1]);
+  const label = obj[0] + " " + obj[1];
+  setBelu(label);
+  if (window.HH && HH.World) HH.World.say("me", label, 2500);
 }
-function handleHelper(helperId) { openFriendCard(helperId); }
-function startRoomQuiz() {
-  const place = HH.PLACES[exState.place];
-  if (!place) return;
-  const room = place.rooms[exState.roomIdx];
-  if (!room.quiz) return;
-  openQuiz(room.quiz.q, room.quiz.a, () => {
-    if (!save.quizzed.includes(room.id)) save.quizzed.push(room.id);
-    awardSticker(1);
-  });
+function handleHelper(helperId) {
+  if (scenarioState) { handleScenarioHelperTap(helperId); return; }
+  openFriendCard(helperId);
+}
+function handleActor(actorId) {
+  if (scenarioState && scenarioState.scenario.id === actorId) {
+    const actor = HH.SCENARIO_ACTORS[actorId];
+    if (actor && window.HH && HH.World) HH.World.say(actorId, actor.bubble, 2500);
+  }
 }
 let toastTimer = null;
 function showToast(text) {
@@ -390,23 +419,97 @@ function showToast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
 }
-function openQuiz(q, answers, onCorrect) {
-  const modal = $("quizModal");
-  $("quizQ").textContent = q;
-  $("quizSpeakBtn").onclick = () => speak(q);
-  const feedback = $("quizFeedback");
-  buildChoices($("quizAnswers"), answers, feedback, () => {
-    setTimeout(() => { modal.hidden = true; if (onCorrect) onCorrect(); }, 900);
-  });
-  modal.hidden = false;
+
+/* ---- world banner: bottom overlay used by Belu's Game + in-world scenarios ---- */
+function showWorldBanner(text, opts) {
+  opts = opts || {};
+  const banner = $("worldBanner");
+  $("worldBannerText").textContent = text || "";
+  $("worldBannerSpeakBtn").onclick = () => speak(text || "");
+  $("worldBannerCloseBtn").hidden = !opts.onClose;
+  $("worldBannerCloseBtn").onclick = opts.onClose || null;
+  $("worldBannerChoices").innerHTML = "";
+  $("worldBannerActions").innerHTML = "";
+  banner.hidden = false;
 }
+function setBannerText(text) { $("worldBannerText").textContent = text || ""; }
+function hideWorldBanner() {
+  $("worldBanner").hidden = true;
+  $("worldBannerChoices").innerHTML = "";
+  $("worldBannerActions").innerHTML = "";
+}
+function bannerChoices(options, onCorrect) {
+  buildChoices($("worldBannerChoices"), options, null, onCorrect);
+}
+function bannerActionButton(label, cls, onClick) {
+  const btn = document.createElement("button");
+  btn.className = cls || "btn-primary";
+  btn.textContent = label;
+  btn.addEventListener("click", onClick);
+  $("worldBannerActions").appendChild(btn);
+  return btn;
+}
+
+/* ---- Belu's Game: find & do (replaces the old room quiz cards) ---- */
+function startFindGame() {
+  const placeId = exState.place;
+  const tasks = HH.FIND_TASKS && HH.FIND_TASKS[placeId];
+  if (!placeId || !tasks || !tasks.length) return;
+  findState = { active: true, placeId, tasks, idx: 0, lastWrongAt: 0 };
+  $("findGameBtn").hidden = true;
+  showFindTask();
+}
+function showFindTask() {
+  const task = findState.tasks[findState.idx];
+  if (!task) { finishFindGame(); return; }
+  setBelu(task.ask);
+  showWorldBanner(task.ask, { onClose: quitFindGame });
+  if (window.HH && HH.World) HH.World.setTarget({ roomId: task.roomId, objIndex: task.objIndex });
+}
+function handleFindObjectTap(roomId, objIndex) {
+  const task = findState.tasks[findState.idx];
+  if (!task) return;
+  if (roomId === task.roomId && objIndex === task.objIndex) {
+    SND.chime();
+    awardSticker(1);
+    setBelu(task.praise);
+    setBannerText(task.praise);
+    if (window.HH && HH.World) HH.World.setTarget(null);
+    findState.idx++;
+    setTimeout(showFindTask, 1500);
+  } else {
+    const now = Date.now();
+    if (now - findState.lastWrongAt > 2500) {
+      findState.lastWrongAt = now;
+      SND.tryTone();
+      setBelu("Hmm, not that one — keep looking! 💙");
+    }
+  }
+}
+function finishFindGame() {
+  const placeId = findState.placeId;
+  findState.active = false;
+  hideWorldBanner();
+  if (window.HH && HH.World) HH.World.setTarget(null);
+  const place = HH.PLACES[placeId];
+  if (placeId && !save.quizzed.includes(placeId)) save.quizzed.push(placeId);
+  saveSave();
+  confettiBig(); SND.chime();
+  setBelu("You know your whole " + (place ? place.name : "place") + "! 🌟");
+  if (place && exState.place === placeId) $("findGameBtn").hidden = false;
+}
+function quitFindGame() {
+  findState.active = false;
+  hideWorldBanner();
+  if (window.HH && HH.World) HH.World.setTarget(null);
+  if (exState.place && HH.FIND_TASKS && HH.FIND_TASKS[exState.place]) $("findGameBtn").hidden = false;
+  setBelu("Let's keep exploring! 🌍");
+}
+
 function wireExplore() {
   $("mapBtn").addEventListener("click", goHub);
-  $("quizBtn").addEventListener("click", startRoomQuiz);
-  $("roomPrevBtn").addEventListener("click", () => stepRoom(-1));
-  $("roomNextBtn").addEventListener("click", () => stepRoom(1));
+  $("findGameBtn").addEventListener("click", startFindGame);
   window.addEventListener("resize", () => { if (window.HH && HH.World && worldReady) HH.World.resize(); });
-  $("quizModal").addEventListener("click", e => { if (e.target.id === "quizModal") $("quizModal").hidden = true; });
   initWorldOnce();
 }
 
@@ -539,9 +642,15 @@ function startFeelingsLesson() {
   $("handBody").innerHTML = "";
   setBelu(HH.FEELINGS.intro, { onNext: renderFeelingsSigns });
 }
+function beluCardRow() {
+  const row = document.createElement("div"); row.className = "belu-card-row";
+  row.innerHTML = '<span class="belu-card-avatar">🐘</span>';
+  return row;
+}
 function renderFeelingsSigns() {
   const body = $("handBody"); body.innerHTML = "";
   const card = document.createElement("div"); card.className = "lesson-card";
+  card.appendChild(beluCardRow());
   const grid = document.createElement("div"); grid.className = "signs-grid";
   HH.FEELINGS.signs.forEach(s => {
     const chip = document.createElement("div"); chip.className = "sign-chip";
@@ -560,6 +669,7 @@ function renderFeelingsSigns() {
 function renderFeelingsQuiz() {
   const body = $("handBody"); body.innerHTML = "";
   const card = stepCardShell("Quick Check");
+  card.appendChild(beluCardRow());
   speakRow(card, HH.FEELINGS.quiz.q);
   const answers = document.createElement("div"); answers.className = "quiz-answers";
   const feedback = document.createElement("div"); feedback.className = "quiz-feedback";
@@ -637,6 +747,10 @@ function wireHand() { /* interactions wired per-render */ }
 
 /* ---------------------------------------------------------------
    6. PRACTICE BEING BRAVE
+   Enacted IN-WORLD: the child walks to the actor, feels/reacts via
+   banner choices, then walks to & taps the right helper to "tell".
+   Falls back to the old step-card flow only if a scenario's place
+   or room is not walkable (shouldn't happen for the tier-A set).
    --------------------------------------------------------------- */
 let practiceState = null;
 
@@ -665,6 +779,10 @@ function visibleScenarios() {
   const showTierB = !!HH.ENABLE_TIER_B;
   return HH.SCENARIOS.filter(sc => showTierB || sc.tier !== "B");
 }
+function scenarioIsWalkable(sc) {
+  const place = HH.PLACES[sc.place];
+  return !!(place && place.rooms && place.rooms.some(r => r.id === sc.room) && window.HH && HH.World && worldReady);
+}
 function renderScenarioPicker(body) {
   setBelu("Pick a story to practice! 💪");
   const grid = document.createElement("div"); grid.className = "scenario-grid";
@@ -678,13 +796,18 @@ function renderScenarioPicker(body) {
     const em = document.createElement("div"); em.className = "em"; em.textContent = sc.emoji;
     const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = sc.title;
     card.appendChild(em); card.appendChild(tt);
-    card.addEventListener("click", () => {
-      practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
-      renderPractice();
-    });
+    card.addEventListener("click", () => attemptStartScenario(sc));
     grid.appendChild(card);
   });
   body.appendChild(grid);
+}
+function attemptStartScenario(sc) {
+  if (scenarioIsWalkable(sc)) {
+    startScenarioInWorld(sc);
+  } else {
+    practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
+    renderPractice();
+  }
 }
 function renderSeeStep(body) {
   const sc = practiceState.scenario;
@@ -830,6 +953,158 @@ function renderResolveStep(body) {
 }
 function wirePractice() { /* interactions wired per-render */ }
 
+/* -------- in-world flow: enact the scenario in the 3D world -------- */
+function startScenarioInWorld(sc) {
+  if (findState.active) quitFindGame();
+  if (window.HH && HH.World) HH.World.removeActor(sc.id); // defensive: idempotent if not present
+  scenarioState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
+  showScreen("exploreScreen");
+  $("mapBtn").hidden = true;
+  $("findGameBtn").hidden = true;
+  $("roomHeader").hidden = true;
+  if (window.HH && HH.World) {
+    HH.World.enterBuilding(sc.place);
+    HH.World.teleport(sc.room);
+    HH.World.spawnActor(sc.id, sc.room);
+  }
+  runScenarioSee();
+}
+function runScenarioSee() {
+  const sc = scenarioState.scenario;
+  const actor = HH.SCENARIO_ACTORS[sc.id];
+  if (actor && window.HH && HH.World) HH.World.say(sc.id, actor.bubble, 4500);
+  showWorldBanner(sc.setup, { onClose: quitScenario });
+  bannerActionButton("Next ➡️", "btn-primary", () => { scenarioState.step = "feel"; runScenarioFeel(); });
+  setBelu(sc.setup);
+}
+function runScenarioFeel() {
+  const sc = scenarioState.scenario;
+  showWorldBanner(sc.feelQ, { onClose: quitScenario });
+  bannerChoices(sc.feelA, () => {
+    setTimeout(() => { scenarioState.step = "react"; runScenarioReact(); }, 800);
+  });
+  setBelu(sc.feelQ);
+}
+function runScenarioReact() {
+  const sc = scenarioState.scenario;
+  showWorldBanner(sc.reactQ, { onClose: quitScenario });
+  bannerChoices(sc.reactA, () => {
+    // the correct reaction always moves the child away from the situation
+    if (window.HH && HH.World) HH.World.removeActor(sc.id);
+    setTimeout(() => { scenarioState.step = "reactWhy"; runScenarioReactWhy(); }, 800);
+  });
+  setBelu(sc.reactQ);
+}
+function runScenarioReactWhy() {
+  const sc = scenarioState.scenario;
+  showWorldBanner(sc.reactWhy, { onClose: quitScenario });
+  bannerActionButton("Next ➡️", "btn-primary", () => { startTellStep(); });
+  setBelu(sc.reactWhy);
+}
+function startTellStep() {
+  const sc = scenarioState.scenario;
+  scenarioState.step = "tell";
+  scenarioState.tellPhase = "ask1";
+  showWorldBanner(sc.tellPrompt, { onClose: quitScenario });
+  setBelu(sc.tellPrompt);
+  if (window.HH && HH.World) HH.World.setTarget({ helperId: sc.tellTo[0] });
+}
+function helperPlaceOf(helperId) {
+  for (const placeId in HH.HELPER_SPOTS) {
+    const rooms = HH.HELPER_SPOTS[placeId];
+    for (const roomId in rooms) if (rooms[roomId] === helperId) return placeId;
+  }
+  return null;
+}
+function handleScenarioHelperTap(helperId) {
+  if (!scenarioState || scenarioState.step !== "tell") return;
+  const sc = scenarioState.scenario;
+  const phase = scenarioState.tellPhase;
+  const expected = phase === "ask2" ? sc.tellTo[1] : sc.tellTo[0];
+  if (helperId !== expected) {
+    SND.tryTone();
+    setBannerText("Try another helper! 💙");
+    return;
+  }
+  scenarioState.usedTell.push(helperId);
+  SND.chime();
+  confettiBig();
+  if (sc.keepTelling && scenarioState.usedTell.length === 1) {
+    if (window.HH && HH.World) {
+      HH.World.setTarget(null);
+      HH.World.say(helperId, sc.busyLine, 3000);
+    }
+    setBannerText(sc.busyLine);
+    setBelu(sc.busyLine);
+    setTimeout(() => {
+      scenarioState.tellPhase = "keep";
+      setBannerText(sc.keepLine);
+      setBelu(sc.keepLine);
+      setTimeout(() => {
+        scenarioState.tellPhase = "ask2";
+        const nextHelper = sc.tellTo[1];
+        const nextPlace = helperPlaceOf(nextHelper);
+        if (nextPlace && nextPlace !== sc.place && window.HH && HH.World) {
+          // the next helper lives in a different building — go there!
+          const line = sc.goLine || "Let's go find another helper!";
+          setBannerText(line);
+          setBelu(line);
+          speak(line);
+          setTimeout(() => {
+            HH.World.enterBuilding(nextPlace);
+            setBannerText(sc.tellPrompt);
+            HH.World.setTarget({ helperId: nextHelper });
+          }, 2600);
+        } else {
+          setBannerText("Who else can you tell?");
+          setBelu("Who else can you tell?");
+          if (window.HH && HH.World) HH.World.setTarget({ helperId: nextHelper });
+        }
+      }, 1800);
+    }, 3000);
+  } else {
+    scenarioState.step = "resolve";
+    runScenarioResolve();
+  }
+}
+function runScenarioResolve() {
+  const sc = scenarioState.scenario;
+  const helperId = scenarioState.usedTell[scenarioState.usedTell.length - 1];
+  if (window.HH && HH.World) {
+    HH.World.setTarget(null);
+    HH.World.say(helperId, "You were brave to tell me. 💙", 4000);
+  }
+  if (!save.done.includes(sc.id)) save.done.push(sc.id);
+  saveSave();
+  awardSticker(1);
+  confettiBig(); SND.chime();
+  const aff = HH.AFFIRMATIONS[Math.floor(Math.random() * HH.AFFIRMATIONS.length)];
+  showWorldBanner(sc.resolve + "  " + aff, {});
+  bannerActionButton("Play again 🔁", "btn-secondary", () => { startScenarioInWorld(sc); });
+  bannerActionButton("More stories ➡️", "btn-primary", () => {
+    endScenario();
+    showScreen("practiceScreen");
+    practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
+    renderPractice();
+  });
+  setBelu(sc.resolve);
+}
+function endScenario() {
+  if (scenarioState) {
+    const sc = scenarioState.scenario;
+    if (window.HH && HH.World) { HH.World.removeActor(sc.id); HH.World.setTarget(null); }
+  }
+  scenarioState = null;
+  hideWorldBanner();
+}
+function quitScenario() {
+  endScenario();
+  showScreen("practiceScreen");
+  practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
+  renderPractice();
+  setBelu("Let's pick another story! 💪");
+}
+
 /* ---------------------------------------------------------------
    7. GROWN-UPS CORNER (adult-gated, sober styling)
    --------------------------------------------------------------- */
@@ -893,7 +1168,7 @@ function wireGlobalChrome() {
     const mute = e.target.closest(".mute-btn");
     if (mute) { toggleMute(); return; }
     const back = e.target.closest(".btn-back[data-target='menu']");
-    if (back) { showScreen("menuScreen"); return; }
+    if (back) { exitOverlayModes(); showScreen("menuScreen"); return; }
   });
 }
 
@@ -928,9 +1203,13 @@ boot();
 
 /* test hooks (harmless in production; used by headless verification) */
 window.__HHTEST = {
-  handleBuilding, handleObject, handleHelper, stepRoom, showScreen,
+  handleBuilding, handleObject, handleHelper, handleActor, handleRoomEnter, showScreen,
+  startFindGame, quitFindGame,
+  attemptStartScenario, quitScenario, handleScenarioHelperTap,
   get exState() { return exState; },
   get worldReady() { return worldReady; },
+  get findState() { return findState; },
+  get scenarioState() { return scenarioState; },
 };
 
 })();

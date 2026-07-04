@@ -163,6 +163,20 @@
   }
   .explore-bottombar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px; flex-wrap: wrap; }
 
+  /* ---------- world banner (Belu's Game + in-world scenarios) ---------- */
+  .world-banner {
+    position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 65;
+    background: #fff; border-radius: 22px; padding: 16px 18px; box-shadow: 0 10px 24px rgba(60,40,100,.28);
+    max-height: 62%; overflow-y: auto; animation: popIn .22s ease-out;
+  }
+  .banner-close-btn {
+    position: absolute; top: 10px; right: 10px; border: 0; background: rgba(95,61,196,.12); color: #5f3dc4;
+    width: 34px; height: 34px; border-radius: 50%; font-size: 14px; cursor: pointer; font-weight: 800;
+  }
+  .banner-text-row { display: flex; align-items: flex-start; gap: 10px; padding-right: 40px; }
+  .banner-text { font-size: 16px; font-weight: 800; color: #4c3a8f; line-height: 1.35; flex: 1; text-align: left; }
+  #worldBannerChoices:not(:empty), #worldBannerActions:not(:empty) { margin-top: 14px; }
+
   /* ---------- belu mascot bubble (global) ---------- */
   #beluBubble {
     position: fixed; left: 12px; bottom: 12px; z-index: 60; display: flex; align-items: flex-end; gap: 8px;
@@ -193,8 +207,6 @@
   .friend-line { font-size: 15px; color: #5c4a7d; line-height: 1.4; margin-bottom: 18px; }
   .modal-card .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 
-  .quiz-q-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-  .quiz-q { font-size: 18px; font-weight: 800; color: #4c3a8f; text-align: left; flex: 1; }
   .quiz-answers { display: flex; flex-direction: column; gap: 10px; }
   .choice-btn {
     border: 0; background: #f1edff; color: #3b2a55; font-weight: 700; font-size: 16px; text-align: left;
@@ -229,6 +241,8 @@
   .helper-chip.friend { box-shadow: 0 4px 10px rgba(60,40,100,.13), 0 0 0 3px #ffd43b; }
   .helper-chip.used { opacity: .4; }
   .lesson-card { background: #fff; border-radius: 24px; padding: 22px; max-width: 560px; box-shadow: 0 8px 20px rgba(60,40,100,.14); display: flex; flex-direction: column; gap: 14px; }
+  .belu-card-row { display: flex; align-items: center; gap: 8px; }
+  .belu-card-avatar { font-size: 32px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
   .signs-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .sign-chip { background: #fff7e0; border-radius: 16px; padding: 12px 14px; min-width: 100px; text-align: center; box-shadow: 0 3px 8px rgba(0,0,0,.08); }
   .sign-chip .em { font-size: 32px; }
@@ -351,12 +365,19 @@
     <canvas id="three"></canvas>
     <div id="worldLoadingNote" class="loading-note">🌍 The world is loading…</div>
     <div id="toastNote" class="toast-note" hidden></div>
+    <div id="worldBanner" class="world-banner" hidden>
+      <button id="worldBannerCloseBtn" class="banner-close-btn" hidden>✖</button>
+      <div class="banner-text-row">
+        <div id="worldBannerText" class="banner-text"></div>
+        <button id="worldBannerSpeakBtn" class="speak-btn" title="Read aloud">🔊</button>
+      </div>
+      <div id="worldBannerChoices" class="quiz-answers"></div>
+      <div id="worldBannerActions" class="resolve-actions"></div>
+    </div>
   </div>
   <div class="explore-bottombar">
-    <button id="roomPrevBtn" class="round-btn" hidden>◀</button>
     <button id="mapBtn" class="pill-btn" hidden>🏠 Map</button>
-    <button id="quizBtn" class="pill-btn" hidden>❓ Quiz</button>
-    <button id="roomNextBtn" class="round-btn" hidden>▶</button>
+    <button id="findGameBtn" class="pill-btn" hidden>⭐ Belu's Game</button>
   </div>
 </div>
 
@@ -424,18 +445,6 @@
       <button id="friendAddBtn" class="btn-primary">Add to my friends! 💙</button>
       <button id="friendCloseBtn" class="link-btn">Close</button>
     </div>
-  </div>
-</div>
-
-<!-- generic quiz modal (room quizzes, feelings quiz) -->
-<div id="quizModal" class="modal-overlay" hidden>
-  <div class="modal-card">
-    <div class="quiz-q-row">
-      <div id="quizQ" class="quiz-q"></div>
-      <button id="quizSpeakBtn" class="speak-btn" title="Read aloud">🔊</button>
-    </div>
-    <div id="quizAnswers" class="quiz-answers"></div>
-    <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
   </div>
 </div>
 
