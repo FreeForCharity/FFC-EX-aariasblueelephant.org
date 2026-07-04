@@ -67,6 +67,7 @@ type ViewState =
     | 'volunteers' 
     | 'manage-testimonials' 
     | 'media-outreach'
+    | 'games'
     | 'wheel'
     | 'blockcraft'
     | 'roadsafety'
@@ -401,17 +402,11 @@ const Dashboard: React.FC = () => {
         
         // Always Visible (at the end)
         { id: 'buddy-up', label: 'Summer Buddy Up', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
-        { id: 'belus-world', label: "Belu's World", icon: Gamepad2, role: 'all', path: '/belus-world' },
-        { id: 'wheel', label: 'Wheel of Fun', icon: Star, role: 'all' },
-        { id: 'blockcraft', label: "Aaria's Block Craft 3D", icon: Gamepad2, role: 'all' },
-        { id: 'elly-tubbies', label: 'Elly-Tubbies', icon: Sun, role: 'all' },
-        { id: 'roadsafety', label: 'Road Safety Heroes', icon: Bike, role: 'all' },
-        { id: 'doughlab', label: 'Dough Lab', icon: Cookie, role: 'all' },
-        { id: 'magnetblocks', label: "Aaria's Magnet Blocks", icon: Magnet, role: 'all' },
+        { id: 'games', label: 'Games Gallery', icon: Gamepad2, role: 'all' },
     ].filter(item => {
-        // Special case for the games/fun sections and buddy-up - always show
-        if (item.id === 'wheel' || item.id === 'blockcraft' || item.id === 'elly-tubbies' || item.id === 'roadsafety' || item.id === 'doughlab' || item.id === 'magnetblocks' || item.id === 'buddy-up' || item.id === 'belus-world') return true;
-        
+        // Special case for the games gallery and buddy-up - always show
+        if (item.id === 'games' || item.id === 'buddy-up') return true;
+
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)
         if (isBoard) {
@@ -423,6 +418,16 @@ const Dashboard: React.FC = () => {
         if (item.role === 'donor') return isDonor;
         return false;
     });
+
+    const GAMES: { id: string; title: string; emoji: string; oneLiner: string; img: string; view?: ViewState; path?: string }[] = [
+        { id: 'belus-world', title: "Belu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Belu grow!', img: '/images/games/belus-world.jpg', path: '/belus-world' },
+        { id: 'magnetblocks', title: "Aaria's Magnet Blocks", emoji: '🧲', oneLiner: 'Magnetic blocks that click, stack & drive!', img: '/images/games/magnetblocks.jpg', view: 'magnetblocks' },
+        { id: 'doughlab', title: 'Dough Lab 3D', emoji: '🫓', oneLiner: 'Squish, slice & sculpt real 3D dough!', img: '/images/games/doughlab.jpg', view: 'doughlab' },
+        { id: 'blockcraft', title: "Aaria's Block Craft 3D", emoji: '🧱', oneLiner: 'Building, animal friends, slime & cookies!', img: '/images/games/blockcraft.jpg', view: 'blockcraft' },
+        { id: 'elly-tubbies', title: 'Elly-Tubbies', emoji: '☀️', oneLiner: 'Bouncy elephant friends in sunny Trunkland!', img: '/images/games/elly-tubbies.jpg', view: 'elly-tubbies' },
+        { id: 'roadsafety', title: 'Road Safety Heroes', emoji: '🚦', oneLiner: 'Ride & drive the REAL streets of Mountain House!', img: '/images/games/roadsafety.jpg', view: 'roadsafety' },
+        { id: 'wheel', title: 'Wheel of Fun', emoji: '🎡', oneLiner: 'Spin the rainbow wheel for surprises & giggles!', img: '/images/games/wheel.jpg', view: 'wheel' },
+    ];
 
     const renderSuccessView = (type: string) => (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
@@ -1957,13 +1962,17 @@ const Dashboard: React.FC = () => {
     };
 
     const renderWheelSection = () => (
-        <div className="flex justify-center py-8">
-            <WheelOfFun />
+        <div className="space-y-4">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
+            <div className="flex justify-center py-8">
+                <WheelOfFun />
+            </div>
         </div>
     );
 
     const renderBlockCraftSection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Block Craft 3D 🐘💙</h2>
@@ -1994,6 +2003,7 @@ const Dashboard: React.FC = () => {
 
     const renderRoadSafetySection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Mountain House Road Safety Heroes 🚲🛡</h2>
@@ -2024,6 +2034,7 @@ const Dashboard: React.FC = () => {
 
     const renderDoughLabSection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Dough Lab 🫧</h2>
@@ -2055,6 +2066,7 @@ const Dashboard: React.FC = () => {
 
     const renderMagnetBlocksSection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Magnet Blocks 🧲🧱</h2>
@@ -2085,6 +2097,7 @@ const Dashboard: React.FC = () => {
 
     const renderEllyTubbiesSection = () => (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Elly-Tubbies 🐘☀️</h2>
@@ -2109,6 +2122,39 @@ const Dashboard: React.FC = () => {
                     allow="autoplay; fullscreen"
                     allowFullScreen
                 />
+            </div>
+        </div>
+    );
+
+    const renderGamesGallerySection = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Games Gallery 🎮</h2>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                    Pick a game! Built for Aaria and Her Friends 💖
+                </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {GAMES.map((g) => (
+                    <div
+                        key={g.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => (g.path ? navigate(g.path) : setActiveView(g.view!))}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                g.path ? navigate(g.path) : setActiveView(g.view!);
+                            }
+                        }}
+                        className="cursor-pointer rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-brand-card shadow-lg hover:scale-[1.03] hover:shadow-2xl transition-all duration-300"
+                    >
+                        <img src={g.img} alt={g.title} className="w-full aspect-video object-cover" loading="lazy" />
+                        <div className="p-4">
+                            <h3 className="font-bold text-slate-900 dark:text-white">{g.emoji} {g.title}</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{g.oneLiner}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -2205,6 +2251,7 @@ const Dashboard: React.FC = () => {
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
             case 'media-outreach': return renderMediaOutreachSection();
+            case 'games': return renderGamesGallerySection();
             case 'wheel': return renderWheelSection();
             case 'blockcraft': return renderBlockCraftSection();
             case 'elly-tubbies': return renderEllyTubbiesSection();

@@ -3,117 +3,160 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Dough Lab — playdough & slime simulator</title>
+<title>Dough Lab 3D — playdough & slime simulator</title>
+<link rel="icon" href="../favicon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
   body {
-    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
-    background: #2e2620;
+    font-family: "Comic Sans MS","Chalkboard SE","Marker Felt","Segoe UI",sans-serif;
+    background: linear-gradient(180deg,#ffd6e0 0%,#fff3bf 45%,#c5f6fa 100%);
     display: flex; flex-direction: column;
     user-select: none; -webkit-user-select: none;
   }
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 8px; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px 10px; gap: 12px; flex-wrap: wrap;
   }
-  h1 { color: #f3e7d3; font-size: 18px; font-weight: 800; letter-spacing: .3px; }
-  h1 small { color: #a89377; font-weight: 600; font-size: 12px; margin-left: 8px; }
+  h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: .3px;
+    background: linear-gradient(90deg,#f03e3e,#f76707,#f59f00,#37b24d,#1c7ed6,#9c36b5);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 small { color: #7048e8; font-weight: 600; font-size: 13px; margin-left: 8px; }
 
-  .seg { display: flex; background: #1f1a15; border-radius: 12px; padding: 3px; }
+  .seg { display: flex; background: #fff; border-radius: 14px; padding: 4px; box-shadow: 0 3px 8px rgba(0,0,0,.12); }
   .seg button {
-    border: 0; background: transparent; color: #a89377; font: inherit; font-weight: 700;
-    font-size: 13px; padding: 6px 14px; border-radius: 9px; cursor: pointer;
+    border: 0; background: transparent; color: #7048e8; font: inherit; font-weight: 700;
+    font-size: 16px; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all .12s;
   }
-  .seg button.on { background: #f3e7d3; color: #2e2620; }
+  .seg button.on {
+    background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00;
+    box-shadow: 0 4px 0 #e8920c; transform: translateY(0);
+  }
+  .seg button.on:active { transform: translateY(2px); box-shadow: 0 2px 0 #e8920c; }
 
   #stage {
-    position: relative; flex: 1; margin: 0 12px; border-radius: 20px; overflow: hidden;
-    background:
-      radial-gradient(120% 90% at 50% 20%, #e9dcc2 0%, #ddcba6 55%, #cdb98f 100%);
-    box-shadow: inset 0 3px 14px rgba(80, 55, 20, .35), inset 0 -2px 6px rgba(255,255,255,.25);
+    position: relative; flex: 1; margin: 0 12px; border-radius: 24px; overflow: hidden;
+    background: #efe3ce;
+    box-shadow: inset 0 4px 12px rgba(100, 70, 30, .25), inset 0 -3px 8px rgba(255,255,255,.4), 0 8px 16px rgba(0,0,0,.12);
+    border: 8px solid #fff8f0;
     touch-action: none;
   }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #goo { filter: url(#gooey) drop-shadow(0 5px 7px rgba(80, 50, 10, .30)); }
-  #ui  { touch-action: none; cursor: crosshair; }
+  #ui { touch-action: none; cursor: crosshair; }
 
   #hint {
     position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
-    background: rgba(31, 26, 21, .75); color: #f3e7d3; font-size: 12.5px; font-weight: 600;
-    padding: 6px 14px; border-radius: 99px; pointer-events: none; white-space: nowrap;
-    transition: opacity .4s;
+    background: #fff; color: #5c4a32; font-size: 13px; font-weight: 600;
+    padding: 7px 16px; border-radius: 20px; pointer-events: none; white-space: nowrap;
+    transition: opacity .4s; box-shadow: 0 3px 8px rgba(0,0,0,.15);
   }
 
   footer { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
   .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
   .tool {
-    border: 0; width: 52px; height: 52px; border-radius: 16px; cursor: pointer;
-    font-size: 23px; line-height: 1; background: #4a3e31; color: #f3e7d3;
-    box-shadow: 0 3px 0 #1f1a15; transition: transform .06s;
+    border: 0; width: 58px; height: 58px; border-radius: 16px; cursor: pointer;
+    font-size: 26px; line-height: 1; background: #fff; color: #5c4a32;
+    box-shadow: 0 4px 0 #adb5bd, 0 6px 12px rgba(0,0,0,.12); transition: transform .06s;
     display: flex; align-items: center; justify-content: center;
   }
-  .tool:active { transform: translateY(2px); box-shadow: 0 1px 0 #1f1a15; }
-  .tool.on { background: #f3e7d3; box-shadow: 0 3px 0 #b09a73; }
-  .tool svg { width: 28px; height: 28px; display: block; }
-  .tool .ink { stroke: #f3e7d3; }
-  .tool.on .ink { stroke: #2e2620; }
-  .tool .inkf { fill: #f3e7d3; }
-  .tool.on .inkf { fill: #2e2620; }
+  .tool:active { transform: translateY(3px); box-shadow: 0 1px 0 #adb5bd; }
+  .tool.on { background: linear-gradient(180deg,#a5d8ff,#74c0fc); box-shadow: 0 4px 0 #1c7ed6, 0 6px 12px rgba(0,0,0,.12); }
+  .tool svg { width: 32px; height: 32px; display: block; }
+  .tool .ink { stroke: #5c4a32; }
+  .tool.on .ink { stroke: #1c7ed6; }
+  .tool .inkf { fill: #5c4a32; }
+  .tool.on .inkf { fill: #1c7ed6; }
 
   .swatch {
-    width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent;
-    cursor: pointer; box-shadow: inset 0 -4px 6px rgba(0,0,0,.22), inset 0 3px 4px rgba(255,255,255,.35);
+    width: 38px; height: 38px; border-radius: 50%; border: 4px solid transparent;
+    cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.18), inset 0 -3px 6px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.4);
+    transition: transform .1s;
   }
-  .swatch.on { border-color: #f3e7d3; }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.on { border-color: #5c4a32; box-shadow: 0 3px 8px rgba(0,0,0,.25), inset 0 -3px 6px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.4); }
 
   .pill {
-    border: 0; background: #1f1a15; color: #f3e7d3; font: inherit; font-weight: 700;
-    font-size: 13px; padding: 9px 16px; border-radius: 99px; cursor: pointer;
+    border: 0; background: linear-gradient(180deg,#8ce99a,#51cf66); color: #0b4419; font: inherit; font-weight: 700;
+    font-size: 16px; padding: 10px 20px; border-radius: 20px; cursor: pointer;
+    box-shadow: 0 4px 0 #2f9e44; transition: transform .1s;
   }
-  .pill:active { opacity: .8; }
+  .pill:active { transform: translateY(2px); box-shadow: 0 2px 0 #2f9e44; }
+  #resetBtn { background: linear-gradient(180deg,#ffa94d,#ff922b); color: #5c3c00; box-shadow: 0 4px 0 #e8590c; }
+  #resetBtn:active { box-shadow: 0 2px 0 #e8590c; }
 
   @media (max-width: 480px) {
     h1 small { display: none; }
-    .tool { width: 48px; height: 48px; }
+    .tool { width: 52px; height: 52px; font-size: 22px; }
+    .tool svg { width: 28px; height: 28px; }
   }
+
+  #credit {
+    font-size: 12px; color: #7048e8; background: rgba(255,255,255,.65);
+    padding: 6px 14px; border-radius: 16px; text-align: center; margin-top: auto;
+  }
+
+  /* ---------- welcome screen (matches the other games) ---------- */
+  #titleScreen {
+    position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; text-align: center;
+    background: linear-gradient(180deg,#ffd6e0 0%,#fff3bf 45%,#c5f6fa 100%);
+  }
+  #titleScreen h2 {
+    font-size: min(8vw,58px); line-height: 1.15;
+    background: linear-gradient(90deg,#f03e3e,#f76707,#f59f00,#37b24d,#1c7ed6,#9c36b5);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 4px 0 rgba(255,255,255,.35); animation: bounceTitle 2.4s ease-in-out infinite;
+  }
+  @keyframes bounceTitle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  #logoImg { width: min(30vh,180px); border-radius: 50%; box-shadow: 0 10px 28px rgba(90,40,20,.3); animation: bounceTitle 3s ease-in-out infinite; }
+  #titleScreen .byline {
+    font-size: min(4vw,24px); color: #1864ab; font-weight: bold;
+    background: rgba(255,255,255,.65); padding: 6px 22px; border-radius: 20px;
+  }
+  #titleScreen .titleEmojis { font-size: min(7vw,44px); letter-spacing: 10px; animation: bounceTitle 3s .4s ease-in-out infinite; }
+  #titleScreen .subtitle { font-size: min(3.4vw,21px); color: #5f3dc4; max-width: 620px; padding: 0 16px; }
+  #startBtn {
+    font-family: inherit; font-size: 26px; padding: 16px 44px; border: none; border-radius: 30px;
+    background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00; cursor: pointer;
+    box-shadow: 0 6px 0 #e8920c, 0 10px 18px rgba(0,0,0,.18); transition: transform .12s;
+  }
+  #startBtn:hover { transform: scale(1.06); }
+  #startBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #e8920c; }
+  #orgFooter { font-size: 14px; color: #7048e8; background: rgba(255,255,255,.6); padding: 8px 20px; border-radius: 18px; }
 </style>
 </head>
 <body>
 
-<!-- The gooey filter: blur the particles, then threshold the alpha channel so
-     hundreds of soft circles fuse into one continuous lump of dough. -->
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <filter id="gooey">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
-      <feColorMatrix in="b" mode="matrix"
-        values="1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                0 0 0 26 -12"/>
-    </filter>
-  </defs>
-</svg>
+<div id="titleScreen">
+  <img id="logoImg" src="logo.png" alt="Aaria's Blue Elephant" onerror="this.style.display='none'">
+  <h2>Dough Lab</h2>
+  <div class="byline">Built for <b>Aaria and Her Friends</b> 💖 — squish, slice &amp; sculpt real 3D dough!</div>
+  <div class="titleEmojis">🫓 🫧 🔪 💛 ⭐ 🌸</div>
+  <div class="subtitle">A real 3D ball of playdough on your table! Squish it, stretch it, pluck pieces off, slice it, punch out cookie shapes — or switch to wobbly slime. Mix colours by squishing lumps together!</div>
+  <button id="startBtn">Let's Squish! 🫓</button>
+  <div id="orgFooter">Aaria's Blue Elephant 🐘💙 — play, learn &amp; grow</div>
+</div>
 
 <header>
-  <h1>Dough Lab<small>squish it · slice it · stamp it</small></h1>
+  <h1>🧁 Dough Lab<small>squish it · slice it · sculpt it — in real 3D 🌈</small></h1>
   <div class="seg" id="modeSeg">
-    <button data-mode="dough" class="on">Playdough</button>
-    <button data-mode="slime">Slime</button>
+    <button data-mode="dough" class="on">🫓 Playdough</button>
+    <button data-mode="slime">🫧 Slime</button>
   </div>
 </header>
 
 <div id="stage">
-  <canvas id="goo"></canvas>
+  <canvas id="three"></canvas>
   <canvas id="ui"></canvas>
-  <div id="hint">Drag to squish, stretch &amp; tear</div>
+  <div id="hint">👐 Grab the dough — squish, stretch, pluck a piece off!</div>
 </div>
 
 <footer>
   <div class="row" id="tools">
-    <button class="tool on" data-tool="grab" title="Grab — squish, stretch, tear">
+    <button class="tool on" data-tool="grab" title="Grab — squish, stretch, pluck">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5v-1a1.5 1.5 0 0 1 3 0V11m0-4.5a1.5 1.5 0 0 1 3 0V12m0-3a1.5 1.5 0 0 1 3 0v5c0 4-2.5 7-6.5 7S8 18.5 6.5 15.5L5 12.4c-.6-1.2.8-2.4 2-1.6l1 .7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <button class="tool" data-tool="poke" title="Press — smoosh it flat">
@@ -140,41 +183,41 @@
     <button class="pill" id="addBtn">+ Add dough</button>
     <button class="pill" id="resetBtn">Start over</button>
   </div>
+  <div id="credit">Built for Aaria and Her Friends 💖</div>
 </footer>
 
+<script src="lib/three.min.js"></script>
+<script src="lib/MarchingCubes.js"></script>
 <script>
 (() => {
 "use strict";
 
 /* ============================================================
-   Dough Lab — particle soft body with plastic deformation
+   Dough Lab 3D — a real volumetric soft body on a table
    ------------------------------------------------------------
-   The dough is a sheet of particles (top-down view) connected
-   by distance constraints, integrated with Verlet.
-
-   What makes it feel real:
-   • PLASTICITY (playdough): stretch a link past ~4% and its
-     rest length creeps — the dough KEEPS its new shape.
-   • ELASTICITY (slime): rest lengths never change, damping is
-     low — it wobbles, droops and snaps back in strands.
-   • TEARING: pull a link far enough and it breaks.
-   • STICKING: free particles that touch gently re-bond, so
-     you can smoosh two lumps back into one.
-   • Cutting (knife / cookie cutters) just deletes the links a
-     blade would cross, with a short "no re-stick" cooldown so
-     the cut stays clean.
-   Rendering: every particle is a soft disc; an SVG gooey
-   filter (blur + alpha threshold) fuses them into one lump.
+   The dough is a 3D lattice of particles joined by distance
+   constraints (Verlet). Gravity squashes it onto the table.
+   • PLAYDOUGH: plastic creep — it KEEPS the shape you sculpt.
+   • SLIME: elastic + slow flow — wobbles, droops, puddles.
+   • PLUCK: grab and pull — bonds neck and SNAP, a real chunk
+     comes away in your hand.
+   • KNIFE: a vertical blade wall severs every bond it crosses;
+     the halves fall apart under gravity.
+   • CUTTERS: an extruded cookie wall punches through the slab.
+   • KNEAD: touching lumps re-bond and their colours mix.
+   Skin: marching-cubes metaballs (three.js), vertex-coloured,
+   so separate chunks read as real 3D dough with fused surfaces.
    ============================================================ */
 
-const S = 16;                 // particle spacing (px)
-const PR = 10.5;              // draw radius
-const GRAB_R = 58, POKE_R = 64, CUT_R = 72;
-const GAP = 6;                // gap opened by a cutter
+const S = 0.26;                 // particle spacing (world units)
+const HW = 3.5;                 // half width of the world / metaball field
+const BALL_R = 0.92;            // spawn ball radius
+const GRAB_R = 0.45, POKE_R = 0.72, CUT_R = 0.85, GAP = 0.22;
+const MAX_PARTICLES = 560;
 
 const MODES = {
-  dough: { damping: 0.80, stiff: 0.50, iter: 3, plastic: true,  tearMul: 1.75, gloss: false },
-  slime: { damping: 0.965, stiff: 0.20, iter: 3, plastic: false, tearMul: 3.2,  gloss: true  },
+  dough: { damping: 0.72, grav: 16, stiff: 0.34, iter: 2, plastic: 0.20, tearMul: 1.75 },
+  slime: { damping: 0.965, grav: 12, stiff: 0.22, iter: 3, plastic: 0.035, tearMul: 3.2 },
 };
 let mode = "dough";
 
@@ -182,68 +225,184 @@ const PALETTE = ["#e8554d", "#f59b2d", "#f2cf3a", "#5cbf63", "#3f8fe0", "#9a6ce0
 let currentColor = PALETTE[4];
 
 /* ---------- state ---------- */
-let particles = [];           // {x,y,px,py,color,ns}  ns = no-stick-until timestamp
-let constraints = [];         // {a,b,rest,dead}
-let linkSet = new Set();      // "a_b" with a<b
-let linkCount = [];           // bonds per particle
-let flashes = [];             // cutter stamp flashes
-let trail = [];               // knife trail points
+let particles = [];            // {x,y,z, px,py,pz, col:THREE.Color, ns}
+let constraints = [];          // {a,b,rest,dead}
+let linkSet = new Set();
+let linkCount = [];
 let tool = "grab";
-let pointer = { x: 0, y: 0, lx: 0, ly: 0, down: false, has: false };
-let grabbed = [];
+let grabbed = null;            // {ids:[{i,ox,oy,oz,w}], plane:THREE.Plane, target:V3}
+const pointer = { x: 0, y: 0, lx: 0, ly: 0, down: false, has: false, mode: "tool" };
+let trail = [], flashes = [];
 
-/* ---------- canvases ---------- */
+/* ---------- three.js scene ---------- */
 const stage = document.getElementById("stage");
-const gooC = document.getElementById("goo"), gooX = gooC.getContext("2d");
 const uiC = document.getElementById("ui"), uiX = uiC.getContext("2d");
-let W = 0, H = 0, DPR = 1;
+let W = 0, H = 0;
 
-function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = stage.clientWidth; H = stage.clientHeight;
-  for (const c of [gooC, uiC]) {
-    c.width = W * DPR; c.height = H * DPR;
-    c.getContext("2d").setTransform(DPR, 0, 0, DPR, 0, 0);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("three"), antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene = new THREE.Scene();
+{ // soft studio backdrop
+  const cv = document.createElement("canvas"); cv.width = 16; cv.height = 256;
+  const c = cv.getContext("2d");
+  const g = c.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, "#fff2d9"); g.addColorStop(0.55, "#f6e3c4"); g.addColorStop(1, "#e8d0a8");
+  c.fillStyle = g; c.fillRect(0, 0, 16, 256);
+  const tex = new THREE.CanvasTexture(cv);
+  scene.background = tex;
+}
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 60);
+const orbit = { az: 0.0, pol: 0.94, r: 6.4, target: new THREE.Vector3(0, 0.55, 0) };
+function applyCamera() {
+  orbit.pol = Math.max(0.35, Math.min(1.30, orbit.pol));
+  orbit.r = Math.max(3.4, Math.min(9.5, orbit.r));
+  camera.position.set(
+    orbit.target.x + orbit.r * Math.sin(orbit.pol) * Math.sin(orbit.az),
+    orbit.target.y + orbit.r * Math.cos(orbit.pol),
+    orbit.target.z + orbit.r * Math.sin(orbit.pol) * Math.cos(orbit.az));
+  camera.lookAt(orbit.target);
+}
+
+scene.add(new THREE.AmbientLight(0xfff2e0, 0.55));
+const hemi = new THREE.HemisphereLight(0xfff8ee, 0xc9a06a, 0.45); scene.add(hemi);
+const key = new THREE.DirectionalLight(0xfff2dd, 0.85); key.position.set(3, 7, 4); scene.add(key);
+const fill = new THREE.DirectionalLight(0xcfe4ff, 0.28); fill.position.set(-4, 3, -3); scene.add(fill);
+
+/* wooden table */
+function woodTexture() {
+  const cv = document.createElement("canvas"); cv.width = cv.height = 512;
+  const c = cv.getContext("2d");
+  c.fillStyle = "#e9c184"; c.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 26; i++) {
+    const y = i * 20 + Math.random() * 6;
+    c.strokeStyle = `rgba(150,100,45,${0.10 + Math.random() * 0.12})`;
+    c.lineWidth = 1.5 + Math.random() * 2.5;
+    c.beginPath(); c.moveTo(0, y);
+    for (let x = 0; x <= 512; x += 32) c.lineTo(x, y + Math.sin(x / 60 + i) * 3.5);
+    c.stroke();
   }
-  for (const p of particles) clampToBounds(p);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 2);
+  return tex;
 }
-window.addEventListener("resize", resize);
+const table = new THREE.Mesh(
+  new THREE.BoxGeometry(HW * 2.6, 0.5, HW * 2.6),
+  new THREE.MeshStandardMaterial({ map: woodTexture(), roughness: 0.75 }));
+table.position.y = -0.25;
+scene.add(table);
 
-/* ---------- helpers ---------- */
-const key = (a, b) => a < b ? a + "_" + b : b + "_" + a;
-const dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
-
-function shade(hex, amt) { // lighten/darken a hex color
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) + amt, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
-  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
-  return `rgb(${r},${g},${b})`;
+/* soft dynamic contact shadow — particles splatted onto a canvas under the dough */
+const shC = document.createElement("canvas"); shC.width = shC.height = 256;
+const shX = shC.getContext("2d");
+const shTex = new THREE.CanvasTexture(shC);
+const shadowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(HW * 2, HW * 2),
+  new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false }));
+shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = 0.012;
+scene.add(shadowPlane);
+const shSprite = (() => { // pre-blurred soft disc
+  const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+  const c = cv.getContext("2d");
+  const g = c.createRadialGradient(32, 32, 2, 32, 32, 30);
+  g.addColorStop(0, "rgba(70,45,15,0.24)"); g.addColorStop(1, "rgba(70,45,15,0)");
+  c.fillStyle = g; c.beginPath(); c.arc(32, 32, 30, 0, 6.2832); c.fill();
+  return cv;
+})();
+function drawShadow() {
+  shX.clearRect(0, 0, 256, 256);
+  const k = 256 / (HW * 2);
+  for (const p of particles) {
+    const r = (14 + p.y * 5);
+    shX.globalAlpha = Math.max(0.12, 1 - p.y * 0.28);
+    shX.drawImage(shSprite, (p.x + HW) * k - r / 2, (p.z + HW) * k - r / 2, r, r);
+  }
+  shX.globalAlpha = 1;
+  shTex.needsUpdate = true;
 }
 
-function clampToBounds(p) {
-  const m = PR;
-  if (p.x < m) p.x = m; else if (p.x > W - m) p.x = W - m;
-  if (p.y < m) p.y = m; else if (p.y > H - m) p.y = H - m;
+/* glossy environment for slime reflections */
+function makeEnvMap() {
+  const faces = [];
+  for (let i = 0; i < 6; i++) {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+    const c = cv.getContext("2d");
+    const g = c.createLinearGradient(0, 0, 0, 64);
+    if (i === 2) { g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#cfe8ff"); }      // up: bright sky
+    else if (i === 3) { g.addColorStop(0, "#caa26b"); g.addColorStop(1, "#8a6a3c"); } // down: table
+    else { g.addColorStop(0, "#f4ecff"); g.addColorStop(0.5, "#ffe9c9"); g.addColorStop(1, "#caa984"); }
+    c.fillStyle = g; c.fillRect(0, 0, 64, 64);
+    if (i < 2 || i > 3) { // window-ish highlight stripes for juicy reflections
+      c.fillStyle = "rgba(255,255,255,0.85)";
+      c.fillRect(10 + i * 6, 6, 12, 30);
+    }
+    faces.push(cv);
+  }
+  const tex = new THREE.CubeTexture(faces);
+  tex.needsUpdate = true;
+  return tex;
 }
+const envMap = makeEnvMap();
 
-function addParticle(x, y, color) {
-  particles.push({ x, y, px: x, py: y, color: shade(color, (Math.random() * 18 - 9) | 0), ns: 0 });
+const matDough = new THREE.MeshStandardMaterial({
+  roughness: 0.78, metalness: 0.0, vertexColors: true,
+});
+const matSlime = new THREE.MeshPhysicalMaterial({
+  roughness: 0.16, metalness: 0.0, vertexColors: true,
+  clearcoat: 1.0, clearcoatRoughness: 0.18,
+  envMap, envMapIntensity: 0.55,
+  transparent: true, opacity: 0.92,
+});
+
+/* the metaball skin */
+const SKIN = { strength: 0.13, subtract: 14, iso: 80 };
+let mc = null;
+function makeSkin(res) {
+  const old = mc;
+  mc = new THREE.MarchingCubes(res, old ? old.material : matDough, false, true);
+  mc.isolation = SKIN.iso;
+  mc.scale.set(HW, HW, HW);
+  mc.position.set(0, HW, 0);        // field cube: x,z ∈ [-HW,HW], y ∈ [0, 2HW]
+  scene.add(mc);
+  if (old) scene.remove(old);
+}
+makeSkin(48);
+// weak tablets: drop the skin resolution once if we can't hold ~24fps
+let fpsSamples = 0, fpsTime = 0, degraded = false;
+function fpsWatch(dt) {
+  if (degraded) return;
+  fpsSamples++; fpsTime += dt;
+  if (fpsTime > 5) {
+    if (fpsSamples / fpsTime < 24) { degraded = true; makeSkin(34); }
+    fpsSamples = 0; fpsTime = 0;
+  }
+}
+const toField = (x, y, z) => [ (x + HW) / (2 * HW), y / (2 * HW), (z + HW) / (2 * HW) ];
+
+/* ---------- soft-body physics ---------- */
+const key3 = (a, b) => a < b ? a + "_" + b : b + "_" + a;
+const dist3 = (a, b) => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+
+function addParticle(x, y, z, colorHex) {
+  const col = new THREE.Color(colorHex);
+  const j = 0.94 + Math.random() * 0.12;
+  col.r = Math.min(1, col.r * j); col.g = Math.min(1, col.g * j); col.b = Math.min(1, col.b * j);
+  particles.push({ x, y, z, px: x, py: y, pz: z, col, ns: 0 });
   linkCount.push(0);
   return particles.length - 1;
 }
-
 function addConstraint(a, b, rest) {
-  const k = key(a, b);
+  const k = key3(a, b);
   if (linkSet.has(k)) return;
   linkSet.add(k);
   constraints.push({ a, b, rest, dead: false });
   linkCount[a]++; linkCount[b]++;
 }
-
 function killConstraint(c, cooldownMs) {
   if (c.dead) return;
   c.dead = true;
-  linkSet.delete(key(c.a, c.b));
+  linkSet.delete(key3(c.a, c.b));
   linkCount[c.a]--; linkCount[c.b]--;
   if (cooldownMs) {
     const t = performance.now() + cooldownMs;
@@ -252,32 +411,199 @@ function killConstraint(c, cooldownMs) {
   }
 }
 
-/* ---------- spawning ---------- */
-function spawnBlob(cx, cy, R, color) {
+function spawnBall(cx, cy, cz, R, colorHex) {
   const start = particles.length;
-  const rows = Math.ceil(R / (S * 0.866)) + 1;
-  for (let j = -rows; j <= rows; j++) {
-    const y = j * S * 0.866, off = (j & 1) ? S / 2 : 0;
-    const cols = Math.ceil(R / S) + 1;
-    for (let i = -cols; i <= cols; i++) {
-      const x = i * S + off;
-      if (x * x + y * y <= R * R) addParticle(cx + x, cy + y, color);
+  const n = Math.ceil(R / S);
+  for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) for (let k = -n; k <= n; k++) {
+    const x = i * S + (Math.random() - 0.5) * S * 0.14;
+    const y = j * S + (Math.random() - 0.5) * S * 0.14;
+    const z = k * S + (Math.random() - 0.5) * S * 0.14;
+    if (x * x + y * y + z * z <= R * R) {
+      if (particles.length >= MAX_PARTICLES) break;
+      addParticle(cx + x, cy + y, cz + z, colorHex);
     }
   }
   for (let a = start; a < particles.length; a++)
     for (let b = a + 1; b < particles.length; b++) {
-      const d = dist(particles[a].x, particles[a].y, particles[b].x, particles[b].y);
-      if (d < S * 1.55) addConstraint(a, b, d);
+      const d = dist3(particles[a], particles[b]);
+      if (d < S * 1.8) addConstraint(a, b, d);
     }
 }
 
 function reset() {
   particles = []; constraints = []; linkSet = new Set(); linkCount = [];
-  flashes = []; trail = []; grabbed = [];
-  spawnBlob(W / 2, H / 2, Math.min(W, H) * 0.26, currentColor);
+  grabbed = null; trail = []; flashes = [];
+  spawnBall(0, BALL_R + 0.55, 0, BALL_R, currentColor);
 }
 
-/* ---------- cutter shapes (unit-radius point lists) ---------- */
+/* spatial hash (3D) */
+const CELL = S * 1.5;
+const hash = new Map();
+function buildHash() {
+  hash.clear();
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const k = ((p.x / CELL) | 0) + 1024 * ((p.y / CELL) | 0) + 1048576 * ((p.z / CELL) | 0);
+    let arr = hash.get(k);
+    if (!arr) hash.set(k, arr = []);
+    arr.push(i);
+  }
+}
+function collideAndStick() {
+  buildHash();
+  const now = performance.now();
+  const minD = S * 0.85, stickD = S * 0.90; // re-bonding needs a real squeeze, so knife cuts stay cut
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const cx = (p.x / CELL) | 0, cy = (p.y / CELL) | 0, cz = (p.z / CELL) | 0;
+    for (let gx = cx - 1; gx <= cx + 1; gx++)
+    for (let gy = cy - 1; gy <= cy + 1; gy++)
+    for (let gz = cz - 1; gz <= cz + 1; gz++) {
+      const arr = hash.get(gx + 1024 * gy + 1048576 * gz);
+      if (!arr) continue;
+      for (const j of arr) {
+        if (j <= i) continue;
+        const q = particles[j];
+        let dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d < 1e-6) { q.x += 0.01; continue; }
+        if (d < minD) {
+          const f = (minD - d) / d * 0.5;
+          p.x -= dx * f; p.y -= dy * f; p.z -= dz * f;
+          q.x += dx * f; q.y += dy * f; q.z += dz * f;
+        }
+        if (d < stickD && !linkSet.has(key3(i, j))
+            && now > p.ns && now > q.ns
+            && linkCount[i] < 16 && linkCount[j] < 16) {
+          addConstraint(i, j, Math.max(d, S * 0.9));
+          // kneading two colours together slowly mixes them
+          p.col.lerp(q.col, 0.05); q.col.lerp(p.col, 0.05);
+        }
+      }
+    }
+  }
+}
+
+function applyPointer() {
+  if (!pointer.down) return;
+  if (tool === "grab" && grabbed) {
+    for (const g of grabbed.ids) {
+      const p = particles[g.i];
+      p.x += (grabbed.target.x + g.ox - p.x) * 0.52 * g.w;
+      p.y += (grabbed.target.y + g.oy - p.y) * 0.52 * g.w;
+      p.z += (grabbed.target.z + g.oz - p.z) * 0.52 * g.w;
+    }
+  } else if (tool === "poke" && pokePoint) {
+    for (const p of particles) {
+      const dx = p.x - pokePoint.x, dy = p.y - pokePoint.y, dz = p.z - pokePoint.z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < POKE_R && d > 1e-4) {
+        const f = (1 - d / POKE_R) * 0.08;
+        p.x += dx / d * f; p.y += dy / d * f * 0.4; p.z += dz / d * f;
+      }
+    }
+  }
+}
+
+const DT = 1 / 60;
+function step() {
+  const M = MODES[mode];
+  const g = M.grav * DT * DT;
+  for (const p of particles) {
+    let vx = (p.x - p.px) * M.damping, vy = (p.y - p.py) * M.damping, vz = (p.z - p.pz) * M.damping;
+    const v = Math.sqrt(vx * vx + vy * vy + vz * vz);
+    if (v > 0.35) { const s = 0.35 / v; vx *= s; vy *= s; vz *= s; }
+    p.px = p.x; p.py = p.y; p.pz = p.z;
+    p.x += vx; p.y += vy - g; p.z += vz;
+    // table + soft walls
+    if (p.y < S * 0.5) { p.y = S * 0.5; p.px += (p.x - p.px) * 0.78; p.pz += (p.z - p.pz) * 0.78; }
+    if (p.y > 2 * HW - 0.4) p.y = 2 * HW - 0.4;
+    if (p.x < -HW + 0.35) p.x = -HW + 0.35; else if (p.x > HW - 0.35) p.x = HW - 0.35;
+    if (p.z < -HW + 0.35) p.z = -HW + 0.35; else if (p.z > HW - 0.35) p.z = HW - 0.35;
+  }
+
+  applyPointer();
+
+  let tore = false;
+  for (let it = 0; it < M.iter; it++) {
+    for (const c of constraints) {
+      if (c.dead) continue;
+      const A = particles[c.a], B = particles[c.b];
+      const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+      if (d > c.rest * M.tearMul || d > S * 2.6) { killConstraint(c, 650); tore = true; continue; }
+      const f = (d - c.rest) / d * M.stiff * 0.5;
+      A.x += dx * f; A.y += dy * f; A.z += dz * f;
+      B.x -= dx * f; B.y -= dy * f; B.z -= dz * f;
+    }
+    collideAndStick();
+  }
+  if (tore) SND.pop();
+
+  // plastic creep — playdough keeps its shape, slime slowly flows
+  const pl = M.plastic;
+  if (pl > 0) {
+    for (const c of constraints) {
+      if (c.dead) continue;
+      const d = dist3(particles[c.a], particles[c.b]);
+      if (d > c.rest * 1.04)      c.rest = Math.min(c.rest + (d - c.rest) * pl, S * 1.55);
+      else if (d < c.rest * 0.96) c.rest = Math.max(c.rest - (c.rest - d) * pl, S * 0.62);
+    }
+  }
+
+  if (++compactTimer > 240) {
+    compactTimer = 0;
+    constraints = constraints.filter(c => !c.dead);
+  }
+}
+let compactTimer = 0;
+
+/* ---------- cutting (blade & cookie walls are vertical columns) ---------- */
+function knifeCutWorld(x1, z1, x2, z2) {
+  if (Math.hypot(x2 - x1, z2 - z1) < 0.01) return;
+  let nx = -(z2 - z1), nz = (x2 - x1);
+  const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+  for (const c of constraints) {
+    if (c.dead) continue;
+    const A = particles[c.a], B = particles[c.b];
+    if (segInt(A.x, A.z, B.x, B.z, x1, z1, x2, z2)) {
+      killConstraint(c, 2200);
+      const sa = Math.sign((A.x - x1) * nx + (A.z - z1) * nz) || 1;
+      A.x += nx * 0.09 * sa; A.z += nz * 0.09 * sa;
+      B.x -= nx * 0.09 * sa; B.z -= nz * 0.09 * sa;
+    }
+  }
+}
+function segInt(ax, ay, bx, by, cx, cy, dx, dy) {
+  const den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+  if (Math.abs(den) < 1e-9) return false;
+  const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / den;
+  const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+function pointInPoly(px, py, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
+      inside = !inside;
+  }
+  return inside;
+}
+function closestOnPoly(px, py, poly) {
+  let bx = 0, by = 0, bd = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    const abx = b.x - a.x, aby = b.y - a.y;
+    let t = ((px - a.x) * abx + (py - a.y) * aby) / (abx * abx + aby * aby || 1);
+    t = Math.max(0, Math.min(1, t));
+    const qx = a.x + abx * t, qy = a.y + aby * t;
+    const d = (px - qx) ** 2 + (py - qy) ** 2;
+    if (d < bd) { bd = d; bx = qx; by = qy; }
+  }
+  return { x: bx, y: by, d: Math.sqrt(bd) };
+}
+
 function normalize(pts) {
   let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
   for (const p of pts) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
@@ -304,331 +630,338 @@ const SHAPES = {
   })),
 };
 const isCutter = t => t in SHAPES;
-const shapeAt = (name, cx, cy, R) => SHAPES[name].map(p => ({ x: cx + p.x * R, y: cy + p.y * R }));
+const shapeAtXZ = (name, cx, cz, R) => SHAPES[name].map(p => ({ x: cx + p.x * R, y: cz + p.y * R }));
 
-/* ---------- geometry ---------- */
-function segInt(ax, ay, bx, by, cx, cy, dx, dy) {
-  const den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
-  if (Math.abs(den) < 1e-9) return false;
-  const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / den;
-  const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / den;
-  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
-}
-
-function pointInPoly(px, py, poly) {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
-    if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi))
-      inside = !inside;
-  }
-  return inside;
-}
-
-function closestOnPoly(px, py, poly) {
-  let bx = 0, by = 0, bd = Infinity;
-  for (let i = 0; i < poly.length; i++) {
-    const a = poly[i], b = poly[(i + 1) % poly.length];
-    const abx = b.x - a.x, aby = b.y - a.y;
-    let t = ((px - a.x) * abx + (py - a.y) * aby) / (abx * abx + aby * aby || 1);
-    t = Math.max(0, Math.min(1, t));
-    const qx = a.x + abx * t, qy = a.y + aby * t;
-    const d = (px - qx) ** 2 + (py - qy) ** 2;
-    if (d < bd) { bd = d; bx = qx; by = qy; }
-  }
-  return { x: bx, y: by, d: Math.sqrt(bd) };
-}
-
-/* ---------- cutting ---------- */
-function knifeCut(x1, y1, x2, y2) {
-  if (dist(x1, y1, x2, y2) < 0.5) return;
-  const nx0 = -(y2 - y1), ny0 = (x2 - x1);
-  const nl = Math.hypot(nx0, ny0) || 1, nx = nx0 / nl, ny = ny0 / nl;
+function stamp(name, cx, cz) {
+  const now = performance.now();
+  const poly = shapeAtXZ(name, cx, cz, CUT_R);
   for (const c of constraints) {
     if (c.dead) continue;
     const A = particles[c.a], B = particles[c.b];
-    if (segInt(A.x, A.y, B.x, B.y, x1, y1, x2, y2)) {
-      killConstraint(c, 900);
-      // nudge the two halves apart so the slice opens up
-      const sa = Math.sign((A.x - x1) * nx + (A.y - y1) * ny) || 1;
-      A.x += nx * 1.6 * sa; A.y += ny * 1.6 * sa;
-      B.x -= nx * 1.6 * sa; B.y -= ny * 1.6 * sa;
+    if (pointInPoly(A.x, A.z, poly) !== pointInPoly(B.x, B.z, poly))
+      killConstraint(c, 2400);
+  }
+  // open the wall gap
+  for (const p of particles) {
+    const q = closestOnPoly(p.x, p.z, poly);
+    if (q.d < GAP) {
+      let dx = p.x - q.x, dz = p.z - q.y, d = Math.hypot(dx, dz);
+      if (d < 1e-4) { dx = 1; dz = 0; d = 1; }
+      p.x = q.x + dx / d * GAP; p.z = q.y + dz / d * GAP;
+      p.ns = Math.max(p.ns, now + 2600);
     }
   }
-}
-
-function stamp(poly) {
-  const now = performance.now();
-  // sever every bond the cutter wall crosses
-  for (const c of constraints) {
-    if (c.dead) continue;
-    const A = particles[c.a], B = particles[c.b];
-    if (pointInPoly(A.x, A.y, poly) !== pointInPoly(B.x, B.y, poly))
-      killConstraint(c, 1400);
-  }
-  // open a clean gap along the cutter wall
-  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
-  for (const p of poly) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+  // the cookie POPS out — jump up and hop aside, so the cut is unmistakable
+  const ang = Math.random() * Math.PI * 2;
+  const hop = { x: Math.cos(ang) * 0.055, z: Math.sin(ang) * 0.055 };
   for (const p of particles) {
-    if (p.x < minX - GAP || p.x > maxX + GAP || p.y < minY - GAP || p.y > maxY + GAP) continue;
-    const q = closestOnPoly(p.x, p.y, poly);
-    if (q.d < GAP) {
-      let dx = p.x - q.x, dy = p.y - q.y, d = Math.hypot(dx, dy);
-      if (d < 1e-4) { dx = 1; dy = 0; d = 1; }
-      p.x = q.x + dx / d * GAP; p.y = q.y + dy / d * GAP;
-      p.ns = Math.max(p.ns, now + 1400);
+    if (pointInPoly(p.x, p.z, poly)) {
+      p.py = p.y - 0.20;                    // upward verlet impulse
+      p.px = p.x - hop.x; p.pz = p.z - hop.z;
+      p.ns = Math.max(p.ns, now + 2600);
     }
   }
   flashes.push({ poly, t: now });
+  SND.stamp();
 }
 
-/* ---------- physics step ---------- */
-let hash = new Map();
-const CELL = S * 1.4;
-function buildHash() {
-  hash.clear();
+/* ---------- picking ---------- */
+const raycaster = new THREE.Raycaster();
+function rayFrom(px, py) {
+  raycaster.setFromCamera({ x: (px / W) * 2 - 1, y: -(py / H) * 2 + 1 }, camera);
+  return raycaster.ray;
+}
+// nearest particle to the ray (returns {i, t, d} or null)
+function pickParticle(ray, maxD) {
+  let best = null;
+  const o = ray.origin, dir = ray.direction;
   for (let i = 0; i < particles.length; i++) {
     const p = particles[i];
-    const k = ((p.x / CELL) | 0) + "," + ((p.y / CELL) | 0);
-    let arr = hash.get(k);
-    if (!arr) hash.set(k, arr = []);
-    arr.push(i);
+    const wx = p.x - o.x, wy = p.y - o.y, wz = p.z - o.z;
+    const t = wx * dir.x + wy * dir.y + wz * dir.z;
+    if (t < 0) continue;
+    const qx = wx - dir.x * t, qy = wy - dir.y * t, qz = wz - dir.z * t;
+    const d = Math.sqrt(qx * qx + qy * qy + qz * qz);
+    if (d < maxD && (!best || t < best.t)) best = { i, t, d };
   }
+  return best;
+}
+function rayOnTable(ray) { // intersection with the table plane (y = knife height)
+  const t = (0.001 - ray.origin.y) / ray.direction.y;
+  if (t <= 0) return null;
+  return { x: ray.origin.x + ray.direction.x * t, z: ray.origin.z + ray.direction.z * t };
+}
+// where a cutter lands: centred on the dough you tapped (no table parallax), else the table
+function cutSpot(ray) {
+  const hit = pickParticle(ray, CUT_R);
+  if (hit) { const a = particles[hit.i]; return { x: a.x, z: a.z }; }
+  return rayOnTable(ray);
 }
 
-function collideAndStick() {
-  buildHash();
-  const now = performance.now();
-  const minD = S * 0.85, stickD = S * 0.98;
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i];
-    const cx = (p.x / CELL) | 0, cy = (p.y / CELL) | 0;
-    for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) {
-      const arr = hash.get(gx + "," + gy);
-      if (!arr) continue;
-      for (const j of arr) {
-        if (j <= i) continue;
-        const q = particles[j];
-        let dx = q.x - p.x, dy = q.y - p.y;
-        const d = Math.hypot(dx, dy);
-        if (d < 1e-6) { q.x += 0.5; continue; }
-        if (d < minD) {                              // squish: dough can't compress into itself
-          const f = (minD - d) / d * 0.5;
-          p.x -= dx * f; p.y -= dy * f;
-          q.x += dx * f; q.y += dy * f;
-        }
-        if (d < stickD && !linkSet.has(key(i, j))    // touch gently → stick back together
-            && now > p.ns && now > q.ns
-            && linkCount[i] < 8 && linkCount[j] < 8) {
-          addConstraint(i, j, Math.max(d, S * 0.9));
-        }
-      }
-    }
+/* ---------- squishy sounds (tiny WebAudio synth, gentle for little ears) ---------- */
+const SND = (() => {
+  let ctx = null, master = null;
+  const last = {};
+  const gate = (name, ms) => {
+    const now = performance.now();
+    if (now - (last[name] || 0) < ms) return false;
+    last[name] = now; return true;
+  };
+  function init() {
+    if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.4; master.connect(ctx.destination);
+    } catch (e) { ctx = null; }
   }
+  const ok = () => ctx && ctx.state === "running";
+  function noise(dur, f0, f1, vol, q) {
+    if (!ok()) return;
+    const n = ctx.sampleRate * dur, buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = q || 1.2;
+    bp.frequency.setValueAtTime(f0, ctx.currentTime);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(40, f1), ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(bp); bp.connect(g); g.connect(master);
+    src.start(); src.stop(ctx.currentTime + dur);
+  }
+  function tone(f0, f1, dur, vol, type) {
+    if (!ok()) return;
+    const o = ctx.createOscillator(); o.type = type || "sine";
+    o.frequency.setValueAtTime(f0, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(Math.max(30, f1), ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(ctx.currentTime + dur);
+  }
+  return {
+    init,
+    squish() { if (gate("sq", 120)) { noise(0.10, 500, 150, 0.16, 1.0); tone(140, 90, 0.08, 0.05); } },
+    stretch() { if (gate("st", 130)) noise(0.14, 900, 350, 0.13, 2.2); },
+    pop()    { if (gate("pop", 110)) { tone(300, 90, 0.07, 0.12, "triangle"); noise(0.05, 1400, 700, 0.08, 1.5); } },
+    snip()   { if (gate("sn", 140)) noise(0.05, 2400, 1200, 0.09, 3); },
+    stamp()  { tone(180, 70, 0.12, 0.14, "triangle"); noise(0.08, 700, 250, 0.12, 1); },
+    plop()   { tone(320, 80, 0.16, 0.14); },
+  };
+})();
+
+/* ---------- input ---------- */
+let pokePoint = null;
+let lastKnife = null;
+
+function localXY(e) {
+  const r = stage.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
-function applyPointer() {
-  if (!pointer.down) return;
+const touches = new Map();
+let pinchDist = 0;
+
+uiC.addEventListener("pointerdown", e => {
+  uiC.setPointerCapture(e.pointerId);
+  SND.init();
+  const p = localXY(e);
+  touches.set(e.pointerId, p);
+  if (touches.size === 2) { // pinch = zoom
+    const [a, b] = [...touches.values()];
+    pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+    grabbed = null; pointer.down = false;
+    return;
+  }
+  pointer.x = pointer.lx = p.x; pointer.y = pointer.ly = p.y;
+  pointer.down = true; pointer.has = true;
+  const ray = rayFrom(p.x, p.y);
+
   if (tool === "grab") {
-    for (const g of grabbed) {
-      const p = particles[g.i];
-      p.x += (pointer.x + g.ox - p.x) * 0.32 * g.w;
-      p.y += (pointer.y + g.oy - p.y) * 0.32 * g.w;
-    }
-  } else if (tool === "poke") {
-    for (const p of particles) {
-      const dx = p.x - pointer.x, dy = p.y - pointer.y;
-      const d = Math.hypot(dx, dy);
-      if (d < POKE_R && d > 1e-4) {
-        const f = (1 - d / POKE_R) * 3.4;
-        p.x += dx / d * f; p.y += dy / d * f;
+    const hit = pickParticle(ray, GRAB_R * 0.9);
+    if (hit) {
+      const anchor = particles[hit.i];
+      const ids = [];
+      for (let i = 0; i < particles.length; i++) {
+        const d = dist3(particles[i], anchor);
+        if (d < GRAB_R) ids.push({
+          i, ox: particles[i].x - anchor.x, oy: particles[i].y - anchor.y, oz: particles[i].z - anchor.z,
+          w: Math.pow(1 - d / GRAB_R, 0.5),
+        });
       }
+      const n = camera.getWorldDirection(new THREE.Vector3());
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, new THREE.Vector3(anchor.x, anchor.y, anchor.z));
+      grabbed = { ids, plane, target: new THREE.Vector3(anchor.x, anchor.y, anchor.z) };
+      pointer.mode = "tool";
+      SND.squish();
+    } else pointer.mode = "orbit";
+  } else if (tool === "poke") {
+    const hit = pickParticle(ray, POKE_R);
+    if (hit) {
+      const a = particles[hit.i];
+      pokePoint = { x: a.x, y: a.y, z: a.z };
+      pointer.mode = "tool";
+      SND.squish();
+    } else pointer.mode = "orbit";
+  } else if (tool === "knife") {
+    const w = rayOnTable(ray);
+    lastKnife = w;
+    pointer.mode = w ? "tool" : "orbit";
+  } else if (isCutter(tool)) {
+    const w = cutSpot(ray);
+    if (w) { stamp(tool, w.x, w.z); pointer.mode = "tool"; }
+    else pointer.mode = "orbit";
+  }
+});
+
+uiC.addEventListener("pointermove", e => {
+  const p = localXY(e);
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, p);
+  if (touches.size === 2) {
+    const [a, b] = [...touches.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    orbit.r *= pinchDist / Math.max(40, d);
+    pinchDist = d;
+    return;
+  }
+  pointer.lx = pointer.x; pointer.ly = pointer.y;
+  pointer.x = p.x; pointer.y = p.y; pointer.has = true;
+  if (!pointer.down) return;
+
+  if (pointer.mode === "orbit") {
+    orbit.az -= (p.x - pointer.lx) * 0.006;
+    orbit.pol -= (p.y - pointer.ly) * 0.005;
+    return;
+  }
+  const ray = rayFrom(p.x, p.y);
+  if (tool === "grab" && grabbed) {
+    const t = new THREE.Vector3();
+    if (ray.intersectPlane(grabbed.plane, t)) {
+      t.y = Math.max(S * 0.6, Math.min(2 * HW - 0.5, t.y));
+      grabbed.target.copy(t);
+    }
+    if (Math.hypot(p.x - pointer.lx, p.y - pointer.ly) > 3)
+      mode === "slime" ? SND.stretch() : SND.squish();
+  } else if (tool === "poke" && pokePoint) {
+    const hit = pickParticle(ray, POKE_R);
+    if (hit) { const a = particles[hit.i]; pokePoint = { x: a.x, y: a.y, z: a.z }; }
+    SND.squish();
+  } else if (tool === "knife" && lastKnife) {
+    const w = rayOnTable(ray);
+    if (w) {
+      knifeCutWorld(lastKnife.x, lastKnife.z, w.x, w.z);
+      lastKnife = w;
+      trail.push({ x: p.x, y: p.y, t: performance.now() });
+      SND.snip();
     }
   }
+});
+
+const release = e => {
+  touches.delete(e.pointerId);
+  pointer.down = false; grabbed = null; pokePoint = null; lastKnife = null;
+  pointer.mode = "tool";
+};
+uiC.addEventListener("pointerup", release);
+uiC.addEventListener("pointercancel", release);
+uiC.addEventListener("pointerleave", () => { pointer.has = false; });
+uiC.addEventListener("wheel", e => { orbit.r += e.deltaY * 0.004; e.preventDefault(); }, { passive: false });
+
+/* ---------- 2D overlay (trail, cutter preview, flashes) ---------- */
+function project(x, y, z) {
+  const v = new THREE.Vector3(x, y, z).project(camera);
+  return { x: (v.x + 1) / 2 * W, y: (-v.y + 1) / 2 * H };
 }
-
-let compactTimer = 0;
-function step() {
-  const M = MODES[mode];
-
-  // Verlet integration
-  for (const p of particles) {
-    let vx = (p.x - p.px) * M.damping, vy = (p.y - p.py) * M.damping;
-    const v = Math.hypot(vx, vy);
-    if (v > 14) { vx *= 14 / v; vy *= 14 / v; }  // safety clamp
-    p.px = p.x; p.py = p.y;
-    p.x += vx; p.y += vy;
-    clampToBounds(p);
-  }
-
-  applyPointer();
-
-  // constraint relaxation + tearing
-  for (let it = 0; it < M.iter; it++) {
-    for (const c of constraints) {
-      if (c.dead) continue;
-      const A = particles[c.a], B = particles[c.b];
-      const dx = B.x - A.x, dy = B.y - A.y;
-      const d = Math.hypot(dx, dy) || 1e-6;
-      if (d > c.rest * M.tearMul || d > S * 3.6) { killConstraint(c, 400); continue; }
-      const f = (d - c.rest) / d * M.stiff * 0.5;
-      A.x += dx * f; A.y += dy * f;
-      B.x -= dx * f; B.y -= dy * f;
-    }
-    collideAndStick();
-  }
-
-  // plastic creep — the playdough secret sauce
-  if (M.plastic) {
-    for (const c of constraints) {
-      if (c.dead) continue;
-      const A = particles[c.a], B = particles[c.b];
-      const d = dist(A.x, A.y, B.x, B.y);
-      if (d > c.rest * 1.04)      c.rest = Math.min(c.rest + (d - c.rest) * 0.20, S * 2.0);
-      else if (d < c.rest * 0.96) c.rest = Math.max(c.rest - (c.rest - d) * 0.20, S * 0.6);
-    }
-  }
-
-  if (++compactTimer > 240) {  // prune dead links occasionally
-    compactTimer = 0;
-    constraints = constraints.filter(c => !c.dead);
-  }
-}
-
-/* ---------- rendering ---------- */
-function drawGoo() {
-  gooX.clearRect(0, 0, W, H);
-  const gloss = MODES[mode].gloss;
-  for (const p of particles) {
-    gooX.fillStyle = p.color;
-    gooX.beginPath();
-    gooX.arc(p.x, p.y, PR, 0, 6.2832);
-    gooX.fill();
-  }
-  if (gloss) {
-    gooX.fillStyle = "rgba(255,255,255,0.30)";
-    for (const p of particles) {
-      gooX.beginPath();
-      gooX.arc(p.x - 3, p.y - 3.5, 3.6, 0, 6.2832);
-      gooX.fill();
-    }
-  }
-}
-
 function drawUI() {
   uiX.clearRect(0, 0, W, H);
   const now = performance.now();
 
-  // knife trail
   trail = trail.filter(t => now - t.t < 260);
   if (trail.length > 1) {
     uiX.lineCap = "round"; uiX.lineJoin = "round";
     for (let i = 1; i < trail.length; i++) {
       const a = trail[i - 1], b = trail[i];
       const age = 1 - (now - b.t) / 260;
-      uiX.strokeStyle = `rgba(255,255,255,${0.75 * age})`;
-      uiX.lineWidth = 2.5 * age + 0.5;
+      uiX.strokeStyle = `rgba(255,255,255,${0.8 * age})`;
+      uiX.lineWidth = 3 * age + 0.5;
       uiX.beginPath(); uiX.moveTo(a.x, a.y); uiX.lineTo(b.x, b.y); uiX.stroke();
     }
   }
 
-  // cutter stamp flashes
   flashes = flashes.filter(f => now - f.t < 420);
   for (const f of flashes) {
     const k = 1 - (now - f.t) / 420;
     uiX.strokeStyle = `rgba(255,255,255,${0.9 * k})`;
     uiX.lineWidth = 3 * k + 1;
-    tracePoly(uiX, f.poly); uiX.stroke();
+    uiX.beginPath();
+    f.poly.forEach((pt, i) => {
+      const s = project(pt.x, 0.35, pt.y);
+      i ? uiX.lineTo(s.x, s.y) : uiX.moveTo(s.x, s.y);
+    });
+    uiX.closePath(); uiX.stroke();
   }
 
-  // hover preview
-  if (pointer.has) {
-    if (isCutter(tool)) {
-      const poly = shapeAt(tool, pointer.x, pointer.y, CUT_R);
-      uiX.strokeStyle = "rgba(46,38,32,0.65)";
+  if (pointer.has && isCutter(tool)) {
+    const ray = rayFrom(pointer.x, pointer.y);
+    const w = cutSpot(ray);
+    if (w) {
+      const poly = shapeAtXZ(tool, w.x, w.z, CUT_R);
+      uiX.strokeStyle = "rgba(92,74,50,0.7)";
       uiX.lineWidth = 2; uiX.setLineDash([6, 5]);
-      tracePoly(uiX, poly); uiX.stroke();
+      uiX.beginPath();
+      poly.forEach((pt, i) => {
+        const s = project(pt.x, 0.35, pt.y);
+        i ? uiX.lineTo(s.x, s.y) : uiX.moveTo(s.x, s.y);
+      });
+      uiX.closePath(); uiX.stroke();
       uiX.setLineDash([]);
-    } else if (tool === "grab" && pointer.down) {
-      uiX.strokeStyle = "rgba(46,38,32,0.35)";
-      uiX.lineWidth = 1.5;
-      uiX.beginPath(); uiX.arc(pointer.x, pointer.y, 14, 0, 6.2832); uiX.stroke();
-    } else if (tool === "poke" && pointer.down) {
-      uiX.strokeStyle = "rgba(46,38,32,0.35)";
-      uiX.lineWidth = 1.5;
-      uiX.beginPath(); uiX.arc(pointer.x, pointer.y, POKE_R, 0, 6.2832); uiX.stroke();
     }
   }
 }
 
-function tracePoly(ctx, poly) {
-  ctx.beginPath();
-  ctx.moveTo(poly[0].x, poly[0].y);
-  for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x, poly[i].y);
-  ctx.closePath();
+/* ---------- frame loop ---------- */
+function resize() {
+  W = stage.clientWidth; H = stage.clientHeight;
+  renderer.setSize(W, H, false);
+  camera.aspect = W / H; camera.updateProjectionMatrix();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  uiC.width = W * dpr; uiC.height = H * dpr;
+  uiX.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener("resize", resize);
+
+function skin() {
+  mc.reset();
+  for (const p of particles) {
+    const f = toField(p.x, p.y, p.z);
+    mc.addBall(f[0], f[1], f[2], SKIN.strength, SKIN.subtract, p.col);
+  }
 }
 
+let lastT = performance.now();
 function frame() {
+  const now = performance.now();
+  fpsWatch(Math.min(0.1, (now - lastT) / 1000)); lastT = now;
   step();
-  drawGoo();
+  skin();
+  drawShadow();
+  applyCamera();
+  renderer.render(scene, camera);
   drawUI();
   requestAnimationFrame(frame);
 }
 
-/* ---------- input ---------- */
-function localXY(e) {
-  const r = stage.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
-}
-
-uiC.addEventListener("pointerdown", e => {
-  uiC.setPointerCapture(e.pointerId);
-  const p = localXY(e);
-  pointer.x = pointer.lx = p.x; pointer.y = pointer.ly = p.y;
-  pointer.down = true; pointer.has = true;
-
-  if (tool === "grab") {
-    grabbed = [];
-    for (let i = 0; i < particles.length; i++) {
-      const d = dist(particles[i].x, particles[i].y, p.x, p.y);
-      if (d < GRAB_R) {
-        grabbed.push({
-          i,
-          ox: particles[i].x - p.x,
-          oy: particles[i].y - p.y,
-          w: Math.pow(1 - d / GRAB_R, 0.5),
-        });
-      }
-    }
-  } else if (isCutter(tool)) {
-    stamp(shapeAt(tool, p.x, p.y, CUT_R));
-  }
-});
-
-uiC.addEventListener("pointermove", e => {
-  const p = localXY(e);
-  pointer.lx = pointer.x; pointer.ly = pointer.y;
-  pointer.x = p.x; pointer.y = p.y; pointer.has = true;
-  if (pointer.down && tool === "knife") {
-    knifeCut(pointer.lx, pointer.ly, pointer.x, pointer.y);
-    trail.push({ x: p.x, y: p.y, t: performance.now() });
-  }
-});
-
-const release = () => { pointer.down = false; grabbed = []; };
-uiC.addEventListener("pointerup", release);
-uiC.addEventListener("pointercancel", release);
-uiC.addEventListener("pointerleave", () => { pointer.has = false; });
-
-/* ---------- toolbar ---------- */
+/* ---------- toolbar / chrome wiring ---------- */
 const HINTS = {
-  grab: "Drag to squish, stretch & tear",
-  poke: "Press & hold to smoosh it outward",
-  knife: "Drag across the dough to slice",
-  circle: "Tap the dough to stamp a circle",
-  star: "Tap the dough to stamp a star",
-  heart: "Tap the dough to stamp a heart",
-  flower: "Tap the dough to stamp a flower",
+  grab: "👐 Grab the dough — squish, stretch, pluck a piece off!",
+  poke: "👇 Press and rub to smoosh dents into it",
+  knife: "🔪 Drag across the table to slice right through",
+  circle: "⭕ Tap the dough to punch out a circle",
+  star: "⭐ Tap the dough to punch out a star",
+  heart: "💛 Tap the dough to punch out a heart",
+  flower: "🌸 Tap the dough to punch out a flower",
 };
 const hint = document.getElementById("hint");
 
@@ -644,17 +977,19 @@ document.getElementById("modeSeg").addEventListener("click", e => {
   const btn = e.target.closest("button");
   if (!btn) return;
   mode = btn.dataset.mode;
+  mc.material = mode === "slime" ? matSlime : matDough;
+  SND.init(); SND.plop();
   document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b === btn));
   hint.textContent = mode === "slime"
-    ? "Slime: wobbly, stretchy, snaps back"
-    : "Playdough: holds whatever shape you make";
+    ? "🫧 Slime: wobbly and drippy — it slowly puddles!"
+    : "🫓 Playdough: it keeps whatever shape you sculpt!";
 });
 
 const swatches = document.getElementById("swatches");
 PALETTE.forEach(c => {
   const b = document.createElement("button");
   b.className = "swatch" + (c === currentColor ? " on" : "");
-  b.style.background = `radial-gradient(circle at 35% 30%, ${shadeHexStr(c, 36)}, ${c} 60%)`;
+  b.style.background = `radial-gradient(circle at 35% 30%, ${c}dd, ${c} 65%)`;
   b.title = "Pick this colour for new dough";
   b.addEventListener("click", () => {
     currentColor = c;
@@ -662,20 +997,58 @@ PALETTE.forEach(c => {
   });
   swatches.appendChild(b);
 });
-function shadeHexStr(hex, amt) { return shade(hex, amt); }
 
 document.getElementById("addBtn").addEventListener("click", () => {
-  const R = Math.min(W, H) * 0.16;
-  const x = R + 20 + Math.random() * (W - 2 * R - 40);
-  const y = R + 20 + Math.random() * (H - 2 * R - 40);
-  spawnBlob(x, y, R, currentColor);
+  SND.init();
+  if (particles.length > MAX_PARTICLES - 80) {
+    hint.textContent = "🙈 The table is full! Slice some off or start over.";
+    return;
+  }
+  const x = (Math.random() - 0.5) * 3.4, z = (Math.random() - 0.5) * 3.4;
+  spawnBall(x, 2.6, z, BALL_R * 0.78, currentColor);
+  SND.plop();
 });
 
-document.getElementById("resetBtn").addEventListener("click", reset);
+document.getElementById("resetBtn").addEventListener("click", () => { reset(); SND.init(); SND.plop(); });
+
+/* test hooks */
+window.DL = {
+  get particles() { return particles; },
+  get constraints() { return constraints; },
+  get mode() { return mode; },
+  components() {
+    const adj = new Map();
+    for (const c of constraints) {
+      if (c.dead) continue;
+      (adj.get(c.a) || adj.set(c.a, []).get(c.a)).push(c.b);
+      (adj.get(c.b) || adj.set(c.b, []).get(c.b)).push(c.a);
+    }
+    const seen = new Set(); let n = 0;
+    for (let i = 0; i < particles.length; i++) {
+      if (seen.has(i)) continue;
+      n++;
+      const q = [i]; seen.add(i);
+      while (q.length) {
+        const v = q.pop();
+        for (const w of adj.get(v) || []) if (!seen.has(w)) { seen.add(w); q.push(w); }
+      }
+    }
+    return n;
+  },
+  knifeCutWorld, stamp, spawnBall, camera, orbit, SKIN,
+  get mc() { return mc; },
+};
 
 /* ---------- go ---------- */
+document.getElementById("startBtn").addEventListener("click", () => {
+  document.getElementById("titleScreen").style.display = "none";
+  SND.init(); SND.plop();
+  resize(); // stage size can change once the overlay is gone
+});
+
 resize();
 reset();
+applyCamera();
 frame();
 })();
 </script>
