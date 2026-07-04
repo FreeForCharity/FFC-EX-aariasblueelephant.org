@@ -41,6 +41,17 @@ window.GL3D = (function(){
   const std = (c, rough) => new T.MeshStandardMaterial({ color: new T.Color(c), roughness: rough ?? .85, metalness: 0 });
   function em(c, i){ const m = std(c, .5); m.emissive = new T.Color(c); m.emissiveIntensity = i ?? .8; return m; }
 
+  /* soft radial glow texture for lamp halos */
+  const GLOWTEX = (function(){
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d");
+    const rg = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+    rg.addColorStop(0, "rgba(255,255,255,1)"); rg.addColorStop(.4, "rgba(255,255,255,.45)");
+    rg.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+    return new T.CanvasTexture(c);
+  })();
+
   /* route point in 3D meters: distance d (px) along route, lat (px) to the right */
   function rp(d, lat){
     const s = sample(S.rt, d);
@@ -221,13 +232,18 @@ window.GL3D = (function(){
         pole.position.set(armLen, 3.6, 0); pole.castShadow = true;
         const arm = new T.Mesh(new T.CylinderGeometry(.09, .09, armLen, 6), mat("#3c454f"));
         arm.rotation.z = Math.PI / 2; arm.position.set(armLen / 2, 6.9, 0);
-        const box = new T.Mesh(new T.BoxGeometry(.8, 2.2, .45), mat("#242c34"));
+        const box = new T.Mesh(new T.BoxGeometry(.95, 2.6, .5), mat("#1c232b"));
         box.position.set(0, 5.7, 0);
         g.add(pole, arm, box);
-        const balls = ["#3a1114", "#3a2e10", "#0f3315"].map((c, i) => {
-          const b = new T.Mesh(new T.SphereGeometry(.28, 10, 8), em(c, .25));
-          b.position.set(0, 6.4 - i * .72, -.26);        // front face of the head
-          g.add(b); return b;
+        // big BRIGHT lamps + a glow halo sprite so the phase reads from far away
+        const LAMP = ["#ff3226", "#ffc400", "#2fe15d"];
+        const balls = LAMP.map((c, i) => {
+          const b = new T.Mesh(new T.SphereGeometry(.34, 12, 10), em(c, .15));
+          b.position.set(0, 6.5 - i * .8, .3);
+          const halo = new T.Sprite(new T.SpriteMaterial({
+            map: GLOWTEX, color: new T.Color(c), transparent: true, opacity: 0, depthWrite: false }));
+          halo.scale.set(2.6, 2.6, 1); halo.position.set(0, 6.5 - i * .8, .55);
+          g.add(b, halo); b.userData.halo = halo; return b;
         });
         const pp = rp(ev.at, 0);
         g.position.set(pp.x, 0, pp.z);
@@ -241,12 +257,23 @@ window.GL3D = (function(){
         const g = new T.Group();
         const pole = new T.Mesh(new T.CylinderGeometry(.06, .08, 2.6, 6), mat("#8a9296"));
         pole.position.y = 1.3;
-        const oct = new T.Mesh(new T.CylinderGeometry(.62, .62, .08, 8), em("#d62828", .45));
-        oct.rotation.x = Math.PI / 2;                    // face flat toward traffic
-        oct.position.y = 2.85;
-        const rim = new T.Mesh(new T.CylinderGeometry(.66, .66, .06, 8), mat("#f4f6f8"));
-        rim.rotation.x = Math.PI / 2; rim.position.set(0, 2.85, .02);
-        g.add(pole, rim, oct);
+        // canvas-textured STOP face (octagon + white text), double-sided
+        const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 128;
+        const sg = sc2.getContext("2d");
+        sg.fillStyle = "#d81f26";
+        sg.beginPath();
+        for (let k = 0; k < 8; k++){
+          const a = Math.PI / 8 + k * Math.PI / 4;
+          sg[k ? "lineTo" : "moveTo"](64 + Math.cos(a) * 60, 64 + Math.sin(a) * 60);
+        }
+        sg.closePath(); sg.fill();
+        sg.strokeStyle = "#fff"; sg.lineWidth = 6; sg.stroke();
+        sg.fillStyle = "#fff"; sg.font = "bold 40px sans-serif";
+        sg.textAlign = "center"; sg.textBaseline = "middle"; sg.fillText("STOP", 64, 66);
+        const face = new T.Mesh(new T.PlaneGeometry(1.35, 1.35),
+          new T.MeshBasicMaterial({ map: new T.CanvasTexture(sc2), transparent: true, side: T.DoubleSide }));
+        face.position.y = 2.9;
+        g.add(pole, face);
         const pp = rp(ev.at - 18, HWf() + 9);
         g.position.set(pp.x, 0, pp.z);
         g.rotation.y = yaw + Math.PI;
@@ -352,10 +379,12 @@ window.GL3D = (function(){
       P.wheels.push(w1, w2);
     } else {
       const isE = id === "ebike";
-      const frame = new T.Mesh(new T.BoxGeometry(.09, .5, 1.15), std(isE ? "#f3722c" : "#e63946", .5));
-      frame.position.y = .62; frame.rotation.x = .5; frame.castShadow = true;
-      const w1 = wheel(.34, .07); w1.position.set(0, .34, -.62);
-      const w2 = wheel(.34, .07); w2.position.set(0, .34, .62);
+      const frame = new T.Mesh(new T.BoxGeometry(isE ? .22 : .09, isE ? .34 : .5, isE ? 1.3 : 1.15),
+        std(isE ? "#f3722c" : "#e63946", .5));
+      frame.position.y = isE ? .55 : .62; frame.rotation.x = isE ? .15 : .5; frame.castShadow = true;
+      const wr2 = isE ? .42 : .34, ww = isE ? .16 : .07;
+      const w1 = wheel(wr2, ww); w1.position.set(0, wr2, -.66);
+      const w2 = wheel(wr2, ww); w2.position.set(0, wr2, .66);
       const bars = new T.Mesh(new T.CylinderGeometry(.03, .03, .52, 8), mat("#333"));
       bars.rotation.z = Math.PI / 2; bars.position.set(0, 1.05, -.55);
       const kid = rider(isE ? "#f8961e" : "#3a6ea5", isE ? "#f4f6f8" : "#ffd23f");
@@ -444,9 +473,12 @@ window.GL3D = (function(){
     for (const o of evObjs){
       if (o.kind === "light"){
         const ph = lightPhase(o.ev);
-        o.balls[0].material.emissiveIntensity = ph === "red" ? 1.6 : .12;
-        o.balls[1].material.emissiveIntensity = ph === "yellow" ? 1.6 : .12;
-        o.balls[2].material.emissiveIntensity = ph === "green" ? 1.6 : .12;
+        const on = ph === "red" ? 0 : ph === "yellow" ? 1 : 2;
+        o.balls.forEach((b, i) => {
+          b.material.emissiveIntensity = i === on ? 2.2 : .06;
+          b.material.color.setScalar(i === on ? 1 : .18);      // unlit lamps go dark
+          b.userData.halo.material.opacity = i === on ? .85 : 0;
+        });
       }
     }
     // cones vanish if hit
