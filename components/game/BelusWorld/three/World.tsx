@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // The world: assembles the floating islands, rainbow bridges and all the
 // per-zone scenery from worldConfig. Stateless except for the "active zone"
-// (which crystal is glowing because Belu is near it).
+// (which crystal is glowing because Nilu is near it).
 // ---------------------------------------------------------------------------
 
 import { useMemo, useRef } from 'react';
@@ -125,7 +125,7 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
   }
   if (isl.id === 'mountain') {
     // The peak sits at the BACK edge of the island (away from the bridge), so it
-    // reads as a scenic backdrop and never blocks the spot where Belu meets a
+    // reads as a scenic backdrop and never blocks the spot where Nilu meets a
     // friend and the answer orbs appear (which is the island centre, front side).
     const len = Math.hypot(isl.cx, isl.cz) || 1;
     const bx = (isl.cx / len) * 6.5; // toward the far edge (away from home)
@@ -166,7 +166,7 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
 }
 
 // The multicolour autism-acceptance infinity symbol, floating over home as a
-// gentle welcoming landmark (and a quiet nod to what Belu's World is for).
+// gentle welcoming landmark (and a quiet nod to what Nilu's World is for).
 function AutismInfinity() {
   const grp = useRef<THREE.Group>(null);
   const tex = useMemo(() => makeInfinityTexture(), []);

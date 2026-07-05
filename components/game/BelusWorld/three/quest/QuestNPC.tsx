@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// A little world friend. Belu walks up to these creatures to learn with them.
+// A little world friend. Nilu walks up to these creatures to learn with them.
 // One component renders ANY character — the face is an emoji sprite, so a fox,
 // a bunny, a happy child or a worried one are all just a different face + mood.
 // The mood drives a gentle body animation (a sad friend slumps, an excited one

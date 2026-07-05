@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Feelings Meadow — caring play (the owner's design).
 //   • 3D animal friends act out a feeling with their bodies.
-//   • Walk Belu up to one and LINGER a moment → a clue bubble appears telling
+//   • Walk Nilu up to one and LINGER a moment → a clue bubble appears telling
 //     you how they feel.
 //   • 3 ways-to-help then appear around them → walk into (or tap) the kind one.
 //   • Right → the animal cheers up, flowers bloom. Help everyone → meadow blooms.
@@ -32,7 +32,7 @@ const HELP_SPREAD = 2.8; // sideways gap between the 3 help bubbles (no overlap)
 const HELP_PICK = 1.5; // walk this close to a help bubble to choose it
 const FIREFLY_FIND = 2.2; // walk this close to a hidden firefly to collect it
 const INVITE_START = 2.4; // walk this close to the waving host to BEGIN (consent)
-const GREET_DIST = 4.0; // a healed friend recognises Belu from this far
+const GREET_DIST = 4.0; // a healed friend recognises Nilu from this far
 
 const FEELING_FACE: Record<AnimalMood, string> = {
   scared: '😨', sad: '😢', lonely: '😞', worried: '😟', happy: '😊',
@@ -60,7 +60,7 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
-  // healed friends remember you — the clock time each friend greeted Belu this
+  // healed friends remember you — the clock time each friend greeted Nilu this
   // session (-1 = not yet)
   greetAt: number[];
 }
@@ -178,7 +178,7 @@ export default function StoryLayer(props: Props) {
       st.friends[st.activeFriend].healedAt = st.clock;
       st.helped += 1;
       st.lockUntil = st.clock + 0.8;
-      props.onFriendHealed(fr.species); // this friend will remember Belu forever
+      props.onFriendHealed(fr.species); // this friend will remember Nilu forever
       props.playSound('star');
       props.setEmotion('excited');
       // the friend cheers up IN THEIR OWN VOICE — gives them personality
@@ -273,7 +273,7 @@ export default function StoryLayer(props: Props) {
     }
     if (!st.active) {
       // NO quest ambush: the story begins only when the child deliberately
-      // walks Belu right up to the waving host friend (approach = consent).
+      // walks Nilu right up to the waving host friend (approach = consent).
       if (onIsland && !st.disarmed) {
         const [hx, hz] = friendWorld(0);
         if (Math.hypot(beluPos.x - hx, beluPos.z - hz) < INVITE_START) startStory();
@@ -287,7 +287,7 @@ export default function StoryLayer(props: Props) {
 
     const friends = MEADOW_STORY[clampLevel(st.level)].friends;
 
-    // who is Belu nearest to (unhealed)?
+    // who is Nilu nearest to (unhealed)?
     let near = -1;
     let nearD = APPROACH;
     for (let i = 0; i < friends.length; i++) {
@@ -327,7 +327,7 @@ export default function StoryLayer(props: Props) {
       bump();
     }
 
-    // once observed, let Belu walk into a help bubble
+    // once observed, let Nilu walk into a help bubble
     if (st.observed) {
       const layout = helpLayout(near);
       let best = -1;

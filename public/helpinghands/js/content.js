@@ -1,5 +1,5 @@
 /* =====================================================================
-   Belu's Helping Hands — curriculum content
+   Nilu's Helping Hands — curriculum content
    ---------------------------------------------------------------------
    ALL child-facing language lives in this file so it can be reviewed
    line-by-line by a clinical reviewer (RBT / Clinical Supervisor)
@@ -27,7 +27,7 @@ HH.ENABLE_TIER_B = true;
 // Set REQUIRE_GATE = true to re-gate future review builds (e.g. when
 // enabling Tier B); hash is SHA-256 of the review password.
 HH.REQUIRE_GATE = false;
-HH.GATE_HASH = "d3d8d42d366ada9307d6eb08ba21c5ae7df56007fadbf07a44d23774e8a85170";
+HH.GATE_HASH = "4fa22d94b2f4dfb0942b08d38edc40e1e46d304519a73a8d4add1c13a1e327f4"; // dormant; NILU-SAFE-2026, only used if REQUIRE_GATE is re-enabled
 
 /* ---------------- helper people (friend cards) ---------------- */
 HH.HELPERS = {
@@ -390,7 +390,7 @@ HH.SCENARIOS = [
 ];
 
 /* ---------------- in-world enactment data ----------------
-   Discovery "find & do" tasks replace quiz cards: Belu asks, the
+   Discovery "find & do" tasks replace quiz cards: Nilu asks, the
    child WALKS to the right room and taps the glowing target object.
    task = { ask, roomId, objIndex, praise } */
 HH.FIND_TASKS = {

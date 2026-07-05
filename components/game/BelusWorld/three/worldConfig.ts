@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Belu's World — 3D world configuration
+// Nilu's World — 3D world configuration
 // A cluster of floating sky-islands connected by rainbow bridges.
 // Everything the world needs to lay itself out lives here so the geometry,
 // the ground-collision math, and the gameplay all read from one source.
@@ -47,7 +47,7 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     grass: '#7ec850',
     rock: '#8a6b4f',
     accent: '#ffd166',
-    label: "Belu's Home",
+    label: "Nilu's Home",
     emoji: '🏡',
   },
   meadow: {
@@ -99,7 +99,7 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     emoji: '🌳',
   },
   // A reward island that only FORMS once the child masters their first island.
-  // It's a free-play playground (no lesson) Belu can walk to and explore — a
+  // It's a free-play playground (no lesson) Nilu can walk to and explore — a
   // visible "the world grew because of you" payoff. Sits out beyond home.
   rainbow: {
     id: 'rainbow',
@@ -138,13 +138,13 @@ export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest'];
 export const worldRuntime = { rainbowUnlocked: false };
 
 // Where the interaction crystal sits on each zone island (offset from centre)
-// and how close Belu must be to trigger the "Play!" prompt.
+// and how close Nilu must be to trigger the "Play!" prompt.
 export const INTERACT_RADIUS = 4.5;
 
 export const PLAYER_SPAWN = { x: 0, y: 0.4, z: 6 };
 
-// Solid things Belu can't walk through (horizontal keep-out cylinders). The
-// Morning Mountain peak is a real landmark — Belu walks AROUND it, not through.
+// Solid things Nilu can't walk through (horizontal keep-out cylinders). The
+// Morning Mountain peak is a real landmark — Nilu walks AROUND it, not through.
 // World.tsx renders the peak at this same spot, so visuals and collision agree.
 export interface Obstacle {
   x: number;

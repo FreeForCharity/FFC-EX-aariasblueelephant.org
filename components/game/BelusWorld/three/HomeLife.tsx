@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Belu's Home comes alive:
+// Nilu's Home comes alive:
 //   • Sparkle Jar — a glass jar by the hut that glows brighter as it fills with
 //     the sparkles (and friendship petals) the child collects. Purely additive.
 //   • Daily sparkle hunt — 3 hidden sparkles per island per REAL day, at
@@ -33,7 +33,7 @@ const SPARKLE_FIND = 2.2; // walk this close to collect (same feel as firefly-fi
 const JAR_POS: [number, number] = [HOME.cx + 2.4, HOME.cz - 2.8];
 const PLOT: [number, number] = [HOME.cx - 3.2, HOME.cz + 3.6]; // garden plot centre
 const PLOT_R = 2.0;
-const PLANT_NEAR = 3.4; // Belu must be this close for tap-to-plant
+const PLANT_NEAR = 3.4; // Nilu must be this close for tap-to-plant
 const SLOT_OFFSETS: [number, number][] = [[-0.9, -0.7], [0.9, -0.7], [-0.9, 0.8], [0.9, 0.8]];
 const VISITOR_POS: [number, number] = [HOME.cx + 4.2, HOME.cz + 1.8];
 const VISITOR_GREET = 4.0; // the friend recognises you from here
@@ -130,7 +130,7 @@ export default function HomeLife({
   const canPlant = seeds > 0 && garden.length < GARDEN_SLOTS;
 
   frame.current = (dt: number) => {
-    // the visitor is a solid little body Belu walks around, not through
+    // the visitor is a solid little body Nilu walks around, not through
     dynamicSolids.homeLife = visitor
       ? [{ x: VISITOR_POS[0], z: VISITOR_POS[1], r: 1.0 }]
       : [];
@@ -266,7 +266,7 @@ export default function HomeLife({
           <meshStandardMaterial color="#caa46a" roughness={0.9} />
         </mesh>
 
-        {/* the invitation bubble when Belu is close and holding a seed */}
+        {/* the invitation bubble when Nilu is close and holding a seed */}
         {nearPlot.current && canPlant && (
           <sprite position={[0, 2.0, 0]} scale={[1.7, 1.7, 1]} renderOrder={12}>
             <spriteMaterial map={plantTex.current} transparent depthWrite={false} depthTest={false} />

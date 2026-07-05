@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The breathing bubble for Calm Cove. A big gentle orb that grows as you
-// breathe in, holds, and shrinks as you breathe out — Belu breathes along with
+// breathe in, holds, and shrinks as you breathe out — Nilu breathes along with
 // it. It runs a set number of calm cycles and then quietly finishes. No taps,
 // no pressure: just follow the bubble. As it breathes, the whole cove settles.
 // ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ interface Props {
   reduceMotion?: boolean;
   /** called once when all cycles are complete */
   onDone: () => void;
-  /** called when a phase begins, so Belu can say the cue aloud */
+  /** called when a phase begins, so Nilu can say the cue aloud */
   onPhase?: (label: string) => void;
 }
 

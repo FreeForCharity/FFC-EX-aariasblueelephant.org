@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Belu — the blue elephant, modelled from primitives so there's nothing to
+// Nilu — the blue elephant, modelled from primitives so there's nothing to
 // download. Soft rounded forms, big friendly eyes, expressive ears + trunk.
 // All animation is driven by a mutable MotionRef the Player controller updates
 // each frame (speed + airborne), so this component never re-renders mid-walk.
@@ -12,7 +12,7 @@ import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
 
 export interface MotionRef {
-  speed: number; // 0..1 how fast Belu is moving on the ground
+  speed: number; // 0..1 how fast Nilu is moving on the ground
   airborne: boolean;
   vy: number; // vertical velocity, for squash/stretch
 }
@@ -20,11 +20,11 @@ export interface MotionRef {
 interface Props {
   motion: React.MutableRefObject<MotionRef>;
   emotion: BeluEmotion;
-  /** overall size from Belu's growth (0.7 baby → 1.15 grown) */
+  /** overall size from Nilu's growth (0.7 baby → 1.15 grown) */
   growthScale?: number;
   /** 0 baby, 1 little, 2 big, 3 grown — gates visible features */
   growthStage?: number;
-  /** cosmetics Belu is wearing */
+  /** cosmetics Nilu is wearing */
   equipped?: EquippedCosmetics;
 }
 
@@ -140,7 +140,7 @@ export default function Belu3D({ motion, emotion, growthScale = 1, growthStage =
           <meshStandardMaterial color={BELLY} roughness={0.6} />
         </mesh>
 
-        {/* explorer's satchel — appears once Belu is all grown up */}
+        {/* explorer's satchel — appears once Nilu is all grown up */}
         {growthStage >= 3 && (
           <group position={[0.95, -0.1, 0]} rotation={[0, 0, -0.2]}>
             <mesh castShadow>
@@ -262,7 +262,7 @@ export default function Belu3D({ motion, emotion, growthScale = 1, growthStage =
             </mesh>
           </group>
 
-          {/* tusks — grow in as Belu grows up (baby has none) */}
+          {/* tusks — grow in as Nilu grows up (baby has none) */}
           {growthStage >= 1 && (
             <>
               <mesh position={[-0.22, -0.45, 0.7]} rotation={[0.6, 0, 0.2]} scale={0.7 + growthStage * 0.15}>

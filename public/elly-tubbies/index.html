@@ -178,7 +178,7 @@
 </style>
 </head>
 <body>
-  <canvas id="cv" role="application" aria-label="Trunkland — a 3D world you explore as Belu the elephant"></canvas>
+  <canvas id="cv" role="application" aria-label="Trunkland — a 3D world you explore as Nilu the elephant"></canvas>
   <div id="loading"><div class="ele">🐘</div><div class="lbl">Waking up Trunkland…</div></div>
 
   <div id="topbar">
@@ -222,7 +222,7 @@
     <button class="big" id="setClose">Done ▶</button>
   </div></div>
 
-  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Belu"><div id="knob">🐘</div>
+  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob">🐘</div>
     <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
     <span class="stickArrow sa-l">◀</span><span class="stickArrow sa-r">▶</span>
   </div>
@@ -267,7 +267,7 @@
       <div class="tub"><div class="dot" style="background:#ffd94d">📺</div>Sunny</div>
       <div class="tub"><div class="dot" style="background:#ff8fb1">📺</div>Rosy</div>
     </div>
-    <p>You are <b>Belu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises!</p>
+    <p>You are <b>Nilu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises!</p>
     <p>🌊 <b>Swim</b> the sea, ✈️ <b>fly</b> the sky, 🚗 <b>zoom</b> a bumper car — find <b>Splash Cove</b>, <b>Sky Hill</b> and the <b>Zoomy Garage</b>, and pick the <b>right gear</b> to unlock each one! Collect <b>✨ sparkles</b>, find <b>secret wonders</b>, and play with every friend to earn <b>⭐ stars</b>.</p>
     <p style="font-size:clamp(13px,3.6vw,16px)">Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b></p>
     <p>Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈</p>
@@ -330,7 +330,7 @@ const TUBBIES={
   rosy:{name:'Skydah', body:'#ffdc00', dark:'#e0b800', antenna:'star', antCol:'#ffe68a',
     zone:'Dreamy Hills', likes:'hide & seek', game:'hide', hello:'Skydah the dreamer loves hide and seek! Come find me?'},
 };
-const BELU={name:'Belu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
+const BELU={name:'Nilu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
 
 const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
   {e:'😊',w:'Happy',   hint:'A big smile means happy!'},
@@ -360,35 +360,35 @@ const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
 /* Story scenes — enacted in 3D: each choice becomes a character/bubble standing
    in the world. `s` = short label under the figure. 3 stories star each day. */
 const STORIES=[
- {id:'doctor',tub:'minty',setup:'Belu\'s tummy hurts. Look — three helpers are here!',prompt:'Tap the DOCTOR who can help a sore tummy.',
+ {id:'doctor',tub:'minty',setup:'Nilu\'s tummy hurts. Look — three helpers are here!',prompt:'Tap the DOCTOR who can help a sore tummy.',
   choices:[{e:'🧑‍⚕️',s:'White coat',ok:1,fb:'Yes! A white coat and stethoscope means doctor. Well spotted!'},{e:'🍦',s:'Ice cream seller',fb:'Yummy, but ice cream can\'t fix tummies. Find the white coat!'},{e:'🚶‍🐕',s:'Dog walker',fb:'So kind, but not a doctor. Look for the stethoscope!'}]},
- {id:'nurse',tub:'minty',setup:'Belu scraped a knee and needs a bandage.',prompt:'Tap the NURSE who can help.',
+ {id:'nurse',tub:'minty',setup:'Nilu scraped a knee and needs a bandage.',prompt:'Tap the NURSE who can help.',
   choices:[{e:'🧑‍⚕️',s:'Scrubs + badge',ok:1,fb:'Yes! Nurses wear scrubs and a name badge. They love to help!'},{e:'📬',s:'Mail carrier',fb:'They bring letters, not bandages. Find the scrubs!'},{e:'🎨',s:'Painter',fb:'They paint walls! A nurse wears scrubs. Look again!'}]},
  {id:'firefighter',tub:'tinko',setup:'Smoke! Someone needs a brave helper at the fire station.',prompt:'Tap the FIREFIGHTER.',
   choices:[{e:'🧑‍🚒',s:'Helmet + coat',ok:1,fb:'Yes! The big helmet and yellow coat keep firefighters safe!'},{e:'🧑‍🍳',s:'Chef',fb:'Chefs cook food! Firefighters wear a helmet. Try again!'},{e:'🤿',s:'Swimmer',fb:'Swimmers wear goggles. Look for the helmet!'}]},
- {id:'police',tub:'rosy',setup:'Belu feels lost in Friendly Town and wants a safe helper.',prompt:'Tap the POLICE OFFICER who keeps people safe.',
+ {id:'police',tub:'rosy',setup:'Nilu feels lost in Friendly Town and wants a safe helper.',prompt:'Tap the POLICE OFFICER who keeps people safe.',
   choices:[{e:'👮',s:'Blue + badge',ok:1,fb:'Yes! Blue uniform and a shiny badge — a safe helper!'},{e:'🤹',s:'Juggler',fb:'Fun! But for safety, find the shiny badge.'},{e:'🎈',s:'Balloon seller',fb:'Balloons are lovely, but the officer has the badge!'}]},
  {id:'nameplate',tub:'sunny',setup:'A sign at the help desk says: “HELP DESK — MISS ROSA”.',prompt:'Who do you ask for help?',
   choices:[{e:'🪧',s:'Ask Miss Rosa',ok:1,fb:'Yes! The sign tells you Miss Rosa helps here. Reading signs is a superpower!'},{e:'🚶',s:'A far stranger',fb:'They\'re busy and far away. The sign says Miss Rosa!'},{e:'🤫',s:'Wait quietly',fb:'Waiting forever is tricky. The sign says ask Miss Rosa!'}]},
- {id:'crossing',tub:'tinko',setup:'Belu needs to cross the street.',prompt:'What is the SAFE way to cross?',
+ {id:'crossing',tub:'tinko',setup:'Nilu needs to cross the street.',prompt:'What is the SAFE way to cross?',
   choices:[{e:'🚦',s:'Stop, look, green',ok:1,fb:'Yes! Stop, look both ways, wait for green, then walk!'},{e:'🏃',s:'Run across',fb:'Running without looking is not safe. Stop and look first!'},{e:'🙈',s:'Eyes closed',fb:'Eyes stay open to stay safe! Stop, look, then go!'}]},
- {id:'private',tub:'rosy',setup:'Someone Belu does not know asks where Belu lives.',prompt:'What should Belu say?',
+ {id:'private',tub:'rosy',setup:'Someone Nilu does not know asks where Nilu lives.',prompt:'What should Nilu say?',
   choices:[{e:'🔒',s:'“No thank you” + tell grown-up',ok:1,fb:'Yes! Home and name are private. Tell a trusted grown-up!'},{e:'🏠',s:'Tell the address',fb:'Where you live is private — we keep it safe!'},{e:'📱',s:'Give phone number',fb:'Phone numbers are private too! Say no thank you.'}]},
- {id:'friend',tub:'minty',setup:'A new bunny sits alone on the hill. Belu wants to play together.',prompt:'How do you make a new friend?',
+ {id:'friend',tub:'minty',setup:'A new bunny sits alone on the hill. Nilu wants to play together.',prompt:'How do you make a new friend?',
   choices:[{e:'👋',s:'Smile, say hi + name',ok:1,fb:'Yes! A friendly hi and your name is how friendship begins!'},{e:'🧸',s:'Grab their toy',fb:'Grabbing can upset a friend. Say hi and ask first!'},{e:'👀',s:'Stare quietly',fb:'Staring feels funny. A warm hi is friendlier!'}]},
- {id:'words',tub:'sunny',setup:'Belu\'s shoe hurts, but nobody knows!',prompt:'How does Belu get help?',
+ {id:'words',tub:'sunny',setup:'Nilu\'s shoe hurts, but nobody knows!',prompt:'How does Nilu get help?',
   choices:[{e:'🗣️',s:'“My shoe hurts, help?”',ok:1,fb:'Yes! Using your words lets people help you. Super talking!'},{e:'🤫',s:'Stay quiet',fb:'If we stay quiet, nobody knows. Use your words!'},{e:'👟',s:'Throw the shoe',fb:'Throwing doesn\'t explain. Words work best!'}]},
  {id:'kind',tub:'tinko',setup:'Oh no — a friend dropped a basket and apples rolled everywhere!',prompt:'What is the KIND thing to do?',
   choices:[{e:'🍎',s:'Help pick up',ok:1,fb:'Yes! Helping and asking “are you okay?” is so kind!'},{e:'😆',s:'Laugh, walk away',fb:'Laughing can hurt feelings. Helping is kinder!'},{e:'🤏',s:'Take one apple',fb:'Those are your friend\'s apples. Let\'s help instead!'}]},
- {id:'wash',tub:'sunny',setup:'Lunch time! But Belu\'s hands are muddy from playing.',prompt:'What comes FIRST before eating?',
+ {id:'wash',tub:'sunny',setup:'Lunch time! But Nilu\'s hands are muddy from playing.',prompt:'What comes FIRST before eating?',
   choices:[{e:'🧼',s:'Wash with soap',ok:1,fb:'Yes! Soap, water, scrub and dry — germs all gone!'},{e:'👕',s:'Wipe on shirt',fb:'Shirts don\'t wash away germs. Soap does!'},{e:'🍽️',s:'Just eat',fb:'Muddy hands carry germs. Wash first!'}]},
- {id:'lost',tub:'rosy',setup:'Belu can\'t find a grown-up at the park and feels worried.',prompt:'What is a good thing to do?',
+ {id:'lost',tub:'rosy',setup:'Nilu can\'t find a grown-up at the park and feels worried.',prompt:'What is a good thing to do?',
   choices:[{e:'🙋',s:'Ask a park helper',ok:1,fb:'Yes! Stay put and tell a safe helper — they\'ll help you find your grown-up!'},{e:'🏃',s:'Run everywhere',fb:'Running can get you more lost. Ask a helper!'},{e:'🌳',s:'Hide behind tree',fb:'Hiding makes it hard to be found. Ask a helper!'}]},
  {id:'turn',tub:'minty',setup:'One swing. Another kid is on it right now.',prompt:'What do you do while you wait?',
   choices:[{e:'⏳',s:'Wait + deep breaths',ok:1,fb:'Yes! Waiting your turn is calm and kind. Your turn comes soon!'},{e:'😠',s:'Push them off',fb:'Pushing hurts. We wait our turn!'},{e:'😭',s:'Cry loudly',fb:'It\'s okay to feel impatient — calm waiting works best!'}]},
- {id:'stranger',tub:'rosy',setup:'A grown-up Belu does NOT know says: “Come to my car for candy.”',prompt:'What is the SAFE thing to do?',
+ {id:'stranger',tub:'rosy',setup:'A grown-up Nilu does NOT know says: “Come to my car for candy.”',prompt:'What is the SAFE thing to do?',
   choices:[{e:'🚫',s:'Say NO + tell grown-up',ok:1,fb:'Yes! Never go with strangers. Say no and tell a safe grown-up. So brave!'},{e:'🍬',s:'Go get candy',fb:'We never go with strangers, even for candy!'},{e:'🤐',s:'Keep it secret',fb:'Never a secret! Safe grown-ups need to know.'}]},
- {id:'calm',tub:'tinko',setup:'CRASH! Belu\'s block tower fell down. Belu feels a BIG mad feeling.',prompt:'What helps the mad feeling get smaller?',
+ {id:'calm',tub:'tinko',setup:'CRASH! Nilu\'s block tower fell down. Nilu feels a BIG mad feeling.',prompt:'What helps the mad feeling get smaller?',
   choices:[{e:'🌬️',s:'Slow deep breaths',ok:1,fb:'Yes! Breathe in soft, breathe out kind — big feelings get smaller!'},{e:'🧱',s:'Throw the blocks',fb:'Throwing can hurt. Deep breaths help more!'},{e:'📢',s:'Yell at a friend',fb:'Yelling hurts feelings. Slow breaths help!'}]},
 ];
 const STICKERS=[   // Sticker Garden — persistent world decorations
@@ -399,7 +399,7 @@ const STICKERS=[   // Sticker Garden — persistent world decorations
   {id:'bfly',    e:'🦋', name:'Butterflies',  cost:16, at:[-9,7]},
   {id:'seesaw',  e:'🛝', name:'Slide',        cost:20, at:[12,-2]},
   {id:'rainbow', e:'🌈', name:'Big Rainbow',  cost:28, at:[0,14]},
-  {id:'crown',   e:'👑', name:'Belu\'s Crown',cost:35, at:null},   // wearable!
+  {id:'crown',   e:'👑', name:'Nilu\'s Crown',cost:35, at:null},   // wearable!
 ];
 const SUN_CHEER=['You did it! Hooray!','I\'m so proud of you!','What a superstar!','That was kind and brave!','Wonderful try!','Yay! Amazing!'];
 const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm, kind one!','I\'m right here with you!'];
@@ -510,12 +510,12 @@ const POI={dome:[0,0], tinko:[24,-13], minty:[-25,-11], sunny:[19,19], rosy:[-19
    new way to travel (and a whole new layer of Trunkland to explore). */
 const STATIONS={
   swim:{poi:'cove', name:'Splash Cove', e:'🌊', btn:'Splash Cove 🌊',
-    setup:'The sparkly sea! Belu wants to swim. But wait — what should Belu wear to stay safe in the water?',
+    setup:'The sparkly sea! Nilu wants to swim. But wait — what should Nilu wear to stay safe in the water?',
     choices:[
       {e:'🦺',s:'Floaty vest',ok:1,fb:'Yes! A floaty keeps you safe and bobbing on top of the water!'},
       {e:'⛑️',s:'Bike helmet',fb:'A helmet is for riding, not swimming. What helps you float?'},
       {e:'🧤',s:'Wooly mittens',fb:'Mittens are for snow! Soggy mittens can\'t help you swim.'}],
-    win:'Belu puts on the floaty! Now you can SWIM in the sea! 🏊 Look for sea friends out there…'},
+    win:'Nilu puts on the floaty! Now you can SWIM in the sea! 🏊 Look for sea friends out there…'},
   fly:{poi:'skyhill', name:'Sky Hill', e:'🪁', btn:'Sky Hill 🪁',
     setup:'Whoosh! The wind on Sky Hill is strong enough to fly! What does a safe little flyer need?',
     choices:[
@@ -524,7 +524,7 @@ const STATIONS={
       {e:'🎒',s:'Heavy backpack',fb:'Too heavy to fly! Light and safe is the way.'}],
     win:'Goggles on, cape flapping! Hold 🦘 to rise — you can FLY over Trunkland! ✈️'},
   drive:{poi:'garage', name:'Zoomy Garage', e:'🚗', btn:'Zoomy Garage 🚗',
-    setup:'A bouncy bumper car! Belu wants to zoom. What must every driver put on FIRST?',
+    setup:'A bouncy bumper car! Nilu wants to zoom. What must every driver put on FIRST?',
     choices:[
       {e:'⛑️',s:'Helmet, buckled',ok:1,fb:'Yes! Helmet first, every time. Safe heads have the most fun!'},
       {e:'👑',s:'Sparkly crown',fb:'A crown is fancy but it won\'t protect your head. What\'s made for safety?'},
@@ -907,7 +907,7 @@ for(let i=0;i<5;i++){const a=i/5*Math.PI*2+0.4;
 function refreshSecrets(){SECRETS.forEach(sc=>{sc.q.visible=!(S.secrets&&S.secrets[sc.id]);});}
 
 /* ============== LIVING STICKER GARDEN ==============
-   Everything the kid plants is ALIVE: it reacts when Belu walks near, wakes up
+   Everything the kid plants is ALIVE: it reacts when Nilu walks near, wakes up
    with a gift on the first hello of each day, and grows bigger when watered
    (one watering per day, 3 growth stages). Never wilts — only ever grows.   */
 const stickerNodes={};
@@ -941,7 +941,7 @@ function stickerReact(st){
   const s=stickerNodes[st.id];if(!s)return;
   const g=S.garden[st.id]||{};
   const fancy=g.stage>=3;
-  if(st.id==='bunny'){        // hops toward Belu
+  if(st.id==='bunny'){        // hops toward Nilu
     const p=player.group.position,dir=new T.Vector3().subVectors(p,s.position).setY(0).normalize();
     tween(0.7,k=>{s.position.x+=dir.x*0.02;s.position.z+=dir.z*0.02;
       s.position.y=terrainH(s.position.x,s.position.z)+1.3+Math.abs(Math.sin(k*Math.PI*3))*0.8;});
@@ -956,7 +956,7 @@ function stickerReact(st){
   else{tween(0.8,k=>{s.material.rotation=Math.sin(k*Math.PI*2)*0.5;});sfx.tap();}   // spin/wiggle
   if(fancy)burst(s.position,8,'#b8a4ff');
 }
-/* garden greets Belu: react in proximity + first-hello-of-the-day gift */
+/* garden greets Nilu: react in proximity + first-hello-of-the-day gift */
 function gardenProximity(){
   const p=player.group.position;
   STICKERS.forEach(st=>{
@@ -981,7 +981,7 @@ const player=makeEllie(BELU);
 player.group.position.set(0,0,-9);scene.add(player.group);
 player.anim.tv('💙');
 
-/* -------- Belu's travel gear (visible when the mode is active) -------- */
+/* -------- Nilu's travel gear (visible when the mode is active) -------- */
 const GEAR={};
 (function makeGearMeshes(){
   // 🦺 floaty: candy-striped ring around the belly
@@ -1124,7 +1124,7 @@ async function wakeRitual(){
       doMove(t,'happy',1.4);doMove(player,'happy',1.4);burst(p,16,'#ff8fb1');
       const mem=Object.keys(S.secrets).length?`You found the ${SECRETS.find(s=>S.secrets[s.id])?.e||'✨'} secret!`
         :S.gear.swim?'You learned to SWIM!':S.gear.fly?'You learned to FLY!':'You played so nicely!';
-      await say('💗',`${TUBBIES[nid].name} hugs Belu! "You came back!! ${mem}"`);
+      await say('💗',`${TUBBIES[nid].name} hugs Nilu! "You came back!! ${mem}"`);
       await maybeHatch();
       const t2=tubbies[nid],back=t2.group.position.clone();
       tween(1.1,k=>{t2.group.position.lerpVectors(back,from,k);
@@ -1219,7 +1219,7 @@ function tubbyWantsUpdate(){
         say('💗',`${TUBBIES[id].name} LOVES you! Best friends — ${TUBBIES[id].name} will follow you all day! 💕`);}
       else say('💗',`${TUBBIES[id].name} wanted ${wants[id].name}! +💕 (${Math.min(lvl,5)}/5) ✨+3`);
       break;}}
-  // best friends follow Belu around
+  // best friends follow Nilu around
   for(const id in tubbies){const t=tubbies[id];
     if(!t.follow||t.busy||mode!=='roam')continue;
     const d=t.group.position.distanceTo(p);
@@ -1345,7 +1345,7 @@ function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
   const s=emojiSprite(ch,scale);s.position.copy(pos);scene.add(s);
   tween(dur,k=>{s.position.y=pos.y+k*rise;s.material.opacity=1-k;}).then(()=>scene.remove(s));}
 
-/* ========================= FUN ACTIONS (Belu!) =========================== */
+/* ========================= FUN ACTIONS (Nilu!) =========================== */
 let actionBusy=false;
 let trumpetTimes=[];
 async function actTrumpet(){
@@ -1392,7 +1392,7 @@ async function actSpray(){
   for(let i=0;i<3;i++){setTimeout(()=>{burst(new T.Vector3(p.x,p.y+2,p.z),14,'#6fd0ff');},i*260);}
   ['💧','💦','💧'].forEach((n,i)=>setTimeout(()=>
     floatSprite(n,new T.Vector3(p.x+(i-1)*1.1,p.y+3,p.z),2.5,1.3),i*180));
-  // a magical rainbow blooms over Belu!
+  // a magical rainbow blooms over Nilu!
   const rb=new T.Mesh(new T.TorusGeometry(4.5,0.5,10,40,Math.PI),
     new T.MeshStandardMaterial({color:'#ffffff',roughness:.6,transparent:true,opacity:0,
       emissive:new T.Color('#ff9ecf'),emissiveIntensity:.35}));
@@ -1823,7 +1823,7 @@ async function startVisit(id){
   enterScene();
   const tub=tubbies[id],cfg=TUBBIES[id];
   const tp=tub.group.position;
-  // Belu steps to the side to WATCH — never blocks the friend's Tummy-TV
+  // Nilu steps to the side to WATCH — never blocks the friend's Tummy-TV
   player.group.position.set(tp.x-5.6,terrainH(tp.x-5.6,tp.z-4.2),tp.z-4.2);
   player.group.rotation.y=Math.atan2(tp.x-player.group.position.x,tp.z-player.group.position.z)+Math.PI;
   sceneCam(tp.x,tp.z,14,8.5);
@@ -2350,7 +2350,7 @@ function renderWmap(){
   const g=$('wmapGrid');g.innerHTML='';
   const ready=flyReady();
   $('wmapHint').textContent=ready?'Where shall we fly, little friend? ✈️'
-    :('Belu\'s wings are resting… ready in '+Math.ceil((FLY_CD-(Date.now()-S.lastFly))/60000)+' min! Walk for now 🚶');
+    :('Nilu\'s wings are resting… ready in '+Math.ceil((FLY_CD-(Date.now()-S.lastFly))/60000)+' min! Walk for now 🚶');
   MAP_SPOTS.forEach(([k,label])=>{
     const b=document.createElement('button');b.className='big';
     b.style.cssText='font-size:15px;padding:11px 8px;margin:0'+(ready?'':';opacity:.45');
@@ -2362,7 +2362,7 @@ function renderWmap(){
       setTrav('walk');player.group.position.set(x+2,terrainH(x+2,z+3),z+3);
       burst(player.group.position,24,'#8fd0ff');sfx.win();
       floatSprite('✈️',player.group.position,4,1.6,1.6);
-      say('☀️','Wheee! Belu flew to '+label+'! ✈️');};
+      say('☀️','Wheee! Nilu flew to '+label+'! ✈️');};
     g.appendChild(b);});
 }
 $('mapBtn').onclick=()=>{sfx.tap();renderWmap();$('wmap').classList.add('show');};
@@ -2372,7 +2372,7 @@ $('wmapClose').onclick=()=>{sfx.tap();$('wmap').classList.remove('show');};
    (with a celebration), then it keeps shuffling them forever. */
 const MYSTERY=[{k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
                {k:'dance',e:'💃',name:'Dance Party',fn:actDance}];
-$('trumpetBtn').onclick=()=>{ac();actTrumpet();};   // Belu's signature — always right there
+$('trumpetBtn').onclick=()=>{ac();actTrumpet();};   // Nilu's signature — always right there
 $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   const fresh=MYSTERY.filter(m=>!S.found[m.k]);
   const m=fresh.length?fresh[Math.floor(Math.random()*fresh.length)]

@@ -2,7 +2,7 @@
 // Friendship Forest content — MAGIC WORDS (expressive language as spell-casting).
 //   walk up to a 3D animal friend → linger a moment → a thought bubble shows
 //   what they WANT or SEE (a picture) → 3 word bubbles appear around them →
-//   walk Belu into the word bubbles IN ORDER to "say" the phrase → the wanted
+//   walk Nilu into the word bubbles IN ORDER to "say" the phrase → the wanted
 //   thing magically appears (sparkles + the item pops) and the friend cheers.
 // The child isn't taking a quiz: they are CASTING the phrase out loud, word by
 // word, and watching their words make something real happen. That is exactly
@@ -31,7 +31,7 @@ export interface ForestFriend {
   decoys: SpellWord[];
   /** the thing that magically appears once the phrase is complete */
   reward: string;
-  /** Belu's happy line when the spell lands */
+  /** Nilu's happy line when the spell lands */
   cheer: string;
   /** local XZ offset from the forest centre */
   pos: [number, number];
@@ -196,7 +196,7 @@ export const FOREST_STORY: ForestLevel[] = [
     ],
   },
 
-  // L5 — whole sentences + a friendly turn-take with Belu (the social finale).
+  // L5 — whole sentences + a friendly turn-take with Nilu (the social finale).
   {
     goal: 'Whole sentences & taking turns',
     intro:
@@ -240,7 +240,7 @@ export const FOREST_TWINKLES: { emoji: string; pos: [number, number] }[] = [
   { emoji: '🍄', pos: [-5.8, 3.5] },
 ];
 
-// Warm one-liners Belu says when a hidden twinkle is found — the firefly guide
+// Warm one-liners Nilu says when a hidden twinkle is found — the firefly guide
 // celebrating discovery. Rotated by a seed so it doesn't feel repetitive.
 export const TWINKLE_FINDS: string[] = [
   'Ooh, a hidden sparkle! You found it! ✨',
@@ -249,7 +249,7 @@ export const TWINKLE_FINDS: string[] = [
   'The forest left a sparkle just for you! 🍄',
 ];
 
-// Belu's gentle nudges while exploring the forest (idle personality).
+// Nilu's gentle nudges while exploring the forest (idle personality).
 export const FOREST_NUDGES: string[] = [
   'The forest feels happier the more friends we help. 🌳',
   'Listen — the fireflies are dancing! 🐝',

@@ -1,9 +1,9 @@
 // ===========================================================================
-// Belu's World — a 3D floating-island adventure for kids on the autism
-// spectrum. The child walks/jumps Belu (a blue elephant) across magical sky
+// Nilu's World — a 3D floating-island adventure for kids on the autism
+// spectrum. The child walks/jumps Nilu (a blue elephant) across magical sky
 // islands. Each island teaches one ASD skill area across 5 levels. As the
-// child earns stars, two things VISIBLY happen: Belu grows up (baby → grown)
-// and each island blooms. Belu also remembers the child and grows a
+// child earns stars, two things VISIBLY happen: Nilu grows up (baby → grown)
+// and each island blooms. Nilu also remembers the child and grows a
 // personality across visits, learning right alongside them.
 //
 // Designed against evidence-based ASD principles (see project memory):
@@ -63,7 +63,7 @@ const GameCanvas = lazy(() => import('./three/GameCanvas'));
 type Phase = 'intro' | 'world';
 
 // Game pace 🐢🐇🚀 — kids who need more time stay Relaxed; kids who want it snappier
-// go Fast. Scales how long Belu's speech bubble lingers AND the read-aloud rate.
+// go Fast. Scales how long Nilu's speech bubble lingers AND the read-aloud rate.
 const SPEED = {
   relaxed: { ico: '🐢', label: 'Relaxed', dur: 1.5, rate: 0.82 },
   normal: { ico: '🐇', label: 'Normal', dur: 1.0, rate: 0.98 },
@@ -150,7 +150,7 @@ export default function BelusWorldGame() {
   const sparklesFound = useMemo(() => sparklesFoundToday(progress, dateKey), [progress, dateKey]);
   const visitor = useMemo(() => todaysVisitor(progress) as AnimalSpecies | null, [progress]);
 
-  // Belu speaks: speech bubble + (optional) read-aloud narration.
+  // Nilu speaks: speech bubble + (optional) read-aloud narration.
   const speak = useCallback((line: string) => {
     setBeluLine(line);
     const sp = SPEED[settingsRef.current.speed] || SPEED.normal;
@@ -190,7 +190,7 @@ export default function BelusWorldGame() {
       else if (grew) gardenLine = 'Psst — our garden grew while you were away! 🌱 Come look!';
     }
 
-    let m = setPlayerName(memory, name);   // personalize Belu's greetings
+    let m = setPlayerName(memory, name);   // personalize Nilu's greetings
     m = recordVisit(m);
     saveMemory(m);
     setMemory(m);
@@ -454,7 +454,7 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         animate={{ y: [0, -10, 0] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
       >
-        Belu's World
+        Nilu's World
       </motion.h1>
 
       <motion.p
@@ -464,7 +464,7 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         className="max-w-xl text-base font-extrabold sm:text-lg"
         style={{ color: '#246' }}
       >
-        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Belu grow!
+        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Nilu grow!
       </motion.p>
 
       <motion.a
@@ -494,7 +494,7 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         </p>
       )}
 
-      {/* who is playing? — personalizes Belu's greetings */}
+      {/* who is playing? — personalizes Nilu's greetings */}
       <div className="mt-1 flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-2.5">
         <label htmlFor="beluName" className="text-base font-bold text-sky-900">Who is playing?</label>
         <input
@@ -566,11 +566,11 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
         <div className="text-5xl">🐘💙</div>
         <h2 className="mt-2 text-2xl font-black text-sky-700">How to Play</h2>
         <div className="mt-4 space-y-2 text-left text-base font-semibold text-slate-700">
-          <p>🕹️ <b>Arrows or the joystick</b> — walk Belu around</p>
+          <p>🕹️ <b>Arrows or the joystick</b> — walk Nilu around</p>
           <p>⬆️ <b>Jump button</b> — hop over things</p>
           <p>✋ <b>Drag</b> the world to look around</p>
           <p>🫧 <b>Walk into glowing orbs</b> (or tap them) to help your friends</p>
-          <p>⭐ Earn stars to help <b>Belu grow up</b> and bloom the islands</p>
+          <p>⭐ Earn stars to help <b>Nilu grow up</b> and bloom the islands</p>
           <p>💙 There is <b>no way to lose</b> — just explore and have fun!</p>
         </div>
         <button
@@ -648,7 +648,7 @@ function QuestPanel({ status }: { status: QuestStatus }) {
 
         {!correct && (
           <p className="mt-1 text-xs font-semibold text-slate-500">
-            {status.hint ?? 'Walk Belu into the matching glowing orb 🫧 (or tap it)'}
+            {status.hint ?? 'Walk Nilu into the matching glowing orb 🫧 (or tap it)'}
           </p>
         )}
       </div>
@@ -657,7 +657,7 @@ function QuestPanel({ status }: { status: QuestStatus }) {
 }
 
 function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => void }) {
-  const headline = reward.grewUp ? 'Belu Grew Up!' : reward.levelUp ? 'Level Complete!' : 'Great Job!';
+  const headline = reward.grewUp ? 'Nilu Grew Up!' : reward.levelUp ? 'Level Complete!' : 'Great Job!';
   const hero = reward.grewUp ? '🐘✨' : reward.islandMastered ? '🌷' : '⭐';
   return (
     <motion.div
@@ -721,7 +721,7 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
 
         {reward.grewUp && (
           <p className="mt-3 rounded-2xl bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">
-            🎉 Belu is now {reward.growthLabel}! You helped Belu grow.
+            🎉 Nilu is now {reward.growthLabel}! You helped Nilu grow.
           </p>
         )}
         {reward.islandMastered && !reward.grewUp && (
@@ -731,7 +731,7 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
         )}
         {reward.unlockedItem && (
           <p className="mt-3 rounded-2xl bg-violet-100 px-4 py-2 text-sm font-bold text-violet-700">
-            🎁 New for Belu: {reward.unlockedItem.icon} {reward.unlockedItem.name}! Tap 🎩 to wear it.
+            🎁 New for Nilu: {reward.unlockedItem.icon} {reward.unlockedItem.name}! Tap 🎩 to wear it.
           </p>
         )}
 
@@ -775,7 +775,7 @@ function SettingsPanel({
             ✕
           </button>
         </div>
-        <p className="mb-4 text-sm text-slate-500">Make Belu's World feel just right for you. 💙</p>
+        <p className="mb-4 text-sm text-slate-500">Make Nilu's World feel just right for you. 💙</p>
 
         {/* Game speed — more time to read/listen 🐢 or snappier 🚀 */}
         <div className="mb-3 rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
@@ -797,7 +797,7 @@ function SettingsPanel({
         <Toggle label="Calm mode" hint="Softer glow, gentler colors" on={settings.calmMode} onClick={() => onChange({ ...settings, calmMode: !settings.calmMode })} />
         <Toggle label="Reduce motion" hint="Slow down drifting clouds & effects" on={settings.reduceMotion} onClick={() => onChange({ ...settings, reduceMotion: !settings.reduceMotion })} />
         <Toggle label="Sounds" hint="Gentle chimes for stars & success" on={settings.sound} onClick={() => onChange({ ...settings, sound: !settings.sound })} />
-        <Toggle label="Read aloud" hint="Belu speaks her words out loud" on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
+        <Toggle label="Read aloud" hint="Nilu speaks her words out loud" on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
 
         <button
           onClick={onClose}

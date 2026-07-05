@@ -2,7 +2,7 @@
 // The "come play when YOU'RE ready" invitation. Islands no longer auto-start
 // their lesson: the host friend beckons with a floating ▶ bubble + a soft
 // pulsing ring on the ground, and the quest only begins when the child
-// deliberately walks Belu right up to them. Approach = consent.
+// deliberately walks Nilu right up to them. Approach = consent.
 // ---------------------------------------------------------------------------
 
 import { useRef } from 'react';

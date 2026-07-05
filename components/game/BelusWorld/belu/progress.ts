@@ -4,7 +4,7 @@
 // score is kept — you can always replay to improve, never to lose). Stars feed
 // two *visible* things the child strives for:
 //   1. each island visibly BLOOMS as its levels are completed, and
-//   2. Belu visibly GROWS UP as total stars rise (baby → child → teen → grown).
+//   2. Nilu visibly GROWS UP as total stars rise (baby → child → teen → grown).
 // No timers, no losing, no farming the same level past 3 stars.
 // ---------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ export interface Cosmetic {
   icon: string;
   slot: CosmeticSlot;
 }
-/** Everything Belu can wear. Earned one per completed level (UNLOCK_ORDER). */
+/** Everything Nilu can wear. Earned one per completed level (UNLOCK_ORDER). */
 export const COSMETICS: Cosmetic[] = [
   { id: 'cap', name: 'Explorer Cap', icon: '🧢', slot: 'head' },
   { id: 'bow', name: 'Cute Bow', icon: '🎀', slot: 'head' },
@@ -62,7 +62,7 @@ export const PLANT_MAX_STAGE = 3; // 0 sprout → 1 leaves → 2 bud → 3 flowe
 
 export interface GameProgress {
   islands: Record<ActivityZone, IslandProgress>;
-  /** cosmetic accessories the child has unlocked for Belu */
+  /** cosmetic accessories the child has unlocked for Nilu */
   unlocked: string[];
   /** which cosmetic is worn in each slot */
   equipped: EquippedCosmetics;
@@ -186,7 +186,7 @@ export function totalCompletedLevels(p: GameProgress): number {
   return ZONES.reduce((sum, z) => sum + completedLevels(p, z), 0);
 }
 
-// ---- Belu growth (the headline reward) ----
+// ---- Nilu growth (the headline reward) ----
 
 export type GrowthStage = 0 | 1 | 2 | 3;
 
@@ -204,7 +204,7 @@ export interface GrowthInfo {
 
 // star thresholds for each growth stage
 const GROWTH_THRESHOLDS = [0, 12, 28, 48];
-const GROWTH_LABELS = ['Baby Belu', 'Little Belu', 'Big Belu', 'Grown-Up Belu'];
+const GROWTH_LABELS = ['Baby Nilu', 'Little Nilu', 'Big Nilu', 'Grown-Up Nilu'];
 const GROWTH_SCALES = [0.7, 0.85, 1.0, 1.15];
 
 export function growthFromStars(stars: number): GrowthInfo {
@@ -308,7 +308,7 @@ export interface AwardResult {
   progress: GameProgress;
   /** did this play complete a brand-new level? */
   newLevel: boolean;
-  /** did Belu just advance a growth stage? */
+  /** did Nilu just advance a growth stage? */
   grewUp: boolean;
   growthBefore: GrowthStage;
   growthAfter: GrowthStage;

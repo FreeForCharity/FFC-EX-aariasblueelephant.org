@@ -14,7 +14,7 @@
 //   L5: build a calm plan — walk to 3 strategy totems in a row, then 1 breath.
 // ---------------------------------------------------------------------------
 
-/** A totem the child walks Belu into (or taps) — a body spot or a calm strategy. */
+/** A totem the child walks Nilu into (or taps) — a body spot or a calm strategy. */
 export interface CoveTotem {
   emoji: string;
   label: string;
@@ -39,7 +39,7 @@ export interface CoveLevel {
   cycles: number;
   /** the action before breathing (drives the totems that appear) */
   pre: CovePreStep;
-  /** the line Belu says once the pre-step is done and breathing is about to start */
+  /** the line Nilu says once the pre-step is done and breathing is about to start */
   breatheCue: string;
   /** how many hidden treasure shells are tucked around the cove this level */
   shells: number;
@@ -47,7 +47,7 @@ export interface CoveLevel {
   dolphin: string;
 }
 
-/** Kind, gentle lines Belu says as the child finds hidden shells (cycled). */
+/** Kind, gentle lines Nilu says as the child finds hidden shells (cycled). */
 export const SHELL_FINDS: string[] = [
   'Ooh, a shiny shell! Hold it up to your ear — can you hear the sea? 🐚',
   'A sparkly treasure! You have good finding eyes. ✨',

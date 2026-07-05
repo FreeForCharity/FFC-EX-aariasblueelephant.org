@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The Growth Map — a single screen where the child SEES their progress:
-//   • how grown-up Belu is, with a meter to the next growth,
+//   • how grown-up Nilu is, with a meter to the next growth,
 //   • how much each island has bloomed (levels completed),
 //   • total stars collected, and a sticker gallery.
 // This is the recognizable thing the child strives for — concrete, additive,
@@ -62,7 +62,7 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
         <h2 className="mb-1 text-center text-2xl font-black text-slate-800">My Growth Map</h2>
         <p className="mb-4 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
 
-        {/* Belu growth */}
+        {/* Nilu growth */}
         <div className="mb-5 rounded-3xl p-5 text-center" style={{ background: 'linear-gradient(160deg,#eaf6ff,#fff)' }}>
           <motion.div
             animate={{ y: [0, -6, 0] }}
@@ -84,8 +84,8 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
           </div>
           <p className="mt-2 text-xs font-semibold text-slate-500">
             {growth.nextAt === null
-              ? 'Belu is all grown up — amazing! 🎉'
-              : `${growth.nextAt - stars} more ⭐ to help Belu grow bigger!`}
+              ? 'Nilu is all grown up — amazing! 🎉'
+              : `${growth.nextAt - stars} more ⭐ to help Nilu grow bigger!`}
           </p>
         </div>
 

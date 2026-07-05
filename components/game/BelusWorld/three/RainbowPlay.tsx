@@ -1,12 +1,12 @@
 // ---------------------------------------------------------------------------
 // Rainbow Playground — the earned reward island actually PLAYS.
-//   • Bouncy dome: standing on it boings Belu up with ~2x jump power (and the
+//   • Bouncy dome: standing on it boings Nilu up with ~2x jump power (and the
 //     dome squishes). Bounce forever — pure body-play.
 //   • Balloons: touch one and it POPS with confetti + a bright chime, then
 //     quietly reappears ~30s later. Nothing to lose, nothing to run out of.
 //   • Slide: step onto the blue ramp and whoosh down it.
 // Deliberately SILENT: no dialogue, no stars, no task card — this island
-// doubles as a sensory/regulation corner, so Belu stays quiet here.
+// doubles as a sensory/regulation corner, so Nilu stays quiet here.
 // ---------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -58,7 +58,7 @@ export default function RainbowPlay({ paused, playSound }: Props) {
     if (paused) return;
     st.clock += dt;
 
-    // ---- bouncy dome: standing on it boings Belu skyward ----
+    // ---- bouncy dome: standing on it boings Nilu skyward ----
     const dDome = Math.hypot(beluPos.x - DOME.x, beluPos.z - DOME.z);
     if (dDome < DOME.r && beluState.grounded && st.clock > st.bounceLock) {
       playerImpulse.vy = BOUNCE_VY;
@@ -67,7 +67,7 @@ export default function RainbowPlay({ paused, playSound }: Props) {
       playSound('correct'); // a bright happy "boing"
     }
 
-    // ---- slide: whoosh Belu down the ramp (downhill = +z) ----
+    // ---- slide: whoosh Nilu down the ramp (downhill = +z) ----
     if (
       Math.abs(beluPos.x - SLIDE.x) < SLIDE.halfW &&
       beluPos.z > SLIDE.z - SLIDE.halfL &&
@@ -153,7 +153,7 @@ export default function RainbowPlay({ paused, playSound }: Props) {
   );
 }
 
-// The pink dome that squishes when Belu boings off it.
+// The pink dome that squishes when Nilu boings off it.
 function SquishyDome({
   meshRef,
   lastBounce,
