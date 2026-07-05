@@ -164,7 +164,8 @@ function setBelu(text, opts) {
   const nextBtn = $("beluNextBtn");
   if (opts.onNext) { nextBtn.hidden = false; nextBtn.onclick = opts.onNext; }
   else { nextBtn.hidden = true; nextBtn.onclick = null; }
-  $("beluBubble").hidden = false;
+  // while the world banner is up it carries the narration — Belu waits
+  $("beluBubble").hidden = !$("worldBanner").hidden;
 }
 function playIntroSequence(lines, onDone) {
   let i = 0;
@@ -433,12 +434,18 @@ function showWorldBanner(text, opts) {
   $("worldBannerChoices").innerHTML = "";
   $("worldBannerActions").innerHTML = "";
   banner.hidden = false;
+  $("beluBubble").hidden = true; // the banner IS the narration — don't double it
 }
 function setBannerText(text) { $("worldBannerText").textContent = text || ""; }
 function hideWorldBanner() {
   $("worldBanner").hidden = true;
   $("worldBannerChoices").innerHTML = "";
   $("worldBannerActions").innerHTML = "";
+  if (BELU_SCREENS.includes(currentScreenId())) $("beluBubble").hidden = false;
+}
+function currentScreenId() {
+  for (const id of SCREEN_IDS) { if (!$(id).hidden) return id; }
+  return "";
 }
 function bannerChoices(options, onCorrect) {
   buildChoices($("worldBannerChoices"), options, null, onCorrect);
@@ -552,8 +559,10 @@ function enterHand() {
     slots: (save.hand && save.hand.length === 5) ? save.hand.slice() : [null, null, null, null, null],
     secretsIdx: 0,
   };
-  $("handBody").innerHTML = "";
-  playIntroSequence(HH.HAND_INTRO, () => renderHandFill());
+  // show the hand UI immediately — Belu's intro plays alongside it, so the
+  // screen is never a blank page with a lone bubble in the corner
+  renderHandFill();
+  playIntroSequence(HH.HAND_INTRO, () => setBelu(HH.HAND_INTRO[3]));
 }
 
 function renderHandFill() {
@@ -787,6 +796,10 @@ function scenarioIsWalkable(sc) {
 }
 function renderScenarioPicker(body) {
   setBelu("Pick a story to practice! 💪");
+  const title = document.createElement("h2");
+  title.className = "practice-title";
+  title.textContent = "Practice Being Brave 💪";
+  body.appendChild(title);
   const grid = document.createElement("div"); grid.className = "scenario-grid";
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");

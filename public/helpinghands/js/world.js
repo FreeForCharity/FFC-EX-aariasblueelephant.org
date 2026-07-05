@@ -27,6 +27,60 @@
     return t;
   }
 
+  // ---- floor textures (near-white, tinted by the material color) ----
+  var plankTexCache = null, tileTexCache = null;
+  function plankTexture() {
+    if (plankTexCache) return plankTexCache;
+    plankTexCache = canvasTex(function (ctx, w, h) {
+      ctx.fillStyle = '#f2e4cf'; ctx.fillRect(0, 0, w, h);
+      var plankW = w / 6;
+      for (var i = 0; i < 6; i++) {
+        var x = i * plankW;
+        ctx.fillStyle = i % 2 ? 'rgba(160,110,60,0.10)' : 'rgba(180,130,80,0.05)';
+        ctx.fillRect(x, 0, plankW, h);
+        ctx.strokeStyle = 'rgba(120,80,40,0.28)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        // grain
+        ctx.strokeStyle = 'rgba(140,95,50,0.10)'; ctx.lineWidth = 1.2;
+        for (var gLine = 0; gLine < 4; gLine++) {
+          var gx = x + 6 + Math.random() * (plankW - 12);
+          ctx.beginPath(); ctx.moveTo(gx, 0);
+          for (var y = 0; y <= h; y += 32) ctx.lineTo(gx + Math.sin(y / 40 + i) * 3, y);
+          ctx.stroke();
+        }
+        // plank end-joints
+        for (var j = 0; j < 2; j++) {
+          var jy = ((i * 137 + j * 251) % h);
+          ctx.strokeStyle = 'rgba(120,80,40,0.22)'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(x, jy); ctx.lineTo(x + plankW, jy); ctx.stroke();
+        }
+      }
+    }, 256, 256);
+    plankTexCache.wrapS = plankTexCache.wrapT = THREE.RepeatWrapping;
+    plankTexCache.repeat.set(2, 2);
+    return plankTexCache;
+  }
+  function tileTexture() {
+    if (tileTexCache) return tileTexCache;
+    tileTexCache = canvasTex(function (ctx, w, h) {
+      ctx.fillStyle = '#f4f1ea'; ctx.fillRect(0, 0, w, h);
+      var t = w / 4;
+      for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) {
+        ctx.fillStyle = (i + j) % 2 ? 'rgba(120,140,160,0.10)' : 'rgba(255,255,255,0.35)';
+        ctx.fillRect(i * t + 2, j * t + 2, t - 4, t - 4);
+      }
+      ctx.strokeStyle = 'rgba(110,120,135,0.35)'; ctx.lineWidth = 3;
+      for (var k = 0; k <= 4; k++) {
+        ctx.beginPath(); ctx.moveTo(k * t, 0); ctx.lineTo(k * t, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, k * t); ctx.lineTo(w, k * t); ctx.stroke();
+      }
+    }, 256, 256);
+    tileTexCache.wrapS = tileTexCache.wrapT = THREE.RepeatWrapping;
+    tileTexCache.repeat.set(3, 3);
+    return tileTexCache;
+  }
+  var TILE_ROOMS = { bathroom: 1, kitchen: 1, nurseroom: 1, cafeteria: 1 };
+
   var matCache = {};
   function stdMat(hex, opts) {
     opts = opts || {};
@@ -49,7 +103,24 @@
   }
 
   function mesh(geo, mat) {
-    return new THREE.Mesh(geo, mat);
+    var m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }
+  function makeSun() {
+    // one soft shadow-casting sun, shared rig for hub + interiors
+    var dir = new THREE.DirectionalLight(0xfff2d9, 0.75);
+    dir.position.set(12, 22, -10);
+    dir.castShadow = true;
+    dir.shadow.mapSize.width = 2048;
+    dir.shadow.mapSize.height = 2048;
+    dir.shadow.camera.left = -26; dir.shadow.camera.right = 26;
+    dir.shadow.camera.top = 26; dir.shadow.camera.bottom = -26;
+    dir.shadow.camera.near = 2; dir.shadow.camera.far = 70;
+    dir.shadow.bias = -0.0012;
+    dir.shadow.radius = 3;
+    return dir;
   }
 
   // ---- emoji sprite cache: draws an emoji onto a canvas, wraps as a Sprite ----
@@ -174,6 +245,7 @@
   // module state
   // =========================================================================
   var renderer = null, scene = null, camera = null, canvasEl = null;
+  var interiorSun = null;
   var raycaster = new THREE.Raycaster();
   var pointerV2 = new THREE.Vector2();
   var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {}, onBump: function () {} };
@@ -288,10 +360,13 @@
     ground.rotation.x = -Math.PI / 2;
     root.add(ground);
 
-    var stoneMat = stdMat('#efe2c2', { roughness: 0.9 });
+    var stoneMat = stdMat('#dcc08e', { roughness: 1 });
     for (var p = 0; p < 7; p++) {
-      var pr = mesh(new THREE.CircleGeometry(1.5, 16), stoneMat);
+      var pr = mesh(new THREE.CircleGeometry(1.15 + (p % 3) * 0.18, 14), stoneMat);
       pr.rotation.x = -Math.PI / 2;
+      pr.rotation.z = p * 0.9;
+      pr.scale.set(1, 0.8, 1);
+      pr.castShadow = false;
       pr.position.set(Math.sin(p * 0.8) * 1.4, 0.02, 15 - p * 3.6);
       root.add(pr);
     }
@@ -375,12 +450,14 @@
       root.add(hubSwing);
     }
 
-    root.add(new THREE.AmbientLight(0xfff6e0, 0.65));
-    var hemi = new THREE.HemisphereLight(0xbfe3ff, 0x8fce6a, 0.55);
+    root.add(new THREE.AmbientLight(0xfff6e0, 0.5));
+    var hemi = new THREE.HemisphereLight(0xbfe3ff, 0x8fce6a, 0.5);
     root.add(hemi);
-    var dir = new THREE.DirectionalLight(0xfff2d9, 0.9);
-    dir.position.set(-30, 40, 20);
-    root.add(dir);
+    var sun = makeSun();
+    sun.shadow.camera.left = -34; sun.shadow.camera.right = 34;
+    sun.shadow.camera.top = 34; sun.shadow.camera.bottom = -34;
+    root.add(sun);
+    root.add(sun.target);
 
     return root;
   }
@@ -483,22 +560,35 @@
     return g;
   }
 
+  var LOCKED_THEMES = {
+    library:     { wall: '#e8c99a', roof: '#a9713a', band: '#8a5a2a' },
+    clinic:      { wall: '#f2f5f8', roof: '#7fb8d8', band: '#e8590c' },
+    firestation: { wall: '#e8695a', roof: '#b8352a', band: '#f8c537' },
+    police:      { wall: '#7f96c9', roof: '#3a4f8a', band: '#f5f7fa' },
+  };
   function buildLockedBuilding(placeId, place) {
     var g = new THREE.Group();
     g.userData = { placeId: placeId };
+    var theme = LOCKED_THEMES[placeId] || { wall: '#c9b8a0', roof: '#8f7a5a', band: '#6a5a44' };
     var W = 6, D = 5.5, H = 4.2;
-    var body = mesh(new THREE.BoxGeometry(W, H, D), stdMat('#9aa3b3', { roughness: 0.85 }));
+    var body = mesh(new THREE.BoxGeometry(W, H, D), stdMat(theme.wall, { roughness: 0.85 }));
     body.position.y = H / 2;
     g.add(body);
-    var roof = mesh(new THREE.BoxGeometry(W + 0.3, 0.5, D + 0.3), stdMat('#767f8f', { roughness: 0.8 }));
-    roof.position.y = H + 0.25;
+    var roof = mesh(new THREE.BoxGeometry(W + 0.5, 0.55, D + 0.5), stdMat(theme.roof, { roughness: 0.8 }));
+    roof.position.y = H + 0.27;
     g.add(roof);
-    var door = mesh(new THREE.PlaneGeometry(1.3, 2.0), stdMat('#5f6673', { roughness: 0.8 }));
-    door.position.set(0, 1.0, D / 2 + 0.01);
+    var band = mesh(new THREE.BoxGeometry(W + 0.06, 0.5, D + 0.06), stdMat(theme.band, { roughness: 0.7 }));
+    band.position.y = H - 0.65;
+    g.add(band);
+    var door = mesh(new THREE.PlaneGeometry(1.3, 2.0), stdMat('#6a5a48', { roughness: 0.8 }));
+    door.position.set(0, 1.0, D / 2 + 0.02);
     g.add(door);
     [-1.9, 1.9].forEach(function (wx) {
-      var win = mesh(new THREE.PlaneGeometry(0.9, 0.9), stdMat('#4a5866', { roughness: 0.6 }));
-      win.position.set(wx, 2.4, D / 2 + 0.01);
+      var frame = mesh(new THREE.PlaneGeometry(1.08, 1.08), stdMat('#ffffff', { roughness: 0.6 }));
+      frame.position.set(wx, 2.3, D / 2 + 0.015);
+      g.add(frame);
+      var win = mesh(new THREE.PlaneGeometry(0.9, 0.9), stdMat('#bfe0f2', { roughness: 0.3 }));
+      win.position.set(wx, 2.3, D / 2 + 0.03);
       g.add(win);
     });
 
@@ -1361,7 +1451,9 @@
 
   // ---- tappable object sprite anchored to furniture, tiny bob (spec: max ±0.03) ----
   function addObjectSprite(g, emoji, index, placeId, position, roomId) {
-    var spr = makeEmojiSprite(emoji, 1.7);
+    var mat = new THREE.SpriteMaterial({ map: tokenTexture(emoji), transparent: true, depthWrite: false });
+    var spr = new THREE.Sprite(mat);
+    spr.scale.set(1.05, 1.05, 1);
     spr.position.copy(position);
     var baseY = position.y;
     var phase = Math.random() * Math.PI * 2;
@@ -1373,68 +1465,256 @@
     return spr;
   }
 
-  // ---- generic character builder: body + arms + emoji head + name label ----
-  // used for HELPER_SPOTS characters and scenario actors alike.
+  // =========================================================================
+  // TOY-FIGURE CHARACTER SYSTEM — proper little people with 3D faces,
+  // outfits, hair and accessories (replaces the old capsule+emoji look)
+  // =========================================================================
+  var SKIN_TONES = ['#ffd9b3', '#f2c29b', '#e0a878', '#c68e63'];
+  var PERSONAS = {
+    teacher:     { shirt: '#9c6ade', pants: '#7048b6', skin: 0, hair: '#6b4a2f', hairStyle: 'bun',   accessory: 'glasses' },
+    principal:   { shirt: '#3b5bdb', pants: '#2c3e8f', skin: 2, hair: '#3a2a1c', hairStyle: 'short', accessory: 'tie' },
+    nurse:       { shirt: '#63e6be', pants: '#f8f9fa', skin: 1, hair: '#8a5a3a', hairStyle: 'bun',   accessory: 'nursehat' },
+    counselor:   { shirt: '#20a9a0', pants: '#33475e', skin: 3, hair: '#241a12', hairStyle: 'curly', accessory: 'none' },
+    mom:         { shirt: '#ff8787', pants: '#e05572', skin: 0, hair: '#7a4a28', hairStyle: 'long',  accessory: 'apron' },
+    dad:         { shirt: '#4dabf7', pants: '#39547a', skin: 1, hair: '#2e2018', hairStyle: 'short', accessory: 'none' },
+    grandma:     { shirt: '#b197fc', pants: '#8a6fd4', skin: 0, hair: '#d8d4d0', hairStyle: 'bun',   accessory: 'glasses' },
+    librarian:   { shirt: '#e8a33d', pants: '#8f6a3a', skin: 1, hair: '#cfc8c0', hairStyle: 'bun',   accessory: 'glasses' },
+    doctor:      { shirt: '#f8f9fa', pants: '#4a6fa5', skin: 2, hair: '#241a12', hairStyle: 'short', accessory: 'none' },
+    firefighter: { shirt: '#e8590c', pants: '#33475e', skin: 1, hair: '#5a3a22', hairStyle: 'short', accessory: 'firehat' },
+    officer:     { shirt: '#364fc7', pants: '#2b3a80', skin: 3, hair: '#1c130c', hairStyle: 'short', accessory: 'cophat' },
+    // scenario actors (kids are smaller, most look grumpy mid-scene)
+    ball:      { shirt: '#f59f00', pants: '#5c7cfa', skin: 1, hair: '#4a3018', hairStyle: 'short', accessory: 'none', kid: true, mood: 'grumpy' },
+    cookies:   { shirt: '#f783ac', pants: '#9c36b5', skin: 0, hair: '#6b4a2f', hairStyle: 'long',  accessory: 'none', kid: true, mood: 'grumpy' },
+    leftout:   { shirt: '#94d82d', pants: '#37864a', skin: 2, hair: '#2e2018', hairStyle: 'curly', accessory: 'none', kid: true, mood: 'grumpy' },
+    poker:     { shirt: '#22b8cf', pants: '#3a5f8a', skin: 1, hair: '#241a12', hairStyle: 'short', accessory: 'none', kid: true, mood: 'grumpy' },
+    follower:  { shirt: '#6a6f7a', pants: '#4a4e58', skin: 1, hair: '#3a2a1c', hairStyle: 'short', accessory: 'none', mood: 'neutral' },
+    aide:      { shirt: '#8a8f9a', pants: '#5a5e68', skin: 0, hair: '#5a3a22', hairStyle: 'bun',   accessory: 'none', mood: 'grumpy' },
+    cousin:    { shirt: '#ff922b', pants: '#4a6fa5', skin: 1, hair: '#3a2a1c', hairStyle: 'curly', accessory: 'none', kid: true, mood: 'grumpy' },
+    scaryhome: { shirt: '#6a6f7a', pants: '#4a4e58', skin: 1, hair: '#3a2a1c', hairStyle: 'short', accessory: 'none', mood: 'grumpy' },
+  };
+
+  function makeFace(headR, mood) {
+    var f = new THREE.Group();
+    var pupilMat = stdMat('#2a2e3a', { roughness: 0.25 });
+    var whiteMat = stdMat('#ffffff', { roughness: 0.35 });
+    [-1, 1].forEach(function (side) {
+      var eye = mesh(new THREE.SphereGeometry(headR * 0.21, 10, 10), whiteMat);
+      eye.scale.set(1, 1.18, 0.55);
+      eye.position.set(side * headR * 0.38, headR * 0.10, headR * 0.86);
+      eye.castShadow = false; f.add(eye);
+      var pupil = mesh(new THREE.SphereGeometry(headR * 0.105, 8, 8), pupilMat);
+      pupil.position.set(side * headR * 0.38, headR * 0.09, headR * 1.00);
+      pupil.castShadow = false; f.add(pupil);
+      var glint = mesh(new THREE.SphereGeometry(headR * 0.035, 6, 6), whiteMat);
+      glint.position.set(side * headR * 0.42, headR * 0.14, headR * 1.07);
+      glint.castShadow = false; f.add(glint);
+      var brow = mesh(new THREE.BoxGeometry(headR * 0.34, headR * 0.07, headR * 0.06), pupilMat);
+      brow.position.set(side * headR * 0.38, headR * 0.42, headR * 0.90);
+      if (mood === 'grumpy') brow.rotation.z = side * 0.45;
+      brow.castShadow = false; f.add(brow);
+      var blush = mesh(new THREE.CircleGeometry(headR * 0.14, 10),
+        stdMat('#ff9d9d', { roughness: 0.9, transparent: true, opacity: 0.55 }));
+      blush.position.set(side * headR * 0.62, headR * -0.18, headR * 0.78);
+      blush.rotation.y = side * 0.55;
+      blush.castShadow = false; f.add(blush);
+    });
+    var mouth = mesh(new THREE.TorusGeometry(headR * 0.28, headR * 0.055, 8, 14, Math.PI * 0.9), pupilMat);
+    mouth.position.set(0, headR * -0.28, headR * 0.88);
+    mouth.rotation.z = mood === 'grumpy' ? 0.15 + Math.PI : Math.PI + Math.PI * 0.05;
+    if (mood === 'grumpy') { mouth.rotation.z = 0.2; mouth.position.y = headR * -0.45; }
+    mouth.castShadow = false; f.add(mouth);
+    return f;
+  }
+
+  function makeHair(headR, style, colorHex) {
+    var g = new THREE.Group();
+    var hm = stdMat(colorHex, { roughness: 0.85 });
+    var cap = mesh(new THREE.SphereGeometry(headR * 1.06, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), hm);
+    g.add(cap);
+    if (style === 'bun') {
+      var bun = mesh(new THREE.SphereGeometry(headR * 0.38, 10, 10), hm);
+      bun.position.set(0, headR * 0.82, -headR * 0.55); g.add(bun);
+    } else if (style === 'long') {
+      var back = mesh(new THREE.SphereGeometry(headR * 0.95, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.6), hm);
+      back.position.set(0, -headR * 0.35, -headR * 0.28);
+      back.scale.set(0.95, 1.25, 0.7); g.add(back);
+    } else if (style === 'curly') {
+      [-0.6, 0, 0.6].forEach(function (x) {
+        var puff = mesh(new THREE.SphereGeometry(headR * 0.42, 10, 10), hm);
+        puff.position.set(x * headR, headR * 0.72, 0); g.add(puff);
+      });
+    }
+    return g;
+  }
+
+  function makeAccessory(headR, kind) {
+    var g = new THREE.Group();
+    if (kind === 'glasses') {
+      var gm = stdMat('#4a4e58', { roughness: 0.4 });
+      [-1, 1].forEach(function (side) {
+        var rim = mesh(new THREE.TorusGeometry(headR * 0.26, headR * 0.035, 8, 16), gm);
+        rim.position.set(side * headR * 0.38, headR * 0.10, headR * 0.92);
+        rim.castShadow = false; g.add(rim);
+      });
+      var bridge = mesh(new THREE.BoxGeometry(headR * 0.26, headR * 0.05, headR * 0.05), gm);
+      bridge.position.set(0, headR * 0.10, headR * 0.94); bridge.castShadow = false; g.add(bridge);
+    } else if (kind === 'nursehat') {
+      var hat = mesh(new THREE.CylinderGeometry(headR * 0.62, headR * 0.66, headR * 0.42, 14), stdMat('#ffffff', { roughness: 0.5 }));
+      hat.position.set(0, headR * 0.98, 0); g.add(hat);
+      var cm = stdMat('#e8590c', { roughness: 0.5 });
+      var c1 = mesh(new THREE.BoxGeometry(headR * 0.42, headR * 0.10, headR * 0.05), cm);
+      c1.position.set(0, headR * 1.02, headR * 0.62); c1.castShadow = false; g.add(c1);
+      var c2 = mesh(new THREE.BoxGeometry(headR * 0.10, headR * 0.42, headR * 0.05), cm);
+      c2.position.set(0, headR * 1.02, headR * 0.62); c2.castShadow = false; g.add(c2);
+    } else if (kind === 'firehat') {
+      var dome = mesh(new THREE.SphereGeometry(headR * 0.92, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), stdMat('#f8c537', { roughness: 0.45 }));
+      dome.position.y = headR * 0.55; g.add(dome);
+      var brim = mesh(new THREE.CylinderGeometry(headR * 1.15, headR * 1.2, headR * 0.09, 16), stdMat('#f8c537', { roughness: 0.45 }));
+      brim.position.y = headR * 0.5; g.add(brim);
+    } else if (kind === 'cophat') {
+      var cap2 = mesh(new THREE.CylinderGeometry(headR * 0.72, headR * 0.78, headR * 0.45, 14), stdMat('#2b3a80', { roughness: 0.55 }));
+      cap2.position.y = headR * 0.92; g.add(cap2);
+      var peak = mesh(new THREE.BoxGeometry(headR * 0.9, headR * 0.07, headR * 0.5), stdMat('#1d2860', { roughness: 0.5 }));
+      peak.position.set(0, headR * 0.72, headR * 0.7); g.add(peak);
+    }
+    return g;
+  }
+
+  function makePersonFigure(opts) {
+    opts = opts || {};
+    var g = new THREE.Group();
+    var skin = SKIN_TONES[opts.skin || 0];
+    var skinMat = stdMat(skin, { roughness: 0.55 });
+    var shirtMat = stdMat(opts.shirt || '#4dabf7', { roughness: 0.65 });
+    var pantsMat = stdMat(opts.pants || '#39547a', { roughness: 0.7 });
+
+    // legs + shoes
+    [-1, 1].forEach(function (side) {
+      var leg = mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.46, 10), pantsMat);
+      leg.position.set(side * 0.15, 0.27, 0); g.add(leg);
+      var shoe = mesh(new THREE.SphereGeometry(0.115, 10, 8), stdMat('#f4f6f8', { roughness: 0.5 }));
+      shoe.scale.set(1, 0.55, 1.45);
+      shoe.position.set(side * 0.15, 0.06, 0.05); g.add(shoe);
+    });
+    // torso
+    var torso = mesh(new THREE.CylinderGeometry(0.26, 0.35, 0.66, 16), shirtMat);
+    torso.position.y = 0.80; g.add(torso);
+    var shoulders = mesh(new THREE.SphereGeometry(0.26, 14, 10), shirtMat);
+    shoulders.position.y = 1.13; shoulders.scale.set(1, 0.6, 1); g.add(shoulders);
+    // arms (pivot at shoulder so waving works)
+    var arms = {};
+    [-1, 1].forEach(function (side) {
+      var pivot = new THREE.Group();
+      pivot.position.set(side * 0.33, 1.10, 0);
+      var arm = mesh(new THREE.CylinderGeometry(0.07, 0.075, 0.48, 10), shirtMat);
+      arm.position.y = -0.24; pivot.add(arm);
+      var hand = mesh(new THREE.SphereGeometry(0.085, 10, 8), skinMat);
+      hand.position.y = -0.5; pivot.add(hand);
+      pivot.rotation.z = side * 0.22;
+      g.add(pivot);
+      arms[side === 1 ? 'right' : 'left'] = pivot;
+    });
+    // head + face + hair
+    var headR = 0.34;
+    var head = mesh(new THREE.SphereGeometry(headR, 18, 16), skinMat);
+    head.position.y = 1.52; g.add(head);
+    var face = makeFace(headR, opts.mood || 'happy');
+    face.position.y = 1.52; g.add(face);
+    if (opts.hairStyle !== 'none') {
+      var hair = makeHair(headR, opts.hairStyle || 'short', opts.hair || '#4a3018');
+      hair.position.y = 1.52; g.add(hair);
+    }
+    if (opts.accessory && opts.accessory !== 'none') {
+      if (opts.accessory === 'tie') {
+        var tie = mesh(new THREE.ConeGeometry(0.07, 0.3, 4), stdMat('#f5b301', { roughness: 0.5 }));
+        tie.rotation.x = Math.PI; tie.position.set(0, 0.95, 0.30); g.add(tie);
+      } else if (opts.accessory === 'apron') {
+        var apron = mesh(new THREE.CylinderGeometry(0.28, 0.37, 0.5, 16, 1, false, -Math.PI / 3, Math.PI / 1.5), stdMat('#fff5e6', { roughness: 0.8 }));
+        apron.position.y = 0.72; apron.position.z = 0.015; g.add(apron);
+      } else {
+        var acc = makeAccessory(headR, opts.accessory);
+        acc.position.y = 1.52; g.add(acc);
+      }
+    }
+    var s = opts.kid ? 0.78 : 1.0;
+    g.scale.set(s, s, s);
+    return { group: g, arms: arms, height: 1.9 * s };
+  }
+
+  // ---- sticker-card token for tappable objects (reads designed, not floating) ----
+  var tokenTexCache = {};
+  function tokenTexture(emoji) {
+    if (tokenTexCache[emoji]) return tokenTexCache[emoji];
+    var size = 256;
+    var c = makeCanvas(size, size);
+    var ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    // soft drop shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(60,40,90,0.35)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 10;
+    roundRectPath(ctx, 30, 24, size - 60, size - 60, 46);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
+    ctx.restore();
+    // rim
+    roundRectPath(ctx, 30, 24, size - 60, size - 60, 46);
+    ctx.lineWidth = 8; ctx.strokeStyle = '#ffd43b'; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '120px serif';
+    ctx.fillText(emoji, size / 2, size / 2 - 6);
+    var t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    tokenTexCache[emoji] = t;
+    return t;
+  }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ---- tappable object sprite anchored to furniture (kept from v2) ----
+  // ---- generic character builder used for HELPER_SPOTS + scenario actors ----
   function addCharacter(parentGroup, id, emoji, name, position, kind) {
     var charGroup = new THREE.Group();
     charGroup.position.copy(position);
+    charGroup.rotation.y = Math.PI; // face the follow camera
 
-    var bodyColors = ['#4dabf7', '#ff9fb0', '#ffd43b', '#69db7c', '#b197fc', '#ff8787'];
-    var colorHex = bodyColors[Math.abs(hashStr(id)) % bodyColors.length];
+    var persona = PERSONAS[id] || {
+      shirt: ['#4dabf7', '#ff9fb0', '#ffd43b', '#69db7c', '#b197fc', '#ff8787'][Math.abs(hashStr(id)) % 6],
+      pants: '#4a6fa5', skin: Math.abs(hashStr(id)) % SKIN_TONES.length,
+      hair: '#4a3018', hairStyle: 'short', accessory: 'none',
+    };
+    var fig = makePersonFigure(persona);
+    charGroup.add(fig.group);
+    var bodyH = fig.height;
 
-    var bodyH = 1.5;
-    var body;
-    if (THREE.CapsuleGeometry) {
-      body = mesh(new THREE.CapsuleGeometry(0.42, bodyH - 0.84, 6, 12), stdMat(colorHex, { roughness: 0.6 }));
-      body.position.y = bodyH / 2 + 0.08;
-      charGroup.add(body);
-    } else {
-      var cyl = mesh(new THREE.CylinderGeometry(0.42, 0.46, bodyH, 14), stdMat(colorHex, { roughness: 0.6 }));
-      cyl.position.y = bodyH / 2;
-      charGroup.add(cyl);
-      var cap = mesh(new THREE.SphereGeometry(0.42, 14, 10), stdMat(colorHex, { roughness: 0.6 }));
-      cap.position.y = bodyH;
-      charGroup.add(cap);
-      body = null;
-    }
-
-    var armMat = stdMat(colorHex, { roughness: 0.6 });
-    var armL = mesh(new THREE.BoxGeometry(0.16, 0.7, 0.16), armMat);
-    armL.position.set(-0.52, bodyH * 0.62, 0);
-    armL.geometry.translate(0, -0.33, 0);
-    charGroup.add(armL);
-    var armR = mesh(new THREE.BoxGeometry(0.16, 0.7, 0.16), armMat);
-    armR.position.set(0.52, bodyH * 0.62, 0);
-    armR.geometry.translate(0, -0.33, 0);
-    charGroup.add(armR);
-
-    var head = makeEmojiSprite(emoji, 1.25);
-    head.position.set(0, bodyH + 0.5, 0);
-    charGroup.add(head);
-
-    var label = makeSignSprite(null, name, { bg: '#ffffff', border: '#4a3222' }, 1.6);
-    label.position.set(0, bodyH + 1.4, 0);
+    var label = makeSignSprite(null, name, { bg: '#ffffff', border: kind === 'actor' ? '#e8590c' : '#5b7cfa' }, 1.5);
+    label.position.set(0, bodyH + 0.55, 0);
     charGroup.add(label);
 
     parentGroup.add(charGroup);
-    charGroup.userData.bubbleHeight = bodyH + 2.3;
+    charGroup.userData.bubbleHeight = bodyH + 1.25;
 
     var basePos = position.clone();
     var phase = Math.random() * Math.PI * 2;
     var waveClock = 0, waving = false, waveDuration = 1.1, nextWaveAt = 2 + Math.random() * 3;
+    var armR = fig.arms.right;
     animItems.push({ ownerId: id, fn: function (t, dt) {
-      charGroup.position.y = basePos.y + Math.sin(t * 1.3 + phase) * 0.06;
-      head.position.y = bodyH + 0.5 + Math.sin(t * 1.3 + phase) * 0.02;
+      charGroup.position.y = basePos.y + Math.sin(t * 1.3 + phase) * 0.045;
       if (!waving && t > nextWaveAt) { waving = true; waveClock = 0; }
       if (waving) {
         waveClock += dt;
         var p = Math.min(waveClock / waveDuration, 1);
-        armR.rotation.z = Math.sin(p * Math.PI * 3) * 0.6 * Math.sin(p * Math.PI);
-        if (p >= 1) { waving = false; armR.rotation.z = 0; nextWaveAt = t + 3 + Math.random() * 4; }
+        armR.rotation.z = 0.22 + Math.sin(p * Math.PI) * 2.4 + Math.sin(p * Math.PI * 5) * 0.25 * Math.sin(p * Math.PI);
+        if (p >= 1) { waving = false; armR.rotation.z = 0.22; nextWaveAt = t + 3 + Math.random() * 4; }
       }
     }});
 
-    charGroup.children.forEach(function (child) {
+    charGroup.traverse(function (child) {
       if (child.isMesh || child.isSprite) {
         registerTappable(child, kind === 'actor' ? { actorId: id, kind: 'actor' } : { helperId: id, kind: 'helper' });
       }
@@ -1529,13 +1809,40 @@
   }
 
   // ---- wall + collision helpers ----
+  var fadeWalls = []; // walls that can turn translucent when they block the camera
   function addWorldWall(xMin, xMax, zMin, zMax, colorHex) {
     var dx = xMax - xMin, dz = zMax - zMin;
     if (dx <= 0.02 || dz <= 0.02) return;
-    var wall = mesh(new THREE.BoxGeometry(dx, INTERIOR_WALL_H, dz), stdMat(colorHex || '#e8d9c0', { roughness: 0.85 }));
+    // cloned (uncached) material so each wall can fade independently
+    var m = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex || '#e8d9c0'), roughness: 0.85 });
+    m.transparent = true;
+    var wall = mesh(new THREE.BoxGeometry(dx, INTERIOR_WALL_H, dz), m);
     wall.position.set((xMin + xMax) / 2, INTERIOR_WALL_H / 2, (zMin + zMax) / 2);
     if (wallTargetGroup) wallTargetGroup.add(wall);
+    fadeWalls.push(wall);
     collisionRects.push({ xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax });
+  }
+  // ---- cutaway: fade any wall sitting between the camera and the avatar ----
+  var cutawayRay = null;
+  function updateWallCutaway(dt) {
+    if (!avatar || !fadeWalls.length) return;
+    if (!cutawayRay) cutawayRay = new THREE.Raycaster();
+    var from = camera.position;
+    var to = new THREE.Vector3(avatar.pos.x, 1.0, avatar.pos.z);
+    var dirV = to.clone().sub(from);
+    var dist = dirV.length();
+    cutawayRay.set(from, dirV.normalize());
+    cutawayRay.far = dist;
+    var blocked = {};
+    var hits = cutawayRay.intersectObjects(fadeWalls, false);
+    for (var i = 0; i < hits.length; i++) blocked[hits[i].object.id] = true;
+    var k = 1 - Math.pow(0.002, dt); // quick but smooth fade
+    for (var j = 0; j < fadeWalls.length; j++) {
+      var w = fadeWalls[j];
+      var target = blocked[w.id] ? 0.18 : 1.0;
+      w.material.opacity += (target - w.material.opacity) * k;
+      w.castShadow = w.material.opacity > 0.6;
+    }
   }
   function addInvisibleWall(xMin, xMax, zMin, zMax) {
     collisionRects.push({ xMin: xMin, xMax: xMax, zMin: zMin, zMax: zMax });
@@ -1622,7 +1929,9 @@
       grass.position.set(0, 0, room.d / 2 + 9);
       g.add(grass);
     } else {
-      var floor = mesh(new THREE.PlaneGeometry(room.w, room.d), stdMat(pal.floor, { roughness: 0.85 }));
+      var floor = mesh(new THREE.PlaneGeometry(room.w, room.d),
+        stdMat(pal.floor, { roughness: 0.85, map: TILE_ROOMS[room.id] ? tileTexture() : plankTexture() }));
+      floor.castShadow = false;
       floor.rotation.x = -Math.PI / 2;
       g.add(floor);
       // ceiling-height wall cap trim isn't drawn (open-top "dollhouse" rooms keep the
@@ -1692,7 +2001,9 @@
     root.add(porch);
     addInvisibleWall(-layout.hallW / 2 - 2.4, layout.hallW / 2 + 2.4, -3.7, -3.5);
 
-    var hallFloor = mesh(new THREE.PlaneGeometry(layout.hallW, layout.hallLen), stdMat('#f6ead0', { roughness: 0.85 }));
+    var hallFloor = mesh(new THREE.PlaneGeometry(layout.hallW, layout.hallLen),
+      stdMat('#f6ead0', { roughness: 0.85, map: plankTexture() }));
+    hallFloor.castShadow = false;
     hallFloor.rotation.x = -Math.PI / 2;
     hallFloor.position.set(0, 0, layout.hallLen / 2);
     root.add(hallFloor);
@@ -1740,12 +2051,13 @@
       }
     }
 
-    root.add(new THREE.AmbientLight(0xfff6e0, 0.6));
-    var hemi = new THREE.HemisphereLight(0xbfe3ff, 0xffe8cc, 0.5);
+    root.add(new THREE.AmbientLight(0xfff6e0, 0.5));
+    var hemi = new THREE.HemisphereLight(0xbfe3ff, 0xffe8cc, 0.45);
     root.add(hemi);
-    var dir = new THREE.DirectionalLight(0xfff2d9, 0.7);
-    dir.position.set(10, 18, 8);
-    root.add(dir);
+    var sun = makeSun();
+    root.add(sun);
+    root.add(sun.target);
+    interiorSun = sun;
 
     wallTargetGroup = null;
     return { root: root, layout: layout };
@@ -1756,66 +2068,78 @@
   // =========================================================================
   function buildAvatar() {
     var g = new THREE.Group(); g.name = 'avatar';
-    var bodyH = 1.15;
-    var bodyMat = stdMat('#ff9152', { roughness: 0.6 });
-    if (THREE.CapsuleGeometry) {
-      var body = mesh(new THREE.CapsuleGeometry(0.36, bodyH - 0.72, 6, 12), bodyMat);
-      body.position.y = bodyH / 2 + 0.32;
-      g.add(body);
-    } else {
-      var cyl = mesh(new THREE.CylinderGeometry(0.36, 0.4, bodyH, 14), bodyMat);
-      cyl.position.y = bodyH / 2 + 0.32;
-      g.add(cyl);
-      var cap = mesh(new THREE.SphereGeometry(0.36, 14, 10), bodyMat);
-      cap.position.y = bodyH + 0.32;
-      g.add(cap);
-    }
-    var legMat = stdMat('#4a6fa5', { roughness: 0.7 });
-    [-0.15, 0.15].forEach(function (lx) {
-      var leg = mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 8), legMat);
-      leg.position.set(lx, 0.25, 0);
-      g.add(leg);
+    var fig = makePersonFigure({
+      shirt: '#ff9152', pants: '#4a6fa5', skin: 1,
+      hair: '#4a3018', hairStyle: 'short', accessory: 'none', kid: true,
     });
-    var face = makeEmojiSprite('🙂', 1.0);
-    face.position.set(0, bodyH + 0.75, 0);
-    g.add(face);
-    g.userData.bubbleHeight = bodyH + 1.5;
-    return { group: g, pos: new THREE.Vector3(), facing: 0, walking: false, bobPhase: 0 };
+    g.add(fig.group);
+    // backpack — makes the follow-cam back view charming
+    var packMat = stdMat('#5cb8ff', { roughness: 0.6 });
+    var pack = mesh(new THREE.BoxGeometry(0.42, 0.5, 0.2), packMat);
+    pack.position.set(0, 0.72, -0.27); g.add(pack);
+    var pocket = mesh(new THREE.BoxGeometry(0.26, 0.24, 0.06), stdMat('#ffd43b', { roughness: 0.6 }));
+    pocket.position.set(0, 0.62, -0.39); g.add(pocket);
+    [-1, 1].forEach(function (side) {
+      var strap = mesh(new THREE.BoxGeometry(0.07, 0.4, 0.05), packMat);
+      strap.position.set(side * 0.14, 0.82, -0.13); g.add(strap);
+    });
+    g.userData.bubbleHeight = fig.height + 0.5;
+    return { group: g, pos: new THREE.Vector3(), facing: 0, walking: false, bobPhase: 0, fig: fig };
   }
 
   function buildBelu() {
     var g = new THREE.Group(); g.name = 'belu';
-    var bodyMat = stdMat('#5f8fe0', { roughness: 0.55 });
-    var body = mesh(new THREE.SphereGeometry(0.5, 16, 14), bodyMat);
-    body.position.y = 0.55;
-    body.scale.set(1, 0.92, 1.1);
-    g.add(body);
-    var head = mesh(new THREE.SphereGeometry(0.36, 16, 14), bodyMat);
-    head.position.set(0, 0.95, 0.42);
-    g.add(head);
+    var blue = '#5f8fe0', blueDark = '#4f7fd4', blueLight = '#89aef0';
+    var bodyMat = stdMat(blue, { roughness: 0.5 });
+    var body = mesh(new THREE.SphereGeometry(0.48, 18, 14), bodyMat);
+    body.position.y = 0.52; body.scale.set(1, 0.9, 1.15); g.add(body);
+    var head = mesh(new THREE.SphereGeometry(0.38, 18, 16), bodyMat);
+    head.position.set(0, 0.98, 0.40); g.add(head);
+    // big friendly ears with pink inners
     [-1, 1].forEach(function (side) {
-      var ear = mesh(new THREE.SphereGeometry(0.28, 12, 10), stdMat('#7fa8ee', { roughness: 0.6 }));
-      ear.scale.set(1, 1.3, 0.25);
-      ear.position.set(side * 0.5, 1.0, 0.3);
-      ear.rotation.y = side * 0.5;
-      g.add(ear);
+      var ear = mesh(new THREE.SphereGeometry(0.30, 14, 12), stdMat(blueLight, { roughness: 0.6 }));
+      ear.scale.set(0.9, 1.25, 0.16);
+      ear.position.set(side * 0.42, 1.12, 0.28);
+      ear.rotation.y = side * 0.6; g.add(ear);
+      var inner = mesh(new THREE.SphereGeometry(0.20, 12, 10), stdMat('#ffc4d0', { roughness: 0.75 }));
+      inner.scale.set(0.85, 1.2, 0.12);
+      inner.position.set(side * 0.46, 1.12, 0.31);
+      inner.rotation.y = side * 0.6; inner.castShadow = false; g.add(inner);
     });
-    var trunk = mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.55, 8), bodyMat);
-    trunk.position.set(0, 0.65, 0.68);
-    trunk.rotation.x = 0.6;
-    g.add(trunk);
-    [-0.13, 0.13].forEach(function (ex) {
-      var eye = mesh(new THREE.SphereGeometry(0.05, 8, 8), stdMat('#28324a', { roughness: 0.3 }));
-      eye.position.set(ex, 1.02, 0.72);
-      g.add(eye);
+    // curved trunk (three tapering tilted segments)
+    var t1 = mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.26, 10), bodyMat);
+    t1.position.set(0, 0.86, 0.72); t1.rotation.x = 0.5; g.add(t1);
+    var t2 = mesh(new THREE.CylinderGeometry(0.085, 0.10, 0.24, 10), bodyMat);
+    t2.position.set(0, 0.68, 0.84); t2.rotation.x = 0.95; g.add(t2);
+    var t3 = mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.2, 10), bodyMat);
+    t3.position.set(0, 0.57, 0.97); t3.rotation.x = 1.5; g.add(t3);
+    var tip = mesh(new THREE.SphereGeometry(0.075, 8, 8), bodyMat);
+    tip.position.set(0, 0.56, 1.06); g.add(tip);
+    // face: eyes with glints, smile, blush
+    var dark = stdMat('#28324a', { roughness: 0.3 });
+    var white = stdMat('#ffffff', { roughness: 0.35 });
+    [-1, 1].forEach(function (side) {
+      var eye = mesh(new THREE.SphereGeometry(0.075, 10, 10), white);
+      eye.scale.set(1, 1.2, 0.6); eye.position.set(side * 0.15, 1.08, 0.72); eye.castShadow = false; g.add(eye);
+      var pupil = mesh(new THREE.SphereGeometry(0.04, 8, 8), dark);
+      pupil.position.set(side * 0.15, 1.07, 0.77); pupil.castShadow = false; g.add(pupil);
+      var glint = mesh(new THREE.SphereGeometry(0.014, 6, 6), white);
+      glint.position.set(side * 0.17, 1.09, 0.80); glint.castShadow = false; g.add(glint);
+      var blush = mesh(new THREE.CircleGeometry(0.055, 10), stdMat('#ff9d9d', { roughness: 0.9, transparent: true, opacity: 0.55 }));
+      blush.position.set(side * 0.27, 0.97, 0.62); blush.rotation.y = side * 0.5; blush.castShadow = false; g.add(blush);
     });
-    var legMat = stdMat('#4f7fd4', { roughness: 0.6 });
-    [[-0.25, -0.2], [0.25, -0.2], [-0.25, 0.25], [0.25, 0.25]].forEach(function (p) {
-      var leg = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.35, 8), legMat);
-      leg.position.set(p[0], 0.18, p[1]);
-      g.add(leg);
+    var smile = mesh(new THREE.TorusGeometry(0.09, 0.016, 8, 12, Math.PI * 0.85), dark);
+    smile.position.set(0, 0.93, 0.70); smile.rotation.z = Math.PI + Math.PI * 0.07; smile.castShadow = false; g.add(smile);
+    // legs, tail
+    [[-0.24, -0.22], [0.24, -0.22], [-0.24, 0.26], [0.24, 0.26]].forEach(function (p) {
+      var leg = mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.32, 10), stdMat(blueDark, { roughness: 0.6 }));
+      leg.position.set(p[0], 0.16, p[1]); g.add(leg);
     });
-    g.userData.bubbleHeight = 1.7;
+    var tail = mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.34, 6), stdMat(blueDark, { roughness: 0.6 }));
+    tail.position.set(0, 0.55, -0.52); tail.rotation.x = -0.7; g.add(tail);
+    var tuft = mesh(new THREE.SphereGeometry(0.05, 6, 6), stdMat('#3f6fc4', { roughness: 0.8 }));
+    tuft.position.set(0, 0.44, -0.62); g.add(tuft);
+    g.userData.bubbleHeight = 1.75;
     return { group: g, pos: new THREE.Vector3() };
   }
 
@@ -1881,7 +2205,8 @@
 
   function updateBelu(dt, t) {
     var forward = new THREE.Vector3(Math.sin(avatar.facing), 0, Math.cos(avatar.facing));
-    var desired = new THREE.Vector3(avatar.pos.x, 0, avatar.pos.z).addScaledVector(forward, -1.2);
+    var desired = new THREE.Vector3(avatar.pos.x, 0, avatar.pos.z).addScaledVector(forward, -1.7)
+      .add(new THREE.Vector3(Math.cos(avatar.facing), 0, -Math.sin(avatar.facing)).multiplyScalar(0.55));
     var f = 1 - Math.pow(0.0008, dt);
     belu.pos.lerp(desired, f);
     var bob = Math.sin(t * 2.2) * 0.05;
@@ -1890,17 +2215,22 @@
     if (lookPt.distanceTo(belu.group.position) > 0.05) belu.group.lookAt(lookPt);
   }
 
-  var CAM_OFFSET_Y = 9, CAM_OFFSET_Z = -8; // elevated 3/4 follow — shallow enough that the
-  // low (3.0-unit) interior walls rarely cross the avatar->camera sightline.
+  var CAM_OFFSET_Y = 7.4, CAM_OFFSET_Z = -8.6; // lower, more cinematic 3/4 follow —
+  // still clears the low (3.0-unit) interior walls on the avatar->camera sightline.
   function updateCameraFollow(dt) {
     var offset = new THREE.Vector3(0, CAM_OFFSET_Y, CAM_OFFSET_Z);
     var desiredPos = new THREE.Vector3(avatar.pos.x, 0, avatar.pos.z).add(offset);
     var f = 1 - Math.pow(0.0006, dt);
     camera.position.lerp(desiredPos, f);
-    var lookTarget = new THREE.Vector3(avatar.pos.x, 1.0, avatar.pos.z);
+    var lookTarget = new THREE.Vector3(avatar.pos.x, 1.15, avatar.pos.z + 0.6);
     if (!camLookCurrent) camLookCurrent = lookTarget.clone();
     camLookCurrent.lerp(lookTarget, f);
     camera.lookAt(camLookCurrent);
+    if (interiorSun) { // keep the shadow frustum centered on the action
+      interiorSun.position.set(avatar.pos.x + 12, 22, avatar.pos.z - 10);
+      interiorSun.target.position.set(avatar.pos.x, 0, avatar.pos.z);
+      interiorSun.target.updateMatrixWorld();
+    }
   }
 
   function snapCameraToAvatar() {
@@ -2117,6 +2447,7 @@
       updateAvatarMovement(dt);
       updateBelu(dt, t);
       updateCameraFollow(dt);
+      updateWallCutaway(dt);
     }
 
     if (targetState) {
@@ -2181,7 +2512,8 @@
         if (renderer.outputEncoding !== undefined && THREE.sRGBEncoding !== undefined) {
           renderer.outputEncoding = THREE.sRGBEncoding;
         }
-        renderer.shadowMap.enabled = false;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
@@ -2221,6 +2553,8 @@
       currentRoomId = null;
       collisionRects = [];
       avatar = null; belu = null;
+      interiorSun = null;
+      fadeWalls = [];
       helpersRegistry = {}; actorsRegistry = {}; objectsRegistry = {};
       targetState = null;
       speechBubbles = []; speechByChar = {};
@@ -2234,6 +2568,7 @@
       if (!HH.PLACES[placeId]) return;
       clearAnim();
       clearTappables();
+      fadeWalls = [];
       helpersRegistry = {}; actorsRegistry = {}; objectsRegistry = {};
       targetState = null;
       speechBubbles = []; speechByChar = {};
@@ -2255,7 +2590,7 @@
       avatar.group.position.copy(avatar.pos);
       belu.group.position.copy(belu.pos);
 
-      camera.fov = 56;
+      camera.fov = 48;
       camera.updateProjectionMatrix();
       snapCameraToAvatar();
 
