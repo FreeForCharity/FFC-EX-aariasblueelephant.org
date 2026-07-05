@@ -685,28 +685,35 @@ function enterHand() {
 }
 
 function handSVG() {
-  // strokeless silhouette so fingers+palm merge cleanly; sleeve + creases for charm
+  // friendly open hand: staggered fingers with clear gaps; thumb is a
+  // stroked capsule (round line caps) so its angle is exact
   return '<svg viewBox="0 0 300 340" aria-hidden="true">' +
     '<g fill="#ffd9b3">' +
-    '<rect x="54"  y="112" width="34" height="130" rx="17"/>' +
-    '<rect x="97"  y="76"  width="36" height="170" rx="18"/>' +
-    '<rect x="141" y="64"  width="38" height="185" rx="19"/>' +
-    '<rect x="186" y="84"  width="36" height="165" rx="18"/>' +
-    '<rect x="216" y="168" width="36" height="110" rx="18" transform="rotate(-38 234 178)"/>' +
-    '<path d="M60 240 Q58 208 78 206 L222 206 Q240 208 238 244 L236 282 Q232 316 196 318 L104 318 Q68 316 63 282 Z"/>' +
+    '<rect x="54"  y="118" width="30" height="92"  rx="15"/>' +
+    '<rect x="94"  y="76"  width="33" height="134" rx="16.5"/>' +
+    '<rect x="137" y="62"  width="34" height="148" rx="17"/>' +
+    '<rect x="181" y="84"  width="33" height="126" rx="16.5"/>' +
+    '<path d="M54 206 Q52 197 62 195 L216 195 Q226 197 228 207 L230 242 Q232 288 197 302 Q150 316 107 302 Q64 290 56 248 Z"/>' +
     '</g>' +
-    '<path d="M108 254 Q140 268 178 262" fill="none" stroke="#eebd8f" stroke-width="4.5" stroke-linecap="round"/>' +
-    '<path d="M104 280 Q145 296 190 286" fill="none" stroke="#eebd8f" stroke-width="4.5" stroke-linecap="round"/>' +
-    '<rect x="86" y="308" width="128" height="32" rx="16" fill="#74c0fc"/>' +
+    '<path d="M224 242 L266 172" stroke="#ffd9b3" stroke-width="34" stroke-linecap="round" fill="none"/>' +
+    '<path d="M102 248 Q140 262 180 254" fill="none" stroke="#eebd8f" stroke-width="4" stroke-linecap="round"/>' +
+    '<path d="M100 272 Q142 286 184 276" fill="none" stroke="#eebd8f" stroke-width="4" stroke-linecap="round"/>' +
+    '<ellipse cx="69"  cy="131" rx="7.5" ry="9" fill="#ffe8cf"/>' +
+    '<ellipse cx="110.5" cy="90" rx="8.5" ry="9.5" fill="#ffe8cf"/>' +
+    '<ellipse cx="154" cy="76" rx="9" ry="10" fill="#ffe8cf"/>' +
+    '<ellipse cx="197.5" cy="98" rx="8.5" ry="9.5" fill="#ffe8cf"/>' +
+    '<ellipse cx="263" cy="178" rx="8.5" ry="9.5" fill="#ffe8cf" transform="rotate(31 263 178)"/>' +
+    '<rect x="86" y="306" width="128" height="32" rx="16" fill="#74c0fc"/>' +
+    '<rect x="86" y="306" width="128" height="11" rx="5.5" fill="#5cb0f5"/>' +
     '</svg>';
 }
-// fingertip slot anchors (percent of the SVG box), thumb..pinky = 1..5
+// slots sit ON the fingertips (percent of the 300x340 box), thumb..pinky = 1..5
 const HAND_TIPS = [
-  { x: 85.5, y: 48 },  // 1 thumb
-  { x: 68.5, y: 27.5 },// 2 index
-  { x: 53.5, y: 22 },  // 3 middle
-  { x: 40.5, y: 25.5 },// 4 ring
-  { x: 26, y: 34.5 },  // 5 pinky
+  { x: 88.7, y: 48 },  // 1 thumb tip
+  { x: 65.8, y: 24 },  // 2 index tip
+  { x: 51.3, y: 17.6 },// 3 middle tip
+  { x: 36.8, y: 21.6 },// 4 ring tip
+  { x: 23, y: 34 },    // 5 pinky tip
 ];
 const WHERE_GROUPS = [
   { key: "home", title: "At Home 🏠", match: w => w === "home" },
