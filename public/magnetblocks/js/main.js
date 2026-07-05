@@ -7,6 +7,31 @@ window.MB = window.MB || {};
 
   // ---------- tiny UI kit ----------
   const $ = id => document.getElementById(id);
+
+  // ---------- milestones (engagement — celebrate build firsts, once ever) ----------
+  const MS_KEY = 'mb_milestones_v1';
+  let msMemory = {};
+  try { msMemory = JSON.parse(localStorage.getItem(MS_KEY)) || {}; } catch(e){ msMemory = {}; }
+
+  // ---------- biggest build record (kept in the HUD) ----------
+  const BEST_KEY = 'mb_best_build_v1';
+  let bestBuild = 0;
+  try { bestBuild = parseInt(localStorage.getItem(BEST_KEY), 10) || 0; } catch(e){ bestBuild = 0; }
+  function updateBestBuild(){
+    const chip = $('bestChip'); if (!chip) return;
+    const onTable = MB.Magnet.blocks.filter(b => b.onTable).length;
+    if (onTable > bestBuild){
+      const hadRecord = bestBuild > 0;
+      bestBuild = onTable;
+      try { localStorage.setItem(BEST_KEY, String(bestBuild)); } catch(e){}
+      chip.textContent = '🏆 ' + bestBuild;
+      chip.classList.remove('chipPop'); void chip.offsetWidth; chip.classList.add('chipPop');
+      if (hadRecord) MB.Audio.sparkle(); // quiet celebration — big fanfare reserved for milestones
+    } else {
+      chip.textContent = '🏆 ' + bestBuild;
+    }
+  }
+
   const ui = MB.ui = {
     muted: false,
     show: id => { $(id).style.display = 'flex'; },
@@ -34,6 +59,16 @@ window.MB = window.MB || {};
       $('confirmYes').onclick = () => { ui.hide('confirmModal'); yes(); };
       $('confirmNo').onclick = () => ui.hide('confirmModal');
     },
+    // one-time celebration the first time a kid reaches a build milestone.
+    // safe to call every frame/event — only fires once per key, ever (localStorage).
+    milestone(key, msg){
+      if (msMemory[key]) return;
+      msMemory[key] = true;
+      try { localStorage.setItem(MS_KEY, JSON.stringify(msMemory)); } catch(e){}
+      MB.Audio.fanfare();
+      ui.confetti();
+      ui.toast(msg, 3200);
+    },
     setPlay(on){
       MB.Animate.setOn(on);
       $('playBtn').textContent = on ? '⏹️' : '▶️';
@@ -41,7 +76,12 @@ window.MB = window.MB || {};
       MB.Builder.select(null);
       updateSelBar();
       if (on){
-        ui.toast(MB.Animate.vehicle ? '🏎️ Beep beep! Drive your creation with the joystick!' : '✨ Playtime! Fans spin, wings flap! (Add wheels to drive!)', 2600);
+        if (MB.Animate.vehicle){
+          if (!msMemory.drive) ui.milestone('drive', '🎉 First drive! Beep beep — you built something that moves!');
+          else ui.toast('🏎️ Beep beep! Drive your creation with the joystick!', 2600);
+        } else {
+          ui.toast('✨ Playtime! Fans spin, wings flap! (Add wheels to drive!)', 2600);
+        }
       }
     },
   };
@@ -158,7 +198,10 @@ window.MB = window.MB || {};
       $('hingeBtn').style.display = sel.def.hinges ? 'inline-block' : 'none';
       $('hingeBtn').innerHTML = (sel.hingeOpen ? '🚪' : '🪟') + '<span>' + (sel.hingeOpen ? 'close' : 'open') + '</span>';
     } else hidePalette();
-    $('pieceChip').textContent = '🧱 ' + MB.Builder.placedCount();
+    const count = MB.Builder.placedCount();
+    $('pieceChip').textContent = '🧱 ' + count;
+    if (count >= 10) ui.milestone('ten', '🎉 10 blocks! Wow, look at all you built!');
+    updateBestBuild();
   }
   function hidePalette(){ $('palettePop').style.display = 'none'; }
   function buildPalette(){
@@ -258,6 +301,7 @@ window.MB = window.MB || {};
     MB.Bag.updateCount();
     buildPalette();
     wrapAudio();
+    $('bestChip').textContent = '🏆 ' + bestBuild;
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();

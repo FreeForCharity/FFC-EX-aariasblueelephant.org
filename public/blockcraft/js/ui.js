@@ -144,6 +144,15 @@ ABC.ui = (function () {
     ABC.saveSoon && ABC.saveSoon();
   }
 
+  /* 🧱 build-count milestones — a light, non-blocking cheer for total blocks placed
+     (separate from the one-time "First Builder" sticker; never opens a dialog) */
+  function checkBuildMilestone(count) {
+    const m = ABC.BUILD_MILESTONES[count];
+    if (!m) return;
+    confetti(50); ABC.audio.sfx.fanfare();
+    setTimeout(() => { bellaSays(m, 5600); }, 300);
+  }
+
   /* ============================================================
      EXPRESSIVE COMMUNICATION ENGINE
      prompt: { emoji, scene, options:[{t,q}] }  q: best|name|off
@@ -638,7 +647,7 @@ ABC.ui = (function () {
   }
 
   return { openDialog, closeDialog, isOpen, toast, bellaSays, confetti, floatHearts,
-           refreshScore, addStars, addHearts, addCoins, askExpressive, askBuilder, pickCard, message,
+           refreshScore, addStars, addHearts, addCoins, checkBuildMilestone, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
            getHand, setHand, openBag, openQuickMenu,
            showSettings, showHelp, pick, pick3, esc };

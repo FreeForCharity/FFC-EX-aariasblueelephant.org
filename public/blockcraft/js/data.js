@@ -743,6 +743,20 @@ ABC.SHOWTELL_SENTENCES = [
   'My building is tall and super cool!',
 ];
 
+/* Idle build-idea hints 💡 — a gentle nudge when {player} pauses, never a quiz */
+ABC.BUILD_IDEAS = [
+  'Try building a rainbow bridge! 🌈',
+  'How about a cozy little house? 🏠',
+  'Stack blocks up high — how tall can you go? 📏',
+  'Build a garden with pretty flowers! 🌸',
+  'Make a home for your animal friends! 🦁',
+  'Try a swimming pool with blue blocks! 🏊',
+  'Build a rocket ship pointing at the sky! 🚀',
+  'Make a bridge across the water! 🌉',
+  'Try a colorful pattern on the ground! 🎨',
+  'Build a castle with tall towers! 🏰',
+];
+
 /* Today's Adventures — 3 focus quests per day 📋 */
 ABC.QUEST_DEFS = [
   { key:'build',  ico:'🏗️', label:'Finish one build stage' },
@@ -761,4 +775,13 @@ ABC.KIND_MILESTONES = {
   5:'💖 5 hearts! Flowers are blooming because of your kindness!',
   10:'💖 10 hearts! A new animal friend heard how kind you are and came to visit!',
   20:'💖🐘 20 hearts! Bella the Blue Elephant is SO proud — you are Building a New Inclusive World!',
+};
+
+/* Build-count milestones 🧱 — celebrate blocks placed, separate from the one-time stickers */
+ABC.BUILD_MILESTONES = {
+  10:  '🧱 10 blocks placed! You are becoming a real builder!',
+  50:  '🏗️ 50 blocks placed! Look at everything you have made!',
+  100: '💯 100 blocks placed! WOW — you are a Block Craft superstar!',
+  250: '🌟 250 blocks placed! Your world is amazing!',
+  500: '👑 500 blocks placed! You are a true Master Builder!',
 };

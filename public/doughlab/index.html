@@ -51,6 +51,27 @@
     background: #fff; color: #5c4a32; font-size: 13px; font-weight: 600;
     padding: 7px 16px; border-radius: 20px; pointer-events: none; white-space: nowrap;
     transition: opacity .4s; box-shadow: 0 3px 8px rgba(0,0,0,.15);
+    max-width: 92%; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  #chip {
+    position: absolute; top: 10px; left: 10px; z-index: 15;
+    background: rgba(255,255,255,.88); color: #5c4a32; font-weight: 700; font-size: 12px;
+    padding: 6px 13px; border-radius: 16px; box-shadow: 0 3px 8px rgba(0,0,0,.15);
+    pointer-events: none;
+  }
+
+  #toast {
+    position: absolute; top: 14px; left: 50%; z-index: 20;
+    background: linear-gradient(180deg,#fff9db,#ffe066); color: #5c3c00; font-weight: 700; font-size: 14px;
+    padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.18);
+    opacity: 0; pointer-events: none; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+    transform: translateX(-50%) translateY(-14px); transition: opacity .35s, transform .35s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    #toast { transition: opacity .35s; transform: translateX(-50%); }
+    #toast.show { transform: translateX(-50%); }
   }
 
   footer { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -156,6 +177,8 @@
 <div id="stage">
   <canvas id="three"></canvas>
   <canvas id="ui"></canvas>
+  <div id="chip">🍪 Shapes made: <span id="chipCount">0</span></div>
+  <div id="toast"></div>
   <div id="hint">👐 Grab the dough — squish, stretch, pluck a piece off!</div>
 </div>
 
@@ -393,7 +416,7 @@ function addParticle(x, y, z, colorHex) {
   const col = new THREE.Color(colorHex);
   const j = 0.94 + Math.random() * 0.12;
   col.r = Math.min(1, col.r * j); col.g = Math.min(1, col.g * j); col.b = Math.min(1, col.b * j);
-  particles.push({ x, y, z, px: x, py: y, pz: z, col, ns: 0 });
+  particles.push({ x, y, z, px: x, py: y, pz: z, col, ns: 0, baseHex: colorHex });
   linkCount.push(0);
   return particles.length - 1;
 }
@@ -483,6 +506,7 @@ function collideAndStick() {
           addConstraint(i, j, Math.max(d, S * 0.9));
           // kneading two colours together slowly mixes them
           p.col.lerp(q.col, 0.05); q.col.lerp(p.col, 0.05);
+          if (p.baseHex && q.baseHex && p.baseHex !== q.baseHex) unlock("color_mixer");
         }
       }
     }
@@ -543,7 +567,7 @@ function step() {
     }
     collideAndStick();
   }
-  if (tore) SND.pop();
+  if (tore) { SND.pop(); unlock("first_tear"); }
 
   // plastic creep — playdough keeps its shape, slime slowly flows
   const pl = M.plastic;
@@ -568,6 +592,7 @@ function knifeCutWorld(x1, z1, x2, z2) {
   if (Math.hypot(x2 - x1, z2 - z1) < 0.01) return;
   let nx = -(z2 - z1), nz = (x2 - x1);
   const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+  let cut = false;
   for (const c of constraints) {
     if (c.dead) continue;
     const A = particles[c.a], B = particles[c.b];
@@ -576,8 +601,10 @@ function knifeCutWorld(x1, z1, x2, z2) {
       const sa = Math.sign((A.x - x1) * nx + (A.z - z1) * nz) || 1;
       A.x += nx * 0.09 * sa; A.z += nz * 0.09 * sa;
       B.x -= nx * 0.09 * sa; B.z -= nz * 0.09 * sa;
+      cut = true;
     }
   }
+  if (cut) unlock("first_slice");
 }
 function segInt(ax, ay, bx, by, cx, cy, dx, dy) {
   const den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
@@ -659,8 +686,10 @@ function stamp(name, cx, cz) {
   // the cookie POPS out — jump up and hop aside, so the cut is unmistakable
   const ang = Math.random() * Math.PI * 2;
   const hop = { x: Math.cos(ang) * 0.055, z: Math.sin(ang) * 0.055 };
+  let insideCount = 0;
   for (const p of particles) {
     if (pointInPoly(p.x, p.z, poly)) {
+      insideCount++;
       p.py = p.y - 0.20;                    // upward verlet impulse
       p.px = p.x - hop.x; p.pz = p.z - hop.z;
       p.ns = Math.max(p.ns, now + 2600);
@@ -668,6 +697,8 @@ function stamp(name, cx, cz) {
   }
   flashes.push({ poly, t: now });
   SND.stamp();
+
+  if (insideCount > 4) registerShape(name);
 }
 
 /* ---------- picking ---------- */
@@ -757,6 +788,86 @@ const SND = (() => {
   };
 })();
 
+/* ---------- engagement: achievements, creations counter, idle hints ---------- */
+const ACHIEVEMENTS = {
+  first_tear:      "🎉 First tear! Real dough stretches and snaps!",
+  first_slice:     "🔪 First slice! You cut right through the dough!",
+  first_shape:     "✨ First shape stamped!",
+  shape_collector: "🌟 Shape collector! Circle, star, heart & flower — all tried!",
+  color_mixer:     "🎨 Colour mixer! You blended two colours together!",
+  mode_explorer:   "🫧 Mode explorer! You tried playdough and slime!",
+  shape_master:    "🏆 Shape master! 10 shapes stamped!",
+};
+const ACH_KEY = "doughlab_achievements_v1", STATS_KEY = "doughlab_stats_v1";
+let unlocked = new Set();
+try { unlocked = new Set(JSON.parse(localStorage.getItem(ACH_KEY) || "[]")); } catch (e) {}
+let stats = { shapes: 0, shapeTypes: {} };
+try { Object.assign(stats, JSON.parse(localStorage.getItem(STATS_KEY) || "{}")); } catch (e) {}
+if (!stats.shapeTypes) stats.shapeTypes = {};
+function saveAch() { try { localStorage.setItem(ACH_KEY, JSON.stringify([...unlocked])); } catch (e) {} }
+function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {} }
+
+const toastEl = document.getElementById("toast");
+let toastQueue = [], toastShowing = false;
+function pumpToast() {
+  if (toastShowing || !toastQueue.length) return;
+  toastShowing = true;
+  toastEl.textContent = toastQueue.shift();
+  requestAnimationFrame(() => toastEl.classList.add("show"));
+  setTimeout(() => {
+    toastEl.classList.remove("show");
+    setTimeout(() => { toastShowing = false; pumpToast(); }, 400);
+  }, 2600);
+}
+function unlock(id) {
+  if (unlocked.has(id) || !ACHIEVEMENTS[id]) return;
+  unlocked.add(id); saveAch();
+  toastQueue.push(ACHIEVEMENTS[id]);
+  pumpToast();
+}
+
+const chipCount = document.getElementById("chipCount");
+function updateChip() { chipCount.textContent = stats.shapes; }
+function registerShape(name) {
+  stats.shapes++;
+  stats.shapeTypes[name] = (stats.shapeTypes[name] || 0) + 1;
+  saveStats(); updateChip();
+  if (stats.shapes === 1) unlock("first_shape");
+  if (stats.shapes === 10) unlock("shape_master");
+  if (["circle", "star", "heart", "flower"].every(s => stats.shapeTypes[s] > 0)) unlock("shape_collector");
+}
+
+/* idle attract-mode: cycle gentle try-this hints in the hint bar after 10s of no input */
+const ATTRACT = [
+  "🔪 Try the knife — drag across the dough to slice it!",
+  "⭐ Try a cookie cutter — tap the dough to punch a shape!",
+  "🌈 Squish two colours together to mix a new one!",
+  "🫧 Try Slime mode up top — it wobbles and drips!",
+  "👐 Pull a piece off and watch it stretch and snap!",
+];
+let lastInteract = performance.now(), attractOn = false, attractIdx = 0, attractTimer = null;
+function markInteract() {
+  lastInteract = performance.now();
+  if (attractOn) {
+    attractOn = false;
+    clearInterval(attractTimer); attractTimer = null;
+    hint.textContent = HINTS[tool];
+  }
+}
+function startAttract() {
+  attractOn = true; attractIdx = 0;
+  hint.textContent = ATTRACT[attractIdx];
+  attractTimer = setInterval(() => {
+    attractIdx = (attractIdx + 1) % ATTRACT.length;
+    hint.textContent = ATTRACT[attractIdx];
+  }, 4500);
+}
+setInterval(() => {
+  if (document.getElementById("titleScreen").style.display === "none"
+      && !pointer.down && !attractOn
+      && performance.now() - lastInteract > 10000) startAttract();
+}, 1000);
+
 /* ---------- input ---------- */
 let pokePoint = null;
 let lastKnife = null;
@@ -772,6 +883,7 @@ let pinchDist = 0;
 uiC.addEventListener("pointerdown", e => {
   uiC.setPointerCapture(e.pointerId);
   SND.init();
+  markInteract();
   const p = localXY(e);
   touches.set(e.pointerId, p);
   if (touches.size === 2) { // pinch = zoom
@@ -973,6 +1085,7 @@ const hint = document.getElementById("hint");
 document.getElementById("tools").addEventListener("click", e => {
   const btn = e.target.closest(".tool");
   if (!btn) return;
+  markInteract();
   tool = btn.dataset.tool;
   document.querySelectorAll(".tool").forEach(b => b.classList.toggle("on", b === btn));
   hint.textContent = HINTS[tool];
@@ -981,9 +1094,11 @@ document.getElementById("tools").addEventListener("click", e => {
 document.getElementById("modeSeg").addEventListener("click", e => {
   const btn = e.target.closest("button");
   if (!btn) return;
+  markInteract();
   mode = btn.dataset.mode;
   mc.material = mode === "slime" ? matSlime : matDough;
   SND.init(); SND.plop();
+  if (mode === "slime") unlock("mode_explorer");
   document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b === btn));
   hint.textContent = mode === "slime"
     ? "🫧 Slime: wobbly and drippy — it slowly puddles!"
@@ -1005,6 +1120,7 @@ PALETTE.forEach(c => {
 
 document.getElementById("addBtn").addEventListener("click", () => {
   SND.init();
+  markInteract();
   if (particles.length > MAX_PARTICLES - 80) {
     hint.textContent = "🙈 The table is full! Slice some off or start over.";
     return;
@@ -1014,7 +1130,7 @@ document.getElementById("addBtn").addEventListener("click", () => {
   SND.plop();
 });
 
-document.getElementById("resetBtn").addEventListener("click", () => { reset(); SND.init(); SND.plop(); });
+document.getElementById("resetBtn").addEventListener("click", () => { markInteract(); reset(); SND.init(); SND.plop(); });
 
 /* test hooks */
 window.DL = {
@@ -1042,17 +1158,23 @@ window.DL = {
   },
   knifeCutWorld, stamp, spawnBall, camera, orbit, SKIN,
   get mc() { return mc; },
+  get stats() { return stats; },
+  get unlocked() { return unlocked; },
+  unlock, markInteract, startAttract,
+  get attractOn() { return attractOn; },
 };
 
 /* ---------- go ---------- */
 document.getElementById("startBtn").addEventListener("click", () => {
   document.getElementById("titleScreen").style.display = "none";
   SND.init(); SND.plop();
+  markInteract();
   resize(); // stage size can change once the overlay is gone
 });
 
 resize();
 reset();
+updateChip();
 applyCamera();
 frame();
 })();
