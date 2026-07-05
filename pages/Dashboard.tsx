@@ -421,7 +421,7 @@ const Dashboard: React.FC = () => {
     });
 
     const GAMES: { id: string; title: string; emoji: string; oneLiner: string; img: string; view?: ViewState; path?: string }[] = [
-        { id: 'belus-world', title: "Nilu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Nilu grow!', img: '/images/games/belus-world.jpg', path: '/belus-world' },
+        { id: 'belus-world', title: "Nilu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Nilu grow!', img: '/images/games/belus-world.jpg', path: '/nelus-world' },
         { id: 'magnetblocks', title: "Aaria's Magnet Blocks", emoji: '🧲', oneLiner: 'Magnetic blocks that click, stack & drive!', img: '/images/games/magnetblocks.jpg', view: 'magnetblocks' },
         { id: 'helpinghands', title: "Nilu's Helping Hands", emoji: '🖐️', oneLiner: 'Learn your world & how to get help — walk, explore, be brave!', img: '/images/games/helpinghands.jpg', view: 'helpinghands' },
         { id: 'doughlab', title: 'Dough Lab 3D', emoji: '🫓', oneLiner: 'Squish, slice & sculpt real 3D dough!', img: '/images/games/doughlab.jpg', view: 'doughlab' },

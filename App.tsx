@@ -149,14 +149,17 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
-                <Route path="/belus-world" element={<BelusWorld />} />
+                <Route path="/nelus-world" element={<BelusWorld />} />
+                {/* aliases: old link + likely spelling both land on the game */}
+                <Route path="/belus-world" element={<Navigate to="/nelus-world" replace />} />
+                <Route path="/nilus-world" element={<Navigate to="/nelus-world" replace />} />
                 <Route path="/buddy" element={<Navigate to="/circle-of-friends" replace />} />
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
 
                 {/* Short game links — aariasblueelephant.org/1, /2, … */}
                 <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message="Loading Elly-Tubbies… 🐘☀️" />} />
                 <Route path="/2" element={<ExternalRedirect url="/blockcraft/index.html" message="Loading Aaria's Block Craft 3D… 🧱🌈" />} />
-                <Route path="/3" element={<Navigate to="/belus-world" replace />} />
+                <Route path="/3" element={<Navigate to="/nelus-world" replace />} />
                 <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Road Safety Heroes… 🚲" />} />
                 <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Dough Lab… 🍪" />} />
                 <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message="Loading Aaria's Magnet Blocks… 🧲🧱" />} />
