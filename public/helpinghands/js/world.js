@@ -1934,6 +1934,10 @@
     aide:      { shirt: '#8a8f9a', pants: '#5a5e68', skin: 0, hair: '#5a3a22', hairStyle: 'bun',   accessory: 'none', mood: 'grumpy' },
     cousin:    { shirt: '#ff922b', pants: '#4a6fa5', skin: 1, hair: '#3a2a1c', hairStyle: 'curly', accessory: 'none', kid: true, mood: 'grumpy' },
     scaryhome: { shirt: '#6a6f7a', pants: '#4a4e58', skin: 1, hair: '#3a2a1c', hairStyle: 'short', accessory: 'none', mood: 'grumpy' },
+    // Wave 2 actors
+    friend:     { shirt: '#94d82d', pants: '#5c7cfa', skin: 2, hair: '#2e2018', hairStyle: 'short', accessory: 'none', kid: true, mood: 'grumpy' },
+    different:  { shirt: '#22b8cf', pants: '#f59f00', skin: 0, hair: '#6b4a2f', hairStyle: 'curly', accessory: 'none', kid: true, mood: 'grumpy' },
+    secretgift: { shirt: '#8a8f9a', pants: '#5a5e68', skin: 1, hair: '#3a2a1c', hairStyle: 'short', accessory: 'none', mood: 'neutral' },
   };
 
   function makeFace(headR, mood) {
