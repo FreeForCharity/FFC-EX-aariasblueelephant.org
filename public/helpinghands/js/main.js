@@ -984,6 +984,14 @@ function renderScenarioPicker(body) {
   title.className = "practice-title";
   title.textContent = "Practice Being Brave 💪";
   body.appendChild(title);
+  const sub = document.createElement("p");
+  sub.className = "practice-sub";
+  sub.textContent = "Short practice stories! In each one we spot the uh-oh feeling, choose a safe thing to do, and go tell a helper — just like real life.";
+  body.appendChild(sub);
+  const hint = document.createElement("p");
+  hint.className = "practice-hint";
+  hint.textContent = "🔒 A grown-up reads each story first, to make sure it is just right for you.";
+  body.appendChild(hint);
   const grid = document.createElement("div"); grid.className = "scenario-grid";
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");
@@ -1426,11 +1434,14 @@ function reviewSignoffFooter() {
     "</div></div>";
 }
 function buildReviewHTML(itemId) {
+  return buildReviewScriptHTML(itemId) + reviewSignoffFooter();
+}
+function buildReviewScriptHTML(itemId) {
   let html = "";
   if (itemId.indexOf("scenario:") === 0) {
     const scId = itemId.slice("scenario:".length);
     const sc = HH.SCENARIOS.find(s => s.id === scId);
-    if (!sc) return "<p>Item not found.</p>" + reviewSignoffFooter();
+    if (!sc) return "<p>Item not found.</p>";
     const actor = HH.SCENARIO_ACTORS[sc.id];
     html += '<div class="review-header"><span class="review-emoji">' + sc.emoji + "</span><h2>" + escHtml(sc.title) + "</h2></div>";
     html += reviewField("Setup", sc.setup);
@@ -1464,31 +1475,53 @@ function buildReviewHTML(itemId) {
   } else {
     html += "<p>Unknown item.</p>";
   }
-  html += reviewSignoffFooter();
   return html;
 }
-function openReviewSheet(itemId, opts) {
-  opts = opts || {};
-  $("reviewSheetBody").innerHTML = buildReviewHTML(itemId);
+const REVIEW_WHY = "Why review? These practice stories touch real safety topics — bullying, getting lost, body safety, secrets. Reading the full script first lets you decide what fits your child today, and be ready to talk about it together afterward. You can re-lock any section at any time from the Grown-Ups Corner.";
+function bindReviewSheet(bodyHTML, approveLabel, onApprove) {
+  $("reviewSheetBody").innerHTML = '<p class="review-intro">' + REVIEW_WHY + "</p>" + bodyHTML;
   const nameInput = $("reviewNameInput");
   const checkbox = $("reviewApproveCheckbox");
   const approveBtn = $("reviewApproveBtn");
+  approveBtn.textContent = approveLabel;
   nameInput.value = signoff.reviewer || "";
   checkbox.checked = false;
   function updateApproveBtn() { approveBtn.disabled = !(checkbox.checked && nameInput.value.trim()); }
-  nameInput.addEventListener("input", updateApproveBtn);
-  checkbox.addEventListener("change", updateApproveBtn);
+  nameInput.oninput = updateApproveBtn;
+  checkbox.onchange = updateApproveBtn;
   updateApproveBtn();
-  approveBtn.addEventListener("click", () => {
-    approveItem(itemId, nameInput.value.trim());
+  approveBtn.onclick = () => {
+    onApprove(nameInput.value.trim());
     $("reviewSheetModal").hidden = true;
-    showGlobalToast("Approved! This section is unlocked. 💙");
-    if (opts.onApproved) opts.onApproved();
-  });
-  $("reviewNotNowBtn").addEventListener("click", () => { $("reviewSheetModal").hidden = true; });
+  };
+  $("reviewNotNowBtn").onclick = () => { $("reviewSheetModal").hidden = true; };
   $("reviewSheetModal").hidden = false;
   $("reviewSheetModal").scrollTop = 0;
 }
+function openReviewSheet(itemId, opts) {
+  opts = opts || {};
+  bindReviewSheet(buildReviewHTML(itemId), "Approve & unlock", name => {
+    approveItem(itemId, name);
+    showGlobalToast("Approved! This section is unlocked. 💙");
+    if (opts.onApproved) opts.onApproved();
+  });
+}
+// one master page: every not-yet-approved script, one sign-off for all
+function openMasterReviewSheet(opts) {
+  opts = opts || {};
+  const pending = gatedItems().filter(it => !isApproved(it.id));
+  if (!pending.length) { showGlobalToast("Everything is already approved on this device. ✓"); return; }
+  const html = pending.map((it, i) =>
+    '<div class="review-master-head">Section ' + (i + 1) + " of " + pending.length + "</div>" +
+    buildReviewScriptHTML(it.id)
+  ).join("") + reviewSignoffFooter();
+  bindReviewSheet(html, "Approve all " + pending.length + " sections", name => {
+    pending.forEach(it => approveItem(it.id, name));
+    showGlobalToast("All " + pending.length + " sections approved and unlocked. 💙");
+    if (opts.onApproved) opts.onApproved();
+  });
+}
+function startMasterReview(opts) { withAdultOk(() => openMasterReviewSheet(opts)); }
 /* one adult-check per browser session guards both the review flow and
    the Grown-Ups Corner itself */
 function withAdultOk(onOk) {
@@ -1536,7 +1569,12 @@ function renderSignoffSection() {
     return "<tr><td>" + escHtml(it.title) + '</td><td><span class="chip ' + chipClass + '">' + chipText + "</span></td><td>" +
       reviewBtn + " " + lockBtn + "</td></tr>";
   }).join("");
+  const pendingCount = gatedItems().filter(it => !isApproved(it.id)).length;
   return "<h3>Content Sign-off</h3>" +
+    '<p class="gu-why">Why this exists: the practice stories touch real safety situations — bullying, getting lost, body safety, secrets. You read each script before your child plays it, so you decide what fits your child today and can talk about it together afterward. Approvals are saved on this device only, and you can re-lock any section at any time.</p>' +
+    (pendingCount
+      ? '<p><button class="btn-plain btn-master" id="signoffMasterBtn">📋 Review everything at once — ' + pendingCount + ' section' + (pendingCount === 1 ? '' : 's') + ' remaining</button></p>'
+      : '<p class="gu-note">All sections are approved on this device. ✓</p>') +
     "<p>Reviewer on file: <b>" + (signoff.reviewer ? escHtml(signoff.reviewer) : "—") + "</b></p>" +
     '<table class="gu-table signoff-table"><thead><tr><th>Item</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows + "</tbody></table>" +
     '<div class="gu-note">Every scenario and both lessons must be approved once before a child can play them. ' +
@@ -1567,6 +1605,9 @@ function wireGrownups() {
   $("grownupsLinkTitle").addEventListener("click", () => enterGrownups("titleScreen"));
   $("grownupsLinkMenu").addEventListener("click", () => enterGrownups("menuScreen"));
   $("guBody").addEventListener("click", e => {
+    if (e.target.id === "signoffMasterBtn" || e.target.closest("#signoffMasterBtn")) {
+      startMasterReview({ onApproved: renderGrownupsBody }); return;
+    }
     const reviewBtn = e.target.closest(".signoff-review-btn");
     if (reviewBtn) { startReview(reviewBtn.dataset.item, { onApproved: renderGrownupsBody }); return; }
     const lockBtn = e.target.closest(".signoff-lock-btn");
