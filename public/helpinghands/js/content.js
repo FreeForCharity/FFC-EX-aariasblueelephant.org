@@ -89,10 +89,54 @@ HH.PLACES = {
         quiz: { q: "When do we go to the nurse's office?", a: ["When we are hurt or feel sick 🩹", "When we want candy 🍬", "When it is time to sing 🎵"] } },
     ],
   },
-  library:     { name: "Library",      emoji: "📖", unlocked: false, comingSoon: "We will learn how to check out books soon!" },
-  clinic:      { name: "Doctor's Office", emoji: "🩺", unlocked: false, comingSoon: "We will visit Doctor Kim soon!" },
-  firestation: { name: "Fire Station", emoji: "🚒", unlocked: false, comingSoon: "We will meet Firefighter Max soon!" },
-  police:      { name: "Police Station", emoji: "🚓", unlocked: false, comingSoon: "We will meet Officer Ruby soon!" },
+  library: {
+    name: "Library", emoji: "📖", unlocked: true,
+    helpers: ["librarian"],
+    rooms: [
+      { id: "readingroom", name: "Reading Room", emoji: "📚", action: "The library is full of books! We read quietly and use soft voices here.",
+        objects: [["📚","books — so many stories to read"],["🪑","comfy chair — sit and read"],["🌍","globe — see the whole world"]],
+        quiz: { q: "How do we talk in the library?", a: ["With a quiet voice 🤫", "Shouting loud 📢", "Singing songs 🎤"] } },
+      { id: "checkout", name: "Checkout Desk", emoji: "💳", action: "To take a book home, bring it to Ms. Pat at the checkout desk. Beep! Now it is yours to borrow.",
+        objects: [["📖","a book to borrow — bring it to the desk"],["💳","library card — shows the book is yours to borrow"],["🖨️","scanner — beep! all checked out"]],
+        quiz: { q: "How do we take a book home?", a: ["Check it out at the desk 💳", "Hide it in our bag 🙈", "Just run home with it 🏃"] } },
+    ],
+  },
+  clinic: {
+    name: "Doctor's Office", emoji: "🩺", unlocked: true,
+    helpers: ["doctor"],
+    rooms: [
+      { id: "waiting", name: "Waiting Room", emoji: "🪑", action: "We sit in the waiting room until it is our turn to see the doctor.",
+        objects: [["🪑","waiting chairs — sit until your name is called"],["📚","picture books — read while you wait"],["🧸","toy box — play quietly while waiting"]],
+        quiz: { q: "What do we do in the waiting room?", a: ["Wait for our turn 🪑", "See the fire truck 🚒", "Take a bath 🛁"] } },
+      { id: "examroom", name: "Doctor's Room", emoji: "🩺", action: "Doctor Kim checks your body to keep you healthy. You can tell the doctor if something hurts.",
+        objects: [["🩺","stethoscope — listens to your heart, thump-thump"],["⚖️","scale — checks how you have grown"],["🛏️","exam bed — sit up here for your checkup"]],
+        quiz: { q: "What does the doctor do?", a: ["Helps your body stay healthy 🩺", "Teaches math 📐", "Drives a bus 🚌"] } },
+    ],
+  },
+  firestation: {
+    name: "Fire Station", emoji: "🚒", unlocked: true,
+    helpers: ["firefighter"],
+    rooms: [
+      { id: "garage", name: "Truck Garage", emoji: "🚒", action: "The big red fire truck lives in the garage, ready to zoom out and help!",
+        objects: [["🚒","fire truck — it zooms to help people"],["🧯","fire extinguisher — puts out small fires"],["🔔","alarm bell — RING! time to go help"]],
+        quiz: { q: "What does the fire truck do?", a: ["Zooms out to help people 🚒", "Delivers pizza 🍕", "Sleeps all day 😴"] } },
+      { id: "gearroom", name: "Gear Room", emoji: "⛑️", action: "Firefighters keep their helmets, coats and boots ready to put on super fast.",
+        objects: [["⛑️","helmet — keeps a firefighter's head safe"],["🧥","fire coat — strong and heat-proof"],["🥾","boots — jump in and go!"]],
+        quiz: { q: "Why do firefighters wear helmets?", a: ["To keep their heads safe ⛑️", "Because they are pretty 🎀", "To hear music 🎧"] } },
+    ],
+  },
+  police: {
+    name: "Police Station", emoji: "🚓", unlocked: true,
+    helpers: ["officer"],
+    rooms: [
+      { id: "frontdesk", name: "Front Desk", emoji: "🛡️", action: "Officer Ruby helps people at the front desk. Police officers are safe helpers you can always ask for help.",
+        objects: [["🛡️","badge — it means 'I am here to help you'"],["📻","radio — officers talk to each other to help fast"],["📞","phone — people call when they need help"]],
+        quiz: { q: "What do police officers do?", a: ["Help people stay safe 🛡️", "Make cookies 🍪", "Fly airplanes ✈️"] } },
+      { id: "safecorner", name: "Safe Corner", emoji: "🗺️", action: "If you are ever lost, find a police officer. You wait in the safe corner while they find your family.",
+        objects: [["🗺️","town map — helps find the way home"],["🧸","waiting teddy — a cozy friend while you wait"],["🥤","water cup — helpers make sure you are okay"]],
+        quiz: { q: "What do you do if you are lost?", a: ["Find a police officer 👮", "Hide where no one can see 🙈", "Go with a stranger 🚶"] } },
+    ],
+  },
 };
 
 /* ---------------- Mode 2: My Helping Hand lessons ---------------- */
@@ -275,6 +319,26 @@ HH.FIND_TASKS = {
     { ask: "Where does Principal Rivera work? Find the front desk!", roomId: "office", objIndex: 0, praise: "Yes! The office is where the principal works! 🏢" },
     { ask: "You feel sick. Where can you rest? Find the rest bed!", roomId: "nurseroom", objIndex: 1, praise: "Yes! Nurse Joy helps you in the nurse's office! 🩹" },
   ],
+  library: [
+    { ask: "So many stories! Find the books in the Reading Room!", roomId: "readingroom", objIndex: 0, praise: "Yes! Libraries are full of books! 📚" },
+    { ask: "You want to take a book home. Find the book at the Checkout Desk!", roomId: "checkout", objIndex: 0, praise: "Yes! First we bring the book to the desk! 📖" },
+    { ask: "Now check it out! Find the scanner — beep!", roomId: "checkout", objIndex: 2, praise: "Beep! The book is checked out. Now you can take it home! 🎉" },
+  ],
+  clinic: [
+    { ask: "We wait our turn first. Find the waiting chairs!", roomId: "waiting", objIndex: 0, praise: "Yes! We wait in the waiting room! 🪑" },
+    { ask: "The doctor listens to your heart. Find the stethoscope!", roomId: "examroom", objIndex: 0, praise: "Thump-thump! The stethoscope hears your heart! 🩺" },
+    { ask: "Time for your checkup! Find the exam bed!", roomId: "examroom", objIndex: 2, praise: "Yes! You sit up there and the doctor checks you! 🛏️" },
+  ],
+  firestation: [
+    { ask: "Where is the big red fire truck? Go find it!", roomId: "garage", objIndex: 0, praise: "There it is! The fire truck zooms out to help people! 🚒" },
+    { ask: "Firefighters need their helmets. Find one in the Gear Room!", roomId: "gearroom", objIndex: 0, praise: "Yes! Helmets keep firefighters safe! ⛑️" },
+    { ask: "RING RING! Find the alarm bell!", roomId: "garage", objIndex: 2, praise: "Ring! When the bell rings, firefighters go help! 🔔" },
+  ],
+  police: [
+    { ask: "Police officers wear a special badge. Find it!", roomId: "frontdesk", objIndex: 0, praise: "Yes! A badge means 'I am here to help you'! 🛡️" },
+    { ask: "If you are lost, where do you wait? Find the waiting teddy in the Safe Corner!", roomId: "safecorner", objIndex: 1, praise: "Yes! You wait in the safe corner and police find your family! 🧸" },
+    { ask: "Officers talk to each other to help fast. Find the radio!", roomId: "frontdesk", objIndex: 1, praise: "Yes! The radio calls more helpers super fast! 📻" },
+  ],
 };
 
 /* short speech-bubble lines for scenario actors (in-world, ≤7 words) */
@@ -293,6 +357,10 @@ HH.SCENARIO_ACTORS = {
 HH.HELPER_SPOTS = {
   house:  { kitchen: "mom", living: "dad", dining: "grandma" },
   school: { classroom: "teacher", office: "principal", nurseroom: "nurse", cafeteria: "counselor" },
+  library:     { checkout: "librarian" },
+  clinic:      { examroom: "doctor" },
+  firestation: { garage: "firefighter" },
+  police:      { frontdesk: "officer" },
 };
 
 HH.AFFIRMATIONS = [
