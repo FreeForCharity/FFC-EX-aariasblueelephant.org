@@ -1560,8 +1560,13 @@ function boot() {
   wireGlobalBelu();
   wireGlobalChrome();
 
-  if (HH.REQUIRE_GATE === false || sessionStorage.getItem("hh_gate") === "1") {
-    $("gateScreen").hidden = true;
+  // gate is hidden in the markup so the public build never flashes it;
+  // review builds (REQUIRE_GATE=true) reveal it here instead
+  if (HH.REQUIRE_GATE && sessionStorage.getItem("hh_gate") !== "1") {
+    SCREEN_IDS.forEach(s => { $(s).hidden = true; });
+    $("beluBubble").hidden = true;
+    $("gateScreen").hidden = false;
+  } else {
     showScreen("titleScreen");
   }
 }
