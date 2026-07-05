@@ -16,10 +16,11 @@
    ===================================================================== */
 window.HH = window.HH || {};
 
-// Phase 4 (Tier B: adult/home scenarios) is authored below but DISABLED
-// per AJ 2026-07-04 — ship peer-bullying tier first, add Tier B after
-// clinical review. Flip to true to enable in the scenario picker.
-HH.ENABLE_TIER_B = false;
+// Tier B (adult/home scenarios) cleared by clinical review 2026-07-05 with
+// wording changes applied. ALL scenarios and lessons are individually gated
+// behind per-item ADULT SIGN-OFF (see main.js) — a grown-up reviews each
+// section on the device and can re-lock it any time from the Grown-Ups Corner.
+HH.ENABLE_TIER_B = true;
 
 // Password gate. Tier A (peer scenarios + discovery + lessons) was
 // cleared for public release by AJ on 2026-07-04, so the gate is OFF.
@@ -230,7 +231,7 @@ HH.SCENARIOS = [
     title: "The Pencil Poker",
     setup: "In class, a boy pokes your back with a pencil when the teacher is not looking. It hurts. He says you are 'telling tales' if you speak.",
     feelQ: "He says telling is bad. Is he right?",
-    feelA: ["No. Telling about being hurt is ALWAYS okay 🗣️", "Yes, I should stay quiet 🤐"],
+    feelA: ["No. Telling about being hurt is ALWAYS okay 🗣️", "Should I stay quiet? 🤐"],
     reactQ: "What can you do?",
     reactA: ["Say 'Stop!' and raise my hand for the teacher ✋", "Poke him back harder ✏️", "Never go to school again 🙈"],
     reactWhy: "Telling a helper about being hurt is not tattling. It is being safe.",
@@ -260,9 +261,9 @@ HH.SCENARIOS = [
     title: "The Grabbing Grown-Up",
     setup: "A grown-up helper at school grabs your arm hard when you are slow. It hurts. She says: 'If you tell, you will lose recess.'",
     feelQ: "A grown-up did this. Is it still okay to tell?",
-    feelA: ["YES. Grown-ups are not allowed to hurt me 🗣️", "No, grown-ups are always right 🤐"],
+    feelA: ["YES. Grown-ups are not allowed to hurt me 🗣️", "Are grown-ups always right? 🤔"],
     reactQ: "What is true?",
-    reactA: ["My body belongs to me. Hurting me is not allowed — even for grown-ups 💙", "It is my fault for being slow 😞", "I will lose recess if I tell 😨"],
+    reactA: ["My body belongs to me. Hurting me is not allowed — even for grown-ups 💙", "Was it my fault for being slow? 🤔", "Will I lose recess if I tell? 😨"],
     reactWhy: "No one is allowed to hurt you. Not kids. Not grown-ups. Not even grown-ups whose job is to help. And telling can NEVER get you in trouble.",
     tellTo: ["teacher", "principal", "mom"], keepTelling: true,
     busyLine: "You tell one grown-up, but nothing changes. The grabbing happens again.",
@@ -277,7 +278,7 @@ HH.SCENARIOS = [
     feelQ: "He says it is a game. What does YOUR body say?",
     feelA: ["Uh-oh. It hurts. It is NOT a game 😖", "Games hurt sometimes, it is fine 😐"],
     reactQ: "What is true?",
-    reactA: ["If it hurts and feels bad, it is not a game — I can tell 💙", "Family can hit me if it is a joke 😞", "I have to keep playing 😨"],
+    reactA: ["If it hurts and feels bad, it is not a game — I can tell 💙", "Is it okay because it is family? 🤔", "Do I have to keep playing? 😨"],
     reactWhy: "A real game feels fun for EVERYONE. If it hurts you, you can say NO and tell — even about family.",
     tellTo: ["mom", "dad", "grandma"], keepTelling: false,
     tellPrompt: "Who at home can you tell?",
@@ -288,9 +289,9 @@ HH.SCENARIOS = [
     title: "When Home Feels Scary",
     setup: "Someone at home yells at you and scares you almost every day. They say you are bad. Your tummy hurts a lot.",
     feelQ: "Is it your fault when a grown-up scares you?",
-    feelA: ["NO. It is never my fault 💙", "Yes, I must be bad 😞"],
+    feelA: ["NO. It is never my fault 💙", "Did I do something wrong? 😟"],
     reactQ: "Your home helpers cannot help this time. Where else are helpers?",
-    reactA: ["At school! Teachers, the nurse, the counselor 🏫", "Nowhere. Only home helpers count 😢", "I should keep it secret 🤐"],
+    reactA: ["At school! Teachers, the nurse, the counselor 🏫", "Is there nowhere else? 😢", "Should I keep it secret? 🤐"],
     reactWhy: "This is why your hand has helpers from DIFFERENT places. If home does not feel safe, school helpers can help you.",
     tellTo: ["teacher", "nurse", "counselor"], keepTelling: true,
     busyLine: "It is hard to find the words the first time, and the moment passes.",

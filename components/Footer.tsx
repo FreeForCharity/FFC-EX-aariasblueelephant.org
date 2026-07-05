@@ -78,6 +78,7 @@ const Footer: React.FC = () => {
                                         <li><Link to="/privacy-policy#terms-of-service" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Terms of Service</Link></li>
                                         <li><Link to="/privacy-policy#donation-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Donation Policy</Link></li>
                                         <li><Link to="/privacy-policy#vulnerability-disclosure" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Vulnerability Disclosure</Link></li>
+                                        <li><a href="/legal/disclosure.html" target="_blank" rel="noopener" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">General Disclosure</a></li>
                                     </ul>
                                 </div>
                             </li>

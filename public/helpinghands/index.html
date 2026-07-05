@@ -341,6 +341,70 @@
   .gu-actions { display: flex; gap: 10px; margin-top: 20px; }
   .btn-plain { border: 1px solid #b9c6e0; background: #fff; color: #16325c; font-weight: 700; padding: 10px 18px; border-radius: 8px; cursor: pointer; min-height: 44px; }
   @media print { .btn-back, .btn-plain, .chrome-header, .gu-actions { display: none !important; } }
+  .gu-actions a.btn-plain { text-decoration: none; display: inline-flex; align-items: center; }
+
+  /* ---------- content sign-off (inside Grown-Ups Corner) ---------- */
+  .chip { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .chip-approved { background: #d3f9d8; color: #2b8a3e; }
+  .chip-locked { background: #ffe3e3; color: #c92a2a; }
+  .chip-pending { background: #e9ecef; color: #495057; }
+  .signoff-table td { vertical-align: middle; }
+  .signoff-table th { text-align: left; padding: 8px 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #5c6b8a; border-bottom: 2px solid #dbe4f3; }
+  .signoff-table .btn-plain { font-size: 12px; padding: 6px 10px; min-height: auto; margin: 2px 4px 2px 0; }
+
+  /* ---------- adult check + review sheet (sober: navy on white) ---------- */
+  .adult-overlay { background: rgba(10,20,40,.6); z-index: 400; }
+  .adult-card {
+    text-align: left; font-family: "Segoe UI", system-ui, sans-serif; color: #16325c;
+    background: #fff; border-radius: 14px;
+  }
+  .adult-card h3 { font-size: 19px; color: #16325c; margin-bottom: 8px; }
+  .adult-card p { font-size: 14px; color: #44546b; margin-bottom: 4px; line-height: 1.4; }
+  .adult-question { font-size: 18px; font-weight: 700; color: #16325c; margin: 14px 0 !important; }
+  #adultAnswerInput {
+    width: 100%; font: inherit; font-size: 16px; padding: 11px 12px; border-radius: 8px;
+    border: 2px solid #ccd6e8; margin-bottom: 8px; min-height: 44px;
+  }
+  #adultAnswerInput:focus { outline: none; border-color: #2a4d8f; }
+  .adult-error { color: #c0392b; font-size: 13px; font-weight: 700; margin-bottom: 8px !important; }
+  .adult-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+
+  .review-sheet {
+    position: fixed; inset: 0; z-index: 401; background: #f4f6fb; overflow-y: auto;
+    font-family: "Segoe UI", system-ui, sans-serif; color: #16325c;
+  }
+  .review-close { position: fixed; top: 14px; right: 14px; z-index: 402; }
+  .review-sheet-body { max-width: 720px; margin: 0 auto; padding: 64px 20px 60px; }
+  .review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .review-header .review-emoji { font-size: 38px; }
+  .review-header h2 { font-size: 24px; color: #16325c; }
+  .review-block { background: #fff; border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .review-label { font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: #5c6b8a; margin-bottom: 6px; }
+  .review-text { font-size: 15px; line-height: 1.5; color: #16325c; }
+  .review-list { padding-left: 20px; margin-top: 8px; }
+  .review-list li { margin-bottom: 4px; font-size: 14px; line-height: 1.4; }
+  .review-secret-item { padding: 10px 0; border-bottom: 1px solid #e2e8f5; font-size: 14px; line-height: 1.5; }
+  .review-secret-item:last-child { border-bottom: 0; }
+  .review-signoff-footer { background: #fff; border-radius: 10px; padding: 20px; margin-top: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 14px; }
+  .review-name-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: #16325c; }
+  .review-name-input { font: inherit; font-size: 15px; padding: 9px 12px; border-radius: 8px; border: 2px solid #ccd6e8; min-height: 40px; }
+  .review-name-input:focus { outline: none; border-color: #2a4d8f; }
+  .review-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #16325c; }
+  .review-checkbox-label input { width: 18px; height: 18px; }
+  .review-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+  /* ---------- kid-facing lock badge on scenario cards ---------- */
+  .lock-badge {
+    position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(40,25,70,.68); color: #fff;
+    font-size: 14px; padding: 3px 7px; border-radius: 10px; line-height: 1.4;
+  }
+
+  /* ---------- global toast (confirmation, any screen) ---------- */
+  .global-toast {
+    position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 410;
+    background: #fff; color: #3b2a55; font-weight: 700; font-size: 15px; padding: 10px 20px;
+    border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.2); max-width: 86%; text-align: center;
+  }
 
   /* ---------- confetti ---------- */
   #confettiCanvas { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
@@ -376,6 +440,7 @@
   <button id="startBtn" class="btn-primary">Play! 🐘</button>
   <div class="title-footer-row">
     <button id="grownupsLinkTitle" class="link-btn">Grown-Ups Corner</button>
+    <a class="link-btn" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
   </div>
   <div id="orgFooter">Aaria's Blue Elephant 🐘💙 — play, learn &amp; grow</div>
 </div>
@@ -455,11 +520,8 @@
   <div id="guGateWrap" class="gu-gate-wrap">
     <div class="gu-gate-card">
       <h3>Grown-Ups Corner</h3>
-      <p>Quick check — please solve to continue:</p>
-      <p id="guQuestion" style="font-size:22px;font-weight:800;margin-top:10px;"></p>
-      <input id="guAnswerInput" type="number" inputmode="numeric" placeholder="?">
-      <button id="guCheckBtn" class="btn-plain">Continue</button>
-      <p id="guError" class="gate-error" hidden>Not quite — try again.</p>
+      <p>This section is for adults, including content sign-off for every story and lesson. Please verify to continue.</p>
+      <button id="guEnterBtn" class="btn-plain" style="margin-top:14px;">Verify I'm an adult</button>
     </div>
   </div>
   <div id="guBody" class="gu-body" hidden></div>
@@ -489,6 +551,42 @@
     </div>
   </div>
 </div>
+
+<!-- kid-facing lock modal: "take this to your grown-up" -->
+<div id="kidLockModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div style="font-size:54px;">🔒</div>
+    <div class="friend-name">This story needs a grown-up first!</div>
+    <div class="friend-line">Please take this to your grown-up.</div>
+    <div class="modal-actions">
+      <button id="kidLockReviewBtn" class="btn-secondary">I am a grown-up — review now</button>
+      <button id="kidLockOkBtn" class="btn-primary">Okay 💙</button>
+    </div>
+  </div>
+</div>
+
+<!-- adult check: sober, randomized challenge -->
+<div id="adultCheckModal" class="modal-overlay adult-overlay" hidden>
+  <div class="modal-card adult-card">
+    <h3>Adult Verification</h3>
+    <p>Please answer this to confirm you're an adult:</p>
+    <p id="adultQuestion" class="adult-question"></p>
+    <input id="adultAnswerInput" type="text" autocomplete="off" spellcheck="false" placeholder="Your answer">
+    <p id="adultError" class="adult-error" hidden></p>
+    <div class="adult-actions">
+      <button id="adultCancelBtn" class="btn-plain">Cancel</button>
+      <button id="adultSubmitBtn" class="btn-plain">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- full-screen review sheet: verbatim script + sign-off footer -->
+<div id="reviewSheetModal" class="review-sheet" hidden>
+  <button id="reviewCloseBtn" class="btn-plain review-close">✖ Close</button>
+  <div id="reviewSheetBody" class="review-sheet-body"></div>
+</div>
+
+<div id="globalToast" class="global-toast" hidden></div>
 
 <canvas id="confettiCanvas"></canvas>
 

@@ -32,6 +32,54 @@ function updateStickerUI() { $$(".stickerCount").forEach(el => { el.textContent 
 function awardSticker(n) { save.stickers += (n || 1); saveSave(); updateStickerUI(); }
 
 /* ---------------------------------------------------------------
+   ADULT SIGN-OFF STORE
+   Every scenario + the two lessons must be reviewed & approved by an
+   adult on this device before a child can play it. A grown-up can
+   re-lock any item at any time from the Grown-Ups Corner. Date() is
+   fine here — this runs on the main thread, not in a workflow.
+   --------------------------------------------------------------- */
+const SIGNOFF_KEY = "hh_signoff";
+function defaultSignoff() { return { reviewer: "", items: {} }; }
+let signoff = defaultSignoff();
+function loadSignoff() {
+  try {
+    const raw = localStorage.getItem(SIGNOFF_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      signoff = Object.assign(defaultSignoff(), parsed);
+      if (!signoff.items || typeof signoff.items !== "object") signoff.items = {};
+      if (typeof signoff.reviewer !== "string") signoff.reviewer = "";
+    }
+  } catch (e) { signoff = defaultSignoff(); }
+}
+function saveSignoff() { try { localStorage.setItem(SIGNOFF_KEY, JSON.stringify(signoff)); } catch (e) {} }
+function isApproved(itemId) {
+  const it = signoff.items[itemId];
+  return !!(it && it.approvedAt && !it.locked);
+}
+function approveItem(itemId, reviewerName) {
+  if (reviewerName) signoff.reviewer = reviewerName;
+  signoff.items[itemId] = { approvedAt: new Date().toISOString(), locked: false };
+  saveSignoff();
+}
+function lockItem(itemId) {
+  const it = signoff.items[itemId] || (signoff.items[itemId] = { approvedAt: null, locked: false });
+  it.locked = true;
+  saveSignoff();
+}
+function getSignoffState() { return JSON.parse(JSON.stringify(signoff)); }
+function gatedItems() {
+  const items = HH.SCENARIOS.map(sc => ({ id: "scenario:" + sc.id, title: sc.emoji + " " + sc.title }));
+  items.push({ id: "lesson:feelings", title: "💓 Feelings Lesson" });
+  items.push({ id: "lesson:secrets", title: "🤫 Secrets Lesson" });
+  return items;
+}
+function formatDate(iso) {
+  try { return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+  catch (e) { return ""; }
+}
+
+/* ---------------------------------------------------------------
    MUTE + SOUND (tiny WebAudio synth) + SPEECH
    --------------------------------------------------------------- */
 function isMuted() { return localStorage.getItem("hh_mute") === "1"; }
@@ -650,6 +698,10 @@ function showHandContinue() {
 }
 
 function startFeelingsLesson() {
+  if (!isApproved("lesson:feelings")) {
+    showKidLockModal("lesson:feelings", startFeelingsLesson);
+    return;
+  }
   $("handBody").innerHTML = "";
   setBelu(HH.FEELINGS.intro, { onNext: renderFeelingsSigns });
 }
@@ -693,6 +745,10 @@ function renderFeelingsQuiz() {
   setBelu(HH.FEELINGS.quiz.q);
 }
 function startSecretsLesson() {
+  if (!isApproved("lesson:secrets")) {
+    showKidLockModal("lesson:secrets", startSecretsLesson);
+    return;
+  }
   $("handBody").innerHTML = "";
   setBelu(HH.SECRETS.intro, {
     onNext: () => {
@@ -787,10 +843,9 @@ function renderPractice() {
   else if (practiceState.step === "resolve") renderResolveStep(body);
 }
 function visibleScenarios() {
-  // Tier B is public only when HH.ENABLE_TIER_B is flipped; the clinical
-  // reviewer can also preview it via the keyed ?clinical= link (see boot)
-  const showTierB = !!HH.ENABLE_TIER_B || sessionStorage.getItem("hh_tierb") === "1";
-  return HH.SCENARIOS.filter(sc => showTierB || sc.tier !== "B");
+  // per-item adult sign-off (see section 7) now guards every scenario,
+  // so all scenarios are listed here — locked ones just show a 🔒 badge.
+  return HH.SCENARIOS.slice();
 }
 function scenarioIsWalkable(sc) {
   const place = HH.PLACES[sc.place];
@@ -806,9 +861,9 @@ function renderScenarioPicker(body) {
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");
     card.className = "scenario-card"; card.dataset.scenarioId = sc.id;
-    if (sc.reviewPending) {
-      const ribbon = document.createElement("div"); ribbon.className = "review-ribbon"; ribbon.textContent = "🔍 Clinical review pending";
-      card.appendChild(ribbon);
+    if (!isApproved("scenario:" + sc.id)) {
+      const badge = document.createElement("div"); badge.className = "lock-badge"; badge.textContent = "🔒";
+      card.appendChild(badge);
     }
     const em = document.createElement("div"); em.className = "em"; em.textContent = sc.emoji;
     const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = sc.title;
@@ -819,6 +874,11 @@ function renderScenarioPicker(body) {
   body.appendChild(grid);
 }
 function attemptStartScenario(sc) {
+  const itemId = "scenario:" + sc.id;
+  if (!isApproved(itemId)) {
+    showKidLockModal(itemId, () => attemptStartScenario(sc));
+    return;
+  }
   if (scenarioIsWalkable(sc)) {
     startScenarioInWorld(sc);
   } else {
@@ -1123,33 +1183,235 @@ function quitScenario() {
 }
 
 /* ---------------------------------------------------------------
-   7. GROWN-UPS CORNER (adult-gated, sober styling)
+   7. ADULT SIGN-OFF: adult check challenge, review sheet, kid lock
+   --------------------------------------------------------------- */
+let globalToastTimer = null;
+function showGlobalToast(text) {
+  const t = $("globalToast");
+  t.textContent = text; t.hidden = false;
+  clearTimeout(globalToastTimer);
+  globalToastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+}
+
+/* ---- adult check: a randomized easy-for-adults challenge ---- */
+function generateAdultChallenge() {
+  const types = ["mult", "year", "spell"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  if (type === "mult") {
+    const a = 11 + Math.floor(Math.random() * 9); // 11-19
+    const b = 3 + Math.floor(Math.random() * 6);  // 3-8
+    return { question: "What is " + a + " × " + b + "?", check: v => parseInt(v, 10) === a * b };
+  }
+  if (type === "year") {
+    const n = 10 + Math.floor(Math.random() * 31); // 10-40 years ago
+    const currentYear = new Date().getFullYear();
+    return { question: "What year was it " + n + " years ago?", check: v => parseInt(v, 10) === currentYear - n };
+  }
+  const sentences = [
+    "The quick brown fox jumps over the lazy dog",
+    "Grown-ups keep children safe every single day",
+    "Please read this whole sentence very carefully now",
+    "Our family likes to walk in the park together",
+  ];
+  const s = sentences[Math.floor(Math.random() * sentences.length)];
+  const target = s.split(" ")[4]; // fifth word
+  const norm = v => String(v).trim().toLowerCase().replace(/[^a-z]/g, "");
+  return { question: 'Type the fifth word of this sentence: "' + s + '"', check: v => norm(v) === norm(target) };
+}
+let adultCheckState = null;
+function adultCheck(onPass) {
+  adultCheckState = { challenge: generateAdultChallenge(), attempts: 0, onPass };
+  $("adultQuestion").textContent = adultCheckState.challenge.question;
+  $("adultAnswerInput").value = "";
+  $("adultAnswerInput").disabled = false;
+  $("adultSubmitBtn").disabled = false;
+  $("adultError").hidden = true;
+  $("adultCheckModal").hidden = false;
+  setTimeout(() => $("adultAnswerInput").focus(), 50);
+}
+function submitAdultCheck() {
+  if (!adultCheckState) return;
+  const val = $("adultAnswerInput").value;
+  if (adultCheckState.challenge.check(val)) {
+    const onPass = adultCheckState.onPass;
+    $("adultCheckModal").hidden = true;
+    adultCheckState = null;
+    if (onPass) onPass();
+    return;
+  }
+  adultCheckState.attempts++;
+  const err = $("adultError");
+  if (adultCheckState.attempts >= 3) {
+    err.hidden = false;
+    err.textContent = "Please try again later.";
+    $("adultAnswerInput").disabled = true;
+    $("adultSubmitBtn").disabled = true;
+    setTimeout(() => {
+      $("adultCheckModal").hidden = true;
+      $("adultAnswerInput").disabled = false;
+      $("adultSubmitBtn").disabled = false;
+      adultCheckState = null;
+    }, 1700);
+  } else {
+    err.hidden = false;
+    err.textContent = "Not quite — try again.";
+    $("adultAnswerInput").value = "";
+    $("adultAnswerInput").focus();
+    const card = document.querySelector("#adultCheckModal .adult-card");
+    card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+  }
+}
+function cancelAdultCheck() {
+  $("adultCheckModal").hidden = true;
+  adultCheckState = null;
+}
+
+/* ---- kid-facing lock modal: "bring this to a grown-up" ---- */
+let kidLockResume = null;
+function showKidLockModal(itemId, resumeFn) {
+  kidLockResume = resumeFn || null;
+  $("kidLockReviewBtn").onclick = () => {
+    $("kidLockModal").hidden = true;
+    startReview(itemId, { onApproved: () => { if (kidLockResume) kidLockResume(); } });
+  };
+  $("kidLockModal").hidden = false;
+}
+
+/* ---- review sheet: full verbatim script + sign-off footer ---- */
+function escHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function helperNames(ids) { return (ids || []).map(id => (HH.HELPERS[id] ? HH.HELPERS[id].name : id)).join(", "); }
+function reviewField(label, text) {
+  return '<div class="review-block"><div class="review-label">' + escHtml(label) + '</div><div class="review-text">' + escHtml(text) + "</div></div>";
+}
+function reviewChoiceBlock(label, q, choices) {
+  const items = (choices || []).map((c, i) => "<li>" + escHtml(c) + (i === 0 ? " <b>✓ correct</b>" : "") + "</li>").join("");
+  return '<div class="review-block"><div class="review-label">' + escHtml(label) + '</div><div class="review-text">' + escHtml(q) +
+    '</div><ul class="review-list">' + items + "</ul></div>";
+}
+function reviewSignoffFooter() {
+  return '<div class="review-signoff-footer">' +
+    '<label class="review-name-label">Your name or initials' +
+      '<input id="reviewNameInput" type="text" class="review-name-input" placeholder="e.g. AJ"></label>' +
+    '<label class="review-checkbox-label"><input id="reviewApproveCheckbox" type="checkbox"> I have read this section and approve it for my child</label>' +
+    '<div class="review-actions">' +
+      '<button id="reviewNotNowBtn" class="btn-plain">Not now</button>' +
+      '<button id="reviewApproveBtn" class="btn-primary" disabled>Approve &amp; unlock</button>' +
+    "</div></div>";
+}
+function buildReviewHTML(itemId) {
+  let html = "";
+  if (itemId.indexOf("scenario:") === 0) {
+    const scId = itemId.slice("scenario:".length);
+    const sc = HH.SCENARIOS.find(s => s.id === scId);
+    if (!sc) return "<p>Item not found.</p>" + reviewSignoffFooter();
+    const actor = HH.SCENARIO_ACTORS[sc.id];
+    html += '<div class="review-header"><span class="review-emoji">' + sc.emoji + "</span><h2>" + escHtml(sc.title) + "</h2></div>";
+    html += reviewField("Setup", sc.setup);
+    if (actor && actor.bubble) html += reviewField("Actor says (in-world speech bubble)", actor.bubble);
+    html += reviewChoiceBlock("Feel — question", sc.feelQ, sc.feelA);
+    html += reviewChoiceBlock("React — question", sc.reactQ, sc.reactA);
+    html += reviewField("Why this is the right reaction", sc.reactWhy);
+    if (sc.busyLine) html += reviewField("If the first helper is busy", sc.busyLine);
+    if (sc.keepLine) html += reviewField("Keep-telling encouragement", sc.keepLine);
+    if (sc.goLine) html += reviewField("Moving to find another helper", sc.goLine);
+    html += reviewField("Tell prompt", sc.tellPrompt);
+    html += reviewField("Accepted helpers to tell", helperNames(sc.tellTo));
+    html += reviewField("Resolution", sc.resolve);
+  } else if (itemId === "lesson:feelings") {
+    const F = HH.FEELINGS;
+    html += '<div class="review-header"><span class="review-emoji">💓</span><h2>Feelings Lesson</h2></div>';
+    html += reviewField("Intro", F.intro);
+    html += '<div class="review-block"><div class="review-label">Signs</div><ul class="review-list">' +
+      F.signs.map(s => "<li>" + s.emoji + " " + escHtml(s.text) + "</li>").join("") + "</ul></div>";
+    html += reviewField("Lesson", F.lesson);
+    html += reviewChoiceBlock("Quiz", F.quiz.q, F.quiz.a);
+  } else if (itemId === "lesson:secrets") {
+    const S = HH.SECRETS;
+    html += '<div class="review-header"><span class="review-emoji">🤫</span><h2>Secrets Lesson</h2></div>';
+    html += reviewField("Intro", S.intro);
+    html += reviewField("Rule", S.rule);
+    html += '<div class="review-block"><div class="review-label">Items</div>' +
+      S.items.map(it => '<div class="review-secret-item"><b>' + it.emoji + " " + escHtml(it.text) + "</b><br>Classification: " +
+        (it.safe ? "Happy surprise" : "Tell a helper") + "<br>Why: " + escHtml(it.why) + "</div>").join("") +
+      "</div>";
+  } else {
+    html += "<p>Unknown item.</p>";
+  }
+  html += reviewSignoffFooter();
+  return html;
+}
+function openReviewSheet(itemId, opts) {
+  opts = opts || {};
+  $("reviewSheetBody").innerHTML = buildReviewHTML(itemId);
+  const nameInput = $("reviewNameInput");
+  const checkbox = $("reviewApproveCheckbox");
+  const approveBtn = $("reviewApproveBtn");
+  nameInput.value = signoff.reviewer || "";
+  checkbox.checked = false;
+  function updateApproveBtn() { approveBtn.disabled = !(checkbox.checked && nameInput.value.trim()); }
+  nameInput.addEventListener("input", updateApproveBtn);
+  checkbox.addEventListener("change", updateApproveBtn);
+  updateApproveBtn();
+  approveBtn.addEventListener("click", () => {
+    approveItem(itemId, nameInput.value.trim());
+    $("reviewSheetModal").hidden = true;
+    showGlobalToast("Approved! This section is unlocked. 💙");
+    if (opts.onApproved) opts.onApproved();
+  });
+  $("reviewNotNowBtn").addEventListener("click", () => { $("reviewSheetModal").hidden = true; });
+  $("reviewSheetModal").hidden = false;
+  $("reviewSheetModal").scrollTop = 0;
+}
+/* one adult-check per browser session guards both the review flow and
+   the Grown-Ups Corner itself */
+function withAdultOk(onOk) {
+  if (sessionStorage.getItem("hh_adult_ok") === "1") { onOk(); return; }
+  adultCheck(() => { sessionStorage.setItem("hh_adult_ok", "1"); onOk(); });
+}
+function startReview(itemId, opts) {
+  withAdultOk(() => openReviewSheet(itemId, opts));
+}
+function wireAdultSignoff() {
+  $("adultSubmitBtn").addEventListener("click", submitAdultCheck);
+  $("adultAnswerInput").addEventListener("keydown", e => { if (e.key === "Enter") submitAdultCheck(); });
+  $("adultCancelBtn").addEventListener("click", cancelAdultCheck);
+  $("kidLockOkBtn").addEventListener("click", () => { $("kidLockModal").hidden = true; });
+  $("reviewCloseBtn").addEventListener("click", () => { $("reviewSheetModal").hidden = true; });
+}
+
+/* ---------------------------------------------------------------
+   8. GROWN-UPS CORNER (adult-gated, sober styling)
    --------------------------------------------------------------- */
 let guReturnScreen = "titleScreen";
-let guChallenge = { a: 2, b: 2, answer: 4 };
 
 function enterGrownups(returnScreen) {
   guReturnScreen = returnScreen || "titleScreen";
   showScreen("grownupsScreen");
-  $("guGateWrap").hidden = false;
-  $("guBody").hidden = true;
-  $("guAnswerInput").value = "";
-  $("guError").hidden = true;
-  const a = 3 + Math.floor(Math.random() * 7);
-  const b = 2 + Math.floor(Math.random() * 7);
-  guChallenge = { a, b, answer: a + b };
-  $("guQuestion").textContent = a + " + " + b + " = ?";
-}
-function checkGuAnswer() {
-  const val = parseInt($("guAnswerInput").value, 10);
-  if (val === guChallenge.answer) {
+  if (sessionStorage.getItem("hh_adult_ok") === "1") {
     $("guGateWrap").hidden = true;
     renderGrownupsBody();
   } else {
-    $("guError").hidden = false;
-    const card = document.querySelector(".gu-gate-card");
-    card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+    $("guGateWrap").hidden = false;
+    $("guBody").hidden = true;
   }
+}
+function renderSignoffSection() {
+  const rows = gatedItems().map(it => {
+    const st = signoff.items[it.id];
+    let chipClass = "chip-pending", chipText = "Not yet reviewed";
+    if (st && st.locked) { chipClass = "chip-locked"; chipText = "Locked"; }
+    else if (st && st.approvedAt) { chipClass = "chip-approved"; chipText = "Approved " + formatDate(st.approvedAt); }
+    const reviewBtn = '<button class="btn-plain signoff-review-btn" data-item="' + it.id + '">Review &amp; approve</button>';
+    const lockBtn = (st && st.approvedAt && !st.locked)
+      ? '<button class="btn-plain signoff-lock-btn" data-item="' + it.id + '">Lock</button>' : "";
+    return "<tr><td>" + escHtml(it.title) + '</td><td><span class="chip ' + chipClass + '">' + chipText + "</span></td><td>" +
+      reviewBtn + " " + lockBtn + "</td></tr>";
+  }).join("");
+  return "<h3>Content Sign-off</h3>" +
+    "<p>Reviewer on file: <b>" + (signoff.reviewer ? escHtml(signoff.reviewer) : "—") + "</b></p>" +
+    '<table class="gu-table signoff-table"><thead><tr><th>Item</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+    '<div class="gu-note">Every scenario and both lessons must be approved once before a child can play them. ' +
+    "You can re-lock any section at any time.</div>";
 }
 function renderGrownupsBody() {
   const body = $("guBody");
@@ -1157,21 +1419,35 @@ function renderGrownupsBody() {
   const G = HH.GROWNUPS;
   const esc = s => String(s);
   body.innerHTML =
+    renderSignoffSection() +
     "<h3>What This Teaches</h3><ul>" + G.what.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>" +
     "<h3>If A Child Tells You Something</h3><ol>" + G.disclosure.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>" +
     "<h3>Where To Report</h3><table class=\"gu-table\">" +
       G.report.map(row => "<tr><td>" + esc(row[0]) + "</td><td>" + esc(row[1]) + "</td></tr>").join("") +
     "</table>" +
     "<div class=\"gu-note\">" + esc(G.note) + "</div>" +
-    "<div class=\"gu-actions\"><button class=\"btn-plain\" id=\"guPrintBtn\">🖨️ Print</button></div>";
+    '<div class="gu-actions"><button class="btn-plain" id="guPrintBtn">🖨️ Print</button>' +
+    '<a class="btn-plain" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a></div>';
   $("guPrintBtn").addEventListener("click", () => window.print());
 }
 function wireGrownups() {
-  $("guCheckBtn").addEventListener("click", checkGuAnswer);
-  $("guAnswerInput").addEventListener("keydown", e => { if (e.key === "Enter") checkGuAnswer(); });
+  $("guEnterBtn").addEventListener("click", () => {
+    withAdultOk(() => { $("guGateWrap").hidden = true; renderGrownupsBody(); });
+  });
   $("guBackBtn").addEventListener("click", () => showScreen(guReturnScreen));
   $("grownupsLinkTitle").addEventListener("click", () => enterGrownups("titleScreen"));
   $("grownupsLinkMenu").addEventListener("click", () => enterGrownups("menuScreen"));
+  $("guBody").addEventListener("click", e => {
+    const reviewBtn = e.target.closest(".signoff-review-btn");
+    if (reviewBtn) { startReview(reviewBtn.dataset.item, { onApproved: renderGrownupsBody }); return; }
+    const lockBtn = e.target.closest(".signoff-lock-btn");
+    if (lockBtn) {
+      if (confirm("Lock this section? Your child will need a grown-up to review and approve it again.")) {
+        lockItem(lockBtn.dataset.item);
+        renderGrownupsBody();
+      }
+    }
+  });
 }
 
 /* ---------------------------------------------------------------
@@ -1193,20 +1469,9 @@ function boot() {
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     document.documentElement.classList.add("reduced-motion");
   }
-  // clinical review mode: /helpinghands/?clinical=<review password> unlocks
-  // the Tier-B scenarios for THIS browser session only (nothing public changes)
-  try {
-    const m = new URLSearchParams(location.search).get("clinical");
-    if (m) {
-      sha256Hex(m.trim()).then(h => {
-        if (HH.GATE_HASH && h.toLowerCase() === HH.GATE_HASH.toLowerCase()) {
-          sessionStorage.setItem("hh_tierb", "1");
-        }
-      }).catch(() => {});
-    }
-  } catch (e) {}
   resizeConfetti();
   loadSave();
+  loadSignoff();
   updateStickerUI();
   applyMuteIcon();
 
@@ -1218,6 +1483,7 @@ function boot() {
   wireHand();
   wirePractice();
   wireGrownups();
+  wireAdultSignoff();
   wireGlobalBelu();
   wireGlobalChrome();
 
@@ -1235,6 +1501,10 @@ window.__HHTEST = {
   handleBuilding, handleObject, handleHelper, handleActor, handleRoomEnter, showScreen,
   startFindGame, quitFindGame,
   attemptStartScenario, quitScenario, handleScenarioHelperTap,
+  getSignoffState,
+  approveItemForTest(itemId, name) { approveItem(itemId, name); },
+  lockItemForTest(itemId) { lockItem(itemId); },
+  startReview,
   get exState() { return exState; },
   get worldReady() { return worldReady; },
   get findState() { return findState; },
