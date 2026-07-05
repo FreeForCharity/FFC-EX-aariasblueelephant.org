@@ -67,7 +67,7 @@ export function Flower({ position, color }: { position: [number, number, number]
 }
 
 // A glowing crystal that hovers over a zone island — this is the "play here"
-// beacon. It pulses brighter when Belu is near.
+// beacon. It pulses brighter when Nilu is near.
 export function Crystal({ position, color, active }: { position: [number, number, number]; color: string; active: boolean }) {
   const mesh = useRef<THREE.Mesh>(null);
   const t = useRef(0);

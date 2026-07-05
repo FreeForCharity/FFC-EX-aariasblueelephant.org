@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Heads-up display layered over the 3D canvas: Belu's speech, the sticker
+// Heads-up display layered over the 3D canvas: Nilu's speech, the sticker
 // collection, the settings gear, the contextual "play here" prompt and the
 // controls hint. The container ignores pointer events; only the buttons catch
 // them, so movement taps still reach the canvas underneath.
@@ -30,7 +30,7 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
-      {/* Belu speech — top left */}
+      {/* Nilu speech — top left */}
       <div className="absolute left-4 top-4 flex max-w-[78%] items-start gap-2">
         <div
           className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-2xl"
@@ -77,8 +77,8 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
         <button
           onClick={onOpenWardrobe}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Dress up Belu"
-          title="Dress up Belu"
+          aria-label="Dress up Nilu"
+          title="Dress up Nilu"
         >
           🎩
         </button>

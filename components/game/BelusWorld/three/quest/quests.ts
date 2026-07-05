@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // The lessons — now as embodied quests instead of flashcard pop-ups.
 // Each island has 5 levels; each level is a short list of "rounds" the child
-// plays by walking Belu up to a friend and walking into (or tapping) glowing
+// plays by walking Nilu up to a friend and walking into (or tapping) glowing
 // answer orbs out in the world. The pedagogy is unchanged from the original
 // research-based activities — only the DELIVERY moved from a 2D quiz panel into
 // the 3D world. Still errorless, no timers, no losing.
@@ -21,7 +21,7 @@ export type RoundKind = 'choice' | 'sequence' | 'multiPick' | 'breathe';
 
 export interface QuestRound {
   kind: RoundKind;
-  /** the line Belu says when this round begins */
+  /** the line Nilu says when this round begins */
   say: string;
   /** the friend you meet for this round */
   npc: { face: string; mood: Mood; thought?: { emoji: string; caption?: string } };
@@ -312,7 +312,7 @@ const CALM_STRATEGIES: Orb[] = [
 
 const COVE: Quest[] = [
   {
-    zone: 'cove', level: 1, goal: 'Breathe with Belu',
+    zone: 'cove', level: 1, goal: 'Breathe with Nilu',
     intro: "Welcome to the cove. Let's feel calm together. Follow the bubble with me.",
     outro: 'I feel calm and cozy now. Thank you for being with me.',
     moment: 'practiced staying calm at the cove',

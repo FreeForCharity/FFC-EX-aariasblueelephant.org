@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
-// Belu's Wardrobe — the reward for finishing levels. Each completed level
-// unlocks a new accessory; here the child dresses Belu up (a hat, shades, a
-// cape…). Equipping is instant and saved, so Belu keeps the look across visits.
+// Nilu's Wardrobe — the reward for finishing levels. Each completed level
+// unlocks a new accessory; here the child dresses Nilu up (a hat, shades, a
+// cape…). Equipping is instant and saved, so Nilu keeps the look across visits.
 // ---------------------------------------------------------------------------
 
 import { motion } from 'framer-motion';
@@ -43,7 +43,7 @@ export default function Wardrobe({
         className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl"
       >
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-2xl font-black text-slate-800">Belu's Wardrobe 🎩</h2>
+          <h2 className="text-2xl font-black text-slate-800">Nilu's Wardrobe 🎩</h2>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
             ✕
           </button>

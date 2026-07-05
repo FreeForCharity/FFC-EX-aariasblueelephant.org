@@ -2,9 +2,9 @@
 // Friendship Forest — MAGIC WORDS (the expressive-language island).
 //   • 3D animal friends (Animal3D) each show a thought bubble of what they WANT
 //     or SEE (a picture, on a soft thought card).
-//   • Walk Belu up to a friend and LINGER a moment → word bubbles (AnswerOrb,
+//   • Walk Nilu up to a friend and LINGER a moment → word bubbles (AnswerOrb,
 //     word as caption + matching picture) appear in an arc around them.
-//   • Walk Belu into the words IN THE RIGHT ORDER to "say" the phrase. Each
+//   • Walk Nilu into the words IN THE RIGHT ORDER to "say" the phrase. Each
 //     correct word lights up; the wanted thing then magically appears (a
 //     Sparkles burst + the item pops) and the friend cheers.
 //   • Wrong word = a gentle wiggle + a kind nudge ("try the first word"),
@@ -12,8 +12,8 @@
 // This teaches expressive language as CASTING WORD-SPELLS — using your words to
 // make real things happen — not as an abstract quiz.
 //
-// Mirrors StoryLayer's lifecycle exactly: arm on the island, abort if Belu
-// leaves, finish → disarm → re-arm only after Belu wanders off again.
+// Mirrors StoryLayer's lifecycle exactly: arm on the island, abort if Nilu
+// leaves, finish → disarm → re-arm only after Nilu wanders off again.
 // ---------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -40,7 +40,7 @@ const WORD_SPREAD = 2.6; // sideways gap between word bubbles (no overlap)
 const WORD_PICK = 1.5; // walk this close to a word bubble to "say" it
 const TWINKLE_PICK = 1.9; // walk this close to a hidden twinkle to collect it
 const INVITE_START = 2.4; // walk this close to the waving host to BEGIN (consent)
-const GREET_DIST = 4.0; // a healed friend recognises Belu from this far
+const GREET_DIST = 4.0; // a healed friend recognises Nilu from this far
 
 // A ring of glow-mushrooms around the forest heart that light up one by one as
 // the child helps friends — the world visibly waking because of them.
@@ -222,7 +222,7 @@ export default function ForestLayer(props: Props) {
     return FOREST_STORY[clampLevel(S.current.level)].friends[i].spell.map((s) => s.word).join(' ');
   }
 
-  // Belu walked into the word bubble at layout index `k`.
+  // Nilu walked into the word bubble at layout index `k`.
   function castWord(i: number, k: number) {
     const st = S.current;
     if (st.clock < st.lockUntil) return;
@@ -242,7 +242,7 @@ export default function ForestLayer(props: Props) {
         st.friends[i].done = true;
         st.friends[i].doneAt = st.clock;
         st.finished += 1;
-        props.onFriendHealed(fr.species); // this friend will remember Belu forever
+        props.onFriendHealed(fr.species); // this friend will remember Nilu forever
         st.listening = false;
         st.lockUntil = st.clock + 0.8;
         props.playSound('star');
@@ -251,7 +251,7 @@ export default function ForestLayer(props: Props) {
         const total = FOREST_STORY[clampLevel(st.level)].friends.length;
         if (st.finished >= total) st.finishAt = st.clock + 1.6;
         else {
-          // move on: let Belu wander to the next friend
+          // move on: let Nilu wander to the next friend
           st.activeFriend = -1;
         }
       } else {
@@ -276,7 +276,7 @@ export default function ForestLayer(props: Props) {
 
   frame.current = (dt: number) => {
     const st = S.current;
-    // keep the forest animals registered as solid (Belu walks around them)
+    // keep the forest animals registered as solid (Nilu walks around them)
     const lvlFriends = FOREST_STORY[clampLevel(st.level)].friends;
     dynamicSolids.forest = lvlFriends.map((_, i) => {
       const [fx, fz] = friendWorld(i);
@@ -356,7 +356,7 @@ export default function ForestLayer(props: Props) {
 
     const friends = FOREST_STORY[clampLevel(st.level)].friends;
 
-    // which unfinished friend is Belu nearest to?
+    // which unfinished friend is Nilu nearest to?
     let near = -1;
     let nearD = APPROACH;
     for (let i = 0; i < friends.length; i++) {
@@ -403,7 +403,7 @@ export default function ForestLayer(props: Props) {
       bump();
     }
 
-    // once listening, let Belu walk into a word bubble (in order)
+    // once listening, let Nilu walk into a word bubble (in order)
     if (st.listening) {
       const layout = wordLayout(near);
       let best = -1;
@@ -435,7 +435,7 @@ export default function ForestLayer(props: Props) {
       <Ticker fnRef={frame} />
 
       {/* two firefly guides give the forest living personality; they speed up
-          and brighten as Belu helps more friends (escalating delight) */}
+          and brighten as Nilu helps more friends (escalating delight) */}
       <Wisp center={[isl.cx, isl.top, isl.cz]} color={isl.accent} seed={1} excited={S.current.finished > 0} />
       <Wisp center={[isl.cx, isl.top, isl.cz]} color="#ffd166" seed={4} excited={S.current.finished >= 2} />
 

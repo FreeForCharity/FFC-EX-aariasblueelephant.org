@@ -1,13 +1,13 @@
 // ---------------------------------------------------------------------------
 // The embodied quest runner. This lives INSIDE the 3D canvas and turns the old
 // flashcard pop-ups into things you do in the world:
-//   • A friend stands on each island. Walk Belu up to one to begin its lesson.
+//   • A friend stands on each island. Walk Nilu up to one to begin its lesson.
 //   • Answers are glowing orbs out in the meadow/forest/etc. You choose by
-//     WALKING Belu into an orb (or tapping it). Right → it blooms and rises;
+//     WALKING Nilu into an orb (or tapping it). Right → it blooms and rises;
 //     "not yet" → a gentle wobble, never a buzzer, never a loss.
 //   • Calm Cove uses a breathing bubble instead of orbs.
-// It reads Belu's live position every frame (playerState.beluPos) and reports a
-// finished level back up so the island blooms and Belu grows.
+// It reads Nilu's live position every frame (playerState.beluPos) and reports a
+// finished level back up so the island blooms and Nilu grows.
 // ---------------------------------------------------------------------------
 
 import { useRef, useState } from 'react';
@@ -31,10 +31,10 @@ const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
   forest: { face: '🦊', mood: 'happy' },
 };
 
-const PICK_RADIUS = 2.4; // how close Belu must walk to choose an orb (generous +
+const PICK_RADIUS = 2.4; // how close Nilu must walk to choose an orb (generous +
 //                          overlapping so you can never thread between orbs)
 const ORB_DIST = 3.0; // orb arc distance out in front of the friend
-const ORB_H = 1.0; // orb float height above the island top (near Belu's body)
+const ORB_H = 1.0; // orb float height above the island top (near Nilu's body)
 
 interface Layout {
   positions: [number, number, number][];
@@ -47,7 +47,7 @@ function orbCount(round: QuestRound): number {
   return 0;
 }
 
-/** Lay the orbs out in an arc in front of the friend, facing Belu's approach. */
+/** Lay the orbs out in an arc in front of the friend, facing Nilu's approach. */
 function layoutOrbs(zone: ActivityZone, n: number): Layout {
   const isl = ISLANDS[zone];
   // approach direction = from the island centre toward home (0,0)
@@ -319,7 +319,7 @@ export default function QuestLayer(props: Props) {
       return;
     }
 
-    // which zone island is Belu standing on?
+    // which zone island is Nilu standing on?
     let onZone: ActivityZone | null = null;
     let onDist = Infinity;
     for (const z of zones) {
@@ -331,7 +331,7 @@ export default function QuestLayer(props: Props) {
       }
     }
 
-    // re-arm a just-completed island once Belu wanders off it
+    // re-arm a just-completed island once Nilu wanders off it
     if (st.disarmed) {
       const isl = ISLANDS[st.disarmed];
       const d = Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz);

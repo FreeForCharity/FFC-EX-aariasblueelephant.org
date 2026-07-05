@@ -27,7 +27,7 @@ export function seeded(seed: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Twinkle — a hidden collectible. Sits at `position`, twinkles, and when Belu
+// Twinkle — a hidden collectible. Sits at `position`, twinkles, and when Nilu
 // gets close the parent calls onShine for the chime; once `collected` it pops
 // up and fades. No fail state — it simply waits to be found.
 // ---------------------------------------------------------------------------

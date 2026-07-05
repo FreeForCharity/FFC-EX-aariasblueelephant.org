@@ -2,8 +2,8 @@
 // Morning Mountain — life skills you DO by walking the routine.
 //   • Little station objects (bed, sink, wardrobe, breakfast, backpack, door…)
 //     stand around the island, each with an emoji sign above it.
-//   • Belu WALKS to the next-correct station to "do" that step: it bounces +
-//     glows, a ✅ sparkle pops, and Belu narrates the step.
+//   • Nilu WALKS to the next-correct station to "do" that step: it bounces +
+//     glows, a ✅ sparkle pops, and Nilu narrates the step.
 //   • Walking to a wrong / out-of-order station = a gentle wiggle + a kind
 //     "what do we do first?" — never a buzzer, never a fail.
 //   • L1-L3 must be done in order; L4 = walk to the SAFE marker of each pair;
@@ -28,7 +28,7 @@ import type { QuestStatus } from './QuestLayer';
 const ZONE = 'mountain' as const;
 const REACH = 1.7; // walk this close to a station to "do" it
 const NUDGE_AT = 1.7; // walking this close to a wrong station triggers the nudge
-const STATION_SOLID_R = 0.85; // keep-out radius so Belu walks around the objects
+const STATION_SOLID_R = 0.85; // keep-out radius so Nilu walks around the objects
 const STAR_PICK = 1.5; // walk this close to a hidden star to collect it
 const INVITE_START = 2.4; // walk this close to Nimbus's spot to BEGIN (consent)
 
@@ -183,7 +183,7 @@ export default function MountainLayer(props: Props) {
     bump();
   }
 
-  // Belu reached station i — "do" it (or nudge if it's wrong/out-of-order)
+  // Nilu reached station i — "do" it (or nudge if it's wrong/out-of-order)
   function reach(i: number) {
     const st = S.current;
     if (st.clock < st.lockUntil) return;
@@ -205,7 +205,7 @@ export default function MountainLayer(props: Props) {
         return;
       }
     }
-    // 'safe' and 'any' can be done whenever Belu reaches them
+    // 'safe' and 'any' can be done whenever Nilu reaches them
 
     // do it!
     st.stations[i].done = true;
@@ -233,7 +233,7 @@ export default function MountainLayer(props: Props) {
 
   frame.current = (dt: number) => {
     const st = S.current;
-    // keep every station registered as a solid so Belu walks around the objects
+    // keep every station registered as a solid so Nilu walks around the objects
     const lvl = MOUNTAIN_ROUTINE[clampLevel(st.level)];
     dynamicSolids.mountain = lvl.stations.map((s) => {
       const [x, z] = stationWorld(s);
@@ -259,7 +259,7 @@ export default function MountainLayer(props: Props) {
       bump();
     }
     if (!st.active) {
-      // NO quest ambush: the routine begins only when the child walks Belu up
+      // NO quest ambush: the routine begins only when the child walks Nilu up
       // to Nimbus the cloud buddy (a deliberate approach = consent).
       if (onIsland && !st.disarmed) {
         const hx = isl.cx - 5.4; // the ground under Nimbus
@@ -272,7 +272,7 @@ export default function MountainLayer(props: Props) {
       stopRoutine();
       return;
     }
-    // hidden morning stars: collect any Belu walks near (no lock — pure bonus)
+    // hidden morning stars: collect any Nilu walks near (no lock — pure bonus)
     const stars = lvl.stars ?? [];
     for (let i = 0; i < stars.length; i++) {
       if (st.starsAt[i] > 0) continue;
@@ -292,7 +292,7 @@ export default function MountainLayer(props: Props) {
 
     if (st.clock < st.lockUntil) return;
 
-    // which station is Belu close enough to "do"? (nearest within reach)
+    // which station is Nilu close enough to "do"? (nearest within reach)
     let best = -1;
     let bestD = Math.max(REACH, NUDGE_AT);
     for (let i = 0; i < lvl.stations.length; i++) {
@@ -332,7 +332,7 @@ export default function MountainLayer(props: Props) {
         />
       )}
 
-      {/* Nimbus the sleepy cloud buddy — wakes + cheers Belu on */}
+      {/* Nimbus the sleepy cloud buddy — wakes + cheers Nilu on */}
       <Nimbus
         position={[isl.cx - 5.4, isl.top + 3.0, isl.cz - 4.6]}
         awake={awake}

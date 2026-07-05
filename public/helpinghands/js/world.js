@@ -1,10 +1,10 @@
-// Belu's Helping Hands — HH.World
+// Nilu's Helping Hands — HH.World
 // Plain script, no imports. THREE is a global (r128 API). Depends on HH.PLACES / HH.HELPERS /
 // HH.HELPER_SPOTS / HH.SCENARIO_ACTORS from content.js.
 //
 // Builds a bright outdoor hub with 6 building slots (unchanged look) PLUS walkable, connected
 // building interiors: a central hallway with rooms attached left/right/top through real wall
-// gaps (doors), simple circle-vs-wall collision, a kid avatar + Belu the elephant who walk
+// gaps (doors), simple circle-vs-wall collision, a kid avatar + Nilu the elephant who walk
 // around, a follow camera, floor target rings, and speech bubbles.
 (function () {
   'use strict';
@@ -426,7 +426,7 @@
       })(bldg, idx * 1.1, hubBuildings[placeId]);
     });
 
-    // the kid + Belu stand at the path, ready to walk to a chosen building
+    // the kid + Nilu stand at the path, ready to walk to a chosen building
     hubAvatar = buildAvatar();
     hubAvatar.group.position.set(0.8, 0, 8.5);
     hubAvatar.group.rotation.y = Math.PI; // face the town
@@ -2206,7 +2206,7 @@
     // give the character a collision footprint (body+arms only would be ideal,
     // but the auto Box3 over the whole group is a fine, slightly generous
     // "personal space" rect — tagged by id so actors can be un-registered
-    // on removeActor). The avatar bumps into helpers/actors; Belu never calls
+    // on removeActor). The avatar bumps into helpers/actors; Nilu never calls
     // resolveCollision so she is unaffected by any of this.
     regCollider(charGroup, id);
 

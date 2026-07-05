@@ -24,7 +24,7 @@ const DB: Record<string, Partial<Record<0 | 1 | 2 | 3, Line[]>>> = {
   greeting_first: {
     0: [
       "Oh! H-hello... I didn't know anyone else knew about this island.",
-      "Um... hi. I'm Belu. This is Harmony Island. I... I'm glad you found it.",
+      "Um... hi. I'm Nilu. This is Harmony Island. I... I'm glad you found it.",
     ],
   },
 

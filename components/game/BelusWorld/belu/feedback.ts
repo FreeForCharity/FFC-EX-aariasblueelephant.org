@@ -25,7 +25,7 @@ function audio(): AudioContext | null {
 }
 
 /** A soft sine "ping". freq in Hz, when = offset seconds, dur seconds.
- *  Polite audio: pings never pile up, and they duck under Belu's voice. */
+ *  Polite audio: pings never pile up, and they duck under Nilu's voice. */
 const _pingLog: number[] = [];
 function ping(freq: number, when: number, dur: number, gain: number) {
   const ac = audio();
@@ -100,7 +100,7 @@ function pickVoice(): SpeechSynthesisVoice | null {
 export function speakAloud(text: string, enabled: boolean, opts?: { rate?: number; force?: boolean }) {
   if (!enabled || typeof window === 'undefined' || !window.speechSynthesis) return;
   try {
-    // Don't cut Belu off mid-sentence: let the current line finish unless this is
+    // Don't cut Nilu off mid-sentence: let the current line finish unless this is
     // a forced read. (The old unconditional cancel() chopped every line short.)
     if (window.speechSynthesis.speaking && !(opts && opts.force)) return;
     window.speechSynthesis.cancel();

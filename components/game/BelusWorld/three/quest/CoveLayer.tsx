@@ -1,11 +1,11 @@
 // ---------------------------------------------------------------------------
 // Calm Cove — "calm the storm" (self-regulation).
 //   • The cove water starts agitated: a dark, choppy plane with cold rain.
-//   • Belu arrives → a BreatheOrb appears. As the child FOLLOWS the breaths, the
+//   • Nilu arrives → a BreatheOrb appears. As the child FOLLOWS the breaths, the
 //     sea visibly CALMS each cycle — the waves settle, the colour brightens from
 //     stormy grey-blue toward bright cyan.
 //   • When the sea is fully calm, fish leap and a rainbow arcs over the cove, and
-//     Belu is calm.
+//     Nilu is calm.
 //   • Higher levels add a gentle pre-step before breathing (a body-scan spot, a
 //     calm strategy, or a 3-part calm plan) walked to as glowing AnswerOrb totems.
 // No quiz feel, no fail: you literally calm the sea by breathing. Wrong taps just
@@ -166,7 +166,7 @@ export default function CoveLayer(props: Props) {
     st.sparkleUntil = 0;
     st.dolphinGreeted = false;
     st.jokeShown = false;
-    props.setEmotion('overwhelmed'); // the sea (and Belu) start stormy
+    props.setEmotion('overwhelmed'); // the sea (and Nilu) start stormy
     props.speak(lvl.intro);
     if (needCount(lvl) > 0) {
       st.phase = 'pre';
@@ -285,7 +285,7 @@ export default function CoveLayer(props: Props) {
 
   frame.current = (dt: number) => {
     const st = S.current;
-    // register the cove friend/totems as solids so Belu walks around them
+    // register the cove friend/totems as solids so Nilu walks around them
     const lvl = COVE_LEVELS[clampLevel(st.level)];
     const solids: { x: number; z: number; r: number }[] = [
       { x: isl.cx, z: isl.cz, r: 1.05 }, // the calm-friend at centre
@@ -332,7 +332,7 @@ export default function CoveLayer(props: Props) {
     }
     if (!st.active) {
       // NO quest ambush: the calm session begins only when the child walks
-      // Belu right up to the calm-friend at the cove centre (consent).
+      // Nilu right up to the calm-friend at the cove centre (consent).
       if (onIsland && !st.disarmed) {
         if (Math.hypot(beluPos.x - isl.cx, beluPos.z - isl.cz) < INVITE_START) startSession();
       }
@@ -343,7 +343,7 @@ export default function CoveLayer(props: Props) {
       return;
     }
 
-    // during the pre-step, detect Belu walking into a totem
+    // during the pre-step, detect Nilu walking into a totem
     if (st.phase === 'pre' && st.clock >= st.lockUntil) {
       const layout = totemLayout(preTotems(lvl).length);
       let best = -1;

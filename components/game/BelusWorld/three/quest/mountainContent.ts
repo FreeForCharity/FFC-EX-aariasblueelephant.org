@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
 // Morning Mountain content — life skills you DO by walking, not a quiz.
 //   Stations sit around the island, each a little object (bed 🛏️, sink 🪥,
-//   wardrobe 👕, breakfast 🥣, backpack 🎒, door 🚪 …). Belu walks to them IN
+//   wardrobe 👕, breakfast 🥣, backpack 🎒, door 🚪 …). Nilu walks to them IN
 //   ORDER to "do" each step of the morning routine. Walking to the next-correct
-//   station does it (bounce + ✅ sparkle + Belu narrates); a wrong/out-of-order
+//   station does it (bounce + ✅ sparkle + Nilu narrates); a wrong/out-of-order
 //   station gives a gentle "what do we do first?" nudge — never a fail.
 //
 // The pedagogy mirrors quests.ts MOUNTAIN exactly, just re-expressed as a
@@ -12,7 +12,7 @@
 //   L4 safety (walk to the SAFE marker of two)  • L5 independent self-check (any order)
 // ---------------------------------------------------------------------------
 
-/** How a station behaves once Belu reaches it. */
+/** How a station behaves once Nilu reaches it. */
 export type StationKind =
   | 'ordered' // must be visited in sequence order (L1-L3, the routine)
   | 'safe' // L4: the safe choice of a pair (visiting it completes that pair)
@@ -26,7 +26,7 @@ export interface Station {
   kind: StationKind;
   /** local XZ offset from the island centre */
   pos: [number, number];
-  /** the kind line Belu says when this station is "done" */
+  /** the kind line Nilu says when this station is "done" */
   done?: string;
   /** L4 only: which safe/unsafe pair this station belongs to */
   pair?: number;
@@ -58,7 +58,7 @@ const STARS: [number, number][][] = [
 // Cheery lines Nimbus the cloud-buddy says as the morning gets going. Picked by
 // step index so they stay deterministic (no random at render).
 export const NIMBUS_LINES = [
-  'Yawwwn… oh! Good morning, Belu! Let us get ready together!',
+  'Yawwwn… oh! Good morning, Nilu! Let us get ready together!',
   'Way to go! The sun is peeking out!',
   'Look — it is getting brighter! Keep going!',
   'You are SO good at this. Almost there!',
@@ -88,7 +88,7 @@ const RING: [number, number][] = [
 ];
 
 // L4 safety pairs sit side by side (safe on the left, twin on the right) at a
-// few spots around the ring, so Belu chooses by walking to the safe one.
+// few spots around the ring, so Nilu chooses by walking to the safe one.
 const SAFE_SPOTS: [number, number][] = [[-2.6, -4], [2.6, -4], [-2.6, 4], [2.6, 4]];
 const TWIN_DX = 2.4;
 

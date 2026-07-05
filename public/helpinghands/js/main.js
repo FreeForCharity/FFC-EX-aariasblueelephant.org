@@ -1,5 +1,5 @@
 /* =====================================================================
-   Belu's Helping Hands — game shell (screens, systems, logic)
+   Nilu's Helping Hands — game shell (screens, systems, logic)
    All child-facing strings come from js/content.js (window.HH.*).
    This file only invents chrome labels (buttons like "Play", "Menu").
    ===================================================================== */
@@ -212,7 +212,7 @@ function setBelu(text, opts) {
   const nextBtn = $("beluNextBtn");
   if (opts.onNext) { nextBtn.hidden = false; nextBtn.onclick = opts.onNext; }
   else { nextBtn.hidden = true; nextBtn.onclick = null; }
-  // while the world banner is up it carries the narration — Belu waits
+  // while the world banner is up it carries the narration — Nilu waits
   $("beluBubble").hidden = !$("worldBanner").hidden;
 }
 function playIntroSequence(lines, onDone) {
@@ -324,7 +324,7 @@ function wireTitle() {
 const MODE_CARDS = [
   { id: "explore", icon: "🌍", title: "Explore My World", desc: "Visit home & school" },
   { id: "hand", icon: "🖐️", title: "My Helping Hand", desc: "Pick 5 helpers who keep you safe" },
-  { id: "practice", icon: "💪", title: "Practice Being Brave", desc: "Try safe choices with Belu" },
+  { id: "practice", icon: "💪", title: "Practice Being Brave", desc: "Try safe choices with Nilu" },
 ];
 function renderMenuCards() {
   const wrap = $("menuCards"); wrap.innerHTML = "";
@@ -345,7 +345,7 @@ function wireMenu() { renderMenuCards(); }
 
 /* ---------------------------------------------------------------
    4. EXPLORE MY WORLD (free-roam) + BELU'S GAME (find & do)
-   Quiz cards are gone — the child WALKS the world. Belu's Game asks
+   Quiz cards are gone — the child WALKS the world. Nilu's Game asks
    the child to find & tap the right object in the right room.
    --------------------------------------------------------------- */
 let worldReady = false;
@@ -542,7 +542,7 @@ function showToast(text) {
   toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
 }
 
-/* ---- world banner: bottom overlay used by Belu's Game + in-world scenarios ---- */
+/* ---- world banner: bottom overlay used by Nilu's Game + in-world scenarios ---- */
 function showWorldBanner(text, opts) {
   opts = opts || {};
   const banner = $("worldBanner");
@@ -578,7 +578,7 @@ function bannerActionButton(label, cls, onClick) {
   return btn;
 }
 
-/* ---- Belu's Game: find & do (replaces the old room quiz cards) ---- */
+/* ---- Nilu's Game: find & do (replaces the old room quiz cards) ---- */
 function startFindGame() {
   const placeId = exState.place;
   const tasks = HH.FIND_TASKS && HH.FIND_TASKS[placeId];
@@ -678,7 +678,7 @@ function enterHand() {
     slots: (save.hand && save.hand.length === 5) ? save.hand.slice() : [null, null, null, null, null],
     secretsIdx: 0,
   };
-  // show the hand UI immediately — Belu's intro plays alongside it, so the
+  // show the hand UI immediately — Nilu's intro plays alongside it, so the
   // screen is never a blank page with a lone bubble in the corner
   renderHandFill();
   playIntroSequence(HH.HAND_INTRO, () => setBelu(HH.HAND_INTRO[3]));

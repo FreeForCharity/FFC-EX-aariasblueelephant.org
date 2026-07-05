@@ -421,9 +421,9 @@ const Dashboard: React.FC = () => {
     });
 
     const GAMES: { id: string; title: string; emoji: string; oneLiner: string; img: string; view?: ViewState; path?: string }[] = [
-        { id: 'belus-world', title: "Belu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Belu grow!', img: '/images/games/belus-world.jpg', path: '/belus-world' },
+        { id: 'belus-world', title: "Nilu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Nilu grow!', img: '/images/games/belus-world.jpg', path: '/belus-world' },
         { id: 'magnetblocks', title: "Aaria's Magnet Blocks", emoji: '🧲', oneLiner: 'Magnetic blocks that click, stack & drive!', img: '/images/games/magnetblocks.jpg', view: 'magnetblocks' },
-        { id: 'helpinghands', title: "Belu's Helping Hands", emoji: '🖐️', oneLiner: 'Learn your world & how to get help — walk, explore, be brave!', img: '/images/games/helpinghands.jpg', view: 'helpinghands' },
+        { id: 'helpinghands', title: "Nilu's Helping Hands", emoji: '🖐️', oneLiner: 'Learn your world & how to get help — walk, explore, be brave!', img: '/images/games/helpinghands.jpg', view: 'helpinghands' },
         { id: 'doughlab', title: 'Dough Lab 3D', emoji: '🫓', oneLiner: 'Squish, slice & sculpt real 3D dough!', img: '/images/games/doughlab.jpg', view: 'doughlab' },
         { id: 'blockcraft', title: "Aaria's Block Craft 3D", emoji: '🧱', oneLiner: 'Building, animal friends, slime & cookies!', img: '/images/games/blockcraft.jpg', view: 'blockcraft' },
         { id: 'elly-tubbies', title: 'Elly-Tubbies', emoji: '☀️', oneLiner: 'Bouncy elephant friends in sunny Trunkland!', img: '/images/games/elly-tubbies.jpg', view: 'elly-tubbies' },
@@ -2071,9 +2071,9 @@ const Dashboard: React.FC = () => {
             <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Belu's Helping Hands 🖐️💙</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Nilu's Helping Hands 🖐️💙</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-sm">
-                        Walk through a 3D house &amp; school with Belu, learn what happens in every room, build your Helping Hand of five trusted adults, and practice being brave — noticing the uh-oh feeling, saying no, and telling a helper until someone helps. A Grown-Ups Corner has guidance for parents.
+                        Walk through a 3D house &amp; school with Nilu, learn what happens in every room, build your Helping Hand of five trusted adults, and practice being brave — noticing the uh-oh feeling, saying no, and telling a helper until someone helps. A Grown-Ups Corner has guidance for parents.
                     </p>
                 </div>
                 <a
@@ -2088,7 +2088,7 @@ const Dashboard: React.FC = () => {
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
                 <iframe
                     src="/helpinghands/index.html"
-                    title="Belu's Helping Hands"
+                    title="Nilu's Helping Hands"
                     className="w-full h-full"
                     allow="autoplay; fullscreen"
                     allowFullScreen

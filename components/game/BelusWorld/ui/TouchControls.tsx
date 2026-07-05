@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // On-screen controls — shown for EVERYONE (mouse or touch), so the whole game
 // is playable without a keyboard. The same soft analog joystick as Elly-Tubbies:
-// drag the elephant knob in any direction to walk Belu (true analog — gentle
+// drag the elephant knob in any direction to walk Nilu (true analog — gentle
 // push = slow stroll, big push = trot). A jump button hops. Everything feeds
 // the same global `input` the keyboard uses.
 // ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ export default function ScreenControls() {
           boxShadow: '0 6px 18px rgba(58,58,90,.18), inset 0 0 24px rgba(184,164,255,.25)',
           backdropFilter: 'blur(2px)',
         }}
-        aria-label="Move Belu"
+        aria-label="Move Nilu"
       >
         {arrow('▲', { top: 5, left: '50%', transform: 'translateX(-50%)' })}
         {arrow('▼', { bottom: 5, left: '50%', transform: 'translateX(-50%)' })}

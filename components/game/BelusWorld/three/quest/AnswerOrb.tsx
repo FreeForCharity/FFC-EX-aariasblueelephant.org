@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // An answer orb — the embodied replacement for a flashcard. It's a real glowing
 // object in the world that shows a picture (and word). The child either WALKS
-// Belu into it or taps it. Choosing right makes it bloom and rise; choosing
+// Nilu into it or taps it. Choosing right makes it bloom and rise; choosing
 // "not yet" just gives it a gentle wobble (never a buzzer, never a fail).
 // ---------------------------------------------------------------------------
 
@@ -50,12 +50,12 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
       grp.current.scale.setScalar(s);
       grp.current.rotation.y += dt * 3;
     } else {
-      // is Belu close enough to choose me? → swell + brighten so it's obvious
+      // is Nilu close enough to choose me? → swell + brighten so it's obvious
       const near =
         Math.hypot(beluPos.x - position[0], beluPos.z - position[2]) < NEAR_DIST;
       const targetScale = near ? 1.12 : 1;
       const s = grp.current.scale.x + (targetScale - grp.current.scale.x) * Math.min(1, dt * 8);
-      // idle bob (a little livelier when Belu is near)
+      // idle bob (a little livelier when Nilu is near)
       const bob = Math.sin(t.current * 2) * (near ? 0.2 : 0.12);
       grp.current.position.y = baseY + bob;
       let x = position[0];

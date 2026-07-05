@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Feelings Meadow — extra delight (owner-only, imported solely by StoryLayer).
-//   • Firefly: a hidden glowing sparkle scattered around the meadow. Walk Belu
+//   • Firefly: a hidden glowing sparkle scattered around the meadow. Walk Nilu
 //     near it and it POPS with sparkles + a chime, then becomes a little floating
 //     star you've collected. Pure discovery joy — never required, never a fail.
 //   • FloatingHeart: a heart that drifts up out of a friend you just helped — a
@@ -169,7 +169,7 @@ export function TrotGroup({ active, children }: { active: boolean; children: Rea
       grp.position.set(0, 0, 0);
       return;
     }
-    // a small closed loop toward Belu's side and back, with happy hops
+    // a small closed loop toward Nilu's side and back, with happy hops
     const a = p * Math.PI * 2;
     grp.position.x = Math.sin(a) * 0.55;
     grp.position.z = (1 - Math.cos(a)) * 0.5;

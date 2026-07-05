@@ -4,7 +4,7 @@
 // the bloom right down for sensory-sensitive players.
 //
 // Performance: device-pixel-ratio is capped and auto-scaled by a
-// PerformanceMonitor (drops to 1x on weak GPUs), only Belu casts a shadow, the
+// PerformanceMonitor (drops to 1x on weak GPUs), only Nilu casts a shadow, the
 // shadow map is modest, and the composer runs without extra multisampling.
 // ---------------------------------------------------------------------------
 
@@ -35,9 +35,9 @@ interface Props {
   paused: boolean;
   reduceMotion: boolean;
   calmMode: boolean;
-  /** the zone whose crystal should glow (Belu is near it) */
+  /** the zone whose crystal should glow (Nilu is near it) */
   activeZone: ZoneId | null;
-  /** Belu's current size + growth stage (visible "growing up") */
+  /** Nilu's current size + growth stage (visible "growing up") */
   growthScale: number;
   growthStage: number;
   equipped?: import('../belu/progress').EquippedCosmetics;
@@ -190,7 +190,7 @@ export default function GameCanvas({
             caring-play (StoryLayer), Friendship Forest is magic words
             (ForestLayer), Morning Mountain is do-the-routine (MountainLayer),
             and Calm Cove is calm-the-storm breathing (CoveLayer). */}
-        {/* Belu's Home comes alive: sparkle jar, daily sparkle hunt, the garden
+        {/* Nilu's Home comes alive: sparkle jar, daily sparkle hunt, the garden
             and the once-a-day visiting healed friend. */}
         <HomeLife
           paused={paused}

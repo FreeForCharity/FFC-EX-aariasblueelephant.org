@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Player controller. Owns Belu's transform and the follow-camera.
+// Player controller. Owns Nilu's transform and the follow-camera.
 // Movement is world-relative against a FIXED-angle camera — deliberately
 // predictable for ASD players: "up on screen" is always the same direction,
 // the camera never spins on its own. Up/down comes from jumping + the islands
@@ -85,7 +85,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
 
     if (paused) {
       motion.current.speed = 0;
-      // keep camera trained on Belu while a panel is open
+      // keep camera trained on Nilu while a panel is open
       followCamera(0.06);
       input.jumpQueued = false;
       return;
@@ -175,7 +175,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
       group.current.position.copy(pos.current);
       group.current.rotation.y = facing.current;
     }
-    // share Belu's live position with the embodied quest system
+    // share Nilu's live position with the embodied quest system
     beluPos.copy(pos.current);
     beluState.grounded = grounded.current;
     if (import.meta.env.DEV) {
