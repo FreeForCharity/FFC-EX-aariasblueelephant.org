@@ -467,6 +467,18 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
         Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Belu grow!
       </motion.p>
 
+      <motion.a
+        href="/legal/disclosure.html"
+        target="_blank"
+        rel="noopener"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.7 }}
+        transition={{ delay: 0.35 }}
+        className="text-xs underline opacity-70 hover:opacity-100"
+      >
+        General Disclosure
+      </motion.a>
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -205,6 +205,9 @@ h1 { color: #1d3461; font-size: clamp(22px, 5vmin, 34px); line-height: 1.15; }
 h2 { color: #1d3461; font-size: clamp(19px, 4.4vmin, 28px); }
 .tagline { color: #2a5a8c; font-size: clamp(13px, 3vmin, 17px); max-width: 420px; }
 .footer { color: #5a7d9a; font-size: 11px; margin-top: 4px; }
+.disclosureLink { display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
+  padding: 0 12px; text-decoration: underline; opacity: .85; }
+.disclosureLink:hover { opacity: 1; }
 
 .namebox { display: flex; flex-direction: column; gap: 4px; color: #1d3461; font-size: 14px; }
 .namebox input {
