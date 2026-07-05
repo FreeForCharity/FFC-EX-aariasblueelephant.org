@@ -419,12 +419,37 @@ function handleBuilding(placeId) {
     setBelu(place.comingSoon || "Coming soon!");
     return;
   }
+  // per AJ: offer the game choice BEFORE entering, instead of the kid
+  // having to find the in-game button
+  const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
+  if (hasTasks) showEnterChoice(placeId, place);
+  else enterPlace(placeId);
+}
+function enterPlace(placeId) {
   exState.place = placeId; exState.roomId = null;
   if (window.HH && HH.World) HH.World.enterBuilding(placeId);
   $("mapBtn").hidden = false;
   const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
   $("findGameBtn").hidden = !hasTasks || findState.active;
   $("roomHeader").hidden = true;
+}
+function showEnterChoice(placeId, place) {
+  $("enterChoiceEmoji").textContent = place.emoji;
+  $("enterChoiceTitle").textContent = place.name;
+  speak(place.name + ". What do you want to do?");
+  $("enterExploreBtn").onclick = () => {
+    $("enterChoiceModal").hidden = true;
+    SND.pop();
+    enterPlace(placeId);
+  };
+  $("enterGameBtn").onclick = () => {
+    $("enterChoiceModal").hidden = true;
+    SND.chime();
+    enterPlace(placeId);
+    setTimeout(() => { if (exState.place === placeId && !findState.active) startFindGame(); }, 450);
+  };
+  $("enterChoiceCloseBtn").onclick = () => { $("enterChoiceModal").hidden = true; };
+  $("enterChoiceModal").hidden = false;
 }
 function handleRoomEnter(roomId) {
   if (scenarioState) return; // scenarios control their own room chrome

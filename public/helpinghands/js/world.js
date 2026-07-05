@@ -188,8 +188,9 @@
     ctx.closePath();
   }
   function makeSignSprite(emoji, name, opts, scale) {
-    var mat = new THREE.SpriteMaterial({ map: signTexture(emoji, name, opts), transparent: true, depthWrite: false });
+    var mat = new THREE.SpriteMaterial({ map: signTexture(emoji, name, opts), transparent: true, depthWrite: false, depthTest: false });
     var spr = new THREE.Sprite(mat);
+    spr.renderOrder = 900; // wording must never hide behind walls or boards
     var s = scale || 2.4;
     spr.scale.set(s, s * (176 / 512), 1);
     return spr;
@@ -1282,8 +1283,8 @@
       return { sofa: new THREE.Vector3(-3.0, 1.9, -shell.roomD / 2 + 1.4), books: new THREE.Vector3(4.5, 2.2, -shell.roomD / 2 + 0.55), puzzle: new THREE.Vector3(0.5, 0.3, 1.0) };
     },
     classroom: function (g, shell) {
-      var board = mesh(new THREE.BoxGeometry(4.5, 2.2, 0.12), stdMat('#2f7d4f', { roughness: 0.7 }));
-      board.position.set(0, 2.6, -shell.roomD / 2 + 0.2);
+      var board = mesh(new THREE.BoxGeometry(3.8, 2.0, 0.12), stdMat('#2f7d4f', { roughness: 0.7 }));
+      board.position.set(-3.6, 2.7, -shell.roomD / 2 + 0.2);
       g.add(board);
       var deskSpots = [];
       var rows = 3, cols = 3;
@@ -1308,12 +1309,12 @@
         }
       }
 
-      addFramedPicture(g, -5.6, 2.3, shell.roomD / 2 - 0.12, Math.PI, '📐', '#eef7ff', '#4499e0', 1.0);
+      addFramedPicture(g, 5.4, 2.3, shell.roomD / 2 - 0.12, Math.PI, '📐', '#eef7ff', '#4499e0', 1.0);
       var alphaPoster = mesh(new THREE.PlaneGeometry(3.2, 2.0), stdMat('#ffffff', { map: alphabetPosterTex(), roughness: 0.7 }));
       alphaPoster.position.set(1.0, 2.5, shell.roomD / 2 - 0.12);
       alphaPoster.rotation.y = Math.PI;
       g.add(alphaPoster);
-      addWallClock(g, -2.6, 2.7, shell.roomD / 2 - 0.12, Math.PI);
+      addWallClock(g, 3.9, 2.7, shell.roomD / 2 - 0.12, Math.PI);
 
       return { crayons: new THREE.Vector3(-2.2, 1.0, -0.5), books: new THREE.Vector3(0, 1.0, -0.5), desk: deskSpots[0] || new THREE.Vector3(0, 1.0, 0.7) };
     },
@@ -2417,7 +2418,34 @@
     (place.rooms || []).forEach(function (r) { if (r.id === room.id) placeRoom = r; });
     var shellInfo = { roomW: room.w, roomD: room.d, roomH: INTERIOR_WALL_H + 3 };
     var slots = null;
+    // Legacy rooms (built before the walkable-world rework) placed their key
+    // furniture against the CAMERA-side wall, which the cutaway fades — so
+    // stoves/desks/the chalkboard turned ghost-invisible and their word-tokens
+    // hid off-frame. Auto-flip anything in the near-wall band to the far wall
+    // (meshes, their colliders, and their token slots), rotated to face the
+    // camera. Mid-room symmetric furniture (desk rows, dining chairs) stays.
+    var LEGACY_FLIP = { bedroom: 1, bathroom: 1, kitchen: 1, dining: 1, living: 1, classroom: 1, cafeteria: 1, office: 1, nurseroom: 1 };
+    var beforeColliders = collisionRects.length;
     if (FURNITURE_BUILDERS[room.id]) slots = FURNITURE_BUILDERS[room.id](g, shellInfo);
+    if (LEGACY_FLIP[room.id] && !room.yard) {
+      var bandZ = -(room.d / 2 - 2.6); // "near the camera wall" band
+      g.children.forEach(function (ch) {
+        if (ch.position.z < bandZ) {
+          ch.position.z = -ch.position.z;
+          ch.rotation.y += Math.PI;
+        }
+      });
+      for (var ci = beforeColliders; ci < collisionRects.length; ci++) {
+        var rc = collisionRects[ci];
+        if ((rc.zMin + rc.zMax) / 2 < room.cz + bandZ) {
+          var nzMin = 2 * room.cz - rc.zMax, nzMax = 2 * room.cz - rc.zMin;
+          rc.zMin = nzMin; rc.zMax = nzMax;
+        }
+      }
+      if (slots) {
+        for (var sk in slots) { if (slots[sk].z < bandZ) slots[sk].z = -slots[sk].z; }
+      }
+    }
     var slotKeys = slots ? Object.keys(slots) : [];
     var objs = (placeRoom && placeRoom.objects) || [];
     var fallback = fallbackSlots(objs.length, shellInfo);
@@ -2813,8 +2841,9 @@
     if (!charGroup) return;
     removeSpeechFor(id);
     var tex = speechTexture(text);
-    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
     var spr = new THREE.Sprite(mat);
+    spr.renderOrder = 950; // speech is the story — always readable
     var aspect = tex.image.width / tex.image.height;
     var th = 1.5, tw = th * aspect;
     spr.scale.set(0.001, 0.001, 1);
