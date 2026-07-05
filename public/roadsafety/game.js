@@ -228,7 +228,7 @@ const QUIZ = {
 
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
-let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{} };
+let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(save, s); } catch(e){}
 // one-time migration: default everyone into the new chase view
 if (!save.chaseDefault){ save.view = "fp"; save.chaseDefault = true; }
@@ -240,7 +240,7 @@ const S = {
   t:0, o:0, speed:0, score:100, time:0,
   events:[], amb:null, toasts:[], banner:null,
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
-  streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1,
+  streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1, safeStops:0,
   air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
 };
 let cam = null;
@@ -391,9 +391,18 @@ function fireBoost(){
   if (S.boostCharge < 3 || S.boost > 0 || S.screen !== "playing") return;
   S.boostCharge = 0; S.boost = 5;
   document.getElementById("boostBtn").classList.add("hidden");
+  updateBoostCharge();
   whoosh(); rewardPopup("⚡ GREEN WAVE!", "");
 }
 document.getElementById("boostBtn").addEventListener("click", () => { ensureAudio(); fireBoost(); });
+/* Boost charge-up dots: fill in as safe moves are made, toward the Green Wave boost */
+const boostChargeEls = document.querySelectorAll("#boostCharge .dots i");
+function updateBoostCharge(){
+  boostChargeEls.forEach((el, i) => el.classList.toggle("lit", i < S.boostCharge));
+  const box = document.getElementById("boostCharge");
+  // hide the charge dots once the boost is ready (the big green button takes over) or firing
+  box.classList.toggle("hidden", S.boostCharge >= 3 || S.boost > 0);
+}
 
 /* ---------- screens ---------- */
 const SCREENS = ["title","menu","intro","tip","quiz","cert","retry","results","settings"];
@@ -603,8 +612,9 @@ function beginRun(){
   S.t = 24; S.speed = 0; S.score = 100; S.time = 0;
   S.amb = null; S.toasts = []; S.banner = null; S.shake = 0;
   S.speedTimer = 0; S.quizBonus = 0; S.air = null; S.airPts = 0;
-  S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0;
+  S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0; S.safeStops = 0;
   refreshStreakChip(); document.getElementById("boostBtn").classList.add("hidden");
+  updateBoostCharge();
   S.events = genEvents(S.li).map(e => initEvent(e, S.cfg));
   S.o = laneC(S.cfg.lanes - 1);
   S.houses = genHouses(S.li);
@@ -686,6 +696,7 @@ function bonus(pts, msg){
   if (S.boostCharge < 3){
     S.boostCharge++;
     if (S.boostCharge >= 3) document.getElementById("boostBtn").classList.remove("hidden");
+    updateBoostCharge();
   }
 }
 function breakStreak(){ S.streak = 0; S.mult = 1; refreshStreakChip(); }
@@ -694,7 +705,7 @@ function breakStreak(){ S.streak = 0; S.mult = 1; refreshStreakChip(); }
    SIMULATION
    ============================================================ */
 function update(dt){
-  if (S.boost > 0) S.boost = Math.max(0, S.boost - dt);
+  if (S.boost > 0){ S.boost = Math.max(0, S.boost - dt); if (S.boost === 0) updateBoostCharge(); }
   engineUpdate();
   S.time += dt;
   const v = S.veh;
@@ -750,7 +761,7 @@ function updateEvent(ev, dt){
       if (t > ev.at - 280 && t < ev.at - 8 && S.speed < .4) ev.fullStop = true;
       if (t >= ev.at - 8){
         ev.resolved = true;
-        if (ev.fullStop) bonus(5, "Perfect stop!");
+        if (ev.fullStop){ bonus(5, "Perfect stop!"); S.safeStops++; }
         else violation("stopsign");
       }
       break;
@@ -762,7 +773,7 @@ function updateEvent(ev, dt){
       if (t >= ev.at - 6){
         ev.resolved = true;
         if (ph === "red") violation("redlight");
-        else if (ev.waited) bonus(5, "Waited for green!");
+        else if (ev.waited){ bonus(5, "Waited for green!"); S.safeStops++; }
       }
       break;
     }
@@ -2382,13 +2393,17 @@ function finishLevel(){
     const newRecord = !prev || S.finalScore > prev.score;
     const beatGhost = prev && gradeOf(S.finalScore) < gradeOf(prev.score);   // "S"<"A"<"B"<"C" lexicographic
     if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time) };
+    // Personal-best Hero Streak (only celebrate an actual improvement, not a brand-new save)
+    const prevStreak = save.bestStreak[S.li] || 0;
+    const newStreakRecord = prevStreak > 0 && S.bestStreak > prevStreak;
+    save.bestStreak[S.li] = Math.max(prevStreak, S.bestStreak);
     persist();
-    showResults(stars, newRecord && !!prev, beatGhost);
+    showResults(stars, newRecord && !!prev, beatGhost, newStreakRecord);
   } else {
     showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate. You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
   }
 }
-function showResults(stars, newRecord, beatGhost){
+function showResults(stars, newRecord, beatGhost, newStreakRecord){
   S.screen = "results";
   engineStop();
   document.getElementById("popupLayer").innerHTML = "";
@@ -2399,14 +2414,37 @@ function showResults(stars, newRecord, beatGhost){
   stamp.style.animation = "none"; void stamp.offsetWidth; stamp.style.animation = "";
   document.getElementById("resScore").textContent = S.finalScore + " / 100";
   document.getElementById("resStreak").textContent = "×" + Math.min(4, 1 + (S.bestStreak >> 1)) + `  (${S.bestStreak} safe moves)`;
+  document.getElementById("resStops").textContent = S.safeStops + (S.safeStops === 1 ? " stop" : " stops");
+  document.getElementById("resDistance").textContent = (S.t / PXM / 1609.34).toFixed(1) + " mi";
   const m = Math.floor(S.time / 60), sec = Math.round(S.time % 60);
   document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
   document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
   document.getElementById("resRecord").classList.toggle("hidden", !newRecord);
+  document.getElementById("resStreakRecord").classList.toggle("hidden", !newStreakRecord);
   document.getElementById("resGhost").classList.toggle("hidden", !beatGhost);
   show("results");
   tone(523, .2); setTimeout(() => tone(659, .2), 150); setTimeout(() => tone(784, .35), 300);
-  speak(g === "S" ? "Perfect run! You are a true safety hero!" : "Great riding! Level complete!");
+  if (newRecord || newStreakRecord) launchConfetti();
+  speak(g === "S" ? "Perfect run! You are a true safety hero!" :
+        newStreakRecord ? "Great riding! And a brand new streak record!" : "Great riding! Level complete!");
+}
+/* Personal-best celebration: a short, kid-gentle confetti burst (no external assets) */
+function launchConfetti(){
+  const layer = document.getElementById("confettiLayer");
+  layer.innerHTML = "";
+  layer.classList.remove("hidden");
+  const colors = ["#ffd43b", "#51cf66", "#4ea8de", "#ff6b6b", "#c77dff", "#ff9f43"];
+  const n = 36;
+  for (let i = 0; i < n; i++){
+    const el = document.createElement("i");
+    el.className = "conf";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.background = colors[i % colors.length];
+    el.style.animationDuration = (1.6 + Math.random() * 1.2) + "s";
+    el.style.animationDelay = (Math.random() * .5) + "s";
+    layer.appendChild(el);
+  }
+  setTimeout(() => { layer.classList.add("hidden"); layer.innerHTML = ""; }, 3200);
 }
 document.getElementById("resCert").addEventListener("click", () => showCert(S.lastStars));
 document.getElementById("resRetry").addEventListener("click", () => openIntro(S.li));

@@ -62,12 +62,15 @@
     font-weight:800;font-size:clamp(13px,3.6vw,17px);
     display:flex;align-items:center;gap:6px;}
   #menu{display:flex;gap:7px;pointer-events:auto;}
-  .mbtn{pointer-events:auto;cursor:pointer;border:2.5px solid #fff;
+  .mbtn{position:relative;pointer-events:auto;cursor:pointer;border:2.5px solid #fff;
     background:linear-gradient(160deg,#ffffff,#eef3ff);
     border-radius:16px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
     color:var(--ink);box-shadow:0 4px 0 #d5ddf5,0 8px 16px rgba(58,58,90,.15);line-height:1;transition:.12s;}
   .mbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #d5ddf5;}
   .mbtn.off{opacity:.45;}
+  .mbadge{position:absolute;top:-6px;right:-6px;background:#ff6b9d;color:#fff;border-radius:999px;
+    min-width:19px;height:19px;padding:0 4px;font-size:11px;font-weight:900;
+    align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(58,58,90,.35);border:2px solid #fff;}
   #speedRow{position:absolute;top:max(64px,calc(env(safe-area-inset-top) + 54px));right:10px;
     display:flex;flex-direction:column;gap:7px;pointer-events:auto;z-index:8;}
   .speed{cursor:pointer;border:2.5px solid #fff;background:linear-gradient(160deg,#ffffff,#eef3ff);
@@ -75,6 +78,28 @@
     box-shadow:0 3px 0 #d5ddf5;opacity:.55;transition:.2s;}
   .speed.sel{opacity:1;background:linear-gradient(160deg,#fff6d5,#ffd23f);transform:scale(1.08);
     box-shadow:0 3px 0 #e0a92e;}
+
+  /* ---------- celebration toast (names what was just earned) ---------- */
+  #celebToast{position:absolute;top:14%;left:50%;transform:translateX(-50%) scale(.6);z-index:15;
+    pointer-events:none;background:linear-gradient(160deg,#fff8dd,#ffe9a8);border:3px solid #fff;
+    border-radius:26px;padding:13px 26px;box-shadow:0 10px 30px rgba(224,169,46,.4),0 4px 0 #e0a92e;
+    font-weight:900;font-size:clamp(17px,5vw,25px);color:#7a5200;opacity:0;white-space:nowrap;
+    transition:opacity .25s ease;}
+  #celebToast.show{opacity:1;animation:celebPop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes celebPop{0%{transform:translateX(-50%) scale(.5)}
+    55%{transform:translateX(-50%) scale(1.1)}100%{transform:translateX(-50%) scale(1)}}
+  body.rm #celebToast.show{animation:none;transform:translateX(-50%) scale(1);}
+
+  /* ---------- idle attract hint (soft nudge toward something undiscovered) ---------- */
+  #hintToast{position:absolute;top:max(150px,calc(env(safe-area-inset-top) + 140px));left:50%;
+    transform:translateX(-50%) translateY(-8px);z-index:8;pointer-events:none;
+    background:rgba(255,255,255,.94);border:2.5px solid #fff;border-radius:20px;padding:9px 18px;
+    box-shadow:0 8px 20px rgba(58,58,90,.22);font-weight:800;color:var(--ink);
+    font-size:clamp(13px,3.8vw,16px);white-space:nowrap;opacity:0;
+    transition:opacity .5s ease,transform .5s ease;}
+  #hintToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  body.rm #hintToast{transition:opacity .3s ease;}
+  body.rm #hintToast.show{transform:translateX(-50%) translateY(0);}
 
   /* ---------- joystick: a soft candy ring ---------- */
   #stick{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:9;
@@ -184,6 +209,7 @@
   <div id="topbar">
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
       <div class="chip">🌞 Day <span id="dayN">1</span></div>
+      <div class="chip" id="visitChip" style="display:none" title="Days you've visited Trunkland — thank you for coming back!">🗓️ <span id="visitN">1</span></div>
       <div class="chip">✨ <span id="sparkN">0</span></div>
       <div class="chip">⭐ <span id="starN">0</span>/<span id="starGoal">5</span></div>
       <div class="chip" id="modeChip" style="cursor:pointer" title="Tap to walk">🚶</div>
@@ -191,7 +217,7 @@
     </div>
     <div id="menu">
       <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
-      <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖</button>
+      <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
@@ -201,6 +227,11 @@
     <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in" aria-label="Zoom in">🔍＋</button>
     <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out" aria-label="Zoom out">🔍−</button>
   </div>
+
+  <!-- celebration toast: names what was just earned (backs up the spoken line) -->
+  <div id="celebToast" aria-live="polite"></div>
+  <!-- gentle idle hint: nudges toward an activity that hasn't been discovered yet -->
+  <div id="hintToast" aria-live="polite"></div>
 
   <!-- World map: tap a place to FLY there (recharges every 5 minutes) -->
   <div class="overlay" id="wmap"><div class="panel" style="max-width:470px">
@@ -406,7 +437,7 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
@@ -415,8 +446,18 @@ S.today=Object.assign({stars:{},seeds:{},stories:{},wantsDone:{}},S.today);if(!S
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const STAR_GOAL=5;
 const starCount=()=>Object.keys(S.today.stars).length;
+const REDUCE_MOTION=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+if(REDUCE_MOTION)document.body.classList.add('rm');
 function hud(){$('dayN').textContent=S.day;$('sparkN').textContent=S.sparks;
-  $('sparkN2').textContent=S.sparks;$('starN').textContent=starCount();$('starGoal').textContent=STAR_GOAL;}
+  $('sparkN2').textContent=S.sparks;$('starN').textContent=starCount();$('starGoal').textContent=STAR_GOAL;
+  // cheerful "we're glad you came back" counter — additive only, never resets, never shames a gap
+  const vc=$('visitChip');
+  if(S.visitDays>1){vc.style.display='flex';$('visitN').textContent=S.visitDays;}else{vc.style.display='none';}
+  // sticker garden badge — how many stickers already collected, visible without opening the book
+  const ownedStk=Object.keys(S.stickers).length;
+  const sb=$('stkBadge');
+  if(ownedStk>0){sb.style.display='flex';sb.textContent=ownedStk;}else{sb.style.display='none';}
+}
 
 // deterministic per-day random (so each day's layout is fresh but stable)
 function dayRnd(salt){let s=(S.day*2654435761+salt*97+11)>>>0;
@@ -1111,7 +1152,7 @@ async function wakeRitual(){
   order.forEach((id,i)=>setTimeout(()=>{doMove(tubbies[id],'jump',0.9);sfx.pop();},i*380));
   await say('☀️','Elly-elly… TUBBIES! Good morning, Trunkland! ☀️');
   if(S.lastDay!==todayKey()){
-    const newDayReal=S.lastDay!=='';S.lastDay=todayKey();save();
+    const newDayReal=S.lastDay!=='';S.lastDay=todayKey();S.visitDays=(S.visitDays||0)+1;save();hud();
     if(newDayReal){
       // the nearest friend runs over for a hug + remembers yesterday
       const p=player.group.position;
@@ -1333,6 +1374,49 @@ function burst(pos,n=16,col='#ffd23f'){
   geo.setAttribute('position',new T.Float32BufferAttribute(p,3));
   const pts=new T.Points(geo,new T.PointsMaterial({color:new T.Color(col),size:0.34,transparent:true,opacity:1}));
   scene.add(pts);bursts.push({pts,v,t:0});
+}
+
+/* ---- celebration toast: names what was just earned, backs up the spoken line
+   for kids who read faster than they listen (or play muted) ---- */
+function celebToast(text,dur=2200){
+  const el=$('celebToast');if(!el)return;
+  el.textContent=text;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+  clearTimeout(celebToast._t);
+  celebToast._t=setTimeout(()=>el.classList.remove('show'),dur*(SPEED[S.speed]||1));
+}
+
+/* ---- idle attract hints: after a quiet stretch, gently point at something
+   real & still undiscovered today. Never nags — silently does nothing once
+   everything's been tried, and only ever whispers a fact about actual content. */
+let lastInputAt=0,lastHintAt=-1e9;
+const IDLE_MS=26000,HINT_COOLDOWN_MS=55000;
+addEventListener('pointerdown',()=>{lastInputAt=performance.now();},{capture:true});
+addEventListener('keydown',()=>{lastInputAt=performance.now();},{capture:true});
+function idleHintPool(){
+  const list=[];
+  const gameVerb={dance:['dance',  '💃'],feelings:['watch Tummy-TV','📺'],
+                  kitchen:['cook','🍲'],  hide:['play hide & seek', '🙈']};
+  ['tinko','minty','sunny','rosy'].forEach(id=>{
+    const st=todayStories().find(s=>s.tub===id);
+    const doneToday=!!S.today.stars[id]||(st&&!!S.today.stars['story-'+st.id]);
+    if(!doneToday){const cfg=TUBBIES[id],[verb,e]=gameVerb[cfg.game];
+      list.push(`${cfg.name} would love to ${verb}! ${e}`);}
+  });
+  for(const k in STATIONS){if(!S.gear[k])list.push(`${STATIONS[k].name} is waiting to be explored! ${STATIONS[k].e}`);}
+  if(SECRETS.some(sc=>!S.secrets[sc.id]))list.push('Some hidden surprises are out there in Trunkland! ✨');
+  if(Object.keys(S.stickers).length<STICKERS.length)list.push('The Sticker Garden has more to discover! 📖');
+  return list;
+}
+function maybeShowIdleHint(now){
+  if(mode!=='roam'||narrBusy)return;
+  if(now-lastInputAt<IDLE_MS||now-lastHintAt<HINT_COOLDOWN_MS)return;
+  const pool=idleHintPool();if(!pool.length)return;
+  const el=$('hintToast');if(!el)return;
+  el.textContent=pool[Math.floor(Math.random()*pool.length)];
+  el.classList.add('show');
+  clearTimeout(maybeShowIdleHint._t);
+  maybeShowIdleHint._t=setTimeout(()=>el.classList.remove('show'),5200*(SPEED[S.speed]||1));
+  lastHintAt=now;
 }
 
 /* ===================== FX / TWEEN / GIGGLE HELPERS ======================= */
@@ -1660,6 +1744,7 @@ function updateRoam(dt,time){
   const m=Math.hypot(mx,mz);
   const SPD={walk:duck?4:7.5, swim:5.5, fly:11, drive:13}[trav];
   if(m>0.15){
+    lastInputAt=performance.now();
     p.x+=mx/m*SPD*Math.min(1,m)*dt;p.z+=mz/m*SPD*Math.min(1,m)*dt;
     player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
     player.group.userData.st=(player.group.userData.st||0)+dt;
@@ -1813,6 +1898,10 @@ async function giveStar(id,tub){
   reactSun();sfx.good();
   doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
   burst(tub.group.position,22,'#ffd23f');burst(player.group.position,18,'#ff8fb1');
+  if(first){
+    if(!REDUCE_MOTION)burst(player.group.position,16,'#8fd0ff');
+    celebToast('⭐ New Star! +5 ✨');
+  }else celebToast('✨ +2 sparkles!',1500);
   await say('☀️',SUN_CHEER[Math.floor(Math.random()*SUN_CHEER.length)]+(first?' You earned a ⭐ and ✨5!':' ✨2 more sparkles!'));
   maybeDropEgg();
   if(starCount()>=STAR_GOAL){showFinale();return true;}
@@ -2249,6 +2338,8 @@ function frame(now){
   // mischief timer (roam only)
   if(mode==='roam'){mischiefT-=dt;
     if(mischiefT<=0){mischiefT=15+Math.random()*18;runMischief();}}
+  // idle attract hint (roam only, gentle, only for real undiscovered content)
+  maybeShowIdleHint(now);
   // bursts
   for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t+=dt;
     const pos=b.pts.geometry.attributes.position;
@@ -2292,7 +2383,7 @@ addEventListener('resize',resize);resize();
 /* ================================ UI wire ================================ */
 /* title screen (uniform across ABE games) */
 $('titlePlayBtn').onclick=()=>{ac();sfx.pop();
-  $('title').classList.add('hiddenT');mode='roam';wakeRitual();};
+  $('title').classList.add('hiddenT');mode='roam';lastInputAt=performance.now();wakeRitual();};
 $('titleHowBtn').onclick=()=>{sfx.tap();$('intro').classList.add('show');};
 $('titleFsBtn').onclick=()=>{
   if(document.fullscreenElement)document.exitFullscreen();

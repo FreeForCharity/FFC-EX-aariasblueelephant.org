@@ -180,6 +180,21 @@ window.MB = window.MB || {};
     return false;
   };
 
+  // brief bright glow ring at the exact connection point — satisfying "it clicked!" feedback.
+  // short-lived, self-removing; independent of the persistent drag-preview ring (B.ring).
+  function spawnSnapFlash(point){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.09, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfff3bf, transparent:true, opacity:1 }));
+    ring.rotation.x = -Math.PI/2;
+    ring.position.set(point.x, point.y + 0.07, point.z);
+    ring.renderOrder = 6;
+    B.scene.add(ring);
+    B.addTween(0.4, k => {
+      ring.scale.setScalar(1 + k * 1.8);
+      ring.material.opacity = 1 - k;
+    }, () => B.scene.remove(ring));
+  }
+
   function updateRing(){
     if (B.snap){
       B.ring.visible = true;
@@ -201,6 +216,8 @@ window.MB = window.MB || {};
       // children keep their internal attachments; re-adopt anything resting on us
       MB.Audio.snap();
       squashBounce(inst.group);
+      spawnSnapFlash(B.snap.point);
+      if (B.snap.parent && MB.ui && MB.ui.milestone) MB.ui.milestone('snap', '🎉 First snap! Blocks click together like magic!');
     } else {
       // no magnet: drop where it is — falls to the floor and becomes a stray
       const from = inst.group.position.clone();
@@ -219,7 +236,7 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 2.2);
         const dy = (to.y - from.y) * e, dx = (to.x-from.x)*e, dz = (to.z-from.z)*e;
         g.members.forEach((m,i) => m.inst.group.position.set(membersFrom[i].x+dx, membersFrom[i].y+dy, membersFrom[i].z+dz));
-      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group);} MB.cleanupCheck && MB.cleanupCheck(); });
+      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); } MB.cleanupCheck && MB.cleanupCheck(); });
     }
     B.snap = null;
     changed();

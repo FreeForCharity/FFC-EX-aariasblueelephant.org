@@ -497,6 +497,8 @@
         ABC.world.flush(); ABC.audio.sfx.pop(); saveSoon();
         ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;
         ABC.activities.maybeShowTell(ABC.state.placedCount);   // Show & Tell moments
+        ABC.ui.checkBuildMilestone(ABC.state.placedCount);     // 🧱 10/50/100… celebration
+        idleTicks = 0;                                          // building counts as activity
       }
     }
   }
@@ -989,6 +991,29 @@
 
   /* emotion spawner: gentle pace */
   setInterval(() => { if (started && !ABC.ui.isOpen()) ABC.activities.emotionTick(); }, 25000);
+
+  /* ---------------- idle build-idea hints 💡 ----------------
+     If {player} stands still with no building for a while, Bella gently suggests
+     something fun to build next — a soft toast, never a dialog, never a quiz.
+     Any movement or block placed resets the idle clock (see updatePlayer/act). */
+  let idleTicks = 0, idleIdeaIdx = 0, lastIdlePos = null, lastIdlePlaced = -1;
+  const IDLE_TICKS_TO_HINT = 9;   // ~9 * 6s = 54s of true idle
+  setInterval(() => {
+    if (!started || ABC.ui.isOpen()) { idleTicks = 0; return; }
+    const pos = { x: Math.round(feet.x * 2), z: Math.round(feet.z * 2) };
+    const placed = ABC.state.placedCount || 0;
+    const moved = !lastIdlePos || pos.x !== lastIdlePos.x || pos.z !== lastIdlePos.z;
+    const built = placed !== lastIdlePlaced;
+    lastIdlePos = pos; lastIdlePlaced = placed;
+    if (moved || built) { idleTicks = 0; return; }
+    idleTicks++;
+    if (idleTicks >= IDLE_TICKS_TO_HINT) {
+      idleTicks = 0;
+      const idea = ABC.BUILD_IDEAS[idleIdeaIdx % ABC.BUILD_IDEAS.length];
+      idleIdeaIdx++;
+      ABC.ui.bellaSays(idea, 4600);
+    }
+  }, 6000);
 
   /* ---------------- smooth-skin perf guard ----------------
      Sample FPS once a second; if it's low for a sustained 3s, calmly drop the

@@ -82,11 +82,16 @@
   #hotbar { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); max-width:calc(96vw - 200px);
     display:flex; gap:6px; pointer-events:auto; background:rgba(0,0,0,.25); padding:8px; border-radius:18px;
     max-width:96vw; overflow-x:auto; }
-  .hotSlot { width:58px; height:58px; min-width:58px; border-radius:12px; border:3px solid rgba(255,255,255,.5);
+  .hotSlot { position:relative; width:58px; height:58px; min-width:58px; border-radius:12px; border:3px solid rgba(255,255,255,.5);
     background:rgba(255,255,255,.18); cursor:pointer; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; color:#fff; font-size:11px; gap:1px; }
+    align-items:center; justify-content:center; color:#fff; font-size:11px; gap:1px; transition:transform .12s ease; }
   .hotSlot .swatch { width:30px; height:30px; border-radius:6px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.18); background-size:cover; }
-  .hotSlot.selected { border-color:#ffd43b; background:rgba(255,212,59,.35); transform:scale(1.1); }
+  /* clearer "this is what I'm holding" state: thicker glow ring + a little pointer above */
+  .hotSlot.selected { border-color:#ffd43b; border-width:4px; background:rgba(255,212,59,.4);
+    transform:scale(1.18); z-index:2;
+    box-shadow:0 0 0 4px rgba(255,212,59,.55), 0 6px 14px rgba(0,0,0,.35); }
+  .hotSlot.selected::after { content:'▼'; position:absolute; top:-15px; left:50%; transform:translateX(-50%);
+    font-size:14px; color:#ffd43b; text-shadow:0 1px 2px rgba(0,0,0,.5); }
   #lookHint { position:absolute; bottom:96px; left:50%; transform:translateX(-50%);
     background:rgba(255,255,255,.92); padding:10px 22px; border-radius:22px; font-size:19px; color:#246;
     box-shadow:0 4px 10px rgba(0,0,0,.2); }
@@ -302,8 +307,11 @@
     max-width:min(94vw,640px); background:var(--glass); }
   body.skin-smooth .hotSlot { border-radius:14px; border:2px solid rgba(255,255,255,.7);
     box-shadow:none; }
-  body.skin-smooth .hotSlot.selected { border-color:var(--accent);
-    background:rgba(31,182,166,.22); transform:scale(1.08); }
+  /* clearer selected state on glass: thicker accent ring + lift + small pointer, still calm */
+  body.skin-smooth .hotSlot.selected { border-color:var(--accent); border-width:3px;
+    background:rgba(31,182,166,.3); transform:scale(1.16);
+    box-shadow:0 0 0 3px rgba(31,182,166,.55), 0 10px 20px -8px rgba(18,38,56,.55); }
+  body.skin-smooth .hotSlot.selected::after { color:var(--accent); text-shadow:0 1px 2px rgba(255,255,255,.8); }
   body.skin-smooth .hotSlot .swatch { border-radius:8px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.12); }
 
   /* movement pad + action cluster — roomier, softer, thumb-friendly */
@@ -426,25 +434,25 @@
 <div id="flash"></div>
 
 <script src="lib/three.min.js"></script>
-<script src="js/data.js?v=34"></script>
-<script src="js/audio.js?v=34"></script>
-<script src="js/world.js?v=34"></script>
-<script src="js/animals.js?v=34"></script>
-<script src="js/squishy.js?v=34"></script>
-<script src="js/weather.js?v=34"></script>
-<script src="js/parks.js?v=34"></script>
-<script src="js/shops.js?v=34"></script>
-<script src="js/signs.js?v=34"></script>
-<script src="js/portal.js?v=34"></script>
-<script src="js/ui.js?v=34"></script>
-<script src="js/activities.js?v=34"></script>
-<script src="js/music.js?v=34"></script>
-<script src="js/pet.js?v=34"></script>
-<script src="js/stickers.js?v=34"></script>
-<script src="js/friends.js?v=34"></script>
-<script src="js/overnight.js?v=34"></script>
-<script src="js/photo.js?v=34"></script>
-<script src="js/dig.js?v=34"></script>
-<script src="js/main.js?v=34"></script>
+<script src="js/data.js?v=35"></script>
+<script src="js/audio.js?v=35"></script>
+<script src="js/world.js?v=35"></script>
+<script src="js/animals.js?v=35"></script>
+<script src="js/squishy.js?v=35"></script>
+<script src="js/weather.js?v=35"></script>
+<script src="js/parks.js?v=35"></script>
+<script src="js/shops.js?v=35"></script>
+<script src="js/signs.js?v=35"></script>
+<script src="js/portal.js?v=35"></script>
+<script src="js/ui.js?v=35"></script>
+<script src="js/activities.js?v=35"></script>
+<script src="js/music.js?v=35"></script>
+<script src="js/pet.js?v=35"></script>
+<script src="js/stickers.js?v=35"></script>
+<script src="js/friends.js?v=35"></script>
+<script src="js/overnight.js?v=35"></script>
+<script src="js/photo.js?v=35"></script>
+<script src="js/dig.js?v=35"></script>
+<script src="js/main.js?v=35"></script>
 </body>
 </html>

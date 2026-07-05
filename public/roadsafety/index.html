@@ -20,9 +20,14 @@
 
   <!-- Race HUD (DOM overlay — streak, boost & reward popups) -->
   <div id="raceHud" class="hidden">
+    <div id="boostCharge" aria-hidden="true">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span>SAFE MOVES</span>
+    </div>
     <button id="boostBtn" class="hidden" aria-label="Green Wave boost">⚡<small>GREEN<br>WAVE</small></button>
   </div>
   <div id="popupLayer"></div>
+  <div id="confettiLayer" class="hidden"></div>
 
   <!-- 3·2·1·GO light tree -->
   <div id="count" class="hidden">
@@ -97,10 +102,13 @@
     <div id="resRows">
       <div class="resRow"><span>🛡️ Safety Score</span><b id="resScore"></b></div>
       <div class="resRow"><span>🔥 Best Streak</span><b id="resStreak"></b></div>
+      <div class="resRow"><span>🛑 Safe Stops</span><b id="resStops"></b></div>
+      <div class="resRow"><span>🛣️ Distance Ridden</span><b id="resDistance"></b></div>
       <div class="resRow"><span>⏱️ Time</span><b id="resTime"></b></div>
       <div class="resRow"><span>⭐ Medal</span><b id="resMedal"></b></div>
     </div>
     <div id="resRecord" class="hidden">🎉 NEW RECORD!</div>
+    <div id="resStreakRecord" class="hidden">🔥 NEW STREAK RECORD!</div>
     <div id="resGhost" class="hidden">👑 You beat your Safety Star!</div>
     <div class="btnrow">
       <button class="bigbtn green" id="resCert">🎓 My Certificate</button>
