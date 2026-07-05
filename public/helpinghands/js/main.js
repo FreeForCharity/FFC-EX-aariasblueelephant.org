@@ -684,58 +684,114 @@ function enterHand() {
   playIntroSequence(HH.HAND_INTRO, () => setBelu(HH.HAND_INTRO[3]));
 }
 
+function handSVG() {
+  // strokeless silhouette so fingers+palm merge cleanly; sleeve + creases for charm
+  return '<svg viewBox="0 0 300 340" aria-hidden="true">' +
+    '<g fill="#ffd9b3">' +
+    '<rect x="54"  y="112" width="34" height="130" rx="17"/>' +
+    '<rect x="97"  y="76"  width="36" height="170" rx="18"/>' +
+    '<rect x="141" y="64"  width="38" height="185" rx="19"/>' +
+    '<rect x="186" y="84"  width="36" height="165" rx="18"/>' +
+    '<rect x="216" y="168" width="36" height="110" rx="18" transform="rotate(-38 234 178)"/>' +
+    '<path d="M60 240 Q58 208 78 206 L222 206 Q240 208 238 244 L236 282 Q232 316 196 318 L104 318 Q68 316 63 282 Z"/>' +
+    '</g>' +
+    '<path d="M108 254 Q140 268 178 262" fill="none" stroke="#eebd8f" stroke-width="4.5" stroke-linecap="round"/>' +
+    '<path d="M104 280 Q145 296 190 286" fill="none" stroke="#eebd8f" stroke-width="4.5" stroke-linecap="round"/>' +
+    '<rect x="86" y="308" width="128" height="32" rx="16" fill="#74c0fc"/>' +
+    '</svg>';
+}
+// fingertip slot anchors (percent of the SVG box), thumb..pinky = 1..5
+const HAND_TIPS = [
+  { x: 85.5, y: 48 },  // 1 thumb
+  { x: 68.5, y: 27.5 },// 2 index
+  { x: 53.5, y: 22 },  // 3 middle
+  { x: 40.5, y: 25.5 },// 4 ring
+  { x: 26, y: 34.5 },  // 5 pinky
+];
+const WHERE_GROUPS = [
+  { key: "home", title: "At Home 🏠", match: w => w === "home" },
+  { key: "school", title: "At School 🏫", match: w => w === "school" },
+  { key: "town", title: "Around Town 🏙️", match: w => w !== "home" && w !== "school" },
+];
+
 function renderHandFill() {
   const body = $("handBody"); body.innerHTML = "";
-  const h2 = document.createElement("h2");
-  h2.style.cssText = "color:#4c3a8f;font-size:20px;text-align:center;";
-  h2.textContent = "Build your Helping Hand 🖐️";
-  body.appendChild(h2);
+  const layout = document.createElement("div"); layout.className = "hand-layout";
 
-  const graphic = document.createElement("div"); graphic.className = "hand-graphic";
-  const bg = document.createElement("div"); bg.className = "hand-emoji-bg"; bg.textContent = "🖐️";
-  graphic.appendChild(bg);
-  const slotsRow = document.createElement("div"); slotsRow.className = "hand-slots";
+  // ----- left: the hand with fingertip sockets -----
+  const handPanel = document.createElement("section"); handPanel.className = "hh-panel hand-panel";
+  handPanel.innerHTML =
+    '<div class="panel-head"><h2>Build your Helping Hand</h2>' +
+    '<p>One trusted helper for every finger — from different places!</p></div>';
+  const stage = document.createElement("div"); stage.className = "hand-stage";
+  stage.innerHTML = handSVG();
+  const firstEmpty = handState.slots.indexOf(null);
   handState.slots.forEach((helperId, idx) => {
     const slot = document.createElement("button");
-    slot.className = "hand-slot" + (helperId ? " filled" : "");
-    slot.textContent = helperId ? HH.HELPERS[helperId].emoji : String(idx + 1);
-    slot.title = helperId ? HH.HELPERS[helperId].name : "Empty slot";
+    slot.className = "tip-slot" + (helperId ? " filled" : "") + (idx === firstEmpty ? " next" : "");
+    slot.style.left = HAND_TIPS[idx].x + "%";
+    slot.style.top = HAND_TIPS[idx].y + "%";
+    if (helperId) {
+      slot.innerHTML = '<span class="em">' + HH.HELPERS[helperId].emoji + '</span>' +
+        '<span class="nm">' + HH.HELPERS[helperId].name + '</span>';
+      slot.title = "Tap to remove " + HH.HELPERS[helperId].name;
+    } else {
+      slot.textContent = String(idx + 1);
+      slot.title = "Empty finger " + (idx + 1);
+    }
     slot.addEventListener("click", () => {
-      if (helperId) { handState.slots[idx] = null; renderHandFill(); }
+      if (helperId) { handState.slots[idx] = null; SND.pop(); renderHandFill(); }
     });
-    slotsRow.appendChild(slot);
+    stage.appendChild(slot);
   });
-  graphic.appendChild(slotsRow);
-  body.appendChild(graphic);
+  handPanel.appendChild(stage);
 
-  const poolTitle = document.createElement("div");
-  poolTitle.style.cssText = "font-weight:800;color:#4c3a8f;font-size:15px;text-align:center;";
-  poolTitle.textContent = "Tap a helper to add them to your hand:";
-  body.appendChild(poolTitle);
+  // progress row
+  const filled = handState.slots.filter(Boolean);
+  const wheres = new Set(filled.map(id => HH.HELPERS[id].where === "home" ? "home" : HH.HELPERS[id].where === "school" ? "school" : "town"));
+  const prog = document.createElement("div"); prog.className = "hand-progress";
+  prog.innerHTML =
+    '<span class="prog-pill">' + filled.length + ' of 5 helpers</span>' +
+    '<span class="prog-pill ' + (wheres.size >= 2 ? "ok" : "") + '">' +
+    (wheres.size >= 2 ? "✓ different places" : "pick from 2+ places") + '</span>';
+  handPanel.appendChild(prog);
+  layout.appendChild(handPanel);
 
-  const pool = document.createElement("div"); pool.className = "helper-pool";
-  Object.keys(HH.HELPERS).forEach(id => {
-    const h = HH.HELPERS[id];
-    const inHand = handState.slots.includes(id);
-    const chip = document.createElement("button");
-    chip.className = "helper-chip" + (save.friends.includes(id) ? " friend" : "") + (inHand ? " used" : "");
-    chip.innerHTML = '<span class="em">' + h.emoji + '</span><span class="nm">' + h.name + "</span>";
-    chip.addEventListener("click", () => {
-      if (inHand) return;
-      const emptyIdx = handState.slots.indexOf(null);
-      if (emptyIdx === -1) return;
-      handState.slots[emptyIdx] = id;
-      SND.pop();
-      renderHandFill();
-      checkHandComplete();
+  // ----- right: grouped helper picker -----
+  const picker = document.createElement("section"); picker.className = "hh-panel picker-panel";
+  picker.innerHTML = '<div class="panel-head"><h2>Pick your helpers</h2>' +
+    '<p>Tap a helper to put them on a finger.</p></div>';
+  WHERE_GROUPS.forEach(gr => {
+    const ids = Object.keys(HH.HELPERS).filter(id => gr.match(HH.HELPERS[id].where));
+    if (!ids.length) return;
+    const gt = document.createElement("div"); gt.className = "group-title"; gt.textContent = gr.title;
+    picker.appendChild(gt);
+    const grid = document.createElement("div"); grid.className = "helper-grid";
+    ids.forEach(id => {
+      const h = HH.HELPERS[id];
+      const inHand = handState.slots.includes(id);
+      const chip = document.createElement("button");
+      chip.className = "helper-card" + (inHand ? " used" : "") + (save.friends.includes(id) ? " friend" : "");
+      chip.innerHTML = '<span class="em">' + h.emoji + '</span><span class="nm">' + h.name + '</span>' +
+        (inHand ? '<span class="pick-check">✓</span>' : "");
+      chip.addEventListener("click", () => {
+        if (inHand) return;
+        const emptyIdx = handState.slots.indexOf(null);
+        if (emptyIdx === -1) return;
+        handState.slots[emptyIdx] = id;
+        SND.pop();
+        renderHandFill();
+        checkHandComplete();
+      });
+      grid.appendChild(chip);
     });
-    pool.appendChild(chip);
+    picker.appendChild(grid);
   });
-  body.appendChild(pool);
+  layout.appendChild(picker);
+  body.appendChild(layout);
 
-  const filledCount = handState.slots.filter(Boolean).length;
-  if (filledCount < 5) {
-    const left = 5 - filledCount;
+  if (filled.length < 5) {
+    const left = 5 - filled.length;
     setBelu("Pick " + left + " more helper" + (left === 1 ? "" : "s") + " for your hand!");
   }
 }
