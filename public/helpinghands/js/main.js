@@ -793,6 +793,14 @@ function renderHandFill() {
   if (filled.length < 5) {
     const left = 5 - filled.length;
     setBelu("Pick " + left + " more helper" + (left === 1 ? "" : "s") + " for your hand!");
+  } else if (wheres.size >= 2) {
+    // returning kid with a saved complete hand: offer the lessons directly
+    const cont = document.createElement("button");
+    cont.className = "btn-primary";
+    cont.style.cssText = "margin:14px auto 0;display:block;";
+    cont.textContent = "Continue to lessons ➡️";
+    cont.addEventListener("click", startFeelingsLesson);
+    handPanel.appendChild(cont);
   }
 }
 
@@ -824,117 +832,177 @@ function showHandContinue() {
   body.appendChild(btn);
 }
 
+/* ---------- lesson stage: Nilu presents, content fills the screen ---------- */
+function lessonStage(opts) {
+  // opts: { title, icon, step, steps, niluText, onNext(nextBtnLabel), content(el) }
+  const body = $("handBody"); body.innerHTML = "";
+  $("beluBubble").hidden = true; // Nilu is ON the stage, not in the corner
+  const stage = document.createElement("section"); stage.className = "lesson-stage";
+  const dots = Array.from({ length: opts.steps }, (_, i) =>
+    '<span class="ls-dot' + (i === opts.step ? " on" : i < opts.step ? " done" : "") + '"></span>').join("");
+  stage.innerHTML =
+    '<div class="ls-head"><span class="ls-icon">' + opts.icon + "</span>" +
+    '<div><div class="ls-kicker">' + escHtml(opts.kicker || "Lesson") + '</div><h2>' + escHtml(opts.title) + "</h2></div>" +
+    '<div class="ls-dots">' + dots + "</div></div>";
+  const nilu = document.createElement("div"); nilu.className = "ls-nilu";
+  nilu.innerHTML = '<span class="ls-nilu-face">🐘</span><div class="ls-nilu-bubble"><p></p>' +
+    '<button class="speak-btn" title="Read aloud">🔊</button></div>';
+  nilu.querySelector("p").textContent = opts.niluText;
+  nilu.querySelector("button").addEventListener("click", () => speak(opts.niluText));
+  stage.appendChild(nilu);
+  speak(opts.niluText);
+  const content = document.createElement("div"); content.className = "ls-content";
+  stage.appendChild(content);
+  if (opts.content) opts.content(content);
+  if (opts.onNext) {
+    const foot = document.createElement("div"); foot.className = "ls-foot";
+    const btn = document.createElement("button"); btn.className = "btn-primary";
+    btn.textContent = opts.nextLabel || "Next ➡️";
+    btn.addEventListener("click", opts.onNext);
+    foot.appendChild(btn);
+    stage.appendChild(foot);
+  }
+  body.appendChild(stage);
+  return stage;
+}
+
 function startFeelingsLesson() {
   if (!isApproved("lesson:feelings")) {
     showKidLockModal("lesson:feelings", startFeelingsLesson);
     return;
   }
-  $("handBody").innerHTML = "";
-  setBelu(HH.FEELINGS.intro, { onNext: renderFeelingsSigns });
-}
-function beluCardRow() {
-  const row = document.createElement("div"); row.className = "belu-card-row";
-  row.innerHTML = '<span class="belu-card-avatar">🐘</span>';
-  return row;
+  lessonStage({
+    icon: "💓", kicker: "Lesson 1 of 2", title: "The Uh-Oh Feeling", step: 0, steps: 3,
+    niluText: HH.FEELINGS.intro,
+    content(el) {
+      el.innerHTML = '<div class="ls-hero">🧒<span class="ls-hero-ping">💓</span></div>';
+    },
+    onNext: renderFeelingsSigns,
+  });
 }
 function renderFeelingsSigns() {
-  const body = $("handBody"); body.innerHTML = "";
-  const card = document.createElement("div"); card.className = "lesson-card";
-  card.appendChild(beluCardRow());
-  const grid = document.createElement("div"); grid.className = "signs-grid";
-  HH.FEELINGS.signs.forEach(s => {
-    const chip = document.createElement("div"); chip.className = "sign-chip";
-    chip.innerHTML = '<div class="em">' + s.emoji + '</div><div class="tx">' + s.text + "</div>";
-    grid.appendChild(chip);
+  lessonStage({
+    icon: "💓", kicker: "Lesson 1 of 2", title: "The Uh-Oh Feeling", step: 1, steps: 3,
+    niluText: HH.FEELINGS.lesson,
+    content(el) {
+      const grid = document.createElement("div"); grid.className = "ls-signs";
+      HH.FEELINGS.signs.forEach((s, i) => {
+        const chip = document.createElement("button"); chip.className = "ls-sign";
+        chip.style.animationDelay = (i * 0.12) + "s";
+        chip.innerHTML = '<span class="em">' + s.emoji + '</span><span class="tx">' + escHtml(s.text) + "</span>";
+        chip.addEventListener("click", () => { speak(s.text); SND.pop(); chip.classList.remove("wiggle"); void chip.offsetWidth; chip.classList.add("wiggle"); });
+        grid.appendChild(chip);
+      });
+      el.appendChild(grid);
+      const hint = document.createElement("p"); hint.className = "ls-hint";
+      hint.textContent = "Tap each sign to hear it!";
+      el.appendChild(hint);
+    },
+    onNext: renderFeelingsQuiz,
   });
-  card.appendChild(grid);
-  speakRow(card, HH.FEELINGS.lesson);
-  const nextBtn = document.createElement("button");
-  nextBtn.className = "btn-primary"; nextBtn.textContent = "Next ➡️";
-  nextBtn.addEventListener("click", renderFeelingsQuiz);
-  card.appendChild(nextBtn);
-  body.appendChild(card);
-  setBelu(HH.FEELINGS.lesson);
 }
 function renderFeelingsQuiz() {
-  const body = $("handBody"); body.innerHTML = "";
-  const card = stepCardShell("Quick Check");
-  card.appendChild(beluCardRow());
-  speakRow(card, HH.FEELINGS.quiz.q);
-  const answers = document.createElement("div"); answers.className = "quiz-answers";
-  const feedback = document.createElement("div"); feedback.className = "quiz-feedback";
-  card.appendChild(answers); card.appendChild(feedback);
-  body.appendChild(card);
-  buildChoices(answers, HH.FEELINGS.quiz.a, feedback, () => {
-    awardSticker(1);
-    setTimeout(startSecretsLesson, 900);
+  const stage = lessonStage({
+    icon: "💓", kicker: "Lesson 1 of 2 · Quick check", title: HH.FEELINGS.quiz.q, step: 2, steps: 3,
+    niluText: HH.FEELINGS.quiz.q,
+    content(el) {
+      const answers = document.createElement("div"); answers.className = "quiz-answers ls-answers";
+      const feedback = document.createElement("div"); feedback.className = "quiz-feedback";
+      el.appendChild(answers); el.appendChild(feedback);
+      buildChoices(answers, HH.FEELINGS.quiz.a, feedback, () => {
+        awardSticker(1);
+        setTimeout(startSecretsLesson, 900);
+      });
+    },
   });
-  setBelu(HH.FEELINGS.quiz.q);
 }
+
 function startSecretsLesson() {
   if (!isApproved("lesson:secrets")) {
     showKidLockModal("lesson:secrets", startSecretsLesson);
     return;
   }
-  $("handBody").innerHTML = "";
-  setBelu(HH.SECRETS.intro, {
-    onNext: () => {
-      setBelu(HH.SECRETS.rule, { onNext: () => { handState.secretsIdx = 0; renderSecretItem(); } });
+  lessonStage({
+    icon: "🤫", kicker: "Lesson 2 of 2", title: "Surprises & Secrets", step: 0, steps: 2 + HH.SECRETS.items.length,
+    niluText: HH.SECRETS.intro,
+    content(el) {
+      el.innerHTML =
+        '<div class="ls-compare">' +
+        '<div class="ls-side happy"><span class="em">🎁</span><b>Happy surprise</b><p>Will be told soon. Makes people smile!</p></div>' +
+        '<div class="ls-vs">vs</div>' +
+        '<div class="ls-side bad"><span class="em">🤫</span><b>Bad secret</b><p>Feels uh-oh. Someone says "never tell."</p></div>' +
+        "</div>";
     },
+    onNext: () => renderSecretRule(),
+  });
+}
+function renderSecretRule() {
+  lessonStage({
+    icon: "🤫", kicker: "Lesson 2 of 2", title: "The Rule", step: 1, steps: 2 + HH.SECRETS.items.length,
+    niluText: HH.SECRETS.rule,
+    content(el) {
+      el.innerHTML = '<div class="ls-rule">Bad secrets are for <b>TELLING</b> a helper. 🗣️</div>';
+    },
+    onNext: () => { handState.secretsIdx = 0; renderSecretItem(); },
+    nextLabel: "Let's sort some secrets! ➡️",
   });
 }
 function renderSecretItem() {
-  const body = $("handBody"); body.innerHTML = "";
   const idx = handState.secretsIdx;
   const item = HH.SECRETS.items[idx];
   if (!item) { finishHandMode(); return; }
-  const card = document.createElement("div"); card.className = "secret-card";
-  const em = document.createElement("div"); em.className = "secret-emoji"; em.textContent = item.emoji;
-  card.appendChild(em);
-  const row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;";
-  const tx = document.createElement("div"); tx.className = "secret-text"; tx.textContent = item.text;
-  const sb = document.createElement("button"); sb.className = "speak-btn"; sb.textContent = "🔊";
-  sb.addEventListener("click", () => speak(item.text));
-  row.appendChild(tx); row.appendChild(sb);
-  card.appendChild(row);
-
-  const btnsRow = document.createElement("div"); btnsRow.className = "secret-buttons";
-  const safeBtn = document.createElement("button"); safeBtn.className = "secret-btn safe"; safeBtn.textContent = "Happy surprise 🎁";
-  const tellBtn = document.createElement("button"); tellBtn.className = "secret-btn tell"; tellBtn.textContent = "Tell a helper 🗣️";
-  const whyBox = document.createElement("div"); whyBox.className = "secret-why"; whyBox.hidden = true;
-
-  function choose(pickedSafe, btnEl) {
-    const correct = pickedSafe === item.safe;
-    whyBox.hidden = false; whyBox.textContent = item.why;
-    if (correct) {
-      SND.chime();
-      const r = btnEl.getBoundingClientRect();
-      confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
-      btnEl.classList.add("correct-flash");
-      safeBtn.disabled = true; tellBtn.disabled = true;
-      setTimeout(() => { handState.secretsIdx++; renderSecretItem(); }, 1700);
-    } else {
-      SND.tryTone();
-      btnEl.classList.remove("wiggle"); void btnEl.offsetWidth; btnEl.classList.add("wiggle");
-    }
-  }
-  safeBtn.addEventListener("click", () => choose(true, safeBtn));
-  tellBtn.addEventListener("click", () => choose(false, tellBtn));
-  btnsRow.appendChild(safeBtn); btnsRow.appendChild(tellBtn);
-  card.appendChild(btnsRow); card.appendChild(whyBox);
-  body.appendChild(card);
-  setBelu("Is this a happy surprise, or should you tell a helper?");
+  lessonStage({
+    icon: "🤫", kicker: "Sort it! " + (idx + 1) + " of " + HH.SECRETS.items.length, title: "Happy surprise — or tell a helper?",
+    step: 2 + idx, steps: 2 + HH.SECRETS.items.length,
+    niluText: idx === 0 ? "Listen to this one. Is it a happy surprise, or a secret to tell?" : "Here is the next one. What do you think?",
+    content(el) {
+      const card = document.createElement("div"); card.className = "ls-secret-card";
+      card.innerHTML = '<span class="em">' + item.emoji + '</span><p>' + escHtml(item.text) + "</p>" +
+        '<button class="speak-btn" title="Read aloud">🔊</button>';
+      card.querySelector("button").addEventListener("click", () => speak(item.text));
+      el.appendChild(card);
+      setTimeout(() => speak(item.text), 1400);
+      const btnsRow = document.createElement("div"); btnsRow.className = "secret-buttons";
+      const safeBtn = document.createElement("button"); safeBtn.className = "secret-btn safe"; safeBtn.textContent = "Happy surprise 🎁";
+      const tellBtn = document.createElement("button"); tellBtn.className = "secret-btn tell"; tellBtn.textContent = "Tell a helper 🗣️";
+      const whyBox = document.createElement("div"); whyBox.className = "secret-why"; whyBox.hidden = true;
+      function choose(pickedSafe, btnEl) {
+        const correct = pickedSafe === item.safe;
+        whyBox.hidden = false; whyBox.textContent = item.why;
+        speak(item.why);
+        if (correct) {
+          SND.chime();
+          const r = btnEl.getBoundingClientRect();
+          confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
+          btnEl.classList.add("correct-flash");
+          safeBtn.disabled = true; tellBtn.disabled = true;
+          setTimeout(() => { handState.secretsIdx++; renderSecretItem(); }, 2100);
+        } else {
+          SND.tryTone();
+          btnEl.classList.remove("wiggle"); void btnEl.offsetWidth; btnEl.classList.add("wiggle");
+        }
+      }
+      safeBtn.addEventListener("click", () => choose(true, safeBtn));
+      tellBtn.addEventListener("click", () => choose(false, tellBtn));
+      btnsRow.appendChild(safeBtn); btnsRow.appendChild(tellBtn);
+      el.appendChild(btnsRow); el.appendChild(whyBox);
+    },
+  });
 }
 function finishHandMode() {
   const body = $("handBody"); body.innerHTML = "";
+  $("beluBubble").hidden = false;
   awardSticker(1);
   confettiBig(); SND.chime();
-  const card = document.createElement("div"); card.className = "lesson-card"; card.style.alignItems = "center"; card.style.textAlign = "center";
-  card.innerHTML = '<div style="font-size:44px;">🎉</div><div class="step-text" style="text-align:center;">You finished My Helping Hand! You know your 5 helpers and how to spot tricky secrets.</div>';
+  const stage = document.createElement("section"); stage.className = "lesson-stage ls-done";
+  stage.innerHTML = '<div class="ls-hero">🎉</div>' +
+    '<h2 style="color:#4c3a8f;text-align:center;">You finished My Helping Hand!</h2>' +
+    '<p class="ls-hint" style="font-size:16px;">You know your 5 helpers and how to spot tricky secrets.</p>';
   const btn = document.createElement("button"); btn.className = "btn-primary"; btn.textContent = "Back to Menu";
+  btn.style.margin = "14px auto 0"; btn.style.display = "block";
   btn.addEventListener("click", () => showScreen("menuScreen"));
-  card.appendChild(btn);
-  body.appendChild(card);
+  stage.appendChild(btn);
+  body.appendChild(stage);
   setBelu("You did it! I am so proud of you. 💙");
 }
 function wireHand() { /* interactions wired per-render */ }
