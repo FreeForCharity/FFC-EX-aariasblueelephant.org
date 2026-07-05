@@ -787,7 +787,9 @@ function renderPractice() {
   else if (practiceState.step === "resolve") renderResolveStep(body);
 }
 function visibleScenarios() {
-  const showTierB = !!HH.ENABLE_TIER_B;
+  // Tier B is public only when HH.ENABLE_TIER_B is flipped; the clinical
+  // reviewer can also preview it via the keyed ?clinical= link (see boot)
+  const showTierB = !!HH.ENABLE_TIER_B || sessionStorage.getItem("hh_tierb") === "1";
   return HH.SCENARIOS.filter(sc => showTierB || sc.tier !== "B");
 }
 function scenarioIsWalkable(sc) {
@@ -1191,6 +1193,18 @@ function boot() {
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     document.documentElement.classList.add("reduced-motion");
   }
+  // clinical review mode: /helpinghands/?clinical=<review password> unlocks
+  // the Tier-B scenarios for THIS browser session only (nothing public changes)
+  try {
+    const m = new URLSearchParams(location.search).get("clinical");
+    if (m) {
+      sha256Hex(m.trim()).then(h => {
+        if (HH.GATE_HASH && h.toLowerCase() === HH.GATE_HASH.toLowerCase()) {
+          sessionStorage.setItem("hh_tierb", "1");
+        }
+      }).catch(() => {});
+    }
+  } catch (e) {}
   resizeConfetti();
   loadSave();
   updateStickerUI();
