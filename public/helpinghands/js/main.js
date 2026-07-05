@@ -992,6 +992,14 @@ function renderScenarioPicker(body) {
   hint.className = "practice-hint";
   hint.textContent = "🔒 A grown-up reads each story first, to make sure it is just right for you.";
   body.appendChild(hint);
+  const pendingCount = gatedItems().filter(it => !isApproved(it.id)).length;
+  if (pendingCount) {
+    const adultBtn = document.createElement("button");
+    adultBtn.className = "practice-adult-btn";
+    adultBtn.textContent = "👋 Grown-up here? Review & approve all " + pendingCount + " sections at once";
+    adultBtn.addEventListener("click", () => startMasterReview({ onApproved: renderPractice }));
+    body.appendChild(adultBtn);
+  }
   const grid = document.createElement("div"); grid.className = "scenario-grid";
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");
