@@ -419,11 +419,32 @@ function handleBuilding(placeId) {
     setBelu(place.comingSoon || "Coming soon!");
     return;
   }
-  // per AJ: offer the game choice BEFORE entering, instead of the kid
-  // having to find the in-game button
+  // per AJ: pop the building (it's clickable!) and offer the game choice
+  // BEFORE entering, instead of the kid having to find the in-game button
+  if (window.HH && HH.World && HH.World.popBuilding) HH.World.popBuilding(placeId);
+  SND.pop();
   const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
-  if (hasTasks) showEnterChoice(placeId, place);
-  else enterPlace(placeId);
+  setTimeout(() => {
+    if (hasTasks) showEnterChoice(placeId, place);
+    else walkThenEnter(placeId, null);
+  }, 260);
+}
+// the kid walks to the chosen building, then we go inside
+let walkingTo = null;
+function walkThenEnter(placeId, afterEnter) {
+  if (walkingTo) return;
+  if (window.HH && HH.World && HH.World.hubWalkTo) {
+    walkingTo = placeId;
+    setBelu("Here we go! 🚶");
+    HH.World.hubWalkTo(placeId, () => {
+      walkingTo = null;
+      enterPlace(placeId);
+      if (afterEnter) afterEnter();
+    });
+  } else {
+    enterPlace(placeId);
+    if (afterEnter) afterEnter();
+  }
 }
 function enterPlace(placeId) {
   exState.place = placeId; exState.roomId = null;
@@ -440,13 +461,14 @@ function showEnterChoice(placeId, place) {
   $("enterExploreBtn").onclick = () => {
     $("enterChoiceModal").hidden = true;
     SND.pop();
-    enterPlace(placeId);
+    walkThenEnter(placeId, null);
   };
   $("enterGameBtn").onclick = () => {
     $("enterChoiceModal").hidden = true;
     SND.chime();
-    enterPlace(placeId);
-    setTimeout(() => { if (exState.place === placeId && !findState.active) startFindGame(); }, 450);
+    walkThenEnter(placeId, () => {
+      setTimeout(() => { if (exState.place === placeId && !findState.active) startFindGame(); }, 350);
+    });
   };
   $("enterChoiceCloseBtn").onclick = () => { $("enterChoiceModal").hidden = true; };
   $("enterChoiceModal").hidden = false;
@@ -474,9 +496,33 @@ function handleObject(roomId, objIndex) {
   const info = findRoomInfo(roomId);
   const obj = info && info.room.objects && info.room.objects[objIndex];
   if (!obj) return;
-  const label = obj[0] + " " + obj[1];
-  setBelu(label);
-  if (window.HH && HH.World) HH.World.say("me", label, 2500);
+  if (window.HH && HH.World && HH.World.pulseToken) HH.World.pulseToken(roomId, objIndex);
+  SND.pop();
+  showUsageCard(obj);
+}
+// zoom-in card: what the object is + a little emoji scene of HOW it's used
+function showUsageCard(obj) {
+  const emoji = obj[0], label = obj[1], scene = obj[2], usage = obj[3];
+  $("usageEmoji").textContent = emoji;
+  $("usageLabel").textContent = label;
+  const sceneEl = $("usageScene");
+  sceneEl.innerHTML = "";
+  if (scene) {
+    // split into glyph clusters (handles ZWJ emoji like the doctor)
+    const parts = typeof Intl !== "undefined" && Intl.Segmenter
+      ? Array.from(new Intl.Segmenter("en", { granularity: "grapheme" }).segment(scene), s => s.segment)
+      : Array.from(scene);
+    parts.forEach((ch, i) => {
+      const sp = document.createElement("span");
+      sp.textContent = ch;
+      sp.style.animationDelay = (0.15 + i * 0.22) + "s";
+      sceneEl.appendChild(sp);
+    });
+  }
+  $("usageText").textContent = usage || label;
+  $("usageSpeakBtn").onclick = () => speak(usage || label);
+  speak(usage || label);
+  $("usageModal").hidden = false;
 }
 function handleHelper(helperId) {
   if (scenarioState) { handleScenarioHelperTap(helperId); return; }
@@ -1401,6 +1447,8 @@ function wireAdultSignoff() {
   $("adultAnswerInput").addEventListener("keydown", e => { if (e.key === "Enter") submitAdultCheck(); });
   $("adultCancelBtn").addEventListener("click", cancelAdultCheck);
   $("kidLockOkBtn").addEventListener("click", () => { $("kidLockModal").hidden = true; });
+  $("usageOkBtn").addEventListener("click", () => { $("usageModal").hidden = true; SND.pop(); });
+  $("usageModal").addEventListener("click", e => { if (e.target.id === "usageModal") $("usageModal").hidden = true; });
   $("reviewCloseBtn").addEventListener("click", () => { $("reviewSheetModal").hidden = true; });
 }
 

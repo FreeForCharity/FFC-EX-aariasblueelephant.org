@@ -247,6 +247,9 @@
   // =========================================================================
   var renderer = null, scene = null, camera = null, canvasEl = null;
   var interiorSun = null;
+  var hubBuildings = {};
+  var hubAvatar = null;
+  var hubWalk = null; // { placeId, from, to, t0, dur, onArrive }
   var raycaster = new THREE.Raycaster();
   var pointerV2 = new THREE.Vector2();
   var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {}, onBump: function () {} };
@@ -408,7 +411,36 @@
       bldg.lookAt(0, 0, 6);
       root.add(bldg);
       if (placeId === 'school') schoolPos = { x: x, z: z };
+      // buildings feel alive & tappable: gentle staggered breathing pulse
+      hubBuildings[placeId] = { group: bldg, x: x, z: z, popT: -1 };
+      (function (grp, phase, rec) {
+        animItems.push({ fn: function (t) {
+          var s = 1 + 0.018 * Math.sin(t * 1.4 + phase);
+          if (rec.popT >= 0) { // tap pop: quick squash-and-bounce
+            var pt = t - rec.popT;
+            if (pt < 0.42) s *= 1 + 0.14 * Math.sin(pt / 0.42 * Math.PI);
+            else rec.popT = -1;
+          }
+          grp.scale.set(s, s, s);
+        }});
+      })(bldg, idx * 1.1, hubBuildings[placeId]);
     });
+
+    // the kid + Belu stand at the path, ready to walk to a chosen building
+    hubAvatar = buildAvatar();
+    hubAvatar.group.position.set(0.8, 0, 8.5);
+    hubAvatar.group.rotation.y = Math.PI; // face the town
+    root.add(hubAvatar.group);
+    var hubBelu = buildBelu();
+    hubBelu.group.position.set(-0.9, 0, 9.3);
+    hubBelu.group.rotation.y = Math.PI;
+    root.add(hubBelu.group);
+    hubAvatar.belu = hubBelu;
+    animItems.push({ fn: function (t) {
+      if (hubWalk) return; // walking animation owns the pose
+      hubAvatar.group.position.y = Math.abs(Math.sin(t * 1.8)) * 0.03;
+      hubBelu.group.position.y = Math.abs(Math.sin(t * 2.1 + 1)) * 0.04;
+    }});
 
     // ---- extra trees of varied sizes, scattered further out for depth ----
     [[-50, -18, 0.6], [50, -20, 0.65], [-10, -45, 1.6], [10, -46, 1.5], [-55, 20, 0.8], [55, 18, 0.75], [0, -55, 1.8], [-24, 22, 0.7]].forEach(function (t) {
@@ -2923,7 +2955,26 @@
       camera.position.copy(camSwayBase.look).add(rotated.multiplyScalar(radius));
       camera.position.y = camSwayBase.pos.y + Math.sin(t * 0.18) * 0.15;
       camera.lookAt(camSwayBase.look);
-    } else if (mode === 'interior' && avatar) {
+    }
+    if (mode === 'hub' && hubWalk && hubAvatar) {
+      var wp = Math.min((elapsedTotal - hubWalk.t0) / hubWalk.dur, 1);
+      var ease = wp < 0.5 ? 2 * wp * wp : 1 - Math.pow(-2 * wp + 2, 2) / 2;
+      var wx = hubWalk.from.x + (hubWalk.to.x - hubWalk.from.x) * ease;
+      var wz = hubWalk.from.z + (hubWalk.to.z - hubWalk.from.z) * ease;
+      hubAvatar.group.position.set(wx, Math.abs(Math.sin(elapsedTotal * 9)) * 0.09, wz);
+      hubAvatar.group.rotation.y = Math.atan2(hubWalk.to.x - hubWalk.from.x, hubWalk.to.z - hubWalk.from.z);
+      if (hubAvatar.belu) {
+        var bx = hubWalk.from.x + (hubWalk.to.x - hubWalk.from.x) * Math.max(0, ease - 0.12) - 1.1;
+        var bz = hubWalk.from.z + (hubWalk.to.z - hubWalk.from.z) * Math.max(0, ease - 0.12) + 0.6;
+        hubAvatar.belu.group.position.set(bx, Math.abs(Math.sin(elapsedTotal * 10 + 1)) * 0.07, bz);
+        hubAvatar.belu.group.rotation.y = hubAvatar.group.rotation.y;
+      }
+      if (wp >= 1) {
+        var cb = hubWalk.onArrive; hubWalk = null;
+        if (cb) cb();
+      }
+    }
+    if (mode === 'interior' && avatar) {
       updateAvatarMovement(dt);
       updateBelu(dt, t);
       updateCameraFollow(dt);
@@ -3039,6 +3090,7 @@
       targetState = null;
       speechBubbles = []; speechByChar = {};
       showJoystick(false);
+      hubBuildings = {}; hubAvatar = null; hubWalk = null;
       var root = buildHub();
       setRoot(root);
       setCameraForHub();
@@ -3115,6 +3167,36 @@
 
     say: function (id, text, ms) {
       sayOnChar(id, text, ms);
+    },
+
+    popBuilding: function (placeId) {
+      var rec = hubBuildings[placeId];
+      if (rec) rec.popT = elapsedTotal;
+    },
+
+    hubWalkTo: function (placeId, onArrive) {
+      var rec = hubBuildings[placeId];
+      if (!rec || !hubAvatar || mode !== 'hub') { if (onArrive) onArrive(); return; }
+      if (hubWalk) return; // already walking
+      var from = hubAvatar.group.position.clone();
+      // stop a few steps in front of the building door
+      var dir = new THREE.Vector3(rec.x - from.x, 0, rec.z - from.z);
+      var dist = dir.length(); dir.normalize();
+      var stop = Math.max(0.5, dist - 5.2);
+      var to = { x: from.x + dir.x * stop, z: from.z + dir.z * stop };
+      hubWalk = { placeId: placeId, from: { x: from.x, z: from.z }, to: to, t0: elapsedTotal, dur: Math.min(2.0, 0.5 + stop * 0.055), onArrive: onArrive };
+    },
+
+    pulseToken: function (roomId, idx) {
+      var spr = objectsRegistry[roomId + ':' + idx];
+      if (!spr) return;
+      var t0 = elapsedTotal;
+      animItems.push({ fn: function (t) {
+        var pt = t - t0;
+        if (pt > 0.55) { spr.scale.set(1.05, 1.05, 1); return; }
+        var s = 1.05 * (1 + 0.75 * Math.sin(pt / 0.55 * Math.PI));
+        spr.scale.set(s, s, 1);
+      }});
     },
 
     spawnActor: function (actorId, roomId) {
