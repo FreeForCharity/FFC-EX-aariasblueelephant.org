@@ -555,10 +555,63 @@
       sign2.position.set(0, H2 + 3.4, 0);
       g.add(sign2);
       registerTappable(sign2, { placeId: placeId, kind: 'building' });
+    } else {
+      // community buildings (library / clinic / fire station / police)
+      var th = COMMUNITY_THEMES[placeId] || { wall: '#e8c99a', roof: '#a9713a', band: '#8a5a2a', door: '#6a5a48' };
+      var W3 = 7, D3 = 6, H3 = 4.8;
+      var body3 = mesh(new THREE.BoxGeometry(W3, H3, D3), stdMat(th.wall, { roughness: 0.85 }));
+      body3.position.y = H3 / 2;
+      g.add(body3);
+      var roof3 = mesh(new THREE.BoxGeometry(W3 + 0.6, 0.6, D3 + 0.6), stdMat(th.roof, { roughness: 0.8 }));
+      roof3.position.y = H3 + 0.3;
+      g.add(roof3);
+      var band3 = mesh(new THREE.BoxGeometry(W3 + 0.08, 0.55, D3 + 0.08), stdMat(th.band, { roughness: 0.7 }));
+      band3.position.y = H3 - 0.7;
+      g.add(band3);
+      var door3 = mesh(new THREE.PlaneGeometry(1.7, 2.4), stdMat(th.door || '#6a5a48', { roughness: 0.7 }));
+      door3.position.set(0, 1.2, D3 / 2 + 0.02);
+      g.add(door3);
+      var knob3 = mesh(new THREE.SphereGeometry(0.09, 8, 8), stdMat('#ffd43b', { metalness: 0.5, roughness: 0.3 }));
+      knob3.position.set(0.6, 1.2, D3 / 2 + 0.08);
+      g.add(knob3);
+      [-2.2, 2.2].forEach(function (wx3) {
+        var wf3 = mesh(new THREE.BoxGeometry(1.3, 1.3, 0.15), stdMat('#ffffff', { roughness: 0.6 }));
+        wf3.position.set(wx3, 2.9, D3 / 2 + 0.02);
+        g.add(wf3);
+        var wg3 = mesh(new THREE.PlaneGeometry(1.05, 1.05), stdMat('#8fd6ff', { emissive: true, emissiveHex: '#bfe9ff', emissiveIntensity: 0.3, roughness: 0.3 }));
+        wg3.position.set(wx3, 2.9, D3 / 2 + 0.1);
+        g.add(wg3);
+      });
+      // special touch per place: fire station gets a garage door, clinic a cross
+      if (placeId === 'firestation') {
+        var gd = mesh(new THREE.PlaneGeometry(2.6, 2.2), stdMat('#c9ccd4', { roughness: 0.6 }));
+        gd.position.set(-1.8, 1.15, D3 / 2 + 0.03); g.add(gd);
+      } else if (placeId === 'clinic') {
+        var cc1 = mesh(new THREE.BoxGeometry(0.8, 0.24, 0.1), stdMat('#e8554d', { roughness: 0.5 }));
+        cc1.position.set(0, H3 - 0.7, D3 / 2 + 0.06); g.add(cc1);
+        var cc2 = mesh(new THREE.BoxGeometry(0.24, 0.8, 0.1), stdMat('#e8554d', { roughness: 0.5 }));
+        cc2.position.set(0, H3 - 0.7, D3 / 2 + 0.06); g.add(cc2);
+      }
+      var emojiSign3 = makeEmojiSprite(place.emoji, 1.9);
+      emojiSign3.position.set(0, H3 + 1.6, 0.3);
+      g.add(emojiSign3);
+      registerTappable(body3, { placeId: placeId, kind: 'building' });
+      registerTappable(door3, { placeId: placeId, kind: 'building' });
+      registerTappable(emojiSign3, { placeId: placeId, kind: 'building' });
+      var sign3 = makeSignSprite(place.emoji, place.name, { bg: '#fff7e6', border: th.roof }, 3.0);
+      sign3.position.set(0, H3 + 3.2, 0);
+      g.add(sign3);
+      registerTappable(sign3, { placeId: placeId, kind: 'building' });
     }
 
     return g;
   }
+  var COMMUNITY_THEMES = {
+    library:     { wall: '#e8c99a', roof: '#a9713a', band: '#8a5a2a', door: '#6a4a28' },
+    clinic:      { wall: '#f2f5f8', roof: '#7fb8d8', band: '#e8590c', door: '#7fb8d8' },
+    firestation: { wall: '#e8695a', roof: '#b8352a', band: '#f8c537', door: '#8a2a20' },
+    police:      { wall: '#7f96c9', roof: '#3a4f8a', band: '#f5f7fa', door: '#2c3e6a' },
+  };
 
   var LOCKED_THEMES = {
     library:     { wall: '#e8c99a', roof: '#a9713a', band: '#8a5a2a' },
@@ -909,7 +962,16 @@
     playground:{ wall: null, wall2: null, floor: '#6ec651' },
     office:    { wall: '#8266d9', wall2: '#7154c7', floor: '#c9bb96' },
     nurseroom: { wall: '#3dc088', wall2: '#2fae77', floor: '#bcdec4' },
+    readingroom: { wall: '#d99a4e', wall2: '#c9883c', floor: '#b9814a' },
+    checkout:    { wall: '#c9883c', wall2: '#b9772e', floor: '#b9814a' },
+    waiting:     { wall: '#57c9a2', wall2: '#46b791', floor: '#cfe8d8' },
+    examroom:    { wall: '#54aede', wall2: '#449ccc', floor: '#d8e8f0' },
+    garage:      { wall: '#d95f4e', wall2: '#c94e3d', floor: '#a8a8b0' },
+    gearroom:    { wall: '#e0a03c', wall2: '#cf8f2c', floor: '#c9a06a' },
+    frontdesk:   { wall: '#5a76c9', wall2: '#4a65b8', floor: '#c9c4b0' },
+    safecorner:  { wall: '#3fb8ae', wall2: '#2fa69c', floor: '#d8ead8' },
   };
+  TILE_ROOMS.garage = 1; TILE_ROOMS.waiting = 1; TILE_ROOMS.examroom = 1; TILE_ROOMS.frontdesk = 1;
 
   // ---- furniture builders keyed by room id (unchanged: local coords, shell.roomW/roomD) ----
   var FURNITURE_BUILDERS = {
@@ -1437,6 +1499,387 @@
       addWallShelf(g, 4.0, 2.0, shell.roomD / 2 - 0.18, Math.PI, 1.1);
 
       return { bandaids: new THREE.Vector3(3.8, 1.5, -shell.roomD / 2 + 0.6), bed: new THREE.Vector3(-3.5, 1.4, -shell.roomD / 2 + 1.2), thermometer: new THREE.Vector3(2.6, 1.1, -shell.roomD / 2 + 0.9) };
+    },
+
+    /* =================== LIBRARY =================== */
+    readingroom: function (g, shell) {
+      var zN = shell.roomD / 2; // far (north) wall — fully visible to the follow-cam
+      [-4.2, -1.6].forEach(function (sx, si) {
+        var shelf = new THREE.Group();
+        var frame = mesh(new THREE.BoxGeometry(2.2, 2.6, 0.5), stdMat('#8a5a30', { roughness: 0.7 }));
+        frame.position.y = 1.3; shelf.add(frame);
+        for (var row = 0; row < 3; row++) {
+          for (var bcol = 0; bcol < 5; bcol++) {
+            var bookColors = ['#e8554d', '#3f8fe0', '#5cbf63', '#f2cf3a', '#9a6ce0', '#ef7fc0'];
+            var book = mesh(new THREE.BoxGeometry(0.28, 0.55, 0.18),
+              stdMat(bookColors[(row * 5 + bcol + si) % 6], { roughness: 0.6 }));
+            book.position.set(-0.8 + bcol * 0.4, 0.65 + row * 0.75, 0.2);
+            shelf.add(book);
+          }
+        }
+        shelf.rotation.y = Math.PI;
+        shelf.position.set(sx, 0, zN - 0.6);
+        g.add(shelf); regCollider(shelf);
+      });
+      var chair = new THREE.Group();
+      var seatC = mesh(new THREE.BoxGeometry(1.3, 0.55, 1.2), stdMat('#c9563e', { roughness: 0.8 }));
+      seatC.position.y = 0.45; chair.add(seatC);
+      var backC = mesh(new THREE.BoxGeometry(1.3, 1.0, 0.35), stdMat('#c9563e', { roughness: 0.8 }));
+      backC.position.set(0, 0.95, 0.5); chair.add(backC);
+      [-0.62, 0.62].forEach(function (ax) {
+        var arm = mesh(new THREE.BoxGeometry(0.28, 0.5, 1.1), stdMat('#b8462e', { roughness: 0.8 }));
+        arm.position.set(ax, 0.75, 0); chair.add(arm);
+      });
+      chair.position.set(1.8, 0, 0.6); chair.rotation.y = 0.4;
+      g.add(chair); regCollider(chair);
+      addRug(g, 1.6, 0.4, 3.6, 3.0, '#e8c99a');
+      var gt = new THREE.Group();
+      var gtTop = mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.1, 14), stdMat('#a8763e', { roughness: 0.6 }));
+      gtTop.position.y = 0.9; gt.add(gtTop);
+      var gtLeg = mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.9, 8), stdMat('#8a5a30', { roughness: 0.6 }));
+      gtLeg.position.y = 0.45; gt.add(gtLeg);
+      var globe = mesh(new THREE.SphereGeometry(0.4, 14, 12), stdMat('#4a9fd8', { roughness: 0.5 }));
+      globe.position.y = 1.4; gt.add(globe);
+      var land = mesh(new THREE.SphereGeometry(0.405, 10, 8, 0.4, 1.4, 0.8, 1.2), stdMat('#6ec651', { roughness: 0.7 }));
+      land.position.y = 1.4; gt.add(land);
+      gt.position.set(4.4, 0, zN - 1.3);
+      g.add(gt); regCollider(gt);
+      addFramedPicture(g, -2.0, 2.3, zN - 0.12, Math.PI, '📖', '#fff2dc', '#8a5a30');
+      addWallClock(g, 2.4, 2.6, zN - 0.12, Math.PI);
+      return {
+        books: new THREE.Vector3(-2.9, 2.0, zN - 1.2),
+        chair: new THREE.Vector3(1.8, 1.7, 0.6),
+        globe: new THREE.Vector3(4.4, 2.3, zN - 1.3),
+      };
+    },
+    checkout: function (g, shell) {
+      var zN = shell.roomD / 2;
+      var counter = new THREE.Group();
+      var cTop = mesh(new THREE.BoxGeometry(6.0, 0.18, 1.4), stdMat('#a8763e', { roughness: 0.5 }));
+      cTop.position.y = 1.1; counter.add(cTop);
+      var cBody = mesh(new THREE.BoxGeometry(5.7, 1.05, 1.2), stdMat('#c9985c', { roughness: 0.7 }));
+      cBody.position.y = 0.55; counter.add(cBody);
+      var monitor = mesh(new THREE.BoxGeometry(0.8, 0.55, 0.08), stdMat('#2e3440', { roughness: 0.3 }));
+      monitor.position.set(-2.2, 1.6, -0.2); monitor.rotation.y = 0.3; counter.add(monitor);
+      ['#e8554d', '#3f8fe0', '#f2cf3a'].forEach(function (bc, bi) {
+        var rb = mesh(new THREE.BoxGeometry(0.7, 0.14, 0.5), stdMat(bc, { roughness: 0.6 }));
+        rb.position.set(-1.0, 1.27 + bi * 0.15, 0.1); rb.rotation.y = bi * 0.25; counter.add(rb);
+      });
+      counter.rotation.y = Math.PI;
+      counter.position.set(-0.6, 0, zN - 1.7);
+      g.add(counter); regCollider(counter);
+      var bin = new THREE.Group();
+      var binBody = mesh(new THREE.BoxGeometry(1.1, 1.15, 1.1), stdMat('#4a9fd8', { roughness: 0.6 }));
+      binBody.position.y = 0.575; bin.add(binBody);
+      var slot = mesh(new THREE.BoxGeometry(0.75, 0.12, 0.06), stdMat('#20303f', { roughness: 0.5 }));
+      slot.position.set(0, 0.9, 0.56); bin.add(slot);
+      bin.rotation.y = Math.PI;
+      bin.position.set(4.6, 0, zN - 1.2);
+      g.add(bin); regCollider(bin);
+      addRug(g, -0.4, 0.4, 5.0, 2.4, '#e8c99a');
+      addFramedPicture(g, 3.4, 2.3, zN - 0.12, Math.PI, '🤫', '#fff2dc', '#8a5a30');
+      return {
+        book:    new THREE.Vector3(-1.6, 1.9, zN - 1.9),
+        card:    new THREE.Vector3(0.6, 1.75, zN - 1.9),
+        scanner: new THREE.Vector3(2.0, 1.75, zN - 1.9),
+      };
+    },
+
+    /* =================== DOCTOR'S OFFICE =================== */
+    waiting: function (g, shell) {
+      var zN = shell.roomD / 2;
+      for (var wc = 0; wc < 4; wc++) {
+        var wchair = new THREE.Group();
+        var wseat = mesh(new THREE.BoxGeometry(0.9, 0.14, 0.9), stdMat('#f2a03d', { roughness: 0.6 }));
+        wseat.position.y = 0.5; wchair.add(wseat);
+        var wback = mesh(new THREE.BoxGeometry(0.9, 0.8, 0.12), stdMat('#f2a03d', { roughness: 0.6 }));
+        wback.position.set(0, 0.95, 0.4); wchair.add(wback);
+        [[-0.35, -0.35], [0.35, -0.35], [-0.35, 0.35], [0.35, 0.35]].forEach(function (lp) {
+          var wleg = mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 8), stdMat('#6a6f7a', { roughness: 0.5 }));
+          wleg.position.set(lp[0], 0.25, lp[1]); wchair.add(wleg);
+        });
+        wchair.position.set(-4.4 + wc * 1.25, 0, zN - 1.0);
+        g.add(wchair);
+        if (wc === 0 || wc === 3) regCollider(wchair);
+      }
+      var lt = new THREE.Group();
+      var ltTop = mesh(new THREE.BoxGeometry(1.6, 0.12, 1.1), stdMat('#e8e0d0', { roughness: 0.6 }));
+      ltTop.position.y = 0.55; lt.add(ltTop);
+      [[-0.6, -0.4], [0.6, -0.4], [-0.6, 0.4], [0.6, 0.4]].forEach(function (lp) {
+        var ltLeg = mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.55, 8), stdMat('#b8b0a0', { roughness: 0.5 }));
+        ltLeg.position.set(lp[0], 0.27, lp[1]); lt.add(ltLeg);
+      });
+      ['#5cbf63', '#ef7fc0'].forEach(function (bc, bi) {
+        var pb = mesh(new THREE.BoxGeometry(0.55, 0.1, 0.4), stdMat(bc, { roughness: 0.6 }));
+        pb.position.set(-0.25 + bi * 0.5, 0.66, 0); pb.rotation.y = bi * 0.5; lt.add(pb);
+      });
+      lt.position.set(0.8, 0, 0.4);
+      g.add(lt); regCollider(lt);
+      var tb = new THREE.Group();
+      var tbBody = mesh(new THREE.BoxGeometry(1.3, 0.75, 0.95), stdMat('#f2cf3a', { roughness: 0.7 }));
+      tbBody.position.y = 0.375; tb.add(tbBody);
+      var ballToy = mesh(new THREE.SphereGeometry(0.22, 10, 10), stdMat('#e8554d', { roughness: 0.6 }));
+      ballToy.position.set(-0.25, 0.85, 0); tb.add(ballToy);
+      var blockToy = mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), stdMat('#4a9fd8', { roughness: 0.6 }));
+      blockToy.position.set(0.3, 0.9, 0.1); blockToy.rotation.y = 0.5; tb.add(blockToy);
+      tb.position.set(4.3, 0, zN - 1.1);
+      g.add(tb); regCollider(tb);
+      addRug(g, 0.8, 0.4, 3.4, 2.6, '#bfe8d8');
+      addFramedPicture(g, -1.8, 2.3, zN - 0.12, Math.PI, '🌈', '#e8fff4', '#2fa67c');
+      addWallClock(g, 1.6, 2.6, zN - 0.12, Math.PI);
+      return {
+        chairs: new THREE.Vector3(-3.2, 1.6, zN - 1.0),
+        books:  new THREE.Vector3(0.8, 1.25, 0.4),
+        toybox: new THREE.Vector3(4.3, 1.5, zN - 1.1),
+      };
+    },
+    examroom: function (g, shell) {
+      var zN = shell.roomD / 2;
+      var bed = new THREE.Group();
+      var bedBase = mesh(new THREE.BoxGeometry(2.6, 0.75, 1.2), stdMat('#e8e8f0', { roughness: 0.6 }));
+      bedBase.position.y = 0.375; bed.add(bedBase);
+      var bedTop = mesh(new THREE.BoxGeometry(2.6, 0.22, 1.2), stdMat('#57a9c9', { roughness: 0.7 }));
+      bedTop.position.y = 0.85; bed.add(bedTop);
+      var paper = mesh(new THREE.BoxGeometry(2.3, 0.03, 0.7), stdMat('#ffffff', { roughness: 0.9 }));
+      paper.position.y = 0.98; bed.add(paper);
+      var bedPillow = mesh(new THREE.BoxGeometry(0.65, 0.18, 0.55), stdMat('#ffffff', { roughness: 0.8 }));
+      bedPillow.position.set(-0.9, 1.05, 0); bed.add(bedPillow);
+      bed.position.set(-3.4, 0, zN - 1.3);
+      g.add(bed); regCollider(bed);
+      var sc = new THREE.Group();
+      var scBase = mesh(new THREE.BoxGeometry(0.75, 0.14, 0.75), stdMat('#6a6f7a', { roughness: 0.5 }));
+      scBase.position.y = 0.07; sc.add(scBase);
+      var scPole = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8), stdMat('#8a8f9a', { roughness: 0.5 }));
+      scPole.position.set(0, 0.82, -0.3); sc.add(scPole);
+      var scDial = mesh(new THREE.CircleGeometry(0.22, 14), stdMat('#ffffff', { roughness: 0.4 }));
+      scDial.position.set(0, 1.62, -0.26); sc.add(scDial);
+      sc.rotation.y = Math.PI;
+      sc.position.set(0.8, 0, zN - 0.9);
+      g.add(sc); regCollider(sc);
+      var cab = new THREE.Group();
+      var cabBody = mesh(new THREE.BoxGeometry(1.7, 2.0, 0.7), stdMat('#ffffff', { roughness: 0.5 }));
+      cabBody.position.y = 1.0; cab.add(cabBody);
+      var cross = mesh(new THREE.BoxGeometry(0.55, 0.16, 0.04), stdMat('#e8554d', { roughness: 0.5 }));
+      cross.position.set(0, 1.45, 0.36); cab.add(cross);
+      var cross2 = mesh(new THREE.BoxGeometry(0.16, 0.55, 0.04), stdMat('#e8554d', { roughness: 0.5 }));
+      cross2.position.set(0, 1.45, 0.36); cab.add(cross2);
+      cab.rotation.y = Math.PI;
+      cab.position.set(3.8, 0, zN - 0.95);
+      g.add(cab); regCollider(cab);
+      var chart = mesh(new THREE.PlaneGeometry(0.6, 2.2), stdMat('#fff2b8', { roughness: 0.8 }));
+      chart.position.set(-shell.roomW / 2 + 0.12, 1.5, 0.6);
+      chart.rotation.y = Math.PI / 2;
+      chart.castShadow = false; g.add(chart);
+      addFramedPicture(g, 2.2, 2.3, zN - 0.12, Math.PI, '🦷', '#e8f6ff', '#449ccc');
+      return {
+        steth: new THREE.Vector3(3.8, 2.4, zN - 0.95),
+        scale: new THREE.Vector3(0.8, 1.6, zN - 0.9),
+        bed:   new THREE.Vector3(-3.4, 1.6, zN - 1.3),
+      };
+    },
+
+    /* =================== FIRE STATION =================== */
+    garage: function (g, shell) {
+      var zN = shell.roomD / 2;
+      var truck = new THREE.Group();
+      var truckBody = mesh(new THREE.BoxGeometry(4.6, 1.5, 1.9), stdMat('#d92c20', { roughness: 0.45 }));
+      truckBody.position.set(0.4, 1.15, 0); truck.add(truckBody);
+      var cabF = mesh(new THREE.BoxGeometry(1.5, 1.9, 1.9), stdMat('#c22318', { roughness: 0.45 }));
+      cabF.position.set(-2.4, 1.35, 0); truck.add(cabF);
+      var windshield = mesh(new THREE.PlaneGeometry(1.1, 0.7), stdMat('#bfe0f2', { roughness: 0.2 }));
+      windshield.position.set(-3.16, 1.7, 0); windshield.rotation.y = -Math.PI / 2;
+      windshield.castShadow = false; truck.add(windshield);
+      var stripe = mesh(new THREE.BoxGeometry(4.62, 0.28, 1.92), stdMat('#f8c537', { roughness: 0.5 }));
+      stripe.position.set(0.4, 1.0, 0); truck.add(stripe);
+      [[-2.4, 0], [-0.6, 0], [1.6, 0]].forEach(function (wp) {
+        [-1, 1].forEach(function (side) {
+          var wheel = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16), stdMat('#2a2e36', { roughness: 0.8 }));
+          wheel.rotation.x = Math.PI / 2;
+          wheel.position.set(wp[0], 0.5, side * 0.95);
+          truck.add(wheel);
+          var hub = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.32, 10), stdMat('#c9ccd4', { roughness: 0.4 }));
+          hub.rotation.x = Math.PI / 2;
+          hub.position.set(wp[0], 0.5, side * 0.96);
+          truck.add(hub);
+        });
+      });
+      var ladder = new THREE.Group();
+      [-0.28, 0.28].forEach(function (lx) {
+        var rail = mesh(new THREE.BoxGeometry(0.08, 0.08, 3.4), stdMat('#e8e8f0', { roughness: 0.4 }));
+        rail.position.set(lx, 0, 0); ladder.add(rail);
+      });
+      for (var rung = 0; rung < 7; rung++) {
+        var r = mesh(new THREE.BoxGeometry(0.55, 0.06, 0.08), stdMat('#e8e8f0', { roughness: 0.4 }));
+        r.position.set(0, 0, -1.5 + rung * 0.5); ladder.add(r);
+      }
+      ladder.rotation.y = Math.PI / 2;
+      ladder.position.set(0.6, 2.05, 0); truck.add(ladder);
+      var beacon = mesh(new THREE.BoxGeometry(0.35, 0.22, 0.5), stdMat('#3f8fe0', { emissive: true, emissiveHex: '#5cb8ff', emissiveIntensity: 0.7, roughness: 0.3 }));
+      beacon.position.set(-2.4, 2.42, 0); truck.add(beacon);
+      truck.position.set(0, 0, zN - 2.2);
+      g.add(truck); regCollider(truck);
+      var gdoor = mesh(new THREE.PlaneGeometry(6.4, 2.6), stdMat('#b8bcc4', { roughness: 0.6 }));
+      gdoor.rotation.y = Math.PI;
+      gdoor.position.set(0, 1.4, zN - 0.16);
+      gdoor.castShadow = false; g.add(gdoor);
+      for (var seg = 0; seg < 4; seg++) {
+        var segLine = mesh(new THREE.BoxGeometry(6.4, 0.06, 0.02), stdMat('#8f939c', { roughness: 0.6 }));
+        segLine.position.set(0, 0.6 + seg * 0.62, zN - 0.18);
+        segLine.castShadow = false; g.add(segLine);
+      }
+      var ext = new THREE.Group();
+      var extBody = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.7, 10), stdMat('#d92c20', { roughness: 0.4 }));
+      extBody.position.y = 0.45; ext.add(extBody);
+      var extTop = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 8), stdMat('#2a2e36', { roughness: 0.5 }));
+      extTop.position.y = 0.9; ext.add(extTop);
+      ext.position.set(5.4, 0, zN - 0.7);
+      g.add(ext); regCollider(ext);
+      var bellDome = mesh(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), stdMat('#f8c537', { roughness: 0.35 }));
+      bellDome.rotation.x = -Math.PI / 2;
+      bellDome.position.set(-5.2, 2.45, zN - 0.2);
+      bellDome.castShadow = false; g.add(bellDome);
+      return {
+        truck: new THREE.Vector3(0, 3.0, zN - 2.2),
+        ext:   new THREE.Vector3(5.4, 1.4, zN - 0.7),
+        bell:  new THREE.Vector3(-5.2, 3.1, zN - 0.6),
+      };
+    },
+    gearroom: function (g, shell) {
+      var zN = shell.roomD / 2;
+      for (var lk = 0; lk < 3; lk++) {
+        var locker = new THREE.Group();
+        var lkFrame = mesh(new THREE.BoxGeometry(1.5, 2.3, 0.8), stdMat('#8f4a2e', { roughness: 0.7 }));
+        lkFrame.position.y = 1.15; locker.add(lkFrame);
+        var lkBack = mesh(new THREE.BoxGeometry(1.3, 2.0, 0.1), stdMat('#6a3820', { roughness: 0.8 }));
+        lkBack.position.set(0, 1.15, -0.25); locker.add(lkBack);
+        var coat = mesh(new THREE.BoxGeometry(0.75, 1.1, 0.28), stdMat('#e8a03c', { roughness: 0.7 }));
+        coat.position.set(0, 1.25, 0.05); locker.add(coat);
+        var coatStripe = mesh(new THREE.BoxGeometry(0.77, 0.14, 0.3), stdMat('#f5f7fa', { emissive: true, emissiveHex: '#ffffcc', emissiveIntensity: 0.3, roughness: 0.5 }));
+        coatStripe.position.set(0, 1.1, 0.05); locker.add(coatStripe);
+        var helm = mesh(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), stdMat('#f8c537', { roughness: 0.4 }));
+        helm.position.set(0, 2.32, 0.05); locker.add(helm);
+        locker.rotation.y = Math.PI;
+        locker.position.set(-3.8 + lk * 1.9, 0, zN - 0.75);
+        g.add(locker); regCollider(locker);
+      }
+      var bench = new THREE.Group();
+      var benchTop = mesh(new THREE.BoxGeometry(3.4, 0.14, 0.7), stdMat('#c9985c', { roughness: 0.7 }));
+      benchTop.position.y = 0.5; bench.add(benchTop);
+      [[-1.5, 0], [1.5, 0]].forEach(function (bp) {
+        var bleg = mesh(new THREE.BoxGeometry(0.16, 0.5, 0.6), stdMat('#a8763e', { roughness: 0.7 }));
+        bleg.position.set(bp[0], 0.25, bp[1]); bench.add(bleg);
+      });
+      bench.position.set(-1.6, 0, 0.2);
+      g.add(bench); regCollider(bench);
+      for (var bt = 0; bt < 3; bt++) {
+        [-0.16, 0.16].forEach(function (bx) {
+          var boot = mesh(new THREE.BoxGeometry(0.24, 0.42, 0.4), stdMat('#2a2e36', { roughness: 0.7 }));
+          boot.position.set(-2.6 + bt * 1.1 + bx, 0.21, -0.4);
+          g.add(boot);
+        });
+      }
+      addFramedPicture(g, 3.6, 2.3, zN - 0.12, Math.PI, '🚒', '#ffe8e0', '#c94e3d');
+      return {
+        helmet: new THREE.Vector3(-3.8, 2.9, zN - 0.75),
+        coat:   new THREE.Vector3(-1.9, 1.8, zN - 0.95),
+        boots:  new THREE.Vector3(-1.6, 1.1, -0.45),
+      };
+    },
+
+    /* =================== POLICE STATION =================== */
+    frontdesk: function (g, shell) {
+      var zN = shell.roomD / 2;
+      var desk = new THREE.Group();
+      var dBody = mesh(new THREE.BoxGeometry(5.4, 1.05, 1.3), stdMat('#4a65b8', { roughness: 0.6 }));
+      dBody.position.y = 0.525; desk.add(dBody);
+      var dTop = mesh(new THREE.BoxGeometry(5.7, 0.16, 1.5), stdMat('#e8e8f0', { roughness: 0.4 }));
+      dTop.position.y = 1.15; desk.add(dTop);
+      var dSign = mesh(new THREE.BoxGeometry(1.8, 0.4, 0.08), stdMat('#f8c537', { roughness: 0.5 }));
+      dSign.position.set(0, 0.8, 0.68); desk.add(dSign);
+      desk.rotation.y = Math.PI;
+      desk.position.set(-0.4, 0, zN - 1.7);
+      g.add(desk); regCollider(desk);
+      var flagPole = mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 8), stdMat('#8a8f9a', { roughness: 0.4 }));
+      flagPole.position.set(5.2, 1.3, zN - 0.6);
+      g.add(flagPole);
+      var flag = mesh(new THREE.PlaneGeometry(1.0, 0.65), stdMat('#3f5fc9', { roughness: 0.7, side: 2 }));
+      flag.position.set(4.68, 2.2, zN - 0.6);
+      flag.castShadow = false; g.add(flag);
+      var board = mesh(new THREE.PlaneGeometry(2.2, 1.4), stdMat('#c9985c', { roughness: 0.8 }));
+      board.rotation.y = Math.PI;
+      board.position.set(-4.4, 2.0, zN - 0.16);
+      board.castShadow = false; g.add(board);
+      [['#ffffff', -4.9, 2.2], ['#fff2b8', -4.1, 1.9], ['#e0f2ff', -4.5, 1.7]].forEach(function (np) {
+        var note = mesh(new THREE.PlaneGeometry(0.5, 0.4), stdMat(np[0], { roughness: 0.9 }));
+        note.rotation.y = Math.PI;
+        note.position.set(np[1], np[2], zN - 0.18);
+        note.castShadow = false; g.add(note);
+      });
+      addRug(g, -0.4, 0.2, 4.6, 2.2, '#b8c4e8');
+      return {
+        badge: new THREE.Vector3(-1.8, 1.75, zN - 1.9),
+        radio: new THREE.Vector3(0.2, 1.75, zN - 1.9),
+        phone: new THREE.Vector3(1.8, 1.75, zN - 1.9),
+      };
+    },
+    safecorner: function (g, shell) {
+      var zN = shell.roomD / 2;
+      var cozy = new THREE.Group();
+      var cozySeat = mesh(new THREE.BoxGeometry(3.2, 0.55, 1.2), stdMat('#e8785a', { roughness: 0.8 }));
+      cozySeat.position.y = 0.45; cozy.add(cozySeat);
+      var cozyBack = mesh(new THREE.BoxGeometry(3.2, 0.95, 0.3), stdMat('#e8785a', { roughness: 0.8 }));
+      cozyBack.position.set(0, 0.95, 0.45); cozy.add(cozyBack);
+      ['#f2cf3a', '#4a9fd8'].forEach(function (cc, ci) {
+        var cush = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.28), stdMat(cc, { roughness: 0.8 }));
+        cush.position.set(-1.0 + ci * 2.0, 0.95, 0.28);
+        cush.rotation.x = 0.15; cozy.add(cush);
+      });
+      // a friendly teddy sitting on the bench
+      var teddy = new THREE.Group();
+      var tBody = mesh(new THREE.SphereGeometry(0.26, 12, 10), stdMat('#a8763e', { roughness: 0.9 }));
+      tBody.position.y = 0.95; teddy.add(tBody);
+      var tHead = mesh(new THREE.SphereGeometry(0.19, 12, 10), stdMat('#a8763e', { roughness: 0.9 }));
+      tHead.position.y = 1.3; teddy.add(tHead);
+      [-1, 1].forEach(function (te) {
+        var tEar = mesh(new THREE.SphereGeometry(0.075, 8, 8), stdMat('#8a5a30', { roughness: 0.9 }));
+        tEar.position.set(te * 0.13, 1.45, 0); teddy.add(tEar);
+      });
+      var tSnout = mesh(new THREE.SphereGeometry(0.08, 8, 8), stdMat('#d8b88a', { roughness: 0.9 }));
+      tSnout.position.set(0, 1.27, -0.15); teddy.add(tSnout);
+      teddy.position.set(0.2, 0, 0);
+      cozy.add(teddy);
+      cozy.position.set(1.4, 0, zN - 1.1);
+      g.add(cozy); regCollider(cozy);
+      var mapBoard = new THREE.Group();
+      var mapFrame = mesh(new THREE.BoxGeometry(2.9, 2.0, 0.1), stdMat('#8a5a30', { roughness: 0.7 }));
+      mapFrame.position.y = 2.0; mapBoard.add(mapFrame);
+      var mapFace = mesh(new THREE.PlaneGeometry(2.6, 1.7), stdMat('#d8ead8', { roughness: 0.9 }));
+      mapFace.position.set(0, 2.0, 0.06); mapFace.castShadow = false; mapBoard.add(mapFace);
+      [[0, 0.4, 2.2, 0.1], [0, -0.3, 2.2, 0.1], [-0.6, 0, 0.1, 1.4], [0.7, 0.05, 0.1, 1.5]].forEach(function (rd) {
+        var road = mesh(new THREE.PlaneGeometry(rd[2], rd[3]), stdMat('#8f939c', { roughness: 0.8 }));
+        road.position.set(rd[0], 2.0 + rd[1], 0.08); road.castShadow = false; mapBoard.add(road);
+      });
+      var homeDot = mesh(new THREE.CircleGeometry(0.12, 10), stdMat('#e8554d', { roughness: 0.6 }));
+      homeDot.position.set(-0.6, 2.4, 0.09); homeDot.castShadow = false; mapBoard.add(homeDot);
+      mapBoard.rotation.y = Math.PI;
+      mapBoard.position.set(-3.2, 0, zN - 0.35);
+      g.add(mapBoard); regCollider(mapBoard);
+      var wt = new THREE.Group();
+      var wtTop = mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 12), stdMat('#e8e0d0', { roughness: 0.6 }));
+      wtTop.position.y = 0.75; wt.add(wtTop);
+      var wtLeg = mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.75, 8), stdMat('#b8b0a0', { roughness: 0.5 }));
+      wtLeg.position.y = 0.375; wt.add(wtLeg);
+      var cup = mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.2, 10), stdMat('#4a9fd8', { roughness: 0.5 }));
+      cup.position.y = 0.9; wt.add(cup);
+      wt.position.set(4.2, 0, zN - 1.1);
+      g.add(wt); regCollider(wt);
+      addRug(g, 1.2, 0.2, 3.8, 2.6, '#c8e8d8');
+      addFramedPicture(g, 3.0, 2.3, zN - 0.12, Math.PI, '💙', '#e8f4ff', '#2fa69c');
+      return {
+        map:   new THREE.Vector3(-3.2, 3.3, zN - 0.8),
+        teddy: new THREE.Vector3(1.6, 1.7, zN - 1.1),
+        cup:   new THREE.Vector3(4.2, 1.35, zN - 1.1),
+      };
     }
   };
 
@@ -1754,7 +2197,11 @@
       { id: 'cafeteria', side: 'L' },
       { id: 'nurseroom', side: 'R' },
       { id: 'playground', side: 'T', yard: true }
-    ]
+    ],
+    library:     [{ id: 'readingroom', side: 'L' }, { id: 'checkout', side: 'R' }],
+    clinic:      [{ id: 'waiting', side: 'L' }, { id: 'examroom', side: 'R' }],
+    firestation: [{ id: 'garage', side: 'L' }, { id: 'gearroom', side: 'R' }],
+    police:      [{ id: 'frontdesk', side: 'L' }, { id: 'safecorner', side: 'R' }]
   };
 
   var LAY_ROOM_W = 13, LAY_ROOM_D = 8, LAY_HALL_W = 3.6, LAY_DOOR_GAP = 1.8;
