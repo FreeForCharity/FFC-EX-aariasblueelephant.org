@@ -158,6 +158,298 @@ ABC.world = (function () {
     t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
   /* ============================================================
+     MODERN SKIN "real world" — only used when ABC.MODERN.
+     Natural-looking ground & trees on the r170 renderer: rich
+     seamless procedural textures derived from each block's authored
+     color, per-face grass (green top / dirt sides), organic foliage
+     puffs + bark cylinders instead of green/brown cubes, per-instance
+     color & shape variation, and wavy grass tufts scattered on open
+     grass tops. World DATA is untouched — same blocks, same saves,
+     same dig/place voxel walk; only how blocks are DRAWN changes.
+     ============================================================ */
+  const MODERN = ABC.MODERN;
+  // terrain ids that swap the toy bevel for flat, seam-tiling "real ground"
+  const REAL_GROUND = ['grass','dirt','sand','snow','stone','moss','sandstone','redrock','granite','blackrock'];
+  // per-instance brightness jitter — breaks up the tiled-texture repetition
+  const REAL_JITTER = new Set([...REAL_GROUND, 'leaf']);
+
+  function shade(hex, f) {        // lighten (f>0) / darken (f<0) '#rrggbb', returns 'rgb()'
+    const n = parseInt(hex.slice(1), 16);
+    const ch = (v) => Math.max(0, Math.min(255, Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f))));
+    return 'rgb(' + ch(n >> 16 & 255) + ',' + ch(n >> 8 & 255) + ',' + ch(n & 255) + ')';
+  }
+
+  const _realTex = {};
+  function realTexture(kind, base, base2) {
+    const ck = kind + base + (base2 || '');
+    if (_realTex[ck]) return _realTex[ck];
+    const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    const rnd = mulberry(kind.length * 131 + base.length * 17 + kind.charCodeAt(0) * 7);
+    // paint one dab at every 3x3 tile offset so the texture tiles seamlessly
+    const W = (x, y, paint) => { for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) paint(x + dx, y + dy); };
+    const blob = (x, y, r, col, a) => W(x, y, (px, py) => {
+      const rg = g.createRadialGradient(px, py, 0, px, py, r);
+      rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.globalAlpha = a; g.fillStyle = rg; g.fillRect(px - r, py - r, r * 2, r * 2); g.globalAlpha = 1;
+    });
+    const mottle = (n, amp, rMin, rMax) => {   // big soft light/dark patches
+      for (let i = 0; i < n; i++) blob(rnd() * S, rnd() * S, rMin + rnd() * (rMax - rMin),
+        shade(base, (rnd() < 0.5 ? -1 : 1) * amp * (0.5 + rnd() * 0.5)), 0.10 + rnd() * 0.10);
+    };
+    const blade = (x, y, len, ang, col, lw) => W(x, y, (px, py) => {
+      const tx = px + Math.cos(ang) * len, ty = py + Math.sin(ang) * len;
+      g.strokeStyle = col; g.lineWidth = lw; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(px, py);
+      g.quadraticCurveTo(px + Math.cos(ang) * len * 0.5 + (rnd() - 0.5) * 4, py + Math.sin(ang) * len * 0.5, tx, ty);
+      g.stroke();
+    });
+    const grassy = (yFrom, yTo, count, lipBase) => {   // dense blade cover in shades of the grass color
+      for (let i = 0; i < count; i++)
+        blade(rnd() * S, yFrom + rnd() * (yTo - yFrom), 7 + rnd() * 13, -Math.PI / 2 + (rnd() - 0.5) * 0.9,
+          shade(lipBase, -0.35 + rnd() * 0.75), 1.2 + rnd() * 1.5);
+    };
+    const dirty = (dirtBase) => {              // clumpy soil with pebbles + root flecks
+      g.fillStyle = dirtBase; g.fillRect(0, 0, S, S);
+      for (let i = 0; i < 22; i++) blob(rnd() * S, rnd() * S, 26 + rnd() * 50,
+        shade(dirtBase, (rnd() < 0.5 ? -1 : 1) * 0.16), 0.12 + rnd() * 0.1);
+      for (let i = 0; i < 260; i++) {
+        const x = rnd() * S, y = rnd() * S, r = 1.6 + rnd() * 3.4, dark = shade(dirtBase, -0.22 - rnd() * 0.2);
+        W(x, y, (px, py) => { g.fillStyle = dark; g.beginPath(); g.ellipse(px, py, r, r * 0.7, rnd() * 3, 0, 7); g.fill();
+          g.strokeStyle = shade(dirtBase, 0.18); g.lineWidth = 0.8; g.globalAlpha = 0.5;
+          g.beginPath(); g.arc(px, py - r * 0.35, r * 0.6, Math.PI, 0); g.stroke(); g.globalAlpha = 1; });
+      }
+      for (let i = 0; i < 26; i++) {           // little grey pebbles
+        const x = rnd() * S, y = rnd() * S, r = 1.5 + rnd() * 2.5, c = shade('#9a948c', (rnd() - 0.5) * 0.4);
+        W(x, y, (px, py) => { g.fillStyle = c; g.beginPath(); g.ellipse(px, py, r, r * 0.8, rnd() * 3, 0, 7); g.fill(); });
+      }
+    };
+    switch (kind) {
+      case 'grassTop':
+        // start a bit below the authored (pastel) green — ACES + the x2.7 day
+        // grade lift it back up; deeper than -0.15 turns the blades into harsh
+        // dark scratches, lighter reads as a dry pale lawn
+        g.fillStyle = shade(base, -0.15); g.fillRect(0, 0, S, S);
+        mottle(26, 0.16, 24, 70);
+        grassy(0, S, 900, base);
+        for (let i = 0; i < 130; i++)          // sunlit tips
+          blade(rnd() * S, rnd() * S, 4 + rnd() * 6, -Math.PI / 2 + (rnd() - 0.5) * 0.8, shade(base, 0.4), 1.1);
+        break;
+      case 'grassSide': {                      // dirt face with a ragged grass lip at the top
+        const dirt = base2;
+        dirty(dirt);
+        g.fillStyle = shade(base, -0.12);
+        g.beginPath(); g.moveTo(0, 0);         // ragged lower edge of the lip
+        for (let x = 0; x <= S; x += 7) g.lineTo(x, 22 + rnd() * 22);
+        g.lineTo(S, 0); g.closePath(); g.fill();
+        g.globalAlpha = 0.35; g.fillStyle = 'rgba(30,18,8,1)';  // soil shadow under the lip
+        g.beginPath(); g.moveTo(0, 30);
+        for (let x = 0; x <= S; x += 7) g.lineTo(x, 34 + rnd() * 20);
+        g.lineTo(S, 54); g.lineTo(0, 54); g.closePath(); g.fill(); g.globalAlpha = 1;
+        for (let i = 0; i < 150; i++)          // blades along the lip, some hanging down
+          blade(rnd() * S, 4 + rnd() * 26, 8 + rnd() * 16, Math.PI / 2 * (rnd() < 0.7 ? 1 : -1) + (rnd() - 0.5) * 0.7,
+            shade(base, -0.35 + rnd() * 0.7), 1.2 + rnd() * 1.3);
+        break; }
+      case 'dirt': dirty(base); break;
+      case 'sand':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(20, 0.12, 30, 80);
+        for (let i = 0; i < 1500; i++) {       // individual grains
+          const c = shade(base, (rnd() < 0.5 ? -1 : 1) * (0.15 + rnd() * 0.25));
+          W(rnd() * S, rnd() * S, (px, py) => { g.fillStyle = c; g.fillRect(px, py, 1.3, 1.3); });
+        }
+        g.globalAlpha = 0.10; g.strokeStyle = shade(base, 0.5); g.lineWidth = 5;  // wind ripples
+        for (let y = 14; y < S; y += 30) { g.beginPath();
+          for (let x = 0; x <= S; x += 8) g.lineTo(x, y + Math.sin(x / S * Math.PI * 4) * 6); g.stroke(); }
+        g.globalAlpha = 1;
+        break;
+      case 'snow':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        for (let i = 0; i < 18; i++) blob(rnd() * S, rnd() * S, 30 + rnd() * 60, 'rgb(168,196,232)', 0.10 + rnd() * 0.08);
+        for (let i = 0; i < 14; i++) blob(rnd() * S, rnd() * S, 24 + rnd() * 50, '#ffffff', 0.16);
+        g.fillStyle = '#ffffff';
+        for (let i = 0; i < 110; i++) { const x = rnd() * S, y = rnd() * S;   // sparkle grains
+          W(x, y, (px, py) => { g.globalAlpha = 0.5 + rnd() * 0.5; g.fillRect(px, py, 1.4, 1.4); g.globalAlpha = 1; }); }
+        break;
+      case 'stone':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(30, 0.2, 24, 78);
+        for (let i = 0; i < 7; i++) {          // meandering cracks with a light catch edge
+          let x = rnd() * S, y = rnd() * S;
+          const seg = 4 + (rnd() * 5 | 0), pts = [[x, y]];
+          for (let s2 = 0; s2 < seg; s2++) { x += (rnd() - 0.5) * 60; y += (rnd() - 0.3) * 44; pts.push([x, y]); }
+          W(0, 0, (dx, dy) => {
+            g.strokeStyle = shade(base, -0.5); g.lineWidth = 1.6; g.globalAlpha = 0.6;
+            g.beginPath(); pts.forEach(([px, py], j) => j ? g.lineTo(px + dx, py + dy) : g.moveTo(px + dx, py + dy)); g.stroke();
+            g.strokeStyle = shade(base, 0.25); g.lineWidth = 1; g.globalAlpha = 0.35;
+            g.beginPath(); pts.forEach(([px, py], j) => j ? g.lineTo(px + dx + 1, py + dy + 1) : g.moveTo(px + dx + 1, py + dy + 1)); g.stroke();
+            g.globalAlpha = 1;
+          });
+        }
+        for (let i = 0; i < 70; i++) {         // mineral flecks
+          const c = shade(base, (rnd() < 0.5 ? -1 : 1) * 0.35);
+          W(rnd() * S, rnd() * S, (px, py) => { g.fillStyle = c; g.fillRect(px, py, 2, 2); });
+        }
+        break;
+      case 'bark': {
+        g.fillStyle = shade(base, -0.18); g.fillRect(0, 0, S, S);
+        for (let x = 4; x < S; x += 9 + rnd() * 9) {   // vertical ridges; sin wobble is period-exact so top/bottom tile
+          const amp = 2 + rnd() * 4, ph = rnd() * 7, wob = 1 + (rnd() * 2 | 0);
+          const ridge = (off, col, lw, a) => W(0, 0, (dx, dy) => {
+            g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha = a; g.beginPath();
+            for (let y = 0; y <= S; y += 8) g.lineTo(x + off + dx + Math.sin(y / S * Math.PI * 2 * wob + ph) * amp, y + dy);
+            g.stroke(); g.globalAlpha = 1;
+          });
+          ridge(0, shade(base, -0.45), 2.6 + rnd() * 2.4, 0.75);   // crevice
+          ridge(3 + rnd() * 2, shade(base, 0.22), 1.6, 0.5);       // lit edge of the ridge
+        }
+        g.strokeStyle = shade(base, -0.5); g.globalAlpha = 0.5;    // short horizontal cracks
+        for (let i = 0; i < 9; i++) { const x = rnd() * S, y = rnd() * S; g.lineWidth = 1 + rnd() * 1.4;
+          W(x, y, (px, py) => { g.beginPath(); g.moveTo(px, py); g.lineTo(px + 6 + rnd() * 12, py + (rnd() - 0.5) * 4); g.stroke(); }); }
+        g.globalAlpha = 1;
+        for (let i = 0; i < 2; i++) {          // knots
+          const x = 30 + rnd() * (S - 60), y = 30 + rnd() * (S - 60);
+          for (let r = 9; r > 2; r -= 2.2) { g.fillStyle = shade(base, r % 4 < 2 ? -0.35 : 0.1);
+            g.beginPath(); g.ellipse(x, y, r, r * 1.5, 0, 0, 7); g.fill(); }
+        }
+        break; }
+      case 'foliage':
+        g.fillStyle = shade(base, -0.35); g.fillRect(0, 0, S, S);
+        mottle(20, 0.2, 26, 64);
+        for (let i = 0; i < 620; i++) {        // layered leaf dabs, dark first then lit
+          const t = i / 620, c = shade(base, -0.35 + t * 0.85), x = rnd() * S, y = rnd() * S;
+          const rx = 2.6 + rnd() * 3.6, ry = rx * (0.4 + rnd() * 0.3), a = rnd() * Math.PI;
+          W(x, y, (px, py) => { g.fillStyle = c; g.beginPath(); g.ellipse(px, py, rx, ry, a, 0, 7); g.fill(); });
+        }
+        for (let i = 0; i < 60; i++) {         // bright sun-caught tips
+          const x = rnd() * S, y = rnd() * S, rx = 2 + rnd() * 2.4;
+          W(x, y, (px, py) => { g.globalAlpha = 0.8; g.fillStyle = shade(base, 0.5);
+            g.beginPath(); g.ellipse(px, py, rx, rx * 0.5, rnd() * Math.PI, 0, 7); g.fill(); g.globalAlpha = 1; });
+        }
+        break;
+      case 'tuft': {                           // transparent blade fan for scattered grass tufts
+        g.clearRect(0, 0, S, S);
+        for (let i = 0; i < 15; i++) {
+          const bx = S * 0.5 + (rnd() - 0.5) * S * 0.45, h = S * (0.35 + rnd() * 0.5);
+          const lean = (rnd() - 0.5) * S * 0.5, cx = bx + lean * 0.3, tipX = bx + lean;
+          g.fillStyle = shade(base, -0.4 + rnd() * 0.85);
+          g.beginPath(); g.moveTo(bx - 3.5, S);
+          g.quadraticCurveTo(cx - 2, S - h * 0.6, tipX, S - h);
+          g.quadraticCurveTo(cx + 3, S - h * 0.6, bx + 3.5, S);
+          g.closePath(); g.fill();
+        }
+        break; }
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.generateMipmaps = true;
+    tex.anisotropy = Math.min(16, _maxAniso);
+    tex.needsUpdate = true;
+    return (_realTex[ck] = tex);
+  }
+
+  function modernStd(tex, extra) {
+    return new THREE.MeshStandardMaterial(Object.assign(
+      { map: tex, roughness: 0.96, metalness: 0, envMapIntensity: 0.22 }, extra));
+  }
+  /* material overrides for the "real" blocks; grass gets per-face materials
+     (green top / lipped dirt sides / dirt bottom — BoxGeometry group order
+     is +x,-x,+y,-y,+z,-z). Everything else in the game keeps its Smooth look. */
+  function modernMaterial(id, def) {
+    const base = def.color;
+    switch (id) {
+      case 'grass': {
+        const lip = def.top || base;           // data.js has always defined top: — finally used!
+        const side = modernStd(realTexture('grassSide', lip, ABC.BLOCK_DEFS.dirt.color));
+        return [side, side, modernStd(realTexture('grassTop', lip)),
+                modernStd(realTexture('dirt', ABC.BLOCK_DEFS.dirt.color)), side, side];
+      }
+      case 'moss':      return modernStd(realTexture('grassTop', base));
+      case 'dirt':      return modernStd(realTexture('dirt', base));
+      case 'sand': case 'sandstone': return modernStd(realTexture('sand', base));
+      case 'snow':      return modernStd(realTexture('snow', base), { roughness: 0.9, envMapIntensity: 0.45 });
+      case 'stone': case 'redrock': case 'granite': case 'blackrock':
+                        return modernStd(realTexture('stone', base));
+      case 'wood':      return modernStd(realTexture('bark', base));
+      case 'leaf':      return modernStd(realTexture('foliage', base), { roughness: 0.88 });
+    }
+    return null;
+  }
+
+  /* geometry overrides: flat seam-tiling boxes for ground (the toy bevel gap
+     between blocks is what reads as "plastic"), bark cylinders for trunks,
+     lumpy displaced icospheres for foliage. Instanced-safe plain geometry. */
+  let _flatGeo = null, _trunkGeo = null, _foliageGeo = null;
+  function foliageGeo() {
+    const geo = new THREE.IcosahedronGeometry(0.68, 1);   // non-indexed → faceted, stylized-organic
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      // hash on POSITION so duplicated verts displace together (no cracks)
+      const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+      const k = 1 + (h - Math.floor(h) - 0.5) * 0.36;
+      p.setXYZ(i, x * k, y * k * 0.92, z * k);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  function modernGeoFor(id) {
+    if (!MODERN) return null;
+    if (REAL_GROUND.includes(id)) return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
+    if (id === 'wood') return _trunkGeo || (_trunkGeo = new THREE.CylinderGeometry(0.44, 0.5, 1, 10));
+    if (id === 'leaf') return _foliageGeo || (_foliageGeo = foliageGeo());
+    return null;
+  }
+
+  /* scattered grass tufts on open grass tops — pure decoration, deliberately
+     invisible to gameplay: dig/place uses the voxel grid walk and the animal
+     raycaster targets an explicit list, so this mesh is never interactive. */
+  let tuftMesh = null, _tuftGeo = null, _tuftMat = null;
+  function tuftGeo() {
+    const g = new THREE.BufferGeometry();
+    const w = 0.48, h = 0.62;
+    g.setAttribute('position', new THREE.Float32BufferAttribute([
+      -w, 0, 0,  w, 0, 0,  w, h, 0,  -w, h, 0,      // quad facing z
+      0, 0, -w,  0, 0, w,  0, h, w,   0, h, -w,     // quad facing x
+    ], 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute([0,0, 1,0, 1,1, 0,1, 0,0, 1,0, 1,1, 0,1], 2));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute([0,0,1, 0,0,1, 0,0,1, 0,0,1, 1,0,0, 1,0,0, 1,0,0, 1,0,0], 3));
+    g.setIndex([0,1,2, 0,2,3, 4,5,6, 4,6,7]);
+    return g;
+  }
+  function rebuildTufts() {
+    const gm = meshes.grass; if (!gm) return;
+    const spots = [];
+    for (const p of gm.userData.positions) {
+      if (map.has(key(p[0], p[1] + 1, p[2]))) continue;         // must be an open top
+      const h = hash2(p[0] * 29 + p[1], p[2] * 23);
+      if (h < 0.52) continue;                                   // ~half the open grass gets a tuft
+      spots.push([p, h]);
+    }
+    if (!tuftMesh || tuftMesh.instanceMatrix.count < spots.length) {
+      if (tuftMesh) { scene.remove(tuftMesh); tuftMesh.dispose(); }
+      let cap = 1024; while (cap < spots.length) cap *= 2;
+      _tuftMat = _tuftMat || modernStd(realTexture('tuft', ABC.BLOCK_DEFS.grass.top || ABC.BLOCK_DEFS.grass.color),
+        { alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.1 });
+      tuftMesh = new THREE.InstancedMesh(_tuftGeo || (_tuftGeo = tuftGeo()), _tuftMat, cap);
+      tuftMesh.frustumCulled = false;
+      scene.add(tuftMesh);
+    }
+    tuftMesh.count = spots.length;
+    for (let i = 0; i < spots.length; i++) {
+      const [p, h] = spots[i], h2 = hash2(p[2] * 31 + p[1], p[0] * 19);
+      const s = 0.7 + h2 * 0.65;
+      _m4.makeRotationY(h * 6.283);
+      _m4.scale(_v1.set(s, s, s));
+      _m4.setPosition(p[0] + 0.25 + h2 * 0.5, p[1] + 1, p[2] + 0.25 + ((h * 7) % 1) * 0.5);
+      tuftMesh.setMatrixAt(i, _m4);
+    }
+    tuftMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  /* ============================================================
      SMOOTH SKIN render helpers — only used when SMOOTH is true.
      ============================================================ */
 
@@ -312,7 +604,7 @@ ABC.world = (function () {
 
   /* ---------- mesh management (capacity grows on demand) ---------- */
   function newMesh(id, cap) {
-    const m = new THREE.InstancedMesh(geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
+    const m = new THREE.InstancedMesh(modernGeoFor(id) || geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
     m.count = 0;
     m.userData.type = id;
     m.userData.positions = [];
@@ -330,7 +622,9 @@ ABC.world = (function () {
     blockGeo = SMOOTH ? roundedBoxGeo(1, 0.07, 1) : new THREE.BoxGeometry(1,1,1);
     for (const [id, def] of Object.entries(ABC.BLOCK_DEFS)) {
       let mat;
-      if (SMOOTH) {
+      if (MODERN && (mat = modernMaterial(id, def))) {
+        // "real world" ground/tree materials — modernMaterial returned them
+      } else if (SMOOTH) {
         mat = makeBlockMaterial(def);
       } else {
         mat = new THREE.MeshLambertMaterial({ map: makeTexture(def) });
@@ -342,7 +636,7 @@ ABC.world = (function () {
     }
   }
 
-  const _m4 = new THREE.Matrix4();
+  const _m4 = new THREE.Matrix4(), _v1 = new THREE.Vector3(), _cJ = new THREE.Color();
   function rebuild(type) {
     let m = meshes[type];
     const pos = [], keys = [];
@@ -358,17 +652,36 @@ ABC.world = (function () {
     }
     m.count = pos.length;
     const slabOff = ABC.BLOCK_DEFS[type].shape === 'slab' ? 0 : 0;  // slab geo already offset
+    // modern "real world": break the tiled-texture repetition with a hash-keyed
+    // (stable — no flicker on rebuild) yaw + brightness jitter per block; leaf
+    // puffs also get a size wobble so canopies read as organic clumps.
+    const jitter = MODERN && REAL_JITTER.has(type);
+    const leafy = jitter && type === 'leaf';
     for (let i=0;i<m.count;i++) {
       const raw = rotMap.get(keys[i]) || 0;
       const rot = (raw & 3) + ((raw & 4) ? 1 : 0);    // bit 4 = door swung open
-      _m4.makeRotationY(rot * Math.PI / 2);
+      if (jitter) {
+        const h = hash2(pos[i][0] * 13 + pos[i][1] * 7, pos[i][2] * 11 + pos[i][1]);
+        // ground boxes must stay grid-flush: yaw only in exact quarter turns
+        _m4.makeRotationY(leafy ? h * 6.283 : ((h * 4) | 0) * Math.PI / 2);
+        if (leafy) { const s = 0.9 + ((h * 31) % 1) * 0.5; _m4.scale(_v1.set(s, s * (0.85 + ((h * 17) % 1) * 0.3), s)); }
+        m.setColorAt(i, _cJ.setScalar(0.9 + ((h * 53) % 1) * 0.2));
+      } else {
+        _m4.makeRotationY(rot * Math.PI / 2);
+      }
       _m4.setPosition(pos[i][0]+0.5, pos[i][1]+0.5 + slabOff, pos[i][2]+0.5);
       m.setMatrixAt(i, _m4);
     }
     m.userData.positions = pos;
     m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
-  function flush() { for (const t of dirty) rebuild(t); dirty.clear(); }
+  function flush() {
+    if (!dirty.size) return;
+    const grassDirty = MODERN && (dirty.has('grass') || dirty.size > 3);  // >3 ≈ chunk gen/unload
+    for (const t of dirty) rebuild(t); dirty.clear();
+    if (grassDirty) rebuildTufts();
+  }
 
   function inBounds(x,y,z) { return Math.abs(x)<=SIZE && Math.abs(z)<=SIZE && y>=MIN_Y && y<=MAX_Y; }
   function get(x,y,z) { return map.get(key(x,y,z)) || null; }
