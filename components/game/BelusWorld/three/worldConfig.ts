@@ -5,7 +5,7 @@
 // the ground-collision math, and the gameplay all read from one source.
 // ---------------------------------------------------------------------------
 
-export type ZoneId = 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'rainbow';
+export type ZoneId = 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore' | 'rainbow';
 
 export interface IslandDef {
   id: ZoneId;
@@ -98,6 +98,20 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'Friendship Forest',
     emoji: '🌳',
   },
+  // The fifth learning island — sharing, turn-taking and waiting, practiced on
+  // a sunny beach. Sits south of home, between the cove and the forest.
+  shore: {
+    id: 'shore',
+    cx: 2,
+    cz: 44,
+    radius: 9.5,
+    top: 0.5,
+    grass: '#f2dfa9',
+    rock: '#b09a72',
+    accent: '#ffb066',
+    label: 'Sharing Shore',
+    emoji: '🏖️',
+  },
   // A reward island that only FORMS once the child masters their first island.
   // It's a free-play playground (no lesson) Nilu can walk to and explore — a
   // visible "the world grew because of you" payoff. Sits out beyond home.
@@ -124,13 +138,14 @@ export const BRIDGES: BridgeDef[] = [
   { from: 'home', to: 'mountain', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   { from: 'home', to: 'cove', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   { from: 'home', to: 'forest', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'shore', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   // bridge to the reward island — only walkable once it's unlocked
   { from: 'home', to: 'rainbow', halfWidth: 2.4, colors: RAINBOW_STRIPES },
 ];
 
 // The zone islands that host a learning activity (everything except home + the
 // reward island). The rainbow playground has no lesson — it's just to explore.
-export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest'];
+export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest', 'shore'];
 
 // Runtime flag: the reward island (and its bridge) only physically exist once
 // the child has finished their first level. Rendering AND ground-collision both

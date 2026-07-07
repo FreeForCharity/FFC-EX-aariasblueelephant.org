@@ -96,6 +96,7 @@ const STICKER_KEYS: Record<ActivityZone, string> = {
   mountain: '⛰️',
   cove: '🌊',
   forest: '🌳',
+  shore: '🏖️',
 };
 
 interface RewardInfo {

@@ -23,8 +23,8 @@ const DB: Record<string, Partial<Record<0 | 1 | 2 | 3, Line[]>>> = {
 
   greeting_first: {
     0: [
-      "Oh! H-hello... I didn't know anyone else knew about this island.",
-      "Um... hi. I'm Nilu. This is Harmony Island. I... I'm glad you found it.",
+      "Oh! H-hello... I didn't know anyone else knew about the sky islands.",
+      "Um... hi. I'm Nilu. These are my sky islands. I... I'm glad you found them.",
     ],
   },
 
@@ -183,6 +183,25 @@ const DB: Record<string, Partial<Record<0 | 1 | 2 | 3, Line[]>>> = {
     ],
   },
 
+  zone_shore: {
+    0: [
+      "This is Sharing Shore. The friends here like to play together... taking turns is tricky for me.",
+      "The beach! Everyone shares the toys here. We can practice together, if you want.",
+    ],
+    1: [
+      "Sharing Shore! Taking turns used to feel SO hard. It gets easier every time.",
+      "Beach day! Want to see who gets the next turn with the ball?",
+    ],
+    2: [
+      "Sharing Shore! Remember — waiting for a turn means your turn is coming. That took me ages to learn.",
+      "I shared my snack with the crab yesterday. He gave me a shell. Sharing comes back around!",
+    ],
+    3: [
+      "SHARING SHORE! Best island. Warm sand, good friends, and everybody gets a turn.",
+      "The bunny challenged me to a sandcastle contest. We ended up building ONE castle together. Even better.",
+    ],
+  },
+
   explorer_mode: {
     0: ["We can just... walk around? And see things?", "I like exploring. It feels calmer than having a plan."],
     1: ["Explorer mode! Let's see what we discover together.", "Who knows what we'll find? I love not knowing."],
@@ -237,6 +256,7 @@ export function getZoneDialogue(zone: string, ctx: DialogueContext): string {
     mountain: 'zone_mountain',
     cove: 'zone_cove',
     forest: 'zone_forest',
+    shore: 'zone_shore',
   };
   return getDialogue(keyMap[zone] ?? 'zone_meadow', ctx);
 }
