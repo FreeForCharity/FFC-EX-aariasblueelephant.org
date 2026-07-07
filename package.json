@@ -35,7 +35,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.27",
     "express": "^5.2.1",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.16",
     "puppeteer": "^24.38.0",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
