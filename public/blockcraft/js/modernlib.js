@@ -22,7 +22,22 @@ import { RoundedBoxGeometry } from '../lib/modern/jsm/geometries/RoundedBoxGeome
    re-author the palette deliberately. */
 THREE.ColorManagement.enabled = false;
 
-window.THREE = THREE;
+/* Every animal/pet/shop/sign/avatar in the game builds from MeshLambertMaterial.
+   On the modern skin, quietly upgrade that to a matte MeshStandardMaterial so
+   entities react to the sun, env light and shadows like the PBR terrain does
+   (all Lambert params used in the game — color/map/transparent/opacity/emissive
+   — are valid Standard params). Smooth/Classic load r128 and are untouched. */
+class LambertAsStandard extends THREE.MeshStandardMaterial {
+  constructor(params) {
+    super(Object.assign({ roughness: 0.9, metalness: 0 }, params));
+  }
+}
+// the ESM namespace is frozen — publish a mutable copy with the shim applied
+const T = Object.assign({}, THREE);
+T.MeshLambertMaterial = LambertAsStandard;
+T.ABC_REAL_LAMBERT = THREE.MeshLambertMaterial;   // escape hatch for a later stage
+
+window.THREE = T;
 window.ABC_MODERN_LIB = {
   EffectComposer,
   RenderPass,

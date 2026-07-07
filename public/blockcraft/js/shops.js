@@ -37,8 +37,8 @@ ABC.shops = (function () {
     return sp;
   }
   function place(px, pz, name, c1, c2) {
-    const g = awning(c1, c2); g.position.set(px, 1, pz); scene.add(g);
-    const s = sign(name); s.position.set(px, 4.4, pz); scene.add(s);
+    const g = awning(c1, c2); g.position.set(px, 1, pz); scene.add(ABC.world.entityShadows(g));
+    const s = sign(name); s.position.set(px, 4.4, pz); scene.add(ABC.world.entityShadows(s));
     stalls.push({ g, s, x: px, z: pz });
   }
   function vendor(s, vx, vz) {

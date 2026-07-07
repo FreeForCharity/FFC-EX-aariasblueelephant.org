@@ -35,7 +35,7 @@ ABC.portal = (function () {
       new THREE.MeshLambertMaterial({ color: 0x9aa0a6 }));
     base.position.y = 0.15;
     g.add(base);
-    scene.add(g);
+    scene.add(ABC.world.entityShadows(g));
     const p = { group: g, id, rings, discMat, stars, t: 0 };
     g.traverse(o => { if (o.isMesh) o.userData.portalRef = p; });
     portals.push(p);
@@ -62,7 +62,7 @@ ABC.portal = (function () {
     eggMesh.scale.y = 1.3;
     eggMesh.position.set(EGG_POS.x, EGG_POS.y + 0.7, EGG_POS.z);
     eggMesh.userData.portalRef = { id: 'egg' };
-    scene.add(eggMesh);
+    scene.add(ABC.world.entityShadows(eggMesh));
   }
 
   function warmEgg() {

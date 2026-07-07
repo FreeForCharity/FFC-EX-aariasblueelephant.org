@@ -38,6 +38,7 @@ ABC.world = (function () {
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
   let _maxAniso = 1, _sky = null, _shadowR = 32;   // smooth-skin render state
+  const _clouds = [];                              // modern drifting clouds
   const map = new Map();      // "x,y,z" -> type
   const rotMap = new Map();   // "x,y,z" -> 0..3 quarter-turns (rotating shapes only)
   const key = (x,y,z) => x + ',' + y + ',' + z;
@@ -327,6 +328,20 @@ ABC.world = (function () {
             g.beginPath(); g.ellipse(px, py, rx, rx * 0.5, rnd() * Math.PI, 0, 7); g.fill(); g.globalAlpha = 1; });
         }
         break;
+      case 'water':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(16, 0.10, 40, 90);
+        for (let i = 0; i < 26; i++) {         // soft crossing wave crests (all W-wrapped = seamless drift)
+          const y0 = rnd() * S, amp = 3 + rnd() * 5, ph = rnd() * 7, w2 = 1 + (rnd() * 2 | 0);
+          W(0, 0, (dx, dy) => {
+            g.strokeStyle = shade(base, 0.25 + rnd() * 0.3); g.lineWidth = 1.4 + rnd() * 1.6;
+            g.globalAlpha = 0.28; g.beginPath();
+            for (let x = 0; x <= S; x += 8) g.lineTo(x + dx, y0 + dy + Math.sin(x / S * Math.PI * 2 * w2 + ph) * amp);
+            g.stroke(); g.globalAlpha = 1;
+          });
+        }
+        for (let i = 0; i < 10; i++) blob(rnd() * S, rnd() * S, 10 + rnd() * 20, '#ffffff', 0.10); // sparkle
+        break;
       case 'tuft': {                           // transparent blade fan for scattered grass tufts
         g.clearRect(0, 0, S, S);
         for (let i = 0; i < 15; i++) {
@@ -374,9 +389,17 @@ ABC.world = (function () {
                         return modernStd(realTexture('stone', base));
       case 'wood':      return modernStd(realTexture('bark', base));
       case 'leaf':      return modernStd(realTexture('foliage', base), { roughness: 0.88 });
+      case 'water': {
+        const tex = realTexture('water', base);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;   // the map drifts each frame
+        _waterTex = tex;
+        return modernStd(tex, { roughness: 0.06, envMapIntensity: 1.0,
+                                transparent: true, opacity: def.alpha });
+      }
     }
     return null;
   }
+  let _waterTex = null, _waterT = 0;
 
   /* geometry overrides: flat seam-tiling boxes for ground (the toy bevel gap
      between blocks is what reads as "plastic"), bark cylinders for trunks,
@@ -397,7 +420,7 @@ ABC.world = (function () {
   }
   function modernGeoFor(id) {
     if (!MODERN) return null;
-    if (REAL_GROUND.includes(id)) return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
+    if (REAL_GROUND.includes(id) || id === 'water') return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
     if (id === 'wood') return _trunkGeo || (_trunkGeo = new THREE.CylinderGeometry(0.44, 0.5, 1, 10));
     if (id === 'leaf') return _foliageGeo || (_foliageGeo = foliageGeo());
     return null;
@@ -523,7 +546,7 @@ ABC.world = (function () {
       envMapIntensity: glassy ? 0.8 : 0.32, // gentle fill; low on matte so the neutral env doesn't tint snow/sand
     });
     if (def.alpha != null) { m.transparent = true; m.opacity = def.alpha; }
-    if (def.glow) { m.emissive = new THREE.Color(0xffe066); m.emissiveIntensity = 0.6; m.roughness = 0.6; }
+    if (def.glow) { m.emissive = new THREE.Color(0xffe066); m.emissiveIntensity = MODERN ? 1.35 : 0.6; m.roughness = 0.6; }  // modern: hot enough to bloom
     return m;
   }
 
@@ -535,20 +558,29 @@ ABC.world = (function () {
     const mat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
       uniforms: { top: { value: new THREE.Color(0x7ec8ff) },
-                  bottom: { value: new THREE.Color(0xdff1ff) } },
+                  bottom: { value: new THREE.Color(0xdff1ff) },
+                  pipeline: { value: 0 } },
       vertexShader: 'varying vec3 vW; void main(){ vW = position;' +
         ' gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      // apply the SAME exposure + ACES + sRGB the renderer uses for everything else,
-      // so the dome matches the terrain/fog and the horizon blends seamlessly.
-      fragmentShader: 'varying vec3 vW; uniform vec3 top; uniform vec3 bottom;' +
+      // pipeline=0 (direct render): apply the SAME exposure + ACES + sRGB the
+      // renderer applies to built-in materials, so the dome matches the terrain.
+      // pipeline=1 (modern EffectComposer): output raw linear — the composer's
+      // OutputPass applies the identical exposure/ACES/sRGB at the end; grading
+      // here too would tone-map the sky twice.
+      fragmentShader: 'varying vec3 vW; uniform vec3 top; uniform vec3 bottom; uniform float pipeline;' +
         ' void main(){ float h = normalize(vW).y; float t = pow(clamp(h*0.5+0.5,0.0,1.0), 0.9);' +
-        ' vec3 c = mix(bottom, top, t) * 1.18;' +
-        ' c = (c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14);' +
-        ' c = pow(clamp(c,0.0,1.0), vec3(1.0/2.2));' +
+        ' vec3 c = mix(bottom, top, t);' +
+        ' if (pipeline < 0.5) {' +
+        '   c *= 1.18;' +
+        '   c = (c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14);' +
+        '   c = pow(clamp(c,0.0,1.0), vec3(1.0/2.2));' +
+        ' }' +
         ' gl_FragColor = vec4(c, 1.0); }'
     });
     const sky = new THREE.Mesh(geo, mat); sky.frustumCulled = false; return sky;
   }
+  /* modern composer on/off — the sky must grade itself iff the pipeline doesn't */
+  function setSkyPipeline(on) { if (_sky) _sky.material.uniforms.pipeline.value = on ? 1 : 0; }
 
   /* ---------- shaped block geometries ---------- */
   function wedgeGeo() {
@@ -665,7 +697,7 @@ ABC.world = (function () {
         // ground boxes must stay grid-flush: yaw only in exact quarter turns
         _m4.makeRotationY(leafy ? h * 6.283 : ((h * 4) | 0) * Math.PI / 2);
         if (leafy) { const s = 0.9 + ((h * 31) % 1) * 0.5; _m4.scale(_v1.set(s, s * (0.85 + ((h * 17) % 1) * 0.3), s)); }
-        m.setColorAt(i, _cJ.setScalar(0.9 + ((h * 53) % 1) * 0.2));
+        m.setColorAt(i, _cJ.setScalar(0.95 + ((h * 53) % 1) * 0.1));   // subtle — stronger reads as checkerboard under ACES
       } else {
         _m4.makeRotationY(rot * Math.PI / 2);
       }
@@ -848,6 +880,10 @@ ABC.world = (function () {
     const night = lockedTheme ? lockedTheme.key === 'night' : !!(reg && reg.night);
     const target = lockedTheme || (reg ? reg.theme : null);
     if (target) gradeTo(target, dt, night);
+    if (_waterTex) {                            // modern: lakes drift gently
+      _waterT += dt;
+      _waterTex.offset.set((_waterT * 0.012) % 1, (_waterT * 0.007) % 1);
+    }
   }
 
   /* ---------- night sky: stars + Milky Way 🌌 ---------- */
@@ -891,6 +927,14 @@ ABC.world = (function () {
 
   function updateSky(cam, dt) {
     if (SMOOTH && _sky) _sky.position.set(cam.x, 0, cam.z);   // dome follows the player
+    // modern: clouds drift on the wind and wrap around the traveller, so the
+    // sky is alive everywhere — not just near spawn
+    for (const c of _clouds) {
+      c.position.x += c.userData.wind * dt;
+      let dx = c.position.x - cam.x, dz = c.position.z - cam.z;
+      if (dx > 150) c.position.x -= 300; else if (dx < -150) c.position.x += 300;
+      if (dz > 150) c.position.z -= 300; else if (dz < -150) c.position.z += 300;
+    }
     if (!starField) return;
     starField.position.set(cam.x, 0, cam.z);
     galaxyBand.position.set(cam.x, 0, cam.z);
@@ -923,8 +967,9 @@ ABC.world = (function () {
       sunLight = new THREE.DirectionalLight(0xfff3da, 2.4 * LIGHT_SCALE);
       sunLight.position.set(40, 80, 25);
       sunLight.castShadow = true;
-      sunLight.shadow.mapSize.set(1024, 1024);
-      _shadowR = 32;
+      // modern: crisper, wider shadows (2048px over R=40) — r170 handles it fine
+      sunLight.shadow.mapSize.set(MODERN ? 2048 : 1024, MODERN ? 2048 : 1024);
+      _shadowR = MODERN ? 40 : 32;
       const sc = sunLight.shadow.camera;
       sc.left = -_shadowR; sc.right = _shadowR; sc.top = _shadowR; sc.bottom = -_shadowR;
       sc.near = 1; sc.far = 220; sc.updateProjectionMatrix();
@@ -951,22 +996,48 @@ ABC.world = (function () {
     underMesh.position.set(0, MIN_Y - 0.51, 0);
     scene.add(underMesh);
     // fluffy clouds
-    const cloudMat = new THREE.MeshLambertMaterial({ color:0xffffff, transparent:true, opacity:.85 });
     const rnd = mulberry(7);
-    for (let i=0;i<10;i++) {
-      const c = new THREE.Group();
-      for (let j=0;j<5;j++) {
-        const s = 3+rnd()*4;
-        const b = new THREE.Mesh(new THREE.BoxGeometry(s,1.6,s*0.7), cloudMat);
-        b.position.set(rnd()*8-4, rnd()*0.8, rnd()*4-2);
-        c.add(b);
+    if (MODERN) {
+      // soft rounded puffs that drift with the wind and follow the traveller
+      // (the old fixed clouds only existed near spawn) — see updateSky
+      const puffGeo = new THREE.IcosahedronGeometry(1, 2);
+      const cloudMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff, roughness: 1, metalness: 0,
+        transparent: true, opacity: 0.88, envMapIntensity: 0.15 });
+      for (let i = 0; i < 12; i++) {
+        const c = new THREE.Group();
+        const n = 4 + (rnd() * 4 | 0);
+        for (let j = 0; j < n; j++) {
+          const b = new THREE.Mesh(puffGeo, cloudMat);
+          const s = 2.2 + rnd() * 3.2;
+          b.scale.set(s, s * (0.42 + rnd() * 0.16), s * (0.7 + rnd() * 0.3));
+          b.position.set((j - n / 2) * 2.6 + rnd() * 1.6, rnd() * 0.9, rnd() * 3 - 1.5);
+          c.add(b);
+        }
+        c.position.set(rnd() * 280 - 140, 33 + rnd() * 9, rnd() * 280 - 140);
+        c.userData.wind = 0.5 + rnd() * 0.8;
+        _clouds.push(c);
+        scene.add(c);
       }
-      c.position.set(rnd()*200-100, 32+rnd()*8, rnd()*200-100);
-      scene.add(c);
+    } else {
+      const cloudMat = new THREE.MeshLambertMaterial({ color:0xffffff, transparent:true, opacity:.85 });
+      for (let i=0;i<10;i++) {
+        const c = new THREE.Group();
+        for (let j=0;j<5;j++) {
+          const s = 3+rnd()*4;
+          const b = new THREE.Mesh(new THREE.BoxGeometry(s,1.6,s*0.7), cloudMat);
+          b.position.set(rnd()*8-4, rnd()*0.8, rnd()*4-2);
+          c.add(b);
+        }
+        c.position.set(rnd()*200-100, 32+rnd()*8, rnd()*200-100);
+        scene.add(c);
+      }
     }
-    // sun ball
-    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16),
-      new THREE.MeshBasicMaterial({ color:0xffe45e }));
+    // sun ball — on modern its color sits above 1.0 so the bloom pass gives it
+    // a real glow (everything else stays under the bloom threshold)
+    const sunMat = new THREE.MeshBasicMaterial({ color:0xffe45e });
+    if (MODERN) sunMat.color.setRGB(2.6, 2.2, 1.2);
+    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), sunMat);
     sunBall.position.set(70, 60, -80);
     scene.add(sunBall);
     buildStars();
@@ -1308,8 +1379,15 @@ ABC.world = (function () {
     return null;
   }
 
+  /* modern: entities cast + catch the sun shadow (no-op on the other skins,
+     so every caller can use it unconditionally) */
+  function entityShadows(root) {
+    if (MODERN && root) root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return root;
+  }
+
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
            ensureChunks, setTheme, gradeFrame, updateSky, updateSun, getRot, topBlock,
-           getScene: () => scene };
+           entityShadows, setSkyPipeline, getScene: () => scene };
 })();

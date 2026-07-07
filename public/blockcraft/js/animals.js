@@ -205,6 +205,7 @@ ABC.animals = (function () {
       happyUntil: 0,
     };
     g.traverse(o => { if (o.isMesh) o.userData.animalRef = a; });
+    ABC.world.entityShadows(g);
     list.push(a);
     return a;
   }

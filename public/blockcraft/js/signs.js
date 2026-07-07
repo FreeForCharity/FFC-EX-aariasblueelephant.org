@@ -50,7 +50,7 @@ ABC.signs = (function () {
       g.add(pl);
     });
     g.position.set(px, 0, pz);
-    scene.add(g);
+    scene.add(ABC.world.entityShadows(g));
     posts.push({ g, x: px, z: pz });
   }
 

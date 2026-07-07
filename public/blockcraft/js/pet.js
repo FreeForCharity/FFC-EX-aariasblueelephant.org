@@ -146,7 +146,7 @@ ABC.pet = (function () {
       if (st.level >= 3) mk(.34, .18, .1, 0, 2.1, .5, '#ff6b9d');          // bow 🎀
       if (st.level >= 6) { mk(.5, .14, .5, 0, 2.3, 0, '#4dabf7'); mk(.34, .3, .34, 0, 2.45, 0, '#4dabf7'); } // hat 🎩
       if (st.level >= 9) mk(.6, .14, .14, 0, 1.4, .42, '#ffd43b');         // golden scarf ✨
-      a.group.add(acc);
+      a.group.add(ABC.world.entityShadows(acc));
     }
   }
 

@@ -145,7 +145,7 @@ ABC.squishy = (function () {
             : data.kind === 'cutout' ? buildCutout(data)
             : buildOreo(data);
     g.position.set(data.x, groundYAt(data.x, data.z), data.z);
-    scene.add(g);
+    scene.add(ABC.world.entityShadows(g));
     const s = { group: g, data,
       spring: { sx: 1, sy: 1, vx: 0, vy: 0 },   // squash & stretch springs
       wobbleT: Math.random() * 10, carried: false };
