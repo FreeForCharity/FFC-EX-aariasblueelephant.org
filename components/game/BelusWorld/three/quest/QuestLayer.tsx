@@ -21,7 +21,7 @@ import AnswerOrb, { type OrbStatus } from './AnswerOrb';
 import QuestNPC, { type Mood } from './QuestNPC';
 import BreatheOrb from './BreatheOrb';
 
-const ALL_ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest'];
+const ALL_ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest', 'shore'];
 
 // idle "host" friends so each island feels inhabited before you arrive
 const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
@@ -29,6 +29,7 @@ const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
   mountain: { face: '🐿️', mood: 'happy' },
   cove: { face: '🐢', mood: 'calm' },
   forest: { face: '🦊', mood: 'happy' },
+  shore: { face: '🦀', mood: 'happy' },
 };
 
 const PICK_RADIUS = 2.4; // how close Nilu must walk to choose an orb (generous +
@@ -400,6 +401,7 @@ export default function QuestLayer(props: Props) {
     mountain: ISLANDS.mountain.accent,
     cove: ISLANDS.cove.accent,
     forest: ISLANDS.forest.accent,
+    shore: ISLANDS.shore.accent,
   };
 
   return (

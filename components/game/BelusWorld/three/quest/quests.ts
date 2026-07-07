@@ -539,12 +539,148 @@ const FOREST: Quest[] = [
 ];
 
 // ===========================================================================
+// SHARING SHORE — Sharing & Taking Turns
+// ===========================================================================
+
+const SHORE: Quest[] = [
+  {
+    zone: 'shore', level: 1, goal: 'Whose turn is it?',
+    intro: "My beach friends are playing catch! Help me see whose turn it is.",
+    outro: 'You know all about turns now. Turn-taking makes games fun for everyone!',
+    moment: 'learned about turns at the shore',
+    rounds: [
+      { kind: 'choice', say: 'Crab just threw the ball to Seal. Whose turn is it now?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '🦭', caption: "Seal's turn", correct: true },
+          { emoji: '🦀', caption: "Crab's turn" },
+        ], doneLine: "Yes! Seal has the ball, so it's Seal's turn!" },
+      { kind: 'choice', say: 'Seal threw it back! Whose turn is it now?',
+        npc: { face: '🦭', mood: MOOD('excited'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '🦀', caption: "Crab's turn", correct: true },
+          { emoji: '🦭', caption: "Seal's turn" },
+        ], doneLine: 'Yes! Back and forth — that is taking turns!' },
+      { kind: 'choice', say: 'Crab says YOU can play too! Crab goes, Seal goes... who goes next?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '🫵' } },
+        options: [
+          { emoji: '🙋', caption: 'My turn', correct: true },
+          { emoji: '🦀', caption: "Crab's turn" },
+        ], doneLine: 'Your turn! Everyone gets a turn when we share the game. 🎉' },
+    ],
+  },
+  {
+    zone: 'shore', level: 2, goal: 'Share the shells',
+    intro: "I found SO many shells! Sharing means everyone gets some. Let's give some to my friends.",
+    outro: 'You shared with every friend. Look how happy they are!',
+    moment: 'shared my shells at the shore',
+    rounds: [
+      { kind: 'multiPick', say: 'Walk into a shell to give it away — one for each friend!', picks: 3,
+        npc: { face: '🐢', mood: MOOD('happy') },
+        options: [
+          { emoji: '🐚', caption: 'for Turtle' },
+          { emoji: '🐚', caption: 'for Crab' },
+          { emoji: '🐚', caption: 'for Seal' },
+        ],
+        doneLine: 'A shell for everyone! Sharing feels good. 💖' },
+      { kind: 'choice', say: 'Turtle only has one bucket, and you want to build too. What is the sharing way?',
+        npc: { face: '🐢', mood: MOOD('happy'), thought: { emoji: '🪣' } },
+        options: [
+          { emoji: '🤝', caption: 'use it together', correct: true },
+          { emoji: '🏃', caption: 'grab it and run' },
+        ], doneLine: 'Yes! We can use it together — that is sharing!' },
+      { kind: 'choice', say: 'Seal wants to see your shiny shell. You can share a LOOK! What do you say?',
+        npc: { face: '🦭', mood: MOOD('happy'), thought: { emoji: '✨' } },
+        options: [
+          { emoji: '🫴', caption: 'here, look!', correct: true },
+          { emoji: '🙈', caption: 'no, mine!' },
+        ], doneLine: '"Here, look!" You shared and it is still yours. 🌟' },
+    ],
+  },
+  {
+    zone: 'shore', level: 3, goal: 'Waiting is okay',
+    intro: "Sometimes we wait for our turn. Waiting is hard for me too! Let's practice together.",
+    outro: 'You waited SO well. Waiting means your turn is coming!',
+    moment: 'practiced waiting at the shore',
+    rounds: [
+      { kind: 'choice', say: 'Crab is on the slide. You want a turn! What do we do first?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '🛝' } },
+        options: [
+          { emoji: '⏳', caption: 'wait my turn', correct: true },
+          { emoji: '😤', caption: 'push past' },
+        ], doneLine: 'Yes — we wait, and our turn comes!' },
+      { kind: 'breathe', say: 'Waiting time! Take slow breaths with me while Crab finishes.',
+        npc: { face: '🐘', mood: MOOD('calm') }, cycles: 2,
+        doneLine: 'Look — Crab is done. Now it is YOUR turn! 🛝' },
+      { kind: 'choice', say: 'Turtle is still using the bucket. What can you do while you wait?',
+        npc: { face: '🐢', mood: MOOD('calm'), thought: { emoji: '🪣' } },
+        options: [
+          { emoji: '🏖️', caption: 'play nearby', correct: true },
+          { emoji: '😡', caption: 'yell at Turtle' },
+        ], doneLine: 'Playing nearby makes waiting easy — and your turn still comes!' },
+    ],
+  },
+  {
+    zone: 'shore', level: 4, goal: 'Ask for a turn',
+    intro: "When we want a turn, we can ASK with kind words. Let's build the asking words!",
+    outro: 'You asked so kindly! Kind words open the way to turns.',
+    moment: 'asked for a turn at the shore',
+    rounds: [
+      { kind: 'sequence', say: 'Say it with me: "my turn please". Walk into the words in order.',
+        npc: { face: '🦭', mood: MOOD('happy') },
+        pool: [{ emoji: '🏃', caption: 'run' }, { emoji: '🙋', caption: 'my turn' }, { emoji: '🙏', caption: 'please' }],
+        order: ['my turn', 'please'], doneLine: '"My turn please!" Seal smiles and hands it over. 🌟' },
+      { kind: 'sequence', say: 'Crab asked YOU for a turn! Say: "your turn now".',
+        npc: { face: '🦀', mood: MOOD('happy') },
+        pool: [{ emoji: '🐚', caption: 'shell' }, { emoji: '🫵', caption: 'your turn' }, { emoji: '⏰', caption: 'now' }],
+        order: ['your turn', 'now'], doneLine: '"Your turn now!" Giving a turn is a gift. 💖' },
+      { kind: 'choice', say: 'You asked, but Turtle says "not yet — one more minute." What do we do?',
+        npc: { face: '🐢', mood: MOOD('calm'), thought: { emoji: '⏳' } },
+        options: [
+          { emoji: '👍', caption: 'okay, I can wait', correct: true },
+          { emoji: '😭', caption: 'grab it anyway' },
+        ], doneLine: 'You waited kindly — and Turtle remembered your turn!' },
+    ],
+  },
+  {
+    zone: 'shore', level: 5, goal: 'Build together',
+    intro: "Bunny wants to build a sandcastle... and so do I! Let's build ONE castle — together!",
+    outro: 'We built it TOGETHER. Sharing made it twice as good. 🏰',
+    moment: 'built a sandcastle with a friend',
+    rounds: [
+      { kind: 'choice', say: 'One pile of sand, two builders. How do we start?',
+        npc: { face: '🐰', mood: MOOD('excited'), thought: { emoji: '🏰' } },
+        options: [
+          { emoji: '🤝', caption: 'build together', correct: true },
+          { emoji: '🧱', caption: 'build a wall between us' },
+        ], doneLine: 'Together! Two builders make one AMAZING castle.' },
+      { kind: 'multiPick', say: 'Take turns adding parts! Walk into each turn to build.', picks: 4,
+        npc: { face: '🐰', mood: MOOD('happy') },
+        options: [
+          { emoji: '🏰', caption: 'my tower' },
+          { emoji: '🐰', caption: "Bunny's wall" },
+          { emoji: '🚩', caption: 'my flag' },
+          { emoji: '🐚', caption: "Bunny's shells" },
+        ],
+        doneLine: 'Turn by turn, the castle grew! 🏰' },
+      { kind: 'choice', say: 'The castle is done! Bunny looks so proud. What do we say?',
+        npc: { face: '🐰', mood: MOOD('proud'), thought: { emoji: '🏰' } },
+        options: [
+          { emoji: '🎉', caption: 'we did it!', correct: true },
+          { emoji: '😤', caption: 'mine is better' },
+        ], doneLine: '"WE did it!" That is the best part of sharing. 💜' },
+    ],
+  },
+];
+
+// ===========================================================================
 
 export const QUESTS: Record<ActivityZone, Quest[]> = {
   meadow: MEADOW,
   mountain: MOUNTAIN,
   cove: COVE,
   forest: FOREST,
+  shore: SHORE,
 };
 
 /** Get the quest for a zone at a 1-based level (clamped to the available set). */

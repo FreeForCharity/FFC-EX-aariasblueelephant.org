@@ -26,6 +26,7 @@ const SKILLS: Record<ActivityZone, string> = {
   mountain: 'Life Skills',
   cove: 'Calm & Senses',
   forest: 'Expressive Language',
+  shore: 'Sharing & Turns',
 };
 
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
