@@ -1,6 +1,12 @@
+import { todayKey } from './progress';
+
 export interface BeluMemory {
   playerName: string | null;
   visitCount: number;
+  /** distinct real calendar days the child has visited (additive-only — a gap
+   *  in play is never counted, shown, or shamed) */
+  visitDays: number;
+  lastVisitDay: string | null;
   lastVisit: string | null;
   zonesVisited: string[];
   lastZone: string | null;
@@ -18,6 +24,8 @@ const KEY = 'belus_world_memory_v1';
 const defaults: BeluMemory = {
   playerName: null,
   visitCount: 0,
+  visitDays: 0,
+  lastVisitDay: null,
   lastVisit: null,
   zonesVisited: [],
   lastZone: null,
@@ -48,7 +56,20 @@ export function recordVisit(m: BeluMemory): BeluMemory {
   const visitCount = m.visitCount + 1;
   const personalityStage: 0 | 1 | 2 | 3 =
     visitCount >= 16 ? 3 : visitCount >= 8 ? 2 : visitCount >= 3 ? 1 : 0;
-  const updated = { ...m, visitCount, personalityStage, lastVisit: new Date().toISOString() };
+  // count distinct calendar days (several sessions in one day = one visit day).
+  // Older saves have no visitDays: seed from visitCount so a long-time player's
+  // chip starts near their history instead of at 1 (generous, never shaming).
+  const today = todayKey();
+  const priorDays = m.visitDays > 0 ? m.visitDays : m.visitCount;
+  const visitDays = m.lastVisitDay === today ? priorDays : priorDays + 1;
+  const updated = {
+    ...m,
+    visitCount,
+    personalityStage,
+    visitDays,
+    lastVisitDay: today,
+    lastVisit: new Date().toISOString(),
+  };
   saveMemory(updated);
   return updated;
 }

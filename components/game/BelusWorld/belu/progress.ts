@@ -8,13 +8,13 @@
 // No timers, no losing, no farming the same level past 3 stars.
 // ---------------------------------------------------------------------------
 
-export type ActivityZone = 'meadow' | 'mountain' | 'cove' | 'forest';
+export type ActivityZone = 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore';
 
-export const ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest'];
+export const ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest', 'shore'];
 export const MAX_LEVEL = 5;
 export const MAX_STARS_PER_LEVEL = 3;
 export const MAX_STARS_PER_ISLAND = MAX_LEVEL * MAX_STARS_PER_LEVEL; // 15
-export const MAX_TOTAL_STARS = MAX_STARS_PER_ISLAND * ZONES.length; // 60
+export const MAX_TOTAL_STARS = MAX_STARS_PER_ISLAND * ZONES.length; // 75
 
 export interface IslandProgress {
   /** best stars earned on each level (index 0..MAX_LEVEL-1); 0 = not completed */
@@ -33,14 +33,27 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'cap', name: 'Explorer Cap', icon: '🧢', slot: 'head' },
   { id: 'bow', name: 'Cute Bow', icon: '🎀', slot: 'head' },
   { id: 'party', name: 'Party Hat', icon: '🥳', slot: 'head' },
+  { id: 'flowercrown', name: 'Flower Crown', icon: '🌸', slot: 'head' },
+  { id: 'sunhat', name: 'Sunny Hat', icon: '👒', slot: 'head' },
+  { id: 'beanie', name: 'Cozy Beanie', icon: '🧶', slot: 'head' },
   { id: 'crown', name: 'Golden Crown', icon: '👑', slot: 'head' },
   { id: 'wizard', name: 'Wizard Hat', icon: '🧙', slot: 'head' },
   { id: 'glasses', name: 'Cool Shades', icon: '🕶️', slot: 'face' },
+  { id: 'goggles', name: 'Swim Goggles', icon: '🥽', slot: 'face' },
+  { id: 'hearts', name: 'Heart Glasses', icon: '💖', slot: 'face' },
   { id: 'cape', name: 'Hero Cape', icon: '🦸', slot: 'back' },
+  { id: 'scarf', name: 'Rainbow Scarf', icon: '🧣', slot: 'back' },
+  { id: 'backpack', name: 'Explorer Backpack', icon: '🎒', slot: 'back' },
+  { id: 'balloon', name: 'Sky Balloon', icon: '🎈', slot: 'back' },
   { id: 'wings', name: 'Fairy Wings', icon: '🧚', slot: 'back' },
 ];
-/** the order items unlock as the child completes levels */
-export const UNLOCK_ORDER = ['cap', 'bow', 'glasses', 'cape', 'party', 'crown', 'wings', 'wizard'];
+/** the order items unlock as the child completes levels — slots interleaved so
+ *  every few levels the reward feels different (a hat, then something for the
+ *  back, then the face…). 16 items across 25 total levels. */
+export const UNLOCK_ORDER = [
+  'cap', 'bow', 'glasses', 'scarf', 'party', 'flowercrown', 'cape', 'sunhat',
+  'goggles', 'crown', 'backpack', 'beanie', 'hearts', 'wings', 'balloon', 'wizard',
+];
 
 export interface EquippedCosmetics {
   head?: string;
@@ -78,6 +91,13 @@ export interface GameProgress {
   healedFriends: string[];
   /** local date of the last once-a-day friend "visit moment" (petal gift) */
   lastVisitMomentDate: string | null;
+  /** highest growth stage Nilu has EVER reached — growth never goes backwards,
+   *  even if star thresholds are rebalanced in an update */
+  growthFloor: number;
+  /** one-time achievement ids the child has earned (additive, never removed) */
+  achievementsEarned: string[];
+  /** today's Star Quests: which fully-bloomed islands' daily quest is done */
+  starQuests: { date: string; doneZones: string[] };
 }
 
 const KEY = 'belus_world_progress_v1';
@@ -93,6 +113,7 @@ function defaults(): GameProgress {
       mountain: emptyIsland(),
       cove: emptyIsland(),
       forest: emptyIsland(),
+      shore: emptyIsland(),
     },
     unlocked: [],
     equipped: {},
@@ -102,6 +123,9 @@ function defaults(): GameProgress {
     dailySparkles: { date: '', found: [] },
     healedFriends: [],
     lastVisitMomentDate: null,
+    growthFloor: 0,
+    achievementsEarned: [],
+    starQuests: { date: '', doneZones: [] },
   };
 }
 
@@ -137,6 +161,23 @@ export function loadProgress(): GameProgress {
     }
     if (Array.isArray(parsed.healedFriends)) base.healedFriends = parsed.healedFriends;
     if (typeof parsed.lastVisitMomentDate === 'string') base.lastVisitMomentDate = parsed.lastVisitMomentDate;
+    if (Array.isArray(parsed.achievementsEarned)) base.achievementsEarned = parsed.achievementsEarned;
+    if (parsed.starQuests && typeof parsed.starQuests.date === 'string' && Array.isArray(parsed.starQuests.doneZones)) {
+      base.starQuests = { date: parsed.starQuests.date, doneZones: parsed.starQuests.doneZones };
+    }
+    if (typeof parsed.growthFloor === 'number') {
+      base.growthFloor = Math.max(0, Math.min(3, parsed.growthFloor));
+    } else {
+      // migrate pre-rebalance saves: the growth stage the child ALREADY reached
+      // under the old thresholds becomes the floor, so Nilu never shrinks back.
+      const legacyStars = totalStars(base);
+      const legacy = [0, 12, 28, 48];
+      let stage = 0;
+      for (let i = legacy.length - 1; i >= 0; i--) {
+        if (legacyStars >= legacy[i]) { stage = i; break; }
+      }
+      base.growthFloor = stage;
+    }
     return base;
   } catch {
     return defaults();
@@ -202,8 +243,11 @@ export interface GrowthInfo {
   scale: number;
 }
 
-// star thresholds for each growth stage
-const GROWTH_THRESHOLDS = [0, 12, 28, 48];
+// Star thresholds for each growth stage. Tuned so the FINAL stage lands near
+// the end of the whole journey (22 of 25 levels) instead of leaving the last
+// islands with no growth payoff. Existing players are protected by
+// `growthFloor` — a stage once reached is never lost.
+const GROWTH_THRESHOLDS = [0, 15, 36, 66];
 const GROWTH_LABELS = ['Baby Nilu', 'Little Nilu', 'Big Nilu', 'Grown-Up Nilu'];
 const GROWTH_SCALES = [0.7, 0.85, 1.0, 1.15];
 
@@ -228,7 +272,18 @@ export function growthFromStars(stars: number): GrowthInfo {
 }
 
 export function getGrowth(p: GameProgress): GrowthInfo {
-  return growthFromStars(totalStars(p));
+  const info = growthFromStars(totalStars(p));
+  const floor = Math.max(0, Math.min(3, p.growthFloor ?? 0)) as GrowthStage;
+  if (floor <= info.stage) return info;
+  // the floor wins: growth NEVER goes backwards (e.g. after a rebalance)
+  const nextAt = floor < 3 ? GROWTH_THRESHOLDS[floor + 1] : null;
+  return {
+    stage: floor,
+    label: GROWTH_LABELS[floor],
+    nextAt,
+    progress: nextAt === null ? 1 : 0,
+    scale: GROWTH_SCALES[floor],
+  };
 }
 
 // ---- Home garden + sparkle jar + friendships (all additive, never decay) ----
@@ -314,6 +369,8 @@ export interface AwardResult {
   growthAfter: GrowthStage;
   /** a cosmetic unlocked by finishing this level for the first time, if any */
   unlockedItem?: Cosmetic;
+  /** sparkles gifted for replaying an already-finished level (0 on first plays) */
+  replaySparkles: number;
 }
 
 /** Record a finished level. levelIdx is 0-based. stars is 1..3. Keeps the best. */
@@ -332,8 +389,14 @@ export function awardLevel(
   const wasIncomplete = prevBest === 0;
   // every finished level also yields a seed for the Home garden
   next.seeds = (p.seeds ?? 0) + 1;
+  // replaying a finished level is never wasted: it harvests jar sparkles, so
+  // revisiting a favourite island keeps feeding the Home garden economy
+  const replaySparkles = wasIncomplete ? 0 : 3;
+  next.jarSparkles = (p.jarSparkles ?? 0) + replaySparkles;
   next.islands[zone].levelStars[levelIdx] = Math.max(prevBest, Math.min(MAX_STARS_PER_LEVEL, stars));
   const growthAfter = getGrowth(next).stage;
+  // a stage once reached is never lost
+  next.growthFloor = Math.max(p.growthFloor ?? 0, growthAfter);
 
   // first-time level completion unlocks the next cosmetic
   let unlockedItem: Cosmetic | undefined;
@@ -357,7 +420,38 @@ export function awardLevel(
     growthBefore,
     growthAfter,
     unlockedItem,
+    replaySparkles,
   };
+}
+
+// ---- daily Star Quests (endgame remix content on fully-bloomed islands) ----
+
+/** Is the once-a-day Star Quest on this island still waiting today? Only
+ *  fully-bloomed islands host one — it's the endgame's daily ritual. */
+export function starQuestAvailable(p: GameProgress, zone: ActivityZone, date: string = todayKey()): boolean {
+  if (!isIslandComplete(p, zone)) return false;
+  const done = p.starQuests.date === date ? p.starQuests.doneZones : [];
+  return !done.includes(zone);
+}
+
+export const STAR_QUEST_SPARKLES = 5;
+
+/** Mark today's Star Quest on an island done: a generous sparkle + seed gift. */
+export function completeStarQuest(p: GameProgress, zone: ActivityZone, date: string = todayKey()): GameProgress {
+  const done = p.starQuests.date === date ? p.starQuests.doneZones : [];
+  if (done.includes(zone)) return p;
+  return {
+    ...p,
+    starQuests: { date, doneZones: [...done, zone] },
+    jarSparkles: p.jarSparkles + STAR_QUEST_SPARKLES,
+    seeds: p.seeds + 1,
+  };
+}
+
+/** Record a one-time achievement (no-op if already earned). */
+export function earnAchievement(p: GameProgress, id: string): GameProgress {
+  if (p.achievementsEarned.includes(id)) return p;
+  return { ...p, achievementsEarned: [...p.achievementsEarned, id] };
 }
 
 export function equipCosmetic(p: GameProgress, slot: CosmeticSlot, id: string | null): GameProgress {
