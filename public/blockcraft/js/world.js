@@ -25,6 +25,12 @@ ABC.world = (function () {
   const SMOOTH = (SKIN !== 'classic');   // modern inherits smooth branches until later stages override
   ABC.SMOOTH = SMOOTH;        // expose so main.js / ui.js read the SAME value
 
+  /* All light intensities in this file were tuned on r128's legacy lighting.
+     r170 (modern) is physically-correct-only (useLegacyLights was removed in
+     r165), which drops punctual-light irradiance by 1/PI — so scale every
+     sun/ambient/hemi intensity by PI to reproduce the exact tuned brightness. */
+  const LIGHT_SCALE = (SKIN === 'modern') ? Math.PI : 1;
+
   const SIZE = 4000;          // soft travel limit — the world generates forever as you walk
   const MAX_Y = 40;
   const MIN_Y = -2;           // dig through grass and dirt down to bedrock stone
@@ -133,7 +139,11 @@ ABC.world = (function () {
     }
     const tex = new THREE.CanvasTexture(cv);
     if (SMOOTH) {
-      tex.encoding = THREE.sRGBEncoding;            // required once renderer outputEncoding=sRGB
+      // canvas pixels are sRGB — tag them so the renderer decodes to linear before
+      // lighting. r170 (modern) renamed .encoding -> .colorSpace; on r128 the old
+      // property is required and the new one is inert, so set per library.
+      if (ABC.MODERN) tex.colorSpace = THREE.SRGBColorSpace;
+      else tex.encoding = THREE.sRGBEncoding;       // required once renderer outputEncoding=sRGB
       tex.magFilter = THREE.LinearFilter;           // SOFT, not pixelated
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.generateMipmaps = true;
@@ -505,8 +515,8 @@ ABC.world = (function () {
       // the region's MOOD come through. At NIGHT, dim the sun right down so it
       // doesn't cast a sunny-day shadow under a navy sky (its shadow stays faint
       // rather than toggling castShadow — which would recompile shaders mid-walk).
-      near *= 1.3; far *= 1.6; hemiI *= 0.9;
-      lightI *= night ? 0.6 : 2.7;
+      near *= 1.3; far *= 1.6; hemiI *= 0.9 * LIGHT_SCALE;
+      lightI *= (night ? 0.6 : 2.7) * LIGHT_SCALE;
       // deepen the zenith so the sky reads as a rich blue after ACES+exposure
       // (a pale hue would blow out to near-white); keep the horizon = fog so it blends
       if (_sky) { _sky.material.uniforms.top.value.lerp(_c1.set(sky).multiplyScalar(0.66), k);
@@ -585,7 +595,8 @@ ABC.world = (function () {
     _maxAniso = renderer.capabilities.getMaxAnisotropy();
     if (SMOOTH) {
       // cinematic color pipeline + soft shadows
-      renderer.outputEncoding = THREE.sRGBEncoding;
+      if (ABC.MODERN) renderer.outputColorSpace = THREE.SRGBColorSpace; // r170 name (its default, but explicit)
+      else renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.18;
       renderer.shadowMap.enabled = true;
@@ -596,7 +607,7 @@ ABC.world = (function () {
       scene.fog = new THREE.Fog(0xdff1ff, 80, 240);
       scene.environment = makeEnvironment(renderer);   // soft daylight fill for the PBR blocks
       // one warm key sun that casts a single soft, player-following shadow
-      sunLight = new THREE.DirectionalLight(0xfff3da, 2.4);
+      sunLight = new THREE.DirectionalLight(0xfff3da, 2.4 * LIGHT_SCALE);
       sunLight.position.set(40, 80, 25);
       sunLight.castShadow = true;
       sunLight.shadow.mapSize.set(1024, 1024);
@@ -607,8 +618,8 @@ ABC.world = (function () {
       sunLight.shadow.bias = -0.0005;
       sunLight.shadow.normalBias = 0.5;               // primary fix for axis-aligned voxel acne
       scene.add(sunLight); scene.add(sunLight.target);
-      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5));
-      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34);
+      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5 * LIGHT_SCALE));
+      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34 * LIGHT_SCALE);
       scene.add(hemiLight);
     } else {
       scene.background = new THREE.Color(0x9fdcff);

@@ -12,6 +12,16 @@ import { OutputPass } from '../lib/modern/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from '../lib/modern/jsm/postprocessing/GTAOPass.js';
 import { RoundedBoxGeometry } from '../lib/modern/jsm/geometries/RoundedBoxGeometry.js';
 
+/* Keep r128 color semantics: every hex color in the game (materials, lights,
+   fog, sky grading, all entity files) was authored/tuned with hex treated as
+   raw linear values. r170's ColorManagement would re-interpret them as sRGB
+   (darker/more saturated in linear) and visibly shift the whole palette —
+   e.g. the 0x4a4036 horizon base plane turns from white haze to a brown band.
+   .enabled only gates Color conversions; sRGB texture decode and the sRGB
+   output transfer still apply. A later polish stage may enable this and
+   re-author the palette deliberately. */
+THREE.ColorManagement.enabled = false;
+
 window.THREE = THREE;
 window.ABC_MODERN_LIB = {
   EffectComposer,
