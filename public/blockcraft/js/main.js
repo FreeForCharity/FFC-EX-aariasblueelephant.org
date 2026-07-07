@@ -20,6 +20,7 @@
   const feet = new THREE.Vector3(0, 1, 6);
   let vy = 0, grounded = false, flying = false, lastSpaceTap = 0, squashT = 0;
   let bobPhase = 0, landDipT = 0, landDipK = 0;   // modern game-feel (camera-only)
+  let strideDist = 0, strideSide = 1;             // footprints / grass pressing
   let sprint = false, lastFwdTap = 0;
   function fwdTap() {                      // double-tap forward = sprint! 🏃
     const now = performance.now();
@@ -86,6 +87,18 @@
       composer.addPass(new L.RenderPass(scene, camera));
       const gtao = new L.GTAOPass(scene, camera, W, H);
       gtao.blendIntensity = 0.85;            // soft contact shading, not a dirt pass
+      // decorative geometry (grass tufts, rain, smoke, clouds, footprints) must
+      // not write AO — alphaTest quads/points read as solid slabs in the AO
+      // depth pass and stamp dark squares on the ground. Hide anything tagged
+      // userData.noAO for JUST this pass.
+      const gtaoRender = gtao.render.bind(gtao);
+      let _aoHidden = [];
+      gtao.render = (r, w2, rb, dtime, mask) => {
+        _aoHidden.length = 0;
+        scene.traverse((o) => { if (o.userData.noAO && o.visible) { o.visible = false; _aoHidden.push(o); } });
+        gtaoRender(r, w2, rb, dtime, mask);
+        for (const o of _aoHidden) o.visible = true;
+      };
       composer.addPass(gtao);
       // physically-lit surfaces run HOT in linear HDR (sunlit white ≈ 2.4 before
       // tone mapping), so the threshold must clear them or the whole world hazes
@@ -777,6 +790,14 @@
     hand.position.y = -0.55 + (moving ? Math.sin(performance.now() / 130) * 0.04 : 0);
     // modern game-feel (first person only): a soft walking head-bob and the
     // landing dip. Camera-only — feet/physics are identical on every skin.
+    // each stride presses the grass down and leaves footprints on soft ground
+    if (ABC.MODERN && moving && grounded && !flying) {
+      strideDist += Math.hypot(move.x, move.z) * (sprint ? 1.65 : 1);
+      if (strideDist > 0.72) {
+        strideDist = 0; strideSide = -strideSide;
+        ABC.world.footstep(feet.x, feet.y, feet.z, yaw, strideSide);
+      }
+    }
     if (ABC.MODERN && !thirdPerson) {
       if (moving && grounded && !flying) {
         bobPhase += dt * (sprint ? 11.5 : 8.5);

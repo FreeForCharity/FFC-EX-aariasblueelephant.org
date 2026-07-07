@@ -444,7 +444,7 @@
    window.__ABC_SKIN so js/world.js derives ABC.SKIN/MODERN/SMOOTH from the
    exact same value. Modern is the new default. */
 (function () {
-  var V = 39;                                   // cache-bust for all game scripts
+  var V = 40;                                   // cache-bust for all game scripts
   var skin = null;
   try { skin = localStorage.getItem('abcSkin'); } catch (e) {}
   if (skin !== 'modern' && skin !== 'smooth' && skin !== 'classic') skin = 'modern';
