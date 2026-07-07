@@ -374,9 +374,9 @@ ABC.activities = (function () {
     'Want to build a big blue elephant like me? Try Build Projects! 🐘',
   ];
   function bellaChat(a) {
-    ui().message('Bella the Blue Elephant 🐘💙',
+    ui().message('Nilu the Blue Elephant 🐘💙',
       ui().pick(BELLA_TIPS) + `<br><br><span style="font-size:14px;color:#557;">${ABC.BRAND.org} — ${ABC.BRAND.tagline} 🌈∞</span>`,
-      'Thanks, Bella! 💙', null, '🐘');
+      'Thanks, Nilu! 💙', null, '🐘');
     ABC.animals.celebrate(a, performance.now() / 1000);
   }
 

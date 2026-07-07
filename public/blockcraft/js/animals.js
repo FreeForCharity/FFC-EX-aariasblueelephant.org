@@ -211,8 +211,8 @@ ABC.animals = (function () {
 
   function spawnAll(sc) {
     scene = sc;
-    // Bella the Blue Elephant — guide, stays near spawn
-    const bella = spawn('elephant', 4, -8, 'Bella');
+    // Nilu the Blue Elephant — guide, stays near spawn
+    const bella = spawn('elephant', 4, -8, 'Nilu');
     bella.isGuide = true; bella.home = {x:4, z:-8}; bella.range = 6;
     // shops (incl. vendors) are placed by ABC.shops after spawnAll
     // a few gentle friends near home — the parks add their own as you explore

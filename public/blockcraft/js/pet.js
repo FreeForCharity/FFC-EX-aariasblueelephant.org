@@ -155,7 +155,7 @@ ABC.pet = (function () {
     if (st.adopted || askedOnce || ABC.state.stars < 3) return;
     askedOnce = true;
     ABC.ui.message('A new friend? 🐾',
-      'Bella knows some little friends who need a home. Would you like your very own pet?',
+      'Nilu knows some little friends who need a home. Would you like your very own pet?',
       'Yes! Adopt a pet! 💕', () => adoptFlow(), '🐾');
   }
   function adoptFlow() {

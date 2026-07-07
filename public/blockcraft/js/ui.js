@@ -54,7 +54,7 @@ ABC.ui = (function () {
     if (speak) ABC.audio.say(msg);
   }
   function bellaSays(msg, dur) {
-    toast('🐘💙 <b>Bella:</b> ' + msg, dur || 4200, false);   // show silently…
+    toast('🐘💙 <b>Nilu:</b> ' + msg, dur || 4200, false);   // show silently…
     ABC.audio.sayBella(ABC.tpl(msg));                          // …Bella speaks in her own voice 🐘🎺
   }
 
