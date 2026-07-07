@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <title>Aaria's Block Craft 3D 🌈</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- Modern skin resolves the bare 'three' specifier (used by the r170 jsm addons)
+     to the vendored ESM build. Must appear before ANY module is loaded. -->
+<script type="importmap">{"imports":{"three":"./lib/modern/three.module.min.js"}}</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
   html,body { width:100%; height:100%; overflow:hidden; background:#aee7ff;
@@ -359,10 +362,10 @@
   <button class="bigBtn green" id="playBtn">▶ Play!</button>
   <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
     <button class="bigBtn" id="howBtn" style="font-size:20px; padding:12px 30px;">❓ How to Play</button>
-    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🎨 Look: Smooth</button>
+    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🎨 Look: Modern ✨</button>
     <button class="bigBtn" id="fsTitleBtn" style="font-size:20px; padding:12px 30px;">⛶ Full Screen</button>
   </div>
-  <div id="skinHint" style="font-size:14px; color:#2b517d; background:rgba(255,255,255,.55); padding:6px 16px; border-radius:14px; max-width:520px;">✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.</div>
+  <div id="skinHint" style="font-size:14px; color:#2b517d; background:rgba(255,255,255,.55); padding:6px 16px; border-radius:14px; max-width:520px;">✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).</div>
   <div id="orgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA</div>
   <a id="disclosureLink" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
 </div>
@@ -384,7 +387,7 @@
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
-    <button class="menuBtn" id="skinToggleBtn" title="Switch Smooth / Classic look">🎨</button>
+    <button class="menuBtn" id="skinToggleBtn" title="Switch Modern / Smooth / Classic look">🎨</button>
     <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>
     <button class="menuBtn deskOnly" id="settingsBtn">⚙️</button>
     <button class="menuBtn deskOnly" id="helpBtn">❓</button>
@@ -433,26 +436,56 @@
 <div id="dialogOverlay"><div id="dialogBox"></div></div>
 <div id="flash"></div>
 
-<script src="lib/three.min.js"></script>
-<script src="js/data.js?v=35"></script>
-<script src="js/audio.js?v=35"></script>
-<script src="js/world.js?v=35"></script>
-<script src="js/animals.js?v=35"></script>
-<script src="js/squishy.js?v=35"></script>
-<script src="js/weather.js?v=35"></script>
-<script src="js/parks.js?v=35"></script>
-<script src="js/shops.js?v=35"></script>
-<script src="js/signs.js?v=35"></script>
-<script src="js/portal.js?v=35"></script>
-<script src="js/ui.js?v=35"></script>
-<script src="js/activities.js?v=35"></script>
-<script src="js/music.js?v=35"></script>
-<script src="js/pet.js?v=35"></script>
-<script src="js/stickers.js?v=35"></script>
-<script src="js/friends.js?v=35"></script>
-<script src="js/overnight.js?v=35"></script>
-<script src="js/photo.js?v=35"></script>
-<script src="js/dig.js?v=35"></script>
-<script src="js/main.js?v=35"></script>
+<script>
+/* ---------------- dual-library skin boot ----------------
+   'modern'  -> three.js r170 ESM (js/modernlib.js via the import map above)
+   'smooth' / 'classic' -> the untouched vendored r128 UMD lib/three.min.js.
+   The skin is resolved HERE, before any game script, and published on
+   window.__ABC_SKIN so js/world.js derives ABC.SKIN/MODERN/SMOOTH from the
+   exact same value. Modern is the new default. */
+(function () {
+  var V = 36;                                   // cache-bust for all game scripts
+  var skin = null;
+  try { skin = localStorage.getItem('abcSkin'); } catch (e) {}
+  if (skin !== 'modern' && skin !== 'smooth' && skin !== 'classic') skin = 'modern';
+  window.__ABC_SKIN = skin;
+
+  // game files, in the exact order the old static tags loaded them
+  var FILES = [
+    'js/data.js', 'js/audio.js', 'js/world.js', 'js/animals.js', 'js/squishy.js',
+    'js/weather.js', 'js/parks.js', 'js/shops.js', 'js/signs.js', 'js/portal.js',
+    'js/ui.js', 'js/activities.js', 'js/music.js', 'js/pet.js', 'js/stickers.js',
+    'js/friends.js', 'js/overnight.js', 'js/photo.js', 'js/dig.js', 'js/main.js'
+  ];
+
+  function loadSeq(i) {                          // classic sequential script chain
+    if (i >= FILES.length) return;
+    var s = document.createElement('script');
+    s.src = FILES[i] + '?v=' + V;
+    s.onload = function () { loadSeq(i + 1); };
+    document.body.appendChild(s);
+  }
+
+  if (skin === 'modern') {
+    // r170 ESM. If dynamic import / import maps aren't supported (old browser),
+    // quietly fall back to the Smooth skin on the r128 lib and reload.
+    // (import() via new Function so ancient browsers can't syntax-error this boot script)
+    var fallBack = function () {
+      try { localStorage.setItem('abcSkin', 'smooth'); } catch (e) {}
+      location.reload();
+    };
+    try {
+      new Function('u', 'return import(u)')('./js/modernlib.js?v=' + V)
+        .then(function () { loadSeq(0); })
+        .catch(fallBack);
+    } catch (e) { fallBack(); }
+  } else {
+    var lib = document.createElement('script');
+    lib.src = 'lib/three.min.js';
+    lib.onload = function () { loadSeq(0); };
+    document.body.appendChild(lib);
+  }
+})();
+</script>
 </body>
 </html>

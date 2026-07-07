@@ -1,14 +1,28 @@
 /* Aaria's Block Craft 3D — voxel world engine (Three.js r128) */
 ABC.world = (function () {
   /* ---------- selectable skin ----------
+     three skins: 'modern' (new, r170 renderer — tuned in a later stage),
      'smooth' = the elevated, premium "Block Craft" look (beveled blocks, soft PBR
-     materials, gentle shadows, gradient sky). Read ONCE at load so every material,
-     geometry and renderer setting is built for the chosen skin. Classic is the
-     default and is left byte-for-byte unchanged (the `else` branch everywhere). */
-  const SMOOTH = (function () {
-    // Smooth is the DEFAULT look now; only an explicit 'classic' opts out.
-    try { return localStorage.getItem('abcSkin') !== 'classic'; } catch (e) { return true; }
+     materials, gentle shadows, gradient sky), 'classic' = the original blocky look.
+     Read ONCE at load so every material, geometry and renderer setting is built
+     for the chosen skin. Classic is left byte-for-byte unchanged (the `else`
+     branch everywhere). Modern inherits every SMOOTH branch until a later stage
+     gives it its own rendering path — only ABC.MODERN distinguishes it for now.
+     The boot script (index.html) already resolved the skin into window.__ABC_SKIN
+     before any game script loaded; fall back to re-deriving from localStorage
+     (same default) if that seam is somehow missing. */
+  const SKIN = (function () {
+    if (window.__ABC_SKIN === 'modern' || window.__ABC_SKIN === 'smooth' || window.__ABC_SKIN === 'classic') {
+      return window.__ABC_SKIN;
+    }
+    try {
+      const v = localStorage.getItem('abcSkin');
+      return (v === 'smooth' || v === 'classic') ? v : 'modern';
+    } catch (e) { return 'modern'; }
   })();
+  ABC.SKIN = SKIN;            // 'modern' | 'smooth' | 'classic'
+  ABC.MODERN = (SKIN === 'modern');
+  const SMOOTH = (SKIN !== 'classic');   // modern inherits smooth branches until later stages override
   ABC.SMOOTH = SMOOTH;        // expose so main.js / ui.js read the SAME value
 
   const SIZE = 4000;          // soft travel limit — the world generates forever as you walk

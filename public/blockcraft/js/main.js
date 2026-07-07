@@ -55,13 +55,15 @@
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
-  // if the Smooth skin fails to init on a weak GPU (PMREM/shadows/shaders), fall
-  // back to Classic on the next load so a kid is never stuck on a broken world.
+  // if a fancier skin fails to init on a weak GPU (PMREM/shadows/shaders/r170
+  // postprocessing), fall back one rung on the next load so a kid is never
+  // stuck on a broken world: Modern -> Smooth -> Classic -> existing error UI.
   let scene;
   try {
     scene = ABC.world.initScene(renderer);
   } catch (e) {
-    if (ABC.SMOOTH) { try { localStorage.setItem('abcSkin', 'classic'); } catch (_) {} location.reload(); }
+    if (ABC.SKIN === 'modern') { try { localStorage.setItem('abcSkin', 'smooth'); } catch (_) {} location.reload(); }
+    else if (ABC.SKIN === 'smooth') { try { localStorage.setItem('abcSkin', 'classic'); } catch (_) {} location.reload(); }
     throw e;
   }
   ABC.world.generate();
@@ -969,24 +971,39 @@
   }
 
   /* ---------------- skin picker (title screen) ----------------
-     The smooth skin rebuilds materials/geometry/renderer at startup, so flipping
-     it writes the choice and reloads — calmer than a mid-session visual pop. */
-  // Smooth is the default; only an explicit 'classic' opts out.
-  function currentSkin() { try { return localStorage.getItem('abcSkin') === 'classic' ? 'classic' : 'smooth'; } catch (e) { return 'smooth'; } }
+     Three skins now: Modern (default) -> Smooth -> Classic -> Modern.
+     Each rebuilds materials/geometry/renderer at startup, so flipping it
+     writes the choice and reloads — calmer than a mid-session visual pop. */
+  const SKIN_ORDER = ['modern', 'smooth', 'classic'];
+  const SKIN_NAME = { modern: 'Modern', smooth: 'Smooth', classic: 'Classic' };
+  const SKIN_ICON = { modern: '✨', smooth: '🌤️', classic: '🧱' };
+  const SKIN_HINT = {
+    modern: '✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).',
+    smooth: '✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.',
+    classic: '🧱 <b>Classic</b> is the original blocky look — simple, fast and familiar.'
+  };
+  function currentSkin() { return ABC.SKIN || 'modern'; }
+  function nextSkin(skin) { return SKIN_ORDER[(SKIN_ORDER.indexOf(skin) + 1) % SKIN_ORDER.length]; }
+  // "Modern ✨" for Modern (its icon trails the name); plain name for the others.
+  function skinTitleLabel(skin) { return skin === 'modern' ? 'Modern ✨' : SKIN_NAME[skin]; }
+  function skinDisplay(skin) { return `${SKIN_ICON[skin]} ${SKIN_NAME[skin]}`; }
+  ABC.SKIN_ORDER = SKIN_ORDER;
+  ABC.nextSkin = nextSkin;
+  ABC.skinDisplay = skinDisplay;
   function labelSkinBtn() {
-    const b = $('skinBtn'); if (!b) return;
-    b.textContent = currentSkin() === 'smooth' ? '🎨 Look: Smooth' : '🎨 Look: Classic';
+    const b = $('skinBtn'); if (b) b.textContent = '🎨 Look: ' + skinTitleLabel(currentSkin());
+    const h = $('skinHint'); if (h) h.innerHTML = SKIN_HINT[currentSkin()] || SKIN_HINT.modern;
   }
   ABC.setSkin = (skin) => {
-    try { localStorage.setItem('abcSkin', skin === 'classic' ? 'classic' : 'smooth'); } catch (e) {}
+    try { localStorage.setItem('abcSkin', (skin === 'smooth' || skin === 'classic') ? skin : 'modern'); } catch (e) {}
     location.reload();
   };
-  const toggleSkin = () => ABC.setSkin(currentSkin() === 'smooth' ? 'classic' : 'smooth');
+  const toggleSkin = () => ABC.setSkin(nextSkin(currentSkin()));
   if ($('skinBtn')) { $('skinBtn').onclick = toggleSkin; labelSkinBtn(); }
   // one-tap in-game skin switch (🎨, always visible — distinct from the 🧱/⛏️ build-dig button)
   if ($('skinToggleBtn')) {
     $('skinToggleBtn').onclick = toggleSkin;
-    $('skinToggleBtn').title = currentSkin() === 'smooth' ? 'Switch to Classic look 🧱' : 'Switch to Smooth look ✨';
+    $('skinToggleBtn').title = 'Look: ' + skinDisplay(currentSkin()) + ' — tap to switch';
   }
 
   /* emotion spawner: gentle pace */
