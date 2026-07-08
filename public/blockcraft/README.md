@@ -13,7 +13,7 @@ and works offline — no internet, no installs, no accounts.
 - **Creative voxel world** — fly, place and remove colorful blocks (no enemies, no failing, single player)
 - **Build Projects** 🏗️ — Cozy Home, Rainbow Car, and a Rocket + Launch Pad with a real countdown blast-off
 - **Animal friends** 🐰🦖 — cute pets *and* prehistoric pals wander the world; click them to talk
-- **Bella the Blue Elephant** 💙 — the non-profit's mascot is the in-game guide
+- **Nilu the Blue Elephant** 💙 — the non-profit's mascot is the in-game guide
 - **Expressive communication engine** 💬 — progress moves forward when Aaria picks (or in Voice Mode, *says aloud*) the best full descriptive sentence, not just a single naming word. Gentle coaching, never punishment.
 - **Emotions & kindness** 💖 — animals get feelings (sad, hungry, scared…); describing the feeling and choosing a kind action earns hearts and blooms the kindness garden
 - **Slime Lab** 🌈 and **Oreo Kitchen** 🍪 — mix, stir, stack and *describe* your creations to unlock slime and cookie blocks

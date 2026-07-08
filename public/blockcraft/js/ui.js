@@ -54,7 +54,7 @@ ABC.ui = (function () {
     if (speak) ABC.audio.say(msg);
   }
   function bellaSays(msg, dur) {
-    toast('🐘💙 <b>Bella:</b> ' + msg, dur || 4200, false);   // show silently…
+    toast('🐘💙 <b>Nilu:</b> ' + msg, dur || 4200, false);   // show silently…
     ABC.audio.sayBella(ABC.tpl(msg));                          // …Bella speaks in her own voice 🐘🎺
   }
 
@@ -566,12 +566,12 @@ ABC.ui = (function () {
   function showSettings() {
     const s = ABC.audio.settings;
     const chk = (v) => v ? '✅' : '⬜';
-    const skinNow = ABC.SMOOTH ? '✨ Smooth' : '🧱 Classic';
+    const skinNow = ABC.skinDisplay ? ABC.skinDisplay(ABC.SKIN) : (ABC.SMOOTH ? '✨ Smooth' : '🧱 Classic');
     const sp = ABC.audio.speedInfo();
     openDialog(`<img src="logo.png" style="width:90px;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.2);" alt=""><h2>Settings</h2>
       <button class="choiceBtn" id="setName">✏️ Player name: <b>${esc(ABC.state.playerName)}</b> — tap to change</button>
       <button class="choiceBtn" id="setSpeed">🎛️ Game speed: <b>${sp.ico} ${sp.label}</b> — tap to change (🐢 more time · 🚀 faster)</button>
-      <button class="choiceBtn" id="setSkin">🎨 Block look: <b>${skinNow}</b> — tap to switch (Smooth = soft, rounded, gentle shadows)</button>
+      <button class="choiceBtn" id="setSkin">🎨 Block look: <b>${skinNow}</b> — tap to switch (Modern ✨ · Smooth 🌤️ · Classic 🧱)</button>
       <button class="choiceBtn" id="setVoice">${chk(s.voiceMode)} 🎤 Voice Mode — say sentences out loud ${ABC.audio.hasSR ? '' : '(needs Chrome/Edge)'}</button>
       <button class="choiceBtn" id="setRead">${chk(s.readAloud)} 🔊 Read everything aloud</button>
       <button class="choiceBtn" id="setVoiceName">🗣️ Voice: <b>${esc(ABC.audio.voiceName())}</b> — tap to try another</button>
@@ -606,8 +606,9 @@ ABC.ui = (function () {
       showSettings();
     });
     wire('setSkin', () => {
-      const next = ABC.SMOOTH ? 'classic' : 'smooth';
-      const niceNext = next === 'smooth' ? 'Smooth ✨' : 'Classic 🧱';
+      const next = ABC.nextSkin ? ABC.nextSkin(ABC.SKIN) : (ABC.SMOOTH ? 'classic' : 'smooth');
+      const niceNext = ABC.skinDisplay ? ABC.skinDisplay(next)
+        : (next === 'smooth' ? 'Smooth ✨' : 'Classic 🧱');
       message('Switch the block look?',
         `I'll switch to <b>${niceNext}</b> and reload your world (your build is saved). Ready?`,
         'Yes, switch! 🎨', () => { (ABC.setSkin || function(){})(next); }, '🎨');

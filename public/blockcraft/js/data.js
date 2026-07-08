@@ -6,7 +6,7 @@ ABC.BRAND = {
   org: "Aaria's Blue Elephant",
   tagline: 'Building a New Inclusive World',
   url: 'https://aariasblueelephant.org',
-  mascot: 'Bella the Blue Elephant',
+  mascot: 'Nilu the Blue Elephant',
 };
 
 /* ============================== BLOCK TYPES ============================== */
@@ -582,7 +582,7 @@ ABC.PROJECT_PROMPTS = {
         { t:'Time for bed.', q:'off' } ] },
   },
   elephant: {
-    intro: { emoji:'🐘', scene:'Let’s build a friend like Bella! What are we making?',
+    intro: { emoji:'🐘', scene:'Let’s build a friend like Nilu! What are we making?',
       options:[
         { t:'A giant blue elephant with big flappy ears!', q:'best' },
         { t:'Elephant.', q:'name' },
@@ -705,7 +705,7 @@ ABC.OREO = {
 
 /* Tutorial prompt — given by Bella the Blue Elephant, the game's guide 💙 */
 ABC.TUTORIAL_PROMPT = {
-  emoji:'🐘💙', scene:'Hi {player}! I’m Bella! 🐘💙 Here, our WORDS make magic. Which sentence tells about our world?',
+  emoji:'🐘💙', scene:'Hi {player}! I’m Nilu! 🐘💙 Here, our WORDS make magic. Which sentence tells about our world?',
   options:[
     { t:'I see a sunny sky and soft green grass.', q:'best' },
     { t:'Grass.', q:'name' },
@@ -774,7 +774,7 @@ ABC.PORTAL = {
 ABC.KIND_MILESTONES = {
   5:'💖 5 hearts! Flowers are blooming because of your kindness!',
   10:'💖 10 hearts! A new animal friend heard how kind you are and came to visit!',
-  20:'💖🐘 20 hearts! Bella the Blue Elephant is SO proud — you are Building a New Inclusive World!',
+  20:'💖🐘 20 hearts! Nilu the Blue Elephant is SO proud — you are Building a New Inclusive World!',
 };
 
 /* Build-count milestones 🧱 — celebrate blocks placed, separate from the one-time stickers */

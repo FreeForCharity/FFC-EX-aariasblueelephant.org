@@ -4,6 +4,22 @@ ABC.weather = (function () {
   let scene = null, pts = null, geo = null, mat = null, pos = null, type = 'clear';
   const N = 340, BOX = 30, TOP = 22;
 
+  /* modern: falling rain is a thin vertical STREAK, not a square dot */
+  let streakTex = null, splashPts = null, splashPos = null, splashAge = null;
+  const NSPLASH = 90;
+  function makeStreakTex() {
+    const cv = document.createElement('canvas'); cv.width = 16; cv.height = 64;
+    const g = cv.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 0, 64);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,.9)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.strokeStyle = grad; g.lineWidth = 4.5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(8, 3); g.lineTo(8, 61); g.stroke();
+    const t = new THREE.CanvasTexture(cv);
+    if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
   function init(sc) {
     scene = sc;
     pos = new Float32Array(N * 3);
@@ -19,7 +35,21 @@ ABC.weather = (function () {
     pts = new THREE.Points(geo, mat);
     pts.frustumCulled = false;
     pts.visible = false;
+    pts.userData.noAO = true;
     scene.add(pts);
+    if (ABC.MODERN) {
+      streakTex = makeStreakTex();
+      // little crowns of spray where drops hit the ground
+      splashPos = new Float32Array(NSPLASH * 3); splashAge = new Float32Array(NSPLASH);
+      for (let i = 0; i < NSPLASH; i++) { splashPos[i*3+1] = -99; splashAge[i] = Math.random() * 0.4; }
+      const sg = new THREE.BufferGeometry();
+      sg.setAttribute('position', new THREE.BufferAttribute(splashPos, 3));
+      splashPts = new THREE.Points(sg, new THREE.PointsMaterial({
+        color: 0xdfeeff, size: 0.14, transparent: true, opacity: 0.75, depthWrite: false }));
+      splashPts.frustumCulled = false; splashPts.visible = false;
+      splashPts.userData.noAO = true;
+      scene.add(splashPts);
+    }
   }
 
   const CFG = {
@@ -36,9 +66,14 @@ ABC.weather = (function () {
     if (tp === type || !pts) return;
     type = tp;
     const c = CFG[tp];
+    if (splashPts) splashPts.visible = ABC.MODERN && tp === 'rain';
     if (!c) { pts.visible = false; return; }
     pts.visible = true;
     mat.color.set(c.color); mat.size = c.size; mat.opacity = c.op;
+    if (ABC.MODERN && streakTex) {              // modern rain falls in streaks
+      mat.map = tp === 'rain' ? streakTex : null;
+      if (tp === 'rain') { mat.size = 1.5; mat.opacity = 0.8; mat.color.set(0xd8e8ff); }
+    }
     mat.blending = c.glow ? THREE.AdditiveBlending : THREE.NormalBlending;
     mat.needsUpdate = true;
   }
@@ -63,7 +98,23 @@ ABC.weather = (function () {
       }
     }
     geo.attributes.position.needsUpdate = true;
+    // modern rain: recycle spray crowns on whatever surface is under them
+    if (splashPts && splashPts.visible) {
+      for (let i = 0; i < NSPLASH; i++) {
+        splashAge[i] -= dt;
+        if (splashAge[i] <= 0) {
+          splashAge[i] = 0.16 + Math.random() * 0.3;
+          const sx = cx + (Math.random() * 2 - 1) * (BOX - 4);
+          const sz = cz + (Math.random() * 2 - 1) * (BOX - 4);
+          const tb = ABC.world.topBlock ? ABC.world.topBlock(Math.floor(sx), Math.floor(sz)) : null;
+          splashPos[i*3] = sx;
+          splashPos[i*3+1] = (tb ? tb.y + 1 : 0) + 0.08;
+          splashPos[i*3+2] = sz;
+        }
+      }
+      splashPts.geometry.attributes.position.needsUpdate = true;
+    }
   }
 
-  return { init, setType, update, serialize: () => ({}), deserialize: () => {} };
+  return { init, setType, update, current: () => type, serialize: () => ({}), deserialize: () => {} };
 })();

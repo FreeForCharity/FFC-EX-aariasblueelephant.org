@@ -1,15 +1,35 @@
 /* Aaria's Block Craft 3D — voxel world engine (Three.js r128) */
 ABC.world = (function () {
   /* ---------- selectable skin ----------
+     three skins: 'modern' (new, r170 renderer — tuned in a later stage),
      'smooth' = the elevated, premium "Block Craft" look (beveled blocks, soft PBR
-     materials, gentle shadows, gradient sky). Read ONCE at load so every material,
-     geometry and renderer setting is built for the chosen skin. Classic is the
-     default and is left byte-for-byte unchanged (the `else` branch everywhere). */
-  const SMOOTH = (function () {
-    // Smooth is the DEFAULT look now; only an explicit 'classic' opts out.
-    try { return localStorage.getItem('abcSkin') !== 'classic'; } catch (e) { return true; }
+     materials, gentle shadows, gradient sky), 'classic' = the original blocky look.
+     Read ONCE at load so every material, geometry and renderer setting is built
+     for the chosen skin. Classic is left byte-for-byte unchanged (the `else`
+     branch everywhere). Modern inherits every SMOOTH branch until a later stage
+     gives it its own rendering path — only ABC.MODERN distinguishes it for now.
+     The boot script (index.html) already resolved the skin into window.__ABC_SKIN
+     before any game script loaded; fall back to re-deriving from localStorage
+     (same default) if that seam is somehow missing. */
+  const SKIN = (function () {
+    if (window.__ABC_SKIN === 'modern' || window.__ABC_SKIN === 'smooth' || window.__ABC_SKIN === 'classic') {
+      return window.__ABC_SKIN;
+    }
+    try {
+      const v = localStorage.getItem('abcSkin');
+      return (v === 'smooth' || v === 'classic') ? v : 'modern';
+    } catch (e) { return 'modern'; }
   })();
+  ABC.SKIN = SKIN;            // 'modern' | 'smooth' | 'classic'
+  ABC.MODERN = (SKIN === 'modern');
+  const SMOOTH = (SKIN !== 'classic');   // modern inherits smooth branches until later stages override
   ABC.SMOOTH = SMOOTH;        // expose so main.js / ui.js read the SAME value
+
+  /* All light intensities in this file were tuned on r128's legacy lighting.
+     r170 (modern) is physically-correct-only (useLegacyLights was removed in
+     r165), which drops punctual-light irradiance by 1/PI — so scale every
+     sun/ambient/hemi intensity by PI to reproduce the exact tuned brightness. */
+  const LIGHT_SCALE = (SKIN === 'modern') ? Math.PI : 1;
 
   const SIZE = 4000;          // soft travel limit — the world generates forever as you walk
   const MAX_Y = 40;
@@ -18,6 +38,7 @@ ABC.world = (function () {
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
   let _maxAniso = 1, _sky = null, _shadowR = 32;   // smooth-skin render state
+  const _clouds = [];                              // modern drifting clouds
   const map = new Map();      // "x,y,z" -> type
   const rotMap = new Map();   // "x,y,z" -> 0..3 quarter-turns (rotating shapes only)
   const key = (x,y,z) => x + ',' + y + ',' + z;
@@ -119,7 +140,11 @@ ABC.world = (function () {
     }
     const tex = new THREE.CanvasTexture(cv);
     if (SMOOTH) {
-      tex.encoding = THREE.sRGBEncoding;            // required once renderer outputEncoding=sRGB
+      // canvas pixels are sRGB — tag them so the renderer decodes to linear before
+      // lighting. r170 (modern) renamed .encoding -> .colorSpace; on r128 the old
+      // property is required and the new one is inert, so set per library.
+      if (ABC.MODERN) tex.colorSpace = THREE.SRGBColorSpace;
+      else tex.encoding = THREE.sRGBEncoding;       // required once renderer outputEncoding=sRGB
       tex.magFilter = THREE.LinearFilter;           // SOFT, not pixelated
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.generateMipmaps = true;
@@ -132,6 +157,369 @@ ABC.world = (function () {
   }
   function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
     t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+  /* ============================================================
+     MODERN SKIN "real world" — only used when ABC.MODERN.
+     Natural-looking ground & trees on the r170 renderer: rich
+     seamless procedural textures derived from each block's authored
+     color, per-face grass (green top / dirt sides), organic foliage
+     puffs + bark cylinders instead of green/brown cubes, per-instance
+     color & shape variation, and wavy grass tufts scattered on open
+     grass tops. World DATA is untouched — same blocks, same saves,
+     same dig/place voxel walk; only how blocks are DRAWN changes.
+     ============================================================ */
+  const MODERN = ABC.MODERN;
+  // terrain ids that swap the toy bevel for flat, seam-tiling "real ground"
+  const REAL_GROUND = ['grass','dirt','sand','snow','stone','moss','sandstone','redrock','granite','blackrock'];
+  // per-instance brightness jitter — breaks up the tiled-texture repetition
+  const REAL_JITTER = new Set([...REAL_GROUND, 'leaf']);
+
+  function shade(hex, f) {        // lighten (f>0) / darken (f<0) '#rrggbb', returns 'rgb()'
+    const n = parseInt(hex.slice(1), 16);
+    const ch = (v) => Math.max(0, Math.min(255, Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f))));
+    return 'rgb(' + ch(n >> 16 & 255) + ',' + ch(n >> 8 & 255) + ',' + ch(n & 255) + ')';
+  }
+
+  const _realTex = {};
+  function realTexture(kind, base, base2) {
+    const ck = kind + base + (base2 || '');
+    if (_realTex[ck]) return _realTex[ck];
+    const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    const rnd = mulberry(kind.length * 131 + base.length * 17 + kind.charCodeAt(0) * 7);
+    // paint one dab at every 3x3 tile offset so the texture tiles seamlessly
+    const W = (x, y, paint) => { for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) paint(x + dx, y + dy); };
+    const blob = (x, y, r, col, a) => W(x, y, (px, py) => {
+      const rg = g.createRadialGradient(px, py, 0, px, py, r);
+      rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.globalAlpha = a; g.fillStyle = rg; g.fillRect(px - r, py - r, r * 2, r * 2); g.globalAlpha = 1;
+    });
+    const mottle = (n, amp, rMin, rMax) => {   // big soft light/dark patches
+      for (let i = 0; i < n; i++) blob(rnd() * S, rnd() * S, rMin + rnd() * (rMax - rMin),
+        shade(base, (rnd() < 0.5 ? -1 : 1) * amp * (0.5 + rnd() * 0.5)), 0.10 + rnd() * 0.10);
+    };
+    const blade = (x, y, len, ang, col, lw) => W(x, y, (px, py) => {
+      const tx = px + Math.cos(ang) * len, ty = py + Math.sin(ang) * len;
+      g.strokeStyle = col; g.lineWidth = lw; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(px, py);
+      g.quadraticCurveTo(px + Math.cos(ang) * len * 0.5 + (rnd() - 0.5) * 4, py + Math.sin(ang) * len * 0.5, tx, ty);
+      g.stroke();
+    });
+    const grassy = (yFrom, yTo, count, lipBase) => {   // dense blade cover in shades of the grass color
+      for (let i = 0; i < count; i++)
+        blade(rnd() * S, yFrom + rnd() * (yTo - yFrom), 7 + rnd() * 13, -Math.PI / 2 + (rnd() - 0.5) * 0.9,
+          shade(lipBase, -0.35 + rnd() * 0.75), 1.2 + rnd() * 1.5);
+    };
+    const dirty = (dirtBase) => {              // clumpy soil with pebbles + root flecks
+      g.fillStyle = dirtBase; g.fillRect(0, 0, S, S);
+      for (let i = 0; i < 22; i++) blob(rnd() * S, rnd() * S, 26 + rnd() * 50,
+        shade(dirtBase, (rnd() < 0.5 ? -1 : 1) * 0.16), 0.12 + rnd() * 0.1);
+      for (let i = 0; i < 260; i++) {
+        const x = rnd() * S, y = rnd() * S, r = 1.6 + rnd() * 3.4, dark = shade(dirtBase, -0.22 - rnd() * 0.2);
+        W(x, y, (px, py) => { g.fillStyle = dark; g.beginPath(); g.ellipse(px, py, r, r * 0.7, rnd() * 3, 0, 7); g.fill();
+          g.strokeStyle = shade(dirtBase, 0.18); g.lineWidth = 0.8; g.globalAlpha = 0.5;
+          g.beginPath(); g.arc(px, py - r * 0.35, r * 0.6, Math.PI, 0); g.stroke(); g.globalAlpha = 1; });
+      }
+      for (let i = 0; i < 26; i++) {           // little grey pebbles
+        const x = rnd() * S, y = rnd() * S, r = 1.5 + rnd() * 2.5, c = shade('#9a948c', (rnd() - 0.5) * 0.4);
+        W(x, y, (px, py) => { g.fillStyle = c; g.beginPath(); g.ellipse(px, py, r, r * 0.8, rnd() * 3, 0, 7); g.fill(); });
+      }
+    };
+    switch (kind) {
+      case 'grassTop':
+        // start a bit below the authored (pastel) green — ACES + the x2.7 day
+        // grade lift it back up; deeper than -0.15 turns the blades into harsh
+        // dark scratches, lighter reads as a dry pale lawn
+        g.fillStyle = shade(base, -0.15); g.fillRect(0, 0, S, S);
+        mottle(26, 0.16, 24, 70);
+        grassy(0, S, 900, base);
+        for (let i = 0; i < 130; i++)          // sunlit tips
+          blade(rnd() * S, rnd() * S, 4 + rnd() * 6, -Math.PI / 2 + (rnd() - 0.5) * 0.8, shade(base, 0.4), 1.1);
+        break;
+      case 'grassSide': {                      // dirt face with a ragged grass lip at the top
+        const dirt = base2;
+        dirty(dirt);
+        g.fillStyle = shade(base, -0.12);
+        g.beginPath(); g.moveTo(0, 0);         // ragged lower edge of the lip
+        for (let x = 0; x <= S; x += 7) g.lineTo(x, 22 + rnd() * 22);
+        g.lineTo(S, 0); g.closePath(); g.fill();
+        g.globalAlpha = 0.35; g.fillStyle = 'rgba(30,18,8,1)';  // soil shadow under the lip
+        g.beginPath(); g.moveTo(0, 30);
+        for (let x = 0; x <= S; x += 7) g.lineTo(x, 34 + rnd() * 20);
+        g.lineTo(S, 54); g.lineTo(0, 54); g.closePath(); g.fill(); g.globalAlpha = 1;
+        for (let i = 0; i < 150; i++)          // blades along the lip, some hanging down
+          blade(rnd() * S, 4 + rnd() * 26, 8 + rnd() * 16, Math.PI / 2 * (rnd() < 0.7 ? 1 : -1) + (rnd() - 0.5) * 0.7,
+            shade(base, -0.35 + rnd() * 0.7), 1.2 + rnd() * 1.3);
+        break; }
+      case 'dirt': dirty(base); break;
+      case 'sand':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(20, 0.12, 30, 80);
+        for (let i = 0; i < 1500; i++) {       // individual grains
+          const c = shade(base, (rnd() < 0.5 ? -1 : 1) * (0.15 + rnd() * 0.25));
+          W(rnd() * S, rnd() * S, (px, py) => { g.fillStyle = c; g.fillRect(px, py, 1.3, 1.3); });
+        }
+        g.globalAlpha = 0.10; g.strokeStyle = shade(base, 0.5); g.lineWidth = 5;  // wind ripples
+        for (let y = 14; y < S; y += 30) { g.beginPath();
+          for (let x = 0; x <= S; x += 8) g.lineTo(x, y + Math.sin(x / S * Math.PI * 4) * 6); g.stroke(); }
+        g.globalAlpha = 1;
+        break;
+      case 'snow':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        for (let i = 0; i < 18; i++) blob(rnd() * S, rnd() * S, 30 + rnd() * 60, 'rgb(168,196,232)', 0.10 + rnd() * 0.08);
+        for (let i = 0; i < 14; i++) blob(rnd() * S, rnd() * S, 24 + rnd() * 50, '#ffffff', 0.16);
+        g.fillStyle = '#ffffff';
+        for (let i = 0; i < 110; i++) { const x = rnd() * S, y = rnd() * S;   // sparkle grains
+          W(x, y, (px, py) => { g.globalAlpha = 0.5 + rnd() * 0.5; g.fillRect(px, py, 1.4, 1.4); g.globalAlpha = 1; }); }
+        break;
+      case 'stone':
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(30, 0.2, 24, 78);
+        for (let i = 0; i < 7; i++) {          // meandering cracks with a light catch edge
+          let x = rnd() * S, y = rnd() * S;
+          const seg = 4 + (rnd() * 5 | 0), pts = [[x, y]];
+          for (let s2 = 0; s2 < seg; s2++) { x += (rnd() - 0.5) * 60; y += (rnd() - 0.3) * 44; pts.push([x, y]); }
+          W(0, 0, (dx, dy) => {
+            g.strokeStyle = shade(base, -0.5); g.lineWidth = 1.6; g.globalAlpha = 0.6;
+            g.beginPath(); pts.forEach(([px, py], j) => j ? g.lineTo(px + dx, py + dy) : g.moveTo(px + dx, py + dy)); g.stroke();
+            g.strokeStyle = shade(base, 0.25); g.lineWidth = 1; g.globalAlpha = 0.35;
+            g.beginPath(); pts.forEach(([px, py], j) => j ? g.lineTo(px + dx + 1, py + dy + 1) : g.moveTo(px + dx + 1, py + dy + 1)); g.stroke();
+            g.globalAlpha = 1;
+          });
+        }
+        for (let i = 0; i < 70; i++) {         // mineral flecks
+          const c = shade(base, (rnd() < 0.5 ? -1 : 1) * 0.35);
+          W(rnd() * S, rnd() * S, (px, py) => { g.fillStyle = c; g.fillRect(px, py, 2, 2); });
+        }
+        break;
+      case 'bark': {
+        g.fillStyle = shade(base, -0.18); g.fillRect(0, 0, S, S);
+        for (let x = 4; x < S; x += 9 + rnd() * 9) {   // vertical ridges; sin wobble is period-exact so top/bottom tile
+          const amp = 2 + rnd() * 4, ph = rnd() * 7, wob = 1 + (rnd() * 2 | 0);
+          const ridge = (off, col, lw, a) => W(0, 0, (dx, dy) => {
+            g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha = a; g.beginPath();
+            for (let y = 0; y <= S; y += 8) g.lineTo(x + off + dx + Math.sin(y / S * Math.PI * 2 * wob + ph) * amp, y + dy);
+            g.stroke(); g.globalAlpha = 1;
+          });
+          ridge(0, shade(base, -0.45), 2.6 + rnd() * 2.4, 0.75);   // crevice
+          ridge(3 + rnd() * 2, shade(base, 0.22), 1.6, 0.5);       // lit edge of the ridge
+        }
+        g.strokeStyle = shade(base, -0.5); g.globalAlpha = 0.5;    // short horizontal cracks
+        for (let i = 0; i < 9; i++) { const x = rnd() * S, y = rnd() * S; g.lineWidth = 1 + rnd() * 1.4;
+          W(x, y, (px, py) => { g.beginPath(); g.moveTo(px, py); g.lineTo(px + 6 + rnd() * 12, py + (rnd() - 0.5) * 4); g.stroke(); }); }
+        g.globalAlpha = 1;
+        for (let i = 0; i < 2; i++) {          // knots
+          const x = 30 + rnd() * (S - 60), y = 30 + rnd() * (S - 60);
+          for (let r = 9; r > 2; r -= 2.2) { g.fillStyle = shade(base, r % 4 < 2 ? -0.35 : 0.1);
+            g.beginPath(); g.ellipse(x, y, r, r * 1.5, 0, 0, 7); g.fill(); }
+        }
+        break; }
+      case 'foliage':
+        g.fillStyle = shade(base, -0.35); g.fillRect(0, 0, S, S);
+        mottle(20, 0.2, 26, 64);
+        for (let i = 0; i < 620; i++) {        // layered leaf dabs, dark first then lit
+          const t = i / 620, c = shade(base, -0.35 + t * 0.85), x = rnd() * S, y = rnd() * S;
+          const rx = 2.6 + rnd() * 3.6, ry = rx * (0.4 + rnd() * 0.3), a = rnd() * Math.PI;
+          W(x, y, (px, py) => { g.fillStyle = c; g.beginPath(); g.ellipse(px, py, rx, ry, a, 0, 7); g.fill(); });
+        }
+        for (let i = 0; i < 60; i++) {         // bright sun-caught tips
+          const x = rnd() * S, y = rnd() * S, rx = 2 + rnd() * 2.4;
+          W(x, y, (px, py) => { g.globalAlpha = 0.8; g.fillStyle = shade(base, 0.5);
+            g.beginPath(); g.ellipse(px, py, rx, rx * 0.5, rnd() * Math.PI, 0, 7); g.fill(); g.globalAlpha = 1; });
+        }
+        break;
+      case 'water':
+        // deeper base + bold crests/troughs — subtle reads as ice from afar
+        g.fillStyle = shade(base, -0.22); g.fillRect(0, 0, S, S);
+        for (let i = 0; i < 14; i++) blob(rnd() * S, rnd() * S, 30 + rnd() * 60, shade(base, -0.42), 0.16);
+        for (let i = 0; i < 30; i++) {         // crossing wave crests (all W-wrapped = seamless drift)
+          const y0 = rnd() * S, amp = 3 + rnd() * 6, ph = rnd() * 7, w2 = 1 + (rnd() * 2 | 0);
+          W(0, 0, (dx, dy) => {
+            g.strokeStyle = shade(base, 0.3 + rnd() * 0.35); g.lineWidth = 1.6 + rnd() * 1.8;
+            g.globalAlpha = 0.5; g.beginPath();
+            for (let x = 0; x <= S; x += 8) g.lineTo(x + dx, y0 + dy + Math.sin(x / S * Math.PI * 2 * w2 + ph) * amp);
+            g.stroke();
+            g.strokeStyle = shade(base, -0.4); g.lineWidth = 1.2; g.globalAlpha = 0.35;  // shadowed trough
+            g.beginPath();
+            for (let x = 0; x <= S; x += 8) g.lineTo(x + dx, y0 + 3 + dy + Math.sin(x / S * Math.PI * 2 * w2 + ph) * amp);
+            g.stroke(); g.globalAlpha = 1;
+          });
+        }
+        for (let i = 0; i < 10; i++) blob(rnd() * S, rnd() * S, 8 + rnd() * 14, '#ffffff', 0.14); // sparkle
+        break;
+      case 'tuft': case 'tuftFlower': {        // transparent blade fan for scattered grass tufts
+        g.clearRect(0, 0, S, S);
+        for (let i = 0; i < 15; i++) {
+          const bx = S * 0.5 + (rnd() - 0.5) * S * 0.45, h = S * (0.35 + rnd() * 0.5);
+          const lean = (rnd() - 0.5) * S * 0.5, cx = bx + lean * 0.3, tipX = bx + lean;
+          g.fillStyle = shade(base, -0.4 + rnd() * 0.85);
+          g.beginPath(); g.moveTo(bx - 3.5, S);
+          g.quadraticCurveTo(cx - 2, S - h * 0.6, tipX, S - h);
+          g.quadraticCurveTo(cx + 3, S - h * 0.6, bx + 3.5, S);
+          g.closePath(); g.fill();
+        }
+        if (kind === 'tuftFlower') {           // little wildflower heads on some stems
+          const petals = ['#ffffff', '#ffd6e8', '#ffe28a', '#cdb4ff'];
+          for (let i = 0; i < 5; i++) {
+            const fx = S * (0.2 + rnd() * 0.6), fy = S * (0.18 + rnd() * 0.35), r = 4.5 + rnd() * 3;
+            g.fillStyle = petals[i % petals.length];
+            for (let p = 0; p < 5; p++) { const a = p / 5 * 6.28 + rnd();
+              g.beginPath(); g.arc(fx + Math.cos(a) * r, fy + Math.sin(a) * r, r * 0.75, 0, 7); g.fill(); }
+            g.fillStyle = '#ffca3a'; g.beginPath(); g.arc(fx, fy, r * 0.6, 0, 7); g.fill();
+          }
+        }
+        break; }
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.generateMipmaps = true;
+    tex.anisotropy = Math.min(16, _maxAniso);
+    tex.needsUpdate = true;
+    return (_realTex[ck] = tex);
+  }
+
+  function modernStd(tex, extra) {
+    return new THREE.MeshStandardMaterial(Object.assign(
+      { map: tex, roughness: 0.96, metalness: 0, envMapIntensity: 0.22 }, extra));
+  }
+  /* material overrides for the "real" blocks; grass gets per-face materials
+     (green top / lipped dirt sides / dirt bottom — BoxGeometry group order
+     is +x,-x,+y,-y,+z,-z). Everything else in the game keeps its Smooth look. */
+  function modernMaterial(id, def) {
+    const base = def.color;
+    switch (id) {
+      case 'grass': {
+        const lip = def.top || base;           // data.js has always defined top: — finally used!
+        const side = modernStd(realTexture('grassSide', lip, ABC.BLOCK_DEFS.dirt.color));
+        return [side, side, modernStd(realTexture('grassTop', lip)),
+                modernStd(realTexture('dirt', ABC.BLOCK_DEFS.dirt.color)), side, side];
+      }
+      case 'moss':      return modernStd(realTexture('grassTop', base));
+      case 'dirt':      return modernStd(realTexture('dirt', base));
+      case 'sand': case 'sandstone': return modernStd(realTexture('sand', base));
+      case 'snow':      return modernStd(realTexture('snow', base), { roughness: 0.9, envMapIntensity: 0.45 });
+      case 'stone': case 'redrock': case 'granite': case 'blackrock':
+                        return modernStd(realTexture('stone', base));
+      case 'wood':      return modernStd(realTexture('bark', base));
+      case 'leaf':      return modernStd(realTexture('foliage', base), { roughness: 0.88 });
+      case 'water': {
+        const tex = realTexture('water', base);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;   // the map drifts each frame
+        _waterTex = tex;
+        const m = modernStd(tex, { roughness: 0.06, envMapIntensity: 1.0,
+                                   transparent: true, opacity: def.alpha });
+        // real moving water: the TOP surface bobs with two crossing sine waves
+        // in world space, so neighbouring blocks form one continuous swell.
+        // (Safe to inject — modern pins three at r170, our vendored build.)
+        m.onBeforeCompile = (sh) => {
+          sh.uniforms.uWave = _waterWave;
+          sh.vertexShader = 'uniform float uWave;\n' + sh.vertexShader.replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\n' +
+            '#ifdef USE_INSTANCING\n' +
+            '  vec4 abcW = instanceMatrix * vec4(position, 1.0);\n' +
+            '  if (position.y > 0.45) transformed.y += sin(abcW.x * 0.9 + uWave * 1.6) * 0.05' +
+            '    + cos(abcW.z * 0.7 + uWave * 1.15) * 0.05 - 0.05;\n' +
+            '#endif\n');
+        };
+        return m;
+      }
+    }
+    return null;
+  }
+  let _waterTex = null, _waterT = 0;
+  const _waterWave = { value: 0 };
+
+  /* geometry overrides: flat seam-tiling boxes for ground (the toy bevel gap
+     between blocks is what reads as "plastic"), bark cylinders for trunks,
+     lumpy displaced icospheres for foliage. Instanced-safe plain geometry. */
+  let _flatGeo = null, _trunkGeo = null, _foliageGeo = null;
+  function foliageGeo() {
+    const geo = new THREE.IcosahedronGeometry(0.68, 1);   // non-indexed → faceted, stylized-organic
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      // hash on POSITION so duplicated verts displace together (no cracks)
+      const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+      const k = 1 + (h - Math.floor(h) - 0.5) * 0.36;
+      p.setXYZ(i, x * k, y * k * 0.92, z * k);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  function modernGeoFor(id) {
+    if (!MODERN) return null;
+    if (REAL_GROUND.includes(id) || id === 'water') return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
+    if (id === 'wood') return _trunkGeo || (_trunkGeo = new THREE.CylinderGeometry(0.44, 0.5, 1, 10));
+    if (id === 'leaf') return _foliageGeo || (_foliageGeo = foliageGeo());
+    return null;
+  }
+
+  /* scattered grass tufts on open grass tops — pure decoration, deliberately
+     invisible to gameplay: dig/place uses the voxel grid walk and the animal
+     raycaster targets an explicit list, so this mesh is never interactive. */
+  let tuftMesh = null, flowerMesh = null, _tuftGeo = null, _tuftMat = null, _flowerMat = null;
+  function tuftGeo() {
+    const g = new THREE.BufferGeometry();
+    const w = 0.48, h = 0.62;
+    g.setAttribute('position', new THREE.Float32BufferAttribute([
+      -w, 0, 0,  w, 0, 0,  w, h, 0,  -w, h, 0,      // quad facing z
+      0, 0, -w,  0, 0, w,  0, h, w,   0, h, -w,     // quad facing x
+    ], 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute([0,0, 1,0, 1,1, 0,1, 0,0, 1,0, 1,1, 0,1], 2));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute([0,0,1, 0,0,1, 0,0,1, 0,0,1, 1,0,0, 1,0,0, 1,0,0, 1,0,0], 3));
+    g.setIndex([0,1,2, 0,2,3, 4,5,6, 4,6,7]);
+    return g;
+  }
+  const _tuftIndex = new Map();   // "x,z" -> tuft instance, for press-underfoot
+  function tuftMatrix(e, squash) {
+    _m4.makeRotationY(e.h * 6.283);
+    _m4.scale(_v1.set(e.s, e.s * (squash != null ? squash : 1), e.s));
+    _m4.setPosition(e.px, e.py, e.pz);
+    return _m4;
+  }
+  function fillTuftMesh(mesh, spots) {
+    mesh.count = spots.length;
+    for (let i = 0; i < spots.length; i++) {
+      const [p, h] = spots[i], h2 = hash2(p[2] * 31 + p[1], p[0] * 19);
+      const e = { mesh, i, h, s: 0.7 + h2 * 0.65,
+                  px: p[0] + 0.25 + h2 * 0.5, py: p[1] + 1, pz: p[2] + 0.25 + ((h * 7) % 1) * 0.5 };
+      mesh.setMatrixAt(i, tuftMatrix(e));
+      _tuftIndex.set(p[0] + ',' + p[2], e);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }
+  function ensureTuftMesh(mesh, need, mat) {
+    if (mesh && mesh.instanceMatrix.count >= need) return mesh;
+    if (mesh) { scene.remove(mesh); mesh.dispose(); }
+    let cap = 1024; while (cap < need) cap *= 2;
+    const m = new THREE.InstancedMesh(_tuftGeo || (_tuftGeo = tuftGeo()), mat, cap);
+    m.frustumCulled = false;
+    m.userData.noAO = true;      // alphaTest quads read as SOLID slabs in the AO
+    scene.add(m);                // depth pass and smudge dark squares on the lawn
+    return m;
+  }
+  function rebuildTufts() {
+    const gm = meshes.grass; if (!gm) return;
+    _tuftIndex.clear(); _pressed.length = 0;   // rebuild resets any pressed state
+    const spots = [], flowers = [];
+    for (const p of gm.userData.positions) {
+      if (map.has(key(p[0], p[1] + 1, p[2]))) continue;         // must be an open top
+      const h = hash2(p[0] * 29 + p[1], p[2] * 23);
+      if (h < 0.52) continue;                                   // ~half the open grass gets a tuft
+      (h > 0.9 ? flowers : spots).push([p, h]);                 // 1-in-5 tufts blooms 🌼
+    }
+    const lip = ABC.BLOCK_DEFS.grass.top || ABC.BLOCK_DEFS.grass.color;
+    _tuftMat = _tuftMat || modernStd(realTexture('tuft', lip),
+      { alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.1 });
+    _flowerMat = _flowerMat || modernStd(realTexture('tuftFlower', lip),
+      { alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.1 });
+    tuftMesh = fillTuftMesh(ensureTuftMesh(tuftMesh, spots.length, _tuftMat), spots);
+    flowerMesh = fillTuftMesh(ensureTuftMesh(flowerMesh, flowers.length, _flowerMat), flowers);
+  }
 
   /* ============================================================
      SMOOTH SKIN render helpers — only used when SMOOTH is true.
@@ -207,7 +595,23 @@ ABC.world = (function () {
       envMapIntensity: glassy ? 0.8 : 0.32, // gentle fill; low on matte so the neutral env doesn't tint snow/sand
     });
     if (def.alpha != null) { m.transparent = true; m.opacity = def.alpha; }
-    if (def.glow) { m.emissive = new THREE.Color(0xffe066); m.emissiveIntensity = 0.6; m.roughness = 0.6; }
+    if (def.glow) {
+      // modern: glow in the block's OWN color at moderate strength — a bright
+      // yellow emissive stacked on sunlit diffuse clips to WHITE through ACES
+      // (the lava river looked like snow). Warm hue survives even when hot.
+      m.emissive = new THREE.Color(MODERN ? def.color : 0xffe066);
+      m.roughness = 0.6;
+      if (MODERN) {
+        // CM is disabled, so a raw hex emissive is treated as LINEAR and the
+        // sRGB output transform LIGHTENS it — #ff6a2b lava rendered pastel
+        // peach. Hand-decode to linear so it round-trips to the true hue,
+        // and damp the sunlit diffuse so the glow dominates (full diffuse +
+        // emissive under the physical sun clips molten rock toward white).
+        m.emissive.convertSRGBToLinear();
+        m.emissiveIntensity = 1.15;
+        m.color.setScalar(0.35);
+      } else m.emissiveIntensity = 0.6;
+    }
     return m;
   }
 
@@ -219,20 +623,29 @@ ABC.world = (function () {
     const mat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
       uniforms: { top: { value: new THREE.Color(0x7ec8ff) },
-                  bottom: { value: new THREE.Color(0xdff1ff) } },
+                  bottom: { value: new THREE.Color(0xdff1ff) },
+                  pipeline: { value: 0 } },
       vertexShader: 'varying vec3 vW; void main(){ vW = position;' +
         ' gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      // apply the SAME exposure + ACES + sRGB the renderer uses for everything else,
-      // so the dome matches the terrain/fog and the horizon blends seamlessly.
-      fragmentShader: 'varying vec3 vW; uniform vec3 top; uniform vec3 bottom;' +
+      // pipeline=0 (direct render): apply the SAME exposure + ACES + sRGB the
+      // renderer applies to built-in materials, so the dome matches the terrain.
+      // pipeline=1 (modern EffectComposer): output raw linear — the composer's
+      // OutputPass applies the identical exposure/ACES/sRGB at the end; grading
+      // here too would tone-map the sky twice.
+      fragmentShader: 'varying vec3 vW; uniform vec3 top; uniform vec3 bottom; uniform float pipeline;' +
         ' void main(){ float h = normalize(vW).y; float t = pow(clamp(h*0.5+0.5,0.0,1.0), 0.9);' +
-        ' vec3 c = mix(bottom, top, t) * 1.18;' +
-        ' c = (c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14);' +
-        ' c = pow(clamp(c,0.0,1.0), vec3(1.0/2.2));' +
+        ' vec3 c = mix(bottom, top, t);' +
+        ' if (pipeline < 0.5) {' +
+        '   c *= 1.18;' +
+        '   c = (c*(2.51*c+0.03))/(c*(2.43*c+0.59)+0.14);' +
+        '   c = pow(clamp(c,0.0,1.0), vec3(1.0/2.2));' +
+        ' }' +
         ' gl_FragColor = vec4(c, 1.0); }'
     });
     const sky = new THREE.Mesh(geo, mat); sky.frustumCulled = false; return sky;
   }
+  /* modern composer on/off — the sky must grade itself iff the pipeline doesn't */
+  function setSkyPipeline(on) { if (_sky) _sky.material.uniforms.pipeline.value = on ? 1 : 0; }
 
   /* ---------- shaped block geometries ---------- */
   function wedgeGeo() {
@@ -288,7 +701,7 @@ ABC.world = (function () {
 
   /* ---------- mesh management (capacity grows on demand) ---------- */
   function newMesh(id, cap) {
-    const m = new THREE.InstancedMesh(geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
+    const m = new THREE.InstancedMesh(modernGeoFor(id) || geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
     m.count = 0;
     m.userData.type = id;
     m.userData.positions = [];
@@ -306,7 +719,9 @@ ABC.world = (function () {
     blockGeo = SMOOTH ? roundedBoxGeo(1, 0.07, 1) : new THREE.BoxGeometry(1,1,1);
     for (const [id, def] of Object.entries(ABC.BLOCK_DEFS)) {
       let mat;
-      if (SMOOTH) {
+      if (MODERN && (mat = modernMaterial(id, def))) {
+        // "real world" ground/tree materials — modernMaterial returned them
+      } else if (SMOOTH) {
         mat = makeBlockMaterial(def);
       } else {
         mat = new THREE.MeshLambertMaterial({ map: makeTexture(def) });
@@ -318,7 +733,7 @@ ABC.world = (function () {
     }
   }
 
-  const _m4 = new THREE.Matrix4();
+  const _m4 = new THREE.Matrix4(), _v1 = new THREE.Vector3(), _cJ = new THREE.Color();
   function rebuild(type) {
     let m = meshes[type];
     const pos = [], keys = [];
@@ -334,17 +749,45 @@ ABC.world = (function () {
     }
     m.count = pos.length;
     const slabOff = ABC.BLOCK_DEFS[type].shape === 'slab' ? 0 : 0;  // slab geo already offset
+    // modern "real world": break the tiled-texture repetition with a hash-keyed
+    // (stable — no flicker on rebuild) yaw + brightness jitter per block; leaf
+    // puffs also get a size wobble so canopies read as organic clumps.
+    const jitter = MODERN && REAL_JITTER.has(type);
+    const leafy = jitter && type === 'leaf';
     for (let i=0;i<m.count;i++) {
       const raw = rotMap.get(keys[i]) || 0;
       const rot = (raw & 3) + ((raw & 4) ? 1 : 0);    // bit 4 = door swung open
-      _m4.makeRotationY(rot * Math.PI / 2);
+      if (jitter) {
+        const h = hash2(pos[i][0] * 13 + pos[i][1] * 7, pos[i][2] * 11 + pos[i][1]);
+        // ground boxes must stay grid-flush: yaw only in exact quarter turns
+        _m4.makeRotationY(leafy ? h * 6.283 : ((h * 4) | 0) * Math.PI / 2);
+        if (leafy) { const s = 0.9 + ((h * 31) % 1) * 0.5; _m4.scale(_v1.set(s, s * (0.85 + ((h * 17) % 1) * 0.3), s)); }
+        // subtle brightness jitter (stronger reads as checkerboard under ACES);
+        // grass ALSO gets a large-scale moisture tint — lush deep green in damp
+        // hollows drifting to warm straw on dry rises, like a real meadow
+        const j2 = 0.95 + ((h * 53) % 1) * 0.1;
+        if (type === 'grass') {
+          // broad, gentle moisture drift — tighter scales/deltas read as blotches
+          const moist = vnoise(pos[i][0] + 31, pos[i][2] - 17, 61);
+          _cJ.setRGB(j2 * (1 + (0.5 - moist) * 0.13), j2 * (1 + (moist - 0.5) * 0.08), j2 * (1 - Math.abs(moist - 0.5) * 0.05));
+        } else _cJ.setScalar(j2);
+        m.setColorAt(i, _cJ);
+      } else {
+        _m4.makeRotationY(rot * Math.PI / 2);
+      }
       _m4.setPosition(pos[i][0]+0.5, pos[i][1]+0.5 + slabOff, pos[i][2]+0.5);
       m.setMatrixAt(i, _m4);
     }
     m.userData.positions = pos;
     m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
-  function flush() { for (const t of dirty) rebuild(t); dirty.clear(); }
+  function flush() {
+    if (!dirty.size) return;
+    const grassDirty = MODERN && (dirty.has('grass') || dirty.size > 3);  // >3 ≈ chunk gen/unload
+    for (const t of dirty) rebuild(t); dirty.clear();
+    if (grassDirty) rebuildTufts();
+  }
 
   function inBounds(x,y,z) { return Math.abs(x)<=SIZE && Math.abs(z)<=SIZE && y>=MIN_Y && y<=MAX_Y; }
   function get(x,y,z) { return map.get(key(x,y,z)) || null; }
@@ -491,8 +934,12 @@ ABC.world = (function () {
       // the region's MOOD come through. At NIGHT, dim the sun right down so it
       // doesn't cast a sunny-day shadow under a navy sky (its shadow stays faint
       // rather than toggling castShadow — which would recompile shaders mid-walk).
-      near *= 1.3; far *= 1.6; hemiI *= 0.9;
-      lightI *= night ? 0.6 : 2.7;
+      near *= 1.3; far *= 1.6; hemiI *= 0.9 * LIGHT_SCALE;
+      lightI *= (night ? 0.6 : 2.7) * LIGHT_SCALE;
+      // modern storm mood: rain robs the sun and pulls the fog in close
+      if (MODERN && ABC.weather && ABC.weather.current && ABC.weather.current() === 'rain') {
+        lightI *= 0.45; hemiI *= 0.75; near *= 0.72; far *= 0.72;
+      }
       // deepen the zenith so the sky reads as a rich blue after ACES+exposure
       // (a pale hue would blow out to near-white); keep the horizon = fog so it blends
       if (_sky) { _sky.material.uniforms.top.value.lerp(_c1.set(sky).multiplyScalar(0.66), k);
@@ -505,12 +952,196 @@ ABC.world = (function () {
     if (sunLight) { sunLight.color.lerp(_c1.set(light), k); sunLight.intensity += (lightI - sunLight.intensity) * k; }
     if (hemiLight) { hemiLight.color.lerp(_c1.set(hemi), k); hemiLight.intensity += (hemiI - hemiLight.intensity) * k; }
   }
+  /* ---------- 👣 footsteps (modern only) ----------
+     Grass tufts squash underfoot and slowly stand back up; on granular ground
+     (sand, snow, dirt, volcanic rock) each stride leaves a fading footprint
+     decal. Purely visual — a ring buffer of quads, never a voxel edit. */
+  const _pressed = [];                        // squashed tufts recovering
+  const PRINT_GROUND = new Set(['sand', 'snow', 'dirt', 'blackrock', 'sandstone', 'moss']);
+  const NPRINT = 56;
+  let _printMesh = null, _printI = 0;
+  function printTexture() {
+    const S = 64, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    g.clearRect(0, 0, S, S);
+    // a soft oval indent: dark center, faint pressed rim — reads on any ground
+    const rg = g.createRadialGradient(S/2, S/2, 2, S/2, S/2, S*0.42);
+    rg.addColorStop(0, 'rgba(20,14,8,0.8)');
+    rg.addColorStop(0.7, 'rgba(20,14,8,0.42)');
+    rg.addColorStop(1, 'rgba(20,14,8,0)');
+    g.fillStyle = rg;
+    g.save(); g.translate(S/2, S/2); g.scale(0.62, 1); g.translate(-S/2, -S/2);
+    g.beginPath(); g.arc(S/2, S/2, S*0.42, 0, 7); g.fill(); g.restore();
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+  function ensurePrintMesh() {
+    if (_printMesh) return;
+    const geo = new THREE.PlaneGeometry(0.4, 0.56);
+    geo.rotateX(-Math.PI / 2);                // lie flat on the ground
+    _printMesh = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({
+      map: printTexture(), transparent: true, depthWrite: false }), NPRINT);
+    _printMesh.frustumCulled = false;
+    _printMesh.renderOrder = 1;
+    _printMesh.userData.noAO = true;
+    for (let i = 0; i < NPRINT; i++) { _m4.makeScale(0, 0, 0); _printMesh.setMatrixAt(i, _m4); }
+    scene.add(_printMesh);
+  }
+  /* one stride: press the tuft in this cell and/or stamp a footprint.
+     side = -1 left / +1 right foot, yaw = travel direction */
+  function footstep(x, y, z, yaw, side) {
+    if (!MODERN || !scene) return;
+    const fx = Math.floor(x), fz = Math.floor(z);
+    const tuft = _tuftIndex.get(fx + ',' + fz);
+    if (tuft && !tuft.down) {
+      tuft.down = true;
+      tuft.mesh.setMatrixAt(tuft.i, tuftMatrix(tuft, 0.15));
+      tuft.mesh.instanceMatrix.needsUpdate = true;
+      _pressed.push({ e: tuft, t: 0 });
+    }
+    const top = topBlock(fx, fz);
+    if (top && PRINT_GROUND.has(top.t) && top.y + 1 <= y + 0.6) {
+      ensurePrintMesh();
+      const ox = Math.cos(yaw) * 0.15 * side, oz = -Math.sin(yaw) * 0.15 * side;
+      _m4.makeRotationY(yaw);
+      _m4.setPosition(x + ox, top.y + 1 + 0.03, z + oz);
+      _printMesh.setMatrixAt(_printI % NPRINT, _m4);
+      _printMesh.instanceMatrix.needsUpdate = true;
+      _printI++;
+    }
+  }
+  function updateFootsteps(dt) {
+    for (let i = _pressed.length - 1; i >= 0; i--) {
+      const p = _pressed[i]; p.t += dt;
+      const k = Math.min(1, p.t / 11);                 // ~11s to stand back up
+      p.e.mesh.setMatrixAt(p.e.i, tuftMatrix(p.e, 0.15 + 0.85 * k * k));
+      p.e.mesh.instanceMatrix.needsUpdate = true;
+      if (k >= 1) { p.e.down = false; _pressed.splice(i, 1); }
+    }
+  }
+
+  /* ---------- 🌋 living volcano (modern only) ----------
+     Pure scene FX on top of the generated terrain — never voxel edits, so
+     kids' saves stay clean. Smoke billows from the crater, glowing bombs arc
+     out and rain onto the flanks, the crater throws warm light, and steam
+     columns rise where the lava river pours into the sea (scanned from the
+     live map so they sit exactly on the lava/water contact). */
+  let _volc = null, _volcScanT = 99;
+  function buildVolcanoFx() {
+    const g = new THREE.Group();
+    const mk = (n, color, size, additive, op) => {
+      const p = new Float32Array(n * 3), geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      const m = new THREE.Points(geo, new THREE.PointsMaterial({
+        color, size, transparent: true, opacity: op, depthWrite: false,
+        blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending }));
+      m.frustumCulled = false; m.userData.noAO = true; g.add(m);
+      return { p, geo, m };
+    };
+    const topY = Math.round(VOLC.H) - 3;
+    _volc = {
+      group: g, topY,
+      smoke: mk(64, 0x8a8580, 4.6, false, 0.32),
+      bomb: mk(10, 0xff9040, 1.1, true, 0.95),
+      steam: mk(96, 0xffffff, 1.6, false, 0.5),
+      bombV: [], smokeA: [], jets: [],
+      glow: new THREE.PointLight(0xff5a20, 420, 40, 2),
+    };
+    for (let i = 0; i < 64; i++) {
+      _volc.smokeA.push(Math.random());
+      _volc.smoke.p.set([VOLC.x, topY + 4 + Math.random() * 20, VOLC.z], i * 3);
+    }
+    for (let i = 0; i < 10; i++) {
+      _volc.bombV.push({ vx: 0, vy: -1, vz: 0, t: Math.random() * 3 });
+      _volc.bomb.p.set([VOLC.x, topY, VOLC.z], i * 3);
+    }
+    _volc.glow.position.set(VOLC.x, topY + 3, VOLC.z);
+    g.add(_volc.glow);
+    scene.add(g);
+  }
+  function scanSteamJets() {                  // lava touching water → steam column
+    const jets = [];
+    for (let along = 6; along < 130 && jets.length < 10; along += 2) {
+      const cx = Math.round(VOLC.x + VOLC.dx * along), cz = Math.round(VOLC.z + VOLC.dz * along);
+      if (map.get(key(cx, 1, cz)) !== 'lava' && map.get(key(cx, 0, cz)) !== 'lava') continue;
+      for (const [ox, oz] of [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]]) {
+        if (map.get(key(cx + ox, 0, cz + oz)) === 'water') { jets.push([cx + ox * 0.5, cz + oz * 0.5]); break; }
+      }
+    }
+    _volc.jets = jets;
+  }
+  function updateVolcano(px, pz, dt) {
+    if (!MODERN || !scene) return;
+    const d = Math.hypot(px - VOLC.x, pz - VOLC.z);
+    if (d > 170) { if (_volc) _volc.group.visible = false; return; }
+    if (!_volc) buildVolcanoFx();
+    _volc.group.visible = true;
+    _volcScanT += dt;
+    if (_volcScanT > 8) { _volcScanT = 0; scanSteamJets(); }
+    const V = _volc, topY = V.topY;
+    // smoke: rise, spread, recycle
+    for (let i = 0; i < 64; i++) {
+      const j = i * 3; V.smokeA[i] += dt * 0.22;
+      const a = V.smokeA[i];
+      V.smoke.p[j+1] += (2.0 + a) * dt;
+      V.smoke.p[j]   += (Math.sin(i * 2.1) * 1.6 + 0.9) * a * dt;   // billow + drift on the wind
+      V.smoke.p[j+2] += Math.cos(i * 1.7) * 1.6 * a * dt;
+      if (V.smoke.p[j+1] > topY + 34) {
+        V.smokeA[i] = 0;
+        V.smoke.p[j] = VOLC.x + (Math.random() - 0.5) * 5;
+        V.smoke.p[j+1] = topY + 2;
+        V.smoke.p[j+2] = VOLC.z + (Math.random() - 0.5) * 5;
+      }
+    }
+    V.smoke.geo.attributes.position.needsUpdate = true;
+    // bombs: ballistic arcs out of the crater
+    for (let i = 0; i < 10; i++) {
+      const j = i * 3, b = V.bombV[i];
+      b.t -= dt;
+      V.bomb.p[j] += b.vx * dt; V.bomb.p[j+1] += b.vy * dt; V.bomb.p[j+2] += b.vz * dt;
+      b.vy -= 14 * dt;
+      if (b.t <= 0 || V.bomb.p[j+1] < 1) {    // relaunch
+        b.t = 2.5 + Math.random() * 2;
+        const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 4.5;
+        b.vx = Math.cos(a) * sp; b.vz = Math.sin(a) * sp; b.vy = 10 + Math.random() * 6;
+        V.bomb.p[j] = VOLC.x; V.bomb.p[j+1] = topY + 1; V.bomb.p[j+2] = VOLC.z;
+      }
+    }
+    V.bomb.geo.attributes.position.needsUpdate = true;
+    // steam: columns rising off the lava/water contact line
+    const nj = Math.max(1, V.jets.length);
+    for (let i = 0; i < 96; i++) {
+      const j = i * 3;
+      if (!V.jets.length) { V.steam.p[j+1] = -50; continue; }   // park under the sea until jets exist
+      V.steam.p[j+1] += 2.6 * dt;
+      V.steam.p[j]   += Math.sin(V.steam.p[j+1] * 1.3 + i) * 0.9 * dt;
+      V.steam.p[j+2] += Math.cos(V.steam.p[j+1] * 1.1 + i) * 0.9 * dt;
+      if (V.steam.p[j+1] > 9 || V.steam.p[j+1] < -1) {
+        const [sx, sz] = V.jets[i % nj];
+        V.steam.p[j] = sx + (Math.random() - 0.5) * 1.4;
+        V.steam.p[j+1] = 0.6 + Math.random() * 0.8;
+        V.steam.p[j+2] = sz + (Math.random() - 0.5) * 1.4;
+      }
+    }
+    V.steam.geo.attributes.position.needsUpdate = true;
+    // the crater breathes
+    V.glow.intensity = 380 + Math.sin(performance.now() / 240) * 130;
+  }
+
   /* called every frame from the main loop with the player position */
   function gradeFrame(x, z, dt) {
     const reg = ABC.REGIONS ? ABC.REGIONS.regionAt(x, z) : null;
     const night = lockedTheme ? lockedTheme.key === 'night' : !!(reg && reg.night);
     const target = lockedTheme || (reg ? reg.theme : null);
     if (target) gradeTo(target, dt, night);
+    if (_waterTex) {                            // modern: lakes drift gently
+      _waterT += dt;
+      _waterTex.offset.set((_waterT * 0.012) % 1, (_waterT * 0.007) % 1);
+      _waterWave.value = _waterT;               // vertex waves ride the same clock
+    }
+    updateVolcano(x, z, dt);
+    updateFootsteps(dt);
   }
 
   /* ---------- night sky: stars + Milky Way 🌌 ---------- */
@@ -554,6 +1185,14 @@ ABC.world = (function () {
 
   function updateSky(cam, dt) {
     if (SMOOTH && _sky) _sky.position.set(cam.x, 0, cam.z);   // dome follows the player
+    // modern: clouds drift on the wind and wrap around the traveller, so the
+    // sky is alive everywhere — not just near spawn
+    for (const c of _clouds) {
+      c.position.x += c.userData.wind * dt;
+      let dx = c.position.x - cam.x, dz = c.position.z - cam.z;
+      if (dx > 150) c.position.x -= 300; else if (dx < -150) c.position.x += 300;
+      if (dz > 150) c.position.z -= 300; else if (dz < -150) c.position.z += 300;
+    }
     if (!starField) return;
     starField.position.set(cam.x, 0, cam.z);
     galaxyBand.position.set(cam.x, 0, cam.z);
@@ -571,7 +1210,8 @@ ABC.world = (function () {
     _maxAniso = renderer.capabilities.getMaxAnisotropy();
     if (SMOOTH) {
       // cinematic color pipeline + soft shadows
-      renderer.outputEncoding = THREE.sRGBEncoding;
+      if (ABC.MODERN) renderer.outputColorSpace = THREE.SRGBColorSpace; // r170 name (its default, but explicit)
+      else renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.18;
       renderer.shadowMap.enabled = true;
@@ -582,19 +1222,20 @@ ABC.world = (function () {
       scene.fog = new THREE.Fog(0xdff1ff, 80, 240);
       scene.environment = makeEnvironment(renderer);   // soft daylight fill for the PBR blocks
       // one warm key sun that casts a single soft, player-following shadow
-      sunLight = new THREE.DirectionalLight(0xfff3da, 2.4);
+      sunLight = new THREE.DirectionalLight(0xfff3da, 2.4 * LIGHT_SCALE);
       sunLight.position.set(40, 80, 25);
       sunLight.castShadow = true;
-      sunLight.shadow.mapSize.set(1024, 1024);
-      _shadowR = 32;
+      // modern: crisper, wider shadows (2048px over R=40) — r170 handles it fine
+      sunLight.shadow.mapSize.set(MODERN ? 2048 : 1024, MODERN ? 2048 : 1024);
+      _shadowR = MODERN ? 40 : 32;
       const sc = sunLight.shadow.camera;
       sc.left = -_shadowR; sc.right = _shadowR; sc.top = _shadowR; sc.bottom = -_shadowR;
       sc.near = 1; sc.far = 220; sc.updateProjectionMatrix();
       sunLight.shadow.bias = -0.0005;
       sunLight.shadow.normalBias = 0.5;               // primary fix for axis-aligned voxel acne
       scene.add(sunLight); scene.add(sunLight.target);
-      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5));
-      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34);
+      scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5 * LIGHT_SCALE));
+      hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34 * LIGHT_SCALE);
       scene.add(hemiLight);
     } else {
       scene.background = new THREE.Color(0x9fdcff);
@@ -613,22 +1254,49 @@ ABC.world = (function () {
     underMesh.position.set(0, MIN_Y - 0.51, 0);
     scene.add(underMesh);
     // fluffy clouds
-    const cloudMat = new THREE.MeshLambertMaterial({ color:0xffffff, transparent:true, opacity:.85 });
     const rnd = mulberry(7);
-    for (let i=0;i<10;i++) {
-      const c = new THREE.Group();
-      for (let j=0;j<5;j++) {
-        const s = 3+rnd()*4;
-        const b = new THREE.Mesh(new THREE.BoxGeometry(s,1.6,s*0.7), cloudMat);
-        b.position.set(rnd()*8-4, rnd()*0.8, rnd()*4-2);
-        c.add(b);
+    if (MODERN) {
+      // soft rounded puffs that drift with the wind and follow the traveller
+      // (the old fixed clouds only existed near spawn) — see updateSky
+      const puffGeo = new THREE.IcosahedronGeometry(1, 2);
+      const cloudMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff, roughness: 1, metalness: 0,
+        transparent: true, opacity: 0.88, envMapIntensity: 0.15 });
+      for (let i = 0; i < 12; i++) {
+        const c = new THREE.Group();
+        const n = 4 + (rnd() * 4 | 0);
+        for (let j = 0; j < n; j++) {
+          const b = new THREE.Mesh(puffGeo, cloudMat);
+          const s = 2.2 + rnd() * 3.2;
+          b.scale.set(s, s * (0.42 + rnd() * 0.16), s * (0.7 + rnd() * 0.3));
+          b.position.set((j - n / 2) * 2.6 + rnd() * 1.6, rnd() * 0.9, rnd() * 3 - 1.5);
+          c.add(b);
+        }
+        c.position.set(rnd() * 280 - 140, 33 + rnd() * 9, rnd() * 280 - 140);
+        c.userData.wind = 0.5 + rnd() * 0.8;
+        c.traverse((o) => { o.userData.noAO = true; });   // clouds must not stamp AO blobs on the ground
+        _clouds.push(c);
+        scene.add(c);
       }
-      c.position.set(rnd()*200-100, 32+rnd()*8, rnd()*200-100);
-      scene.add(c);
+    } else {
+      const cloudMat = new THREE.MeshLambertMaterial({ color:0xffffff, transparent:true, opacity:.85 });
+      for (let i=0;i<10;i++) {
+        const c = new THREE.Group();
+        for (let j=0;j<5;j++) {
+          const s = 3+rnd()*4;
+          const b = new THREE.Mesh(new THREE.BoxGeometry(s,1.6,s*0.7), cloudMat);
+          b.position.set(rnd()*8-4, rnd()*0.8, rnd()*4-2);
+          c.add(b);
+        }
+        c.position.set(rnd()*200-100, 32+rnd()*8, rnd()*200-100);
+        scene.add(c);
+      }
     }
-    // sun ball
-    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16),
-      new THREE.MeshBasicMaterial({ color:0xffe45e }));
+    // sun ball — on modern its color sits above 1.0 so the bloom pass gives it
+    // a real glow (everything else stays under the bloom threshold)
+    const sunMat = new THREE.MeshBasicMaterial({ color:0xffe45e });
+    if (MODERN) sunMat.color.setRGB(2.6, 2.2, 1.2);
+    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), sunMat);
     sunBall.position.set(70, 60, -80);
     scene.add(sunBall);
     buildStars();
@@ -724,9 +1392,17 @@ ABC.world = (function () {
     }
     gset(keys, x, baseY + h + 1, z, 'leaf');
   }
+  /* ground variety — the meadow isn't a golf course: worn dirt patches and
+     the odd mossy spot break up the grass (kid edits still always win) */
+  function groundAt(x, z) {
+    const p = vnoise(x * 1.3 + 61, z * 1.3 - 43, 13);
+    if (p > 0.8) return 'dirt';                           // bare, trodden patches
+    if (p < 0.05 && vnoise(x - 9, z + 31, 9) > 0.78) return 'moss';  // occasional damp clover spot
+    return 'grass';
+  }
   function genHome(keys, x, z) {             // calm flat home meadow
-    gset(keys, x, 0, z, 'grass');
     const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
+    gset(keys, x, 0, z, sp > 14 ? groundAt(x, z) : 'grass');   // spawn pad stays tidy
     const tk = sp > 10 ? treasureMarkerAt(x, z) : null;   // off the spawn pad
     if (tk) { gset(keys, x, 1, z, tk); return; }          // a visible treasure to dig up 🪙
     if (sp > 16 && treeCell(x, z, 13) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
@@ -736,8 +1412,7 @@ ABC.world = (function () {
     const e = vnoise(x, z, 44);
     const hh = e > 0.6 ? Math.round((e - 0.6) * 18) : 0;
     for (let y = 1; y <= hh; y++) gset(keys, x, y, z, y === hh ? 'grass' : 'dirt');
-    if (hh === 0) gset(keys, x, 0, z, 'grass');
-    else gset(keys, x, 0, z, 'grass');
+    gset(keys, x, 0, z, hh === 0 ? groundAt(x, z) : 'grass');
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     if (hh === 0) {
       const tk = treasureMarkerAt(x, z);
@@ -746,6 +1421,19 @@ ABC.world = (function () {
       else if (hsh < 0.004) gset(keys, x, 1, z, 'flower');
     }
   }
+  /* the volcano's fixed anchor: center of the hawaii compass slice, a little
+     way into the park. Derived from ABC.REGIONS so terrain + FX always agree. */
+  const VOLC = (function () {
+    const parks = ABC.REGIONS.parks;
+    const i = parks.findIndex((p) => p.key === 'hawaii');
+    const th = ((i + 0.5) / parks.length) * Math.PI * 2 - Math.PI;   // regionAt inverse
+    const R = ABC.REGIONS.PARK_R + 62;
+    const x = Math.round(Math.cos(th) * R), z = Math.round(Math.sin(th) * R);
+    const dn = Math.hypot(x, z);
+    // the lava river runs outward, away from home — guaranteed downhill to sea
+    return { x, z, dx: x / dn, dz: z / dn, R: 24, H: 22 };
+  })();
+
   /* region terrain — each US national park looks distinct 🏞️ */
   function genColumn(keys, x, z) {
     gset(keys, x, -2, z, 'stone');                          // bedrock
@@ -774,11 +1462,24 @@ ABC.world = (function () {
         break;
       }
       case 'grandcanyon': {
-        const river = Math.abs(vnoise(x + 11, z - 77, 64) - 0.5);
-        if (river < 0.04) { gset(keys, x, 0, z, 'water'); break; }
-        gset(keys, x, 0, z, 'sandstone');
-        const wall = Math.round((0.5 - river) * 2 * 11 * t);
-        for (let y = 1; y <= wall; y++) gset(keys, x, y, z, (Math.floor(y / 2) % 2) ? 'redrock' : 'sandstone');
+        // a real canyon: you arrive on a HIGH layered plateau and the land
+        // falls away in stepped terraces to a river far below. Strata bands
+        // are keyed to absolute height so they line up across every wall.
+        const rv = Math.abs(vnoise(x + 11, z - 77, 64) - 0.5);      // 0 = river line
+        const rim = 9 + Math.round(vnoise(x - 51, z + 23, 34) * 6); // rolling rim height
+        const carve = rv < 0.17 ? Math.pow(1 - rv / 0.17, 1.3) : 0; // 1 at the river
+        // terraced steps, not a smooth ramp — that's what reads as "canyon"
+        let h = Math.round(rim * t * (1 - carve));
+        if (carve > 0) h = Math.min(h, Math.round((Math.floor((1 - carve) * 5) / 5) * rim * t));
+        const STRATA = ['sandstone','redrock','redrock','sandstone','redrock','granite','redrock','sandstone'];
+        if (rv < 0.028) {                                           // the river that carved it all
+          gset(keys, x, 0, z, 'water');
+          break;
+        }
+        gset(keys, x, 0, z, rv < 0.05 ? 'sand' : 'sandstone');      // sandy banks at the water
+        for (let y = 1; y <= h; y++) gset(keys, x, y, z, STRATA[y % STRATA.length]);
+        // sparse desert scrub up on the rim
+        if (h >= Math.round(rim * t) && h > 4 && hsh < 0.01) gset(keys, x, h + 1, z, 'leaf');
         break;
       }
       case 'yellowstone': {
@@ -825,13 +1526,43 @@ ABC.world = (function () {
         break;
       }
       case 'hawaii': {
+        // a REAL volcano: a tall cone with a lava-filled crater, a glowing lava
+        // river running down the flank into the sea, and a black-rock delta
+        // where molten rock met water and NEW LAND formed (steam FX live in
+        // updateVolcano). The cone sits at the fixed VOLC point so the terrain
+        // and the eruption effects always agree.
+        const dvx = x - VOLC.x, dvz = z - VOLC.z, dv = Math.hypot(dvx, dvz);
         const oc = vnoise(x, z, 50);
-        if (oc < 0.4) { gset(keys, x, 0, z, 'water'); break; }
+        // lava river: distance from a ray cast from the crater toward the sea
+        const along = dvx * VOLC.dx + dvz * VOLC.dz;
+        const perp = Math.abs(dvz * VOLC.dx - dvx * VOLC.dz);
+        const onChannel = along > 3 && perp < 1.7 + vnoise(x, z, 7) * 1.2;
+        if (dv < VOLC.R) {                                   // the cone
+          const noise = vnoise(x * 2 + 5, z * 2 - 5, 9) * 2.4;
+          let ch = Math.max(1, Math.round(((1 - dv / VOLC.R) * VOLC.H + noise) * t));
+          if (dv < 4.5) ch = Math.max(1, Math.round(VOLC.H * t) - 5);   // crater bowl
+          gset(keys, x, 0, z, 'blackrock');
+          for (let y = 1; y <= ch; y++) {
+            // not a black blob: rusty scorched veins + molten cracks near the top
+            let bt = 'blackrock';
+            if (onChannel && y === ch) bt = 'lava';
+            else if (y === ch && dv < 9 && hsh < 0.3) bt = 'lava';               // glowing summit cracks
+            else if (vnoise(x * 3 + y * 7, z * 3 - y * 5, 6) > 0.74) bt = 'redrock';  // iron-scorched veins
+            gset(keys, x, y, z, bt);
+          }
+          if (dv < 4.5 && t > 0.9) gset(keys, x, ch + 1, z, 'lava');    // molten crater pool
+          break;
+        }
+        if (oc < 0.4) {                                      // open sea…
+          if (perp < 4.5 - along * 0.012 && along < 130) {   // …except the newborn delta
+            gset(keys, x, 0, z, 'blackrock');
+            if (onChannel && along < 105) gset(keys, x, 1, z, 'lava');  // lava still creeping seaward
+          } else gset(keys, x, 0, z, 'water');
+          break;
+        }
         gset(keys, x, 0, z, oc < 0.46 ? 'sand' : 'blackrock');
-        if (oc >= 0.46 && vnoise(x + 7, z + 7, 16) > 0.84) gset(keys, x, 1, z, 'lava');
-        const vc = vnoise(x - 25, z - 25, 30);
-        const mh = vc > 0.7 ? Math.round((vc - 0.7) * 54 * t) : 0;
-        for (let y = 1; y <= mh; y++) gset(keys, x, y, z, (y > mh - 2 && mh > 6) ? 'lava' : 'blackrock');
+        if (onChannel) gset(keys, x, 1, z, 'lava');          // the river glows across the flats
+        else if (oc >= 0.5 && hsh < 0.006) genTree(keys, x, z, 0);      // a little tropical green
         break;
       }
       case 'galaxy': {                       // 🌌 magical night meadow
@@ -970,8 +1701,15 @@ ABC.world = (function () {
     return null;
   }
 
+  /* modern: entities cast + catch the sun shadow (no-op on the other skins,
+     so every caller can use it unconditionally) */
+  function entityShadows(root) {
+    if (MODERN && root) root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return root;
+  }
+
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
            ensureChunks, setTheme, gradeFrame, updateSky, updateSun, getRot, topBlock,
-           getScene: () => scene };
+           entityShadows, setSkyPipeline, footstep, getScene: () => scene };
 })();

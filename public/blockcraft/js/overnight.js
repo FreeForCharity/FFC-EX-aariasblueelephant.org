@@ -38,7 +38,7 @@ ABC.overnight = (function () {
     { key: 'flowers',   make: () => { bloomNearSpawn(); return '🌼 A little flower patch bloomed near your home!'; } },
     { key: 'gift',      make: () => { ABC.ui.addStars(2); return '⭐ Sparkle left you 2 shiny stars!'; } },
     { key: 'butterfly', make: () => { const a = ABC.animals.spawnSurprise(); return `${a.def.emoji} ${a.name} the ${a.def.label} moved in nearby!`; } },
-    { key: 'bella',     make: () => '🐘💙 Bella has news: ' + pick(BELLA_NEWS) },
+    { key: 'bella',     make: () => '🐘💙 Nilu has news: ' + pick(BELLA_NEWS) },
   ];
 
   /* ---------------- login: new day? ---------------- */

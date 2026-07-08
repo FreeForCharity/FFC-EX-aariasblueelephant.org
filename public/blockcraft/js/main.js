@@ -19,6 +19,8 @@
   const EYE = 1.62;
   const feet = new THREE.Vector3(0, 1, 6);
   let vy = 0, grounded = false, flying = false, lastSpaceTap = 0, squashT = 0;
+  let bobPhase = 0, landDipT = 0, landDipK = 0;   // modern game-feel (camera-only)
+  let strideDist = 0, strideSide = 1;             // footprints / grass pressing
   let sprint = false, lastFwdTap = 0;
   function fwdTap() {                      // double-tap forward = sprint! 🏃
     const now = performance.now();
@@ -51,19 +53,63 @@
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
   }
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
-  // if the Smooth skin fails to init on a weak GPU (PMREM/shadows/shaders), fall
-  // back to Classic on the next load so a kid is never stuck on a broken world.
+  // if a fancier skin fails to init on a weak GPU (PMREM/shadows/shaders/r170
+  // postprocessing), fall back one rung on the next load so a kid is never
+  // stuck on a broken world: Modern -> Smooth -> Classic -> existing error UI.
   let scene;
   try {
     scene = ABC.world.initScene(renderer);
   } catch (e) {
-    if (ABC.SMOOTH) { try { localStorage.setItem('abcSkin', 'classic'); } catch (_) {} location.reload(); }
+    if (ABC.SKIN === 'modern') { try { localStorage.setItem('abcSkin', 'smooth'); } catch (_) {} location.reload(); }
+    else if (ABC.SKIN === 'smooth') { try { localStorage.setItem('abcSkin', 'classic'); } catch (_) {} location.reload(); }
     throw e;
   }
+  /* ---------------- modern post-processing (AO + gentle bloom) ----------------
+     GTAO gives every block contact shading where it meets its neighbours — the
+     single biggest "real game" cue — and bloom makes glow blocks/sun actually
+     glow. Direct rendering stays the fallback: the FPS ladder turns the composer
+     off first on weak devices, and the sky shader re-grades itself to match. */
+  let composer = null, useComposer = false;
+  function setComposer(on) {
+    useComposer = !!(on && composer);
+    ABC.world.setSkyPipeline(useComposer);
+  }
+  if (ABC.MODERN && window.ABC_MODERN_LIB) {
+    try {
+      const L = window.ABC_MODERN_LIB;
+      const W = window.innerWidth, H = window.innerHeight;
+      composer = new L.EffectComposer(renderer);
+      composer.addPass(new L.RenderPass(scene, camera));
+      const gtao = new L.GTAOPass(scene, camera, W, H);
+      gtao.blendIntensity = 0.85;            // soft contact shading, not a dirt pass
+      // decorative geometry (grass tufts, rain, smoke, clouds, footprints) must
+      // not write AO — alphaTest quads/points read as solid slabs in the AO
+      // depth pass and stamp dark squares on the ground. Hide anything tagged
+      // userData.noAO for JUST this pass.
+      const gtaoRender = gtao.render.bind(gtao);
+      let _aoHidden = [];
+      gtao.render = (r, w2, rb, dtime, mask) => {
+        _aoHidden.length = 0;
+        scene.traverse((o) => { if (o.userData.noAO && o.visible) { o.visible = false; _aoHidden.push(o); } });
+        gtaoRender(r, w2, rb, dtime, mask);
+        for (const o of _aoHidden) o.visible = true;
+      };
+      composer.addPass(gtao);
+      // physically-lit surfaces run HOT in linear HDR (sunlit white ≈ 2.4 before
+      // tone mapping), so the threshold must clear them or the whole world hazes
+      // over — only the >2.5 stuff blooms: the sun ball (2.6) + specular glints
+      composer.addPass(new L.UnrealBloomPass(new THREE.Vector2(W, H), 0.35, 0.3, 2.5));
+      composer.addPass(new L.OutputPass());
+      setComposer(true);
+    } catch (e) { composer = null; useComposer = false; ABC.world.setSkyPipeline(false); }
+  }
+  ABC._setComposer = setComposer;            // test seam
+
   ABC.world.generate();
   ABC.animals.spawnAll(scene);
   ABC.squishy.init(scene);
@@ -95,7 +141,7 @@
     const e = mat('#222');
     [-0.1, 0.1].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.02), e); m.position.set(x,1.64,.22); avatar.add(m); });
     avatar.visible = false;
-    scene.add(avatar);
+    scene.add(ABC.world.entityShadows(avatar));
   })();
 
   /* held block "hand" (first person, Minecraft style) */
@@ -693,7 +739,14 @@
           grounded = false;
           ABC.audio.sfx.boing();
           squashT = 0.35;            // squash & stretch!
-        } else { feet.y = gy; vy = 0; grounded = true; }
+        } else {
+          // modern game-feel: a firm landing dips the camera for a beat,
+          // scaled by how hard you hit (camera-only — physics untouched)
+          if (ABC.MODERN && !grounded && vy < -7) {
+            landDipT = 0.3; landDipK = Math.min(1, (-vy - 7) / 14);
+          }
+          feet.y = gy; vy = 0; grounded = true;
+        }
       } else grounded = false;
     }
 
@@ -735,6 +788,31 @@
     // gentle hand bob while moving
     const moving = move.lengthSq() > 0;
     hand.position.y = -0.55 + (moving ? Math.sin(performance.now() / 130) * 0.04 : 0);
+    // modern game-feel (first person only): a soft walking head-bob and the
+    // landing dip. Camera-only — feet/physics are identical on every skin.
+    // each stride presses the grass down and leaves footprints on soft ground
+    if (ABC.MODERN && moving && grounded && !flying) {
+      strideDist += Math.hypot(move.x, move.z) * (sprint ? 1.65 : 1);
+      if (strideDist > 0.72) {
+        strideDist = 0; strideSide = -strideSide;
+        ABC.world.footstep(feet.x, feet.y, feet.z, yaw, strideSide);
+      }
+    }
+    if (ABC.MODERN && !thirdPerson) {
+      if (moving && grounded && !flying) {
+        bobPhase += dt * (sprint ? 11.5 : 8.5);
+        camera.position.y += Math.sin(bobPhase) * 0.045;
+        camera.position.x += Math.cos(bobPhase * 0.5) * 0.02;
+        hand.position.y += Math.sin(bobPhase) * 0.02;      // hand rides the same step
+      } else {
+        bobPhase = 0;
+      }
+      if (landDipT > 0) {
+        landDipT = Math.max(0, landDipT - dt);
+        const k = Math.sin((1 - landDipT / 0.3) * Math.PI); // dip down then recover
+        camera.position.y -= k * 0.22 * landDipK;
+      }
+    }
   }
 
   /* gentle auto-fly to a build site */
@@ -969,24 +1047,39 @@
   }
 
   /* ---------------- skin picker (title screen) ----------------
-     The smooth skin rebuilds materials/geometry/renderer at startup, so flipping
-     it writes the choice and reloads — calmer than a mid-session visual pop. */
-  // Smooth is the default; only an explicit 'classic' opts out.
-  function currentSkin() { try { return localStorage.getItem('abcSkin') === 'classic' ? 'classic' : 'smooth'; } catch (e) { return 'smooth'; } }
+     Three skins now: Modern (default) -> Smooth -> Classic -> Modern.
+     Each rebuilds materials/geometry/renderer at startup, so flipping it
+     writes the choice and reloads — calmer than a mid-session visual pop. */
+  const SKIN_ORDER = ['modern', 'smooth', 'classic'];
+  const SKIN_NAME = { modern: 'Modern', smooth: 'Smooth', classic: 'Classic' };
+  const SKIN_ICON = { modern: '✨', smooth: '🌤️', classic: '🧱' };
+  const SKIN_HINT = {
+    modern: '✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).',
+    smooth: '✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.',
+    classic: '🧱 <b>Classic</b> is the original blocky look — simple, fast and familiar.'
+  };
+  function currentSkin() { return ABC.SKIN || 'modern'; }
+  function nextSkin(skin) { return SKIN_ORDER[(SKIN_ORDER.indexOf(skin) + 1) % SKIN_ORDER.length]; }
+  // "Modern ✨" for Modern (its icon trails the name); plain name for the others.
+  function skinTitleLabel(skin) { return skin === 'modern' ? 'Modern ✨' : SKIN_NAME[skin]; }
+  function skinDisplay(skin) { return `${SKIN_ICON[skin]} ${SKIN_NAME[skin]}`; }
+  ABC.SKIN_ORDER = SKIN_ORDER;
+  ABC.nextSkin = nextSkin;
+  ABC.skinDisplay = skinDisplay;
   function labelSkinBtn() {
-    const b = $('skinBtn'); if (!b) return;
-    b.textContent = currentSkin() === 'smooth' ? '🎨 Look: Smooth' : '🎨 Look: Classic';
+    const b = $('skinBtn'); if (b) b.textContent = '🎨 Look: ' + skinTitleLabel(currentSkin());
+    const h = $('skinHint'); if (h) h.innerHTML = SKIN_HINT[currentSkin()] || SKIN_HINT.modern;
   }
   ABC.setSkin = (skin) => {
-    try { localStorage.setItem('abcSkin', skin === 'classic' ? 'classic' : 'smooth'); } catch (e) {}
+    try { localStorage.setItem('abcSkin', (skin === 'smooth' || skin === 'classic') ? skin : 'modern'); } catch (e) {}
     location.reload();
   };
-  const toggleSkin = () => ABC.setSkin(currentSkin() === 'smooth' ? 'classic' : 'smooth');
+  const toggleSkin = () => ABC.setSkin(nextSkin(currentSkin()));
   if ($('skinBtn')) { $('skinBtn').onclick = toggleSkin; labelSkinBtn(); }
   // one-tap in-game skin switch (🎨, always visible — distinct from the 🧱/⛏️ build-dig button)
   if ($('skinToggleBtn')) {
     $('skinToggleBtn').onclick = toggleSkin;
-    $('skinToggleBtn').title = currentSkin() === 'smooth' ? 'Switch to Classic look 🧱' : 'Switch to Smooth look ✨';
+    $('skinToggleBtn').title = 'Look: ' + skinDisplay(currentSkin()) + ' — tap to switch';
   }
 
   /* emotion spawner: gentle pace */
@@ -1028,15 +1121,23 @@
       _frames = 0; _t0 = now;
       window.__abcFps = Math.round(fps);
       if (ABC._noPerfGuard) return;
-      // act only on a sustained 3s trend, one rung at a time, never frame-to-frame
+      // act only on a sustained 3s trend, one rung at a time, never frame-to-frame.
+      // modern gets an extra first rung: drop the composer (AO/bloom) before
+      // touching shadows — post-processing is the priciest and least missed.
+      const maxRung = useComposer || (ABC.MODERN && composer) ? 3 : 2;
       if (fps < 28) _lowSec++; else _lowSec = 0;
-      if (_lowSec >= 3 && _perfRung < 2) {
+      if (_lowSec >= 3 && _perfRung < maxRung) {
         _lowSec = 0; _perfRung++;
-        if (_perfRung === 1) {               // rung 1: drop the sun shadow + HUD blur
+        let rung = _perfRung;
+        if (maxRung === 3) {
+          if (rung === 1) { setComposer(false); rung = 0; }
+          else rung -= 1;                    // rungs 2/3 map onto the classic 1/2
+        }
+        if (rung === 1) {                    // drop the sun shadow + HUD blur
           renderer.shadowMap.enabled = false;
           renderer.shadowMap.needsUpdate = true;
           document.body.classList.add('perf-lite');
-        } else {                             // rung 2: drop pixel ratio + the reflection env
+        } else if (rung === 2) {             // drop pixel ratio + the reflection env
           renderer.setPixelRatio(1.0);
           const sc = ABC.world.getScene && ABC.world.getScene();
           if (sc) sc.environment = null;
@@ -1091,9 +1192,10 @@
         } else hl.visible = false;
       } else hl.visible = false;
     }
-    renderer.render(scene, camera);
+    if (useComposer) composer.render(); else renderer.render(scene, camera);
   }
-  ABC.renderScene = () => renderer.render(scene, camera);   // fresh frame for photo snaps
+  // fresh frame for photo snaps — same pipeline the screen uses
+  ABC.renderScene = () => { if (useComposer) composer.render(); else renderer.render(scene, camera); };
   requestAnimationFrame(loop);
 
   // test hook: ?autostart skips the title screen (used for automated checks)
