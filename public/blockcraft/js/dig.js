@@ -34,6 +34,60 @@ ABC.dig = (function () {
       `You dug up a sleepy little friend! ${a ? a.def.emoji : '🐾'} Tap them to say hello and help!`, 5200);
   }
 
+  /* ---------- ⭐ gentle treasure hints ----------
+     Treasures are truly buried now (invisible under the grass), so a child who
+     hasn't found one in a while gets a nudge: a floating, bobbing star appears
+     over ONE or TWO nearby buried treasures — never all of them, so the hunt
+     stays a hunt. Triggers after ~3 min without a find, or sooner if they've
+     been digging a lot with no luck. A hint vanishes when its treasure is dug. */
+  let lastFound = performance.now(), digsSinceFound = 0, hints = [], bobT = 0, retryAt = 0;
+  const TREASURE_IDS = ['silverGlint', 'goldGlint', 'eggTell', 'moundTell'];
+  function hintSprite() {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    const rg = g.createRadialGradient(64, 64, 8, 64, 64, 60);   // soft golden halo
+    rg.addColorStop(0, 'rgba(255,225,120,.9)'); rg.addColorStop(1, 'rgba(255,225,120,0)');
+    g.fillStyle = rg; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill();
+    g.font = '72px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('⭐', 64, 66);
+    const tex = new THREE.CanvasTexture(cv);
+    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    sp.scale.set(1.5, 1.5, 1);
+    sp.userData.noAO = true;
+    return sp;
+  }
+  function noteDig() { digsSinceFound++; }
+  function update(dt, px, pz) {
+    const scene = ABC.world.getScene && ABC.world.getScene();
+    if (!scene) return;
+    bobT += dt;
+    for (const h of hints) {
+      h.sp.position.y = h.y + Math.sin(bobT * 2 + h.ph) * 0.28;
+      if (ABC.world.get(h.cx, h.cy, h.cz) !== h.t ||                 // dug (or gone) → hint done
+          Math.hypot(h.cx - px, h.cz - pz) > 80) {                   // wandered far away → drop it
+        scene.remove(h.sp); h.dead = true;
+      }
+    }
+    if (hints.length) { hints = hints.filter((h) => !h.dead); return; }
+    const now = performance.now();
+    const struggling = (now - lastFound > 180000) ||                          // ~3 min, no find
+                       (digsSinceFound >= 12 && now - lastFound > 45000);     // digging hard, no luck
+    if (!struggling || now < retryAt) return;
+    retryAt = now + 20000;                       // rescan at most every 20s
+    const near = ABC.world.findNear ? ABC.world.findNear(TREASURE_IDS, px, pz, 48, 2) : [];
+    for (const c of near) {
+      const sp = hintSprite();
+      const top = ABC.world.topBlock ? ABC.world.topBlock(c.x, c.z) : null;
+      const y = (top ? top.y + 1 : c.y + 2) + 1.6;
+      sp.position.set(c.x + 0.5, y, c.z + 0.5);
+      scene.add(sp);
+      hints.push({ sp, y, ph: Math.random() * 6, cx: c.x, cy: c.y, cz: c.z, t: c.t });
+    }
+    if (near.length) ABC.ui.bellaSays && ABC.ui.bellaSays(
+      'I can feel treasure sparkling under the ground! Walk to the floating star and dig down! ⭐', 5200);
+  }
+
   // route a dug marker to its reward (called from main.js act() after a successful dig)
   function reward(kind, cell) {
     const f = (ABC.DIG_FIND && ABC.DIG_FIND[kind]) || { emoji: '✨', word: 'a surprise' };
@@ -50,8 +104,10 @@ ABC.dig = (function () {
     } else if (kind === 'friend') {
       wakeFriend(cell);
     }
+    lastFound = performance.now();               // found one — the hint timer starts over
+    digsSinceFound = 0;
     ABC.saveSoon && ABC.saveSoon();
   }
 
-  return { kindForBlock, reward, hatchNextShape, wakeFriend };
+  return { kindForBlock, reward, hatchNextShape, wakeFriend, noteDig, update };
 })();

@@ -534,6 +534,7 @@
           pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
           collapseCheck(info.cell);                              // 🌳 unsupported parts fall
           // 🪙 dig up buried treasure — the dug marker block IS the reward (no random roll)
+          ABC.dig && ABC.dig.noteDig && ABC.dig.noteDig();      // feeds the ⭐ hint timer
           const treasureKind = ABC.dig && ABC.dig.kindForBlock(t);
           if (treasureKind) ABC.dig.reward(treasureKind, info.cell);
         } else if (info.cell.y === ABC.world.MIN_Y) {
@@ -1193,6 +1194,7 @@
       ABC.shops.update(dt);
       ABC.signs.update(dt);
       ABC.animals.update(dt, now / 1000);
+      ABC.dig.update && ABC.dig.update(dt, feet.x, feet.z);   // ⭐ treasure hints
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);
       ABC.portal.update(dt);

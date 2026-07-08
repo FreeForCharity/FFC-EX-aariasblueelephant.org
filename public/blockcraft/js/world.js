@@ -1344,16 +1344,17 @@ ABC.world = (function () {
     h = Math.imul(h ^ (h >>> 13), 1274126177);
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   }
-  /* Buried-treasure "tell": which VISIBLE marker (if any) sits on this cell.
-     Deterministic from hash2, so the same spot always holds the same thing — the
-     child SEES the glint/egg/mound and digs it (no random rolls). Made MUCH more
-     common so treasures are easy to find & engaging to hunt for! */
+  /* Buried treasure: which marker (if any) hides UNDER this cell. Deterministic
+     from hash2, so the same spot always holds the same thing (no random rolls).
+     Truly hidden at y=-1 — dig through the grass to discover it. Dense enough
+     that digging a small patch almost always finds something (~1 in 5 columns);
+     the floating-star hint system in dig.js helps a child who's struck out. */
   function treasureMarkerAt(x, z) {
     const h = hash2(x * 31 + 5, z * 31 + 7);
-    if (h < 0.010) return 'moundTell';     // sleepy animal friend (common!)
-    if (h < 0.035) return 'eggTell';       // shape egg (3× more common)
-    if (h < 0.12) return 'goldGlint';      // gold coin (+5) (17× more common!)
-    if (h < 0.30) return 'silverGlint';    // silver coin (+1) (the most common find!)
+    if (h < 0.006) return 'moundTell';     // rarest — a sleepy animal friend
+    if (h < 0.026) return 'eggTell';       // a shape egg
+    if (h < 0.09)  return 'goldGlint';     // gold coin (+5)
+    if (h < 0.20)  return 'silverGlint';   // silver coin (+1) — the common find
     return null;
   }
   function vnoise(x, z, s) {
@@ -1405,7 +1406,7 @@ ABC.world = (function () {
     const sp = Math.hypot(x, z), h = hash2(x * 3 + 1, z * 3 + 7);
     gset(keys, x, 0, z, sp > 14 ? groundAt(x, z) : 'grass');   // spawn pad stays tidy
     const tk = sp > 10 ? treasureMarkerAt(x, z) : null;   // off the spawn pad
-    if (tk) { gset(keys, x, 0, z, tk); return; }          // BURY IT: treasure replaces the grass block
+    if (tk) { gset(keys, x, -1, z, tk); return; }         // truly buried: hidden in the dirt UNDER the grass
     if (sp > 16 && treeCell(x, z, 13) && vnoise(x + 777, z - 777, 34) > 0.55) genTree(keys, x, z, 0);
     else if (h < 0.007) gset(keys, x, 1, z, 'flower');
   }
@@ -1417,7 +1418,7 @@ ABC.world = (function () {
     const hsh = hash2(x * 3 + 1, z * 3 + 7);
     if (hh === 0) {
       const tk = treasureMarkerAt(x, z);
-      if (tk) gset(keys, x, 0, z, tk);                    // BURY IT: treasure replaces the grass block
+      if (tk) gset(keys, x, -1, z, tk);                   // truly buried: hidden in the dirt UNDER the grass
       else if (treeCell(x, z, 14) && vnoise(x, z, 26) > 0.58) genTree(keys, x, z, 0);
       else if (hsh < 0.004) gset(keys, x, 1, z, 'flower');
     }
@@ -1709,8 +1710,24 @@ ABC.world = (function () {
     return root;
   }
 
+  /* nearest loaded blocks of the given types (uses the per-type instance
+     position lists that rebuild() maintains) — the treasure-hint radar */
+  function findNear(types, px, pz, r, limit) {
+    const out = [];
+    for (const t of types) {
+      const m = meshes[t];
+      if (!m || !m.userData.positions) continue;
+      for (const p of m.userData.positions) {
+        const d = Math.hypot(p[0] - px, p[2] - pz);
+        if (d < r) out.push({ x: p[0], y: p[1], z: p[2], t, d });
+      }
+    }
+    out.sort((a, b) => a.d - b.d);
+    return out.slice(0, limit || 2);
+  }
+
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
            ensureChunks, setTheme, gradeFrame, updateSky, updateSun, getRot, topBlock,
-           entityShadows, setSkyPipeline, footstep, getScene: () => scene };
+           entityShadows, setSkyPipeline, footstep, findNear, getScene: () => scene };
 })();
