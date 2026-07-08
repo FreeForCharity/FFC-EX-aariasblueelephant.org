@@ -362,8 +362,21 @@
   <button class="bigBtn green" id="playBtn">▶ Play!</button>
   <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
     <button class="bigBtn" id="howBtn" style="font-size:20px; padding:12px 30px;">❓ How to Play</button>
-    <button class="bigBtn" id="skinBtn" style="font-size:20px; padding:12px 30px;">🎨 Look: Modern ✨</button>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:4px;">
+      <button class="bigBtn skin-selector" data-skin="modern" style="font-size:20px; padding:12px 28px; border:3px solid #1fb4a6;">✨ Modern</button>
+      <button class="bigBtn skin-selector" data-skin="smooth" style="font-size:20px; padding:12px 28px;">🌤️ Smooth</button>
+      <button class="bigBtn skin-selector" data-skin="classic" style="font-size:20px; padding:12px 28px;">🧱 Classic</button>
+    </div>
     <button class="bigBtn" id="fsTitleBtn" style="font-size:20px; padding:12px 30px;">⛶ Full Screen</button>
+    <script>
+      document.querySelectorAll('.skin-selector').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const skin = this.dataset.skin;
+          try { localStorage.setItem('abcSkin', skin); } catch(e) {}
+          location.reload();
+        });
+      });
+    </script>
   </div>
   <div id="skinHint" style="font-size:14px; color:#2b517d; background:rgba(255,255,255,.55); padding:6px 16px; border-radius:14px; max-width:520px;">✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).</div>
   <div id="orgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA</div>
