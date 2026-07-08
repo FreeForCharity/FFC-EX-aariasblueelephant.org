@@ -128,18 +128,35 @@
   const avatar = new THREE.Group();
   (function buildAvatar() {
     const mat = (c) => new THREE.MeshLambertMaterial({ color: c });
-    const bx = (w,h,d,x,y,z,c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c)); m.position.set(x,y,z); avatar.add(m); return m; };
-    bx(.5,.6,.3, 0,1.05,0, '#4dabf7');     // shirt
-    bx(.42,.42,.42, 0,1.6,0, '#ffd8b5');   // head
-    bx(.46,.18,.46, 0,1.86,0, '#5c3c10');  // hair
-    bx(.5,.1,.5, 0,1.94,0, '#5c3c10');     // bun
-    bx(.16,.55,.2, -.14,.38,0, '#b197fc'); // legs
-    bx(.16,.55,.2,  .14,.38,0, '#b197fc');
-    bx(.14,.5,.18, -.33,1.05,0, '#ffd8b5');// arms
-    bx(.14,.5,.18,  .33,1.05,0, '#ffd8b5');
-    // friendly face
-    const e = mat('#222');
-    [-0.1, 0.1].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.02), e); m.position.set(x,1.64,.22); avatar.add(m); });
+    if (ABC.MODERN) {
+      // a soft rounded kid, not a LEGO minifig: sphere head, capsule torso &
+      // limbs (CapsuleGeometry is r170-core; smooth/classic never reach here)
+      const add = (geo, x, y, z, c) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); avatar.add(m); return m; };
+      add(new THREE.CapsuleGeometry(.245, .3, 6, 16), 0, 1.02, 0, '#4dabf7').scale.z = .7;   // torso
+      add(new THREE.SphereGeometry(.235, 24, 18), 0, 1.6, 0, '#ffd8b5');                     // head
+      add(new THREE.SphereGeometry(.25, 24, 18), 0, 1.67, -.03, '#5c3c10').scale.y = .78;    // hair cap
+      add(new THREE.SphereGeometry(.11, 16, 12), 0, 1.9, -.08, '#5c3c10');                   // bun
+      [-1, 1].forEach((s) => {
+        add(new THREE.CapsuleGeometry(.07, .3, 4, 12), s * .32, 1.02, 0, '#ffd8b5').rotation.z = -s * .14;  // arms
+        add(new THREE.CapsuleGeometry(.09, .28, 4, 12), s * .13, .34, 0, '#b197fc');                        // legs
+        add(new THREE.SphereGeometry(.095, 14, 10), s * .13, .07, .05, '#ffffff').scale.set(1, .7, 1.35);   // shoes
+        add(new THREE.SphereGeometry(.034, 10, 8), s * .09, 1.64, .2, '#222222');                           // eyes
+      });
+      add(new THREE.TorusGeometry(.07, .016, 8, 14, Math.PI), 0, 1.545, .21, '#c9576b').rotation.z = Math.PI;  // smile ∪
+    } else {
+      const bx = (w,h,d,x,y,z,c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c)); m.position.set(x,y,z); avatar.add(m); return m; };
+      bx(.5,.6,.3, 0,1.05,0, '#4dabf7');     // shirt
+      bx(.42,.42,.42, 0,1.6,0, '#ffd8b5');   // head
+      bx(.46,.18,.46, 0,1.86,0, '#5c3c10');  // hair
+      bx(.5,.1,.5, 0,1.94,0, '#5c3c10');     // bun
+      bx(.16,.55,.2, -.14,.38,0, '#b197fc'); // legs
+      bx(.16,.55,.2,  .14,.38,0, '#b197fc');
+      bx(.14,.5,.18, -.33,1.05,0, '#ffd8b5');// arms
+      bx(.14,.5,.18,  .33,1.05,0, '#ffd8b5');
+      // friendly face
+      const e = mat('#222');
+      [-0.1, 0.1].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.02), e); m.position.set(x,1.64,.22); avatar.add(m); });
+    }
     avatar.visible = false;
     scene.add(ABC.world.entityShadows(avatar));
   })();

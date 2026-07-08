@@ -12,8 +12,21 @@ ABC.animals = (function () {
     group.add(m);
     return m;
   }
+  /* modern: every box body-part becomes a rounded plush shape (vendored
+     RoundedBoxGeometry) so animals read as soft toys, not LEGO bricks.
+     Same dims recur across every bunny/puppy/etc, so cache one geometry
+     per unique size. Smooth/Classic keep the original crisp boxes. */
+  const _geoCache = new Map();
+  function boxGeo(w, h, d) {
+    const lib = ABC.MODERN && window.ABC_MODERN_LIB;
+    if (!lib || !lib.RoundedBoxGeometry) return new THREE.BoxGeometry(w, h, d);
+    const k = w + ',' + h + ',' + d;
+    let g = _geoCache.get(k);
+    if (!g) { g = new lib.RoundedBoxGeometry(w, h, d, 4, Math.min(w, h, d) * 0.25); _geoCache.set(k, g); }
+    return g;
+  }
   function bx(group, w,h,d, x,y,z, color) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(color));
+    const m = new THREE.Mesh(boxGeo(w,h,d), mat(color));
     m.position.set(x,y,z);
     group.add(m);
     return m;
@@ -169,7 +182,13 @@ ABC.animals = (function () {
       bx(g, w,h,w, sx*0.35, h/2, sz*s*0.5, d.accent));
   }
   function face(g, w, y, z) {
-    // simple friendly eyes
+    // simple friendly eyes — modern: round bead eyes, nudged out a touch so
+    // they sit proud of the rounded cheek instead of sinking into it
+    if (ABC.MODERN) {
+      sp(g, .075, -w*0.25, y, z + .04, '#222');
+      sp(g, .075,  w*0.25, y, z + .04, '#222');
+      return;
+    }
     bx(g, .12,.12,.05, -w*0.25, y, z, '#222');
     bx(g, .12,.12,.05,  w*0.25, y, z, '#222');
   }
