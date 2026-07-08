@@ -19,6 +19,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Elly-Tubbies 🐘 — Aaria's Blue Elephant</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐘</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
   :root{--belu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -71,15 +74,27 @@
   /* ---------- HUD ---------- */
   #topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:8;
     display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none;}
-  .chip{background:linear-gradient(160deg,#ffffff,#f2f6ff);border-radius:999px;padding:7px 14px;
-    border:2.5px solid #fff;box-shadow:0 4px 0 rgba(184,164,255,.35),0 8px 18px rgba(58,58,90,.14);
+  .chip{background:rgba(255,255,255,.68);border-radius:999px;padding:7px 14px;
+    border:2px solid rgba(255,255,255,.92);
+    backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);
+    box-shadow:0 4px 0 rgba(184,164,255,.3),0 8px 18px rgba(58,58,90,.14),inset 0 1px 0 rgba(255,255,255,.9);
     font-weight:800;font-size:clamp(13px,3.6vw,17px);
     display:flex;align-items:center;gap:6px;}
+  .chip.quest{position:absolute;top:max(64px,calc(env(safe-area-inset-top) + 54px));
+    left:50%;transform:translateX(-50%);z-index:8;
+    cursor:pointer;pointer-events:auto;max-width:min(62vw,380px);
+    background:linear-gradient(160deg,rgba(255,248,221,.88),rgba(255,233,168,.85));
+    border-color:#ffe9a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+  .chip.quest.donePulse{animation:questPop .6s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes questPop{0%{transform:translateX(-50%) scale(.85)}
+    55%{transform:translateX(-50%) scale(1.12)}100%{transform:translateX(-50%) scale(1)}}
+  body.rm .chip.quest.donePulse{animation:none;}
   #menu{display:flex;gap:7px;pointer-events:auto;}
-  .mbtn{position:relative;pointer-events:auto;cursor:pointer;border:2.5px solid #fff;
-    background:linear-gradient(160deg,#ffffff,#eef3ff);
+  .mbtn{position:relative;pointer-events:auto;cursor:pointer;border:2px solid rgba(255,255,255,.92);
+    background:rgba(255,255,255,.66);
+    backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);
     border-radius:16px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
-    color:var(--ink);box-shadow:0 4px 0 #d5ddf5,0 8px 16px rgba(58,58,90,.15);line-height:1;transition:.12s;}
+    color:var(--ink);box-shadow:0 4px 0 rgba(213,221,245,.8),0 8px 16px rgba(58,58,90,.15),inset 0 1px 0 rgba(255,255,255,.9);line-height:1;transition:.12s;}
   .mbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #d5ddf5;}
   .mbtn.off{opacity:.45;}
   .mbadge{position:absolute;top:-6px;right:-6px;background:#ff6b9d;color:#fff;border-radius:999px;
@@ -166,8 +181,11 @@
     z-index:12;width:min(620px,92vw);display:none;pointer-events:auto;}
   #narr.show{display:block;animation:pop .3s ease;}
   @keyframes pop{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
-  #narrCard{background:rgba(255,255,255,.96);border-radius:24px;padding:14px 18px;
-    box-shadow:0 12px 34px rgba(58,58,90,.3);display:flex;gap:12px;align-items:center;}
+  #narrCard{background:rgba(255,255,255,.88);border-radius:24px;padding:14px 18px;
+    border:2px solid rgba(255,255,255,.95);
+    backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+    box-shadow:0 12px 34px rgba(58,58,90,.3),inset 0 1px 0 rgba(255,255,255,.95);
+    display:flex;gap:12px;align-items:center;}
   #narrWho{font-size:clamp(30px,9vw,44px);flex:0 0 auto;}
   #narrTxt{font-weight:800;font-size:clamp(15px,4.4vw,20px);line-height:1.35;flex:1;text-align:left;}
   #narrNext{flex:0 0 auto;cursor:pointer;border:none;background:var(--sun);border-radius:50%;
@@ -242,6 +260,9 @@
     <button class="speed" id="zoomInBtn" style="opacity:1" title="Zoom in" aria-label="Zoom in">🔍＋</button>
     <button class="speed" id="zoomOutBtn" style="opacity:1" title="Zoom out" aria-label="Zoom out">🔍−</button>
   </div>
+
+  <!-- Sun Baby's never-ending quest — tap for a sparkle trail -->
+  <div class="chip quest" id="questChip" style="display:none" title="Sun Baby's quest — tap for a sparkle trail!"></div>
 
   <!-- celebration toast: names what was just earned (backs up the spoken line) -->
   <div id="celebToast" aria-live="polite"></div>
@@ -590,13 +611,43 @@ const STATIONS={
 let trav='walk';           // walk | swim | fly | drive
 let flyY=0, flyRise=false;
 const FLAT=Object.values(POI);
+/* ---- the Giggle River: winds from the pond down to the sea ---- */
+const RIVER={z0:34, z1:140, level:-0.18, depth:1.45, halfW:4.6, bridgeZ:62};
+const riverX=z=>1+6*Math.sin((z-30)*0.085);                 // centerline
+function riverCut(x,z){                                     // 0..1 carve factor
+  if(z<RIVER.z0-6||z>RIVER.z1)return 0;
+  const d=Math.abs(x-riverX(z));
+  const across=Math.max(0,1-d/RIVER.halfW);
+  const fade=Math.min(1,(z-(RIVER.z0-6))/8);                // eases in below the pond
+  return across*across*(3-2*across)*fade;                   // smoothstep profile
+}
+function riverDepth(x,z){                                   // how deep the river is here (0 = dry)
+  if(!riverCut(x,z))return 0;
+  return Math.max(0,RIVER.level-terrainH(x,z));
+}
+function waterDepthAt(x,z){                                 // river OR inland lake (valleys under sea level)
+  const h=terrainH(x,z);
+  const rd=riverCut(x,z)?Math.max(0,RIVER.level-h):0;
+  const ld=(Math.hypot(x,z)<ISLAND-1&&h<SEA_Y)?SEA_Y-h:0;
+  return Math.max(rd,ld);
+}
 function terrainH(x,z){
   let h=Math.sin(x*0.16)*0.9+Math.cos(z*0.14)*1.0+Math.sin((x+z)*0.07)*0.7;
+  h+=Math.sin(x*0.55+z*0.31)*0.12+Math.cos(x*0.23-z*0.61)*0.1;   // fine bumps: ground feels real
   let f=1;
   for(const [fx,fz] of FLAT){const d=Math.hypot(x-fx,z-fz);f=Math.min(f,Math.max(0,(d-6.5)/5));}
   const r=Math.hypot(x,z);
   const edge=Math.min(1,Math.max(0,(r-4)/10));
   h=h*f*edge;
+  // river carve: banks slope smoothly down to a soft muddy bed
+  const w=riverCut(x,z);
+  if(w>0)h=h*(1-w)+(-RIVER.depth)*w;
+  // arched wooden bridge is part of the walkable ground
+  {const bz=RIVER.bridgeZ,cx=riverX(bz);
+   const along=Math.max(0,1-Math.abs(z-bz)/2.1);
+   if(along>0&&Math.abs(x-cx)<7.4){
+     const arc=0.95*Math.cos(Math.PI*(x-cx)/17);
+     h=Math.max(h,arc*Math.min(1,along*2.2));}}
   if(r>ISLAND-2)h-=(r-(ISLAND-2))*0.5;      // beach slides down into the sea
   return h;
 }
@@ -604,21 +655,157 @@ const SEA_Y=-0.5, SEA_MAX=ISLAND+30;          // water level & how far you may s
 let _seed=1337;function rnd(){_seed=(_seed*1103515245+12345)&0x7fffffff;return _seed/0x7fffffff;}
 const matStd=(c,r=0.75)=>new T.MeshStandardMaterial({color:new T.Color(c),roughness:r,metalness:0});
 
+/* ------- ground detail texture: fine tonal noise so grass & sand feel REAL,
+   not like flat plastic. Multiplies under the painted vertex colors. ------- */
+const groundDetail=(()=>{const c=document.createElement('canvas');c.width=c.height=256;
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,256,256);
+  let s=97;const rn=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};
+  for(let i=0;i<5200;i++){const v=205+Math.floor(rn()*50);
+    g.fillStyle=`rgba(${v},${v},${v},${0.5+rn()*0.5})`;
+    g.fillRect(rn()*256,rn()*256,1+rn()*2.2,1+rn()*2.2);}
+  for(let i=0;i<340;i++){g.fillStyle=`rgba(255,255,255,${0.25+rn()*0.3})`;   // sun-kissed blades
+    g.fillRect(rn()*256,rn()*256,1,2+rn()*3);}
+  const tx=new T.CanvasTexture(c);tx.wrapS=tx.wrapT=T.RepeatWrapping;tx.repeat.set(90,90);
+  tx.anisotropy=4;return tx;})();
 (function ground(){
   // subdivided plane gives better hills:
-  const g2=new T.PlaneGeometry((ISLAND+30)*2,(ISLAND+30)*2,150,150);g2.rotateX(-Math.PI/2);
+  const g2=new T.PlaneGeometry((ISLAND+30)*2,(ISLAND+30)*2,170,170);g2.rotateX(-Math.PI/2);
   const pos=g2.attributes.position,col=[];
-  const cLow=new T.Color('#54ad45'),cHigh=new T.Color('#8ed46e');
+  const cLow=new T.Color('#54ad45'),cHigh=new T.Color('#8ed46e'),cMeadow=new T.Color('#3f9440'),
+        cSand=new T.Color('#ecd9a4'),cSandWet=new T.Color('#c8ad72'),cMud=new T.Color('#8f7148');
   for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);
     const y=terrainH(x,z);pos.setY(i,y);
-    const c=cLow.clone().lerp(cHigh,Math.min(1,(y+1)/2.6));col.push(c.r,c.g,c.b);}
+    const r=Math.hypot(x,z);
+    // grass: two greens by height + a slow mottle so meadows read like meadows
+    const mot=Math.sin(x*0.21+z*0.33)*Math.cos(x*0.13-z*0.24)*0.5+0.5;
+    let c=cLow.clone().lerp(cHigh,Math.min(1,(y+1)/2.6)).lerp(cMeadow,mot*0.4);
+    // sandy beach ring, wet sand at the waterline, seabed
+    const sandK=Math.min(1,Math.max(0,(r-(ISLAND-11))/7));
+    if(sandK>0)c.lerp(cSand,sandK);
+    if(y<0.1&&r>ISLAND-6)c.lerp(cSandWet,Math.min(1,(0.1-y)/1.4));
+    // river banks: sandy edges, soft mud under the water
+    const rc=riverCut(x,z);
+    if(rc>0.04){c.lerp(cSand,Math.min(1,rc*1.4));
+      if(y<RIVER.level+0.1)c.lerp(cMud,Math.min(1,(RIVER.level+0.1-y)/0.9));}
+    col.push(c.r,c.g,c.b);}
   g2.setAttribute('color',new T.Float32BufferAttribute(col,3));g2.computeVertexNormals();
-  const m=new T.Mesh(g2,new T.MeshStandardMaterial({vertexColors:true,roughness:1}));
+  const m=new T.Mesh(g2,new T.MeshStandardMaterial({vertexColors:true,roughness:1,map:groundDetail}));
   m.receiveShadow=true;scene.add(m);
-  // the real swimmable sea — a big glassy disc the beach slides into
-  const sea=new T.Mesh(new T.CircleGeometry(ISLAND+80,72),
-    new T.MeshStandardMaterial({color:'#3fa9dc',roughness:.15,metalness:.25,transparent:true,opacity:.92}));
-  sea.rotation.x=-Math.PI/2;sea.position.y=SEA_Y;scene.add(sea);
+})();
+
+/* ================= REALISTIC WATER (sea · pond · river) ==================
+   One tiny wave shader: rolling vertex waves, fresnel sky reflection, the
+   sun's glitter path, sparkles, and foam kissing the beach. Fog-aware.    */
+const waterMats=[];
+function makeWaterMat(o={}){
+  const u={uTime:{value:0},
+    uSunDir:{value:new T.Vector3(-0.3,0.8,0.5).normalize()},
+    uDeep:{value:new T.Color(o.deep||'#155f9c')},
+    uShallow:{value:new T.Color(o.shallow||'#3cb1d4')},
+    uSky:{value:new T.Color('#bfe0ff')},
+    uFoam:{value:o.foam?1:0},uAmp:{value:o.amp??0.16},
+    uFlow:{value:o.flow||0},uAlpha:{value:o.alpha??0.92},uIsland:{value:ISLAND}};
+  const mat=new T.ShaderMaterial({uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,u]),
+    transparent:true,fog:true,side:T.DoubleSide,
+    vertexShader:`
+      uniform float uTime,uAmp,uFlow;
+      varying vec3 vWorld;varying vec3 vNorm;
+      #include <fog_pars_vertex>
+      void main(){
+        vec4 wp=modelMatrix*vec4(position,1.0);
+        float t=uTime, zz=wp.z-uFlow*t;
+        float a=wp.x*0.19+t*0.95, b=zz*0.16-t*1.2, c=(wp.x+zz)*0.11+t*0.65;
+        wp.y+=uAmp*(sin(a)+sin(b)+0.6*sin(c));
+        float dx=uAmp*(0.19*cos(a)+0.066*cos(c));
+        float dz=uAmp*(0.16*cos(b)+0.066*cos(c));
+        vNorm=normalize(vec3(-dx*3.2,1.0,-dz*3.2));
+        vWorld=wp.xyz;
+        vec4 mvPosition=viewMatrix*wp;
+        gl_Position=projectionMatrix*mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader:`
+      uniform vec3 uDeep,uShallow,uSky,uSunDir;
+      uniform float uTime,uFoam,uIsland,uAlpha;
+      varying vec3 vWorld;varying vec3 vNorm;
+      #include <fog_pars_fragment>
+      void main(){
+        vec3 n=normalize(vNorm);
+        vec3 v=normalize(cameraPosition-vWorld);
+        float fres=pow(1.0-max(dot(n,v),0.0),3.0);
+        float r=length(vWorld.xz);
+        float shore=smoothstep(uIsland+16.0,uIsland-2.0,r);
+        vec3 col=mix(uDeep,uShallow,shore*0.8);
+        col=mix(col,uSky,fres*0.42);
+        vec3 hv=normalize(uSunDir+v);
+        float dnh=max(dot(n,hv),0.0);
+        float spec=pow(dnh,150.0)*2.6+pow(dnh,18.0)*0.22;
+        float tw=sin(vWorld.x*2.3+uTime*3.1)*sin(vWorld.z*2.1-uTime*2.4);
+        spec*=0.7+0.6*smoothstep(0.1,0.9,tw);
+        col+=vec3(1.0,0.96,0.82)*spec;
+        if(uFoam>0.5){
+          float wob=sin(vWorld.x*0.33+uTime*0.8)*1.3+cos(vWorld.z*0.29-uTime*0.6)*1.3;
+          float edge=abs(r-(uIsland+1.2)+wob);
+          float foam=smoothstep(3.4,0.3,edge)*(0.55+0.45*sin(uTime*1.8+r*0.8));
+          col=mix(col,vec3(1.0),clamp(foam,0.0,1.0)*0.8);}
+        gl_FragColor=vec4(col,uAlpha*(0.78+0.22*fres));
+        #include <fog_fragment>
+      }`});
+  waterMats.push(mat);return mat;
+}
+(function waterBodies(){
+  // the swimmable SEA — rolling waves, glitter path, foam on the beach
+  const sg=new T.PlaneGeometry(440,440,150,150);sg.rotateX(-Math.PI/2);
+  const sea=new T.Mesh(sg,makeWaterMat({foam:true,amp:0.17}));
+  sea.position.y=SEA_Y;scene.add(sea);
+  // the GIGGLE RIVER — a flowing ribbon down the carved bed to the sea
+  const pts=[],idx=[];let rows=0;
+  for(let z=RIVER.z0-2;z<=136;z+=2,rows++){
+    const cx=riverX(z),hw=RIVER.halfW*0.86;
+    let y=RIVER.level;
+    if(z>116)y=RIVER.level+(SEA_Y-RIVER.level)*Math.min(1,(z-116)/16);
+    pts.push(cx-hw,y,z,cx+hw,y,z);}
+  for(let i=0;i<rows-1;i++){const a=i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3);}
+  const rg=new T.BufferGeometry();
+  rg.setAttribute('position',new T.Float32BufferAttribute(pts,3));
+  rg.setIndex(idx);rg.computeVertexNormals();
+  const river=new T.Mesh(rg,makeWaterMat({amp:0.055,flow:2.4,alpha:0.88,deep:'#2d86b5',shallow:'#7fd4e6'}));
+  scene.add(river);
+  // the wooden BRIDGE over it — planks follow the walkable arc in terrainH
+  (function bridge(){
+    const g=new T.Group();const bz=RIVER.bridgeZ,cx=riverX(bz);
+    const plankM=matStd('#a5713f',.85),postM=matStd('#7d5028',.9);
+    for(let px=-6.5;px<=6.5;px+=1.05){
+      const h=0.95*Math.cos(Math.PI*px/17);
+      const slope=-0.95*Math.PI/17*Math.sin(Math.PI*px/17);
+      const p=new T.Mesh(new T.BoxGeometry(1.0,0.14,4.0),plankM);
+      p.position.set(cx+px,h+0.02,bz);p.rotation.z=Math.atan(slope);
+      p.castShadow=true;p.receiveShadow=true;g.add(p);}
+    [[-6.4,-1],[6.4,-1],[-6.4,1],[6.4,1]].forEach(([px,sz])=>{
+      const post=new T.Mesh(new T.CylinderGeometry(0.11,0.13,1.15,8),postM);
+      const h=0.95*Math.cos(Math.PI*px/17);
+      post.position.set(cx+px,h+0.55,bz+sz*1.9);post.castShadow=true;g.add(post);});
+    [-1,1].forEach(sz=>{const rail=new T.Mesh(new T.CylinderGeometry(0.06,0.06,13,8),plankM);
+      rail.rotation.z=Math.PI/2;rail.position.set(cx,1.35,bz+sz*1.9);g.add(rail);});
+    scene.add(g);
+  })();
+})();
+
+/* ---- puffy clouds drifting way up high (the sky feels alive) ---- */
+const clouds=[];
+(function makeClouds(){
+  const puffM=new T.MeshStandardMaterial({color:'#ffffff',roughness:1,transparent:true,opacity:0.92});
+  for(let i=0;i<7;i++){
+    const g=new T.Group();
+    const n=3+Math.floor(rnd()*3);
+    for(let k=0;k<n;k++){
+      const s=1.6+rnd()*2.4;
+      const p=new T.Mesh(new T.SphereGeometry(s,10,8),puffM);
+      p.position.set((k-(n-1)/2)*s*1.15,(rnd()-0.5)*0.8,(rnd()-0.5)*2.2);
+      p.scale.y=0.55;g.add(p);}
+    const a=rnd()*Math.PI*2,r=30+rnd()*(ISLAND+20);
+    g.position.set(Math.cos(a)*r,23+rnd()*9,Math.sin(a)*r);
+    scene.add(g);clouds.push({g,sp:0.55+rnd()*0.7});}
 })();
 
 /* ---- sprite helpers ---- */
@@ -662,7 +849,7 @@ function makeEllie(cfg,scaleAll=1){
     const hand=new T.Mesh(new T.SphereGeometry(0.17,10,8),body);hand.position.y=-0.74;
     piv.add(arm,hand);piv.rotation.z=sx*0.85;inner.add(piv);
     anim.arms.push({piv,sx});});
-  belly.scale.set(1.05,0.95,1.15);belly.position.y=1.35;belly.castShadow=true;inner.add(belly);
+  belly.scale.set(1.12,0.98,1.18);belly.position.y=1.35;belly.castShadow=true;inner.add(belly);
   // ---- Tummy-TV (updatable canvas screen!) ----
   const tvC=document.createElement('canvas');tvC.width=tvC.height=128;
   const tvTex=new T.CanvasTexture(tvC);tvTex.encoding=T.sRGBEncoding;
@@ -677,23 +864,28 @@ function makeEllie(cfg,scaleAll=1){
   screen.position.set(0,1.32,-1.06);screen.rotation.y=Math.PI;inner.add(screen);
   anim.tv=tv;
   // head
-  const head=new T.Group();head.position.set(0,2.55,-0.1);inner.add(head);anim.head=head;
+  // a proper toddler head: a touch bigger than life = instantly cuter
+  const head=new T.Group();head.position.set(0,2.58,-0.1);head.scale.setScalar(1.1);
+  inner.add(head);anim.head=head;
   const skull=new T.Mesh(new T.SphereGeometry(0.95,24,20),skin);skull.castShadow=true;head.add(skull);
   const earGeo=new T.SphereGeometry(0.55,18,14);
-  [-1,1].forEach(sx=>{const ear=new T.Mesh(earGeo,skin);ear.scale.set(0.55,1,0.28);
+  const earPink=matStd(cfg.earIn||'#f4b8cf',0.8);                 // soft pink inner ears
+  [-1,1].forEach(sx=>{const ear=new T.Mesh(earGeo,skin);ear.scale.set(0.58,1.06,0.28);
     ear.position.set(sx*0.95,0.05,0.15);ear.castShadow=true;head.add(ear);anim.ears.push({ear,sx});
-    const ein=new T.Mesh(earGeo,skinD);ein.scale.set(0.34,0.66,0.18);ein.position.set(sx*1.02,0.05,0.02);head.add(ein);});
+    const ein=new T.Mesh(earGeo,earPink);ein.scale.set(0.36,0.7,0.18);ein.position.set(sx*1.02,0.05,0.02);head.add(ein);});
   const curve=new T.QuadraticBezierCurve3(new T.Vector3(0,-0.2,-0.85),new T.Vector3(0,-0.9,-1.25),new T.Vector3(0.05,-1.15,-0.85));
   const trunk=new T.Mesh(new T.TubeGeometry(curve,16,0.22,10,false),skin);trunk.castShadow=true;head.add(trunk);
-  const eyeW=new T.MeshStandardMaterial({color:0xffffff,roughness:.4});
-  const eyeD=new T.MeshStandardMaterial({color:0x20305e,roughness:.3});
+  // BIG sparkly toddler eyes — twin highlights make them look glassy and alive
+  const eyeW=new T.MeshStandardMaterial({color:0xffffff,roughness:.25});
+  const eyeD=new T.MeshStandardMaterial({color:0x1c2b56,roughness:.2});
   [-1,1].forEach(sx=>{
-    const w=new T.Mesh(new T.SphereGeometry(0.24,16,14),eyeW);w.position.set(sx*0.34,0.12,-0.82);head.add(w);
-    const p=new T.Mesh(new T.SphereGeometry(0.13,14,12),eyeD);p.position.set(sx*0.36,0.1,-0.98);head.add(p);
-    const sh=new T.Mesh(new T.SphereGeometry(0.045,8,8),eyeW);sh.position.set(sx*0.31,0.17,-1.04);head.add(sh);});
-  const cheekMat=new T.MeshStandardMaterial({color:0xff8fb1,roughness:.8,transparent:true,opacity:.7});
-  [-1,1].forEach(sx=>{const ch=new T.Mesh(new T.SphereGeometry(0.16,12,10),cheekMat);
-    ch.scale.set(1,0.7,0.4);ch.position.set(sx*0.62,-0.1,-0.78);head.add(ch);});
+    const w=new T.Mesh(new T.SphereGeometry(0.29,16,14),eyeW);w.position.set(sx*0.36,0.14,-0.8);head.add(w);
+    const p=new T.Mesh(new T.SphereGeometry(0.165,14,12),eyeD);p.position.set(sx*0.38,0.12,-0.99);head.add(p);
+    const sh=new T.Mesh(new T.SphereGeometry(0.06,8,8),eyeW);sh.position.set(sx*0.32,0.21,-1.09);head.add(sh);
+    const sh2=new T.Mesh(new T.SphereGeometry(0.028,8,8),eyeW);sh2.position.set(sx*0.44,0.05,-1.11);head.add(sh2);});
+  const cheekMat=new T.MeshStandardMaterial({color:0xff9dbb,roughness:.85,transparent:true,opacity:.85});
+  [-1,1].forEach(sx=>{const ch=new T.Mesh(new T.SphereGeometry(0.19,12,10),cheekMat);
+    ch.scale.set(1,0.68,0.4);ch.position.set(sx*0.64,-0.12,-0.78);head.add(ch);});
   // iconic Teletubby antenna on a thin stalk (ring / triangle / curl / star)
   const stalk=new T.Mesh(new T.CylinderGeometry(0.045,0.05,0.72,8),skinD);stalk.position.set(0,1.25,0.05);head.add(stalk);
   const antMat=matStd(cfg.antCol,0.45);antMat.emissive=new T.Color(cfg.antCol);antMat.emissiveIntensity=0.28;
@@ -766,8 +958,8 @@ function addProp(kind,x,z,ry=0){
       const arm=new T.Group();arm.rotation.z=i*Math.PI*2/3;arm.add(blade);hub.add(arm);}
     spinners.push({mesh:hub,speed:0.8});
   }else if(kind==='pond'){
-    const water=new T.Mesh(new T.CircleGeometry(4.4,32),
-      new T.MeshStandardMaterial({color:'#49b3c9',roughness:.15,metalness:.3,transparent:true,opacity:.85}));
+    const water=new T.Mesh(new T.RingGeometry(0.05,4.4,40,6),
+      makeWaterMat({amp:0.045,alpha:0.9,deep:'#2d86b5',shallow:'#63c4d8'}));
     water.rotation.x=-Math.PI/2;water.position.y=0.05;g.add(water);
     for(let i=0;i<8;i++){const a=i/8*Math.PI*2;
       const reed=new T.Mesh(new T.CylinderGeometry(0.05,0.09,1+rnd(),6),matStd('#5ea15a'));
@@ -1285,6 +1477,114 @@ function tubbyWantsUpdate(){
       t.group.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;}}
 }
 
+/* ============== SUN BABY'S NEVER-ENDING LEARNING QUEST ==================
+   An infinite, gentle quest chain: one small adventure at a time, chosen
+   deterministically from templates over things that really exist in the
+   world right now. No timers, no failure — finishing one earns sparkles,
+   a Sun Baby cheer, a REAL fun fact to learn, and the next quest begins.
+   S.questN only ever counts up: the learning never ends. */
+const QUEST_FACTS=[
+  'Elephants say hello by twining their trunks together — a trunk-hug!',
+  'A group of elephants is called a parade. A PARADE!',
+  'Bees do a waggle dance to tell friends where the flowers are!',
+  'Rivers always flow downhill, all the way home to the sea.',
+  'Your heart is about the same size as your fist. Squeeze!',
+  'Butterflies taste with their FEET. Imagine tasting your socks!',
+  'The moon makes the sea rise and fall — it\'s called the tide.',
+  'Elephants can hear storms rumbling from very far away with their feet!',
+  'Sunflowers turn their faces to follow the sun across the sky.',
+  'Snails can sleep for a very long nap — even years!',
+  'Raindrops start as tiny clouds droplets hugging specks of dust.',
+  'An elephant\'s trunk has no bones — it bends any way it likes!',
+  'Sharing a smile is contagious — smiles love to bounce between friends!',
+  'Trees talk to each other through their roots, like whispering.',
+  'Deep breaths make big feelings smaller. In… and out… ahh.',
+  'Ladybugs\' spots warn birds: "I taste yucky!" Clever little dots!',
+  'Sea otters hold hands while they sleep so they don\'t drift apart.',
+  'Saying "thank you" makes TWO people feel warm — you and your friend!',
+];
+function mulQ(seed){let s=seed>>>0;return()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
+if(S.questN===undefined)S.questN=0;
+let quest=null,questPoll=0,jumpCount=0,trumpetCount=0,lastTrumpetNear=0,lastTrampAt=0;
+const Q_TEMPLATES=[
+  {id:'star',gen:R=>{const ids=['tinko','minty','sunny','rosy'].filter(id=>!S.today.stars[id]);
+    if(!ids.length)return null;const id=ids[(R()*ids.length)|0];
+    return{text:`Play with ${TUBBIES[id].name} and earn a ⭐`,icon:'⭐',
+      target:()=>TUBBY_POS[id],check:()=>!!S.today.stars[id]};}},
+  {id:'sparks',gen:R=>{const n=4+((R()*4)|0),start=S.sparks;
+    return{text:`Collect ${n} ✨ sparkles`,icon:'✨',target:null,
+      check:()=>S.sparks>=start+n};}},
+  {id:'secret',gen:R=>{const left=SECRETS.filter(sc=>!S.secrets[sc.id]&&(!sc.need||S.gear[sc.need]));
+    if(!left.length)return null;const sc=left[(R()*left.length)|0];
+    const start=Object.keys(S.secrets).length;
+    return{text:'Find a hidden secret, far far away!',icon:'🔭',
+      target:()=>[sc.x,sc.z],check:()=>Object.keys(S.secrets).length>start};}},
+  {id:'water',gen:R=>{const owned=STICKERS.filter(st=>S.stickers[st.id]&&st.at&&(S.garden[st.id]||{}).lastWater!==todayKey());
+    if(!owned.length)return null;const st=owned[(R()*owned.length)|0];
+    return{text:`Water the ${st.name} ${st.e} (tap it!)`,icon:'💧',
+      target:()=>st.at,check:()=>(S.garden[st.id]||{}).lastWater===todayKey()};}},
+  {id:'river',gen:R=>({text:'Splash across the Giggle River!',icon:'🌊',
+    target:()=>[riverX(RIVER.bridgeZ+16),RIVER.bridgeZ+16],
+    check:()=>trav==='walk'&&riverDepth(player.group.position.x,player.group.position.z)>0.35})},
+  {id:'bridge',gen:R=>({text:'Cross the wooden bridge!',icon:'🌉',
+    target:()=>[riverX(RIVER.bridgeZ),RIVER.bridgeZ],
+    check:()=>{const p=player.group.position;
+      return Math.abs(p.z-RIVER.bridgeZ)<1.6&&Math.abs(p.x-riverX(RIVER.bridgeZ))<4&&p.y>0.45;}})},
+  {id:'jump',gen:R=>{const n=3+((R()*3)|0),start=jumpCount;
+    return{text:`Do ${n} big elephant jumps! 🦘`,icon:'🦘',target:null,
+      check:()=>jumpCount>=start+n};}},
+  {id:'trumpet',gen:R=>({text:'Trumpet 🎺 a song near a friend!',icon:'🎺',
+    target:()=>TUBBY_POS.tinko,check:function(){return lastTrumpetNear>this._t0;}}),},
+  {id:'tramp',gen:R=>({text:'Boing on the trampoline!',icon:'🤸',
+    target:()=>POI.tramp,check:function(){return lastTrampAt>this._t0;}})},
+  {id:'tickle',gen:R=>{const start=Object.values(tickles).reduce((a,b)=>a+b,0);
+    return{text:'Tickle a friend — tap them! 💕',icon:'💕',
+      target:()=>TUBBY_POS.rosy,check:()=>Object.values(tickles).reduce((a,b)=>a+b,0)>start};}},
+  {id:'place',gen:R=>{const spots=[['pond','the lily pond 🪷'],['mill','the windmill 🌬️'],['arch','the bunny arch 🐇'],['fixit','the Fix-It Garden 🔨']];
+    const [k,name]=spots[(R()*spots.length)|0];
+    return{text:`Visit ${name}`,icon:'🧭',target:()=>POI[k],
+      check:()=>{const p=player.group.position;return Math.hypot(p.x-POI[k][0],p.z-POI[k][1])<7;}};}},
+  {id:'deliver',gen:R=>{const open=Object.keys(wants).filter(id=>!S.today.wantsDone[id]);
+    if(!open.length)return null;const start=Object.keys(S.today.wantsDone).length;
+    return{text:'Bring a friend what they wish for 💭',icon:'🎁',
+      target:()=>TUBBY_POS[open[0]],check:()=>Object.keys(S.today.wantsDone).length>start};}},
+];
+function newQuest(){
+  const R=mulQ(S.day*7919+S.questN*104729+5);
+  for(let tries=0;tries<14;tries++){
+    const q=Q_TEMPLATES[(R()*Q_TEMPLATES.length)|0].gen(R);
+    if(q){q._t0=performance.now();
+      q.fact=QUEST_FACTS[(S.day*13+S.questN*7)%QUEST_FACTS.length];
+      quest=q;renderQuestChip();return;}}
+  quest=null;renderQuestChip();
+}
+function renderQuestChip(){
+  const el=$('questChip');if(!el)return;
+  if(!quest){el.style.display='none';return;}
+  el.style.display='block';
+  el.textContent=`${quest.icon} Quest ${S.questN+1}: ${quest.text}`;
+}
+function questUpdate(dt){
+  if(!quest||mode!=='roam')return;
+  questPoll-=dt;if(questPoll>0)return;questPoll=0.6;
+  let done=false;
+  try{done=quest.check();}catch(e){}
+  if(done){
+    const q=quest;quest=null;
+    S.questN++;S.sparks+=4;save();hud();
+    sfx.good();reactSun();
+    celebToast(`🌟 Quest ${S.questN} done! +4 ✨`);
+    const el=$('questChip');if(el){el.classList.remove('donePulse');void el.offsetWidth;el.classList.add('donePulse');}
+    say('☀️',`Quest complete! Did you know? ${q.fact}`).then(newQuest);
+  }
+}
+$('questChip').onclick=()=>{sfx.tap();
+  if(!quest)return;
+  if(quest.target){const t=quest.target();
+    breadcrumbTo(new T.Vector3(t[0],0,t[1]));
+    say('☀️','Follow the sparkles to your quest! ✨');}
+  else say('☀️',quest.text+' You can do it!');};
+
 /* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
 const NAVY='#12244f';
 const girlImg=new Image();let girlReady=false;
@@ -1344,6 +1644,7 @@ function drawSunBaby(g,w,h,mood,blink){
    screen size, never clipped and never behind the bottom dialog */
 const sunGroup=new T.Group();scene.add(camera);camera.add(sunGroup);
 sunGroup.position.set(-8.4,5.2,-24);
+let sunScale=8;   // aspect-aware: fitSun() keeps her cosy in the top-left on EVERY screen
 let sunMood='happy',sunBlink=0,sunReactUntil=0,sunReactDur=1900,sunBounce=false;
 const sunTex=makeCanvasTex((g,w,h)=>drawSunBaby(g,w,h,sunMood,sunBlink),512,512);
 function repaintSun(){const c=sunTex.image.getContext('2d');
@@ -1351,9 +1652,51 @@ function repaintSun(){const c=sunTex.image.getContext('2d');
 const sunSprite=new T.Sprite(new T.SpriteMaterial({map:sunTex,transparent:true,depthWrite:false,depthTest:false,fog:false}));
 sunSprite.renderOrder=999;                       // she draws over everything, like a HUD
 sunSprite.scale.set(8,8,1);sunGroup.add(sunSprite);
-function reactSun(){sunMood='cheer';repaintSun();sunReactUntil=performance.now()+1900;sunReactDur=1900;sunBounce=true;}
+function reactSun(){sunMood='cheer';repaintSun();sunReactUntil=performance.now()+1900;sunReactDur=1900;sunBounce=true;
+  sunAction('kiss',true);}                          // every cheer blows a little kiss
 function careSun(){if(mode==='finale')return;sunMood='care';repaintSun();sunReactUntil=performance.now()+1700;sunReactDur=1700;sunBounce=false;}
 sunGroup.add(new T.PointLight(0xfff0c0,0.35,140));
+/* warm halo behind her — real sunshine glow that the water glitters toward */
+const sunGlow=(()=>{
+  const tex=makeCanvasTex((g,w,h)=>{const gr=g.createRadialGradient(w/2,h/2,10,w/2,h/2,w/2);
+    gr.addColorStop(0,'rgba(255,236,170,.95)');gr.addColorStop(0.4,'rgba(255,220,120,.4)');
+    gr.addColorStop(1,'rgba(255,210,80,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);},256,256);
+  const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthWrite:false,
+    depthTest:false,fog:false,blending:T.AdditiveBlending,opacity:.75}));
+  sp.renderOrder=998;sp.scale.set(17,17,1);sunGroup.add(sp);return sp;})();
+
+/* ---- Sun Baby is ALIVE: little actions on her own clock ----
+   (her real printed logo eyes stay untouched; all antics are safe cues) */
+let sunActT=8,sunWig=0,sunPeeking=false;
+async function sunAction(kind,fromCheer){
+  if(mode==='finale'||sunPeeking)return;
+  kind=kind||['kiss','sing','peek','wiggle','bounce'][Math.floor(Math.random()*5)];
+  const wp=new T.Vector3();sunSprite.getWorldPosition(wp);
+  if(kind==='kiss'){                       // blows kisses — hearts drift down to Trunkland
+    ['💗','💛','💙'].slice(0,fromCheer?2:3).forEach((h,i)=>setTimeout(()=>{
+      const pos=wp.clone();pos.x+=(i-1)*1.2;pos.y-=1.5;
+      floatSprite(h,pos,-3.2,1.7,1.1);},i*240));
+    if(!fromCheer)giggle();
+  }else if(kind==='sing'){                 // hums a tiny tune, notes float away
+    ['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>{
+      const pos=wp.clone();pos.x+=1.6+(i%2)*0.8;pos.y-=0.5+i*0.3;
+      floatSprite(n,pos,2.2,1.6,0.9);},i*300));
+    [660,784,880].forEach((f,i)=>tone(f,.22,'sine',.05,i*.28));
+  }else if(kind==='peek'){                 // peekaboo! ducks away, pops back giggling
+    sunPeeking=true;const y0=sunGroup.position.y;
+    await tween(0.45,k=>{sunGroup.position.y=y0+k*5.5;});
+    await wait(650);
+    sunGroup.position.y=y0+5.5;
+    await tween(0.5,k=>{sunGroup.position.y=y0+5.5-(5.5*(1-Math.pow(1-k,2)));});
+    sunGroup.position.y=y0;giggle();sunPeeking=false;
+    sunReactUntil=performance.now()+900;sunReactDur=900;sunBounce=true;
+  }else if(kind==='wiggle'){               // happy head-wobble
+    tween(1.0,k=>{sunWig=Math.sin(k*Math.PI*5)*0.2*(1-k*0.5);}).then(()=>sunWig=0);
+    giggle();
+  }else if(kind==='bounce'){               // a joyful boing
+    sunReactUntil=performance.now()+1200;sunReactDur=1200;sunBounce=true;
+  }
+}
 
 /* ---------- stars for night ---------- */
 let stars;
@@ -1460,8 +1803,10 @@ async function actTrumpet(){
   scene.add(ring);
   tween(1.1,k=>{const s=1+k*14;ring.scale.set(s,s,1);ring.material.opacity=0.8*(1-k);}).then(()=>scene.remove(ring));
   const R=16;
+  trumpetCount++;
   for(const id in tubbies){const t=tubbies[id];
-    if(!t.busy&&t.group.visible&&t.group.position.distanceTo(p)<R)doMove(t,'spin',1);}
+    if(!t.busy&&t.group.visible&&t.group.position.distanceTo(p)<R){doMove(t,'spin',1);
+      lastTrumpetNear=performance.now();}}
   STICKERS.forEach(st=>{if(st.at&&stickerNodes[st.id]&&
     Math.hypot(p.x-st.at[0],p.z-st.at[1])<R)stickerReact(st);});
   reactSun();
@@ -1669,7 +2014,13 @@ function camFollow(dt){
     wantLook=new T.Vector3(p.x,p.y+2,p.z+5);}
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
-  camera.position.copy(camState.pos);camera.lookAt(camState.look);
+  camera.position.copy(camState.pos);
+  if(camShake>0.004&&!REDUCE_MOTION){                    // landing thump rattles the camera
+    camera.position.x+=(Math.random()-0.5)*camShake;
+    camera.position.y+=(Math.random()-0.5)*camShake*0.7;
+    camShake*=Math.pow(0.0008,dt);}
+  else camShake=0;
+  camera.lookAt(camState.look);
   // (sun is parented to the camera - no per-frame repositioning needed)
   sunLight.position.set(player.group.position.x-12,26,player.group.position.z-8);
   sunLight.target.position.copy(player.group.position);
@@ -1698,8 +2049,53 @@ addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 
 let nearThing=null;   // {kind:'tubby'|'dome', id}
+
+/* =============== ELEPHANT WEIGHT: paw prints, dust & thumps ===============
+   Nilu is HEAVY (in the cuddliest way): every step presses a real paw print
+   into the ground that slowly fades, kicks a whiff of dust on dry earth,
+   and landing from a jump thumps the whole camera. */
+const PAW_TEX=makeCanvasTex((g,w,h)=>{g.clearRect(0,0,w,h);
+  const soft=(x,y,rx,ry)=>{const R=Math.max(rx,ry);
+    g.save();g.translate(x,y);g.scale(rx/R,ry/R);
+    const gr=g.createRadialGradient(0,0,0,0,0,R);       // gradient in LOCAL space
+    gr.addColorStop(0,'rgba(52,38,20,0.95)');gr.addColorStop(0.72,'rgba(52,38,20,0.7)');
+    gr.addColorStop(1,'rgba(52,38,20,0)');g.fillStyle=gr;
+    g.beginPath();g.arc(0,0,R,0,7);g.fill();g.restore();};
+  soft(64,82,30,26);                                    // the big round pad
+  [[-32,40],[-11,30],[11,30],[32,40]].forEach(([ox,oy])=>soft(64+ox,oy,12,15)); // 4 toes
+},128,128);
+const printGeo=new T.PlaneGeometry(0.66,0.78);
+const prints=[];const PRINT_LIFE=24,PRINT_MAX=110;
+let stepSide=1,camShake=0;
+function stampPaw(x,z,yaw){
+  if(trav!=='walk'||waterDepthAt(x,z)>0.06)return;      // no prints under water
+  const r=Math.hypot(x,z);
+  const sand=r>ISLAND-11||riverCut(x,z)>0.08;
+  const mat=new T.MeshBasicMaterial({map:PAW_TEX,transparent:true,
+    opacity:sand?0.6:0.42,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+  const m=new T.Mesh(printGeo,mat);
+  m.rotation.x=-Math.PI/2;m.rotateZ(-yaw+Math.PI+(Math.random()-0.5)*0.12);
+  m.position.set(x,terrainH(x,z)+0.025,z);
+  scene.add(m);
+  prints.push({m,t:0,base:mat.opacity,life:sand?PRINT_LIFE*1.4:PRINT_LIFE});
+  if(prints.length>PRINT_MAX){const old=prints.shift();
+    scene.remove(old.m);old.m.material.dispose();}
+  if(!sand&&Math.random()<0.5)dustPuff(x,z,3);          // dry earth kicks a little dust
+  else if(sand)dustPuff(x,z,4,'#e3d3a2');
+}
+function dustPuff(x,z,n=4,col='#c9b58a'){
+  const geo=new T.BufferGeometry();const p=[],v=[];
+  const y=terrainH(x,z)+0.15;
+  for(let i=0;i<n;i++){p.push(x+(Math.random()-0.5)*0.5,y,z+(Math.random()-0.5)*0.5);
+    const a=Math.random()*Math.PI*2;
+    v.push(Math.cos(a)*1.1,0.7+Math.random()*0.9,Math.sin(a)*1.1);}   // low, soft billow
+  geo.setAttribute('position',new T.Float32BufferAttribute(p,3));
+  const pts=new T.Points(geo,new T.PointsMaterial({color:new T.Color(col),size:0.3,transparent:true,opacity:.7}));
+  scene.add(pts);bursts.push({pts,v,t:0.25});                          // starts part-faded
+}
+
 /* ---- tumble physics (Teletubby knockdown!) ---- */
-let kd=null, duck=false, jumpY=0, jumpV=0, jumping=false;
+let kd=null, duck=false, jumpY=0, jumpV=0, jumping=false, landT=0;
 /* Four silly tumble styles — every bonk feels a little different, so bumping
    into things is its own game. */
 const KD_STYLES=['roll','bounce','spin','flop'];
@@ -1709,6 +2105,7 @@ function knockdown(nx,nz,style){
   const dur={roll:1.35,bounce:1.7,spin:1.5,flop:1.15}[style];
   const pow={roll:7.5,bounce:9.5,spin:6,flop:5}[style];
   kd={t:0,dur,vx:nx*pow,vz:nz*pow,style};
+  if(player.vel){player.vel.x=0;player.vel.z=0;player.vel.sp=0;}   // the bonk eats all momentum
   ({roll:()=>sfx.boing(),bounce:()=>{sfx.boing();tone(300,.2,'square',.05,.12);},
     spin:()=>{[500,700,900].forEach((f,i)=>tone(f,.1,'sine',.06,i*.07));},
     flop:()=>tone(140,.25,'square',.08)})[style]();
@@ -1718,7 +2115,7 @@ function knockdown(nx,nz,style){
   knockdown.n=(knockdown.n||0)+1;
   if(knockdown.n<=2)say('☀️','Whoopsie-daisy! Bonk! 🤭');
 }
-function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();}}
+function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();jumpCount++;}}
 function updateRoam(dt,time){
   const p=player.group.position;
   // --- knocked down: roll like a teletubby, no control ---
@@ -1757,14 +2154,52 @@ function updateRoam(dt,time){
   if(keys['arrowleft']||keys['a'])mx-=1;if(keys['arrowright']||keys['d'])mx+=1;
   if(keys['arrowup']||keys['w'])mz+=1;if(keys['arrowdown']||keys['s'])mz-=1;
   const m=Math.hypot(mx,mz);
-  const SPD={walk:duck?4:7.5, swim:5.5, fly:11, drive:13}[trav];
-  if(m>0.15){
-    lastInputAt=performance.now();
-    p.x+=mx/m*SPD*Math.min(1,m)*dt;p.z+=mz/m*SPD*Math.min(1,m)*dt;
-    player.group.rotation.y=Math.atan2(mx,mz)+Math.PI;
+  let SPD={walk:duck?4:7.5, swim:5.5, fly:11, drive:13}[trav];
+  // wading the Giggle River (or a lake): heavy legs push through real water
+  const wade=trav==='walk'?waterDepthAt(p.x,p.z):0;
+  if(wade>0.12)SPD*=0.55;
+  /* WEIGHT: an elephant doesn't stop on a coin. Velocity eases up with
+     momentum and brakes with a skid of inertia; the body turns, not snaps. */
+  const V=player.vel||(player.vel={x:0,z:0,sp:0});
+  const tx2=m>0.15?mx/m*SPD*Math.min(1,m):0, tz2=m>0.15?mz/m*SPD*Math.min(1,m):0;
+  const ease=1-Math.exp(-dt*(m>0.15?(trav==='drive'?3.6:5.2):7.5));
+  V.x+=(tx2-V.x)*ease;V.z+=(tz2-V.z)*ease;
+  const sp=Math.hypot(V.x,V.z);
+  if(sp>0.05){p.x+=V.x*dt;p.z+=V.z*dt;}
+  if(m>0.15)lastInputAt=performance.now();
+  // heading eases toward travel direction (shortest arc)
+  if(sp>0.7){
+    const want=Math.atan2(V.x,V.z)+Math.PI;
+    const cur=player.group.rotation.y;
+    const dAng=((want-cur+Math.PI*3)%(Math.PI*2))-Math.PI;
+    player.group.rotation.y=cur+dAng*Math.min(1,dt*(trav==='drive'?5:9));
+    // lean INTO the turn + pitch with acceleration — the body carries mass
+    const leanT=Math.max(-0.2,Math.min(0.2,dAng*sp*0.045));
+    player.anim.inner.rotation.z+=(leanT-player.anim.inner.rotation.z)*Math.min(1,dt*7);
+    const pitchT=Math.max(-0.14,Math.min(0.14,(sp-(V.sp||0))/Math.max(dt,0.001)*0.01));
+    player.anim.inner.rotation.x+=(pitchT-player.anim.inner.rotation.x)*Math.min(1,dt*6);
+  }else{
+    player.anim.inner.rotation.z*=Math.max(0,1-dt*6);
+    player.anim.inner.rotation.x*=Math.max(0,1-dt*6);
+  }
+  V.sp=sp;
+  // footsteps: pace matches speed; each walking step STAMPS a paw print
+  if(sp>1.2){
     player.group.userData.st=(player.group.userData.st||0)+dt;
-    if(player.group.userData.st>0.28){player.group.userData.st=0;
-      if(trav==='walk')tone(180,.05,'sine',.03);
+    if(player.group.userData.st>2.05/Math.max(2.2,sp)){player.group.userData.st=0;
+      stepSide*=-1;
+      if(trav==='walk'){
+        if(wade>0.12){                                   // wading splash!
+          tone(430+Math.random()*120,.07,'triangle',.045);
+          burst(new T.Vector3(p.x,p.y+wade+0.15,p.z),5,'#aee2f5');
+          if(Math.random()<0.25)floatSprite('💦',new T.Vector3(p.x,p.y+1.6,p.z),1.8,0.9,1);
+        }else{
+          tone(105,.09,'sine',.05);tone(160,.05,'sine',.028,.015);   // heavy soft thump
+          const yaw=player.group.rotation.y;
+          const dxn=V.x/(sp||1),dzn=V.z/(sp||1);
+          stampPaw(p.x-dzn*0.34*stepSide-dxn*0.2,p.z+dxn*0.34*stepSide-dzn*0.2,yaw);
+        }
+      }
       else if(trav==='drive')tone(90,.08,'sawtooth',.03);
       else if(trav==='swim'){tone(400,.06,'sine',.03);burst(p,3,'#bfe9ff');}}
   }
@@ -1805,7 +2240,19 @@ function updateRoam(dt,time){
     // --- jump physics (walk & drive hop) ---
     if(keys[' ']&&!jumping)tryJump();
     if(jumping){jumpV-=24*dt;jumpY+=jumpV*dt;
-      if(jumpY<=0){jumpY=0;jumping=false;tone(220,.07,'sine',.05);}}
+      if(jumpY<=0){jumpY=0;jumping=false;
+        // an elephant LANDS: ground thump, dust ring, both front paws press in
+        tone(75,.22,'sine',.1);tone(150,.08,'sine',.05,.02);
+        camShake=0.32;landT=0.35;
+        const yaw=player.group.rotation.y;
+        if(trav==='walk'&&waterDepthAt(p.x,p.z)<0.06){
+          dustPuff(p.x,p.z,7);dustPuff(p.x,p.z,5,'#b7a47e');
+          stampPaw(p.x-Math.cos(yaw)*0.34,p.z+Math.sin(yaw)*0.34,yaw);
+          stampPaw(p.x+Math.cos(yaw)*0.34,p.z-Math.sin(yaw)*0.34,yaw);
+        }else if(waterDepthAt(p.x,p.z)>=0.06){
+          sfx.splash();
+          burst(new T.Vector3(p.x,terrainH(p.x,p.z)+waterDepthAt(p.x,p.z)+0.2,p.z),14,'#aee2f5');
+        }}}
     p.y=terrainH(p.x,p.z)+jumpY;
     player.group.rotation.x=0;
   }
@@ -1829,7 +2276,9 @@ function updateRoam(dt,time){
     const tp2=t.group.position;const dx=p.x-tp2.x,dz=p.z-tp2.z,d=Math.hypot(dx,dz);
     if(d<1.8&&d>0.01){p.x=tp2.x+dx/d*1.8;p.z=tp2.z+dz/d*1.8;}}
   player.anim.baseY=p.y;
-  animEllie(player,time,dt,m>0.15&&trav!=='fly'&&trav!=='drive');
+  animEllie(player,time,dt,((player.vel&&player.vel.sp)||0)>1.2&&trav!=='fly'&&trav!=='drive');
+  if(landT>0){landT-=dt;const q=Math.sin(Math.max(0,landT/0.35)*Math.PI);   // landing squash
+    player.anim.inner.scale.y*=1-q*0.22;player.anim.inner.scale.x*=1+q*0.13;player.anim.inner.scale.z*=1+q*0.13;}
   if(trav==='swim')player.anim.legs.forEach(L=>L.pivot.rotation.x=Math.sin(time*6)*0.6); // paddle!
   if(duck){player.anim.inner.scale.y*=0.55;player.anim.inner.scale.x*=1.18;player.anim.inner.scale.z*=1.18;}
   // seeds pickup
@@ -1840,7 +2289,7 @@ function updateRoam(dt,time){
   // trampoline: land on it -> BOING sky-high!
   {const [tx,tz]=POI.tramp;
    if(trav==='walk'&&Math.hypot(p.x-tx,p.z-tz)<2.1&&jumpY<=0.02&&!kd){
-     jumping=true;jumpV=16;sfx.boing();burst(p,10,'#ff4136');
+     jumping=true;jumpV=16;sfx.boing();burst(p,10,'#ff4136');lastTrampAt=performance.now();
      if(window._trampG)tween(0.35,k=>{_trampG.userData.bed.position.y=0.72-Math.sin(k*Math.PI)*0.3;});
      floatSprite('🤸',p,4,1.4,1.3);}}
   gardenProximity();               // living stickers say hello
@@ -1901,7 +2350,9 @@ $('actBtn').onclick=()=>{sfx.tap();
 function enterScene(){mode='scene';$('actBtn').classList.remove('show');
   $('stick').classList.add('hidden');$('jumpCol').classList.add('hidden');
   $('funRow').classList.add('hidden');$('moves').classList.remove('show');
-  duck=false;jumping=false;jumpY=0;kd=null;player.group.rotation.x=0;}
+  duck=false;jumping=false;jumpY=0;kd=null;player.group.rotation.x=0;
+  player.anim.inner.rotation.x=0;player.anim.inner.rotation.z=0;   // no frozen mid-turn lean
+  if(player.vel){player.vel.x=0;player.vel.z=0;player.vel.sp=0;}}
 function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
   $('stick').classList.remove('hidden');$('jumpCol').classList.remove('hidden');
   $('funRow').classList.remove('hidden');nearThing=null;updateActBtn();}
@@ -2310,7 +2761,7 @@ $('newDay').onclick=()=>{
   // reset world to morning
   scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
   hemi.intensity=0.95;sunLight.intensity=1.15;sunLight.color.set(0xfff3d6);
-  stars.material.opacity=0;sunMood='happy';repaintSun();sunGroup.position.y=4.6;
+  stars.material.opacity=0;sunMood='happy';repaintSun();fitSun();
   for(const id in tubbies){const [x,z]=TUBBY_POS[id];
     tubbies[id].group.position.set(x,terrainH(x,z),z);tubbies[id].group.rotation.y=0;}
   spawnSeeds();refreshMarks();renderSched();setupWants();mode='roam';$('stick').classList.remove('hidden');
@@ -2327,6 +2778,15 @@ function frame(now){
   if(mode==='roam')updateRoam(dt,time);
   else animEllie(player,time,dt,false);
   for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
+
+  // living water: waves roll, and the glitter path always points at the Sun Baby
+  {const sw=frame._sunW||(frame._sunW=new T.Vector3());
+   sunGroup.getWorldPosition(sw);
+   sw.sub(player.group.position);sw.y=Math.max(sw.y,14);sw.normalize();
+   waterMats.forEach(m2=>{m2.uniforms.uTime.value=time;m2.uniforms.uSunDir.value.copy(sw);});}
+  // clouds drift on the breeze, wrapping around the far sky
+  clouds.forEach(c=>{c.g.position.x+=c.sp*dt;
+    if(c.g.position.x>ISLAND+70)c.g.position.x=-(ISLAND+70);});
 
   // ambient spinners / bobbers (sweep out removed meshes every ~5s — no leak)
   if(!frame._sw||now-frame._sw>5000){frame._sw=now;
@@ -2353,8 +2813,14 @@ function frame(now){
   // mischief timer (roam only)
   if(mode==='roam'){mischiefT-=dt;
     if(mischiefT<=0){mischiefT=15+Math.random()*18;runMischief();}}
+  // the never-ending quest watches for its moment
+  questUpdate(dt);
   // idle attract hint (roam only, gentle, only for real undiscovered content)
   maybeShowIdleHint(now);
+  // paw prints slowly fade back into the earth
+  for(let i=prints.length-1;i>=0;i--){const pr=prints[i];pr.t+=dt;
+    pr.m.material.opacity=pr.base*Math.max(0,1-pr.t/pr.life);
+    if(pr.t>=pr.life){scene.remove(pr.m);pr.m.material.dispose();prints.splice(i,1);}}
   // bursts
   for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t+=dt;
     const pos=b.pts.geometry.attributes.position;
@@ -2364,8 +2830,11 @@ function frame(now){
     if(b.t>1){scene.remove(b.pts);bursts.splice(i,1);}}
 
   // sun baby life
+  if(mode==='roam'&&!narrBusy){sunActT-=dt;
+    if(sunActT<=0){sunActT=13+Math.random()*15;sunAction();}}
   const breathe=1+Math.sin(time*1.6)*0.03;
-  sunSprite.material.rotation=Math.sin(time*0.6)*0.05+(sunMood==='care'?0.13:0);
+  sunSprite.material.rotation=Math.sin(time*0.6)*0.05+(sunMood==='care'?0.13:0)+sunWig;
+  sunGlow.material.opacity=0.6+Math.sin(time*1.1)*0.12;
   if(sunMood!=='sleepy'){const cyc=time%4;let nb=cyc<0.16?1-Math.abs(cyc-0.08)/0.08:0;
     nb=Math.max(0,Math.min(1,nb));
     if(Math.abs(nb-sunBlink)>0.06){sunBlink=nb;repaintSun();}}
@@ -2373,7 +2842,7 @@ function frame(now){
   if(sunReactUntil){const left=sunReactUntil-now;
     pop=sunBounce?1+Math.max(0,Math.sin((1-left/sunReactDur)*Math.PI))*0.22:1;
     if(left<=0){sunReactUntil=0;if(mode!=='finale'){sunMood='happy';repaintSun();}}}
-  sunSprite.scale.set(8*breathe*pop,8*breathe*pop,1);
+  sunSprite.scale.set(sunScale*breathe*pop,sunScale*breathe*pop,1);
 
   if(mode==='finale'){
     if(sunMood!=='sleepy'){sunMood='sleepy';repaintSun();}
@@ -2383,7 +2852,7 @@ function frame(now){
     hemi.intensity=Math.max(0.35,0.95-fe*0.12);
     sunLight.intensity=Math.max(0.35,1.15-fe*0.16);
     sunLight.color.lerpColors(new T.Color(0xfff3d6),new T.Color(0xffb27a),Math.min(1,fe/4));
-    sunGroup.position.y=Math.max(-7,4.6-fe*1.6);   // she sinks below the view for goodnight
+    sunGroup.position.y=Math.max(-7,sunBaseY-fe*1.6);   // she sinks below the view for goodnight
     stars.material.opacity=Math.min(0.9,Math.max(0,(fe-2)/3));
   }
 
@@ -2391,8 +2860,19 @@ function frame(now){
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }
+let sunBaseY=5.2;
+function fitSun(){   // a cosy on-screen spot on every aspect — never clipped, never behind HUD
+  const halfH=Math.tan(camera.fov*Math.PI/360)*24;
+  const halfW=halfH*camera.aspect;
+  const narrow=camera.aspect<0.9;                 // phones: chips own the top — she floats lower-left, smaller
+  sunScale=narrow?Math.min(6,halfW*0.62):8;
+  sunGroup.position.x=narrow?-(halfW-sunScale*0.62):-halfW*0.45;
+  sunBaseY=narrow?halfH*0.16:5.2;
+  if(mode!=='finale')sunGroup.position.y=sunBaseY;
+  sunGlow.scale.set(sunScale*2.12,sunScale*2.12,1);
+}
 function resize(){renderer.setSize(innerWidth,innerHeight,false);
-  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();fitSun();}
 addEventListener('resize',resize);resize();
 
 /* ================================ UI wire ================================ */
@@ -2494,11 +2974,18 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
   dir(id){const t=id==='dome'?{x:POI.dome[0],z:POI.dome[1]}:tubbies[id].group.position;
     const p=player.group.position;return {x:t.x-p.x,z:t.z-p.z,d:Math.hypot(t.x-p.x,t.z-p.z)};},
   mischief:runMischief,jump:tryJump,
-  get phys(){return {kd:!!kd,jumpY,duck,rotX:player.group.rotation.x};}};
+  get phys(){return {kd:!!kd,jumpY,duck,rotX:player.group.rotation.x,
+    sp:(player.vel&&player.vel.sp)||0,prints:prints.length,camShake};},
+  get quest(){return quest?{n:S.questN,text:quest.text}:null},
+  get water(){return {mats:waterMats.length,t:waterMats[0]?waterMats[0].uniforms.uTime.value:0};},
+  riverDepth,terrainH,stampPaw,
+  pos(){const p=player.group.position;return{x:p.x,y:p.y,z:p.z};},
+  setPos(x,z){player.group.position.set(x,terrainH(x,z),z);},
+  key(k,v){keys[k]=v;}};
 
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();registerTickles();refreshStickers();refreshSecrets();
-renderSched();setupWants();spawnEggNode();renderNest();
+renderSched();setupWants();spawnEggNode();renderNest();newQuest();
 $('loading').classList.add('hidden');   // title screen (#title) greets first
 requestAnimationFrame(frame);
 </script>
