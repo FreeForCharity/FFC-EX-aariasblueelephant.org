@@ -4,7 +4,59 @@ ABC.animals = (function () {
   let scene = null;
   let nameIdx = 0;
 
-  function mat(color) { return new THREE.MeshLambertMaterial({ color }); }
+  /* ---------- 🧸 modern fur ----------
+     Flat single-color parts are what make the animals read as plastic toys.
+     On modern, every animal color becomes a little painted FUR texture — a
+     tinted base with hundreds of short, mostly-downward strokes plus soft
+     dapples — so bodies read as felt/plush fur under the PBR sun. One texture
+     + material cached per color. Smooth/Classic keep plain Lambert colors. */
+  const _furTex = new Map(), _furMat = new Map();
+  function shadeHex(hex, k) {                    // '#rgb'/'#rrggbb' lightened (+k) / darkened (−k)
+    let h = hex.slice(1);
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const n = parseInt(h, 16);
+    const c = (v) => Math.max(0, Math.min(255, Math.round(v * (1 + k))));
+    return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
+  }
+  function furTexture(color) {
+    let tex = _furTex.get(color);
+    if (tex) return tex;
+    const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d');
+    g.fillStyle = color; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 12; i++) {               // soft tonal dapples
+      g.globalAlpha = 0.12;
+      g.fillStyle = shadeHex(color, (i % 2 ? 0.18 : -0.18));
+      g.beginPath(); g.arc(Math.random() * S, Math.random() * S, 16 + Math.random() * 28, 0, 7); g.fill();
+    }
+    for (let i = 0; i < 1100; i++) {             // the fur itself — bold enough to read in-game
+      const x = Math.random() * S, y = Math.random() * S, len = 5 + Math.random() * 10;
+      const a = Math.PI / 2 + (Math.random() - 0.5) * 0.9;   // mostly downward, like real coat lie
+      g.globalAlpha = 0.22 + Math.random() * 0.26;
+      g.strokeStyle = shadeHex(color, (Math.random() - 0.45) * 0.75);
+      g.lineWidth = 0.8 + Math.random() * 1.4;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(x, y);
+      g.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + 1.5, y + Math.sin(a) * len * 0.5,
+                         x + Math.cos(a) * len, y + Math.sin(a) * len);   // gentle curl
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);                        // finer fur across big body parts
+    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    _furTex.set(color, tex);
+    return tex;
+  }
+  function mat(color) {
+    if (!ABC.MODERN || typeof color !== 'string' || color[0] !== '#') {
+      return new THREE.MeshLambertMaterial({ color });
+    }
+    let m = _furMat.get(color);                  // materials are never mutated per-animal → share
+    if (!m) { m = new THREE.MeshLambertMaterial({ map: furTexture(color) }); _furMat.set(color, m); }
+    return m;
+  }
   function sp(group, r, x, y, z, color, sy) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), mat(color));
     m.position.set(x, y, z);
@@ -22,7 +74,7 @@ ABC.animals = (function () {
     if (!lib || !lib.RoundedBoxGeometry) return new THREE.BoxGeometry(w, h, d);
     const k = w + ',' + h + ',' + d;
     let g = _geoCache.get(k);
-    if (!g) { g = new lib.RoundedBoxGeometry(w, h, d, 4, Math.min(w, h, d) * 0.25); _geoCache.set(k, g); }
+    if (!g) { g = new lib.RoundedBoxGeometry(w, h, d, 4, Math.min(w, h, d) * 0.34); _geoCache.set(k, g); }
     return g;
   }
   function bx(group, w,h,d, x,y,z, color) {
