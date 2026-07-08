@@ -65,10 +65,10 @@ ABC.BLOCK_DEFS = {
   prism:     { name:'Rainbow Prism', emoji:'🌈', color:'#d0bfff', pat:'rainbow', glow:true, locked:true, skyOnly:true },
   /* 🪙 Buried treasure "tells" — VISIBLE glowing markers placed in the world; dig
      them to get the reward. NOT in HOTBAR_ORDER, so kids can never place them. */
-  silverGlint:{ name:'Silver Coin', emoji:'🪙', color:'#dfe6ec', pat:'plain', shape:'knob', glow:true },
-  goldGlint:  { name:'Gold Coin',   emoji:'🪙', color:'#ffd43b', pat:'plain', shape:'knob', glow:true },
-  eggTell:    { name:'Shape Egg',   emoji:'🥚', color:'#eaf2ff', pat:'plain', shape:'knob', glow:true },
-  moundTell:  { name:'Sleepy Mound',emoji:'🌱', color:'#8fce6a', pat:'plain', shape:'knob' },
+  silverGlint:{ name:'Silver Coin', emoji:'🪙', color:'#f0f8ff', pat:'plain', shape:'knob', glow:true },
+  goldGlint:  { name:'Gold Coin',   emoji:'🪙', color:'#ffff00', pat:'plain', shape:'knob', glow:true },
+  eggTell:    { name:'Shape Egg',   emoji:'🥚', color:'#ffffcc', pat:'plain', shape:'knob', glow:true },
+  moundTell:  { name:'Sleepy Mound',emoji:'🌱', color:'#90ee90', pat:'plain', shape:'knob', glow:true },
 };
 
 /* Hotbar order (unlocked-by-default first) — treasure markers are intentionally absent */
