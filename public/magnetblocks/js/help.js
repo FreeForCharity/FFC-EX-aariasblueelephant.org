@@ -90,6 +90,7 @@ window.MB = window.MB || {};
       }, () => {
         inst.group.position.copy(to);
         MB.Audio.snap();
+        inst.group.userData.seq = MB.Bag.nextSeq(); // 🎬 stamp build-order for replay
         setTimeout(placeNext, 120);
       });
     };

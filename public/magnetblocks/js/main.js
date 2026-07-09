@@ -229,6 +229,8 @@ window.MB = window.MB || {};
     } else hidePalette();
     const count = MB.Builder.placedCount();
     $('pieceChip').textContent = '🧱 ' + count;
+    const rb = $('replayBtn');
+    if (rb) rb.style.display = (!MB.Builder.locked && MB.Bag.serializeTable().length >= 3) ? 'inline-block' : 'none';
     if (count >= 10) ui.milestone('ten', '🎉 10 blocks! Wow, look at all you built!');
     if (count >= 20) ui.milestone('twenty', '🎉 20 blocks! You are building something amazing!');
     if (count >= 40) ui.milestone('forty', '🌟 40 blocks! You are a building superstar!');
@@ -278,23 +280,29 @@ window.MB = window.MB || {};
     setTimeout(() => { ph.style.display = 'none'; MB.Bag.updateCount(); MB.Audio.sparkle(); ui.toast('🎒 Safe in your school bag! Take it out any time to keep building!', 2600); }, 950);
   }
 
+  // shared by "tap to load" in the bag gallery and the "bring a friend's build" import flow
+  function loadBagItem(item){
+    const tableBusy = MB.Bag.serializeTable().length > 0;
+    const doLoad = () => {
+      const made = MB.Bag.rebuild(item, scene);
+      MB.Audio.sparkle(); MB.Audio.fanfare();
+      ui.toast('🎒→🧱 ' + item.name + ' is back on the table! Keep building on it!', 2800);
+      updateSelBar();
+    };
+    if (tableBusy){
+      ui.confirm('Swap builds? 🔁', 'The table is busy! Put those blocks back on the shelves and take out "' + item.name + '"? (Snap 📸 first if you want to keep the current one!)', () => {
+        for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
+        setTimeout(doLoad, 800);
+      });
+    } else doLoad();
+  }
+
   function openBag(){
-    MB.Bag.renderGrid(item => {
-      ui.hide('bagModal');
-      const tableBusy = MB.Bag.serializeTable().length > 0;
-      const doLoad = () => {
-        const made = MB.Bag.rebuild(item, scene);
-        MB.Audio.sparkle(); MB.Audio.fanfare();
-        ui.toast('🎒→🧱 ' + item.name + ' is back on the table! Keep building on it!', 2800);
-        updateSelBar();
-      };
-      if (tableBusy){
-        ui.confirm('Swap builds? 🔁', 'The table is busy! Put those blocks back on the shelves and take out "' + item.name + '"? (Snap 📸 first if you want to keep the current one!)', () => {
-          for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
-          setTimeout(doLoad, 800);
-        });
-      } else doLoad();
-    });
+    MB.Bag.renderGrid(
+      item => { ui.hide('bagModal'); loadBagItem(item); },
+      item => { ui.hide('bagModal'); MB.Replay.playCreation(item, scene); },
+      item => { MB.Bag.exportItem(item); MB.Audio.sparkle(); ui.toast('📤 Saved "' + item.name + '" — share the file with a friend!', 2600); }
+    );
     MB.Bag.updateCount();
     ui.show('bagModal');
   }
@@ -425,6 +433,22 @@ window.MB = window.MB || {};
     $('photoBtn').addEventListener('click', takePhoto);
     $('bagBtn').addEventListener('click', openBag);
     $('bagClose').addEventListener('click', () => ui.hide('bagModal'));
+    $('replayBtn').addEventListener('click', () => MB.Replay.playTable(scene));
+    $('replayStopBtn').addEventListener('click', () => MB.Replay.stop());
+    $('importBtn').addEventListener('click', () => $('importFile').click());
+    $('importFile').addEventListener('change', (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      MB.Bag.importFromFile(file, (item, err) => {
+        if (err){ ui.toast("Hmm, that file isn't a magnet build 💛", 2600); MB.Audio.no(); return; }
+        MB.Bag.updateCount();
+        MB.Audio.sparkle();
+        ui.hide('bagModal');
+        ui.confirm('Build it now? 🧲🎁', '"' + item.name + '" is safe in your school bag! Put it on the table right now?',
+          () => loadBagItem(item), () => {}, 'Yes! 🧲', 'Later');
+      });
+    });
     $('playBtn').addEventListener('click', () => ui.setPlay(!MB.Animate.on));
     $('helpBtn').addEventListener('click', () => MB.Help.openPicker());
     $('helpClose').addEventListener('click', () => ui.hide('helpModal'));

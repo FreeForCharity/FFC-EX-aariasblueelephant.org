@@ -201,6 +201,19 @@
     font-size:clamp(30px,8vw,42px);transition:.1s;}
   .mv:active{transform:translateY(4px);box-shadow:0 2px 0 #cfd6ee;}
 
+  /* ---------- 🎬 replay bar: shown only while watching a recorded adventure ---------- */
+  #replayBar{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);
+    z-index:13;display:flex;align-items:center;gap:8px;pointer-events:auto;
+    background:rgba(255,255,255,.92);border:2.5px solid #fff;border-radius:22px;padding:8px 14px;
+    box-shadow:0 8px 22px rgba(58,58,90,.25);}
+  .rbLabel{font-weight:900;font-size:clamp(13px,3.6vw,16px);color:var(--ink);white-space:nowrap;}
+  .rbtn{cursor:pointer;border:none;border-radius:14px;min-width:48px;min-height:48px;
+    font-weight:900;font-size:15px;background:linear-gradient(160deg,#fff6d5,#ffd97a);
+    box-shadow:0 4px 0 #e0a92e;font-family:inherit;padding:6px 10px;transition:.12s;}
+  .rbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #e0a92e;}
+  .rbDone{background:linear-gradient(160deg,#ffd2de,#ff8fb1);box-shadow:0 4px 0 #d6547d;}
+  .rbDone:active{box-shadow:0 1px 0 #d6547d;}
+
   /* ---------- overlays (intro / book / finale only) ---------- */
   .overlay{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
     padding:16px;pointer-events:auto;background:rgba(40,60,120,.25);}
@@ -253,6 +266,7 @@
       <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
       <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
+      <button class="mbtn" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure">🎬</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
     </div>
@@ -264,6 +278,16 @@
 
   <!-- Sun Baby's never-ending quest — tap for a sparkle trail -->
   <div class="chip quest" id="questChip" style="display:none" title="Sun Baby's quest — tap for a sparkle trail!"></div>
+
+  <!-- 🎬 Replay bar — shown only while watching a recorded adventure -->
+  <div id="replayBar" class="hidden">
+    <span class="rbLabel">🎬 Nilu's Adventure</span>
+    <button class="rbtn" id="replaySpeedBtn" title="Change speed" aria-label="Playback speed">1x</button>
+    <button class="rbtn" id="replayShareBtn" title="Share adventure" aria-label="Share adventure">📤</button>
+    <button class="rbtn rbDone" id="replayDoneBtn" title="Done watching" aria-label="Done watching">⏹ Done</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+
 
   <!-- celebration toast: names what was just earned (backs up the spoken line) -->
   <div id="celebToast" aria-live="polite"></div>
@@ -287,6 +311,8 @@
       <button class="big" id="setVoice" style="font-size:17px"></button>
       <button class="big" id="setCalm" style="font-size:17px"></button>
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
+      <button class="big" id="setReplay" style="font-size:17px">🎬 Watch my adventure</button>
+      <button class="big" id="setImportReplay" style="font-size:17px">📥 Watch a friend's adventure</button>
     </div>
     <button class="big" id="setClose">Done ▶</button>
   </div></div>
@@ -1594,7 +1620,7 @@ function questUpdate(dt){
   if(done){
     const q=quest;quest=null;
     S.questN++;S.sparks+=4;save();hud();
-    sfx.good();reactSun();
+    sfx.good();reactSun();recEvent('quest');
     celebToast(`🌟 Quest ${S.questN} done! +4 ✨`);
     const el=$('questChip');if(el){el.classList.remove('donePulse');void el.offsetWidth;el.classList.add('donePulse');}
     say('☀️',`Quest complete! Did you know? ${q.fact}`).then(newQuest);
@@ -1812,11 +1838,197 @@ function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
   const s=emojiSprite(ch,scale);s.position.copy(pos);scene.add(s);
   tween(dur,k=>{s.position.y=pos.y+k*rise;s.material.opacity=1-k;}).then(()=>scene.remove(s));}
 
+/* ===================== 🎬 ADVENTURE RECORDER / REPLAY =====================
+   A gentle "watch what you just did" feature. While playing normally (not
+   paused, not already watching a replay) we quietly sample Nilu's position
+   every ~250ms into a small ring buffer (last 5 minutes, session-only RAM —
+   never saved), plus a few fun moments (jump, trumpet, mystery tricks,
+   stickers, stars, quests). Replay ONLY ever moves Nilu and re-plays a
+   little sound/sparkle — it never re-awards sparkles/stars or advances
+   quests/friendship/state. Samples: [tMs,x,z,rotY]. Events: [tMs,type,extra].
+   ========================================================================== */
+const REC_SAMPLE_MS=250, REC_MAX_SAMPLES=1200, REC_MAX_EVENTS=500, REC_MIN_MS=20000;
+let REC={t0:0,acc:0,samples:[],events:[]};
+let replaying=false,replayData=null,replayIdx=0,replayElapsed=0,replaySpeed=1,replaySaved=null;
+function recTick(dt,now){
+  if(paused||replaying||mode==='intro'||mode==='finale')return;
+  REC.acc+=dt*1000;
+  if(REC.acc<REC_SAMPLE_MS)return;
+  REC.acc=0;
+  if(!REC.t0)REC.t0=now;
+  const p=player.group.position;
+  REC.samples.push([Math.round(now-REC.t0),Math.round(p.x*100)/100,Math.round(p.z*100)/100,
+    Math.round(player.group.rotation.y*1000)/1000]);
+  if(REC.samples.length>REC_MAX_SAMPLES){
+    REC.samples.shift();
+    const cutoff=REC.samples[0][0];
+    while(REC.events.length&&REC.events[0][0]<cutoff)REC.events.shift();
+  }
+}
+/* call from wherever a fun, recordable moment happens — cheap, no-op while paused/replaying */
+function recEvent(type,extra){
+  if(paused||replaying||mode==='intro'||mode==='finale')return;
+  if(!REC.t0)REC.t0=performance.now();
+  REC.events.push([Math.round(performance.now()-REC.t0),type,extra===undefined?0:extra]);
+  if(REC.events.length>REC_MAX_EVENTS)REC.events.shift();
+}
+function recordedSpanMs(){const s=REC.samples;return s.length<2?0:s[s.length-1][0]-s[0][0];}
+/* re-fire ONLY the visual/sound flourish for a recorded moment — never state! */
+function replayFireEvent(type,extra){
+  const p=player.group.position;
+  const at=(dy=1)=>new T.Vector3(p.x,p.y+dy,p.z);
+  switch(type){
+    case 'jump':
+      sfx.boing();if(!REDUCE_MOTION)burst(at(0.3),8,'#ffe9a8');
+      break;
+    case 'trumpet':
+      sfx.trumpet();
+      if(!REDUCE_MOTION)['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>{
+        if(mode==='replay')floatSprite(n,new T.Vector3(p.x+(i-1)*0.9,p.y+3.4,p.z),3,1.6);},i*220));
+      break;
+    case 'mystery':{
+      const col={spray:'#6fd0ff',dance:'#ff8fb1',bubbles:'#bfe9ff',confetti:'#ff8fb1',
+        growshrink:'#c8b6ff',rainbowarc:'#ffd23f'}[extra]||'#b8a4ff';
+      const em={spray:'💦',dance:'💃',bubbles:'🫧',confetti:'🎉',growshrink:'✨',rainbowarc:'🌈'}[extra]||'✨';
+      sfx.good();if(!REDUCE_MOTION)burst(at(1.5),16,col);
+      floatSprite(em,at(2.6),3,1.4,1.6);
+      break;}
+    case 'sticker':{
+      const st=STICKERS[extra];
+      sfx.star();if(!REDUCE_MOTION)burst(at(1),14,'#ffd23f');
+      floatSprite(st?st.e:'🌸',at(2),2.4,1.2,1.4);
+      break;}
+    case 'star':
+      sfx.star();if(!REDUCE_MOTION)burst(at(1),18,'#ffd23f');
+      celebToast('⭐ New Star!',1600);
+      break;
+    case 'quest':
+      sfx.good();if(!REDUCE_MOTION)burst(at(1),14,'#8fd0ff');
+      celebToast('🌟 Quest done!',1600);
+      break;
+  }
+}
+function angLerp(a,b,k){const d=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI;return a+d*k;}
+function startReplay(data){
+  if(replaying||!data||!data.samples||data.samples.length<2)return;
+  replaySaved={x:player.group.position.x,y:player.group.position.y,z:player.group.position.z,
+    ry:player.group.rotation.y,mode,trav,
+    jumpCount,trumpetCount,lastTrumpetNear,lastTrampAt,mischiefT,sunActT,questPoll};
+  replaying=true;replayData={samples:data.samples,events:data.events||[],_evIdx:0};
+  replayIdx=0;replayElapsed=0;replaySpeed=1;
+  clearNarr();freeCam();clearChoices();
+  duck=false;jumping=false;jumpY=0;kd=null;
+  player.group.rotation.x=0;player.anim.inner.rotation.x=0;player.anim.inner.rotation.z=0;
+  if(player.vel){player.vel.x=0;player.vel.z=0;player.vel.sp=0;}
+  mode='replay';
+  $('stick').classList.add('hidden');$('jumpCol').classList.add('hidden');
+  $('funRow').classList.add('hidden');$('moves').classList.remove('show');
+  $('actBtn').classList.remove('show');
+  const rs=$('replaySpeedBtn');if(rs)rs.textContent='1x';
+  const rb=$('replayBar');if(rb)rb.classList.remove('hidden');
+}
+function endReplay(){
+  if(!replaying)return;
+  replaying=false;
+  const sv=replaySaved;replaySaved=null;
+  if(sv){
+    player.group.position.set(sv.x,sv.y,sv.z);player.group.rotation.y=sv.ry;
+    trav=sv.trav;
+    jumpCount=sv.jumpCount;trumpetCount=sv.trumpetCount;lastTrumpetNear=sv.lastTrumpetNear;
+    lastTrampAt=sv.lastTrampAt;mischiefT=sv.mischiefT;sunActT=sv.sunActT;questPoll=sv.questPoll;
+    mode=sv.mode;
+  }
+  const rb=$('replayBar');if(rb)rb.classList.add('hidden');
+  if(mode==='roam'){$('stick').classList.remove('hidden');$('jumpCol').classList.remove('hidden');
+    $('funRow').classList.remove('hidden');}
+  updateActBtn();
+  sfx.tap();celebToast('What an adventure! 🌟',2400);
+}
+function updateReplay(dt,time){
+  const data=replayData;const samples=data.samples;
+  replayElapsed+=dt*1000*replaySpeed;
+  const t0=samples[0][0];
+  while(replayIdx<samples.length-1&&(samples[replayIdx+1][0]-t0)<=replayElapsed)replayIdx++;
+  const cur=samples[replayIdx],nxt=samples[Math.min(replayIdx+1,samples.length-1)];
+  const t1=cur[0]-t0,t2=nxt[0]-t0;
+  const k=t2>t1?Math.max(0,Math.min(1,(replayElapsed-t1)/(t2-t1))):0;
+  const x=cur[1]+(nxt[1]-cur[1])*k,z=cur[2]+(nxt[2]-cur[2])*k;
+  const ry=angLerp(cur[3],nxt[3],k);
+  const p=player.group.position;
+  p.set(x,terrainH(x,z),z);player.group.rotation.y=ry;
+  const spd=Math.hypot(nxt[1]-cur[1],nxt[2]-cur[2])/((Math.max(1,t2-t1))/1000);
+  player.anim.baseY=p.y;
+  animEllie(player,time,dt,spd>1.2);
+  while(data._evIdx<data.events.length&&(data.events[data._evIdx][0]-t0)<=replayElapsed){
+    try{replayFireEvent(data.events[data._evIdx][1],data.events[data._evIdx][2]);}catch(e){}
+    data._evIdx++;
+  }
+  const lastT=samples[samples.length-1][0]-t0;
+  if(replayElapsed>=lastT)endReplay();
+}
+function tryStartOwnReplay(){
+  if(mode!=='roam'){sfx.soft();celebToast('Let\'s finish this first! 💛',2000);return;}
+  if(recordedSpanMs()<REC_MIN_MS){sfx.soft();celebToast('Play a little first, then watch your adventure! 🎬',2800);return;}
+  startReplay({samples:REC.samples.map(s=>s.slice()),events:REC.events.map(e=>e.slice())});
+}
+function buildExportPayload(){
+  const samples=replaying?replayData.samples:REC.samples;
+  const events=replaying?replayData.events:REC.events;
+  if(!samples||samples.length<2)return null;
+  const t0=samples[0][0];
+  return {app:'ellytubbies',v:1,day:S.day,
+    samples:samples.map(s=>[Math.round(s[0]-t0),s[1],s[2],s[3]]),
+    events:events.map(e=>[Math.round(e[0]-t0),e[1],e[2]])};
+}
+function shareAdventure(){
+  try{
+    const payload=buildExportPayload();
+    if(!payload){celebToast('Play a little first! 🎬',2000);return;}
+    const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='my-adventure.ellytubbies.json';document.body.appendChild(a);a.click();
+    setTimeout(()=>{try{URL.revokeObjectURL(a.href);}catch(e){}a.remove();},1500);
+  }catch(e){celebToast('Hmm, could not share that 💛',2200);}
+}
+function validateAdventureImport(obj){
+  try{
+    if(!obj||typeof obj!=='object')return null;
+    if(obj.app!=='ellytubbies'||obj.v!==1)return null;
+    if(!Array.isArray(obj.samples)||!Array.isArray(obj.events))return null;
+    const B=ISLAND+20;
+    const samples=[];
+    for(const s of obj.samples){
+      if(!Array.isArray(s)||s.length<4)continue;
+      const t=+s[0],x=+s[1],z=+s[2],ry=+s[3];
+      if(![t,x,z,ry].every(Number.isFinite))continue;
+      samples.push([Math.max(0,t),Math.max(-B,Math.min(B,x)),Math.max(-B,Math.min(B,z)),ry]);
+      if(samples.length>=REC_MAX_SAMPLES)break;
+    }
+    if(samples.length<2)return null;
+    samples.sort((a,b)=>a[0]-b[0]);
+    const lastT=samples[samples.length-1][0];
+    const okTypes=new Set(['jump','trumpet','mystery','sticker','star','quest']);
+    const events=[];
+    for(const ev of (obj.events||[])){
+      if(!Array.isArray(ev)||ev.length<2)continue;
+      const t=+ev[0],type=ev[1];let extra=ev[2];
+      if(!Number.isFinite(t)||typeof type!=='string'||!okTypes.has(type))continue;
+      if(extra===undefined||extra===null)extra=0;
+      if(typeof extra!=='number'&&typeof extra!=='string')extra=0;
+      events.push([Math.max(0,Math.min(lastT,t)),type,extra]);
+      if(events.length>=REC_MAX_EVENTS)break;
+    }
+    events.sort((a,b)=>a[0]-b[0]);
+    return {samples,events};
+  }catch(e){return null;}
+}
+
 /* ========================= FUN ACTIONS (Nilu!) =========================== */
 let actionBusy=false;
 let trumpetTimes=[];
 async function actTrumpet(){
   if(actionBusy)return;actionBusy=true;
+  recEvent('trumpet');
   sfx.trumpet();doMove(player,'stomp',0.9);
   const p=player.group.position;
   ['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>
@@ -2181,7 +2393,7 @@ function knockdown(nx,nz,style){
   knockdown.n=(knockdown.n||0)+1;
   if(knockdown.n<=2)say('☀️','Whoopsie-daisy! Bonk! 🤭');
 }
-function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();jumpCount++;}}
+function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();jumpCount++;recEvent('jump');}}
 function updateRoam(dt,time){
   const p=player.group.position;
   // --- knocked down: roll like a teletubby, no control ---
@@ -2425,7 +2637,7 @@ function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
 
 async function giveStar(id,tub){
   const first=!S.today.stars[id];
-  if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();}
+  if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();recEvent('star');}
   S.sparks+=first?5:2;save();hud();
   reactSun();sfx.good();
   doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
@@ -2719,6 +2931,7 @@ function openBook(){
     else{const b=document.createElement('button');b.textContent='✨'+st.cost;
       b.onclick=()=>{if(S.sparks<st.cost){sfx.soft();say('☀️','Collect more ✨ sparkles first — they\'re hiding all over Trunkland!');$('book').classList.remove('show');return;}
         S.sparks-=st.cost;S.stickers[st.id]=true;save();hud();refreshStickers();sfx.star();
+        recEvent('sticker',STICKERS.indexOf(st));
         openBook();};
       d.appendChild(b);}
     grid.appendChild(d);});
@@ -2872,8 +3085,10 @@ function frame(now){
     return;
   }
   const time=(now-t0)/1000;
+  recTick(dt,now);            // 🎬 quietly sample the adventure (no-op while paused/replaying)
 
   if(mode==='roam')updateRoam(dt,time);
+  else if(mode==='replay')updateReplay(dt,time);   // 🎬 play back a recorded path — visuals/sound only
   else animEllie(player,time,dt,false);
   for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
 
@@ -3016,6 +3231,30 @@ $('setFs').onclick=()=>{sfx.tap();
 /* ⏸️ pause: freezes the whole frame loop (see setPaused/frame) */
 $('pauseBtn').onclick=()=>{sfx.tap();setPaused(true);};
 $('resumeBtn').onclick=()=>{sfx.tap();setPaused(false);};
+/* 🎬 replay: watch a recording of recent play (own, or an imported friend's) */
+$('replayBtn').onclick=()=>{sfx.tap();tryStartOwnReplay();};
+$('setReplay').onclick=()=>{sfx.tap();$('settings').classList.remove('show');tryStartOwnReplay();};
+$('setImportReplay').onclick=()=>{sfx.tap();$('importFile').click();};
+$('importFile').addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0];e.target.value='';
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let data=null;
+    try{data=validateAdventureImport(JSON.parse(reader.result));}catch(err){data=null;}
+    if(!data){sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);return;}
+    $('settings').classList.remove('show');
+    if(mode!=='roam'){sfx.soft();celebToast('Let\'s finish this first! 💛',2200);return;}
+    startReplay(data);
+  };
+  reader.onerror=()=>{sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);};
+  try{reader.readAsText(file);}catch(err){sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);}
+});
+$('replaySpeedBtn').onclick=()=>{sfx.tap();
+  replaySpeed=replaySpeed>=4?1:replaySpeed*2;
+  $('replaySpeedBtn').textContent=replaySpeed+'x';};
+$('replayShareBtn').onclick=()=>{sfx.tap();shareAdventure();};
+$('replayDoneBtn').onclick=()=>{sfx.tap();endReplay();};
 // jump / duck / fun buttons
 $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();
   if(trav==='fly')flyRise=true; else tryJump();});
@@ -3075,6 +3314,7 @@ $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   if(!S.found[m.k]){S.found[m.k]=1;save();
     burst(player.group.position,16,'#b8a4ff');sfx.star();
     say('☀️',`Surprise! You discovered the ${m.name}! ${m.e}`);}
+  recEvent('mystery',m.k);
   m.fn();};
 
 /* debug/testing hook (harmless in production) */

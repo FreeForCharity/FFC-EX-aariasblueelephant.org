@@ -216,6 +216,7 @@ window.MB = window.MB || {};
       applyGrabPose();
       g.members.forEach(m => { m.inst.onTable = inst.onTable; });
       // children keep their internal attachments; re-adopt anything resting on us
+      inst.group.userData.seq = MB.Bag.nextSeq(); // 🎬 stamp build-order for replay
       MB.Audio.snap();
       squashBounce(inst.group);
       spawnSnapFlash(B.snap.point);
@@ -239,7 +240,7 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 2.2);
         const dy = (to.y - from.y) * e, dx = (to.x-from.x)*e, dz = (to.z-from.z)*e;
         g.members.forEach((m,i) => m.inst.group.position.set(membersFrom[i].x+dx, membersFrom[i].y+dy, membersFrom[i].z+dz));
-      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); } MB.cleanupCheck && MB.cleanupCheck(); MB.Undo && MB.Undo.push(); });
+      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); inst.group.userData.seq = MB.Bag.nextSeq(); } MB.cleanupCheck && MB.cleanupCheck(); MB.Undo && MB.Undo.push(); });
     }
     B.snap = null;
     changed();
@@ -349,6 +350,13 @@ window.MB = window.MB || {};
     for (const b of [...MB.Magnet.blocks]) MB.Magnet.removeBlock(b);
     B.select(null); B.grabbed = null; B.pending = null;
     changed();
+  };
+
+  // exposed for 🎬 replay: the same satisfying arrival feedback used on a normal snap
+  // (calm mode: skip the bright flash, matching how normal play already feels gentler)
+  B.snapEffect = function(group, point){
+    squashBounce(group);
+    if (!(MB.ui && MB.ui.calm)) spawnSnapFlash(point);
   };
 
   B.tick = function(dt){ runTweens(dt); if (B.grabbed) updateRing(); };
