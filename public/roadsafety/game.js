@@ -357,7 +357,7 @@ function speak(txt){
 document.getElementById("muteBtn").addEventListener("click", () => {
   muted = !muted;
   document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔊";
-  if (muted) sirenStop();
+  if (muted){ sirenStop(); if (window.speechSynthesis) speechSynthesis.cancel(); }
 });
 function toggleView(){
   S.view = S.view === "top" ? "fp" : "top";

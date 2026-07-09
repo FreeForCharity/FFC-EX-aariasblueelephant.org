@@ -731,8 +731,8 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setCalm">${chk(s.calm)} 😌 Calm mode — softer sounds &amp; less bouncy camera</button>
       <button class="choiceBtn" id="setShare">📤 Share world — save a file of your build to send a friend</button>
       <button class="choiceBtn" id="setVisit">📥 Visit a friend's world — open a world file they shared</button>
-      <button class="choiceBtn" id="setTimelapse">🎬 My world grew! — watch your build come together again</button>
-      <button class="choiceBtn" id="setAdventure">🎬 Watch my adventure — replay your last walk around!</button>
+      <button class="choiceBtn" id="setTimelapse">🏗️ My world grew! — watch it build</button>
+      <button class="choiceBtn" id="setAdventure">▶️ My Movie — watch your adventure!</button>
       <button class="choiceBtn" id="setParent">👨‍👩‍👧 For grown-ups — progress dashboard</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>

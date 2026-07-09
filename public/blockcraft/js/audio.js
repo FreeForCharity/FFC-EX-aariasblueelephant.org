@@ -1,7 +1,8 @@
 /* Aaria's Block Craft 3D — audio: WebAudio synth SFX, gentle music, and text-to-speech */
 ABC.audio = (function () {
   let ctx = null, musicGain = null, musicTimer = null;
-  const S = { sound:true, music:false, readAloud:true, voiceMode:false, speed:'normal', calm:false };
+  const S = { sound:true, music:false, readAloud:true, voiceMode:false, speed:'normal', calm:false,
+              muted:false };   // 🔇 master mute (HUD one-tap) — silences sfx, music AND speech
 
   /* Game pace 🐢🐇🚀 — kids who need more time stay Relaxed; kids who want it
      snappier go Fast. Scales how long messages linger AND the read-aloud rate.
@@ -31,7 +32,7 @@ ABC.audio = (function () {
   /* polite audio: cap how many beeps can stack, and duck under Bella's voice */
   const _toneLog = [];
   function tone(freq, dur, type, vol, when, slideTo) {
-    if (!S.sound) return;
+    if (!S.sound || S.muted) return;
     const nowMs = performance.now();
     while (_toneLog.length && nowMs - _toneLog[0] > 350) _toneLog.shift();
     if (_toneLog.length >= 6) return;
@@ -123,7 +124,7 @@ ABC.audio = (function () {
   /* Soft generative music: slow pentatonic bells */
   const SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
   function musicTick() {
-    if (!S.music || !ctx) return;
+    if (!S.music || S.muted || !ctx) return;
     const n = SCALE[Math.floor(Math.random()*SCALE.length)];
     const t = ctx.currentTime;
     const o = ctx.createOscillator(), g = ctx.createGain();
@@ -171,6 +172,7 @@ ABC.audio = (function () {
   }
   function say(text, opts) {
     if (!window.speechSynthesis) return;
+    if (S.muted) return;   // master mute wins over everything, even forced reads
     if (!S.readAloud && !(opts && opts.force)) return;
     const clean = String(text).replace(/<[^>]*>/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}✨⭐]/gu, '');
     if (!clean.trim()) return;
