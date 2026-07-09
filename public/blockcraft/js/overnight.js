@@ -5,14 +5,17 @@ ABC.overnight = (function () {
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  /* {lastVisit, petals, seenEvents} — petals NEVER go down 💛 */
-  let data = { lastVisit: null, petals: 0, seenEvents: [] };
+  /* {lastVisit, petals, seenEvents, shown} — petals NEVER go down 💛
+     shown: milestone petal-counts already celebrated, so a returning child never
+     sees the same surprise twice (and gaps in play never cost a celebration). */
+  let data = { lastVisit: null, petals: 0, seenEvents: [], shown: [] };
 
-  /* 🌻 petal milestones → confetti + sticker-style toast */
+  /* 🌻 petal milestones → confetti + sticker-style toast + a one-time reward */
   const MILESTONES = {
-    7:  '🌟 Sticker earned: <b>SUNSHINE STAR</b> — 7 days of adventures!',
-    14: '🦋 Sticker earned: <b>BUTTERFLY CHAMP</b> — 14 days of adventures!',
-    30: '🌈 Sticker earned: <b>RAINBOW HERO</b> — 30 days of adventures!',
+    3:  { text: '🐾 Sticker earned: <b>EXPLORER PAWS</b> — 3 days of adventures!', reward: 'animal' },
+    7:  { text: '🌟 Sticker earned: <b>SUNSHINE STAR</b> — 7 days of adventures!', reward: 'animal' },
+    14: { text: '🦋 Sticker earned: <b>BUTTERFLY CHAMP</b> — 14 days of adventures!', reward: 'stars' },
+    30: { text: '🌈 Sticker earned: <b>RAINBOW HERO</b> — 30 days of adventures!', reward: 'rainbow' },
   };
 
   const BELLA_NEWS = [
@@ -29,6 +32,17 @@ ABC.overnight = (function () {
       const x = Math.round(Math.cos(a) * r), z = Math.round(6 + Math.sin(a) * r);
       const tb = ABC.world.topBlock(x, z);
       if (tb && tb.t !== 'flower') ABC.world.set(x, tb.y + 1, z, 'flower');
+    }
+    ABC.world.flush();
+  }
+
+  /* 🌈 30-day milestone: a whole ring of rainbow flowers blooms near spawn */
+  function bloomRainbowFlowers() {
+    for (let i = 0; i < 16; i++) {
+      const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 7;
+      const x = Math.round(Math.cos(a) * r), z = Math.round(6 + Math.sin(a) * r);
+      const tb = ABC.world.topBlock(x, z);
+      if (tb) ABC.world.set(x, tb.y + 1, z, 'rainbow');
     }
     ABC.world.flush();
   }
@@ -73,10 +87,25 @@ ABC.overnight = (function () {
 
   function checkMilestone() {
     const m = MILESTONES[data.petals];
-    if (!m) return;
-    ABC.ui.confetti(50);
+    if (!m || data.shown.includes(data.petals)) return;   // celebrate once each, ever
+    data.shown.push(data.petals);
+    ABC.saveSoon && ABC.saveSoon();
+    ABC.ui.confetti(50);              // calm-aware — gentler burst when 😌 calm mode is on
     ABC.audio.sfx.fanfare();
-    setTimeout(() => { ABC.ui.toast(m, 5600, true); }, 400);
+    ABC.ui.bellaSays(`You've played ${data.petals} days! A special surprise…`, 4200);
+    setTimeout(() => {
+      ABC.ui.toast(m.text, 5600, true);
+      if (m.reward === 'animal') {
+        const a = ABC.animals.spawnSurprise();
+        setTimeout(() => ABC.ui.bellaSays(
+          `${a.def.emoji} ${a.name} the ${a.def.label} came to celebrate with you!`, 5200), 900);
+      } else if (m.reward === 'stars') {
+        ABC.ui.addStars(5);
+      } else if (m.reward === 'rainbow') {
+        bloomRainbowFlowers();
+        setTimeout(() => ABC.ui.bellaSays('🌈 A whole ring of rainbow flowers bloomed for you!', 5200), 900);
+      }
+    }, 900);
   }
 
   /* ---------------- the streak sunflower 🌻 ---------------- */
@@ -141,15 +170,16 @@ ABC.overnight = (function () {
 
   /* ---------------- save / load ---------------- */
   function serialize() {
-    return { lastVisit: data.lastVisit, petals: data.petals, seenEvents: data.seenEvents };
+    return { lastVisit: data.lastVisit, petals: data.petals, seenEvents: data.seenEvents, shown: data.shown };
   }
   function deserialize(d) {
     if (!d) return;
     data.lastVisit = d.lastVisit || null;
     data.petals = d.petals || 0;
     data.seenEvents = d.seenEvents || [];
+    data.shown = d.shown || [];
     refreshChip();
   }
 
-  return { onLogin, showFlower, refreshChip, serialize, deserialize };
+  return { onLogin, showFlower, refreshChip, serialize, deserialize, petals: () => data.petals };
 })();

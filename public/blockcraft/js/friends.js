@@ -43,6 +43,7 @@ ABC.friends = (function () {
   function record(a) {
     const page = PAGES.find(p => p.kind === a.kind);
     if (!page) return;
+    ABC.state.metrics.animalsTalked++;   // 👨‍👩‍👧 parent dashboard
     const b = book();
     const was = b.met[a.kind] || 0;
     b.met[a.kind] = was + 1;

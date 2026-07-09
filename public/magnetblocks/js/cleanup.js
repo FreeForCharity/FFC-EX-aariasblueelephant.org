@@ -112,6 +112,7 @@ window.MB = window.MB || {};
       document.getElementById('tidyBanner').style.display = 'none';
       MB.Audio.tidy(false);
       MB.Audio.fanfare();
+      if (MB.Stats) MB.Stats.bump('tidyUps');
       MB.ui.confetti();
       MB.ui.toast('✨ Sparkling clean! What a great helper! Back to building! 🧱', 2800);
       for (const sp of C.sparkles) MB.Builder.scene.remove(sp);

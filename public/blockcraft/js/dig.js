@@ -117,6 +117,7 @@ ABC.dig = (function () {
 
   // route a dug marker to its reward (called from main.js act() after a successful dig)
   function reward(kind, cell) {
+    ABC.state.metrics.treasures++;   // 👨‍👩‍👧 parent dashboard
     const f = (ABC.DIG_FIND && ABC.DIG_FIND[kind]) || { emoji: '✨', word: 'a surprise' };
     if (kind === 'coin') {
       ABC.ui.addCoins(1);

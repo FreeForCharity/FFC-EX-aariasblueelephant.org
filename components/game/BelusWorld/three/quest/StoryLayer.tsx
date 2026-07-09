@@ -60,6 +60,8 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  /** gentle re-prompts this session — grown-ups-only signal, never shown to the child */
+  slips: number;
   // healed friends remember you — the clock time each friend greeted Nilu this
   // session (-1 = not yet)
   greetAt: number[];
@@ -73,7 +75,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
-  onComplete: (zone: 'meadow', level: number, stars: number, moment: string) => void;
+  onComplete: (zone: 'meadow', level: number, stars: number, moment: string, slips?: number) => void;
   onStatus: (s: QuestStatus | null) => void;
   /** the child just healed this species — remember the friendship */
   onFriendHealed: (species: string) => void;
@@ -90,7 +92,7 @@ export default function StoryLayer(props: Props) {
     clock: 0, active: false, level: props.level, friends: MEADOW_STORY[clampLevel(props.level)].friends.map(() => ({ healed: false, healedAt: -99 })),
     fireflies: MEADOW_STORY[clampLevel(props.level)].fireflies.map(() => false), firefliesFound: 0, finaleAt: 0,
     helped: 0, disarmed: false, activeFriend: -1, lingerStart: 0, observed: false,
-    wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0, slips: 0,
     greetAt: MEADOW_STORY[clampLevel(props.level)].friends.map(() => -1),
   });
   const frame = useRef<(dt: number) => void>(() => {});
@@ -142,6 +144,7 @@ export default function StoryLayer(props: Props) {
     S.current.activeFriend = -1;
     S.current.observed = false;
     S.current.greetAt = lvl.friends.map(() => -1);
+    S.current.slips = 0;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, 'Walk up to a friend to see how they feel 💛');
@@ -159,7 +162,7 @@ export default function StoryLayer(props: Props) {
 
   function finish() {
     const lvl = MEADOW_STORY[clampLevel(S.current.level)];
-    props.onComplete(ZONE, S.current.level, 3, lvl.moment);
+    props.onComplete(ZONE, S.current.level, 3, lvl.moment, S.current.slips);
     props.speak(lvl.outro);
     S.current.active = false;
     S.current.disarmed = true;
@@ -199,6 +202,7 @@ export default function StoryLayer(props: Props) {
       st.wrongIdx = i;
       st.wrongUntil = st.clock + 0.5;
       st.lockUntil = st.clock + 0.5;
+      st.slips += 1;
       props.playSound('tap');
       props.setEmotion('curious');
       props.speak('Hmm, that might not help them. What would a kind friend do?');

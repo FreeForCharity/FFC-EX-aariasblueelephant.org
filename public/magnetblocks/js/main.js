@@ -262,6 +262,7 @@ window.MB = window.MB || {};
     const item = MB.Bag.keep(renderer, scene, camera);
     MB.Builder.select(wasSel);
     if (!item) return;
+    if (MB.Stats) MB.Stats.bump('photosTaken');
     MB.Audio.camera();
     if (ui.calm){ // calm mode: skip the flash + flying-photo animation, just confirm gently
       MB.Bag.updateCount(); MB.Audio.sparkle();
@@ -388,6 +389,7 @@ window.MB = window.MB || {};
       $('titleScreen').style.display = 'none';
       $('hud').style.display = 'block';
       started = true;
+      if (MB.Stats) MB.Stats.bump('sessions');
       MB.Help.init();
       rotateHints(); setInterval(rotateHints, 13000);
       ui.toast('🧲 Welcome to the playroom! Tap any block on the shelves to start building!', 3200);
@@ -452,6 +454,29 @@ window.MB = window.MB || {};
     $('playBtn').addEventListener('click', () => ui.setPlay(!MB.Animate.on));
     $('helpBtn').addEventListener('click', () => MB.Help.openPicker());
     $('helpClose').addEventListener('click', () => ui.hide('helpModal'));
+    $('parentBtn').addEventListener('click', () => {
+      const answer = prompt('For grown-ups: what is 6 + 7?');
+      if (answer !== null){
+        if (String(answer).trim() === '13'){
+          // correct answer: show stats
+          const allStats = MB.Stats ? MB.Stats.getAll() : {};
+          $('statSessions').textContent = allStats.sessions || 0;
+          $('statBlocksPlaced').textContent = allStats.blocksPlaced || 0;
+          $('statBuildsSaved').textContent = allStats.buildsSaved || 0;
+          $('statPhotosTaken').textContent = allStats.photosTaken || 0;
+          $('statTidyUps').textContent = allStats.tidyUps || 0;
+          $('statBiggestBuild').textContent = bestBuild;
+          let milestoneCount = 0;
+          try { milestoneCount = Object.keys(msMemory).length; } catch(e){}
+          $('statMilestones').textContent = milestoneCount;
+          ui.show('parentModal');
+        } else {
+          ui.toast('Sorry, that\'s not quite right. Try again! 💭', 1800);
+          MB.Audio.no();
+        }
+      }
+    });
+    $('parentClose').addEventListener('click', () => ui.hide('parentModal'));
     $('rotBtn').addEventListener('click', () => MB.Builder.rotateSel());
     // view controls
     $('zoomInBtn').addEventListener('click', () => nudgeZoom(-3));

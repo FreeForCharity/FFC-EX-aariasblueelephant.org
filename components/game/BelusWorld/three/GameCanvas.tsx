@@ -64,7 +64,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: Sound) => void;
-  onQuestComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
+  onQuestComplete: (zone: ActivityZone, level: number, stars: number, moment: string, slips?: number, calmChoices?: string[]) => void;
   onQuestStatus: (s: QuestStatus | null) => void;
   onCollectSparkle: (id: string) => void;
   onPlant: () => void;

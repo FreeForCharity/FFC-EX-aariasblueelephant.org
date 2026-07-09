@@ -11,7 +11,7 @@
 // supports, read-aloud narration, and full sensory comfort settings.
 // ===========================================================================
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BeluEmotion } from './BeluCharacter';
 import { ISLANDS, worldRuntime, type ZoneId } from './three/worldConfig';
@@ -50,11 +50,21 @@ import {
   todaysVisitor,
   sparklesFoundToday,
   plantStage,
+  starQuestAvailable,
+  completeStarQuest,
+  STAR_QUEST_SPARKLES,
+  earnAchievement,
+  saveCalmPlan,
+  topPracticeZones,
+  isIslandComplete,
+  islandStars,
+  MAX_STARS_PER_ISLAND,
   type GameProgress,
   type ActivityZone,
   type CosmeticSlot,
   ZONES,
 } from './belu/progress';
+import { newlyEarned, type Achievement } from './belu/achievements';
 import type { AnimalSpecies } from './three/quest/Animal3D';
 import { speakAloud, playSound, stopSpeaking } from './belu/feedback';
 
@@ -111,6 +121,10 @@ interface RewardInfo {
   growthLabel: string;
   islandMastered: boolean;
   unlockedItem?: { name: string; icon: string };
+  /** this play also completed today's Star Quest on a fully-bloomed island */
+  starQuest?: boolean;
+  /** a brand-new badge earned by this play (first one, if several) */
+  newBadge?: Achievement;
 }
 
 export default function BelusWorldGame() {
@@ -128,6 +142,8 @@ export default function BelusWorldGame() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [manualPause, setManualPause] = useState(false);
+  const [showGrownUpGate, setShowGrownUpGate] = useState(false);
+  const [showGrownUps, setShowGrownUps] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -154,6 +170,14 @@ export default function BelusWorldGame() {
 
   // ---- Home life: daily sparkles, garden, jar, remembered friends ----
   const dateKey = todayKey();
+
+  // Star Quest chip: a small ⭐ glow when Nilu is standing on a fully-bloomed
+  // island that still has its once-a-day Star Quest waiting to be replayed.
+  const starQuestZone = useMemo(() => {
+    if (!nearZone || nearZone === 'home' || nearZone === 'rainbow') return null;
+    return starQuestAvailable(progress, nearZone as ActivityZone, dateKey) ? nearZone : null;
+  }, [nearZone, progress, dateKey]);
+
   const sparklesFound = useMemo(() => sparklesFoundToday(progress, dateKey), [progress, dateKey]);
   const visitor = useMemo(() => todaysVisitor(progress) as AnimalSpecies | null, [progress]);
 
@@ -217,7 +241,7 @@ export default function BelusWorldGame() {
     };
   }, [phase]);
 
-  const paused = showSettings || showMap || reward !== null || showWardrobe || showExitConfirm || manualPause;
+  const paused = showSettings || showMap || reward !== null || showWardrobe || showExitConfirm || manualPause || showGrownUpGate || showGrownUps;
 
   const handleProximity = useCallback((zone: ZoneId | null) => {
     setNearZone(zone);
@@ -295,19 +319,39 @@ export default function BelusWorldGame() {
   }, []);
 
   const handleQuestComplete = useCallback(
-    (zone: ActivityZone, level: number, stars: number, moment: string) => {
-      const res = awardLevel(progress, zone, level - 1, stars);
-      saveProgress(res.progress);
-      setProgress(res.progress);
+    (zone: ActivityZone, level: number, stars: number, moment: string, slips: number = 0, calmChoices?: string[]) => {
+      // was today's Star Quest still waiting on this (already-bloomed) island?
+      // checked BEFORE awarding, since awardLevel doesn't change bloom status here.
+      const questWasAvailable = starQuestAvailable(progress, zone, dateKey);
+      const res = awardLevel(progress, zone, level - 1, stars, slips, 1);
+      let nextProgress = res.progress;
+      if (calmChoices && calmChoices.length > 0) nextProgress = saveCalmPlan(nextProgress, calmChoices);
+
+      let starQuestDone = false;
+      if (questWasAvailable) {
+        const withQuest = completeStarQuest(nextProgress, zone, dateKey);
+        if (withQuest !== nextProgress) {
+          starQuestDone = true;
+          nextProgress = withQuest;
+        }
+      }
 
       // personality memory (separate from leveling)
       let m = recordZoneVisit(memory, zone);
       m = recordMoment(m, moment);
       m = addAchievement(m, `${ISLANDS[zone].label} L${level}`);
+
+      // one-time achievements: check against the freshest progress + memory,
+      // right after the natural "finished a level" moment
+      const earned = newlyEarned(nextProgress, m);
+      for (const a of earned) nextProgress = earnAchievement(nextProgress, a.id);
+
+      saveProgress(nextProgress);
+      setProgress(nextProgress);
       saveMemory(m);
       setMemory(m);
 
-      const mastered = completedLevels(res.progress, zone) >= 5;
+      const mastered = completedLevels(nextProgress, zone) >= 5;
       setEmotion('excited');
       playSound(res.grewUp ? 'growup' : res.newLevel ? 'levelup' : 'star', settingsRef.current.sound);
       setReward({
@@ -315,13 +359,29 @@ export default function BelusWorldGame() {
         skill: ISLANDS[zone].label,
         levelUp: res.newLevel,
         grewUp: res.grewUp,
-        growthLabel: getGrowth(res.progress).label,
+        growthLabel: getGrowth(nextProgress).label,
         islandMastered: mastered,
         unlockedItem: res.unlockedItem ? { name: res.unlockedItem.name, icon: res.unlockedItem.icon } : undefined,
+        starQuest: starQuestDone,
+        newBadge: earned[0],
       });
     },
-    [progress, memory],
+    [progress, memory, dateKey],
   );
+
+  // Badges that aren't tied to finishing a level (sparkle jar milestones, a
+  // garden flower opening on a new day, visit-day streak, etc.) are caught
+  // here — a passive safety net so nothing is missed. Award-then-no-op is
+  // safe: newlyEarned only returns ids not already in achievementsEarned, so
+  // this settles after one extra render with no loop.
+  useEffect(() => {
+    const earned = newlyEarned(progress, memory);
+    if (earned.length === 0) return;
+    let next = progress;
+    for (const a of earned) next = earnAchievement(next, a.id);
+    saveProgress(next);
+    setProgress(next);
+  }, [progress, memory]);
 
   if (phase === 'intro') {
     return (
@@ -374,6 +434,7 @@ export default function BelusWorldGame() {
       <HUD
         beluLine={beluLine}
         nearZone={questStatus ? null : nearZone}
+        starQuestZone={questStatus ? null : starQuestZone}
         stickers={stickers}
         totalStars={totalStars(progress)}
         isTouch={isTouch.current}
@@ -418,7 +479,28 @@ export default function BelusWorldGame() {
       {/* Settings */}
       <AnimatePresence>
         {showSettings && (
-          <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />
+          <SettingsPanel
+            settings={settings}
+            onChange={setSettings}
+            onClose={() => setShowSettings(false)}
+            onOpenGrownUps={() => { setShowSettings(false); setShowGrownUpGate(true); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* For grown-ups — a simple typed-math gate before any stats are shown,
+          so a curious child doesn't wander into a read-only parent report */}
+      <AnimatePresence>
+        {showGrownUpGate && (
+          <GrownUpGate
+            onCancel={() => setShowGrownUpGate(false)}
+            onUnlock={() => { setShowGrownUpGate(false); setShowGrownUps(true); }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showGrownUps && (
+          <GrownUpsPanel progress={progress} memory={memory} onClose={() => setShowGrownUps(false)} />
         )}
       </AnimatePresence>
 
@@ -786,6 +868,16 @@ function RewardToast({ reward, reduceMotion, onClose }: { reward: RewardInfo; re
             🎁 New for Nilu: {reward.unlockedItem.icon} {reward.unlockedItem.name}! Tap 🎩 to wear it.
           </p>
         )}
+        {reward.starQuest && (
+          <p className="mt-3 rounded-2xl bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-700">
+            ⭐ Today's Star Quest complete! +{STAR_QUEST_SPARKLES} sparkles for the jar!
+          </p>
+        )}
+        {reward.newBadge && (
+          <p className="mt-3 rounded-2xl bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">
+            {reward.newBadge.icon} New badge: {reward.newBadge.name}! Check My Badges on the map.
+          </p>
+        )}
 
         <button
           onClick={onClose}
@@ -866,10 +958,12 @@ function SettingsPanel({
   settings,
   onChange,
   onClose,
+  onOpenGrownUps,
 }: {
   settings: Settings;
   onChange: (s: Settings) => void;
   onClose: () => void;
+  onOpenGrownUps: () => void;
 }) {
   return (
     <motion.div
@@ -916,13 +1010,202 @@ function SettingsPanel({
         <Toggle label="Read aloud" hint="Nilu speaks her words out loud" on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
 
         <button
+          onClick={onOpenGrownUps}
+          className="mt-2 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm font-bold text-slate-600 transition hover:bg-slate-100"
+        >
+          👤 For grown-ups — view progress notes
+        </button>
+
+        <button
           onClick={onClose}
-          className="mt-5 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
+          className="mt-3 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
         >
           Done
         </button>
       </motion.div>
     </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// For grown-ups: a simple typed-math question gates a read-only parent/carer
+// view. Deliberately low-friction (not a real password) — its only job is to
+// keep a curious child from wandering into adult-facing progress notes.
+// ---------------------------------------------------------------------------
+
+function makeGateQuestion() {
+  const a = 3 + Math.floor(Math.random() * 6); // 3..8
+  const b = 3 + Math.floor(Math.random() * 6);
+  return { a, b, answer: a + b };
+}
+
+function GrownUpGate({ onCancel, onUnlock }: { onCancel: () => void; onUnlock: () => void }) {
+  const [q] = useState(makeGateQuestion);
+  const [value, setValue] = useState('');
+  const [wrong, setWrong] = useState(false);
+
+  function submit() {
+    if (Number(value.trim()) === q.answer) {
+      onUnlock();
+    } else {
+      setWrong(true);
+      setValue('');
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,28,46,0.5)', backdropFilter: 'blur(8px)' }}
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92 }}
+        className="w-full max-w-xs rounded-[24px] bg-white p-6 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-3xl">👤</div>
+        <h2 className="mt-1 text-lg font-extrabold text-slate-800">For grown-ups</h2>
+        <p className="mt-1 text-sm text-slate-500">Quick check — solve this to continue:</p>
+        <p className="mt-3 text-2xl font-black text-sky-700">{q.a} + {q.b} = ?</p>
+        <input
+          autoFocus
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setWrong(false); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+          className={`mt-3 w-24 rounded-xl border-[3px] bg-white px-3 py-2 text-center text-lg font-bold text-slate-700 outline-none ${wrong ? 'border-rose-300' : 'border-slate-200 focus:border-sky-400'}`}
+        />
+        {wrong && <p className="mt-1 text-xs font-semibold text-rose-500">Not quite — try again.</p>}
+        <div className="mt-4 flex gap-2">
+          <button onClick={onCancel} className="flex-1 rounded-full bg-slate-100 py-2.5 text-sm font-bold text-slate-500 transition active:scale-95">
+            Cancel
+          </button>
+          <button onClick={submit} className="flex-1 rounded-full bg-sky-500 py-2.5 text-sm font-bold text-white shadow-lg transition active:scale-95">
+            Continue
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Read-only progress notes for a parent/carer: visited days, per-island
+// levels/stars, skills practiced, recent moments, areas practicing most (from
+// slip data), and the child's saved calm-plan choices. Calm, plain styling —
+// no games, no motion flourishes.
+function GrownUpsPanel({ progress, memory, onClose }: { progress: GameProgress; memory: BeluMemory; onClose: () => void }) {
+  const practicing = topPracticeZones(progress).slice(0, 3);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(30,36,48,0.6)' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-extrabold text-slate-800">Progress notes</h2>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">✕</button>
+        </div>
+        <p className="mb-4 text-xs text-slate-400">Read-only, for grown-ups. Nilu's World is always no-fail for the child — nothing here is a score.</p>
+
+        <Section title="Days visited">
+          <p className="text-2xl font-black text-slate-700">{memory.visitDays}</p>
+        </Section>
+
+        <Section title="Islands: levels done &amp; stars">
+          <div className="flex flex-col gap-1.5">
+            {ZONES.map((z) => (
+              <div key={z} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                <span className="font-semibold text-slate-600">{ISLANDS[z].emoji} {ISLANDS[z].label}</span>
+                <span className="font-bold text-slate-500">
+                  {completedLevels(progress, z)}/5 levels · {islandStars(progress, z)}/{MAX_STARS_PER_ISLAND}⭐
+                  {isIslandComplete(progress, z) ? ' · bloomed 🌷' : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Skills practiced">
+          {memory.skillsPracticed.length === 0 ? (
+            <p className="text-sm text-slate-400">Nothing yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {memory.skillsPracticed.map((s) => (
+                <span key={s.zone} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  {s.zone}: {s.count}×
+                </span>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        <Section title="Areas practicing most">
+          {practicing.length === 0 ? (
+            <p className="text-sm text-slate-400">Not enough plays yet to tell.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {practicing.map((p) => (
+                <div key={p.zone} className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm">
+                  <span className="font-semibold text-amber-800">{ISLANDS[p.zone].emoji} {ISLANDS[p.zone].label}</span>
+                  <span className="font-bold text-amber-600">{p.slips} gentle re-prompts / {p.rounds} rounds</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="mt-1 text-[11px] text-slate-400">A higher number just means more re-tries were offered — never a penalty, and stars are unaffected.</p>
+        </Section>
+
+        <Section title="Recent moments">
+          {memory.recentMoments.length === 0 ? (
+            <p className="text-sm text-slate-400">Nothing yet.</p>
+          ) : (
+            <ul className="list-disc pl-5 text-sm text-slate-600">
+              {memory.recentMoments.map((m, i) => <li key={i}>{m}</li>)}
+            </ul>
+          )}
+        </Section>
+
+        <Section title="Calm plan (Calm Cove)">
+          {progress.calmPlan.length === 0 ? (
+            <p className="text-sm text-slate-400">Not built yet — this appears after Calm Cove level 5.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {progress.calmPlan.map((c, i) => (
+                <span key={i} className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">{c}</span>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        <button onClick={onClose} className="mt-2 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95">
+          Close
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="mb-4">
+      <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-400">{title}</h3>
+      {children}
+    </div>
   );
 }
 

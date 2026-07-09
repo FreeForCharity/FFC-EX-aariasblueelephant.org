@@ -21,6 +21,7 @@ import {
   totalStars,
 } from '../belu/progress';
 import type { BeluMemory } from '../belu/memory';
+import { ACHIEVEMENTS } from '../belu/achievements';
 
 const SKILLS: Record<ActivityZone, string> = {
   meadow: 'Reading Emotions',
@@ -130,6 +131,31 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
                     {done >= MAX_LEVEL ? '🌷 Fully bloomed!' : `${done}/${MAX_LEVEL} levels grown`}
                   </div>
                 </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* My Badges — one-time achievements, all additive, nothing to lose */}
+        <h3 className="mb-2 mt-5 text-sm font-bold uppercase tracking-wide text-slate-400">
+          My Badges ({progress.achievementsEarned.length}/{ACHIEVEMENTS.length})
+        </h3>
+        <div className="grid grid-cols-4 gap-2">
+          {ACHIEVEMENTS.map((a) => {
+            const earned = progress.achievementsEarned.includes(a.id);
+            return (
+              <div
+                key={a.id}
+                title={earned ? `${a.name} — ${a.blurb}` : a.name}
+                className="flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-center"
+                style={{
+                  borderColor: earned ? '#ffd43b' : '#eef1f6',
+                  background: earned ? 'linear-gradient(160deg,#fff9e0,#fff)' : '#f8fafc',
+                  opacity: earned ? 1 : 0.55,
+                }}
+              >
+                <span className="text-2xl" style={{ filter: earned ? 'none' : 'grayscale(1)' }}>{a.icon}</span>
+                <span className="text-[10px] font-bold leading-tight text-slate-600">{a.name}</span>
               </div>
             );
           })}

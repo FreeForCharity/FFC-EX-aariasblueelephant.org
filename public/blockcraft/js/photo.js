@@ -144,5 +144,5 @@ ABC.photo = (function () {
     photos = (d && Array.isArray(d.photos)) ? d.photos.slice(-MAX_PHOTOS) : [];
   }
 
-  return { snap, takePhoto, openAlbum, serialize, deserialize };
+  return { snap, takePhoto, openAlbum, serialize, deserialize, count: () => photos.length };
 })();

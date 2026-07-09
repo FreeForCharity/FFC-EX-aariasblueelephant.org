@@ -477,6 +477,12 @@ HH.STICKER_BOOK = {
 /* ---------------- first-run movement tutorial (interiors) ---------------- */
 HH.TUTORIAL_TEXT = "Use this stick to walk! 🕹️";
 
+/* ---------------- spaced re-practice nudge (Practice menu) ---------------- */
+HH.REVIEW_PROMPT = {
+  banner(title) { return "Let's practice " + title + " again! 💪"; },
+  button: "Let's go!",
+};
+
 /* ---------------- Grown-Ups Corner (parent-gated) ---------------- */
 HH.GROWNUPS = {
   what: [

@@ -12,6 +12,9 @@ import { nudgeZoom, CAM_ZOOM_STEP } from '../three/playerState';
 interface Props {
   beluLine: string | null;
   nearZone: ZoneId | null;
+  /** a fully-bloomed island Nilu is standing on that still has today's Star
+   *  Quest waiting — shows a small glowing ⭐ banner */
+  starQuestZone?: ZoneId | null;
   stickers: string[];
   totalStars: number;
   isTouch: boolean;
@@ -26,8 +29,9 @@ interface Props {
   speedLabel: string;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel }: Props) {
+export default function HUD({ beluLine, nearZone, starQuestZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
+  const hasStarQuest = !!starQuestZone && starQuestZone === nearZone;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
@@ -169,6 +173,15 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
             <div className="text-2xl">{zoneMeta.emoji}</div>
             <div className="text-base font-extrabold text-slate-800">{zoneMeta.label}</div>
             <div className="mt-0.5 text-xs font-semibold text-slate-500">Walk up to your friend to begin ✨</div>
+            {hasStarQuest && (
+              <motion.div
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+                className="mt-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700"
+              >
+                ⭐ Today's Star Quest here!
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

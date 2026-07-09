@@ -248,6 +248,7 @@ h1.rainbow {
   animation: recFlash .8s ease-in-out infinite alternate; }
 #resStreakRecord { color: #ff9f43; }
 @keyframes recFlash { from { opacity: .65; transform: scale(1);} to { opacity: 1; transform: scale(1.07);} }
+#resPractice { color: #9fd8b8; font-size: 15px; font-style: italic; text-align: center; max-width: min(320px, 84vw); }
 
 /* ---- confetti burst (personal-best celebration) ---- */
 #confettiLayer { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }

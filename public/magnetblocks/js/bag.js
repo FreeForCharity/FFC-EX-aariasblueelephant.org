@@ -71,6 +71,7 @@ window.MB = window.MB || {};
       date: new Date().toLocaleDateString(), thumb: Bag.snapshot(renderer, scene, camera), pieces };
     Bag.items.push(item);
     if (Bag.items.length > MAX) Bag.items.shift();
+    if (MB.Stats) MB.Stats.bump('buildsSaved');
     save();
     return item;
   };

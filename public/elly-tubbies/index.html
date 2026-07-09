@@ -313,8 +313,30 @@
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
       <button class="big" id="setReplay" style="font-size:17px">🎬 Watch my adventure</button>
       <button class="big" id="setImportReplay" style="font-size:17px">📥 Watch a friend's adventure</button>
+      <button class="big" id="setParent" style="font-size:17px">👨‍👩‍👧 For grown-ups</button>
     </div>
     <button class="big" id="setClose">Done ▶</button>
+  </div></div>
+
+  <!-- Grown-up gate: a tiny typed math check keeps this out of kid-taps -->
+  <div class="overlay" id="parentGate"><div class="panel" style="max-width:380px">
+    <h1>👨‍👩‍👧 For grown-ups</h1>
+    <p>Quick check — what is <b>6 + 7</b>?</p>
+    <input id="parentAns" type="text" inputmode="numeric" autocomplete="off"
+      style="font-size:20px;padding:10px;border-radius:12px;border:2px solid #ddd;width:100%;box-sizing:border-box;margin:8px 0"
+      placeholder="Your answer">
+    <div id="parentGateErr" style="color:#e0521f;min-height:20px;font-size:14px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="big" id="parentGateGo" style="font-size:17px">Continue ▶</button>
+      <button class="big" id="parentGateCancel" style="font-size:17px">Cancel</button>
+    </div>
+  </div></div>
+
+  <!-- Grown-up summary: read-only stats, plain list -->
+  <div class="overlay" id="parentPanel"><div class="panel" style="max-width:460px">
+    <h1>👨‍👩‍👧 Grown-up Summary</h1>
+    <div id="parentStats" style="text-align:left;font-size:15px;line-height:1.8;max-height:52vh;overflow:auto"></div>
+    <button class="big" id="parentClose" style="font-size:17px">Done ▶</button>
   </div></div>
 
   <!-- Pause: a calm, no-fail break screen. Freezes the whole frame loop. -->
@@ -518,10 +540,14 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
 let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,calm:false,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
+       lastGiftDay:'',milestonesShown:{},lifeSparks:0,               // daily gift + streak milestones + parent summary
+       learn:{feelings:{},recipes:{},stories:{}},                    // practice counters, for the grown-up panel
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
+S.learn=Object.assign({feelings:{},recipes:{},stories:{}},S.learn);
+function addSparks(n){S.sparks+=n;S.lifeSparks=(S.lifeSparks||0)+n;}
 S.today=Object.assign({stars:{},seeds:{},stories:{},wantsDone:{}},S.today);if(!S.today.wantsDone)S.today.wantsDone={};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const STAR_GOAL=5;
@@ -1262,7 +1288,7 @@ function gardenProximity(){
     if(d<3.2){
       if(g.lastGreet!==todayKey()){                 // first hello today: wake + tiny gift
         g.lastGreet=todayKey();save();
-        stickerReact(st);S.sparks++;hud();save();
+        stickerReact(st);addSparks(1);hud();save();
         floatSprite('✨',s.position,3,1.4,1.1);sfx.seed();
       }else if(!g._cool||performance.now()-g._cool>6000){g._cool=performance.now();stickerReact(st);}
     }});
@@ -1351,7 +1377,7 @@ function registerTickles(){for(const id in tubbies){
     floatSprite('💕',t.group.position,3,1.2,1.1);
     tickles[id]=(tickles[id]||0)+1;
     if(tickles[id]%3===0){burst(t.group.position,20,'#ffdc00');sfx.star();
-      S.sparks++;save();hud();floatSprite('✨',t.group.position,3.5,1.5,1.4);}
+      addSparks(1);save();hud();floatSprite('✨',t.group.position,3.5,1.5,1.4);}
   },true,true);})(id);
 }}
 function refreshMarks(){for(const id in tubbies){
@@ -1408,6 +1434,19 @@ async function wakeRitual(){
   await say('☀️','Elly-elly… TUBBIES! Good morning, Trunkland! ☀️');
   if(S.lastDay!==todayKey()){
     const newDayReal=S.lastDay!=='';S.lastDay=todayKey();S.visitDays=(S.visitDays||0)+1;save();hud();
+    if(S.lastGiftDay!==todayKey()){                    // 🎁 daily gift: first visit each real day
+      S.lastGiftDay=todayKey();addSparks(10);save();hud();
+      sfx.good();burst(player.group.position,20,'#ffd23f');
+      celebToast('✨ Daily gift! +10 ✨');
+      say('☀️','A new day in Trunkland! Here are 10 sparkles! ✨');
+    }
+    const MS=[3,7,14,30];                               // 🎉 streak milestones — never shame a gap
+    if(MS.includes(S.visitDays)&&!(S.milestonesShown||{})[S.visitDays]){
+      S.milestonesShown=S.milestonesShown||{};S.milestonesShown[S.visitDays]=1;save();
+      burst(player.group.position,26,'#8fd0ff');
+      celebToast(`🎉 ${S.visitDays} days in Trunkland!`);
+      say('☀️',`${S.visitDays} days in Trunkland! 🎉`);
+    }
     if(newDayReal){
       // the nearest friend runs over for a hug + remembers yesterday
       const p=player.group.position;
@@ -1505,7 +1544,7 @@ function tubbyWantsUpdate(){
     const t=tubbies[id];
     if(t.group.position.distanceTo(p)<3.4){
       S.today.wantsDone[id]=1;
-      S.friend[id]=(S.friend[id]||0)+1;S.sparks+=3;save();hud();
+      S.friend[id]=(S.friend[id]||0)+1;addSparks(3);save();hud();
       player.group.remove(carrySprite);carrySprite=null;carried=null;
       if(t.bubble){t.group.remove(t.bubble);t.bubble=null;}
       doMove(t,'happy',1.5);doMove(player,'happy',1.5);
@@ -1619,7 +1658,7 @@ function questUpdate(dt){
   try{done=quest.check();}catch(e){}
   if(done){
     const q=quest;quest=null;
-    S.questN++;S.sparks+=4;save();hud();
+    S.questN++;addSparks(4);save();hud();
     sfx.good();reactSun();recEvent('quest');
     celebToast(`🌟 Quest ${S.questN} done! +4 ✨`);
     const el=$('questChip');if(el){el.classList.remove('donePulse');void el.offsetWidth;el.classList.add('donePulse');}
@@ -2562,7 +2601,7 @@ function updateRoam(dt,time){
   // seeds pickup
   for(let i=seeds.length-1;i>=0;i--){const s=seeds[i];
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
-      S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
+      S.today.seeds[s.i]=1;addSparks(1);save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
   // trampoline: land on it -> BOING sky-high!
   {const [tx,tz]=POI.tramp;
@@ -2578,7 +2617,7 @@ function updateRoam(dt,time){
     if(sc.need&&sc.need!==trav)continue;
     if(sc.need==='fly'&&Math.abs(p.y-sc.hy)>4)continue;
     if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.6){
-      S.secrets[sc.id]=1;S.sparks+=5;save();hud();refreshSecrets();
+      S.secrets[sc.id]=1;addSparks(5);save();hud();refreshSecrets();
       burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
       say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
     }}
@@ -2638,7 +2677,7 @@ function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
 async function giveStar(id,tub){
   const first=!S.today.stars[id];
   if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();recEvent('star');}
-  S.sparks+=first?5:2;save();hud();
+  addSparks(first?5:2);save();hud();
   reactSun();sfx.good();
   doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
   burst(tub.group.position,22,'#ffd23f');burst(player.group.position,18,'#ff8fb1');
@@ -2703,7 +2742,7 @@ async function runStory(st,tub){
         clearChoices();
         burst(pos,16,'#8fd0ff');
         await say('🎉',c.fb);
-        S.today.stories[st.id]=1;save();
+        S.today.stories[st.id]=1;S.learn.stories[st.id]=(S.learn.stories[st.id]||0)+1;save();
         const over=await giveStar('story-'+st.id,tub);
         if(!over)exitScene();
       }else{
@@ -2744,6 +2783,7 @@ async function gameFeelings(tub){
       const pos=base.clone();pos.x+=xs[k];pos.z-=7;pos.y=terrainH(pos.x,pos.z);
       makeChoiceFigure('💭',o.w,pos,async()=>{
         if(o.w===f.w){sfx.good();clearChoices();wins++;
+          S.learn.feelings[f.w]=(S.learn.feelings[f.w]||0)+1;save();
           burst(tub.group.position,14,'#6dd47e');
           await say('💚',`Yes! ${f.e} means ${f.w}! ${f.hint}`);
           next();
@@ -2820,6 +2860,7 @@ async function gameKitchen(tub){
         await say('💛',`${stp.e} ${stp.w}! ${idx<rec.steps.length?'What\'s next?':''}`);
         if(idx>=rec.steps.length){
           tub.anim.tv('🍲');
+          S.learn.recipes[rec.name]=(S.learn.recipes[rec.name]||0)+1;save();
           const over=await giveStar('sunny',tub);
           if(!over)exitScene();}
       }else{sfx.soft();careSun();fig.userData.wob=1;
@@ -2897,7 +2938,7 @@ async function startGearVisit(k){
         clearChoices();sfx.good();
         S.gear[k]=1;
         const first=!S.today.stars['gear_'+k];
-        if(first){S.today.stars['gear_'+k]=1;S.sparks+=5;save();hud();sfx.star();}
+        if(first){S.today.stars['gear_'+k]=1;addSparks(5);save();hud();sfx.star();}
         else save();
         reactSun();burst(player.group.position,22,'#ffd23f');
         doMove(player,'happy',1.4);
@@ -2981,10 +3022,10 @@ function fxTap(i,el){
     const el2=[...$('fxGrid').children][i];el2.classList.add('pop');
     sfx.good();
     if(t.i+1===t.ch.tiers.length-1){             // chain complete!
-      S.fixit.done[t.ch.id]=1;cells[i]=null;S.sparks+=8;save();hud();
+      S.fixit.done[t.ch.id]=1;cells[i]=null;addSparks(8);save();hud();
       renderFixit();refreshFixit();reactSun();sfx.star();
       $('fxGoal').innerHTML=`<b style="color:#2f9e44">${t.ch.tiers[t.ch.tiers.length-1]} ${t.ch.story} ✨+8</b>`;
-      if(FX_CHAINS.every(c=>S.fixit.done[c.id])){S.sparks+=20;save();hud();
+      if(FX_CHAINS.every(c=>S.fixit.done[c.id])){addSparks(20);save();hud();
         setTimeout(()=>{$('fixit').classList.remove('show');say('☀️','You fixed the WHOLE garden! Trunkland is so happy! ✨+20 🌟');exitScene();},1400);}
     }
   }else{el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),350);sfx.soft();}
@@ -3228,6 +3269,32 @@ $('setCalm').onclick=()=>{S.calm=!S.calm;save();renderSettings();sfx.tap();
 $('setFs').onclick=()=>{sfx.tap();
   if(document.fullscreenElement)document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});};
+/* 👨‍👩‍👧 grown-up summary: gated by a typed math check, read-only stats */
+function topN(obj,n){return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+function renderParentPanel(){
+  const learn=S.learn||{feelings:{},recipes:{},stories:{}};
+  const top=[...topN(learn.feelings,3).map(([k,v])=>`${k} ×${v}`),
+             ...topN(learn.recipes,3).map(([k,v])=>`${k} ×${v}`),
+             ...topN(learn.stories,3).map(([k,v])=>`${k} ×${v}`)].slice(0,3);
+  const friends=Object.keys(TUBBIES).map(id=>`${TUBBIES[id].name} Lv${S.friend[id]||0}`).join(', ');
+  $('parentStats').innerHTML=
+    `<div>📅 Days visited: <b>${S.visitDays||1}</b></div>
+     <div>☀️ Current day: <b>${S.day}</b></div>
+     <div>✨ Total sparkles earned: <b>${S.lifeSparks||0}</b></div>
+     <div>⭐ Stars today: <b>${starCount()}</b> / ${STAR_GOAL}</div>
+     <div>🌸 Stickers owned: <b>${Object.keys(S.stickers).length}</b> / ${STICKERS.length}</div>
+     <div>🌟 Quests completed: <b>${S.questN||0}</b></div>
+     <div>💜 Friends: ${friends}</div>
+     <div>📖 Practiced most: ${top.length?top.join(', '):'—'}</div>`;
+}
+$('setParent').onclick=()=>{sfx.tap();$('settings').classList.remove('show');
+  $('parentAns').value='';$('parentGateErr').textContent='';$('parentGate').classList.add('show');};
+$('parentGateCancel').onclick=()=>{sfx.tap();$('parentGate').classList.remove('show');$('settings').classList.add('show');};
+$('parentGateGo').onclick=()=>{
+  if(($('parentAns').value||'').trim()===String(6+7)){
+    sfx.tap();$('parentGate').classList.remove('show');renderParentPanel();$('parentPanel').classList.add('show');
+  }else{$('parentGateErr').textContent='Not quite — try again!';sfx.soft();}};
+$('parentClose').onclick=()=>{sfx.tap();$('parentPanel').classList.remove('show');};
 /* ⏸️ pause: freezes the whole frame loop (see setPaused/frame) */
 $('pauseBtn').onclick=()=>{sfx.tap();setPaused(true);};
 $('resumeBtn').onclick=()=>{sfx.tap();setPaused(false);};

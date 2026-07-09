@@ -25,6 +25,14 @@ function loadSave() {
       ["friends", "hand", "done", "quizzed"].forEach(k => { if (!Array.isArray(save[k])) save[k] = []; });
       if (typeof save.stickers !== "number" || isNaN(save.stickers)) save.stickers = 0;
       if (!save.trials || typeof save.trials !== "object" || Array.isArray(save.trials)) save.trials = {};
+      // migrate older trial entries to include dates[] / completions used by
+      // the mastery criterion and progress report (see section below).
+      Object.keys(save.trials).forEach(k => {
+        const t = save.trials[k];
+        if (!t || typeof t !== "object") { delete save.trials[k]; return; }
+        if (!Array.isArray(t.dates)) t.dates = [];
+        if (typeof t.completions !== "number" || isNaN(t.completions)) t.completions = 0;
+      });
       if (typeof save.seenTutorial !== "boolean") save.seenTutorial = false;
     }
   } catch (e) { save = defaultSave(); }
@@ -287,26 +295,52 @@ function buildChoices(container, options, feedbackEl, onCorrect, trial) {
   });
 }
 /* ---------------------------------------------------------------
-   PER-TRIAL DATA — foundation for the future clinical progress
-   report. Pure data capture; no report UI is built from this yet.
-   save.trials = { [scenarioId]: { attempts, firstTryCorrect, lastPlayed } }
+   PER-TRIAL DATA — foundation for the clinical progress report.
+   save.trials = { [scenarioId]: {
+     attempts, firstTryCorrect, lastPlayed,
+     completions,   // total number of finished playthroughs
+     dates: []      // unique YYYY-MM-DD dates on which a playthrough was
+                     // completed with no wrong tap — 3 distinct dates = mastered
+   } }
    --------------------------------------------------------------- */
+function newTrialEntry() { return { attempts: 0, firstTryCorrect: null, lastPlayed: null, completions: 0, dates: [] }; }
 function trialRecordWrong(scenarioId) {
   if (!scenarioId) return;
   if (!save.trials) save.trials = {};
-  const t = save.trials[scenarioId] || (save.trials[scenarioId] = { attempts: 0, firstTryCorrect: null, lastPlayed: null });
+  const t = save.trials[scenarioId] || (save.trials[scenarioId] = newTrialEntry());
   t.attempts = (t.attempts || 0) + 1;
   saveSave();
 }
 function trialRecordCompletion(scenarioId, hadWrongTap) {
   if (!scenarioId) return;
   if (!save.trials) save.trials = {};
-  const t = save.trials[scenarioId] || (save.trials[scenarioId] = { attempts: 0, firstTryCorrect: null, lastPlayed: null });
+  const t = save.trials[scenarioId] || (save.trials[scenarioId] = newTrialEntry());
   // firstTryCorrect is decided only once — the first time this scenario
   // is completed — and never overwritten by later replays.
   if (t.firstTryCorrect === null) t.firstTryCorrect = !hadWrongTap;
+  t.completions = (t.completions || 0) + 1;
   t.lastPlayed = new Date().toISOString().slice(0, 10);
+  if (!Array.isArray(t.dates)) t.dates = [];
+  // mastery criterion: a first-try-correct completion on 3 different dates
+  if (!hadWrongTap && t.dates.indexOf(t.lastPlayed) === -1) t.dates.push(t.lastPlayed);
   saveSave();
+}
+function isScenarioMastered(scenarioId) {
+  const t = save.trials && save.trials[scenarioId];
+  return !!(t && Array.isArray(t.dates) && t.dates.length >= 3);
+}
+function daysSinceDate(isoDate) {
+  if (!isoDate) return Infinity;
+  const ms = Date.now() - new Date(isoDate + "T00:00:00").getTime();
+  return Math.floor(ms / 86400000);
+}
+/* one gentle re-practice nudge per browser session (see renderScenarioPicker) */
+function findReviewCandidate() {
+  if (!save.trials) return null;
+  return HH.SCENARIOS.find(sc => {
+    const t = save.trials[sc.id];
+    return t && t.lastPlayed && !isScenarioMastered(sc.id) && daysSinceDate(t.lastPlayed) >= 3;
+  }) || null;
 }
 function speakRow(card, text) {
   const row = document.createElement("div"); row.className = "step-text-row";
@@ -1187,6 +1221,23 @@ function renderScenarioPicker(body) {
     adultBtn.addEventListener("click", () => startMasterReview({ onApproved: renderPractice }));
     body.appendChild(adultBtn);
   }
+  // spaced re-practice: one gentle nudge per browser session, only if a
+  // played-but-unmastered scenario has gone quiet for 3+ days.
+  if (sessionStorage.getItem("hh_review_suggested") !== "1") {
+    const cand = findReviewCandidate();
+    if (cand && isApproved("scenario:" + cand.id)) {
+      sessionStorage.setItem("hh_review_suggested", "1");
+      const banner = document.createElement("div"); banner.className = "review-suggest-banner";
+      const txt = document.createElement("p"); txt.className = "review-suggest-text";
+      txt.textContent = HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title);
+      const btn = document.createElement("button"); btn.className = "btn-primary review-suggest-btn";
+      btn.textContent = HH.REVIEW_PROMPT.button;
+      btn.addEventListener("click", () => attemptStartScenario(cand));
+      banner.appendChild(txt); banner.appendChild(btn);
+      body.appendChild(banner);
+      setNilu(HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title));
+    }
+  }
   const grid = document.createElement("div"); grid.className = "scenario-grid";
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");
@@ -1196,7 +1247,8 @@ function renderScenarioPicker(body) {
       card.appendChild(badge);
     } else if (save.done.includes(sc.id)) {
       // progress marker only — nothing is hidden or locked because of this
-      const badge = document.createElement("div"); badge.className = "done-badge"; badge.textContent = "✅";
+      const badge = document.createElement("div"); badge.className = "done-badge";
+      badge.textContent = isScenarioMastered(sc.id) ? "✅🏅" : "✅";
       card.appendChild(badge);
       card.classList.add("scenario-done");
     }
@@ -1783,6 +1835,38 @@ function renderSignoffSection() {
     '<div class="gu-note">Every scenario and both lessons must be approved once before a child can play them. ' +
     "You can re-lock any section at any time.</div>";
 }
+/* ---- progress report: factual, adult-facing, print-friendly ---- */
+function renderProgressSection() {
+  const trials = save.trials || {};
+  const total = HH.SCENARIOS.length;
+  let practicedCount = 0, masteredCount = 0;
+  const rows = HH.SCENARIOS.map(sc => {
+    const t = trials[sc.id];
+    const practiced = !!(t && t.lastPlayed);
+    if (practiced) practicedCount++;
+    const mastered = isScenarioMastered(sc.id);
+    if (mastered) masteredCount++;
+    const timesPracticed = t && t.completions ? t.completions : 0;
+    const firstTry = t && t.firstTryCorrect !== null && t.firstTryCorrect !== undefined
+      ? (t.firstTryCorrect ? "✓" : "✗") : "—";
+    const dateCount = t && Array.isArray(t.dates) ? t.dates.length : 0;
+    const lastPlayed = t && t.lastPlayed ? formatDate(t.lastPlayed) : "—";
+    return "<tr><td>" + escHtml(sc.emoji + " " + sc.title) + "</td><td>" + timesPracticed + "</td><td>" +
+      firstTry + "</td><td>" + dateCount + " of 3</td><td>" + (mastered ? "🏅" : "—") + "</td><td>" +
+      lastPlayed + "</td></tr>";
+  }).join("");
+  const filledHand = (save.hand || []).filter(Boolean);
+  const placesCovered = new Set(filledHand.map(id => (HH.HELPERS[id] ? HH.HELPERS[id].where : null)).filter(Boolean));
+  const handStatus = filledHand.length + " of 5 helpers chosen" +
+    (placesCovered.size ? " — covers: " + Array.from(placesCovered).join(", ") : " — no places covered yet");
+  return "<h3>📊 Progress</h3>" +
+    "<p class=\"gu-summary\">" + practicedCount + " of " + total + " scenarios practiced &nbsp;•&nbsp; " +
+    masteredCount + " of " + total + " mastered (3 first-try-correct practice dates).</p>" +
+    "<p class=\"gu-summary\">Helping Hand: " + escHtml(handStatus) + ".</p>" +
+    '<table class="gu-table progress-table"><thead><tr><th>Scenario</th><th>Times Practiced</th>' +
+    "<th>First-Try Correct</th><th>Practice Dates</th><th>Mastered</th><th>Last Played</th></tr></thead><tbody>" +
+    rows + "</tbody></table>";
+}
 function renderGrownupsBody() {
   const body = $("guBody");
   body.hidden = false;
@@ -1790,6 +1874,7 @@ function renderGrownupsBody() {
   const esc = s => String(s);
   body.innerHTML =
     renderSignoffSection() +
+    renderProgressSection() +
     "<h3>What This Teaches</h3><ul>" + G.what.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>" +
     "<h3>If A Child Tells You Something</h3><ol>" + G.disclosure.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>" +
     "<h3>Where To Report</h3><table class=\"gu-table\">" +

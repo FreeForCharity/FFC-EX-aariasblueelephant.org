@@ -3,8 +3,23 @@ window.MB = window.MB || {};
 (function(){
   const COOLDOWN = 60;       // seconds between magic builds
   const FIRST_WAIT = 40;     // first one unlocks quickly so kids discover it
+  const LAST_DAY_KEY = 'mb_last_day';
   const H = { readyAt: 0, running: false };
-  H.init = function(){ H.readyAt = performance.now()/1000 + FIRST_WAIT; H.lastCooldown = FIRST_WAIT; };
+  H.init = function(){
+    // daily reset: on first visit of each calendar day, the magic wand is fully charged
+    const today = new Date().toLocaleDateString();
+    const lastDay = localStorage.getItem(LAST_DAY_KEY);
+    if (lastDay !== today){
+      H.readyAt = performance.now()/1000; // ready now
+      H.lastCooldown = FIRST_WAIT;
+      try { localStorage.setItem(LAST_DAY_KEY, today); } catch(e){}
+      // slight delay so toast system is ready, then show the message
+      setTimeout(() => { if (MB.ui && MB.ui.toast) MB.ui.toast('The Magic Wand is fully charged today! ✨', 2400); }, 100);
+    } else {
+      H.readyAt = performance.now()/1000 + FIRST_WAIT;
+      H.lastCooldown = FIRST_WAIT;
+    }
+  };
 
   H.isReady = () => !H.running && performance.now()/1000 >= H.readyAt;
 

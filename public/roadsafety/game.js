@@ -226,9 +226,30 @@ const QUIZ = {
   ],
 };
 
+/* ---------- concept tracking + practice messaging ---------- */
+const CONCEPT_MAP = {
+  stopsign:"stopSign", redlight:"redLight", yield:"crosswalk", hitPed:"crosswalk",
+  emergency:"siren", cone:"cones", schoolSpeed:"schoolZone", festSpeed:"speeding", zoneSpeed:"speeding",
+};
+const PRACTICE_MSG = {
+  stopSign:   "stopping fully at stop signs 🛑",
+  redLight:   "stopping for red lights 🚦",
+  crosswalk:  "stopping for crosswalks 🚸",
+  siren:      "pulling over for sirens 🚑",
+  cones:      "steering clear of cones 🚧",
+  schoolZone: "slowing down in school zones 🏫",
+  speeding:   "watching your speed limit 🐢",
+};
+function practiceLine(counts){
+  let top = null, topN = 0;
+  for (const k in counts) if (counts[k] > topN){ topN = counts[k]; top = k; }
+  if (!top || topN === 0) return "Perfect safety — nothing to practice! 🌟";
+  return "Let's practice: " + (PRACTICE_MSG[top] || top);
+}
+
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
-let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{} };
+let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{}, concepts:{} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(save, s); } catch(e){}
 // one-time migration: default everyone into the new chase view
 if (!save.chaseDefault){ save.view = "fp"; save.chaseDefault = true; }
@@ -246,7 +267,7 @@ const S = {
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
   streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1, safeStops:0,
   air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
-  paused:false,
+  paused:false, violCounts:{}, curve:[], curveNext:0, practiceLine:"",
 };
 let cam = null;
 const input = { left:false, right:false, go:false, stop:false };
@@ -652,6 +673,7 @@ function beginRun(){
   S.amb = null; S.toasts = []; S.banner = null; S.shake = 0;
   S.speedTimer = 0; S.quizBonus = 0; S.air = null; S.airPts = 0;
   S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0; S.safeStops = 0;
+  S.violCounts = {}; S.curve = []; S.curveNext = 0; S.practiceLine = "";
   refreshStreakChip(); document.getElementById("boostBtn").classList.add("hidden");
   updateBoostCharge();
   S.events = genEvents(S.li).map(e => initEvent(e, S.cfg));
@@ -709,6 +731,8 @@ function startCountdown(){
 function violation(key){
   const v = TIPS[key];
   breakStreak();
+  const concept = CONCEPT_MAP[key] || key;
+  S.violCounts[concept] = (S.violCounts[concept] || 0) + 1;
   S.score = Math.max(0, S.score - v.pts);
   buzz(); S.shake = save.calm ? 0 : 10;
   document.getElementById("tipIcon").textContent = v.icon;
@@ -798,6 +822,11 @@ function update(dt){
   for (const t of S.toasts) t.t -= dt;
   S.toasts = S.toasts.filter(t => t.t > 0);
   if (S.shake > 0) S.shake = Math.max(0, S.shake - 40 * dt);
+
+  // score-vs-progress ghost curve: record the running score once per 5% of route
+  const _p = clamp(S.t / S.rt.len, 0, 1);
+  const _b = Math.min(20, Math.floor(_p * 20));
+  while (S.curveNext <= _b){ S.curve[S.curveNext] = S.score; S.curveNext++; }
 
   if (S.score <= 0 && S.screen === "playing"){
     showRetry("Too many oopsies this time — and that's OK! Every safety hero practices. Let's ride it again, nice and careful.");
@@ -2039,10 +2068,15 @@ function drawHUD(){
   }
   ctx.font = "11px sans-serif"; ctx.fillStyle = "#fff"; ctx.fillText("🏁", bx + bw + 5, 29);
   const _best = save.best[S.li];
-  if (_best && _best.time > 0){    // Safety Star ghost — its pace to beat
-    const gp = clamp(S.time / _best.time, 0, 1);
+  if (_best && _best.curve && _best.curve.length){    // Safety Star ghost — best SAFETY at this point of the route (never speed)
+    const gp = clamp(S.t / S.rt.len, 0, 1);
+    const gIdx = Math.min(_best.curve.length - 1, Math.floor(gp * 20));
+    const ghostScore = _best.curve[gIdx] ?? _best.score;
+    const ahead = S.score >= ghostScore;
     ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = ahead ? "#51cf66" : "#ff6b6b";
     ctx.fillText("⭐", bx + bw * gp, 17);
+    ctx.fillStyle = "#fff";
   }
   ctx.font = "9px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#9fb3c8";
   ctx.fillText(`LEVEL ${S.li + 1} • ${S.cfg.title.toUpperCase()}`, bx + bw / 2, 46);
@@ -2431,13 +2465,25 @@ function startQuiz(){
   sirenStop();
   S.screen = "quiz";
   const pool = [...QUIZ[S.veh.id]].sort(() => Math.random() - .5);
-  quizQs = pool.slice(0, 2); quizIdx = 0;
+  quizQs = pool.slice(0, 2).map(q => shuffleQuestion(q));
+  quizIdx = 0;
   showQuizQ();
   show("quiz");
 }
+/* shuffle a question's answer order (tracking the new correct index); keep the
+   original question object around (_src) so a wrong answer can be re-queued once */
+function shuffleQuestion(q){
+  const src = q._src || q;
+  const order = src.opts.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return { q: src.q, opts: order.map(i => src.opts[i]), a: order.indexOf(src.a), why: src.why, _src: src };
+}
 function showQuizQ(){
   const q = quizQs[quizIdx];
-  document.getElementById("quizQ").textContent = `${quizIdx + 1}/2: ${q.q}`;
+  document.getElementById("quizQ").textContent = `${quizIdx + 1}/${quizQs.length}: ${q.q}`;
   document.getElementById("quizWhy").classList.add("hidden");
   document.getElementById("quizNext").classList.add("hidden");
   const box = document.getElementById("quizOpts");
@@ -2451,7 +2497,11 @@ function showQuizQ(){
       [...box.children].forEach((c, j) => { if (j === q.a) c.classList.add("right"); });
       const why = document.getElementById("quizWhy");
       if (i === q.a){ S.quizBonus += 4; ding(); why.textContent = "✅ Correct! +4 — " + q.why; }
-      else { b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why; }
+      else {
+        b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why;
+        // missed it — give it one more try, re-shuffled, at the end of the quiz
+        if (!q._requeued){ q._requeued = true; const again = shuffleQuestion(q); again._requeued = true; quizQs.push(again); }
+      }
       speak(q.why);
       why.classList.remove("hidden");
       const next = document.getElementById("quizNext");
@@ -2471,6 +2521,11 @@ document.getElementById("quizNext").addEventListener("click", () => {
 function gradeOf(sc){ return sc >= 95 ? "S" : sc >= 85 ? "A" : sc >= 70 ? "B" : "C"; }
 function finishLevel(){
   S.finalScore = clamp(Math.round(S.score + S.quizBonus), 0, 100);
+  S.curve[20] = S.finalScore;                 // close out the safety curve at the finish line
+  S.practiceLine = practiceLine(S.violCounts);
+  // lifetime per-concept tally, for the "what to practice" nudge
+  save.concepts = save.concepts || {};
+  for (const k in S.violCounts) save.concepts[k] = (save.concepts[k] || 0) + S.violCounts[k];
   if (S.finalScore >= 70){
     const stars = S.finalScore >= 90 ? 3 : S.finalScore >= 78 ? 2 : 1;
     S.lastStars = stars;
@@ -2478,11 +2533,11 @@ function finishLevel(){
     const old = save.certs[S.veh.id];
     if (!old || S.finalScore > old.score)
       save.certs[S.veh.id] = { score: S.finalScore, stars, date: new Date().toLocaleDateString() };
-    // Safety Star ghost record (best score; its pace haunts the progress bar)
+    // Safety Star ghost record (best SCORE curve — beating it means safer, never faster)
     const prev = save.best[S.li];
     const newRecord = !prev || S.finalScore > prev.score;
     const beatGhost = prev && gradeOf(S.finalScore) < gradeOf(prev.score);   // "S"<"A"<"B"<"C" lexicographic
-    if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time) };
+    if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time), curve: S.curve.slice() };
     // Personal-best Hero Streak (only celebrate an actual improvement, not a brand-new save)
     const prevStreak = save.bestStreak[S.li] || 0;
     const newStreakRecord = prevStreak > 0 && S.bestStreak > prevStreak;
@@ -2490,6 +2545,7 @@ function finishLevel(){
     persist();
     showResults(stars, newRecord && !!prev, beatGhost, newStreakRecord);
   } else {
+    persist();
     showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate. You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
   }
 }
@@ -2509,6 +2565,7 @@ function showResults(stars, newRecord, beatGhost, newStreakRecord){
   const m = Math.floor(S.time / 60), sec = Math.round(S.time % 60);
   document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
   document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
+  document.getElementById("resPractice").textContent = S.practiceLine;
   document.getElementById("resRecord").classList.toggle("hidden", !newRecord);
   document.getElementById("resStreakRecord").classList.toggle("hidden", !newStreakRecord);
   document.getElementById("resGhost").classList.toggle("hidden", !beatGhost);
@@ -2599,6 +2656,8 @@ function drawCert(stars, champ, stunt){
     x.font = "bold 21px Georgia, serif"; x.fillStyle = "#b07d12";
     x.fillText("🏆 MOUNTAIN HOUSE ROAD SAFETY CHAMPION 🏆", CW/2, 538);
   }
+  x.font = "italic 13px Georgia, serif"; x.fillStyle = "#5a7d9a"; x.textAlign = "center";
+  x.fillText(S.practiceLine || "", CW/2, champ ? 558 : 538);
   x.font = "54px sans-serif"; x.textAlign = "left";
   x.fillText(S.veh.emoji, 70, 380);
   x.textAlign = "center";

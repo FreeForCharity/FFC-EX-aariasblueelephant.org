@@ -5,6 +5,7 @@ ABC.state = {
   unlocked: new Set(),        // unlocked block ids (locked blocks)
   foundShapes: new Set(),     // shapes hatched/unlocked via digging
   completed: new Set(),       // completed project ids
+  metrics: { digs: 0, treasures: 0, animalsTalked: 0, wordsPracticed: 0 },  // 👨‍👩‍👧 parent dashboard counters
   tutorialDone: false,
   visiting: false,            // true while looking at a friend's shared world — never persisted, blocks auto-save
 };
@@ -345,6 +346,7 @@ ABC.ui = (function () {
             closeDialog();
             confetti(18);
             addStars(opts.stars != null ? opts.stars : 1);
+            ABC.state.metrics.wordsPracticed++;    // 👨‍👩‍👧 parent dashboard: expressive success
             ABC.portal && ABC.portal.charge(1);    // word power 🌀
             toast('🌟 ' + praise, 3600, true);
             onSuccess && onSuccess(o);
@@ -389,6 +391,7 @@ ABC.ui = (function () {
       setTimeout(() => {
         closeDialog(); confetti(22);
         addStars((opts.stars != null ? opts.stars : 1) + 1);  // bonus star for using voice!
+        ABC.state.metrics.wordsPracticed++;    // 👨‍👩‍👧 parent dashboard: expressive success
         ABC.portal && ABC.portal.charge(1);    // word power 🌀
         toast('🌟 ' + pick(ABC.PRAISE) + ' (+1 voice bonus ⭐)', 3800, true);
         onSuccess && onSuccess(best);
@@ -730,6 +733,7 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setVisit">📥 Visit a friend's world — open a world file they shared</button>
       <button class="choiceBtn" id="setTimelapse">🎬 My world grew! — watch your build come together again</button>
       <button class="choiceBtn" id="setAdventure">🎬 Watch my adventure — replay your last walk around!</button>
+      <button class="choiceBtn" id="setParent">👨‍👩‍👧 For grown-ups — progress dashboard</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>
       <div class="dlgRow"><button class="bigBtn green" id="setDone">Done ✔</button></div>`);
@@ -782,6 +786,7 @@ ABC.ui = (function () {
     wire('setVisit', () => visitWorld());
     wire('setTimelapse', () => { closeDialog(); startTimelapse(); });
     wire('setAdventure', () => { closeDialog(); ABC.startAdventureReplay && ABC.startAdventureReplay(); });
+    wire('setParent', () => showParentGate());
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {
@@ -790,6 +795,54 @@ ABC.ui = (function () {
         location.reload();
       }, '🧹');
     });
+  }
+
+  /* ---------------- 👨‍👩‍👧 for grown-ups: a quiet, read-only progress dashboard ----------------
+     Gated by a simple math check so it stays a grown-up-only screen. */
+  function showParentGate() {
+    openDialog(`<div class="bigEmoji">🔒</div><h2>For Grown-ups</h2>
+      <div class="scene">Quick check — what is <b>6 + 7</b>?</div>
+      <input id="gateInput" type="number" inputmode="numeric"
+        style="font-family:inherit;font-size:24px;text-align:center;padding:12px;border:3px solid #74c0fc;border-radius:16px;width:60%;">
+      <div class="dlgRow">
+        <button class="bigBtn green" id="gateOk">Enter</button>
+        <button class="bigBtn" id="gateBack" style="background:#eee;color:#333;box-shadow:0 4px 0 #ccc;">Back</button>
+      </div>`);
+    const inp = $('gateInput'); inp.focus();
+    const tryGo = () => {
+      if (+inp.value === 13) showParentDashboard();
+      else { inp.value = ''; toast('Not quite — try again!', 2200); inp.focus(); }
+    };
+    $('gateOk').onclick = tryGo;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryGo(); });
+    $('gateBack').onclick = () => showSettings();
+  }
+
+  function showParentDashboard() {
+    const st = ABC.state, m = st.metrics || {};
+    const days = ABC.overnight && ABC.overnight.petals ? ABC.overnight.petals() : 0;
+    const photos = ABC.photo && ABC.photo.count ? ABC.photo.count() : 0;
+    const befriended = ABC.friends && ABC.friends.metCount ? ABC.friends.metCount() : 0;
+    const row = (ico, label, val) =>
+      `<div style="display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px solid #e7ecf3;font-size:17px;">
+        <span>${ico} ${esc(label)}</span><b>${val}</b></div>`;
+    const html = `<div class="bigEmoji">👨‍👩‍👧</div><h2>For Grown-ups</h2>
+      <div class="scene" style="text-align:left; max-width:360px; margin:0 auto;">
+        ${row('🌻', 'Days played', days)}
+        ${row('⭐', 'Stars', st.stars || 0)}
+        ${row('💗', 'Hearts', st.hearts || 0)}
+        ${row('🪙', 'Coins', st.coins || 0)}
+        ${row('🧱', 'Blocks placed', st.placedCount || 0)}
+        ${row('💎', 'Treasures found', m.treasures || 0)}
+        ${row('🐾', 'Animals befriended', befriended)}
+        ${row('🏗️', 'Projects done', st.completed ? st.completed.size : 0)}
+        ${row('💬', 'Words practiced', m.wordsPracticed || 0)}
+        ${row('🔷', 'Shapes found', st.foundShapes ? st.foundShapes.size : 0)}
+        ${row('📸', 'Photos taken', photos)}
+      </div>
+      <div class="dlgRow"><button class="bigBtn green" id="pdOk" style="font-size:20px; padding:14px 32px;">Close ✔</button></div>`;
+    openDialog(html);
+    $('pdOk').onclick = () => { ABC.audio.sfx.pop(); showSettings(); };
   }
 
   function showHelp(onClose) {
@@ -809,5 +862,5 @@ ABC.ui = (function () {
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
            getHand, setHand, openBag, openQuickMenu,
            shareWorld, visitWorld, startTimelapse,
-           showSettings, showHelp, pick, pick3, esc };
+           showSettings, showParentGate, showParentDashboard, showHelp, pick, pick3, esc };
 })();

@@ -215,6 +215,7 @@
       <button class="menuBtn" id="soundBtn">🔊</button>
       <button class="menuBtn" id="tidyNowBtn">🧹 Tidy</button>
       <button class="menuBtn" id="clearBtn">🆕 New</button>
+      <button class="menuBtn" id="parentBtn" title="Parent panel">👨‍👩‍👧</button>
       <button class="menuBtn" id="replayBtn" style="display:none">🎬 Watch my build</button>
     </div>
 
@@ -275,6 +276,18 @@
     <div class="cardBtnRow"><button class="cardBtn gray" id="helpClose">Not now</button></div>
   </div></div>
 
+  <div class="overlay" id="parentModal"><div class="card">
+    <h2>👨‍👩‍👧 Growth Check-In</h2>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Sessions:</strong> <span id="statSessions">0</span></p>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Blocks Placed:</strong> <span id="statBlocksPlaced">0</span></p>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Builds Saved:</strong> <span id="statBuildsSaved">0</span></p>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Photos Taken:</strong> <span id="statPhotosTaken">0</span></p>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Tidy-Ups Completed:</strong> <span id="statTidyUps">0</span></p>
+    <p style="font-size:16px; margin-bottom:20px;"><strong>Biggest Build:</strong> <span id="statBiggestBuild">0</span> blocks</p>
+    <p style="font-size:16px;"><strong>Milestones:</strong> <span id="statMilestones">0</span> achieved</p>
+    <div class="cardBtnRow"><button class="cardBtn gray" id="parentClose" style="min-height:48px; min-width:100px;">Close</button></div>
+  </div></div>
+
   <div class="overlay" id="confirmModal"><div class="card">
     <h2 id="confirmTitle"></h2><p id="confirmText"></p>
     <div class="cardBtnRow"><button class="cardBtn" id="confirmYes">Yes!</button><button class="cardBtn gray" id="confirmNo">No</button></div>
@@ -291,6 +304,7 @@
   <script src="js/builder.js"></script>
   <script src="js/animate.js"></script>
   <script src="js/bag.js"></script>
+  <script src="js/stats.js"></script>
   <script src="js/undo.js"></script>
   <script src="js/replay.js"></script>
   <script src="js/cleanup.js"></script>

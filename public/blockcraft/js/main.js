@@ -542,6 +542,7 @@
         const t = ABC.world.get(info.cell.x, info.cell.y, info.cell.z);
         if (ABC.world.remove(info.cell.x, info.cell.y, info.cell.z)) {
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
+          ABC.state.metrics.digs++;                              // 👨‍👩‍👧 parent dashboard
           ABC.replayEvent && ABC.replayEvent('dig');             // 🎬 adventure recorder
           pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
           collapseCheck(info.cell);                              // 🌳 unsupported parts fall
@@ -898,6 +899,7 @@
         stars: ABC.state.stars, hearts: ABC.state.hearts, coins: ABC.state.coins,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         foundShapes: [...ABC.state.foundShapes],
+        metrics: ABC.state.metrics,
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
                     theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather, calm: s.calm },
@@ -946,6 +948,7 @@
       (d.foundShapes || []).forEach(s => ABC.state.foundShapes.add(s));
       (d.unlocked || []).forEach(b => ABC.state.unlocked.add(b));
       (d.completed || []).forEach(p => ABC.state.completed.add(p));
+      Object.assign(ABC.state.metrics, d.metrics || {});
       ABC.state.tutorialDone = !!d.tutorialDone;
       if (d.settings) Object.assign(ABC.audio.settings, d.settings);
       return true;

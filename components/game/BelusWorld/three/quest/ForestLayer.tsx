@@ -82,6 +82,8 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  /** gentle re-prompts this session — grown-ups-only signal, never shown to the child */
+  slips: number;
   // ---- engagement extras ----
   twinkles: TwinkleRT[]; // hidden collectibles found so far
   found: number; // count of twinkles collected this level
@@ -98,7 +100,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
-  onComplete: (zone: 'forest', level: number, stars: number, moment: string) => void;
+  onComplete: (zone: 'forest', level: number, stars: number, moment: string, slips?: number) => void;
   onStatus: (s: QuestStatus | null) => void;
   /** the child just helped this species — remember the friendship */
   onFriendHealed: (species: string) => void;
@@ -118,7 +120,7 @@ export default function ForestLayer(props: Props) {
     clock: 0, active: false, level: props.level,
     friends: FOREST_STORY[clampLevel(props.level)].friends.map(() => ({ done: false, doneAt: -99 })),
     finished: 0, disarmed: false, activeFriend: -1, lingerStart: 0, listening: false,
-    progress: 0, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    progress: 0, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0, slips: 0,
     twinkles: twinklesOf(props.level).map(() => ({ found: false, foundAt: -99 })),
     found: 0, trail: null,
     greetAt: FOREST_STORY[clampLevel(props.level)].friends.map(() => -1),
@@ -188,6 +190,7 @@ export default function ForestLayer(props: Props) {
     S.current.found = 0;
     S.current.trail = null;
     S.current.greetAt = lvl.friends.map(() => -1);
+    S.current.slips = 0;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, 'Walk up to a friend to hear their wish 💜');
@@ -207,7 +210,7 @@ export default function ForestLayer(props: Props) {
   function finish() {
     const lvl = FOREST_STORY[clampLevel(S.current.level)];
     // errorless & no-fail: every completed level is worth a full 3 stars
-    props.onComplete(ZONE, S.current.level, 3, lvl.moment);
+    props.onComplete(ZONE, S.current.level, 3, lvl.moment, S.current.slips);
     props.speak(lvl.outro);
     S.current.active = false;
     S.current.disarmed = true;
@@ -267,6 +270,7 @@ export default function ForestLayer(props: Props) {
       st.wrongIdx = k;
       st.wrongUntil = st.clock + 0.5;
       st.lockUntil = st.clock + 0.5;
+      st.slips += 1;
       props.playSound('tap');
       props.setEmotion('curious');
       props.speak(st.progress === 0 ? `Try the first word — "${expected}".` : `Almost! Next is "${expected}".`);
