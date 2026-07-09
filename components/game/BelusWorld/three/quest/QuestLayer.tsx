@@ -10,8 +10,9 @@
 // finished level back up so the island blooms and Nilu grows.
 // ---------------------------------------------------------------------------
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 import { ISLANDS } from '../worldConfig';
 import { beluPos, dynamicSolids } from '../playerState';
 import type { ActivityZone } from '../../belu/progress';
@@ -26,6 +27,7 @@ import CarrySlot, { type SlotStatus } from './CarrySlot';
 const ALL_ZONES: ActivityZone[] = [
   'meadow', 'mountain', 'cove', 'forest', 'shore',
   'school', 'afternoon', 'night',
+  'garden', 'deepforest', 'lagoon', 'bay',
 ];
 
 // idle "host" friends so each island feels inhabited before you arrive
@@ -38,20 +40,41 @@ const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
   school: { face: '🦉', mood: 'happy' },
   afternoon: { face: '🐕', mood: 'happy' },
   night: { face: '🐑', mood: 'calm' },
+  garden: { face: '🦋', mood: 'happy' },
+  deepforest: { face: '🦌', mood: 'happy' },
+  lagoon: { face: '🐬', mood: 'calm' },
+  bay: { face: '🦜', mood: 'happy' },
 };
 
 const PICK_RADIUS = 2.4; // how close Nilu must walk to choose an orb (generous +
 //                          overlapping so you can never thread between orbs)
-const ORB_DIST = 3.0; // orb arc distance out in front of the friend
+const ORB_DIST = 2.4; // orb arc distance out in front of the friend
 const ORB_H = 1.0; // orb float height above the island top (near Nilu's body)
+
+// Adjacent-choice spacing: a joystick can't reliably steer between two things
+// whose walk-in circles overlap. PICK_RADIUS is 2.4, so two centres closer
+// than 4.8 apart are ambiguous — a parent reported exactly this on Forest's
+// word orbs ("too close together to navigate precisely"). 5.0 gives clean
+// daylight between every pair while staying inside the smallest island's
+// walkable radius (8.5) even at the largest option count QuestLayer ever
+// lays out (4, for a couple of Sleepy Island sequence rounds).
+const ORB_SPACING = 5.0;
 
 // carry/sort: items sit further out on their own pedestals; the delivery pads
 // (numbered slots or labeled tables) sit a bit closer to the friend, so the
-// child's walk naturally reads as "pick up, then bring it in".
-const CARRY_ITEM_DIST = ORB_DIST + 2.6;
-const CARRY_SLOT_DIST = ORB_DIST;
+// child's walk naturally reads as "pick up, then bring it in". Items get the
+// same ≥5-apart rule as orbs; pads (fewer, and only ever a target, never a
+// multi-way choice to distinguish) get a slightly tighter ≥4.
+const CARRY_ITEM_DIST = 5.4;
+const CARRY_SPACING = 5.0;
+const CARRY_SLOT_DIST = 2.4;
+const SLOT_SPACING = 4.2;
 // steps: a little path of stones receding from the friend, each a touch
-// higher than the last — a gentle rising staircase to walk in order.
+// higher than the last — a gentle rising staircase to walk in order. This is
+// a single-file path (not a side-by-side choice fan), so the ≥5 rule doesn't
+// apply the same way; the fix here is nearest-match picking (below) rather
+// than spacing, since widening it enough to beat PICK_RADIUS would push the
+// last stone off the smaller islands.
 const STEP_DIST = ORB_DIST + 0.4;
 const STEP_SPACING = 1.9;
 const STEP_RISE = 0.28;
@@ -69,8 +92,10 @@ function orbCount(round: QuestRound): number {
 
 /** Lay `n` things out in an arc at `dist` in front of the friend, facing
  *  Nilu's approach (the same fan used for answer orbs, carry items/slots,
- *  and sort tables — only the distance differs). */
-function layoutArc(zone: ActivityZone, n: number, dist: number): Layout {
+ *  and sort tables — only the distance + spacing differ). `spacing` is the
+ *  centre-to-centre gap between adjacent things, chosen by the caller so it
+ *  clears PICK_RADIUS with real room (see the constants above). */
+function layoutArc(zone: ActivityZone, n: number, dist: number, spacing: number = ORB_SPACING): Layout {
   const isl = ISLANDS[zone];
   // approach direction = from the island centre toward home (0,0)
   const len = Math.hypot(isl.cx, isl.cz) || 1;
@@ -79,9 +104,6 @@ function layoutArc(zone: ActivityZone, n: number, dist: number): Layout {
   // perpendicular (for spreading things left/right)
   const px = -az;
   const pz = ax;
-  // wider fan = easier to reach from any approach angle; pick radius (2.4) is
-  // bigger than half the spacing so coverage never has a gap to walk through.
-  const spacing = n <= 2 ? 3.8 : n <= 3 ? 3.4 : n <= 4 ? 3.0 : 2.6;
   const positions: [number, number, number][] = [];
   for (let i = 0; i < n; i++) {
     const frac = n === 1 ? 0 : i / (n - 1) - 0.5;
@@ -95,7 +117,7 @@ function layoutArc(zone: ActivityZone, n: number, dist: number): Layout {
 
 /** Lay the answer orbs out in an arc in front of the friend. */
 function layoutOrbs(zone: ActivityZone, n: number): Layout {
-  return layoutArc(zone, n, ORB_DIST);
+  return layoutArc(zone, n, ORB_DIST, ORB_SPACING);
 }
 
 /** A little path of stepping stones receding from the friend, rising as it
@@ -111,6 +133,30 @@ function layoutSteps(zone: ActivityZone, n: number): Layout {
     positions.push([isl.cx + ax * dist, isl.top + ORB_H * 0.6 + i * STEP_RISE, isl.cz + az * dist]);
   }
   return { positions };
+}
+
+/** Find the CLOSEST candidate to Nilu within `radius`, or -1. Each candidate
+ *  is `[id, position]` — `id` is whatever the caller wants back (an item's
+ *  original index, a pad number, ...). Several rounds lay pedestals/pads
+ *  close enough together that their walk-in circles overlap (that's fine —
+ *  it's what makes picking feel forgiving) but picking must always resolve
+ *  to the thing Nilu is actually nearest to, never just the first one
+ *  checked in array order — otherwise a child standing right on item B can
+ *  end up "picking up" item A because it happened to be checked first. */
+function nearestWithin(
+  candidates: [id: number, pos: [number, number, number]][],
+  radius: number,
+): number {
+  let best = -1;
+  let bestD = radius;
+  for (const [id, p] of candidates) {
+    const d = Math.hypot(beluPos.x - p[0], beluPos.z - p[2]);
+    if (d < bestD) {
+      bestD = d;
+      best = id;
+    }
+  }
+  return best;
 }
 
 /** Deterministic shuffle (no Math.random at render/module time — like the
@@ -168,6 +214,16 @@ interface State {
   /** carry/sort/steps: which slot/table/stone is wobbling right now, or -1 */
   wrongSlot: number;
   wrongSlotUntil: number;
+  /** stuck-help: clock time of the last correct pick/delivery/step (or round
+   *  start) — the two-stage help escalation counts idle time from here */
+  lastProgressAt: number;
+  /** stuck-help: 0 = nothing yet, 1 = coach hint + beacon shown, 2 = "Help
+   *  me" button offered, 3 = help already used this round (one per round) */
+  helpStage: 0 | 1 | 2 | 3;
+  /** stuck-help: true while the assisted "watch me" animation is playing,
+   *  between tapping Help me and the round actually completing */
+  helping: boolean;
+  helpFinishAt: number;
 }
 
 export interface QuestStatus {
@@ -182,7 +238,19 @@ export interface QuestStatus {
   phase: 'question' | 'correct';
   /** optional override for the small hint line under the instruction */
   hint?: string;
+  /** the child has been stuck long enough that a "🤝 Help me" button should
+   *  appear on the quest card (two-stage stuck-help escalation) */
+  helpOffered?: boolean;
 }
+
+// Stuck-help timing: a coach hint + spotlight at 18s without progress, then a
+// "Help me" button at 18s more (36s total). Reset on every correct pick,
+// delivery or step so a child who's actively working never sees it.
+const HELP_HINT_AT = 18;
+const HELP_BUTTON_AT = 36;
+// how long the assisted "watch me" animation plays before the round
+// actually completes, once Help me is tapped
+const HELP_ANIM_TIME = 1.6;
 
 interface Props {
   islandNextLevel: Record<ActivityZone, number>;
@@ -196,6 +264,11 @@ interface Props {
   onStatus: (s: QuestStatus | null) => void;
   /** which islands this layer owns (others are handled elsewhere, e.g. StoryLayer) */
   zones?: ActivityZone[];
+  /** the DOM "🤝 Help me" button (rendered by QuestPanel in index.tsx) calls
+   *  this ref when tapped. Assigned every render this layer is active, so it
+   *  always points at whichever quest layer currently owns the on-screen
+   *  status card (StoryLayer/ForestLayer/CoveLayer don't use it). */
+  helpRequestRef?: MutableRefObject<() => void>;
 }
 
 export default function QuestLayer(props: Props) {
@@ -209,6 +282,7 @@ export default function QuestLayer(props: Props) {
     lockUntil: 0, wrongIdx: -1, wrongUntil: 0, disarmed: null,
     pendingSay: null, sayAt: 0,
     carrying: null, stepIdx: 0, stepWrongStreak: 0, wrongSlot: -1, wrongSlotUntil: 0,
+    lastProgressAt: 0, helpStage: 0, helping: false, helpFinishAt: 0,
   });
 
   // The frame logic is re-bound every render so it never closes over stale
@@ -217,6 +291,13 @@ export default function QuestLayer(props: Props) {
 
   const curQuest: Quest | null = S.current.zone ? getQuest(S.current.zone, S.current.level) : null;
   const curRound: QuestRound | null = curQuest ? curQuest.rounds[S.current.roundIdx] : null;
+
+  // wire the DOM "🤝 Help me" button to this layer only while it's the one
+  // actually running a quest — StoryLayer/ForestLayer/CoveLayer never touch
+  // this ref, so whichever of them (or QuestLayer) is active always owns it
+  if (props.helpRequestRef && S.current.zone) {
+    props.helpRequestRef.current = () => doHelp();
+  }
 
   function resetRound() {
     S.current.seqDone = [];
@@ -228,6 +309,18 @@ export default function QuestLayer(props: Props) {
     S.current.stepWrongStreak = 0;
     S.current.wrongSlot = -1;
     S.current.wrongSlotUntil = 0;
+    S.current.lastProgressAt = S.current.clock;
+    S.current.helpStage = 0;
+    S.current.helping = false;
+    S.current.helpFinishAt = 0;
+  }
+
+  // stuck-help: call whenever the child makes REAL progress (a correct pick,
+  // delivery or step) so the 18s/36s escalation timer restarts and any
+  // coach hint/beacon already shown clears.
+  function recordProgress() {
+    S.current.lastProgressAt = S.current.clock;
+    if (S.current.helpStage > 0 && S.current.helpStage < 3) S.current.helpStage = 0;
   }
 
   // tell the DOM HUD what the player should be doing right now (persistent card)
@@ -244,6 +337,7 @@ export default function QuestLayer(props: Props) {
       zone: z, title: isl.label, emoji: isl.emoji, accent: isl.accent,
       level: S.current.level, instruction, step: S.current.roundIdx,
       total: q.rounds.length, phase, hint: hintFor(round.kind),
+      helpOffered: S.current.helpStage >= 2,
     });
   }
 
@@ -349,65 +443,65 @@ export default function QuestLayer(props: Props) {
     const n = items.length;
     const seed = st.roundIdx * 7 + st.level * 3 + (st.zone?.length ?? 0);
     const perm = seededShuffle(items.map((_, i) => i), seed);
-    const itemPositions = layoutArc(st.zone!, n, CARRY_ITEM_DIST).positions;
-    const slotPositions = layoutArc(st.zone!, n, CARRY_SLOT_DIST).positions;
+    const itemPositions = layoutArc(st.zone!, n, CARRY_ITEM_DIST, CARRY_SPACING).positions;
+    const slotPositions = layoutArc(st.zone!, n, CARRY_SLOT_DIST, SLOT_SPACING).positions;
 
     if (st.carrying == null) {
+      const candidates: [number, [number, number, number]][] = [];
       for (let p = 0; p < n; p++) {
         const idx = perm[p];
         if (st.seqDone.includes(items[idx].caption ?? String(idx))) continue;
-        const pos = itemPositions[p];
-        const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-        if (d < PICK_RADIUS) {
-          st.carrying = idx;
-          props.playSound('tap');
-          st.lockUntil = st.clock + 0.3;
-          bump();
-          return;
-        }
+        candidates.push([idx, itemPositions[p]]);
+      }
+      const near = nearestWithin(candidates, PICK_RADIUS);
+      if (near >= 0) {
+        st.carrying = near;
+        props.playSound('tap');
+        st.lockUntil = st.clock + 0.3;
+        recordProgress();
+        bump();
       }
       return;
     }
 
     // already carrying something — walking into a different, unplaced item
     // swaps politely (no penalty, it's still just one thing at a time)
+    const swapCandidates: [number, [number, number, number]][] = [];
     for (let p = 0; p < n; p++) {
       const idx = perm[p];
       if (idx === st.carrying || st.seqDone.includes(items[idx].caption ?? String(idx))) continue;
-      const pos = itemPositions[p];
-      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-      if (d < PICK_RADIUS) {
-        st.carrying = idx;
-        props.playSound('tap');
-        st.lockUntil = st.clock + 0.3;
-        bump();
-        return;
-      }
+      swapCandidates.push([idx, itemPositions[p]]);
+    }
+    const swap = nearestWithin(swapCandidates, PICK_RADIUS);
+    if (swap >= 0) {
+      st.carrying = swap;
+      props.playSound('tap');
+      st.lockUntil = st.clock + 0.3;
+      bump();
+      return;
     }
 
     // walking onto a numbered pad — right item + right pad (the next one in
     // order) delivers it; anything else is a gentle "not yet, try again"
-    for (let s = 0; s < n; s++) {
-      const pos = slotPositions[s];
-      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-      if (d < PICK_RADIUS) {
-        const expected = st.seqDone.length;
-        if (s === expected && st.carrying === expected) {
-          st.seqDone.push(items[expected].caption ?? String(expected));
-          st.carrying = null;
-          props.playSound('correct');
-          if (st.seqDone.length >= n) {
-            solveRound(round.doneLine ?? 'Perfect! Everything is in its place!');
-          } else {
-            st.lockUntil = st.clock + 0.3;
-            props.setEmotion('happy');
-            bump();
-          }
+    const slotCandidates: [number, [number, number, number]][] = slotPositions.map((pos, s) => [s, pos]);
+    const s = nearestWithin(slotCandidates, PICK_RADIUS);
+    if (s >= 0) {
+      const expected = st.seqDone.length;
+      if (s === expected && st.carrying === expected) {
+        st.seqDone.push(items[expected].caption ?? String(expected));
+        st.carrying = null;
+        props.playSound('correct');
+        recordProgress();
+        if (st.seqDone.length >= n) {
+          solveRound(round.doneLine ?? 'Perfect! Everything is in its place!');
         } else {
-          st.carrying = null; // returns to its pedestal
-          carrySlip(s, 'Hmm — what comes first?');
+          st.lockUntil = st.clock + 0.3;
+          props.setEmotion('happy');
+          bump();
         }
-        return;
+      } else {
+        st.carrying = null; // returns to its pedestal
+        carrySlip(s, 'Hmm — what comes first?');
       }
     }
   }
@@ -420,61 +514,61 @@ export default function QuestLayer(props: Props) {
     const n = items.length;
     const seed = st.roundIdx * 11 + st.level * 5 + (st.zone?.length ?? 0);
     const perm = seededShuffle(items.map((_, i) => i), seed);
-    const itemPositions = layoutArc(st.zone!, n, CARRY_ITEM_DIST).positions;
-    const tablePositions = layoutArc(st.zone!, tables.length, CARRY_SLOT_DIST).positions;
+    const itemPositions = layoutArc(st.zone!, n, CARRY_ITEM_DIST, CARRY_SPACING).positions;
+    const tablePositions = layoutArc(st.zone!, tables.length, CARRY_SLOT_DIST, SLOT_SPACING).positions;
 
     if (st.carrying == null) {
+      const candidates: [number, [number, number, number]][] = [];
       for (let p = 0; p < n; p++) {
         const idx = perm[p];
         if (st.seqDone.includes(items[idx].caption ?? String(idx))) continue;
-        const pos = itemPositions[p];
-        const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-        if (d < PICK_RADIUS) {
-          st.carrying = idx;
-          props.playSound('tap');
-          st.lockUntil = st.clock + 0.3;
-          bump();
-          return;
-        }
+        candidates.push([idx, itemPositions[p]]);
+      }
+      const near = nearestWithin(candidates, PICK_RADIUS);
+      if (near >= 0) {
+        st.carrying = near;
+        props.playSound('tap');
+        st.lockUntil = st.clock + 0.3;
+        recordProgress();
+        bump();
       }
       return;
     }
 
+    const swapCandidates: [number, [number, number, number]][] = [];
     for (let p = 0; p < n; p++) {
       const idx = perm[p];
       if (idx === st.carrying || st.seqDone.includes(items[idx].caption ?? String(idx))) continue;
-      const pos = itemPositions[p];
-      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-      if (d < PICK_RADIUS) {
-        st.carrying = idx;
-        props.playSound('tap');
-        st.lockUntil = st.clock + 0.3;
-        bump();
-        return;
-      }
+      swapCandidates.push([idx, itemPositions[p]]);
+    }
+    const swap = nearestWithin(swapCandidates, PICK_RADIUS);
+    if (swap >= 0) {
+      st.carrying = swap;
+      props.playSound('tap');
+      st.lockUntil = st.clock + 0.3;
+      bump();
+      return;
     }
 
-    for (let t = 0; t < tables.length; t++) {
-      const pos = tablePositions[t];
-      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-      if (d < PICK_RADIUS) {
-        const carried = items[st.carrying];
-        if (carried.table === t) {
-          st.seqDone.push(carried.caption ?? String(st.carrying));
-          st.carrying = null;
-          props.playSound('correct');
-          if (st.seqDone.length >= n) {
-            solveRound(round.doneLine ?? 'Everything sorted!');
-          } else {
-            st.lockUntil = st.clock + 0.3;
-            props.setEmotion('happy');
-            bump();
-          }
+    const tableCandidates: [number, [number, number, number]][] = tablePositions.map((pos, t) => [t, pos]);
+    const t = nearestWithin(tableCandidates, PICK_RADIUS);
+    if (t >= 0) {
+      const carried = items[st.carrying];
+      if (carried.table === t) {
+        st.seqDone.push(carried.caption ?? String(st.carrying));
+        st.carrying = null;
+        props.playSound('correct');
+        recordProgress();
+        if (st.seqDone.length >= n) {
+          solveRound(round.doneLine ?? 'Everything sorted!');
         } else {
-          st.carrying = null;
-          carrySlip(t, `Hmm — where does the ${carried.caption ?? 'thing'} go?`);
+          st.lockUntil = st.clock + 0.3;
+          props.setEmotion('happy');
+          bump();
         }
-        return;
+      } else {
+        st.carrying = null;
+        carrySlip(t, `Hmm — where does the ${carried.caption ?? 'thing'} go?`);
       }
     }
   }
@@ -488,41 +582,42 @@ export default function QuestLayer(props: Props) {
     const n = round.count ?? 4;
     const positions = layoutSteps(st.zone!, n).positions;
     const expected = st.stepIdx;
-    for (let i = 0; i < n; i++) {
-      const pos = positions[i];
-      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
-      if (d < PICK_RADIUS) {
-        if (i === expected) {
-          st.stepIdx += 1;
-          st.stepWrongStreak = 0;
-          const label = round.labels?.[i] ?? String(i + 1);
-          props.playSound(st.stepIdx >= n ? 'star' : 'correct');
-          if (st.stepIdx >= n) {
-            solveRound(round.doneLine ?? 'You did every step!');
-          } else {
-            props.speak(`${label}!`);
-            st.lockUntil = st.clock + 0.35;
-            props.setEmotion('happy');
-            bump();
-          }
-        } else if (i > expected) {
-          st.stepWrongStreak += 1;
-          st.wrongSlot = i;
-          st.wrongSlotUntil = st.clock + 0.5;
-          st.lockUntil = st.clock + 0.4;
-          if (st.stepWrongStreak >= 2) {
-            st.slips += 1;
-            st.stepWrongStreak = 0;
-          }
-          props.playSound('tap');
-          props.setEmotion('curious');
-          props.speak('Which number comes next?');
-          bump();
-        }
-        // stepping on an already-done stone (i < expected): no reaction
-        return;
+    // this is a receding single-file path (not a side-by-side fan), so
+    // adjacent stones' walk-in circles can overlap however close they sit —
+    // always resolve to the NEAREST stone, never the first index checked,
+    // so standing on stone 3 can't get silently swallowed by stone 2's radius.
+    const candidates: [number, [number, number, number]][] = positions.map((pos, i) => [i, pos]);
+    const i = nearestWithin(candidates, PICK_RADIUS);
+    if (i < 0) return;
+    if (i === expected) {
+      st.stepIdx += 1;
+      st.stepWrongStreak = 0;
+      const label = round.labels?.[i] ?? String(i + 1);
+      props.playSound(st.stepIdx >= n ? 'star' : 'correct');
+      recordProgress();
+      if (st.stepIdx >= n) {
+        solveRound(round.doneLine ?? 'You did every step!');
+      } else {
+        props.speak(`${label}!`);
+        st.lockUntil = st.clock + 0.35;
+        props.setEmotion('happy');
+        bump();
       }
+    } else if (i > expected) {
+      st.stepWrongStreak += 1;
+      st.wrongSlot = i;
+      st.wrongSlotUntil = st.clock + 0.5;
+      st.lockUntil = st.clock + 0.4;
+      if (st.stepWrongStreak >= 2) {
+        st.slips += 1;
+        st.stepWrongStreak = 0;
+      }
+      props.playSound('tap');
+      props.setEmotion('curious');
+      props.speak('Which number comes next?');
+      bump();
     }
+    // stepping on an already-done stone (i < expected): no reaction
   }
 
   function pick(i: number) {
@@ -532,6 +627,7 @@ export default function QuestLayer(props: Props) {
       const o = curRound.options![i];
       if (o.correct) {
         props.playSound('correct');
+        recordProgress();
         solveRound(curRound.doneLine ?? 'Yes! You got it!');
       } else slip(i);
     } else if (curRound.kind === 'sequence') {
@@ -540,6 +636,7 @@ export default function QuestLayer(props: Props) {
       if (cap === expected && !st.seqDone.includes(cap)) {
         st.seqDone.push(cap);
         props.playSound('correct');
+        recordProgress();
         if (st.seqDone.length >= curRound.order!.length) {
           solveRound(curRound.doneLine ?? 'Perfect!');
         } else {
@@ -554,6 +651,7 @@ export default function QuestLayer(props: Props) {
       if (st.picked.has(i)) return;
       st.picked.add(i);
       props.playSound('correct');
+      recordProgress();
       if (st.picked.size >= (curRound.picks ?? 1)) {
         solveRound(curRound.doneLine ?? 'Wonderful!');
       } else {
@@ -562,6 +660,97 @@ export default function QuestLayer(props: Props) {
         bump();
       }
     }
+  }
+
+  // ---- stuck-help ----------------------------------------------------------
+
+  /** What's the single correct next thing to do right now, in plain words?
+   *  Derived entirely from round data — no per-quest authoring needed. Used
+   *  both for the Stage-1 coach hint and to know where to draw the beacon. */
+  function stuckHint(): { text: string; kind: 'orb' | 'carryItem' | 'carrySlot' | 'sortTable' | 'step'; idx: number } | null {
+    const st = S.current;
+    if (!curRound) return null;
+    if (curRound.kind === 'choice') {
+      const idx = curRound.options!.findIndex((o) => o.correct);
+      if (idx < 0) return null;
+      const cap = curRound.options![idx].caption;
+      return { text: cap ? `${cap}! Walk to it!` : 'Walk to the glowing one!', kind: 'orb', idx };
+    }
+    if (curRound.kind === 'sequence') {
+      const nextCap = curRound.order![st.seqDone.length];
+      const idx = curRound.pool!.findIndex((o) => o.caption === nextCap);
+      if (idx < 0) return null;
+      return { text: `"${nextCap}" next! Walk to it!`, kind: 'orb', idx };
+    }
+    if (curRound.kind === 'multiPick') {
+      const idx = curRound.options!.findIndex((_, i) => !st.picked.has(i));
+      if (idx < 0) return null;
+      const cap = curRound.options![idx].caption;
+      return { text: cap ? `Try ${cap}!` : 'Walk to one you haven’t tried!', kind: 'orb', idx };
+    }
+    if (curRound.kind === 'carry') {
+      const items = curRound.items!;
+      if (st.carrying != null) {
+        return { text: `Carry it to spot ${st.seqDone.length + 1}!`, kind: 'carrySlot', idx: st.seqDone.length };
+      }
+      const idx = st.seqDone.length;
+      if (idx >= items.length) return null;
+      const it = items[idx];
+      return { text: `The ${it.caption ?? 'thing'} goes next! Walk to it ${it.emoji}!`, kind: 'carryItem', idx };
+    }
+    if (curRound.kind === 'sort') {
+      const items = curRound.items!;
+      const tables = curRound.tables!;
+      if (st.carrying != null) {
+        const t = items[st.carrying].table ?? 0;
+        const tCap = tables[t]?.caption;
+        return { text: tCap ? `Carry it to ${tCap}!` : 'Carry it to its table!', kind: 'sortTable', idx: t };
+      }
+      const idx = items.findIndex((it, i) => !st.seqDone.includes(it.caption ?? String(i)));
+      if (idx < 0) return null;
+      const it = items[idx];
+      return { text: `The ${it.caption ?? 'thing'} goes next! Walk to it ${it.emoji}!`, kind: 'carryItem', idx };
+    }
+    if (curRound.kind === 'steps') {
+      const label = curRound.labels?.[st.stepIdx] ?? String(st.stepIdx + 1);
+      return { text: `Walk to ${label}!`, kind: 'step', idx: st.stepIdx };
+    }
+    return null;
+  }
+
+  /** Fill in the whole round as if the child had done it, then solve — used
+   *  after the "watch me" assist animation. Never counts as a slip. */
+  function completeRoundAssisted() {
+    const st = S.current;
+    st.helping = false;
+    if (!curRound || st.solved) return;
+    if (curRound.kind === 'sequence') {
+      st.seqDone = [...curRound.order!];
+    } else if (curRound.kind === 'multiPick') {
+      curRound.options!.forEach((_, i) => st.picked.add(i));
+    } else if (curRound.kind === 'carry' || curRound.kind === 'sort') {
+      st.seqDone = curRound.items!.map((it, i) => it.caption ?? String(i));
+      st.carrying = null;
+    } else if (curRound.kind === 'steps') {
+      st.stepIdx = curRound.count ?? 4;
+    }
+    props.playSound('star');
+    solveRound(curRound.doneLine ?? 'Now you did it! 💙');
+  }
+
+  /** Tapping the quest card's "🤝 Help me" button (Stage 2). Nilu's friend
+   *  does it together with her: a short "watch me" beat, then the round
+   *  finishes for real — stars are never docked for asking for help. */
+  function doHelp() {
+    const st = S.current;
+    if (!st.zone || st.solved || st.helpStage < 2 || st.helping) return;
+    st.helpStage = 3; // used — one help per round
+    st.helping = true;
+    st.helpFinishAt = st.clock + HELP_ANIM_TIME;
+    props.setEmotion('curious');
+    props.speak('Let’s do it together! Watch me…');
+    emitStatus('question', curQuest ? curQuest.rounds[st.roundIdx].say : '');
+    bump();
   }
 
   // ---- per-frame logic ----
@@ -641,6 +830,30 @@ export default function QuestLayer(props: Props) {
 
     // orb pick detection (walk-in). Breathe rounds handle themselves.
     const round = getQuest(st.zone, st.level).rounds[st.roundIdx];
+
+    // stuck-help: two-stage escalation. Breathe rounds auto-advance on their
+    // own (no "stuck" state is possible), so they're excluded.
+    if (round.kind !== 'breathe' && !st.solved && !st.helping) {
+      const stuckFor = st.clock - st.lastProgressAt;
+      if (st.helpStage < 1 && stuckFor >= HELP_HINT_AT) {
+        st.helpStage = 1;
+        const h = stuckHint();
+        if (h) props.speak(h.text);
+        bump();
+      } else if (st.helpStage === 1 && stuckFor >= HELP_BUTTON_AT) {
+        st.helpStage = 2;
+        emitStatus('question', round.say);
+        bump();
+      }
+    }
+
+    // mid "watch me" assist — freeze normal picking until it lands, then
+    // fill in the round for real (never counted as a slip)
+    if (st.helping) {
+      if (st.clock >= st.helpFinishAt) completeRoundAssisted();
+      return;
+    }
+
     if (round.kind === 'breathe' || st.solved || st.clock < st.lockUntil) return;
     if (round.kind === 'carry') {
       carryFrame(st, round);
@@ -692,6 +905,10 @@ export default function QuestLayer(props: Props) {
     return 'idle';
   }
 
+  // Stage-1 stuck-help spotlight target (recomputed each render so it tracks
+  // live state — cheap, and only non-null while genuinely stuck)
+  const help = S.current.helpStage >= 1 && !S.current.solved ? stuckHint() : null;
+
   const accent: Record<ActivityZone, string> = {
     meadow: ISLANDS.meadow.accent,
     mountain: ISLANDS.mountain.accent,
@@ -701,6 +918,10 @@ export default function QuestLayer(props: Props) {
     school: ISLANDS.school.accent,
     afternoon: ISLANDS.afternoon.accent,
     night: ISLANDS.night.accent,
+    garden: ISLANDS.garden.accent,
+    deepforest: ISLANDS.deepforest.accent,
+    lagoon: ISLANDS.lagoon.accent,
+    bay: ISLANDS.bay.accent,
   };
 
   return (
@@ -759,8 +980,8 @@ export default function QuestLayer(props: Props) {
               const n = items.length;
               const seed = st.roundIdx * 7 + st.level * 3 + zone.length;
               const perm = seededShuffle(items.map((_, i) => i), seed);
-              const itemPositions = layoutArc(zone, n, CARRY_ITEM_DIST).positions;
-              const slotPositions = layoutArc(zone, n, CARRY_SLOT_DIST).positions;
+              const itemPositions = layoutArc(zone, n, CARRY_ITEM_DIST, CARRY_SPACING).positions;
+              const slotPositions = layoutArc(zone, n, CARRY_SLOT_DIST, SLOT_SPACING).positions;
               return (
                 <group>
                   {perm.map((idx, p) => {
@@ -775,6 +996,7 @@ export default function QuestLayer(props: Props) {
                         carrying={st.carrying === idx}
                         reduceMotion={props.reduceMotion}
                         bobSeed={p * 0.6}
+                        isNext={st.carrying == null && idx === st.seqDone.length}
                       />
                     );
                   })}
@@ -793,6 +1015,12 @@ export default function QuestLayer(props: Props) {
                       />
                     );
                   })}
+                  {help && help.kind === 'carryItem' && (
+                    <HelpBeacon position={itemPositions[perm.indexOf(help.idx)]} reduceMotion={props.reduceMotion} />
+                  )}
+                  {help && help.kind === 'carrySlot' && (
+                    <HelpBeacon position={slotPositions[help.idx]} reduceMotion={props.reduceMotion} />
+                  )}
                 </group>
               );
             })()
@@ -805,8 +1033,8 @@ export default function QuestLayer(props: Props) {
               const n = items.length;
               const seed = st.roundIdx * 11 + st.level * 5 + zone.length;
               const perm = seededShuffle(items.map((_, i) => i), seed);
-              const itemPositions = layoutArc(zone, n, CARRY_ITEM_DIST).positions;
-              const tablePositions = layoutArc(zone, tables.length, CARRY_SLOT_DIST).positions;
+              const itemPositions = layoutArc(zone, n, CARRY_ITEM_DIST, CARRY_SPACING).positions;
+              const tablePositions = layoutArc(zone, tables.length, CARRY_SLOT_DIST, SLOT_SPACING).positions;
               return (
                 <group>
                   {perm.map((idx, p) => {
@@ -835,6 +1063,12 @@ export default function QuestLayer(props: Props) {
                       caption={tb.caption}
                     />
                   ))}
+                  {help && help.kind === 'carryItem' && (
+                    <HelpBeacon position={itemPositions[perm.indexOf(help.idx)]} reduceMotion={props.reduceMotion} />
+                  )}
+                  {help && help.kind === 'sortTable' && (
+                    <HelpBeacon position={tablePositions[help.idx]} reduceMotion={props.reduceMotion} />
+                  )}
                 </group>
               );
             })()
@@ -862,6 +1096,9 @@ export default function QuestLayer(props: Props) {
                       />
                     );
                   })}
+                  {help && help.kind === 'step' && (
+                    <HelpBeacon position={positions[help.idx]} reduceMotion={props.reduceMotion} />
+                  )}
                 </group>
               );
             })()
@@ -875,18 +1112,25 @@ export default function QuestLayer(props: Props) {
                   : curRound.kind === 'sequence'
                     ? curRound.pool!
                     : curRound.options!;
-              return items.map((o, i) => (
-                <AnswerOrb
-                  key={`${S.current.roundIdx}-${i}`}
-                  position={positions[i]}
-                  emoji={o.emoji}
-                  caption={o.caption}
-                  color={accent[S.current.zone!]}
-                  status={orbStatus(i)}
-                  bobSeed={i * 0.7}
-                  onPick={() => pick(i)}
-                />
-              ));
+              return (
+                <group>
+                  {items.map((o, i) => (
+                    <AnswerOrb
+                      key={`${S.current.roundIdx}-${i}`}
+                      position={positions[i]}
+                      emoji={o.emoji}
+                      caption={o.caption}
+                      color={accent[S.current.zone!]}
+                      status={orbStatus(i)}
+                      bobSeed={i * 0.7}
+                      onPick={() => pick(i)}
+                    />
+                  ))}
+                  {help && help.kind === 'orb' && (
+                    <HelpBeacon position={positions[help.idx]} reduceMotion={props.reduceMotion} />
+                  )}
+                </group>
+              );
             })()
           )}
         </group>
@@ -898,4 +1142,30 @@ export default function QuestLayer(props: Props) {
 function Ticker({ fnRef }: { fnRef: React.MutableRefObject<(dt: number) => void> }) {
   useFrame((_, dt) => fnRef.current(Math.min(dt, 0.05)));
   return null;
+}
+
+// Stage-1 stuck-help spotlight: a bright pulsing gold beacon dropped on top
+// of whatever the child should walk to next. Static (no pulse) under
+// reduce-motion so it stays a clear, calm spotlight rather than a distraction.
+function HelpBeacon({ position, reduceMotion }: { position: [number, number, number]; reduceMotion: boolean }) {
+  const ring = useRef<THREE.Mesh>(null);
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!ring.current) return;
+    if (reduceMotion) {
+      ring.current.scale.setScalar(1.3);
+    } else {
+      ring.current.scale.setScalar(1.1 + Math.sin(t.current * 3.2) * 0.25);
+    }
+  });
+  return (
+    <group position={position}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, 1.1, 0]}>
+        <ringGeometry args={[0.55, 0.78, 28]} />
+        <meshBasicMaterial color="#ffe066" transparent opacity={0.85} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <pointLight color="#ffe066" intensity={1.4} distance={4} position={[0, 1.2, 0]} />
+    </group>
+  );
 }

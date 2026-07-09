@@ -33,6 +33,10 @@ const SKILLS: Record<ActivityZone, string> = {
   school: 'School Skills',
   afternoon: 'Home Routines',
   night: 'Bedtime Routines',
+  garden: 'Advanced Feelings',
+  deepforest: 'Advanced Friendship',
+  lagoon: 'Advanced Calm',
+  bay: 'Advanced Sharing',
 };
 
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below

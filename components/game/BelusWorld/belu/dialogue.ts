@@ -287,6 +287,82 @@ const DB: Record<string, Partial<Record<0 | 1 | 2 | 3, Line[]>>> = {
     3: [ctx => `${name(ctx)}, that was genuinely incredible. I am SO proud of us.`, "Achievement unlocked! And you made it look easy."],
   },
 
+  zone_garden: {
+    0: [
+      "This is the Feelings Garden... feelings here can be tricky. Sometimes two at once!",
+      "The Feelings Garden grew once you mastered the meadow. There's more to learn about feelings here.",
+    ],
+    1: [
+      "The Feelings Garden! Did you know you can feel two things at the same time? I'm still getting used to that.",
+      "This garden is for the BIG feelings questions. Ready to look closer?",
+    ],
+    2: [
+      "The Feelings Garden — I've learned that a smile doesn't always mean happy. Noticing that takes practice.",
+      "I love helping friends here now. Empathy gets easier the more you practice it.",
+    ],
+    3: [
+      "FEELINGS GARDEN! My advanced feelings headquarters. Ask me anything.",
+      "The butterfly taught me that feelings pass like clouds. I think about that all the time now.",
+    ],
+  },
+
+  zone_deepforest: {
+    0: [
+      "This is the Deep Forest... it's further in than the Friendship Forest. Bigger friendship things happen here.",
+      "Sometimes friends say no, or we lose a game. We can practice that here, gently.",
+    ],
+    1: [
+      "The Deep Forest! Joining a game already in progress used to feel scary. It gets easier.",
+      "Deer and Bear taught me how to lose a game with a smile. Want to try?",
+    ],
+    2: [
+      "The Deep Forest — I know how to disagree kindly now, even about the red block.",
+      "Giving compliments used to feel weird. Now I love telling my friends how great they are.",
+    ],
+    3: [
+      "DEEP FOREST! Where I mastered the graceful 'good game!' Ask Deer, she'll confirm.",
+      "I once said 'not now' to a friend and it was totally fine. 'Not now' isn't 'never' — huge lesson.",
+    ],
+  },
+
+  zone_lagoon: {
+    0: [
+      "This is the Quiet Lagoon... it formed once the Calm Cove felt easy for you. Even calmer things live here.",
+      "Sometimes our body tells us a big feeling is coming before we even notice. We can practice noticing early.",
+    ],
+    1: [
+      "The Quiet Lagoon! Noticing tight hands or a fast heart EARLY — that's the trick I learned here.",
+      "Five calm breaths, five calm stones. Want to climb them with me?",
+    ],
+    2: [
+      "The Quiet Lagoon — I have a real plan for loud places now. Cover ears, ask for quiet, breathe.",
+      "Waiting used to feel impossible. Counting slowly and squeezing my hands really helps now.",
+    ],
+    3: [
+      "QUIET LAGOON! My most peaceful island. Even when plans change, I find a new idea here.",
+      "The dolphin and I have a whole breathing routine now. It's basically a superpower.",
+    ],
+  },
+
+  zone_bay: {
+    0: [
+      "This is Treasure Bay... it formed once Sharing Shore felt easy for you. Bigger sharing things happen here.",
+      "Borrowing, trading, building together — there's a lot to practice at the bay.",
+    ],
+    1: [
+      "Treasure Bay! I learned to borrow AND give things back here. Parrot trusts me with the shovel now.",
+      "Trading shells with Turtle taught me compromise. Want to see?",
+    ],
+    2: [
+      "Treasure Bay — we built a whole sandcastle together here, turn by turn. Even better than building alone.",
+      "When there's only one boat, a timer or riding together both work. I learned that at the bay.",
+    ],
+    3: [
+      "TREASURE BAY! Where I learned to cheer for a friend's win like it was my own.",
+      "Turtle won the swimming race and I clapped so loud. Being happy for a friend feels amazing.",
+    ],
+  },
+
   overwhelmed_response: {
     0: ["Oh... is it too much? It's okay. We can go slow."],
     1: ["Hey, it's okay if this feels like a lot. We can take a break at the Calm Cove."],
@@ -317,6 +393,10 @@ export function getZoneDialogue(zone: string, ctx: DialogueContext): string {
     school: 'zone_school',
     afternoon: 'zone_afternoon',
     night: 'zone_night',
+    garden: 'zone_garden',
+    deepforest: 'zone_deepforest',
+    lagoon: 'zone_lagoon',
+    bay: 'zone_bay',
   };
   return getDialogue(keyMap[zone] ?? 'zone_meadow', ctx);
 }

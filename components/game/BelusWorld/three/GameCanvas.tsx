@@ -8,13 +8,13 @@
 // shadow map is modest, and the composer runs without extra multisampling.
 // ---------------------------------------------------------------------------
 
-import { Suspense, useRef, useState } from 'react';
+import { Suspense, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
-import World, { type DayUnlocks } from './World';
+import World, { type DayUnlocks, type AdvancedUnlocks } from './World';
 import HomeLife from './HomeLife';
 import RainbowPlay from './RainbowPlay';
 import type { AnimalSpecies } from './quest/Animal3D';
@@ -49,6 +49,10 @@ interface Props {
   dayUnlocks: DayUnlocks;
   /** day-arc zones whose islands exist — these run on the generic QuestLayer */
   unlockedDayZones: ActivityZone[];
+  /** which advanced sister islands have formed (garden/deepforest/lagoon/bay) */
+  advancedUnlocks: AdvancedUnlocks;
+  /** advanced-zone islands whose islands exist — these run on the generic QuestLayer */
+  unlockedAdvancedZones: ActivityZone[];
   /** which level to play next on each zone island */
   islandNextLevel: Record<ActivityZone, number>;
   sound: boolean;
@@ -74,6 +78,9 @@ interface Props {
   onPlant: () => void;
   onPetal: () => void;
   onFriendHealed: (species: string) => void;
+  /** the DOM "🤝 Help me" button (index.tsx QuestPanel) calls this when
+   *  tapped — QuestLayer and MountainLayer each claim it while active */
+  helpRequestRef?: MutableRefObject<() => void>;
 }
 
 function Lighting({ calmMode }: { calmMode: boolean }) {
@@ -115,6 +122,8 @@ export default function GameCanvas({
   rainbowUnlocked,
   dayUnlocks,
   unlockedDayZones,
+  advancedUnlocks,
+  unlockedAdvancedZones,
   islandNextLevel,
   sound,
   dateKey,
@@ -134,6 +143,7 @@ export default function GameCanvas({
   onPlant,
   onPetal,
   onFriendHealed,
+  helpRequestRef,
 }: Props) {
   const player = useRef<PlayerHandle>(null);
   // start at a safe-ish ratio and let the monitor scale it to the device
@@ -184,7 +194,7 @@ export default function GameCanvas({
       <Lighting calmMode={calmMode} />
 
       <Suspense fallback={null}>
-        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} dayUnlocks={dayUnlocks} />
+        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} dayUnlocks={dayUnlocks} advancedUnlocks={advancedUnlocks} />
         <Player
           ref={player}
           emotion={emotion}
@@ -252,6 +262,7 @@ export default function GameCanvas({
           playSound={playSound}
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
+          helpRequestRef={helpRequestRef}
         />
         <CoveLayer
           level={islandNextLevel.cove}
@@ -264,10 +275,12 @@ export default function GameCanvas({
           onStatus={onQuestStatus}
         />
         {/* Sharing Shore + the Nilu's Day islands (School / Fun Corner /
-            Sleepy Island — only the ones that have formed) run on the generic
+            Sleepy Island — only the ones that have formed) + the advanced
+            sister islands (Feelings Garden / Deep Forest / Quiet Lagoon /
+            Treasure Bay — only the ones that have formed) run on the generic
             quest engine: island host + answer orbs, five levels each. */}
         <QuestLayer
-          zones={['shore', ...unlockedDayZones]}
+          zones={['shore', ...unlockedDayZones, ...unlockedAdvancedZones]}
           islandNextLevel={islandNextLevel}
           paused={paused}
           reduceMotion={reduceMotion}
@@ -277,6 +290,7 @@ export default function GameCanvas({
           playSound={playSound}
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
+          helpRequestRef={helpRequestRef}
         />
       </Suspense>
 

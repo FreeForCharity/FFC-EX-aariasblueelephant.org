@@ -57,7 +57,20 @@ interface State {
   // companion cloud + Nimbus cheer pulse
   cheerUntil: number;
   nimbusLine: number;
+  /** stuck-help: same two-stage escalation as QuestLayer (18s coach hint +
+   *  spotlight, 36s "Help me" button) — reset whenever a station is reached */
+  lastProgressAt: number;
+  helpStage: 0 | 1 | 2 | 3;
+  helping: boolean;
+  helpFinishAt: number;
+  /** the instruction text last sent to the DOM card, so a stuck-help status
+   *  re-emit (to flip on helpOffered) doesn't clobber it */
+  lastInstruction: string;
 }
+
+const HELP_HINT_AT = 18;
+const HELP_BUTTON_AT = 36;
+const HELP_ANIM_TIME = 1.6;
 
 interface Props {
   level: number;
@@ -72,6 +85,9 @@ interface Props {
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
   onComplete: (zone: 'mountain', level: number, stars: number, moment: string, slips?: number) => void;
   onStatus: (s: QuestStatus | null) => void;
+  /** the DOM "🤝 Help me" button (index.tsx QuestPanel) calls this ref when
+   *  tapped, while this layer is the active one */
+  helpRequestRef?: import('react').MutableRefObject<() => void>;
 }
 
 function clampLevel(level: number) {
@@ -134,9 +150,16 @@ export default function MountainLayer(props: Props) {
     doneCount: 0, disarmed: false, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0, slips: 0,
     starsAt: (MOUNTAIN_ROUTINE[clampLevel(props.level)].stars ?? []).map(() => -99),
     starsFound: 0, cheerUntil: 0, nimbusLine: -1,
+    lastProgressAt: 0, helpStage: 0, helping: false, helpFinishAt: 0, lastInstruction: '',
   });
   const frame = useRef<(dt: number) => void>(() => {});
   const isl = ISLANDS[ZONE];
+
+  // wire the DOM "🤝 Help me" button to this layer only while its routine
+  // is actually active
+  if (props.helpRequestRef && S.current.active) {
+    props.helpRequestRef.current = () => doHelp();
+  }
 
   // today's pedestal-placement shuffle — stable all day, fresh tomorrow
   const shuffledPos = useMemo(() => dailyStationShuffle(props.dateKey), [props.dateKey]);
@@ -166,11 +189,55 @@ export default function MountainLayer(props: Props) {
 
   function emitStatus(phase: 'question' | 'correct', instruction: string, hint?: string) {
     const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
+    S.current.lastInstruction = instruction;
     props.onStatus({
       zone: ZONE, title: isl.label, emoji: isl.emoji, accent: isl.accent,
       level: S.current.level, instruction, step: S.current.doneCount,
       total: targetCount(lvl.stations), phase, hint,
+      helpOffered: S.current.helpStage >= 2,
     });
+  }
+
+  /** the correct next station to visit right now (works for ordered chains,
+   *  safety pairs, and the any-order finale alike — the un-safe twin is
+   *  never "correct") */
+  function nextCorrectStationIdx(): number {
+    const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
+    return lvl.stations.findIndex((s, i) => s.kind !== 'unsafe' && !S.current.stations[i].done);
+  }
+
+  /** Fill in the rest of the routine as if the child had walked it, then
+   *  finish — used after the "watch me" assist beat. Never counted as a slip. */
+  function completeRoutineAssisted() {
+    const st = S.current;
+    st.helping = false;
+    const lvl = MOUNTAIN_ROUTINE[clampLevel(st.level)];
+    lvl.stations.forEach((s, i) => {
+      if (s.kind !== 'unsafe' && !st.stations[i].done) {
+        st.stations[i].done = true;
+        st.stations[i].doneAt = st.clock;
+        st.doneCount += 1;
+      }
+    });
+    props.playSound('levelup');
+    st.cheerUntil = st.clock + 2.0;
+    emitStatus('correct', 'Now you did it! 💙', 'Routine complete! 🌟');
+    st.finishAt = st.clock + 1.8;
+    bump();
+  }
+
+  /** Tapping "🤝 Help me" (Stage 2). Nimbus does the rest of the routine
+   *  together with Nilu — stars are never docked for asking for help. */
+  function doHelp() {
+    const st = S.current;
+    if (!st.active || st.helpStage < 2 || st.helping) return;
+    st.helpStage = 3; // used — one help per routine
+    st.helping = true;
+    st.helpFinishAt = st.clock + HELP_ANIM_TIME;
+    props.setEmotion('curious');
+    props.speak('Let’s do it together! Watch me…');
+    emitStatus('question', st.lastInstruction);
+    bump();
   }
 
   // the hint depends on the level's mechanic so the task card guides the child
@@ -199,6 +266,10 @@ export default function MountainLayer(props: Props) {
     S.current.cheerUntil = 0;
     S.current.nimbusLine = -1;
     S.current.slips = 0;
+    S.current.lastProgressAt = S.current.clock;
+    S.current.helpStage = 0;
+    S.current.helping = false;
+    S.current.helpFinishAt = 0;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, actionHint());
@@ -270,6 +341,8 @@ export default function MountainLayer(props: Props) {
     st.stations[i].doneAt = st.clock;
     st.doneCount += 1;
     st.lockUntil = st.clock + 0.4;
+    st.lastProgressAt = st.clock;
+    if (st.helpStage > 0 && st.helpStage < 3) st.helpStage = 0;
     props.playSound('correct');
     props.setEmotion('excited');
 
@@ -330,6 +403,30 @@ export default function MountainLayer(props: Props) {
       stopRoutine();
       return;
     }
+
+    // stuck-help: same two-stage escalation as the generic quest engine —
+    // 18s without a station completed → coach hint + spotlight; 18s more →
+    // "Help me" button. Reset whenever a station is reached (see reach()).
+    if (!st.helping) {
+      const stuckFor = st.clock - st.lastProgressAt;
+      if (st.helpStage < 1 && stuckFor >= HELP_HINT_AT) {
+        st.helpStage = 1;
+        const idx = nextCorrectStationIdx();
+        if (idx >= 0) props.speak(`${lvl.stations[idx].label}! Walk to it ${lvl.stations[idx].emoji}!`);
+        bump();
+      } else if (st.helpStage === 1 && stuckFor >= HELP_BUTTON_AT) {
+        st.helpStage = 2;
+        emitStatus('question', st.lastInstruction, actionHint());
+        bump();
+      }
+    }
+
+    // mid "watch me" assist — freeze normal picking until it lands
+    if (st.helping) {
+      if (st.clock >= st.helpFinishAt) completeRoutineAssisted();
+      return;
+    }
+
     // hidden morning stars: collect any Nilu walks near (no lock — pure bonus)
     const stars = lvl.stars ?? [];
     for (let i = 0; i < stars.length; i++) {
@@ -374,6 +471,8 @@ export default function MountainLayer(props: Props) {
   const cheering = S.current.active && S.current.clock < S.current.cheerUntil;
   const awake = S.current.active; // Nimbus naps until the routine begins
   const starList = lvl.stars ?? [];
+  // Stage-1 stuck-help spotlight: which station is the correct next one?
+  const helpBeaconIdx = S.current.active && S.current.helpStage >= 1 ? nextCorrectStationIdx() : -1;
   return (
     <group>
       <Ticker fnRef={frame} />
@@ -437,9 +536,34 @@ export default function MountainLayer(props: Props) {
             )}
             {/* a glowing footprint pad that lights up once this step is done */}
             <StepStone position={[0, 0.06, 1.05]} lit={rt.done} accent={isl.accent} />
+            {/* Stage-1 stuck-help spotlight — a bright beacon on the correct station */}
+            {i === helpBeaconIdx && <HelpBeacon reduceMotion={props.reduceMotion} />}
           </Station3D>
         );
       })}
+    </group>
+  );
+}
+
+// Stuck-help spotlight: a bright pulsing gold beacon dropped above whatever
+// station the child should walk to next. Static (no pulse) under
+// reduce-motion so it reads as a clear, calm spotlight rather than a
+// distraction. Rendered as a child of Station3D, so it inherits its position.
+function HelpBeacon({ reduceMotion }: { reduceMotion: boolean }) {
+  const ring = useRef<THREE.Mesh>(null);
+  const t = useRef(0);
+  useFrame((_, dt) => {
+    t.current += dt;
+    if (!ring.current) return;
+    ring.current.scale.setScalar(reduceMotion ? 1.3 : 1.1 + Math.sin(t.current * 3.2) * 0.25);
+  });
+  return (
+    <group position={[0, 2.4, 0]}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.72, 28]} />
+        <meshBasicMaterial color="#ffe066" transparent opacity={0.85} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <pointLight color="#ffe066" intensity={1.4} distance={4} />
     </group>
   );
 }

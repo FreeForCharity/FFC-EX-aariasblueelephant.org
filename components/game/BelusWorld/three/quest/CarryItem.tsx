@@ -20,16 +20,23 @@ interface Props {
   carrying: boolean;
   reduceMotion: boolean;
   bobSeed?: number;
+  /** this is the NEXT thing the child should fetch — a small ⬇️ arrow hovers
+   *  above it and it bounces a touch more, so "which one do I grab?" is
+   *  always answerable at a glance (static arrow, no extra bounce under
+   *  reduce-motion). */
+  isNext?: boolean;
 }
 
 const HEAD_HEIGHT = 2.15;
 
 export default function CarryItem({
-  pedestalPosition, emoji, caption, color, carrying, reduceMotion, bobSeed = 0,
+  pedestalPosition, emoji, caption, color, carrying, reduceMotion, bobSeed = 0, isNext = false,
 }: Props) {
   const grp = useRef<THREE.Group>(null);
+  const arrow = useRef<THREE.Sprite>(null);
   const t = useRef(bobSeed);
   const tex = useMemo(() => makeLabelTexture(emoji, caption), [emoji, caption]);
+  const arrowTex = useMemo(() => makeLabelTexture('⬇️'), []);
 
   useFrame((_, dt) => {
     t.current += dt;
@@ -42,6 +49,12 @@ export default function CarryItem({
       const bob = reduceMotion ? 0 : Math.sin(t.current * 2) * 0.14;
       g.position.set(pedestalPosition[0], pedestalPosition[1] + bob, pedestalPosition[2]);
     }
+    // the "fetch this one next" arrow — a gentle bounce, or a static hover
+    // under reduce-motion so it's never overlooked but never overwhelming
+    if (arrow.current) {
+      const bounce = reduceMotion ? 0 : Math.abs(Math.sin(t.current * 3)) * 0.18;
+      arrow.current.position.y = 1.05 + bounce;
+    }
   });
 
   return (
@@ -51,7 +64,7 @@ export default function CarryItem({
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={carrying ? 1.5 : 0.9}
+          emissiveIntensity={carrying ? 1.5 : isNext ? 1.3 : 0.9}
           roughness={0.3}
           transparent
           opacity={0.8}
@@ -65,6 +78,11 @@ export default function CarryItem({
           <ringGeometry args={[0.4, 0.56, 24]} />
           <meshBasicMaterial color={color} transparent opacity={0.5} side={THREE.DoubleSide} />
         </mesh>
+      )}
+      {!carrying && isNext && (
+        <sprite ref={arrow} position={[0, 1.05, 0]} scale={[0.9, 0.9, 1]} renderOrder={12}>
+          <spriteMaterial map={arrowTex} transparent depthWrite={false} depthTest={false} />
+        </sprite>
       )}
     </group>
   );

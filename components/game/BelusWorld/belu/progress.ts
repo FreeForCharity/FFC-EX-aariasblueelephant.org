@@ -8,22 +8,37 @@
 // No timers, no losing, no farming the same level past 3 stars.
 // ---------------------------------------------------------------------------
 
+import { ADVANCED_STICKERS } from '../three/quest/advancedQuests';
+
 export type ActivityZone =
   | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore'
-  | 'school' | 'afternoon' | 'night';
+  | 'school' | 'afternoon' | 'night'
+  | 'garden' | 'deepforest' | 'lagoon' | 'bay';
 
 export const ZONES: ActivityZone[] = [
   'meadow', 'mountain', 'cove', 'forest', 'shore',
   'school', 'afternoon', 'night',
+  'garden', 'deepforest', 'lagoon', 'bay',
 ];
 
 /** Nilu's Day — the story arc through one day of Nilu's life. Each stage's
  *  island only FORMS once the previous stage's island is fully completed. */
 export const DAY_ARC: ActivityZone[] = ['mountain', 'school', 'afternoon', 'night'];
+
+/** Advanced sister islands (see three/quest/advancedQuests.ts): each FORMS once
+ *  its PARENT skill island reaches 5/5 completed levels. Plain gating — no
+ *  dayArc/fresh choice involved, unlike the Nilu's Day arc above. */
+export const ADVANCED_PARENT: Record<'garden' | 'deepforest' | 'lagoon' | 'bay', ActivityZone> = {
+  garden: 'meadow',
+  deepforest: 'forest',
+  lagoon: 'cove',
+  bay: 'shore',
+};
+
 export const MAX_LEVEL = 5;
 export const MAX_STARS_PER_LEVEL = 3;
 export const MAX_STARS_PER_ISLAND = MAX_LEVEL * MAX_STARS_PER_LEVEL; // 15
-export const MAX_TOTAL_STARS = MAX_STARS_PER_ISLAND * ZONES.length; // 75
+export const MAX_TOTAL_STARS = MAX_STARS_PER_ISLAND * ZONES.length; // 180
 
 export interface IslandProgress {
   /** best stars earned on each level (index 0..MAX_LEVEL-1); 0 = not completed */
@@ -65,14 +80,26 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'moonpin', name: 'Moon Pin', icon: '🌙', slot: 'face' },
   { id: 'kite', name: 'Play Kite', icon: '🪁', slot: 'back' },
   { id: 'snackpin', name: 'Snack Pin', icon: '🍎', slot: 'face' },
+  // ---- Advanced sister island items — earned across Feelings Garden / Deep
+  // Forest / Quiet Lagoon / Treasure Bay levels. ----
+  { id: 'gardencrown', name: 'Garden Crown', icon: '🌸', slot: 'head' },
+  { id: 'explorerhat', name: 'Explorer Hat', icon: '🧭', slot: 'head' },
+  { id: 'pearl', name: 'Lagoon Pearl', icon: '🫧', slot: 'face' },
+  { id: 'captainhat', name: "Captain's Hat", icon: '⛵', slot: 'head' },
+  { id: 'butterflywings', name: 'Butterfly Wings', icon: '🦋', slot: 'back' },
+  { id: 'antlers', name: 'Gentle Antlers', icon: '🦌', slot: 'head' },
+  { id: 'lilypin', name: 'Lily Pin', icon: '🪷', slot: 'face' },
+  { id: 'treasuremap', name: 'Treasure Map', icon: '🗺️', slot: 'back' },
 ];
 /** the order items unlock as the child completes levels — slots interleaved so
  *  every few levels the reward feels different (a hat, then something for the
- *  back, then the face…). 24 items across 40 total levels. */
+ *  back, then the face…). 32 items across 60 total levels (the remaining
+ *  levels still award stars/stickers, just no new cosmetic). */
 export const UNLOCK_ORDER = [
   'cap', 'bow', 'glasses', 'scarf', 'party', 'flowercrown', 'cape', 'sunhat',
   'goggles', 'crown', 'backpack', 'beanie', 'hearts', 'wings', 'balloon', 'wizard',
   'schoolcap', 'snackpin', 'schoolbag', 'kite', 'starbadge', 'teddy', 'moonpin', 'pajamahat',
+  'gardencrown', 'explorerhat', 'pearl', 'captainhat', 'butterflywings', 'antlers', 'lilypin', 'treasuremap',
 ];
 
 export interface EquippedCosmetics {
@@ -198,6 +225,9 @@ export const DAY_BOOK_STICKERS: Record<string, { emoji: string; label: string }>
   'night-3': { emoji: '📚', label: 'Story time!' },
   'night-4': { emoji: '🧸', label: 'Cuddled Teddy!' },
   'night-5': { emoji: '🌙', label: 'Slept tight!' },
+
+  // ---- Advanced sister islands (garden/deepforest/lagoon/bay) ----
+  ...ADVANCED_STICKERS,
 };
 
 const KEY = 'belus_world_progress_v1';
@@ -216,6 +246,10 @@ function emptyPracticeStats(): Record<ActivityZone, { slips: number; rounds: num
     school: { slips: 0, rounds: 0 },
     afternoon: { slips: 0, rounds: 0 },
     night: { slips: 0, rounds: 0 },
+    garden: { slips: 0, rounds: 0 },
+    deepforest: { slips: 0, rounds: 0 },
+    lagoon: { slips: 0, rounds: 0 },
+    bay: { slips: 0, rounds: 0 },
   };
 }
 
@@ -230,6 +264,10 @@ function defaults(): GameProgress {
       school: emptyIsland(),
       afternoon: emptyIsland(),
       night: emptyIsland(),
+      garden: emptyIsland(),
+      deepforest: emptyIsland(),
+      lagoon: emptyIsland(),
+      bay: emptyIsland(),
     },
     unlocked: [],
     equipped: {},
@@ -398,10 +436,24 @@ export function setDayChoice(p: GameProgress, choice: 'fresh' | 'continue'): Gam
   return { ...p, dayArc: { ...p.dayArc, choice } };
 }
 
-/** Mark a day-arc island's "it formed!" celebration as played (fires once). */
+/** Mark a day-arc island's "it formed!" celebration as played (fires once).
+ *  Also reused (tolerantly) for the advanced sister islands below — the
+ *  `celebrated` list is just a flat array of zone ids, not restricted to
+ *  DAY_ARC members. */
 export function markDayCelebrated(p: GameProgress, zone: ActivityZone): GameProgress {
   if (p.dayArc.celebrated.includes(zone)) return p;
   return { ...p, dayArc: { ...p.dayArc, celebrated: [...p.dayArc.celebrated, zone] } };
+}
+
+// ---- Advanced sister islands (🌷 garden / 🌲 deepforest / 🪷 lagoon / ⛵ bay) --
+// Plain gating: no dayArc/fresh choice involved. Each simply forms once its
+// PARENT skill island reaches 5/5 completed levels.
+
+/** Has this advanced sister island formed yet? */
+export function isAdvancedZoneUnlocked(p: GameProgress, zone: ActivityZone): boolean {
+  const parent = (ADVANCED_PARENT as Partial<Record<ActivityZone, ActivityZone>>)[zone];
+  if (!parent) return true; // not an advanced zone — always considered unlocked
+  return completedLevels(p, parent) >= MAX_LEVEL;
 }
 
 // ---- totals ----
@@ -430,12 +482,12 @@ export interface GrowthInfo {
   scale: number;
 }
 
-// Star thresholds for each growth stage. Retuned for the Nilu's Day update
-// (8 islands × 15 stars = 120 max) so the FINAL stage lands near the end of
-// the whole journey instead of leaving the day-arc islands with no growth
-// payoff. Existing players are protected by `growthFloor` — a stage once
-// reached is never lost.
-const GROWTH_THRESHOLDS = [0, 18, 45, 84];
+// Star thresholds for each growth stage. Retuned for the advanced sister
+// islands update (12 islands × 15 stars = 180 max) so the FINAL stage lands
+// near the end of the whole journey instead of leaving the newest islands
+// with no growth payoff. Existing players are protected by `growthFloor` — a
+// stage once reached is never lost.
+const GROWTH_THRESHOLDS = [0, 22, 60, 110];
 const GROWTH_LABELS = ['Baby Nilu', 'Little Nilu', 'Big Nilu', 'Grown-Up Nilu'];
 const GROWTH_SCALES = [0.7, 0.85, 1.0, 1.15];
 

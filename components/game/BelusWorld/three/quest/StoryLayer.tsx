@@ -27,8 +27,13 @@ import StartSign from './StartSign';
 const ZONE = 'meadow' as const;
 const APPROACH = 4.6; // stay this close to a friend while observing & choosing
 const LINGER = 1.6; // seconds of staying close before the clue appears
-const HELP_DIST = 2.3; // how far the help bubbles sit in front of a friend
-const HELP_SPREAD = 2.8; // sideways gap between the 3 help bubbles (no overlap)
+const HELP_DIST = 1.8; // how far the help bubbles sit in front of a friend
+// Sideways gap between the 3 help bubbles. A parent reported the Forest
+// word-orb version of this same fan being too tight to steer between with a
+// joystick — HELP_PICK-sized circles need real daylight between centres.
+// Some friends sit close to the meadow's edge, so this is the largest value
+// that keeps every bubble on the island for every authored friend position.
+const HELP_SPREAD = 4.5;
 const HELP_PICK = 1.5; // walk this close to a help bubble to choose it
 const FIREFLY_FIND = 2.2; // walk this close to a hidden firefly to collect it
 const INVITE_START = 2.4; // walk this close to the waving host to BEGIN (consent)

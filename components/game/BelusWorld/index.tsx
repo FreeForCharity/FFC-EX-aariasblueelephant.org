@@ -66,6 +66,7 @@ import {
   recordDayStage,
   setDayChoice,
   markDayCelebrated,
+  isAdvancedZoneUnlocked,
   type GameProgress,
   type ActivityZone,
   type CosmeticSlot,
@@ -112,6 +113,18 @@ function loadSettings(): Settings {
   }
 }
 
+// Skill islands (as opposed to the Day-arc islands, which already get an
+// "a new island formed!" celebration) bloom silently via World.tsx's decor —
+// no other cue marks a finished level as progress. This gives each one a
+// zone-appropriate "the island is growing!" moment instead.
+const SKILL_ZONES: ActivityZone[] = ['meadow', 'forest', 'cove', 'shore'];
+const GROWTH_WORDING: Record<'meadow' | 'forest' | 'cove' | 'shore', { emoji: string; grew: string }> = {
+  meadow: { emoji: '🌼', grew: 'New flowers bloomed!' },
+  forest: { emoji: '🌳', grew: 'New trees appeared!' },
+  cove: { emoji: '💧', grew: 'The pool shimmers brighter!' },
+  shore: { emoji: '🐚', grew: 'More shells washed up!' },
+};
+
 const STICKER_KEYS: Record<ActivityZone, string> = {
   meadow: '💛',
   mountain: '⛰️',
@@ -121,6 +134,10 @@ const STICKER_KEYS: Record<ActivityZone, string> = {
   school: '🏫',
   afternoon: '🏡',
   night: '🌙',
+  garden: '🌷',
+  deepforest: '🌲',
+  lagoon: '🪷',
+  bay: '⛵',
 };
 
 // Nilu's Day arc — the four stages of one day, in order (☀️→🏫→🏡→🌙)
@@ -167,6 +184,9 @@ export default function BelusWorldGame() {
 
   const rootRef = useRef<HTMLDivElement>(null);
   const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // the on-screen "🤝 Help me" button calls whichever quest layer currently
+  // owns the status card (QuestLayer or MountainLayer claim this while active)
+  const helpRequestRef = useRef<() => void>(() => {});
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const isTouch = useRef(typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
@@ -206,6 +226,28 @@ export default function BelusWorldGame() {
     [dayUnlocks],
   );
 
+  // ---- Advanced sister islands: plain gating — each forms once its PARENT
+  // skill island reaches 5/5 completed levels (no dayArc/fresh choice). ----
+  const gardenUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'garden'), [progress]);
+  const deepforestUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'deepforest'), [progress]);
+  const lagoonUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'lagoon'), [progress]);
+  const bayUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'bay'), [progress]);
+  worldRuntime.gardenUnlocked = gardenUnlocked;
+  worldRuntime.deepforestUnlocked = deepforestUnlocked;
+  worldRuntime.lagoonUnlocked = lagoonUnlocked;
+  worldRuntime.bayUnlocked = bayUnlocked;
+  const advancedUnlocks = useMemo(
+    () => ({ garden: gardenUnlocked, deepforest: deepforestUnlocked, lagoon: lagoonUnlocked, bay: bayUnlocked }),
+    [gardenUnlocked, deepforestUnlocked, lagoonUnlocked, bayUnlocked],
+  );
+  const unlockedAdvancedZones = useMemo(
+    () =>
+      (['garden', 'deepforest', 'lagoon', 'bay'] as ActivityZone[]).filter(
+        (z) => advancedUnlocks[z as 'garden' | 'deepforest' | 'lagoon' | 'bay'],
+      ),
+    [advancedUnlocks],
+  );
+
   // the one-time fresh/continue chooser (players updating with real progress)
   const needsDayChoice = progress.dayArc.choice === null && totalCompletedLevels(progress) > 0;
   // new players never see the chooser — they simply live the day in order
@@ -229,9 +271,16 @@ export default function BelusWorldGame() {
     playSound('tap', settingsRef.current.sound);
   }, []);
 
-  // island-forming celebration — fires once per day-arc island, the moment its
-  // unlock condition flips true (and any reward toast is out of the way)
+  // island-forming celebration — fires once per day-arc OR advanced sister
+  // island, the moment its unlock condition flips true (and any reward toast
+  // is out of the way)
   const [islandFormed, setIslandFormed] = useState<{ zone: ActivityZone; label: string; emoji: string } | null>(null);
+
+  // skill-island "it's growing!" celebration — queued by handleQuestComplete,
+  // fired once the RewardToast for that same play closes (see RewardToast's
+  // onClose below), so it never competes with the stars/level-up moment.
+  const pendingGrowthRef = useRef<{ zone: ActivityZone; mastered: boolean } | null>(null);
+  const [growthToast, setGrowthToast] = useState<{ zone: ActivityZone; label: string; emoji: string; text: string; mastered: boolean } | null>(null);
 
   // ---- Home life: daily sparkles, garden, jar, remembered friends ----
   const dateKey = todayKey();
@@ -261,8 +310,15 @@ export default function BelusWorldGame() {
   useEffect(() => {
     if (phase !== 'world' || reward !== null || islandFormed !== null) return;
     if (progress.dayArc.choice === null) return; // chooser still open
-    const unlockedFlags: Record<'school' | 'afternoon' | 'night', boolean> = dayUnlocks;
-    for (const z of ['school', 'afternoon', 'night'] as const) {
+    // day-arc stages + advanced sister islands share the same "a new island
+    // formed!" celebration and the same tolerant `dayArc.celebrated` list —
+    // advanced zones just use plain parent-mastery gating (advancedUnlocks),
+    // no dayArc/fresh choice involved.
+    const unlockedFlags: Record<'school' | 'afternoon' | 'night' | 'garden' | 'deepforest' | 'lagoon' | 'bay', boolean> = {
+      ...dayUnlocks,
+      ...advancedUnlocks,
+    };
+    for (const z of ['school', 'afternoon', 'night', 'garden', 'deepforest', 'lagoon', 'bay'] as const) {
       if (!unlockedFlags[z] || progress.dayArc.celebrated.includes(z)) continue;
       const isl = ISLANDS[z];
       setProgress((p) => {
@@ -276,7 +332,7 @@ export default function BelusWorldGame() {
       setEmotion('excited');
       break; // one celebration at a time
     }
-  }, [phase, reward, islandFormed, progress, dayUnlocks, speak]);
+  }, [phase, reward, islandFormed, progress, dayUnlocks, advancedUnlocks, speak]);
 
   // persist comfort + speed settings so they don't reset each visit
   useEffect(() => {
@@ -468,6 +524,15 @@ export default function BelusWorldGame() {
       setMemory(m);
 
       const mastered = completedLevels(nextProgress, zone) >= 5;
+
+      // a skill island (meadow/forest/cove/shore) blooms silently in the 3D
+      // world on every newly-finished level — queue a small toast for it so
+      // finishing a level actually feels like visible progress, not just
+      // stars. Never fires on a replay of an already-finished level.
+      if (SKILL_ZONES.includes(zone) && res.newLevel) {
+        pendingGrowthRef.current = { zone, mastered };
+      }
+
       setEmotion('excited');
       playSound(res.grewUp ? 'growup' : res.newLevel ? 'levelup' : 'star', settingsRef.current.sound);
       setReward({
@@ -530,6 +595,8 @@ export default function BelusWorldGame() {
           rainbowUnlocked={rainbowUnlocked}
           dayUnlocks={dayUnlocks}
           unlockedDayZones={unlockedDayZones}
+          advancedUnlocks={advancedUnlocks}
+          unlockedAdvancedZones={unlockedAdvancedZones}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
           dateKey={dateKey}
@@ -549,6 +616,7 @@ export default function BelusWorldGame() {
           playSound={sfx}
           onQuestComplete={handleQuestComplete}
           onQuestStatus={setQuestStatus}
+          helpRequestRef={helpRequestRef}
         />
       </Suspense>
 
@@ -574,7 +642,10 @@ export default function BelusWorldGame() {
 
       <AnimatePresence>
         {questStatus && !paused && (
-          <QuestPanel status={questStatus} />
+          <QuestPanel
+            status={questStatus}
+            onHelp={() => { sfx('tap'); helpRequestRef.current(); }}
+          />
         )}
       </AnimatePresence>
 
@@ -614,8 +685,36 @@ export default function BelusWorldGame() {
           <RewardToast
             reward={reward}
             reduceMotion={settings.reduceMotion || settings.calmMode}
-            onClose={() => setReward(null)}
+            onClose={() => {
+              setReward(null);
+              const pending = pendingGrowthRef.current;
+              pendingGrowthRef.current = null;
+              if (!pending) return;
+              const isl = ISLANDS[pending.zone];
+              const wording = GROWTH_WORDING[pending.zone as 'meadow' | 'forest' | 'cove' | 'shore'];
+              playSound('growup', settingsRef.current.sound);
+              if (pending.mastered) {
+                speak(`${isl.label} is complete! Look at the glowing victory totem! ⭐`);
+              } else {
+                speak(`Look! ${isl.label} is growing! ${wording.emoji} ${wording.grew}`);
+              }
+              setEmotion('excited');
+              setGrowthToast({
+                zone: pending.zone,
+                label: isl.label,
+                emoji: wording.emoji,
+                text: pending.mastered ? `${isl.label} is complete! ⭐` : wording.grew,
+                mastered: pending.mastered,
+              });
+            }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* "the island grew!" celebration for a skill island's newly-finished level */}
+      <AnimatePresence>
+        {growthToast && (
+          <IslandGrewToast info={growthToast} onClose={() => setGrowthToast(null)} />
         )}
       </AnimatePresence>
 
@@ -876,7 +975,7 @@ function LoadingWorld() {
 
 // The persistent "what to do right now" task card, pinned top-center. Keeps the
 // current question + progress on screen so the child always knows the next step.
-function QuestPanel({ status }: { status: QuestStatus }) {
+function QuestPanel({ status, onHelp }: { status: QuestStatus; onHelp: () => void }) {
   const correct = status.phase === 'correct';
   return (
     <motion.div
@@ -929,6 +1028,19 @@ function QuestPanel({ status }: { status: QuestStatus }) {
           <p className="mt-1 text-xs font-semibold text-slate-500">
             {status.hint ?? 'Walk Nilu into the matching glowing orb 🫧 (or tap it)'}
           </p>
+        )}
+
+        {/* Stage-2 stuck-help: a friendly, no-pressure way out after ~36s of
+            no progress. Tapping it never costs stars — a friend just helps. */}
+        {!correct && status.helpOffered && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={onHelp}
+            className="pointer-events-auto mt-2 rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-5 py-2 text-sm font-bold text-amber-950 shadow-[0_4px_0_#e8920c,0_6px_10px_rgba(0,0,0,0.15)] transition active:translate-y-0.5"
+          >
+            🤝 Help me
+          </motion.button>
         )}
       </div>
     </motion.div>
@@ -1080,6 +1192,43 @@ function IslandFormedToast({ info, reduceMotion, onClose }: { info: { zone: Acti
           Let's go! →
         </button>
       </motion.div>
+    </motion.div>
+  );
+}
+
+// A small, brief "the island is growing!" toast for skill islands (meadow/
+// forest/cove/shore) — those bloom silently in the 3D world on every
+// finished level, so this is the only cue that a level just finished. Kept
+// short and auto-dismissing so it never blocks play, unlike the bigger
+// once-ever "a new island appeared!" toast above.
+function IslandGrewToast({
+  info,
+  onClose,
+}: {
+  info: { zone: ActivityZone; label: string; emoji: string; text: string; mastered: boolean };
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="fixed left-1/2 top-40 z-40 -translate-x-1/2"
+    >
+      <div
+        className="flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-center shadow-2xl"
+        style={{ border: info.mastered ? '2px solid #ffd166' : '2px solid #7ec850' }}
+      >
+        <span className="text-2xl">{info.emoji}</span>
+        <div className="text-left">
+          <p className="text-sm font-black text-slate-800">{info.label} is growing!</p>
+          <p className="text-xs font-semibold text-slate-500">{info.text}</p>
+        </div>
+      </div>
     </motion.div>
   );
 }
