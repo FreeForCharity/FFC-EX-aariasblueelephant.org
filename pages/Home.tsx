@@ -57,6 +57,24 @@ const imagesToPreload = [
 // Track initial app load to allow random initialization on refresh but skip on internal navigation
 let isAppInitialLoad = true;
 
+// The games kids can play — used to power the smart "Play" button on Home.
+// Nilu's Helping Hands is excluded from the random "surprise me" pool since
+// it's password-gated safety-ed content, not open-ended free play.
+type PlayGame = { url: string; name: string; emoji: string; isReactRoute?: boolean; sampler?: boolean };
+const RANDOM_GAMES: PlayGame[] = [
+    { url: '/elly-tubbies/index.html', name: 'Elly-Tubbies', emoji: '🐘', sampler: true },
+    { url: '/blockcraft/index.html', name: 'Block Craft 3D', emoji: '🧱', sampler: true },
+    { url: '/roadsafety/index.html', name: 'Road Safety Heroes', emoji: '🚴', sampler: true },
+    { url: '/doughlab/index.html', name: 'Dough Lab', emoji: '🌈', sampler: true },
+    { url: '/magnetblocks/index.html', name: 'Magnet Blocks', emoji: '🧲', sampler: true },
+];
+
+type LastGame = { url: string; name: string; emoji: string; at: number };
+
+function pickRandomGame(): PlayGame {
+    return RANDOM_GAMES[Math.floor(Math.random() * RANDOM_GAMES.length)];
+}
+
 const Home: React.FC = () => {
     // Animations play on full refresh (isAppInitialLoad is true)
     // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
@@ -122,6 +140,24 @@ const Home: React.FC = () => {
     const a = (cls: string) => shouldAnimate ? cls : '';
 
     const [isHydrated, setIsHydrated] = useState(false);
+    const [lastGame, setLastGame] = useState<LastGame | null>(null);
+
+    // Read the "last game played" stamp (written by each game on mount) so
+    // we can offer a one-tap "keep playing" button on first paint.
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem('abe_last_game');
+            if (raw) setLastGame(JSON.parse(raw));
+        } catch { /* ignore */ }
+    }, []);
+
+    // "Surprise me" — picks a random static game and appends ?sampler=1 so
+    // it can show a lightweight taste of the game to a first-time visitor.
+    const goToRandomGame = () => {
+        const game = pickRandomGame();
+        const dest = game.sampler ? `${game.url}?sampler=1` : game.url;
+        window.location.href = dest;
+    };
 
     useEffect(() => {
         setIsHydrated(true);
@@ -390,11 +426,66 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Play Nilu's World — free, kid-facing 3D game built for Aaria & friends.
+            {/* Play — free, kid-facing games built for Aaria & friends.
                 Kept simple/warm rather than matching the marketing sections above,
-                since this card is for kids and parents to click through and play. */}
+                since this card is for kids and parents to click through and play.
+                Smart: offers to resume the last game played, or picks a random
+                one for first-time visitors. */}
             <section className="pb-20 bg-white dark:bg-slate-900 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+                    <div
+                        className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all sm:flex-row sm:text-left"
+                        style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
+                    >
+                        <div className="text-6xl transition-transform group-hover:scale-110">
+                            {lastGame ? lastGame.emoji : '🎲'}
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-black text-sky-700">
+                                {lastGame ? `Keep playing ${lastGame.name}` : 'Play — surprise me!'}
+                            </h3>
+                            <p className="mt-1 text-slate-600 dark:text-slate-500">
+                                {lastGame
+                                    ? `Jump back into ${lastGame.name} right where you left off.`
+                                    : 'Free, no-fail games built for Aaria and her friends — pick a game at random and see what you get. No login needed.'}
+                            </p>
+                        </div>
+                        <div className="flex flex-none flex-col items-center gap-3 sm:items-end">
+                            {lastGame ? (
+                                lastGame.url === '/nelus-world' ? (
+                                    <Link
+                                        to="/nelus-world"
+                                        className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
+                                    >
+                                        ▶️ Keep playing {lastGame.name} {lastGame.emoji}
+                                    </Link>
+                                ) : (
+                                    <a
+                                        href={lastGame.url}
+                                        className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
+                                    >
+                                        ▶️ Keep playing {lastGame.name} {lastGame.emoji}
+                                    </a>
+                                )
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={goToRandomGame}
+                                    className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
+                                >
+                                    ▶️ Play — surprise me!
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={goToRandomGame}
+                                className="rounded-full bg-white/80 dark:bg-slate-800/80 border border-sky-200 dark:border-sky-800 px-5 py-2 text-sm font-bold text-sky-600 dark:text-sky-300 shadow transition hover:bg-white"
+                            >
+                                🎲 Surprise me!
+                            </button>
+                        </div>
+                    </div>
+
                     <Link
                         to="/nelus-world"
                         className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:flex-row sm:text-left"
