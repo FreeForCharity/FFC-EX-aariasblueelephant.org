@@ -44,9 +44,11 @@ window.MB = window.MB || {};
     }
   }
   function squashBounce(group){
+    const calm = MB.ui && MB.ui.calm;
+    const amp = calm ? 0.4 : 1; // calm mode: gentler, quicker settle — no big wobble
     const base = group.scale.clone();
-    B.addTween(0.28, k => {
-      const s = k<0.4 ? 1 - 0.22*Math.sin(k/0.4*Math.PI) : 1 + 0.08*Math.sin((k-0.4)/0.6*Math.PI);
+    B.addTween(calm ? 0.16 : 0.28, k => {
+      const s = k<0.4 ? 1 - 0.22*amp*Math.sin(k/0.4*Math.PI) : 1 + 0.08*amp*Math.sin((k-0.4)/0.6*Math.PI);
       group.scale.set(base.x*(2-s < 1 ? 1 : 1), base.y*s, base.z*(1));
       group.scale.x = base.x*(1 + (1-s)*0.5); group.scale.z = base.z*(1 + (1-s)*0.5);
     }, ()=>group.scale.copy(base));
@@ -218,6 +220,7 @@ window.MB = window.MB || {};
       squashBounce(inst.group);
       spawnSnapFlash(B.snap.point);
       if (B.snap.parent && MB.ui && MB.ui.milestone) MB.ui.milestone('snap', '🎉 First snap! Blocks click together like magic!');
+      MB.Undo && MB.Undo.push();
     } else {
       // no magnet: drop where it is — falls to the floor and becomes a stray
       const from = inst.group.position.clone();
@@ -236,7 +239,7 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 2.2);
         const dy = (to.y - from.y) * e, dx = (to.x-from.x)*e, dz = (to.z-from.z)*e;
         g.members.forEach((m,i) => m.inst.group.position.set(membersFrom[i].x+dx, membersFrom[i].y+dy, membersFrom[i].z+dz));
-      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); } MB.cleanupCheck && MB.cleanupCheck(); });
+      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); } MB.cleanupCheck && MB.cleanupCheck(); MB.Undo && MB.Undo.push(); });
     }
     B.snap = null;
     changed();
@@ -281,6 +284,7 @@ window.MB = window.MB || {};
     }
     MB.Audio.pick();
     squashBounce(inst.group);
+    MB.Undo && MB.Undo.push();
   };
 
   B.repaint = function(inst, colorHex){
@@ -291,6 +295,7 @@ window.MB = window.MB || {};
     g2.userData.mb = inst; g2.traverse(o => { o.userData.mbRoot = inst; });
     if (B.selected === inst){ highlight(inst, true); }
     MB.Audio.sparkle();
+    MB.Undo && MB.Undo.push();
   };
 
   B.duplicateSel = function(){
@@ -321,6 +326,7 @@ window.MB = window.MB || {};
     const members = [...MB.Magnet.subtree(inst)];
     MB.Audio.whoosh();
     for (const m of members) m._flying = true;
+    let doneCount = 0;
     for (const m of members){
       const bin = B.room.bins.find(b => b.blockId === m.def.id) || B.room.bins[0];
       const from = m.group.position.clone(), to = bin.pos.clone();
@@ -330,7 +336,11 @@ window.MB = window.MB || {};
         m.group.position.lerpVectors(from, to, e);
         m.group.position.y += Math.sin(e*Math.PI) * lift;
         m.group.scale.setScalar(1 - 0.6*e);
-      }, () => { if (thenRemove) MB.Magnet.removeBlock(m); changed(); });
+      }, () => {
+        if (thenRemove) MB.Magnet.removeBlock(m); changed();
+        doneCount++;
+        if (doneCount === members.length) MB.Undo && MB.Undo.push();
+      });
     }
     if (B.selected && members.includes(B.selected)) B.select(null);
   };

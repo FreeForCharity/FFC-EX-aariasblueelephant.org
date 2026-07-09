@@ -757,11 +757,17 @@ ABC.BUILD_IDEAS = [
   'Build a castle with tall towers! 🏰',
 ];
 
-/* Today's Adventures — 3 focus quests per day 📋 */
+/* Today's Adventures — a pool of quests; 3 are picked each day (seeded by the
+   date, so the picks are predictable within a day but vary day to day) 📋 */
 ABC.QUEST_DEFS = [
-  { key:'build',  ico:'🏗️', label:'Finish one build stage' },
-  { key:'animal', ico:'💖', label:'Help an animal friend feel better' },
-  { key:'words',  ico:'💬', label:'Do Kind Words, Slime Lab or Oreo Kitchen' },
+  { key:'build',   ico:'🏗️', label:'Finish one build stage' },
+  { key:'animal',  ico:'💖', label:'Help an animal friend feel better' },
+  { key:'words',   ico:'💬', label:'Do Kind Words, Slime Lab or Oreo Kitchen' },
+  { key:'dig',     ico:'⛏️', label:'Dig up a treasure' },
+  { key:'plant',   ico:'🌱', label:'Plant a tree' },
+  { key:'photo',   ico:'📸', label:'Take a photo' },
+  { key:'friend',  ico:'🐾', label:'Say hello to an animal friend' },
+  { key:'sticker', ico:'🏅', label:'Check your treasures' },
 ];
 
 /* Wormhole portal — the reward for using expressive language 🌀 */
@@ -784,4 +790,6 @@ ABC.BUILD_MILESTONES = {
   100: '💯 100 blocks placed! WOW — you are a Block Craft superstar!',
   250: '🌟 250 blocks placed! Your world is amazing!',
   500: '👑 500 blocks placed! You are a true Master Builder!',
+  1000: '🏆 1,000 blocks placed! You are an incredible builder, {player}!',
+  2500: '🌈👑 2,500 blocks placed! A legendary Block Craft master — WOW!',
 };

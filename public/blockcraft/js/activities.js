@@ -271,6 +271,7 @@ ABC.activities = (function () {
 
   function talkToAnimal(a) {
     ABC.audio.animalCall(a.kind);                    // each animal says hello its own way 🐾
+    if (!a.isGuide) ABC.quests.mark('friend');        // saying hello to any friend counts 🐾
     if (a.isGuide) { bellaChat(a); return; }
     if (a.isVendor) { shop(a); return; }
     if (ABC.pet && ABC.pet.tryInteract(a)) return;   // your own pet 💕
@@ -507,24 +508,46 @@ ABC.activities = (function () {
      ===================================================== */
   ABC.quests = (function () {
     const todayKey = () => new Date().toISOString().slice(0, 10);
+    /* deterministic "random": same date always shuffles the pool the same way,
+       so today's 3 adventures are predictable within a day, but vary day to day */
+    function seededShuffle(arr, seedStr) {
+      let seed = 0;
+      for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+      const rand = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296; };
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
     function state() {
       let q = ABC.state.quests;
       if (!q || q.date !== todayKey()) {
-        q = ABC.state.quests = { date: todayKey(), done: {}, celebrated: false };
+        const picks = seededShuffle(ABC.QUEST_DEFS, todayKey()).slice(0, 3);
+        q = ABC.state.quests = { date: todayKey(), done: {}, celebrated: false, keys: picks.map(d => d.key) };
+      }
+      if (!q.keys || !q.keys.length) {    // migrate an old save that had no keys yet
+        q.keys = seededShuffle(ABC.QUEST_DEFS, q.date).slice(0, 3).map(d => d.key);
       }
       return q;
     }
-    function allDone() { return ABC.QUEST_DEFS.every(d => state().done[d.key]); }
+    function todayDefs() {
+      const q = state();
+      return q.keys.map(k => ABC.QUEST_DEFS.find(d => d.key === k)).filter(Boolean);
+    }
+    function allDone() { return todayDefs().every(d => state().done[d.key]); }
     function refreshChip() {
       const chip = document.getElementById('questChip');
       if (!chip) return;
-      const n = ABC.QUEST_DEFS.filter(d => state().done[d.key]).length;
-      chip.textContent = '📋 ' + n + '/' + ABC.QUEST_DEFS.length;
+      const defs = todayDefs();
+      const n = defs.filter(d => state().done[d.key]).length;
+      chip.textContent = '📋 ' + n + '/' + defs.length;
       chip.classList.toggle('portalReady', allDone());
     }
     function mark(key) {
       const q = state();
-      if (q.done[key]) return;
+      if (!q.keys.includes(key) || q.done[key]) return;
       q.done[key] = true;
       refreshChip();
       ABC.saveSoon && ABC.saveSoon();
@@ -546,7 +569,7 @@ ABC.activities = (function () {
       const q = state();
       let html = `<div class="bigEmoji">📋</div><h2>Today's Adventures</h2>
         <div class="scene">Three special things to do today!</div>`;
-      ABC.QUEST_DEFS.forEach(d => {
+      todayDefs().forEach(d => {
         const done = !!q.done[d.key];
         html += `<div class="sentenceCard" style="display:flex; align-items:center; gap:12px; ${done ? 'opacity:.65; border-style:solid; border-color:#51cf66;' : ''}">
           <span style="font-size:30px;">${done ? '✅' : d.ico}</span>
@@ -557,7 +580,7 @@ ABC.activities = (function () {
       ABC.audio.say(allDone() ? 'All adventures done! Amazing!' : 'Here are today’s three adventures!');
       document.getElementById('qbOk').onclick = () => ABC.ui.closeDialog();
     }
-    return { mark, showBoard, refreshChip, state };
+    return { mark, showBoard, refreshChip, state, todayDefs };
   })();
 
   /* =====================================================

@@ -96,7 +96,7 @@ ABC.stickers = (function () {
     '25-stars':        () => ABC.state.stars >= 25,
     'all-quests-day':  () => {
       const q = ABC.state.quests;
-      return !!q && ABC.QUEST_DEFS.every(d => q.done[d.key]);
+      return !!q && ABC.quests.todayDefs().every(d => q.done[d.key]);
     },
     'surprise-pocket': () => !!ABC.state.pocket,
   };

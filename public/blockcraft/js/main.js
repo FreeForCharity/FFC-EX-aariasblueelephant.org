@@ -121,6 +121,14 @@
   ABC.signs.init(scene);
   ABC.signs.placeAll();
 
+  /* 🌈 the world is built — dismiss the loading overlay shown since page load */
+  (function hideLoadingOverlay() {
+    const ov = document.getElementById('loadingOverlay');
+    if (!ov) return;
+    ov.classList.add('hide');
+    setTimeout(() => ov.remove(), 650);
+  })();
+
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
   ABC.setLook = (y, p) => { yaw = y; pitch = p; };   // test/debug: aim the camera
 
@@ -489,6 +497,7 @@
         clearInterval(t);
         ABC.ui.confetti(14); ABC.audio.sfx.ding();
         ABC.ui.toast('🌳 Your tree is all grown! You are a nature helper!', 3600, true);
+        ABC.quests.mark('plant');
         saveSoon();
         return;
       }
@@ -760,7 +769,8 @@
         } else {
           // modern game-feel: a firm landing dips the camera for a beat,
           // scaled by how hard you hit (camera-only — physics untouched)
-          if (ABC.MODERN && !grounded && vy < -7) {
+          // 😌 calm mode skips this — no camera jolt on landing
+          if (ABC.MODERN && !grounded && vy < -7 && !ABC.audio.settings.calm) {
             landDipT = 0.3; landDipK = Math.min(1, (-vy - 7) / 14);
           }
           feet.y = gy; vy = 0; grounded = true;
@@ -816,7 +826,7 @@
         ABC.world.footstep(feet.x, feet.y, feet.z, yaw, strideSide);
       }
     }
-    if (ABC.MODERN && !thirdPerson) {
+    if (ABC.MODERN && !thirdPerson && !ABC.audio.settings.calm) {   // 😌 calm mode: no head-bob
       if (moving && grounded && !flying) {
         bobPhase += dt * (sprint ? 11.5 : 8.5);
         camera.position.y += Math.sin(bobPhase) * 0.045;
@@ -875,6 +885,7 @@
         portalCharge: ABC.state.portalCharge || 0,
         quests: ABC.state.quests || null,
         placedCount: ABC.state.placedCount || 0,
+        postCapDigs: ABC.state.postCapDigs || 0,
         friends: ABC.state.friends || [],
         pocket: ABC.state.pocket || null,
         skyEgg: ABC.state.skyEgg || null,
@@ -884,12 +895,13 @@
         foundShapes: [...ABC.state.foundShapes],
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
-                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather },
+                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather, calm: s.calm },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1500); }
   ABC.saveSoon = saveSoon;
+  ABC.saveNow = saveNow;
   window.addEventListener('beforeunload', saveNow);
 
   function load() {
@@ -915,6 +927,7 @@
       ABC.state.portalCharge = d.portalCharge || 0;
       ABC.state.quests = d.quests || null;
       ABC.state.placedCount = d.placedCount || 0;
+      ABC.state.postCapDigs = d.postCapDigs || 0;
       ABC.state.friends = d.friends || [];
       ABC.state.pocket = d.pocket || null;
       ABC.state.skyEgg = d.skyEgg || null;
@@ -950,14 +963,67 @@
   $('zoomOutBtn').onclick  = () => setZoom(+0.18);
   $('mapBtn').onclick      = () => showMap();
   $('passportBtn').onclick = () => ABC.parks.openPassport();
-  $('photoBtn').onclick    = () => ABC.photo.takePhoto();
+  $('photoBtn').onclick    = () => { ABC.photo.takePhoto(); ABC.quests.mark('photo'); };
   $('albumBtn').onclick    = () => ABC.photo.openAlbum();
-  $('stickersBtn').onclick = () => ABC.stickers.openBook();
+  $('stickersBtn').onclick = () => { ABC.stickers.openBook(); ABC.quests.mark('sticker'); };
   $('friendsBtn').onclick  = () => ABC.friends.openBook();
   $('flowerChip').onclick  = () => ABC.overnight.showFlower();
   $('moreBtn').onclick     = () => ABC.ui.openQuickMenu();
   $('tFly').addEventListener('click', () => $('flyBtn').click());
   $('questChip').onclick   = () => ABC.quests.showBoard();
+
+  /* ---------------- 🔊 one-tap mute ---------------- */
+  function refreshMuteBtn() {
+    const b = $('muteBtn'); if (!b) return;
+    const muted = !ABC.audio.settings.sound;
+    b.textContent = muted ? '🔇' : '🔊';
+    b.title = muted ? 'Unmute — tap to hear sound again' : 'Mute — tap to turn off sound';
+  }
+  ABC.refreshMuteBtn = refreshMuteBtn;
+  if ($('muteBtn')) {
+    $('muteBtn').onclick = () => {
+      const s = ABC.audio.settings;
+      const turningOn = !s.sound;
+      s.sound = turningOn; s.music = turningOn;
+      refreshMuteBtn();
+      saveSoon();
+      if (turningOn) ABC.audio.sfx.pop();
+      ABC.ui.toast(turningOn ? '🔊 Sound is back on!' : '🔇 Sound is off — tap 🔇 to hear again!', 2000);
+    };
+    refreshMuteBtn();
+  }
+
+  /* ---------------- ⏸️ pause / take-a-break ---------------- */
+  function showPauseDialog() {
+    ABC.ui.openDialog(`<div class="bigEmoji">⏸️</div><h2>Taking a break?</h2>
+      <div class="scene">No hurry, {player} — your world will be right here when you come back!</div>
+      <div class="dlgRow">
+        <button class="bigBtn green" id="pauseKeep">Keep playing ▶️</button>
+        <button class="bigBtn" id="pauseSave" style="background:linear-gradient(180deg,#d0ebff,#a5d8ff); color:#1864ab; box-shadow:0 4px 0 #4dabf7;">Save &amp; rest 💤</button>
+      </div>`);
+    ABC.audio.say('Taking a break? You can keep playing, or save and rest.', { force: true });
+    $('pauseKeep').onclick = () => { ABC.audio.sfx.pop(); ABC.ui.closeDialog(); };
+    $('pauseSave').onclick = () => {
+      ABC.audio.sfx.gentle();
+      saveNow();
+      ABC.ui.closeDialog();
+      showRestOverlay();
+    };
+  }
+  function showRestOverlay() {
+    started = false;   // freeze the world underneath (same as ABC.ui.isOpen elsewhere)
+    const ov = document.createElement('div');
+    ov.id = 'restOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;'
+      + 'align-items:center;justify-content:center;gap:20px;text-align:center;color:#fff;'
+      + 'background:linear-gradient(180deg,#1a2a52,#0d1830);';
+    ov.innerHTML = `<div style="font-size:64px;">🌙💙</div>
+      <div style="font-size:26px;max-width:80vw;line-height:1.4;">Your world is saved!<br>See you soon 🌙</div>
+      <button class="bigBtn green" id="restPlayAgain" style="font-size:20px;padding:14px 32px;">▶ Play again</button>`;
+    document.body.appendChild(ov);
+    $('restPlayAgain').onclick = () => { ov.remove(); started = true; };
+  }
+  if ($('pauseBtn')) $('pauseBtn').onclick = showPauseDialog;
 
   /* full screen — works on Chrome/Edge/Firefox AND Safari (incl. iOS, which
      has no Fullscreen API, via a CSS faux-fullscreen fallback) */

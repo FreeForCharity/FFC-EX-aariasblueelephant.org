@@ -2,6 +2,7 @@
 window.MB = window.MB || {};
 (function(){
   const KEY = 'mb_bag_v1', MAX = 24;
+  const AUTOSAVE_KEY = 'mb_autosave';
   const Bag = { items: [] };
 
   function load(){ try { Bag.items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ Bag.items = []; } }
@@ -51,11 +52,11 @@ window.MB = window.MB || {};
 
   Bag.remove = function(id){ Bag.items = Bag.items.filter(i => i.id !== id); save(); };
 
-  // rebuild a saved creation onto the table (table must be clear-ish; caller confirms)
-  Bag.rebuild = function(item, scene){
+  // rebuild any array of serialized pieces onto the table (shared by bag-load, autosave-restore, undo)
+  Bag.rebuildPieces = function(pieces, scene){
     const t = MB.Builder.table;
     const made = [];
-    for (const pc of item.pieces){
+    for (const pc of pieces){
       const def = MB.CATALOG.blocks[pc.b];
       if (!def) continue; // block retired from catalog — skip gracefully
       const inst = MB.Magnet.createBlock(pc.b, pc.c || def.defaultColor);
@@ -71,6 +72,18 @@ window.MB = window.MB || {};
     return made;
   };
 
+  // rebuild a saved creation onto the table (table must be clear-ish; caller confirms)
+  Bag.rebuild = function(item, scene){ return Bag.rebuildPieces(item.pieces, scene); };
+
+  // ---- autosave: quietly remember the live table so a refresh never loses a build ----
+  Bag.saveAutosave = function(){
+    try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(Bag.serializeTable())); } catch(e){}
+  };
+  Bag.loadAutosave = function(){
+    try { return JSON.parse(localStorage.getItem(AUTOSAVE_KEY)) || []; } catch(e){ return []; }
+  };
+  Bag.clearAutosave = function(){ try { localStorage.removeItem(AUTOSAVE_KEY); } catch(e){} };
+
   // UI ------------------------------------------------------------------
   Bag.renderGrid = function(onPick){
     const grid = document.getElementById('bagGrid'), empty = document.getElementById('bagEmpty');
@@ -78,9 +91,18 @@ window.MB = window.MB || {};
     empty.style.display = Bag.items.length ? 'none' : 'block';
     for (const item of [...Bag.items].reverse()){
       const el = document.createElement('div'); el.className = 'bagItem';
-      el.innerHTML = '<img src="' + item.thumb + '" alt=""><div class="nm">' + item.name + ' · ' + item.date + '</div>' +
+      el.innerHTML = '<img src="' + item.thumb + '" alt=""><div class="nm" title="✏️ Tap to rename">' + item.name + ' · ' + item.date + '</div>' +
                      '<button class="del">✕</button>';
       el.querySelector('img').addEventListener('click', () => onPick(item));
+      el.querySelector('.nm').addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const nm = prompt('Name this creation:', item.name);
+        if (nm && nm.trim()){
+          item.name = nm.trim().slice(0, 40);
+          save();
+          Bag.renderGrid(onPick);
+        }
+      });
       el.querySelector('.del').addEventListener('click', (ev) => {
         ev.stopPropagation();
         Bag.remove(item.id); Bag.renderGrid(onPick); Bag.updateCount();

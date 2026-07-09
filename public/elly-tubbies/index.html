@@ -252,6 +252,7 @@
       <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
       <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
+      <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
     </div>
@@ -284,9 +285,17 @@
       <button class="big" id="setSpeed" style="font-size:17px"></button>
       <button class="big" id="setSound" style="font-size:17px"></button>
       <button class="big" id="setVoice" style="font-size:17px"></button>
+      <button class="big" id="setCalm" style="font-size:17px"></button>
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
     </div>
     <button class="big" id="setClose">Done ▶</button>
+  </div></div>
+
+  <!-- Pause: a calm, no-fail break screen. Freezes the whole frame loop. -->
+  <div class="overlay" id="pauseOv"><div class="panel" style="max-width:380px">
+    <h1>Taking a break 💙</h1>
+    <p>Trunkland is waiting patiently for you!</p>
+    <button class="big" id="resumeBtn" style="font-size:22px">Keep playing ▶️</button>
   </div></div>
 
   <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob">🐘</div>
@@ -410,12 +419,18 @@ const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
   {e:'🥳',w:'Proud',   hint:'A party face means proud — you did it!'},
   {e:'😳',w:'Shy',     hint:'Pink cheeks can mean shy. That\'s okay!'},
   {e:'😌',w:'Calm',    hint:'Soft eyes and a little smile mean calm.'},
+  {e:'🤔',w:'Confused',hint:'A tilted head and squished brows mean confused. Asking helps!'},
+  {e:'🙁',w:'Worried', hint:'A little frown and quiet eyes can mean worried. A hug helps!'},
+  {e:'🥰',w:'Loving',  hint:'Soft smiling eyes and a warm smile mean loving!'},
 ];
 const MOVES=[      // Tinko's dance moves (each has a 3D animation)
   {k:'jump', e:'🦘', w:'Jump'},
   {k:'spin', e:'🌀', w:'Spin'},
   {k:'wave', e:'👋', w:'Wave'},
   {k:'stomp',e:'🦶', w:'Stomp'},
+  {k:'nod',  e:'🙆', w:'Nod'},
+  {k:'wiggle',e:'🕺', w:'Wiggle'},
+  {k:'clap', e:'👏', w:'Clap'},
 ];
 const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
   {name:'Tubby Custard', steps:[{e:'🧼',w:'Wash hands'},{e:'🥣',w:'Get the bowl'},{e:'🥛',w:'Pour the milk'},{e:'🥄',w:'Stir it round'},{e:'💞',w:'Share with friends'}]},
@@ -423,6 +438,9 @@ const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
   {name:'Bedtime', steps:[{e:'🛁',w:'Warm bath'},{e:'🪥',w:'Brush teeth'},{e:'📖',w:'Story time'},{e:'🤗',w:'Big hug'},{e:'😴',w:'Sleep tight'}]},
   {name:'Morning Time', steps:[{e:'⏰',w:'Wake up'},{e:'🚽',w:'Go potty'},{e:'🪥',w:'Brush teeth'},{e:'🥣',w:'Eat breakfast'},{e:'🎒',w:'Ready to go'}]},
   {name:'Tidy Up', steps:[{e:'🧸',w:'Pick up toys'},{e:'📚',w:'Books on shelf'},{e:'🧺',w:'Clothes in basket'},{e:'🧹',w:'Sweep sweep'},{e:'🌟',w:'All done!'}]},
+  {name:'Snack Time', steps:[{e:'🧼',w:'Wash hands'},{e:'🍌',w:'Pick a snack'},{e:'🍽️',w:'Put on a plate'},{e:'😋',w:'Enjoy'},{e:'🧹',w:'Clean up crumbs'}]},
+  {name:'Getting Dressed', steps:[{e:'🧦',w:'Socks on'},{e:'👕',w:'Shirt on'},{e:'👖',w:'Pants on'},{e:'👟',w:'Shoes on'},{e:'🪞',w:'Check the mirror'}]},
+  {name:'Watering Plants', steps:[{e:'🪣',w:'Fill the can'},{e:'🌱',w:'Find the plant'},{e:'💧',w:'Pour gently'},{e:'☀️',w:'Find a sunny spot'},{e:'🌸',w:'Watch it grow'}]},
 ];
 /* Story scenes — enacted in 3D: each choice becomes a character/bubble standing
    in the world. `s` = short label under the figure. 3 stories star each day. */
@@ -473,7 +491,7 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,calm:false,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
@@ -504,6 +522,7 @@ let AC=null;const ac=()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitA
 /* polite audio: never let effect-beeps pile up or drown the voice */
 const _toneLog=[];
 function tone(f,d,type='sine',v=.13,delay=0){if(S.muted)return;const a=ac();if(!a)return;
+  if(S.calm)v*=0.5;                                 // 😌 Calm: gentler on the ears
   const nowMs=performance.now();
   while(_toneLog.length&&nowMs-_toneLog[0]>350)_toneLog.shift();
   if(_toneLog.length>=6)return;                     // enough beeps already — stay calm
@@ -703,8 +722,8 @@ function makeWaterMat(o={}){
     uDeep:{value:new T.Color(o.deep||'#155f9c')},
     uShallow:{value:new T.Color(o.shallow||'#3cb1d4')},
     uSky:{value:new T.Color('#bfe0ff')},
-    uFoam:{value:o.foam?1:0},uAmp:{value:o.amp??0.16},
-    uFlow:{value:o.flow||0},uAlpha:{value:o.alpha??0.92},uIsland:{value:ISLAND}};
+    uFoam:{value:o.foam?1:0},uAmp:{value:(o.amp??0.16)*(REDUCE_MOTION?0.35:1)},
+    uFlow:{value:(o.flow||0)*(REDUCE_MOTION?0.4:1)},uAlpha:{value:o.alpha??0.92},uIsland:{value:ISLAND}};
   const mat=new T.ShaderMaterial({uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,u]),
     transparent:true,fog:true,side:T.DoubleSide,
     vertexShader:`
@@ -805,7 +824,7 @@ const clouds=[];
       p.scale.y=0.55;g.add(p);}
     const a=rnd()*Math.PI*2,r=30+rnd()*(ISLAND+20);
     g.position.set(Math.cos(a)*r,23+rnd()*9,Math.sin(a)*r);
-    scene.add(g);clouds.push({g,sp:0.55+rnd()*0.7});}
+    scene.add(g);clouds.push({g,sp:(0.55+rnd()*0.7)*(REDUCE_MOTION?0.35:1)});}
 })();
 
 /* ---- sprite helpers ---- */
@@ -933,7 +952,10 @@ function animEllie(e,time,dt,walking){
     else if(a.move==='stomp'){a.inner.scale.y*=1-p*0.25;a.inner.scale.x*=1+p*0.18;e.group.position.y=a.baseY+(t>0.5?0:p*0.5);}
     else if(a.move==='happy'){e.group.position.y=a.baseY+Math.abs(Math.sin(t*Math.PI*3))*1.1;a.inner.rotation.y=Math.sin(t*Math.PI*2)*0.4;}
     else if(a.move==='sad'){a.head.rotation.x=p*0.4;}
-    if(t>=1){a.move=null;a.inner.rotation.y=0;a.head.rotation.x=0;e.group.position.y=a.baseY;}}
+    else if(a.move==='nod'){a.head.rotation.x=Math.sin(t*Math.PI*3)*0.3;}
+    else if(a.move==='wiggle'){a.inner.rotation.z=Math.sin(t*Math.PI*4)*0.25;}
+    else if(a.move==='clap'&&a.arms){a.arms.forEach(({piv})=>{piv.rotation.x=Math.sin(t*Math.PI*6)*0.5;});}
+    if(t>=1){a.move=null;a.inner.rotation.y=0;a.inner.rotation.z=0;a.head.rotation.x=0;e.group.position.y=a.baseY;}}
 }
 function doMove(e,k,dur=0.9){e.anim.move=k;e.anim.moveT=0;e.anim.moveDur=dur;e.anim.baseY=e.group.position.y;}
 
@@ -1588,7 +1610,9 @@ $('questChip').onclick=()=>{sfx.tap();
 /* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
 const NAVY='#12244f';
 const girlImg=new Image();let girlReady=false;
-girlImg.onload=()=>{girlReady=true;repaintSun();};girlImg.src='girl.png';
+girlImg.onload=()=>{girlReady=true;repaintSun();tryHideLoading();};
+girlImg.onerror=()=>{girlReady=true;tryHideLoading();};   // never let a bad network hang the loading screen
+girlImg.src='girl.png';
 const GW=172,GH=240;
 const EYES=[{x:70/GW,y:126/GH,rx:27/GW,ry:19/GH},{x:117/GW,y:120/GH,rx:28/GW,ry:18/GH}];
 const CHEEKS=[{x:44/GW,y:150/GH},{x:132/GW,y:146/GH}];
@@ -1725,6 +1749,7 @@ function spawnSeeds(){
 /* burst of celebration sparkles at a world point */
 const bursts=[];
 function burst(pos,n=16,col='#ffd23f'){
+  if(S.calm)n=Math.max(4,Math.round(n*0.4));         // 😌 Calm: fewer sparkly particles
   const geo=new T.BufferGeometry();const p=[],v=[];
   for(let i=0;i<n;i++){p.push(pos.x,pos.y+1,pos.z);
     const a=Math.random()*Math.PI*2,e2=Math.random()*Math.PI;
@@ -1871,6 +1896,47 @@ async function actDance(){
   burst(p,18,'#ff8fb1');if(crowd.length)reactSun();
   actionBusy=false;
 }
+async function actBubbles(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.soft();doMove(player,'wave',1);giggle();
+  const p=player.group.position;
+  for(let i=0;i<8;i++){setTimeout(()=>{
+    if(mode!=='roam')return;
+    const s=emojiSprite('🫧',0.7+Math.random()*0.6);
+    s.position.set(p.x+(Math.random()-0.5)*1.6,p.y+1.2,p.z+(Math.random()-0.5)*1.6);
+    scene.add(s);
+    const rise=3.5+Math.random()*2;
+    tween(1.5+Math.random()*0.8,k=>{s.position.y=p.y+1.2+k*rise;
+      s.position.x+=Math.sin(k*9+i)*0.02;s.material.opacity=1-k;}).then(()=>scene.remove(s));
+  },i*140);}
+  await wait(900);actionBusy=false;
+}
+async function actConfetti(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.star();doMove(player,'jump',1);
+  const p=player.group.position.clone();
+  burst(new T.Vector3(p.x,p.y+2.4,p.z),26,'#ff8fb1');
+  ['🎉','🎊','✨'].forEach((n,i)=>setTimeout(()=>
+    floatSprite(n,new T.Vector3(p.x+(i-1)*1.1,p.y+3,p.z),3,1.5),i*180));
+  reactSun();
+  await wait(700);actionBusy=false;
+}
+async function actGrowShrink(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.boing();floatSprite('✨',player.group.position,3,1.2,1.4);
+  await tween(0.55,k=>{const s=1+Math.sin(k*Math.PI)*0.5;player.group.scale.setScalar(s);});
+  player.group.scale.setScalar(1);giggle();
+  await wait(250);actionBusy=false;
+}
+async function actRainbowArc(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.good();doMove(player,'spin',1);
+  const p=player.group.position.clone();
+  const cols=['#ff5f6d','#ffa53f','#ffd23f','#6dd47e','#5fb4ff','#a78bfa'];
+  cols.forEach((c,i)=>setTimeout(()=>{if(mode==='roam')burst(new T.Vector3(p.x,p.y+1.4,p.z),6,c);},i*90));
+  floatSprite('🌈',new T.Vector3(p.x,p.y+2.6,p.z),3,1.6,1.8);
+  await wait(700);actionBusy=false;
+}
 
 /* ================= MISCHIEF! holes, disappearing & BOO! ================== */
 function makeHole(){
@@ -2015,7 +2081,7 @@ function camFollow(dt){
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
   camera.position.copy(camState.pos);
-  if(camShake>0.004&&!REDUCE_MOTION){                    // landing thump rattles the camera
+  if(camShake>0.004&&!REDUCE_MOTION&&!S.calm){           // landing thump rattles the camera
     camera.position.x+=(Math.random()-0.5)*camShake;
     camera.position.y+=(Math.random()-0.5)*camShake*0.7;
     camShake*=Math.pow(0.0008,dt);}
@@ -2446,9 +2512,10 @@ async function gameFeelings(tub){
   sceneCam(tp.x,tp.z,14,8.5);
   await say('💚','Watch my Tummy-TV! What feeling do you see?');
   const R=dayRnd(21);const pool=[...FEELINGS].sort(()=>R()-0.5);
+  const ROUNDS=3+((S.day-1)%3);              // 3-5 rounds, predictable within a day
   let round=0,wins=0;
   const next=async()=>{
-    if(round>=3){
+    if(round>=ROUNDS){
       tub.anim.tv('💚');
       const over=await giveStar('minty',tub);
       if(!over)exitScene();
@@ -2755,8 +2822,20 @@ async function showFinale(){
   $('nextDayN').textContent=S.day+1;
   setTimeout(()=>$('finale').classList.add('show'),2600*SPEED[S.speed]);
 }
-$('newDay').onclick=()=>{
-  sfx.tap();S.day++;S.today={stars:{},seeds:{},stories:{},wantsDone:{}};save();hud();
+/* a mis-tap shouldn't end the day: first tap arms a 3s confirm window */
+const newDayBtn=$('newDay');
+const newDayOrigHTML=newDayBtn.innerHTML;
+let newDayArmed=false,newDayTimer=null;
+function newDayDisarm(){newDayArmed=false;clearTimeout(newDayTimer);newDayBtn.innerHTML=newDayOrigHTML;}
+newDayBtn.onclick=()=>{
+  sfx.tap();
+  if(!newDayArmed){
+    newDayArmed=true;newDayBtn.textContent='Ready? ☀️';
+    clearTimeout(newDayTimer);newDayTimer=setTimeout(newDayDisarm,3000);
+    return;
+  }
+  newDayDisarm();
+  S.day++;S.today={stars:{},seeds:{},stories:{},wantsDone:{}};save();hud();
   $('finale').classList.remove('show');
   // reset world to morning
   scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
@@ -2771,8 +2850,27 @@ $('newDay').onclick=()=>{
 
 /* ============================== RENDER LOOP ============================== */
 let lastT=performance.now(),t0=lastT;
+let firstFrameRendered=false,loadingHidden=false;
+function tryHideLoading(){                 // hide only once the girl.png art AND a first real frame are ready
+  if(loadingHidden)return;
+  if(!(girlReady||girlImg.complete)||!firstFrameRendered)return;
+  loadingHidden=true;$('loading').classList.add('hidden');
+}
+setTimeout(()=>{if(!loadingHidden){loadingHidden=true;$('loading').classList.add('hidden');}},4500);  // safety net
+let paused=false;
+function setPaused(v){
+  paused=v;
+  if(v){$('pauseOv').classList.add('show');}
+  else{$('pauseOv').classList.remove('show');lastT=performance.now();}   // avoid a giant dt jump on resume
+}
 function frame(now){
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+  if(paused){                          // ⏸️ frozen: no world updates, no mischief/quest timers — just a still frame
+    renderer.render(scene,camera);
+    if(!firstFrameRendered){firstFrameRendered=true;tryHideLoading();}
+    requestAnimationFrame(frame);
+    return;
+  }
   const time=(now-t0)/1000;
 
   if(mode==='roam')updateRoam(dt,time);
@@ -2810,8 +2908,8 @@ function frame(now){
     const k=Math.min(1,f.t/f.dur);
     try{f.fn(k);}catch(e){}
     if(k>=1){fx.splice(i,1);f.res();}}
-  // mischief timer (roam only)
-  if(mode==='roam'){mischiefT-=dt;
+  // mischief timer (roam only) — 😌 Calm mode turns the BOO! surprises off entirely
+  if(mode==='roam'&&!S.calm){mischiefT-=dt;
     if(mischiefT<=0){mischiefT=15+Math.random()*18;runMischief();}}
   // the never-ending quest watches for its moment
   questUpdate(dt);
@@ -2858,6 +2956,7 @@ function frame(now){
 
   camFollow(dt);
   renderer.render(scene,camera);
+  if(!firstFrameRendered){firstFrameRendered=true;tryHideLoading();}
   requestAnimationFrame(frame);
 }
 let sunBaseY=5.2;
@@ -2900,7 +2999,8 @@ function cycleSpeed(){const order=['relaxed','normal','fast'];
 function renderSettings(){
   $('setSpeed').innerHTML=`🎛️ Game speed: <b>${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}</b>`;
   $('setSound').textContent=S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on';
-  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';}
+  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';
+  $('setCalm').textContent=S.calm?'😌 Calm mode: on — extra gentle':'😌 Calm mode: off — tap for extra gentle';}
 $('speedBtn').onclick=cycleSpeed;
 $('settingsBtn').onclick=()=>{sfx.tap();renderSettings();$('settings').classList.add('show');};
 $('setClose').onclick=()=>{sfx.tap();$('settings').classList.remove('show');};
@@ -2908,9 +3008,14 @@ $('setSpeed').onclick=cycleSpeed;
 $('setSound').onclick=()=>{S.muted=!S.muted;save();renderSettings();if(!S.muted)sfx.tap();};
 $('setVoice').onclick=()=>{S.voice=!S.voice;save();renderSettings();
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+$('setCalm').onclick=()=>{S.calm=!S.calm;save();renderSettings();sfx.tap();
+  say('☀️',S.calm?'Calm mode on — everything is extra gentle now.':'Calm mode off — back to the usual fun!');};
 $('setFs').onclick=()=>{sfx.tap();
   if(document.fullscreenElement)document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});};
+/* ⏸️ pause: freezes the whole frame loop (see setPaused/frame) */
+$('pauseBtn').onclick=()=>{sfx.tap();setPaused(true);};
+$('resumeBtn').onclick=()=>{sfx.tap();setPaused(false);};
 // jump / duck / fun buttons
 $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();
   if(trav==='fly')flyRise=true; else tryJump();});
@@ -2957,7 +3062,11 @@ $('wmapClose').onclick=()=>{sfx.tap();$('wmap').classList.remove('show');};
 /* ONE mystery button — every tap a surprise! Undiscovered tricks come first
    (with a celebration), then it keeps shuffling them forever. */
 const MYSTERY=[{k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
-               {k:'dance',e:'💃',name:'Dance Party',fn:actDance}];
+               {k:'dance',e:'💃',name:'Dance Party',fn:actDance},
+               {k:'bubbles',e:'🫧',name:'Bubble Pop',fn:actBubbles},
+               {k:'confetti',e:'🎉',name:'Confetti Party',fn:actConfetti},
+               {k:'growshrink',e:'✨',name:'Wiggly Grow',fn:actGrowShrink},
+               {k:'rainbowarc',e:'🌈',name:'Rainbow Arc',fn:actRainbowArc}];
 $('trumpetBtn').onclick=()=>{ac();actTrumpet();};   // Nilu's signature — always right there
 $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   const fresh=MYSTERY.filter(m=>!S.found[m.k]);
@@ -2986,7 +3095,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();registerTickles();refreshStickers();refreshSecrets();
 renderSched();setupWants();spawnEggNode();renderNest();newQuest();
-$('loading').classList.add('hidden');   // title screen (#title) greets first
+// #loading hides only once girl.png has loaded AND the first frame has rendered (see tryHideLoading)
 requestAnimationFrame(frame);
 </script>
 </body>

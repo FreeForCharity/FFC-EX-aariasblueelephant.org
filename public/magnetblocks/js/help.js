@@ -1,7 +1,7 @@
 // help.js — 🪄 Magic Builder: on a cooldown, blocks fly off the shelves and click into a surprise build
 window.MB = window.MB || {};
 (function(){
-  const COOLDOWN = 240;      // seconds between magic builds
+  const COOLDOWN = 60;       // seconds between magic builds
   const FIRST_WAIT = 40;     // first one unlocks quickly so kids discover it
   const H = { readyAt: 0, running: false };
   H.init = function(){ H.readyAt = performance.now()/1000 + FIRST_WAIT; H.lastCooldown = FIRST_WAIT; };

@@ -65,6 +65,18 @@
   #nameRow input { font-family:inherit; font-size:22px; text-align:center; width:200px;
     padding:8px 12px; border:3px solid #74c0fc; border-radius:14px; color:#1d4ed8; background:#fff; }
 
+  /* ---------- Loading overlay (shown immediately, removed once the world is ready) ---------- */
+  #loadingOverlay { position:fixed; inset:0; z-index:400; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; text-align:center;
+    background:linear-gradient(180deg,#7ec8ff 0%,#b9e7ff 45%,#baf2bb 100%); transition:opacity .5s; }
+  #loadingOverlay img { width:min(30vh,110px); border-radius:50%;
+    box-shadow:0 10px 24px rgba(20,40,90,.28); animation:bounceTitle 2.2s ease-in-out infinite; }
+  #loadingOverlay .loadTxt { font-size:22px; color:#1d4ed8; font-weight:bold; }
+  #loadingOverlay .loadSpin { width:46px; height:46px; border:6px solid rgba(29,78,216,.18);
+    border-top-color:#1d4ed8; border-radius:50%; animation:loadSpin .9s linear infinite; }
+  @keyframes loadSpin { to { transform:rotate(360deg); } }
+  #loadingOverlay.hide { opacity:0; pointer-events:none; }
+
   /* ---------- HUD ---------- */
   #hud { position:fixed; inset:0; z-index:10; pointer-events:none; display:none; }
   #crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
@@ -363,6 +375,11 @@
 </head>
 <body>
     <!-- Google Tag Manager (noscript) --><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WD789BVB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript><!-- End Google Tag Manager (noscript) -->
+<div id="loadingOverlay">
+  <img src="logo.png" alt="">
+  <div class="loadSpin"></div>
+  <div class="loadTxt">Building your world… 🌈</div>
+</div>
 <canvas id="gameCanvas"></canvas>
 
 <div id="titleScreen">
@@ -414,6 +431,8 @@
     <button class="menuBtn deskOnly" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
+    <button class="menuBtn" id="muteBtn" title="Mute — tap to turn off sound" style="min-width:44px;min-height:44px;">🔊</button>
+    <button class="menuBtn" id="pauseBtn" title="Take a break" style="min-width:44px;min-height:44px;">⏸️</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
     <button class="menuBtn" id="skinToggleBtn" title="Switch Modern / Smooth / Classic look">🎨</button>
     <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>

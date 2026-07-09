@@ -460,6 +460,27 @@
     position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(40,25,70,.68); color: #fff;
     font-size: 14px; padding: 3px 7px; border-radius: 10px; line-height: 1.4;
   }
+  /* ---------- done checkmarks (progress only — nothing is ever hidden/locked) ---------- */
+  .done-badge {
+    position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(43,138,62,.85); color: #fff;
+    font-size: 14px; padding: 3px 7px; border-radius: 10px; line-height: 1.4;
+  }
+  .scenario-card.scenario-done { box-shadow: 0 10px 22px rgba(60,40,100,.16), 0 0 0 3px #8ce99a inset; }
+
+  /* ---------- My Stickers (pure display) ---------- */
+  .sticker-book { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px 16px 60px; max-width: 720px; margin: 0 auto; }
+  .sticker-count-text { font-size: clamp(16px, 2vw, 20px); font-weight: 800; color: #4c3a8f; text-align: center; }
+  .sticker-empty { font-size: 15px; color: #5f3dc4; text-align: center; }
+  .sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 10px; width: 100%; max-width: 560px; }
+  .sticker-cell { font-size: clamp(30px, 4vw, 44px); text-align: center; line-height: 1; animation: stickerPop .3s ease-out backwards; }
+  @keyframes stickerPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* ---------- first-run movement tutorial (interiors, one-time) ---------- */
+  .move-tutorial { position: absolute; left: 16px; bottom: 142px; z-index: 39; pointer-events: none; animation: mtBounce 1.4s ease-in-out infinite; }
+  .move-tutorial-card { background: #fff; border-radius: 16px; padding: 10px 14px; box-shadow: 0 6px 16px rgba(0,0,0,.25); display: flex; align-items: center; gap: 8px; max-width: 220px; }
+  .move-tutorial-icon { font-size: 26px; }
+  .move-tutorial-card p { margin: 0; font-size: 13px; font-weight: 800; color: #4c3a8f; }
+  @keyframes mtBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
   /* ---------- global toast (confirmation, any screen) ---------- */
   .global-toast {
@@ -615,6 +636,7 @@
     <h2 class="menu-title">What do you want to do?</h2>
     <div id="menuCards" class="menu-cards"></div>
   </div>
+  <button id="stickerBookLinkMenu" class="link-btn">🌟 My Stickers</button>
   <button id="grownupsLinkMenu" class="link-btn">Grown-Ups Corner</button>
 </div>
 
@@ -640,6 +662,12 @@
       </div>
       <div id="worldBannerChoices" class="quiz-answers"></div>
       <div id="worldBannerActions" class="resolve-actions"></div>
+    </div>
+    <div id="moveTutorialOverlay" class="move-tutorial" hidden>
+      <div class="move-tutorial-card">
+        <span class="move-tutorial-icon">🕹️</span>
+        <p id="moveTutorialText"></p>
+      </div>
     </div>
   </div>
   <div class="explore-bottombar">
@@ -698,6 +726,18 @@
     </div>
   </header>
   <div id="practiceBody" class="practice-body"></div>
+</div>
+
+<!-- 6b. MY STICKERS -->
+<div id="stickersScreen" class="screen" hidden>
+  <header class="chrome-header">
+    <button class="btn-back" data-target="menu">◀ Menu</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="sticker-counter">🌟 <span class="stickerCount">0</span></div>
+      <button class="mute-btn" title="Mute sounds">🔊</button>
+    </div>
+  </header>
+  <div id="stickerBody" class="hand-body"></div>
 </div>
 
 <!-- 7. GROWN-UPS CORNER -->

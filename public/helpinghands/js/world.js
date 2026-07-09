@@ -252,7 +252,7 @@
   var hubWalk = null; // { placeId, from, to, t0, dur, onArrive }
   var raycaster = new THREE.Raycaster();
   var pointerV2 = new THREE.Vector2();
-  var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {}, onBump: function () {} };
+  var handlers = { onBuilding: function () {}, onObject: function () {}, onHelper: function () {}, onActor: function () {}, onRoomEnter: function () {}, onBump: function () {}, onJoystickFirstUse: function () {} };
   var animItems = []; // { obj, fn(t,dt), ownerId? }
   var tappables = []; // meshes/sprites registered for raycast
   var currentRoot = null; // Group currently in scene (hub or interior)
@@ -2913,6 +2913,7 @@
     }
     function reset() { joystickVec.x = 0; joystickVec.z = 0; knob.style.transform = 'translate(0,0)'; }
     joystickEl.addEventListener('pointerdown', function (ev) {
+      handlers.onJoystickFirstUse();
       active = true;
       try { joystickEl.setPointerCapture(ev.pointerId); } catch (e) {}
       var r = joystickEl.getBoundingClientRect();
@@ -3229,6 +3230,7 @@
       handlers.onActor = h.onActor || function () {};
       handlers.onRoomEnter = h.onRoomEnter || function () {};
       handlers.onBump = h.onBump || function () {};
+      handlers.onJoystickFirstUse = h.onJoystickFirstUse || function () {};
     }
   };
 })();

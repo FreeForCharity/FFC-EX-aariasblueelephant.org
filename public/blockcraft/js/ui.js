@@ -61,7 +61,9 @@ ABC.ui = (function () {
   /* ---------------- confetti & hearts ---------------- */
   const CONF = ['🎉','⭐','🌈','💖','✨','🎊','🌸','💙'];
   function confetti(n) {
-    for (let i=0;i<(n||34);i++) {
+    n = n || 34;
+    if (ABC.audio.settings.calm) n = Math.max(4, Math.round(n * 0.25));   // 😌 calm mode: gentler bursts
+    for (let i=0;i<n;i++) {
       const d = document.createElement('div');
       d.className = 'confetti';
       d.textContent = pick(CONF);
@@ -579,6 +581,7 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setSound">${chk(s.sound)} 🎵 Sound effects</button>
       <button class="choiceBtn" id="setMusic">${chk(s.music)} 🎶 Gentle music</button>
       <button class="choiceBtn" id="setWeather">${chk(s.weather !== false)} 🌦️ Gentle weather (rain &amp; snow)</button>
+      <button class="choiceBtn" id="setCalm">${chk(s.calm)} 😌 Calm mode — softer sounds &amp; less bouncy camera</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>
       <div class="dlgRow"><button class="bigBtn green" id="setDone">Done ✔</button></div>`);
@@ -623,9 +626,10 @@ ABC.ui = (function () {
                  toast(c.t.ico + ' ' + c.t.label + '!', 2600, true); }, '🎨');
     });
     wire('setRead',  () => { s.readAloud = !s.readAloud; ABC.saveSoon(); showSettings(); });
-    wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); showSettings(); });
-    wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); showSettings(); });
+    wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); ABC.refreshMuteBtn && ABC.refreshMuteBtn(); showSettings(); });
+    wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); ABC.refreshMuteBtn && ABC.refreshMuteBtn(); showSettings(); });
     wire('setWeather', () => { s.weather = s.weather === false; ABC.saveSoon(); showSettings(); });
+    wire('setCalm', () => { s.calm = !s.calm; ABC.saveSoon(); showSettings(); });
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {

@@ -85,7 +85,11 @@ const DEFAULT_SETTINGS: Settings = { reduceMotion: false, calmMode: false, sound
 function loadSettings(): Settings {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_KEY) : null;
-    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    // No saved preference yet — respect the OS-level "prefers reduced motion"
+    // signal so kids who need it get a calmer first run automatically.
+    const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    return { ...DEFAULT_SETTINGS, reduceMotion: !!prefersReduced };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -122,6 +126,8 @@ export default function BelusWorldGame() {
   const [showMap, setShowMap] = useState(false);
   const [reward, setReward] = useState<RewardInfo | null>(null);
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [manualPause, setManualPause] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const lineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,7 +217,7 @@ export default function BelusWorldGame() {
     };
   }, [phase]);
 
-  const paused = showSettings || showMap || reward !== null || showWardrobe;
+  const paused = showSettings || showMap || reward !== null || showWardrobe || showExitConfirm || manualPause;
 
   const handleProximity = useCallback((zone: ZoneId | null) => {
     setNearZone(zone);
@@ -318,7 +324,15 @@ export default function BelusWorldGame() {
   );
 
   if (phase === 'intro') {
-    return <IntroScreen memory={memory} growthLabel={growth.label} onStart={start} onToggleFullscreen={toggleFullscreen} />;
+    return (
+      <IntroScreen
+        memory={memory}
+        growthLabel={growth.label}
+        reduceMotion={settings.reduceMotion || settings.calmMode}
+        onStart={start}
+        onToggleFullscreen={toggleFullscreen}
+      />
+    );
   }
 
   return (
@@ -368,13 +382,14 @@ export default function BelusWorldGame() {
         onOpenWardrobe={() => setShowWardrobe(true)}
         onToggleFullscreen={toggleFullscreen}
         onGoHome={() => { queueGoHome(); sfx('tap'); }}
-        onExit={() => { stopSpeaking(); window.history.back(); }}
+        onExit={() => { sfx('tap'); setShowExitConfirm(true); }}
+        onPause={() => { sfx('tap'); setManualPause(true); }}
         onCycleSpeed={cycleSpeed}
         speedLabel={SPEED[settings.speed].label}
       />
 
       <AnimatePresence>
-        {questStatus && !showSettings && !showMap && reward === null && (
+        {questStatus && !paused && (
           <QuestPanel status={questStatus} />
         )}
       </AnimatePresence>
@@ -383,11 +398,17 @@ export default function BelusWorldGame() {
 
       {/* Reward / celebration */}
       <AnimatePresence>
-        {reward && <RewardToast reward={reward} onClose={() => setReward(null)} />}
+        {reward && (
+          <RewardToast
+            reward={reward}
+            reduceMotion={settings.reduceMotion || settings.calmMode}
+            onClose={() => setReward(null)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Growth map */}
-      <AnimatePresence>{showMap && <GrowthMap progress={progress} onClose={() => setShowMap(false)} />}</AnimatePresence>
+      <AnimatePresence>{showMap && <GrowthMap progress={progress} memory={memory} onClose={() => setShowMap(false)} />}</AnimatePresence>
 
       {/* Wardrobe */}
       <AnimatePresence>
@@ -400,13 +421,30 @@ export default function BelusWorldGame() {
           <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />
         )}
       </AnimatePresence>
+
+      {/* Exit confirm — a small, calm check before leaving, kept visually
+          distinct from the settings gear so a stray tap never boots a child
+          out of the world without warning */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <ExitConfirm
+            onStay={() => setShowExitConfirm(false)}
+            onLeave={() => { stopSpeaking(); window.history.back(); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Manual pause — a calm full-screen break, separate from panel-pausing */}
+      <AnimatePresence>
+        {manualPause && <PauseOverlay onResume={() => setManualPause(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
 
-function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { memory: BeluMemory; growthLabel: string; onStart: (name: string) => void; onToggleFullscreen: () => void }) {
+function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFullscreen }: { memory: BeluMemory; growthLabel: string; reduceMotion: boolean; onStart: (name: string) => void; onToggleFullscreen: () => void }) {
   const returning = memory.visitCount > 0;
   const [name, setName] = useState(memory.playerName ?? 'Aaria');
   const [showHow, setShowHow] = useState(false);
@@ -418,21 +456,28 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
       className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 overflow-y-auto p-6 text-center"
       style={{ background: 'linear-gradient(180deg,#7ec8ff 0%,#b9e7ff 45%,#baf2bb 100%)' }}
     >
-      {/* drifting clouds */}
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="pointer-events-none absolute text-6xl opacity-80"
-          style={{ top: `${10 + i * 24}%` }}
-          initial={{ left: '-20%' }}
-          animate={{ left: '120%' }}
-          transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
-        >
-          ☁️
-        </motion.div>
-      ))}
+      {/* drifting clouds — stand still under reduce motion */}
+      {!reduceMotion &&
+        [0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="pointer-events-none absolute text-6xl opacity-80"
+            style={{ top: `${10 + i * 24}%` }}
+            initial={{ left: '-20%' }}
+            animate={{ left: '120%' }}
+            transition={{ duration: 30 + i * 10, repeat: Infinity, ease: 'linear' }}
+          >
+            ☁️
+          </motion.div>
+        ))}
+      {reduceMotion &&
+        [0, 1, 2].map((i) => (
+          <div key={i} className="pointer-events-none absolute text-6xl opacity-60" style={{ top: `${10 + i * 24}%`, left: `${20 + i * 30}%` }}>
+            ☁️
+          </div>
+        ))}
 
-      {/* org logo — gentle pop-in, then a soft float */}
+      {/* org logo — gentle pop-in, then a soft float (float skipped under reduce motion) */}
       <motion.div
         initial={{ scale: 0, rotate: -8 }}
         animate={{ scale: 1, rotate: 0 }}
@@ -443,16 +488,16 @@ function IntroScreen({ memory, growthLabel, onStart, onToggleFullscreen }: { mem
           alt="Aaria's Blue Elephant — Building a New Inclusive World"
           className="w-[min(36vh,210px)] rounded-full"
           style={{ boxShadow: '0 10px 28px rgba(20,40,90,.3)' }}
-          animate={{ y: [0, -8, 0] }}
+          animate={reduceMotion ? {} : { y: [0, -8, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
         />
       </motion.div>
 
-      {/* rainbow bouncing title */}
+      {/* rainbow title — bounce skipped under reduce motion */}
       <motion.h1
         className="text-5xl font-black drop-shadow-sm sm:text-6xl"
         style={{ backgroundImage: RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
-        animate={{ y: [0, -10, 0] }}
+        animate={reduceMotion ? {} : { y: [0, -10, 0] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
       >
         Nilu's World
@@ -657,7 +702,7 @@ function QuestPanel({ status }: { status: QuestStatus }) {
   );
 }
 
-function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => void }) {
+function RewardToast({ reward, reduceMotion, onClose }: { reward: RewardInfo; reduceMotion: boolean; onClose: () => void }) {
   const headline = reward.grewUp ? 'Nilu Grew Up!' : reward.levelUp ? 'Level Complete!' : 'Great Job!';
   const hero = reward.grewUp ? '🐘✨' : reward.islandMastered ? '🌷' : '⭐';
   return (
@@ -670,14 +715,16 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.6, y: 40 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.8 }}
-        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+        initial={reduceMotion ? { opacity: 0 } : { scale: 0.6, y: 40 }}
+        animate={reduceMotion ? { opacity: 1 } : { scale: 1, y: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { scale: 0.8 }}
+        transition={reduceMotion ? { duration: 0.25 } : { type: 'spring', stiffness: 240, damping: 18 }}
         className="relative rounded-[28px] bg-white px-8 py-8 text-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {Array.from({ length: 16 }).map((_, i) => {
+        {/* particle burst — a fun flourish, but never forced on a child who
+            finds motion overwhelming */}
+        {!reduceMotion && Array.from({ length: 16 }).map((_, i) => {
           const a = (i / 16) * Math.PI * 2;
           return (
             <motion.span
@@ -692,13 +739,17 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
           );
         })}
 
-        <motion.div
-          animate={{ scale: [1, 1.18, 1], rotate: reward.grewUp ? [0, 6, -6, 0] : 0 }}
-          transition={{ duration: 1.4, repeat: Infinity }}
-          className="text-7xl"
-        >
-          {hero}
-        </motion.div>
+        {reduceMotion ? (
+          <div className="text-7xl">{hero}</div>
+        ) : (
+          <motion.div
+            animate={{ scale: [1, 1.18, 1], rotate: reward.grewUp ? [0, 6, -6, 0] : 0 }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+            className="text-7xl"
+          >
+            {hero}
+          </motion.div>
+        )}
 
         <h2 className="mt-3 text-2xl font-black text-slate-800">{headline}</h2>
 
@@ -743,6 +794,70 @@ function RewardToast({ reward, onClose }: { reward: RewardInfo; onClose: () => v
           Keep exploring →
         </button>
       </motion.div>
+    </motion.div>
+  );
+}
+
+// Small, calm "are you sure?" before leaving the world — visually distinct
+// (warm/soft, no gear icon, no settings toggles) from the Comfort Settings panel.
+function ExitConfirm({ onStay, onLeave }: { onStay: () => void; onLeave: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,28,46,0.5)', backdropFilter: 'blur(8px)' }}
+      onClick={onStay}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92 }}
+        className="w-full max-w-xs rounded-[24px] bg-gradient-to-b from-white to-amber-50 p-6 text-center shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-4xl">🌈🐘</div>
+        <h2 className="mt-2 text-lg font-extrabold text-slate-800">Leave Nilu's World? 🌈</h2>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            onClick={onStay}
+            className="rounded-full bg-green-500 py-3 text-base font-bold text-white shadow-lg transition active:scale-95"
+          >
+            Stay and play
+          </button>
+          <button
+            onClick={onLeave}
+            className="rounded-full bg-slate-100 py-3 text-base font-bold text-slate-500 transition active:scale-95"
+          >
+            Leave
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// A calm full-screen break — reuses the existing `paused` wiring so the 3D
+// world truly stops (no timers, no penalty; the child resumes whenever ready).
+function PauseOverlay({ onResume }: { onResume: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 p-6 text-center"
+      style={{ background: 'rgba(30,60,110,0.75)', backdropFilter: 'blur(10px)' }}
+    >
+      <div className="text-6xl">💙</div>
+      <h2 className="text-2xl font-black text-white">Taking a break 💙</h2>
+      <p className="max-w-xs text-sm font-semibold text-white/80">Nilu is waiting patiently. Come back whenever you're ready.</p>
+      <button
+        onClick={onResume}
+        className="mt-1 rounded-full bg-green-400 px-10 py-4 text-xl font-black text-green-950 shadow-[0_6px_0_#2f9e44,0_10px_18px_rgba(0,0,0,0.25)] transition active:translate-y-1"
+      >
+        Keep playing ▶️
+      </button>
     </motion.div>
   );
 }

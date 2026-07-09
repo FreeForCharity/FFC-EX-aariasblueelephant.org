@@ -20,6 +20,7 @@ import {
   completedLevels,
   totalStars,
 } from '../belu/progress';
+import type { BeluMemory } from '../belu/memory';
 
 const SKILLS: Record<ActivityZone, string> = {
   meadow: 'Reading Emotions',
@@ -32,7 +33,7 @@ const SKILLS: Record<ActivityZone, string> = {
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
 const GROWTH_SCALE = [44, 60, 78, 96];
 
-export default function GrowthMap({ progress, onClose }: { progress: GameProgress; onClose: () => void }) {
+export default function GrowthMap({ progress, memory, onClose }: { progress: GameProgress; memory?: BeluMemory; onClose: () => void }) {
   const growth = getGrowth(progress);
   const stars = totalStars(progress);
 
@@ -61,7 +62,16 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
         </button>
 
         <h2 className="mb-1 text-center text-2xl font-black text-slate-800">My Growth Map</h2>
-        <p className="mb-4 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
+        <p className="mb-1 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
+        {/* Visit-days chip — a warm, additive tally of days played, never a
+            "streak" that can break or shame a gap in play (see belu/memory.ts) */}
+        <div className="mb-4 flex justify-center">
+          {!!memory?.visitDays && (
+            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600">
+              🌈 {memory.visitDays} {memory.visitDays === 1 ? 'day' : 'days'} in Nilu's World!
+            </span>
+          )}
+        </div>
 
         {/* Nilu growth */}
         <div className="mb-5 rounded-3xl p-5 text-center" style={{ background: 'linear-gradient(160deg,#eaf6ff,#fff)' }}>

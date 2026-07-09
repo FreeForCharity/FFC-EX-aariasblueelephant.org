@@ -88,6 +88,33 @@ ABC.dig = (function () {
       'I can feel treasure sparkling under the ground! Walk to the floating star and dig down! ⭐', 5200);
   }
 
+  /* once every shape is unlocked, coins alone stop being the goal — treasure
+     digs after that get an occasional bonus surprise instead of a flat +5 */
+  function allShapesFound() {
+    return (ABC.SHAPE_UNLOCKS || []).every((id) => ABC.state.unlocked.has(id));
+  }
+  function goldReward(f) {
+    if (allShapesFound()) {
+      ABC.state.postCapDigs = (ABC.state.postCapDigs || 0) + 1;
+      if (ABC.state.postCapDigs % 3 === 0) {
+        ABC.ui.confetti && ABC.ui.confetti(30);
+        ABC.audio.sfx.fanfare && ABC.audio.sfx.fanfare();
+        if (Math.random() < 0.5 && ABC.animals && ABC.animals.spawnSurprise) {
+          const a = ABC.animals.spawnSurprise();
+          ABC.ui.bellaSays && ABC.ui.bellaSays(
+            `Wow — ${f.word}! And look — a surprise friend, ${a.name} the ${a.def.label} ${a.def.emoji}, came to say hi!`, 5200);
+        } else {
+          ABC.ui.addStars(1);
+          ABC.ui.bellaSays && ABC.ui.bellaSays(`Wow — ${f.word}! That earned you a bonus star! ${f.emoji}`, 4200);
+        }
+        return;
+      }
+    }
+    ABC.ui.addCoins(5);
+    ABC.ui.confetti && ABC.ui.confetti(10);
+    ABC.ui.bellaSays && ABC.ui.bellaSays(`Wow — ${f.word}! That is worth five! ${f.emoji}`, 4200);
+  }
+
   // route a dug marker to its reward (called from main.js act() after a successful dig)
   function reward(kind, cell) {
     const f = (ABC.DIG_FIND && ABC.DIG_FIND[kind]) || { emoji: '✨', word: 'a surprise' };
@@ -95,9 +122,7 @@ ABC.dig = (function () {
       ABC.ui.addCoins(1);
       ABC.ui.toast(`🪙 You dug up ${f.word}!`, 2600);
     } else if (kind === 'gold') {
-      ABC.ui.addCoins(5);
-      ABC.ui.confetti && ABC.ui.confetti(10);
-      ABC.ui.bellaSays && ABC.ui.bellaSays(`Wow — ${f.word}! That is worth five! ${f.emoji}`, 4200);
+      goldReward(f);
     } else if (kind === 'egg') {
       ABC.ui.bellaSays && ABC.ui.bellaSays(`A magic shape egg! Let's see what hatches… ${f.emoji}`, 3600);
       hatchNextShape();
@@ -106,6 +131,7 @@ ABC.dig = (function () {
     }
     lastFound = performance.now();               // found one — the hint timer starts over
     digsSinceFound = 0;
+    ABC.quests.mark && ABC.quests.mark('dig');
     ABC.saveSoon && ABC.saveSoon();
   }
 

@@ -92,10 +92,10 @@
   .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
   .tool {
-    border: 0; width: 58px; height: 58px; border-radius: 16px; cursor: pointer;
+    border: 0; width: 58px; min-height: 66px; border-radius: 16px; cursor: pointer;
     font-size: 26px; line-height: 1; background: #fff; color: #5c4a32;
     box-shadow: 0 4px 0 #adb5bd, 0 6px 12px rgba(0,0,0,.12); transition: transform .06s;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px 6px;
   }
   .tool:active { transform: translateY(3px); box-shadow: 0 1px 0 #adb5bd; }
   .tool.on { background: linear-gradient(180deg,#a5d8ff,#74c0fc); box-shadow: 0 4px 0 #1c7ed6, 0 6px 12px rgba(0,0,0,.12); }
@@ -104,9 +104,24 @@
   .tool.on .ink { stroke: #1c7ed6; }
   .tool .inkf { fill: #5c4a32; }
   .tool.on .inkf { fill: #1c7ed6; }
+  .tool .toolLabel { font-size: 10px; font-weight: 700; line-height: 1; color: #5c4a32; }
+  .tool.on .toolLabel { color: #0b4a8f; }
+
+  #hudBtns {
+    position: absolute; top: 10px; right: 10px; z-index: 15; display: flex; gap: 6px;
+  }
+  .hudBtn {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(255,255,255,.9); color: #5c4a32; font-size: 21px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.18); transition: transform .1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hudBtn:active { transform: scale(.88); }
+  .hudBtn.on { background: linear-gradient(180deg,#a5d8ff,#74c0fc); }
+  #resetBtn.confirm { background: linear-gradient(180deg,#ff8787,#fa5252); color: #fff; box-shadow: 0 4px 0 #c92a2a; }
 
   .swatch {
-    width: 38px; height: 38px; border-radius: 50%; border: 4px solid transparent;
+    width: 48px; height: 48px; border-radius: 50%; border: 4px solid transparent;
     cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.18), inset 0 -3px 6px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.4);
     transition: transform .1s;
   }
@@ -124,8 +139,14 @@
 
   @media (max-width: 480px) {
     h1 small { display: none; }
-    .tool { width: 52px; height: 52px; font-size: 22px; }
+    .tool { width: 52px; min-height: 60px; font-size: 22px; }
     .tool svg { width: 28px; height: 28px; }
+    .tool .toolLabel { font-size: 9px; }
+    .hudBtn { width: 44px; height: 44px; font-size: 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #titleScreen h2, #logoImg, #titleScreen .titleEmojis { animation: none; }
   }
 
   #credit {
@@ -207,6 +228,12 @@
   <canvas id="three"></canvas>
   <canvas id="ui"></canvas>
   <div id="chip">🍪 Shapes made: <span id="chipCount">0</span></div>
+  <div id="hudBtns">
+    <button id="calmBtn" class="hudBtn" title="Calm mode — locks the camera and calms things down">😌</button>
+    <button id="viewBtn" class="hudBtn" title="Reset the camera view">🔄</button>
+    <button id="photoBtn" class="hudBtn" title="Save a photo of your dough">📸</button>
+    <button id="muteBtn" class="hudBtn" title="Mute sound">🔊</button>
+  </div>
   <div id="toast"></div>
   <div id="hint">👐 Grab the dough — squish, stretch, pluck a piece off!</div>
 </div>
@@ -215,24 +242,31 @@
   <div class="row" id="tools">
     <button class="tool on" data-tool="grab" title="Grab — squish, stretch, pluck">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5v-1a1.5 1.5 0 0 1 3 0V11m0-4.5a1.5 1.5 0 0 1 3 0V12m0-3a1.5 1.5 0 0 1 3 0v5c0 4-2.5 7-6.5 7S8 18.5 6.5 15.5L5 12.4c-.6-1.2.8-2.4 2-1.6l1 .7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="toolLabel">Grab</span>
     </button>
     <button class="tool" data-tool="poke" title="Press — smoosh it flat">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M12 3v8m0 0-3-3m3 3 3-3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><ellipse class="ink" cx="12" cy="17" rx="7" ry="3.4" stroke-width="1.7"/></svg>
+      <span class="toolLabel">Poke</span>
     </button>
     <button class="tool" data-tool="knife" title="Knife — slice through">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M4 20 18.5 5.5c1.3-1.3 3.3.7 2 2L9.5 18.5c-1.6 1.6-4 1.9-5.5 1.5Z" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span class="toolLabel">Cut</span>
     </button>
     <button class="tool" data-tool="circle" title="Round cutter">
       <svg viewBox="0 0 24 24" fill="none"><circle class="ink" cx="12" cy="12" r="8" stroke-width="1.8" stroke-dasharray="3.6 3"/></svg>
+      <span class="toolLabel">Circle</span>
     </button>
     <button class="tool" data-tool="star" title="Star cutter">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4l-5.3 3 1.2-6L3.4 9.3l6-.7L12 3Z" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="toolLabel">Star</span>
     </button>
     <button class="tool" data-tool="heart" title="Heart cutter">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M12 20.5S3.5 15 3.5 9.3C3.5 6.4 5.7 4.5 8 4.5c1.7 0 3.2 1 4 2.4.8-1.4 2.3-2.4 4-2.4 2.3 0 4.5 1.9 4.5 4.8 0 5.7-8.5 11.2-8.5 11.2Z" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="toolLabel">Heart</span>
     </button>
     <button class="tool" data-tool="flower" title="Flower cutter">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M12 4.2c1.8-2.4 5.4-.4 4.3 2.3 2.9-.4 3.8 3.6 1 4.5 2.4 1.7.4 5.2-2.3 4.2.5 2.9-3.5 3.8-4.4 1-1.7 2.4-5.3.4-4.2-2.3-2.9.4-3.8-3.6-1-4.5-2.4-1.7-.4-5.2 2.3-4.2-.5-2.9 3.5-3.8 4.3-1Z" stroke-width="1.5" stroke-linejoin="round"/><circle class="inkf" cx="12" cy="10.6" r="1.6"/></svg>
+      <span class="toolLabel">Flower</span>
     </button>
   </div>
   <div class="row" id="bottomRow">
@@ -291,12 +325,25 @@ let grabbed = null;            // {ids:[{i,ox,oy,oz,w}], plane:THREE.Plane, targ
 const pointer = { x: 0, y: 0, lx: 0, ly: 0, down: false, has: false, mode: "tool" };
 let trail = [], flashes = [];
 
+/* ---------- calm mode / accessibility flags ---------- */
+const reducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+let calmMode = false;
+try { calmMode = localStorage.getItem("doughlab_calm_v1") === "1"; } catch (e) {}
+let lastHaptic = 0;
+function haptic(ms, minGap) {
+  if (calmMode) return;
+  const now = performance.now();
+  if (now - lastHaptic < (minGap || 120)) return;
+  lastHaptic = now;
+  if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} }
+}
+
 /* ---------- three.js scene ---------- */
 const stage = document.getElementById("stage");
 const uiC = document.getElementById("ui"), uiX = uiC.getContext("2d");
 let W = 0, H = 0;
 
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("three"), antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("three"), antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -311,7 +358,8 @@ const scene = new THREE.Scene();
   scene.background = tex;
 }
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 60);
-const orbit = { az: 0.0, pol: 0.94, r: 6.4, target: new THREE.Vector3(0, 0.55, 0) };
+const ORBIT_DEFAULT = { az: 0.0, pol: 0.94, r: 6.4 };
+const orbit = { az: ORBIT_DEFAULT.az, pol: ORBIT_DEFAULT.pol, r: ORBIT_DEFAULT.r, target: new THREE.Vector3(0, 0.55, 0) };
 function applyCamera() {
   orbit.pol = Math.max(0.35, Math.min(1.30, orbit.pol));
   orbit.r = Math.max(3.4, Math.min(9.5, orbit.r));
@@ -596,7 +644,7 @@ function step() {
     }
     collideAndStick();
   }
-  if (tore) { SND.pop(); unlock("first_tear"); }
+  if (tore) { SND.pop(); haptic(25, 400); unlock("first_tear"); }
 
   // plastic creep — playdough keeps its shape, slime slowly flows
   const pl = M.plastic;
@@ -713,7 +761,8 @@ function stamp(name, cx, cz) {
     }
   }
   // the cookie POPS out — jump up and hop aside, so the cut is unmistakable
-  const ang = Math.random() * Math.PI * 2;
+  // (calm mode: always hop the same fixed direction, so it's predictable)
+  const ang = calmMode ? Math.PI / 2 : Math.random() * Math.PI * 2;
   const hop = { x: Math.cos(ang) * 0.055, z: Math.sin(ang) * 0.055 };
   let insideCount = 0;
   for (const p of particles) {
@@ -726,6 +775,7 @@ function stamp(name, cx, cz) {
   }
   flashes.push({ poly, t: now });
   SND.stamp();
+  haptic(30, 300);
 
   if (insideCount > 4) registerShape(name);
 }
@@ -766,17 +816,21 @@ function cutSpot(ray) {
 /* ---------- squishy sounds (tiny WebAudio synth, gentle for little ears) ---------- */
 const SND = (() => {
   let ctx = null, master = null;
+  const BASE_VOL = 0.4;
+  let muted = false, volScale = 1;
   const last = {};
   const gate = (name, ms) => {
     const now = performance.now();
     if (now - (last[name] || 0) < ms) return false;
     last[name] = now; return true;
   };
+  function applyVol() { if (master) master.gain.value = muted ? 0 : BASE_VOL * volScale; }
   function init() {
     if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
-      master = ctx.createGain(); master.gain.value = 0.4; master.connect(ctx.destination);
+      master = ctx.createGain(); master.connect(ctx.destination);
+      applyVol();
     } catch (e) { ctx = null; }
   }
   const ok = () => ctx && ctx.state === "running";
@@ -814,6 +868,8 @@ const SND = (() => {
     snip()   { if (gate("sn", 140)) noise(0.05, 2400, 1200, 0.09, 3); },
     stamp()  { tone(180, 70, 0.12, 0.14, "triangle"); noise(0.08, 700, 250, 0.12, 1); },
     plop()   { tone(320, 80, 0.16, 0.14); },
+    setMuted(m) { muted = m; applyVol(); },
+    setVolumeScale(s) { volScale = s; applyVol(); },
   };
 })();
 
@@ -893,7 +949,7 @@ function startAttract() {
 }
 setInterval(() => {
   if (document.getElementById("titleScreen").style.display === "none"
-      && !pointer.down && !attractOn
+      && !pointer.down && !attractOn && !calmMode && !reducedMotion
       && performance.now() - lastInteract > 10000) startAttract();
 }, 1000);
 
@@ -942,6 +998,7 @@ uiC.addEventListener("pointerdown", e => {
       grabbed = { ids, plane, target: new THREE.Vector3(anchor.x, anchor.y, anchor.z) };
       pointer.mode = "tool";
       SND.squish();
+      haptic(15);
     } else pointer.mode = "orbit";
   } else if (tool === "poke") {
     const hit = pickParticle(ray, POKE_R);
@@ -950,6 +1007,7 @@ uiC.addEventListener("pointerdown", e => {
       pokePoint = { x: a.x, y: a.y, z: a.z };
       pointer.mode = "tool";
       SND.squish();
+      haptic(15);
     } else pointer.mode = "orbit";
   } else if (tool === "knife") {
     const w = rayOnTable(ray);
@@ -977,8 +1035,11 @@ uiC.addEventListener("pointermove", e => {
   if (!pointer.down) return;
 
   if (pointer.mode === "orbit") {
-    orbit.az -= (p.x - pointer.lx) * 0.006;
-    orbit.pol -= (p.y - pointer.ly) * 0.005;
+    // calm mode: camera orbit is locked — tapping/dragging empty space does nothing
+    if (!calmMode) {
+      orbit.az -= (p.x - pointer.lx) * 0.006;
+      orbit.pol -= (p.y - pointer.ly) * 0.005;
+    }
     return;
   }
   const ray = rayFrom(p.x, p.y);
@@ -988,12 +1049,15 @@ uiC.addEventListener("pointermove", e => {
       t.y = Math.max(S * 0.6, Math.min(2 * HW - 0.5, t.y));
       grabbed.target.copy(t);
     }
-    if (Math.hypot(p.x - pointer.lx, p.y - pointer.ly) > 3)
+    if (Math.hypot(p.x - pointer.lx, p.y - pointer.ly) > 3) {
       mode === "slime" ? SND.stretch() : SND.squish();
+      haptic(8, 180);
+    }
   } else if (tool === "poke" && pokePoint) {
     const hit = pickParticle(ray, POKE_R);
     if (hit) { const a = particles[hit.i]; pokePoint = { x: a.x, y: a.y, z: a.z }; }
     SND.squish();
+    haptic(8, 180);
   } else if (tool === "knife" && lastKnife) {
     const w = rayOnTable(ray);
     if (w) {
@@ -1001,6 +1065,7 @@ uiC.addEventListener("pointermove", e => {
       lastKnife = w;
       trail.push({ x: p.x, y: p.y, t: performance.now() });
       SND.snip();
+      haptic(12, 150);
     }
   }
 });
@@ -1159,7 +1224,81 @@ document.getElementById("addBtn").addEventListener("click", () => {
   SND.plop();
 });
 
-document.getElementById("resetBtn").addEventListener("click", () => { markInteract(); reset(); SND.init(); SND.plop(); });
+const resetBtn = document.getElementById("resetBtn");
+let resetArmed = false, resetTimer = null;
+resetBtn.addEventListener("click", () => {
+  markInteract();
+  if (!resetArmed) {
+    resetArmed = true;
+    resetBtn.textContent = "Really? 🗑️";
+    resetBtn.classList.add("confirm");
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+      resetArmed = false;
+      resetBtn.textContent = "Start over";
+      resetBtn.classList.remove("confirm");
+    }, 3000);
+    return;
+  }
+  resetArmed = false;
+  clearTimeout(resetTimer);
+  resetBtn.textContent = "Start over";
+  resetBtn.classList.remove("confirm");
+  reset(); SND.init(); SND.plop();
+});
+
+/* ---------- HUD: mute / calm / reset-view / photo ---------- */
+const muteBtn = document.getElementById("muteBtn");
+let muted = false;
+try { muted = localStorage.getItem("doughlab_mute_v1") === "1"; } catch (e) {}
+function applyMuteUI() {
+  muteBtn.textContent = muted ? "🔇" : "🔊";
+  muteBtn.classList.toggle("on", muted);
+  SND.setMuted(muted);
+}
+muteBtn.addEventListener("click", () => {
+  markInteract();
+  muted = !muted;
+  try { localStorage.setItem("doughlab_mute_v1", muted ? "1" : "0"); } catch (e) {}
+  applyMuteUI();
+});
+applyMuteUI(); // works whether audio has been inited yet or not — SND stores the flag either way
+
+const calmBtn = document.getElementById("calmBtn");
+function applyCalmUI() {
+  calmBtn.classList.toggle("on", calmMode);
+  SND.setVolumeScale(calmMode ? 0.5 : 1);
+}
+calmBtn.addEventListener("click", () => {
+  markInteract();
+  calmMode = !calmMode;
+  try { localStorage.setItem("doughlab_calm_v1", calmMode ? "1" : "0"); } catch (e) {}
+  applyCalmUI();
+});
+applyCalmUI();
+
+document.getElementById("viewBtn").addEventListener("click", () => {
+  markInteract();
+  orbit.az = ORBIT_DEFAULT.az; orbit.pol = ORBIT_DEFAULT.pol; orbit.r = ORBIT_DEFAULT.r;
+});
+
+document.getElementById("photoBtn").addEventListener("click", () => {
+  markInteract();
+  try {
+    renderer.render(scene, camera); // make sure the freshest frame is in the buffer
+    const url = renderer.domElement.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url; a.download = "my-dough.png";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    SND.init(); SND.plop();
+    haptic(20, 0);
+    toastQueue.push("📸 Saved your dough photo!");
+    pumpToast();
+  } catch (e) {
+    toastQueue.push("😕 Couldn't save the photo");
+    pumpToast();
+  }
+});
 
 /* test hooks */
 window.DL = {

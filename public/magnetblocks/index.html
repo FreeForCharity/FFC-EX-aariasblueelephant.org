@@ -59,6 +59,7 @@
   .menuBtn { font-family:inherit; font-size:18px; padding:10px 14px; border:none; border-radius:18px;
     background:rgba(255,255,255,.92); cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.18); transition:transform .1s; }
   .menuBtn:hover { transform:scale(1.08); background:#fff; }
+  .menuBtn.on { background:#d0ebff; box-shadow:0 3px 8px rgba(0,0,0,.18), inset 0 0 0 3px #4dabf7; }
 
   /* big round action buttons */
   .fab { border:none; border-radius:26px; cursor:pointer; pointer-events:auto; font-family:inherit;
@@ -137,7 +138,8 @@
   .bagItem { background:#fff; border-radius:18px; padding:8px; box-shadow:0 4px 10px rgba(0,0,0,.15); cursor:pointer; position:relative; transition:transform .12s; }
   .bagItem:hover { transform:scale(1.05); }
   .bagItem img { width:100%; border-radius:12px; background:#dbe4ff; }
-  .bagItem .nm { font-size:14px; color:#495057; margin-top:4px; }
+  .bagItem .nm { font-size:14px; color:#495057; margin-top:4px; padding:8px 4px; min-height:24px; cursor:pointer; border-radius:8px; }
+  .bagItem .nm:hover { background:rgba(0,0,0,.06); }
   .bagItem .del { position:absolute; top:-8px; right:-8px; width:30px; height:30px; border:none; border-radius:50%;
     background:#fa5252; color:#fff; font-size:16px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3); }
   #bagEmpty { font-size:17px; color:#868e96; padding:20px; }
@@ -193,6 +195,7 @@
     </div>
     <div id="topRight">
       <button class="menuBtn" id="tableBtn">🟩 Table</button>
+      <button class="menuBtn" id="calmBtn" title="Calm mode">😌</button>
       <button class="menuBtn" id="soundBtn">🔊</button>
       <button class="menuBtn" id="tidyNowBtn">🧹 Tidy</button>
       <button class="menuBtn" id="clearBtn">🆕 New</button>
@@ -203,6 +206,8 @@
       <button class="viewBtn" id="zoomOutBtn">➖</button>
       <button class="viewBtn" id="turnLBtn">⟲</button>
       <button class="viewBtn" id="turnRBtn">⟳</button>
+      <button class="viewBtn" id="recenterBtn" title="Recenter view">🎯</button>
+      <button class="viewBtn" id="undoBtn" title="Undo">↩️</button>
     </div>
     <button class="fab" id="holdRotBtn">🔄</button>
 
@@ -264,6 +269,7 @@
   <script src="js/builder.js"></script>
   <script src="js/animate.js"></script>
   <script src="js/bag.js"></script>
+  <script src="js/undo.js"></script>
   <script src="js/cleanup.js"></script>
   <script src="js/help.js"></script>
   <script src="js/main.js"></script>

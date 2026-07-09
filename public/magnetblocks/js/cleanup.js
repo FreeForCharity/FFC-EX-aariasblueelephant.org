@@ -7,6 +7,7 @@ window.MB = window.MB || {};
 
   C.check = function(){
     if (C.active) return;
+    if (MB.ui && MB.ui.calm) return; // calm mode: never nag about tidy-up on its own
     const strays = MB.Builder.strays();
     if (strays.length > LIMIT) C.start();
     else if (strays.length === LIMIT){
@@ -19,10 +20,11 @@ window.MB = window.MB || {};
     if (C.active) return;
     const strays = MB.Builder.strays();
     if (!strays.length) return;
+    const calm = MB.ui && MB.ui.calm;
     C.active = true;
     C.auto = false;
     C.startedAt = performance.now()/1000;
-    MB.Builder.locked = true;
+    if (!calm) MB.Builder.locked = true; // calm mode: manual tidy never locks input
     if (MB.Animate.on) MB.ui.setPlay(false);
     document.getElementById('tidyBanner').style.display = 'block';
     MB.Audio.tidy(true);
@@ -88,8 +90,10 @@ window.MB = window.MB || {};
         C.startedAt = performance.now()/1000; // kid is on it — reset the auto timer
         setTimeout(() => C.progress(), 700);
       }
+      return true;
     }
-    return true; // swallow all input during tidy time
+    // calm mode: tidy sparkles keep showing, but building isn't blocked
+    return !(MB.ui && MB.ui.calm);
   };
 
   function removeSparkle(inst){
