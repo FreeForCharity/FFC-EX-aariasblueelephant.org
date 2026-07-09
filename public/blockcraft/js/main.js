@@ -902,7 +902,8 @@
         metrics: ABC.state.metrics,
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
-                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather, calm: s.calm },
+                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather, calm: s.calm,
+                    muted: s.muted },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }
@@ -983,7 +984,7 @@
   /* ---------------- 🔊 one-tap mute ---------------- */
   function refreshMuteBtn() {
     const b = $('muteBtn'); if (!b) return;
-    const muted = !ABC.audio.settings.sound;
+    const muted = !!ABC.audio.settings.muted;
     b.textContent = muted ? '🔇' : '🔊';
     b.title = muted ? 'Unmute — tap to hear sound again' : 'Mute — tap to turn off sound';
   }
@@ -991,12 +992,12 @@
   if ($('muteBtn')) {
     $('muteBtn').onclick = () => {
       const s = ABC.audio.settings;
-      const turningOn = !s.sound;
-      s.sound = turningOn; s.music = turningOn;
+      s.muted = !s.muted;             // master mute: sfx + music + Bella's voice
+      if (s.muted) ABC.audio.stopSay();  // silence any line already being spoken
       refreshMuteBtn();
       saveSoon();
-      if (turningOn) ABC.audio.sfx.pop();
-      ABC.ui.toast(turningOn ? '🔊 Sound is back on!' : '🔇 Sound is off — tap 🔇 to hear again!', 2000);
+      if (!s.muted) ABC.audio.sfx.pop();
+      ABC.ui.toast(s.muted ? '🔇 Sound is off — tap 🔇 to hear again!' : '🔊 Sound is back on!', 2000);
     };
     refreshMuteBtn();
   }
@@ -1032,6 +1033,11 @@
     $('restPlayAgain').onclick = () => { ov.remove(); started = true; };
   }
   if ($('pauseBtn')) $('pauseBtn').onclick = showPauseDialog;
+
+  /* ---------------- ▶️ My Movie — the replay button, promoted out of Settings ---------------- */
+  if ($('movieBtn')) {
+    $('movieBtn').onclick = () => { ABC.startAdventureReplay && ABC.startAdventureReplay(); };
+  }
 
   /* full screen — works on Chrome/Edge/Firefox AND Safari (incl. iOS, which
      has no Fullscreen API, via a CSS faux-fullscreen fallback) */

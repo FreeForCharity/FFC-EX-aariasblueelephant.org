@@ -89,14 +89,17 @@
   @keyframes questPop{0%{transform:translateX(-50%) scale(.85)}
     55%{transform:translateX(-50%) scale(1.12)}100%{transform:translateX(-50%) scale(1)}}
   body.rm .chip.quest.donePulse{animation:none;}
-  #menu{display:flex;gap:7px;pointer-events:auto;}
+  #menu{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px;pointer-events:auto;max-width:100%;}
   .mbtn{position:relative;pointer-events:auto;cursor:pointer;border:2px solid rgba(255,255,255,.92);
-    background:rgba(255,255,255,.66);
+    background:rgba(255,255,255,.66);min-width:48px;min-height:48px;
     backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);
     border-radius:16px;padding:9px 12px;font-size:clamp(15px,4vw,20px);font-weight:800;
+    display:inline-flex;align-items:center;justify-content:center;
     color:var(--ink);box-shadow:0 4px 0 rgba(213,221,245,.8),0 8px 16px rgba(58,58,90,.15),inset 0 1px 0 rgba(255,255,255,.9);line-height:1;transition:.12s;}
   .mbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #d5ddf5;}
   .mbtn.off{opacity:.45;}
+  .mbtn.mbtnLabeled{flex-direction:column;gap:1px;padding:6px 10px;}
+  .mbtnLbl{font-size:9.5px;font-weight:900;line-height:1;white-space:nowrap;letter-spacing:.2px;}
   .mbadge{position:absolute;top:-6px;right:-6px;background:#ff6b9d;color:#fff;border-radius:999px;
     min-width:19px;height:19px;padding:0 4px;font-size:11px;font-weight:900;
     align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(58,58,90,.35);border:2px solid #fff;}
@@ -262,11 +265,12 @@
       <div class="chip" id="sched" style="pointer-events:auto;gap:4px" title="Today's plan"></div>
     </div>
     <div id="menu">
+      <button class="mbtn" id="soundBtn" title="Sound — tap to mute or unmute" aria-label="Sound on or off">🔊</button>
+      <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
+      <button class="mbtn mbtnLabeled" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure — My Movie">▶️<span class="mbtnLbl">My Movie</span></button>
       <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
       <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
-      <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
-      <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
-      <button class="mbtn" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure">🎬</button>
+      <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🐇</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
     </div>
@@ -279,9 +283,9 @@
   <!-- Sun Baby's never-ending quest — tap for a sparkle trail -->
   <div class="chip quest" id="questChip" style="display:none" title="Sun Baby's quest — tap for a sparkle trail!"></div>
 
-  <!-- 🎬 Replay bar — shown only while watching a recorded adventure -->
+  <!-- ▶️ Replay bar — shown only while watching a recorded adventure -->
   <div id="replayBar" class="hidden">
-    <span class="rbLabel">🎬 Nilu's Adventure</span>
+    <span class="rbLabel">▶️ My Movie</span>
     <button class="rbtn" id="replaySpeedBtn" title="Change speed" aria-label="Playback speed">1x</button>
     <button class="rbtn" id="replayShareBtn" title="Share adventure" aria-label="Share adventure">📤</button>
     <button class="rbtn rbDone" id="replayDoneBtn" title="Done watching" aria-label="Done watching">⏹ Done</button>
@@ -311,7 +315,7 @@
       <button class="big" id="setVoice" style="font-size:17px"></button>
       <button class="big" id="setCalm" style="font-size:17px"></button>
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
-      <button class="big" id="setReplay" style="font-size:17px">🎬 Watch my adventure</button>
+      <button class="big" id="setReplay" style="font-size:17px">▶️ My Movie — watch your adventure!</button>
       <button class="big" id="setImportReplay" style="font-size:17px">📥 Watch a friend's adventure</button>
       <button class="big" id="setParent" style="font-size:17px">👨‍👩‍👧 For grown-ups</button>
     </div>
@@ -3248,20 +3252,32 @@ addEventListener('wheel',e=>{if(mode==='roam')setCamZoom(e.deltaY>0?0.1:-0.1);},
 $('helpBtn').onclick=()=>{$('intro').classList.add('show');};
 /* ---- ⚙️ settings + 🎛️ speed (uniform across ABE games; Block Craft canon) ---- */
 const SPEED_META={relaxed:{ico:'🐢',label:'More time'},normal:{ico:'🐇',label:'Just right'},fast:{ico:'🚀',label:'Faster'}};
+function updateSpeedBtn(){const b=$('speedBtn');if(!b)return;
+  b.textContent=SPEED_META[S.speed].ico;
+  b.setAttribute('aria-label',`Game speed: ${SPEED_META[S.speed].label}`);}
 function cycleSpeed(){const order=['relaxed','normal','fast'];
   S.speed=order[(order.indexOf(S.speed)+1)%3];save();sfx.tap();
-  renderSettings();
-  say('☀️',`${SPEED_META[S.speed].ico} Game speed: ${SPEED_META[S.speed].label}!`);}
+  renderSettings();updateSpeedBtn();
+  celebToast(`${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}!`,1800);}
 function renderSettings(){
   $('setSpeed').innerHTML=`🎛️ Game speed: <b>${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}</b>`;
   $('setSound').textContent=S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on';
   $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';
   $('setCalm').textContent=S.calm?'😌 Calm mode: on — extra gentle':'😌 Calm mode: off — tap for extra gentle';}
+/* 🔊 one-tap HUD mute — mirrors + stays in sync with the settings sound toggle */
+function updateSoundBtn(){const b=$('soundBtn');if(!b)return;
+  b.textContent=S.muted?'🔇':'🔊';b.classList.toggle('off',!!S.muted);
+  b.setAttribute('aria-label',S.muted?'Sound off — tap to turn on':'Sound on — tap to mute');}
+function toggleMute(){S.muted=!S.muted;save();
+  if(S.muted&&voiceOK)try{speechSynthesis.cancel();}catch(e){}
+  updateSoundBtn();renderSettings();if(!S.muted)sfx.tap();}
+$('soundBtn').onclick=toggleMute;
+updateSoundBtn();updateSpeedBtn();
 $('speedBtn').onclick=cycleSpeed;
 $('settingsBtn').onclick=()=>{sfx.tap();renderSettings();$('settings').classList.add('show');};
 $('setClose').onclick=()=>{sfx.tap();$('settings').classList.remove('show');};
 $('setSpeed').onclick=cycleSpeed;
-$('setSound').onclick=()=>{S.muted=!S.muted;save();renderSettings();if(!S.muted)sfx.tap();};
+$('setSound').onclick=toggleMute;
 $('setVoice').onclick=()=>{S.voice=!S.voice;save();renderSettings();
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
 $('setCalm').onclick=()=>{S.calm=!S.calm;save();renderSettings();sfx.tap();

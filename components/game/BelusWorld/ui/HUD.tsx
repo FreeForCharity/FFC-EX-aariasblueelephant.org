@@ -27,9 +27,11 @@ interface Props {
   onPause: () => void;
   onCycleSpeed: () => void;
   speedLabel: string;
+  onToggleMute: () => void;
+  muted: boolean;
 }
 
-export default function HUD({ beluLine, nearZone, starQuestZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel }: Props) {
+export default function HUD({ beluLine, nearZone, starQuestZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel, onToggleMute, muted }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
   const hasStarQuest = !!starQuestZone && starQuestZone === nearZone;
 
@@ -71,6 +73,14 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
             </span>
           )}
         </div>
+        <button
+          onClick={onToggleMute}
+          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+          title={muted ? 'Unmute sound' : 'Mute sound'}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
         <button
           onClick={onGoHome}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"

@@ -205,6 +205,16 @@ export default function BelusWorldGame() {
     });
   }, []);
 
+  // one-tap master mute — flips the same settings.sound the settings panel
+  // uses, and cancels any speech already in flight so it doesn't keep talking
+  const toggleMute = useCallback(() => {
+    setSettings((s) => {
+      const next = !s.sound;
+      if (!next) stopSpeaking();
+      return { ...s, sound: next };
+    });
+  }, []);
+
   function start(name: string) {
     // did the garden grow while the child was away? (checked BEFORE the visit
     // stamp updates, so "away" means since the previous session)
@@ -447,6 +457,8 @@ export default function BelusWorldGame() {
         onPause={() => { sfx('tap'); setManualPause(true); }}
         onCycleSpeed={cycleSpeed}
         speedLabel={SPEED[settings.speed].label}
+        onToggleMute={toggleMute}
+        muted={!settings.sound}
       />
 
       <AnimatePresence>

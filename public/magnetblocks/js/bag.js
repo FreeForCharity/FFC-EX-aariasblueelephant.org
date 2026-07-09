@@ -169,7 +169,7 @@ window.MB = window.MB || {};
       const el = document.createElement('div'); el.className = 'bagItem';
       el.innerHTML = '<img src="' + item.thumb + '" alt=""><div class="nm" title="✏️ Tap to rename">' + item.name + ' · ' + item.date + '</div>' +
                      '<div class="bagActions">' +
-                       '<button class="bagAct" title="Watch my build">🎬</button>' +
+                       '<button class="bagAct" title="My Movie — watch my build">▶️</button>' +
                        '<button class="bagAct" title="Share this build">📤</button>' +
                      '</div>' +
                      '<button class="del">✕</button>';

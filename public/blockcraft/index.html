@@ -124,15 +124,38 @@
   #lookHint { position:absolute; bottom:96px; left:50%; transform:translateX(-50%);
     background:rgba(255,255,255,.92); padding:10px 22px; border-radius:22px; font-size:19px; color:#246;
     box-shadow:0 4px 10px rgba(0,0,0,.2); }
-  /* side buttons: anchored under the top menu, wrapping inward — can never reach
-     the bottom action buttons no matter the screen height */
+  /* side buttons: anchored under the top menu, one flex column. On short
+     windows (see height-based media queries below) the buttons shrink and,
+     below ~600px, reflow into a compact grid so they can never collide with
+     the ⬆/⬇/🧱 action cluster on the same (right) edge. */
   #sideBtns { position:absolute; right:14px; top:64px; display:flex; flex-direction:column;
-    flex-wrap:wrap-reverse; gap:8px; pointer-events:auto;
-    max-height:calc(100vh - 320px); align-content:flex-start; }
+    flex-wrap:nowrap; gap:8px; pointer-events:auto; }
   .sideBtn { width:56px; height:56px; font-size:21px; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; border-radius:14px; }
+    align-items:center; justify-content:center; border-radius:14px; flex-shrink:0; }
   .sideBtn small { font-size:10px; }
   .sideBtn.active { background:#ffe066; box-shadow:0 0 0 3px #fab005, 0 3px 8px rgba(0,0,0,.18); }
+
+  /* ---- short-viewport rescue: keep #sideBtns and #touchActs/#touchPad from
+     ever overlapping when the browser window isn't full height ---- */
+  @media (max-height: 850px) {
+    #sideBtns { top:56px; gap:6px; }
+    .sideBtn { width:46px; height:46px; font-size:17px; border-radius:11px; }
+    .sideBtn small { font-size:8px; }
+    #touchActs { right:14px; bottom:92px; gap:8px; }
+    #touchActs .tBtn { width:48px; height:48px; font-size:22px; }
+    #touchPad { bottom:92px; width:140px; height:140px; }
+  }
+  @media (max-height: 620px) {
+    /* not enough vertical room for a single column of 8 — reflow into a
+       compact 2-wide grid anchored under the top menu instead */
+    #sideBtns { top:52px; flex-direction:row; flex-wrap:wrap; justify-content:flex-end;
+      width:104px; gap:6px; }
+    .sideBtn { width:44px; height:44px; font-size:15px; }
+    .sideBtn small { display:none; }
+    #touchActs { bottom:78px; gap:6px; }
+    #touchActs .tBtn { width:44px; height:44px; font-size:19px; }
+    #touchPad { bottom:78px; width:124px; height:124px; }
+  }
 
   /* on-screen control pad — always visible, no Esc or mouse-lock needed */
   #touchPad, #touchActs { position:absolute; bottom:110px; pointer-events:auto; }
@@ -313,12 +336,22 @@
   /* spacious edge placement — replaces the cramped defaults */
   body.skin-smooth #scoreBar { top:var(--hud-pad); left:var(--hud-pad); gap:12px; }
   body.skin-smooth #menuBar  { top:var(--hud-pad); right:var(--hud-pad); gap:10px; }
-  body.skin-smooth #sideBtns { right:var(--hud-pad); top:86px; gap:13px;
-    max-height:calc(100vh - 340px); }
+  body.skin-smooth #sideBtns { right:var(--hud-pad); top:86px; gap:13px; }
   body.skin-smooth .sideBtn  { width:60px; height:60px; border-radius:17px; font-size:22px; }
   body.skin-smooth .sideBtn small { font-size:10px; opacity:.8; }
   body.skin-smooth .sideBtn.active { background:rgba(31,182,166,.3);
     box-shadow:0 0 0 3px var(--accent), 0 8px 18px -8px rgba(18,38,56,.5); }
+  /* short-viewport rescue applies to the Smooth skin too */
+  @media (max-height: 850px) {
+    body.skin-smooth #sideBtns { top:70px; gap:8px; }
+    body.skin-smooth .sideBtn { width:48px; height:48px; font-size:18px; }
+  }
+  @media (max-height: 620px) {
+    body.skin-smooth #sideBtns { top:64px; flex-direction:row; flex-wrap:wrap;
+      justify-content:flex-end; width:114px; gap:8px; }
+    body.skin-smooth .sideBtn { width:46px; height:46px; font-size:16px; }
+    body.skin-smooth .sideBtn small { display:none; }
+  }
 
   /* the bag — calm: no pulsing glow, no strobing sparkle */
   body.skin-smooth #bagBtn {
@@ -352,6 +385,18 @@
   body.skin-smooth #touchActs .tBtn { width:66px; height:66px; font-size:28px; }
   body.skin-smooth #tMode { box-shadow:0 0 0 3px #2fb36a, 0 8px 18px -8px rgba(18,38,56,.5); }
   body.skin-smooth #tMode.digMode { box-shadow:0 0 0 3px #ff922b, 0 8px 18px -8px rgba(18,38,56,.5); }
+  /* short-viewport rescue: shrink the Smooth skin's roomy pad/action cluster
+     so it can't push into the (also-shrinking) side buttons above it */
+  @media (max-height: 850px) {
+    body.skin-smooth #touchPad  { bottom:92px; width:150px; height:150px; }
+    body.skin-smooth #touchActs { bottom:92px; gap:10px; }
+    body.skin-smooth #touchActs .tBtn { width:50px; height:50px; font-size:22px; }
+  }
+  @media (max-height: 620px) {
+    body.skin-smooth #touchPad  { bottom:78px; width:130px; height:130px; }
+    body.skin-smooth #touchActs { bottom:78px; gap:8px; }
+    body.skin-smooth #touchActs .tBtn { width:44px; height:44px; font-size:19px; }
+  }
   body.skin-smooth #lookHint { bottom:104px; border-radius:22px; padding:11px 22px; color:var(--ink); }
   body.skin-smooth #crosshair { text-shadow:0 0 8px rgba(0,0,0,.45); opacity:.7; }
   body.skin-smooth #projectPanel { border-radius:20px; }
@@ -425,14 +470,15 @@
     <div class="scoreChip" id="flowerChip" title="Days of adventures">🌻 0</div>
   </div>
   <div id="menuBar">
+    <button class="menuBtn" id="muteBtn" title="Mute — tap to turn off sound" style="min-width:44px;min-height:44px;">🔊</button>
+    <button class="menuBtn" id="pauseBtn" title="Take a break" style="min-width:44px;min-height:44px;">⏸️</button>
+    <button class="menuBtn" id="movieBtn" title="Watch your last adventure!" style="min-width:44px;min-height:44px;">▶️</button>
     <button class="menuBtn deskOnly" id="buildMenuBtn">🏗️<span class="btnTxt"> Build</span></button>
     <button class="menuBtn deskOnly" id="slimeBtn">🌈<span class="btnTxt"> Slime Lab</span></button>
     <button class="menuBtn deskOnly" id="oreoBtn">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn deskOnly" id="kindBtn">💌<span class="btnTxt"> Kind Words</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
-    <button class="menuBtn" id="muteBtn" title="Mute — tap to turn off sound" style="min-width:44px;min-height:44px;">🔊</button>
-    <button class="menuBtn" id="pauseBtn" title="Take a break" style="min-width:44px;min-height:44px;">⏸️</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
     <button class="menuBtn" id="skinToggleBtn" title="Switch Modern / Smooth / Classic look">🎨</button>
     <button class="menuBtn deskOnly" id="fsBtn" title="Full screen">⛶</button>
