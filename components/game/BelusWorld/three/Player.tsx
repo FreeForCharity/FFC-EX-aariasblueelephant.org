@@ -94,7 +94,26 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     // ---- horizontal movement (world-relative, camera is fixed-angle) ----
     const ix = input.moveX;
     const iz = input.moveZ;
-    const target = new THREE.Vector3(ix, 0, iz);
+    let mx = ix;
+    let mz = iz;
+    if (ix !== 0 || iz !== 0) {
+      // manual joystick/keyboard input always overrides — and cancels — any
+      // queued tap-to-walk target so it never fights the child's own steering
+      if (input.walkTarget) input.walkTarget = null;
+    } else if (input.walkTarget) {
+      // point-and-tap movement: walk straight toward the queued target,
+      // reusing the same speed/turn logic as manual steering
+      const dx = input.walkTarget.x - pos.current.x;
+      const dz = input.walkTarget.z - pos.current.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.6) {
+        input.walkTarget = null; // arrived
+      } else {
+        mx = dx / d;
+        mz = dz / d;
+      }
+    }
+    const target = new THREE.Vector3(mx, 0, mz);
     if (target.lengthSq() > 1) target.normalize();
     vel.current.x = target.x * SPEED;
     vel.current.z = target.z * SPEED;

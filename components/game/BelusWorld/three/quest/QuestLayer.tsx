@@ -1123,7 +1123,6 @@ export default function QuestLayer(props: Props) {
                       color={accent[S.current.zone!]}
                       status={orbStatus(i)}
                       bobSeed={i * 0.7}
-                      onPick={() => pick(i)}
                     />
                   ))}
                   {help && help.kind === 'orb' && (

@@ -10,6 +10,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { makeLabelTexture } from './emojiTexture';
+import { queueWalkTo } from '../input';
 
 export type Mood =
   | 'neutral' | 'happy' | 'excited' | 'proud' | 'calm'
@@ -80,8 +81,18 @@ export default function QuestNPC({ position, face, mood, color, thought, beckon,
   return (
     <group position={position}>
       <group ref={body}>
-        {/* rounded body */}
-        <mesh castShadow position={[0, 0.55, 0]} scale={[0.95, slump ? 0.85 : 1, 0.95]}>
+        {/* rounded body — a tap walks Nilu straight up to this friend */}
+        <mesh
+          castShadow
+          position={[0, 0.55, 0]}
+          scale={[0.95, slump ? 0.85 : 1, 0.95]}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            queueWalkTo(position[0], position[2]);
+          }}
+          onPointerOver={() => (document.body.style.cursor = 'pointer')}
+          onPointerOut={() => (document.body.style.cursor = 'auto')}
+        >
           <sphereGeometry args={[0.7, 24, 18]} />
           <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>

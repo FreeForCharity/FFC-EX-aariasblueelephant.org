@@ -13,6 +13,7 @@ import { useFrame } from '@react-three/fiber';
 import { Tree, Flower, Waterfall, Clouds, makeRng } from './Scenery';
 import WorldLife from './WorldLife';
 import { makeInfinityTexture } from './quest/emojiTexture';
+import { queueWalkTo } from './input';
 
 function Island({ isl }: { isl: IslandDef }) {
   return (
@@ -22,8 +23,19 @@ function Island({ isl }: { isl: IslandDef }) {
         <cylinderGeometry args={[isl.radius, isl.radius * 0.94, 1.4, 48]} />
         <meshStandardMaterial color={isl.grass} roughness={0.85} />
       </mesh>
-      {/* soft grassy rim cap so the edge reads round */}
-      <mesh position={[0, isl.top - 0.1, 0]}>
+      {/* soft grassy rim cap so the edge reads round — this is the surface the
+          camera actually sees from above, so it's also the tap-to-walk target:
+          a tap anywhere on an island walks Nilu straight there (e.point is the
+          real world-space hit, already guaranteed on walkable ground) */}
+      <mesh
+        position={[0, isl.top - 0.1, 0]}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          queueWalkTo(e.point.x, e.point.z);
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'auto')}
+      >
         <cylinderGeometry args={[isl.radius * 0.99, isl.radius, 0.5, 48]} />
         <meshStandardMaterial color={isl.grass} roughness={0.85} />
       </mesh>
@@ -70,7 +82,18 @@ function RainbowBridges({ hiddenKey, isHidden }: { hiddenKey: string; isHidden: 
   return (
     <group>
       {planks.map((p, i) => (
-        <mesh key={i} position={p.pos} rotation={[0, p.rot, 0]} receiveShadow>
+        <mesh
+          key={i}
+          position={p.pos}
+          rotation={[0, p.rot, 0]}
+          receiveShadow
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            queueWalkTo(e.point.x, e.point.z);
+          }}
+          onPointerOver={() => (document.body.style.cursor = 'pointer')}
+          onPointerOut={() => (document.body.style.cursor = 'auto')}
+        >
           <boxGeometry args={[p.w, 0.28, 1.3]} />
           <meshStandardMaterial
             color={p.color}

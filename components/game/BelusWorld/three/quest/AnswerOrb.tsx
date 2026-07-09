@@ -10,6 +10,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { makeLabelTexture } from './emojiTexture';
 import { beluPos } from '../playerState';
+import { queueWalkTo } from '../input';
 
 const NEAR_DIST = 2.4; // matches QuestLayer PICK_RADIUS
 
@@ -23,7 +24,6 @@ interface Props {
   status: OrbStatus;
   /** a phase offset so a row of orbs doesn't bob in lockstep */
   bobSeed?: number;
-  onPick: () => void;
 }
 
 // Detect prefers-reduced-motion locally so the ring/pulse can respect it
@@ -33,7 +33,7 @@ const prefersReducedMotion =
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 
-export default function AnswerOrb({ position, emoji, caption, color, status, bobSeed = 0, onPick }: Props) {
+export default function AnswerOrb({ position, emoji, caption, color, status, bobSeed = 0 }: Props) {
   const grp = useRef<THREE.Group>(null);
   const sphere = useRef<THREE.Mesh>(null);
   const ring = useRef<THREE.Mesh>(null);
@@ -113,12 +113,16 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
           depthWrite
         />
       </mesh>
-      {/* invisible, larger hit-target so an imprecise tap still lands */}
+      {/* invisible, larger hit-target so an imprecise tap still lands — a tap
+          walks Nilu straight to the orb (select-and-go); the actual pick only
+          fires once she arrives via the normal walk-in proximity check in
+          QuestLayer, so tapping from across the island can never pick from
+          range. */}
       <mesh
         visible={false}
         onPointerDown={(e) => {
           e.stopPropagation();
-          onPick();
+          queueWalkTo(position[0], position[2]);
         }}
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
         onPointerOut={() => (document.body.style.cursor = 'auto')}

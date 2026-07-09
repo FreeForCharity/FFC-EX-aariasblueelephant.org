@@ -15,6 +15,11 @@ export interface InputState {
   interactQueued: boolean;
   /** edge-triggered "warp back to home island" request */
   goHomeQueued: boolean;
+  /** point-and-tap movement target (world XZ), or null when none is queued /
+   *  active. The Player controller walks Nilu toward it every frame it's set
+   *  AND no manual joystick/keyboard input is active (manual input always
+   *  wins and cancels it); it's cleared on arrival too. */
+  walkTarget: { x: number; z: number } | null;
 }
 
 export const input: InputState = {
@@ -23,10 +28,18 @@ export const input: InputState = {
   jumpQueued: false,
   interactQueued: false,
   goHomeQueued: false,
+  walkTarget: null,
 };
 
 export function queueGoHome() {
   input.goHomeQueued = true;
+}
+
+/** Tap-to-walk: queue a world XZ point for Nilu to walk toward (a tap on the
+ *  ground, or on an orb/item/pad/NPC/sign — see the callers). Overwrites any
+ *  previous target. Cleared automatically by manual input or on arrival. */
+export function queueWalkTo(x: number, z: number) {
+  input.walkTarget = { x, z };
 }
 
 const keys = new Set<string>();

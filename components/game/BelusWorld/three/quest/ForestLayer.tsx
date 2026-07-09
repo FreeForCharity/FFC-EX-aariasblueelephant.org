@@ -555,7 +555,6 @@ export default function ForestLayer(props: Props) {
                     color={isl.accent}
                     status={status}
                     bobSeed={k * 0.7}
-                    onPick={() => castWord(i, k)}
                   />
                 );
               })}

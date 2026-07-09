@@ -12,6 +12,7 @@ import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { makeStartTexture } from './emojiTexture';
+import { queueWalkTo } from '../input';
 
 interface Props {
   /** where the sign board floats (above the host friend's head) */
@@ -72,8 +73,20 @@ export default function StartSign({ position, ground, color, reduceMotion }: Pro
         <Sparkles count={10} scale={2.2} size={4.5} speed={0.4} color={color} position={[ground[0], ground[1] + 1, ground[2]]} />
       )}
 
-      {/* pulsing accent ring on the ground — static (still visible) when reduceMotion */}
-      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[ground[0], ground[1] + 0.06, ground[2]]}>
+      {/* pulsing accent ring on the ground — static (still visible) when
+          reduceMotion. Also the tap target: a tap walks Nilu straight to the
+          sign; walking in (as usual) is what actually begins the quest. */}
+      <mesh
+        ref={ring}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[ground[0], ground[1] + 0.06, ground[2]]}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          queueWalkTo(ground[0], ground[2]);
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'auto')}
+      >
         <ringGeometry args={[1.1, 1.55, 32]} />
         <meshBasicMaterial color={color} transparent opacity={0.38} side={THREE.DoubleSide} />
       </mesh>
