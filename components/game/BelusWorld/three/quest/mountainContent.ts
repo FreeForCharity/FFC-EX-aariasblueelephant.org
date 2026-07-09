@@ -94,8 +94,8 @@ const TWIN_DX = 2.4;
 
 export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   {
-    goal: 'Do each self-care job',
-    intro: "Let's get ready for the day! Walk to each job in order to do it.",
+    goal: 'Do each self-care job, in order',
+    intro: "Let's get ready for the day! Walk to the bed 🛏️ first, to wake up. Then visit each job in order.",
     outro: 'You did it all by yourself — you are so ready!',
     moment: 'practiced life skills on the mountain',
     // L1: a short ordered chain of single self-care matches (wake→wash→brush→shoes)
@@ -109,7 +109,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   },
   {
     goal: 'Do the steps in order',
-    intro: 'Some jobs have steps in order. Walk the steps from first to last!',
+    intro: 'Some jobs have steps in order. Walk to the bed 🛏️ first, to wake up. Then visit each next step in order.',
     outro: 'You did it all by yourself — you are so ready!',
     moment: 'practiced life skills on the mountain',
     // L2: a short chain — get up, get dressed, then breakfast
@@ -123,7 +123,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   },
   {
     goal: 'The whole morning',
-    intro: "Let's do the WHOLE morning, step by step. Walk them in order!",
+    intro: "Let's do the WHOLE morning, step by step! Walk to the bed 🛏️ first, to wake up. Then visit each next step in order.",
     outro: 'A perfect morning, start to finish!',
     moment: 'practiced life skills on the mountain',
     // L3: the full morning sequence wake→brush→dress→eat→pack→goodbye
@@ -139,15 +139,15 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   },
   {
     goal: 'Stay safe',
-    intro: 'Being safe is a big-kid skill. Walk to the choice that keeps us safe.',
+    intro: 'Being safe is a big-kid skill! Each spot has two choices. Walk to the SAFE one — like Look both ways 👀 — to keep us safe.',
     outro: 'You made every safe choice — well done!',
     moment: 'practiced staying safe on the mountain',
     // L4: each pair = a safe marker + its un-safe twin. Walk to the SAFE one.
     stations: [
       st('👀', 'Look both ways', 'safe', SAFE_SPOTS[0][0], SAFE_SPOTS[0][1], { pair: 0, done: 'Yes — that is the safe choice!' }),
       st('🏃', 'Run across fast', 'unsafe', SAFE_SPOTS[0][0] + TWIN_DX, SAFE_SPOTS[0][1], { pair: 0 }),
-      st('🙅', 'Stay away (hot stove)', 'safe', SAFE_SPOTS[1][0], SAFE_SPOTS[1][1], { pair: 1, done: 'Staying away keeps us safe.' }),
-      st('✋', 'Touch the stove', 'unsafe', SAFE_SPOTS[1][0] + TWIN_DX, SAFE_SPOTS[1][1], { pair: 1 }),
+      st('🙅', 'Stay away from the hot stove', 'safe', SAFE_SPOTS[1][0], SAFE_SPOTS[1][1], { pair: 1, done: 'Staying away keeps us safe.' }),
+      st('✋', 'Touch the hot stove', 'unsafe', SAFE_SPOTS[1][0] + TWIN_DX, SAFE_SPOTS[1][1], { pair: 1 }),
       st('🙋', 'Find a trusted grown-up', 'safe', SAFE_SPOTS[2][0], SAFE_SPOTS[2][1], { pair: 2, done: 'Always find a trusted grown-up.' }),
       st('🚶', 'Go with a stranger', 'unsafe', SAFE_SPOTS[2][0] + TWIN_DX, SAFE_SPOTS[2][1], { pair: 2 }),
       st('🔒', 'Buckle your seatbelt', 'safe', SAFE_SPOTS[3][0], SAFE_SPOTS[3][1], { pair: 3, done: 'Click! Safe and ready.' }),
@@ -157,7 +157,7 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   },
   {
     goal: 'All by myself',
-    intro: 'Can you get ready all by yourself? Walk to each job — any order you like!',
+    intro: 'Can you get ready all by yourself? Walk to each job you see — the bed 🛏️, the toothbrush 🪥, and the rest — any order you like!',
     outro: 'All done — you got ready by yourself! 🌟',
     moment: 'got ready all by myself',
     // L5: independent self-check — visit all five, any order

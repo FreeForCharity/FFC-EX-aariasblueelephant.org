@@ -136,7 +136,69 @@ export interface GameProgress {
     stagesDone: string[];
     celebrated: string[];
   };
+  /** My Day Book — one sticker id per level, earned on its FIRST completion
+   *  (e.g. 'school-3'). Additive only, never removed; tolerant of old saves. */
+  dayBook: string[];
 }
+
+/** A single My Day Book sticker: the picture + short praise shown for a level. */
+export interface DayBookSticker {
+  id: string;
+  emoji: string;
+  label: string;
+}
+
+/** Thematic reward sticker for every zone × level (8 zones × 5 levels = 40),
+ *  keyed `${zone}-${level}` (level is 1-based, matching UI numbering). */
+export const DAY_BOOK_STICKERS: Record<string, { emoji: string; label: string }> = {
+  'meadow-1': { emoji: '😊', label: 'Spotted happy!' },
+  'meadow-2': { emoji: '😢', label: 'Spotted sad!' },
+  'meadow-3': { emoji: '😠', label: 'Spotted mad!' },
+  'meadow-4': { emoji: '😲', label: 'Spotted surprised!' },
+  'meadow-5': { emoji: '🥰', label: 'Read all the feelings!' },
+
+  'mountain-1': { emoji: '🪥', label: 'Brushed teeth!' },
+  'mountain-2': { emoji: '👕', label: 'Got dressed!' },
+  'mountain-3': { emoji: '🧼', label: 'Washed hands!' },
+  'mountain-4': { emoji: '🍽️', label: 'Set the table!' },
+  'mountain-5': { emoji: '🎒', label: 'Ready for the day!' },
+
+  'cove-1': { emoji: '🌊', label: 'Calmed the sea!' },
+  'cove-2': { emoji: '🦋', label: 'Counted my breaths!' },
+  'cove-3': { emoji: '🧘', label: 'Calm body check!' },
+  'cove-4': { emoji: '💙', label: 'Chose my calm trick!' },
+  'cove-5': { emoji: '⭐', label: 'Built my calm plan!' },
+
+  'forest-1': { emoji: '🗣️', label: 'Used my words!' },
+  'forest-2': { emoji: '🙋', label: 'Asked for help!' },
+  'forest-3': { emoji: '📖', label: 'Told a story!' },
+  'forest-4': { emoji: '🤝', label: 'Asked to play!' },
+  'forest-5': { emoji: '💬', label: 'Shared my feelings!' },
+
+  'shore-1': { emoji: '🏖️', label: 'Took my turn!' },
+  'shore-2': { emoji: '🤲', label: 'Shared a toy!' },
+  'shore-3': { emoji: '⏳', label: 'Waited patiently!' },
+  'shore-4': { emoji: '🙌', label: 'Played together!' },
+  'shore-5': { emoji: '🎉', label: 'Great teamwork!' },
+
+  'school-1': { emoji: '✋', label: 'Raised my hand!' },
+  'school-2': { emoji: '📏', label: 'Lined up nicely!' },
+  'school-3': { emoji: '🎒', label: 'Packed my bag!' },
+  'school-4': { emoji: '👂', label: 'Listened well!' },
+  'school-5': { emoji: '🏫', label: 'Great school day!' },
+
+  'afternoon-1': { emoji: '🍎', label: 'Ate my snack!' },
+  'afternoon-2': { emoji: '🧸', label: 'Cleaned up toys!' },
+  'afternoon-3': { emoji: '🎨', label: 'Made some art!' },
+  'afternoon-4': { emoji: '🪁', label: 'Played outside!' },
+  'afternoon-5': { emoji: '🏡', label: 'Fun afternoon!' },
+
+  'night-1': { emoji: '🛁', label: 'Took a bath!' },
+  'night-2': { emoji: '🦷', label: 'Brushed at night!' },
+  'night-3': { emoji: '📚', label: 'Story time!' },
+  'night-4': { emoji: '🧸', label: 'Cuddled Teddy!' },
+  'night-5': { emoji: '🌙', label: 'Slept tight!' },
+};
 
 const KEY = 'belus_world_progress_v1';
 
@@ -183,6 +245,7 @@ function defaults(): GameProgress {
     practiceStats: emptyPracticeStats(),
     calmPlan: [],
     dayArc: { choice: null, stagesDone: [], celebrated: [] },
+    dayBook: [],
   };
 }
 
@@ -245,6 +308,10 @@ export function loadProgress(): GameProgress {
       if (Array.isArray(da.celebrated)) {
         base.dayArc.celebrated = da.celebrated.filter((s): s is string => typeof s === 'string');
       }
+    }
+    // older saves have no dayBook — tolerate missing/malformed entries entirely
+    if (Array.isArray(parsed.dayBook)) {
+      base.dayBook = parsed.dayBook.filter((s): s is string => typeof s === 'string');
     }
     if (typeof parsed.growthFloor === 'number') {
       base.growthFloor = Math.max(0, Math.min(3, parsed.growthFloor));
@@ -490,6 +557,8 @@ export interface AwardResult {
   unlockedItem?: Cosmetic;
   /** sparkles gifted for replaying an already-finished level (0 on first plays) */
   replaySparkles: number;
+  /** a My Day Book sticker earned by finishing this level for the FIRST time */
+  dayBookSticker?: DayBookSticker;
 }
 
 /** Record a finished level. levelIdx is 0-based. stars is 1..3. Keeps the best.
@@ -544,6 +613,18 @@ export function awardLevel(
     }
   }
 
+  // first-time level completion also earns a My Day Book sticker (a small,
+  // additive per-level keepsake — never lost, never re-earned on replay)
+  let dayBookSticker: DayBookSticker | undefined;
+  if (wasIncomplete) {
+    const id = `${zone}-${levelIdx + 1}`;
+    if (!p.dayBook.includes(id)) {
+      const sticker = DAY_BOOK_STICKERS[id];
+      next.dayBook = [...(p.dayBook ?? []), id];
+      if (sticker) dayBookSticker = { id, ...sticker };
+    }
+  }
+
   return {
     progress: next,
     newLevel: wasIncomplete,
@@ -552,6 +633,7 @@ export function awardLevel(
     growthAfter,
     unlockedItem,
     replaySparkles,
+    dayBookSticker,
   };
 }
 

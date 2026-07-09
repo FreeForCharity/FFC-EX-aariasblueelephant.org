@@ -143,6 +143,8 @@ interface RewardInfo {
   starQuest?: boolean;
   /** a brand-new badge earned by this play (first one, if several) */
   newBadge?: Achievement;
+  /** a My Day Book sticker earned by finishing this level for the first time */
+  dayBookSticker?: { emoji: string; label: string };
 }
 
 export default function BelusWorldGame() {
@@ -477,6 +479,9 @@ export default function BelusWorldGame() {
         unlockedItem: res.unlockedItem ? { name: res.unlockedItem.name, icon: res.unlockedItem.icon } : undefined,
         starQuest: starQuestDone,
         newBadge: earned[0],
+        dayBookSticker: res.dayBookSticker
+          ? { emoji: res.dayBookSticker.emoji, label: res.dayBookSticker.label }
+          : undefined,
       });
     },
     [progress, memory, dateKey],
@@ -1170,6 +1175,11 @@ function RewardToast({ reward, reduceMotion, onClose }: { reward: RewardInfo; re
         {reward.newBadge && (
           <p className="mt-3 rounded-2xl bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">
             {reward.newBadge.icon} New badge: {reward.newBadge.name}! Check My Badges on the map.
+          </p>
+        )}
+        {reward.dayBookSticker && (
+          <p className="mt-3 rounded-2xl bg-pink-100 px-4 py-2 text-sm font-bold text-pink-700">
+            📖 New Day Book sticker: {reward.dayBookSticker.emoji} {reward.dayBookSticker.label}
           </p>
         )}
 

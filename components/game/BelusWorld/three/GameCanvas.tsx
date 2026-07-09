@@ -276,7 +276,7 @@ export default function GameCanvas({
         <EffectComposer multisampling={0}>
           <Bloom
             intensity={0.6}
-            luminanceThreshold={0.65}
+            luminanceThreshold={0.55}
             luminanceSmoothing={0.3}
             mipmapBlur
           />
