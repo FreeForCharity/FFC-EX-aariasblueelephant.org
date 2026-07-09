@@ -19,7 +19,7 @@ import HomeLife from './HomeLife';
 import RainbowPlay from './RainbowPlay';
 import type { AnimalSpecies } from './quest/Animal3D';
 import type { GardenPlant } from '../belu/progress';
-import { type QuestStatus } from './quest/QuestLayer';
+import QuestLayer, { type QuestStatus } from './quest/QuestLayer';
 import StoryLayer from './quest/StoryLayer';
 import ForestLayer from './quest/ForestLayer';
 import MountainLayer from './quest/MountainLayer';
@@ -243,6 +243,20 @@ export default function GameCanvas({
         <CoveLayer
           level={islandNextLevel.cove}
           paused={paused}
+          speak={speak}
+          setEmotion={setEmotion}
+          playSound={playSound}
+          onComplete={onQuestComplete}
+          onStatus={onQuestStatus}
+        />
+        {/* Sharing Shore runs on the generic quest engine: crab host + answer
+            orbs for the five Sharing & Turns levels. */}
+        <QuestLayer
+          zones={['shore']}
+          islandNextLevel={islandNextLevel}
+          paused={paused}
+          reduceMotion={reduceMotion}
+          sound={sound}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}

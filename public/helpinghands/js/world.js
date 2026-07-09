@@ -270,7 +270,7 @@
   var wallTargetGroup = null; // group new wall meshes are added to while building
 
   var avatar = null; // { group, pos, facing, walking, bobPhase }
-  var belu = null;   // { group, pos }
+  var nilu = null;   // { group, pos }
   var helpersRegistry = {}; // helperId -> { group }
   var actorsRegistry = {};  // actorId -> { group }
   var objectsRegistry = {}; // "roomId:idx" -> sprite Object3D
@@ -431,15 +431,15 @@
     hubAvatar.group.position.set(0.8, 0, 8.5);
     hubAvatar.group.rotation.y = Math.PI; // face the town
     root.add(hubAvatar.group);
-    var hubBelu = buildBelu();
-    hubBelu.group.position.set(-0.9, 0, 9.3);
-    hubBelu.group.rotation.y = Math.PI;
-    root.add(hubBelu.group);
-    hubAvatar.belu = hubBelu;
+    var hubNilu = buildNilu();
+    hubNilu.group.position.set(-0.9, 0, 9.3);
+    hubNilu.group.rotation.y = Math.PI;
+    root.add(hubNilu.group);
+    hubAvatar.nilu = hubNilu;
     animItems.push({ fn: function (t) {
       if (hubWalk) return; // walking animation owns the pose
       hubAvatar.group.position.y = Math.abs(Math.sin(t * 1.8)) * 0.03;
-      hubBelu.group.position.y = Math.abs(Math.sin(t * 2.1 + 1)) * 0.04;
+      hubNilu.group.position.y = Math.abs(Math.sin(t * 2.1 + 1)) * 0.04;
     }});
 
     // ---- extra trees of varied sizes, scattered further out for depth ----
@@ -2575,7 +2575,7 @@
   }
 
   // =========================================================================
-  // AVATAR + BELU
+  // AVATAR + NILU
   // =========================================================================
   function buildAvatar() {
     var g = new THREE.Group(); g.name = 'avatar';
@@ -2598,8 +2598,8 @@
     return { group: g, pos: new THREE.Vector3(), facing: 0, walking: false, bobPhase: 0, fig: fig };
   }
 
-  function buildBelu() {
-    var g = new THREE.Group(); g.name = 'belu';
+  function buildNilu() {
+    var g = new THREE.Group(); g.name = 'nilu';
     var blue = '#5f8fe0', blueDark = '#4f7fd4', blueLight = '#89aef0';
     var bodyMat = stdMat(blue, { roughness: 0.5 });
     var body = mesh(new THREE.SphereGeometry(0.48, 18, 14), bodyMat);
@@ -2714,16 +2714,16 @@
     }
   }
 
-  function updateBelu(dt, t) {
+  function updateNilu(dt, t) {
     var forward = new THREE.Vector3(Math.sin(avatar.facing), 0, Math.cos(avatar.facing));
     var desired = new THREE.Vector3(avatar.pos.x, 0, avatar.pos.z).addScaledVector(forward, -1.7)
       .add(new THREE.Vector3(Math.cos(avatar.facing), 0, -Math.sin(avatar.facing)).multiplyScalar(0.55));
     var f = 1 - Math.pow(0.0008, dt);
-    belu.pos.lerp(desired, f);
+    nilu.pos.lerp(desired, f);
     var bob = Math.sin(t * 2.2) * 0.05;
-    belu.group.position.set(belu.pos.x, bob, belu.pos.z);
-    var lookPt = new THREE.Vector3(avatar.pos.x, belu.group.position.y, avatar.pos.z);
-    if (lookPt.distanceTo(belu.group.position) > 0.05) belu.group.lookAt(lookPt);
+    nilu.group.position.set(nilu.pos.x, bob, nilu.pos.z);
+    var lookPt = new THREE.Vector3(avatar.pos.x, nilu.group.position.y, avatar.pos.z);
+    if (lookPt.distanceTo(nilu.group.position) > 0.05) nilu.group.lookAt(lookPt);
   }
 
   var CAM_OFFSET_Y = 7.4, CAM_OFFSET_Z = -8.6; // lower, more cinematic 3/4 follow —
@@ -2800,7 +2800,7 @@
   // =========================================================================
   function resolveCharGroup(id) {
     if (id === 'me') return avatar ? avatar.group : null;
-    if (id === 'belu') return belu ? belu.group : null;
+    if (id === 'nilu') return nilu ? nilu.group : null;
     if (helpersRegistry[id]) return helpersRegistry[id].group;
     if (actorsRegistry[id]) return actorsRegistry[id].group;
     return null;
@@ -2963,11 +2963,11 @@
       var wz = hubWalk.from.z + (hubWalk.to.z - hubWalk.from.z) * ease;
       hubAvatar.group.position.set(wx, Math.abs(Math.sin(elapsedTotal * 9)) * 0.09, wz);
       hubAvatar.group.rotation.y = Math.atan2(hubWalk.to.x - hubWalk.from.x, hubWalk.to.z - hubWalk.from.z);
-      if (hubAvatar.belu) {
+      if (hubAvatar.nilu) {
         var bx = hubWalk.from.x + (hubWalk.to.x - hubWalk.from.x) * Math.max(0, ease - 0.12) - 1.1;
         var bz = hubWalk.from.z + (hubWalk.to.z - hubWalk.from.z) * Math.max(0, ease - 0.12) + 0.6;
-        hubAvatar.belu.group.position.set(bx, Math.abs(Math.sin(elapsedTotal * 10 + 1)) * 0.07, bz);
-        hubAvatar.belu.group.rotation.y = hubAvatar.group.rotation.y;
+        hubAvatar.nilu.group.position.set(bx, Math.abs(Math.sin(elapsedTotal * 10 + 1)) * 0.07, bz);
+        hubAvatar.nilu.group.rotation.y = hubAvatar.group.rotation.y;
       }
       if (wp >= 1) {
         var cb = hubWalk.onArrive; hubWalk = null;
@@ -2976,7 +2976,7 @@
     }
     if (mode === 'interior' && avatar) {
       updateAvatarMovement(dt);
-      updateBelu(dt, t);
+      updateNilu(dt, t);
       updateCameraFollow(dt);
       updateWallCutaway(dt);
     }
@@ -3083,7 +3083,7 @@
       currentLayout = null;
       currentRoomId = null;
       collisionRects = [];
-      avatar = null; belu = null;
+      avatar = null; nilu = null;
       interiorSun = null;
       fadeWalls = [];
       helpersRegistry = {}; actorsRegistry = {}; objectsRegistry = {};
@@ -3114,13 +3114,13 @@
       setRoot(built.root);
 
       avatar = buildAvatar();
-      belu = buildBelu();
+      nilu = buildNilu();
       currentRoot.add(avatar.group);
-      currentRoot.add(belu.group);
+      currentRoot.add(nilu.group);
       avatar.pos.set(0, 0, 1.0);
-      belu.pos.set(0, 0, -0.2);
+      nilu.pos.set(0, 0, -0.2);
       avatar.group.position.copy(avatar.pos);
-      belu.group.position.copy(belu.pos);
+      nilu.group.position.copy(nilu.pos);
 
       camera.fov = 48;
       camera.updateProjectionMatrix();
@@ -3137,9 +3137,9 @@
       if (r) avatar.pos.set(r.cx, 0, Math.min(r.cz, r.boundsZMax - 1));
       else avatar.pos.set(0, 0, 1.0);
       avatar.group.position.set(avatar.pos.x, 0, avatar.pos.z);
-      if (belu) {
-        belu.pos.set(avatar.pos.x, 0, avatar.pos.z - 1.2);
-        belu.group.position.copy(belu.pos);
+      if (nilu) {
+        nilu.pos.set(avatar.pos.x, 0, avatar.pos.z - 1.2);
+        nilu.group.position.copy(nilu.pos);
       }
       snapCameraToAvatar();
       currentRoomId = computeRoom(avatar.pos);

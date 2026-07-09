@@ -629,6 +629,7 @@ ABC.ui = (function () {
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {
+        localStorage.removeItem('aariasBlockCraft3');
         localStorage.removeItem('aariasBlockCraft2');
         location.reload();
       }, '🧹');

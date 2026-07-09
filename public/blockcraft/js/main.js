@@ -884,7 +884,7 @@
         foundShapes: [...ABC.state.foundShapes],
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
-                    theme: s.theme, voiceName: s.voiceName, speed: s.speed },
+                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }

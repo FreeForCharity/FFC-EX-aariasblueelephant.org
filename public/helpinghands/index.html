@@ -225,15 +225,15 @@
   #worldBannerChoices .choice-btn { font-size: clamp(16px, 1.8vw, 19px); padding: 15px 18px; }
   #worldBannerChoices:not(:empty), #worldBannerActions:not(:empty) { margin-top: 14px; }
 
-  /* ---------- belu mascot bubble (global) ---------- */
-  #beluBubble {
+  /* ---------- nilu mascot bubble (global) ---------- */
+  #niluBubble {
     position: fixed; left: 12px; bottom: 12px; z-index: 60; display: flex; align-items: flex-end; gap: 8px;
     max-width: min(92vw, 420px); animation: popIn .25s ease-out;
   }
-  .belu-avatar { font-size: 44px; flex-shrink: 0; filter: drop-shadow(0 4px 5px rgba(0,0,0,.2)); }
-  .belu-content { background: #fff; border-radius: 20px 20px 20px 4px; padding: 12px 14px; box-shadow: 0 6px 16px rgba(60,40,100,.22); }
-  .belu-text { font-size: 15px; font-weight: 700; color: #3b2a55; line-height: 1.35; }
-  .belu-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .nilu-avatar { font-size: 44px; flex-shrink: 0; filter: drop-shadow(0 4px 5px rgba(0,0,0,.2)); }
+  .nilu-content { background: #fff; border-radius: 20px 20px 20px 4px; padding: 12px 14px; box-shadow: 0 6px 16px rgba(60,40,100,.22); }
+  .nilu-text { font-size: 15px; font-weight: 700; color: #3b2a55; line-height: 1.35; }
+  .nilu-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
   .next-btn {
     border: 0; background: linear-gradient(180deg,#ffd43b,#ffa94d); color: #5c3c00; font-weight: 800; font-size: 14px;
     padding: 9px 16px; border-radius: 16px; cursor: pointer; box-shadow: 0 4px 0 #e8920c; min-height: 40px;
@@ -330,8 +330,8 @@
   .helper-chip.friend { box-shadow: 0 4px 10px rgba(60,40,100,.13), 0 0 0 3px #ffd43b; }
   .helper-chip.used { opacity: .4; }
   .lesson-card { background: #fff; border-radius: 26px; padding: clamp(20px, 3vh, 30px); max-width: 620px; width: 100%; box-shadow: 0 12px 26px rgba(60,40,100,.16), 0 2px 0 rgba(255,255,255,.9) inset; display: flex; flex-direction: column; gap: 14px; }
-  .belu-card-row { display: flex; align-items: center; gap: 8px; }
-  .belu-card-avatar { font-size: 32px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
+  .nilu-card-row { display: flex; align-items: center; gap: 8px; }
+  .nilu-card-avatar { font-size: 32px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
   .signs-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .sign-chip { background: #fff7e0; border-radius: 16px; padding: 12px 14px; min-width: 100px; text-align: center; box-shadow: 0 3px 8px rgba(0,0,0,.08); }
   .sign-chip .em { font-size: 32px; }
@@ -729,14 +729,14 @@
   <div id="guBody" class="gu-body" hidden></div>
 </div>
 
-<!-- global belu mascot bubble -->
-<div id="beluBubble" hidden>
-  <div class="belu-avatar">🐘</div>
-  <div class="belu-content">
-    <div id="beluText" class="belu-text"></div>
-    <div class="belu-actions">
-      <button id="beluSpeakBtn" class="speak-btn" title="Read this aloud">🔊</button>
-      <button id="beluNextBtn" class="next-btn" hidden>Next ▶</button>
+<!-- global nilu mascot bubble -->
+<div id="niluBubble" hidden>
+  <div class="nilu-avatar">🐘</div>
+  <div class="nilu-content">
+    <div id="niluText" class="nilu-text"></div>
+    <div class="nilu-actions">
+      <button id="niluSpeakBtn" class="speak-btn" title="Read this aloud">🔊</button>
+      <button id="niluNextBtn" class="next-btn" hidden>Next ▶</button>
     </div>
   </div>
 </div>

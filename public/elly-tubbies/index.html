@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--belu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
+  :root{--nilu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#7cc4ff;
     font-family:'Baloo 2','Comic Sans MS','Chalkboard SE','Segoe UI',system-ui,sans-serif;
@@ -169,7 +169,7 @@
 
   /* ---------- context action button ---------- */
   #actBtn{position:absolute;right:18px;bottom:max(26px,calc(env(safe-area-inset-bottom) + 8px));z-index:9;
-    display:none;cursor:pointer;border:none;background:var(--belu);color:#fff;font-weight:900;
+    display:none;cursor:pointer;border:none;background:var(--nilu);color:#fff;font-weight:900;
     font-size:clamp(17px,4.8vw,22px);border-radius:28px;padding:16px 26px;
     box-shadow:0 7px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);animation:bob 1.3s ease-in-out infinite;
     font-family:inherit;}
@@ -208,10 +208,10 @@
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .panel{background:rgba(255,255,255,.97);border-radius:30px;max-width:620px;width:100%;
     padding:22px;box-shadow:0 20px 60px rgba(58,58,90,.35);text-align:center;max-height:92vh;overflow:auto;}
-  .panel h1{font-size:clamp(26px,7.5vw,42px);margin:.1em 0;color:var(--belu);}
+  .panel h1{font-size:clamp(26px,7.5vw,42px);margin:.1em 0;color:var(--nilu);}
   .panel p{font-size:clamp(15px,4.3vw,19px);line-height:1.45;margin:.45em 0;}
   .big{cursor:pointer;border:none;border-radius:24px;padding:15px 28px;margin:8px 5px 2px;
-    font-size:clamp(17px,4.8vw,23px);font-weight:900;color:#fff;background:var(--belu);
+    font-size:clamp(17px,4.8vw,23px);font-weight:900;color:#fff;background:var(--nilu);
     box-shadow:0 8px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);transition:.12s;font-family:inherit;}
   .big:active{transform:translateY(4px);box-shadow:0 4px 0 #1a4bbf;}
   .tubRow{display:flex;justify-content:center;gap:8px;margin:8px 0;flex-wrap:wrap;}
@@ -397,7 +397,7 @@ const TUBBIES={
   rosy:{name:'Skydah', body:'#ffdc00', dark:'#e0b800', antenna:'star', antCol:'#ffe68a',
     zone:'Dreamy Hills', likes:'hide & seek', game:'hide', hello:'Skydah the dreamer loves hide and seek! Come find me?'},
 };
-const BELU={name:'Nilu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
+const NILU={name:'Nilu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
 
 const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
   {e:'😊',w:'Happy',   hint:'A big smile means happy!'},
@@ -1225,7 +1225,7 @@ function refreshStickers(){STICKERS.forEach(st=>{if(S.stickers[st.id])placeStick
     c.position.set(0,4.6,0.05);player.anim.head.add(c);stickerNodes.crown=c;}}
 
 /* ============================ CHARACTERS ================================= */
-const player=makeEllie(BELU);
+const player=makeEllie(NILU);
 player.group.position.set(0,0,-9);scene.add(player.group);
 player.anim.tv('💙');
 
@@ -2756,7 +2756,7 @@ async function showFinale(){
   setTimeout(()=>$('finale').classList.add('show'),2600*SPEED[S.speed]);
 }
 $('newDay').onclick=()=>{
-  sfx.tap();S.day++;S.today={stars:{},seeds:{},stories:{}};save();hud();
+  sfx.tap();S.day++;S.today={stars:{},seeds:{},stories:{},wantsDone:{}};save();hud();
   $('finale').classList.remove('show');
   // reset world to morning
   scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
