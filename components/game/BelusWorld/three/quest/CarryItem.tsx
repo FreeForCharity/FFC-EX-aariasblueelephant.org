@@ -11,6 +11,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { makeLabelTexture } from './emojiTexture';
 import { beluPos } from '../playerState';
+import { queueWalkTo } from '../input';
 
 interface Props {
   pedestalPosition: [number, number, number];
@@ -59,7 +60,16 @@ export default function CarryItem({
 
   return (
     <group ref={grp} position={pedestalPosition}>
-      <mesh>
+      <mesh
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          // a tap walks Nilu to the pedestal precisely — the pick-up itself
+          // still only happens via the normal walk-in proximity check
+          queueWalkTo(pedestalPosition[0], pedestalPosition[2]);
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'auto')}
+      >
         <sphereGeometry args={[0.42, 20, 16]} />
         <meshStandardMaterial
           color={color}

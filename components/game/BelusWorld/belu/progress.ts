@@ -26,8 +26,9 @@ export const ZONES: ActivityZone[] = [
 export const DAY_ARC: ActivityZone[] = ['mountain', 'school', 'afternoon', 'night'];
 
 /** Advanced sister islands (see three/quest/advancedQuests.ts): each FORMS once
- *  its PARENT skill island reaches 5/5 completed levels. Plain gating — no
- *  dayArc/fresh choice involved, unlike the Nilu's Day arc above. */
+ *  its PARENT skill island completes its CURRENT task (>= 1 completed level) —
+ *  the same "form immediately after one success" rule as the Nilu's Day arc
+ *  above (dayStageComplete). Plain gating — no dayArc/fresh choice involved. */
 export const ADVANCED_PARENT: Record<'garden' | 'deepforest' | 'lagoon' | 'bay', ActivityZone> = {
   garden: 'meadow',
   deepforest: 'forest',
@@ -449,11 +450,15 @@ export function markDayCelebrated(p: GameProgress, zone: ActivityZone): GameProg
 // Plain gating: no dayArc/fresh choice involved. Each simply forms once its
 // PARENT skill island reaches 5/5 completed levels.
 
-/** Has this advanced sister island formed yet? */
+/** Has this advanced sister island formed yet? Forms the moment its PARENT
+ *  island's current task is completed once (>= 1 completed level) — the
+ *  island rises immediately, bridged from its parent. Levels 2-5 on the
+ *  parent stay available as richer replays; they don't gate the sister
+ *  island any further. */
 export function isAdvancedZoneUnlocked(p: GameProgress, zone: ActivityZone): boolean {
   const parent = (ADVANCED_PARENT as Partial<Record<ActivityZone, ActivityZone>>)[zone];
   if (!parent) return true; // not an advanced zone — always considered unlocked
-  return completedLevels(p, parent) >= MAX_LEVEL;
+  return completedLevels(p, parent) >= 1;
 }
 
 // ---- totals ----

@@ -570,7 +570,6 @@ export default function CoveLayer(props: Props) {
               color={isl.accent}
               status={status}
               bobSeed={i * 0.7}
-              onPick={() => pickTotem(i)}
             />
           );
         })}
@@ -584,7 +583,6 @@ export default function CoveLayer(props: Props) {
           caption={`${senseStep.senseLabel} ${senseStep.targetLabel}`}
           color={isl.accent}
           status="idle"
-          onPick={pickSense}
         />
       )}
 
@@ -597,7 +595,6 @@ export default function CoveLayer(props: Props) {
           caption={lvl.pose.name}
           color={isl.accent}
           status={S.current.poseHolding ? 'chosen' : 'idle'}
-          onPick={beginPoseHold}
         />
       )}
 

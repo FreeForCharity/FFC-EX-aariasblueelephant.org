@@ -408,7 +408,6 @@ export default function StoryLayer(props: Props) {
                     color={isl.accent}
                     status={status}
                     bobSeed={oi * 0.7}
-                    onPick={() => pickHelp(oi)}
                   />
                 );
               })}

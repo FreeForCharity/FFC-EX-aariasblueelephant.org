@@ -15,6 +15,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
 import World, { type DayUnlocks, type AdvancedUnlocks } from './World';
+import WalkTargetMarker from './WalkTargetMarker';
 import HomeLife from './HomeLife';
 import RainbowPlay from './RainbowPlay';
 import type { AnimalSpecies } from './quest/Animal3D';
@@ -154,6 +155,11 @@ export default function GameCanvas({
       shadows
       // mouse-wheel zoom over the world (same channel as the 🔍 HUD buttons)
       onWheel={(e) => nudgeZoom(e.deltaY > 0 ? CAM_ZOOM_STEP : -CAM_ZOOM_STEP)}
+      // a tap that hits nothing walkable (open sky/water between islands) —
+      // island tops + bridge planks + interactive things all handle their own
+      // taps and stopPropagation, so this only fires for genuine misses; a
+      // silent no-op is the calm, no-fail choice here (never a buzzer)
+      onPointerMissed={() => {}}
       dpr={dpr}
       gl={{
         antialias: false, // the composer + dpr handle edges; saves fill-rate
@@ -195,6 +201,9 @@ export default function GameCanvas({
 
       <Suspense fallback={null}>
         <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} dayUnlocks={dayUnlocks} advancedUnlocks={advancedUnlocks} />
+        {/* tap-to-walk: a small fading accent ring wherever Nilu is currently
+            headed (ground tap, or a tapped orb/item/pad/NPC/sign) */}
+        <WalkTargetMarker reduceMotion={reduceMotion} />
         <Player
           ref={player}
           emotion={emotion}

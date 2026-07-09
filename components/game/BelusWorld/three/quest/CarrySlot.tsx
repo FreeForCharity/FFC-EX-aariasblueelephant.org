@@ -12,6 +12,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { makeLabelTexture } from './emojiTexture';
+import { queueWalkTo } from '../input';
 
 export type SlotStatus = 'idle' | 'next' | 'filled' | 'wrong';
 
@@ -97,7 +98,17 @@ export default function CarrySlot({
 
   return (
     <group ref={grp} position={position}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          // a tap walks Nilu to the pad/table precisely — the delivery itself
+          // still only happens via the normal walk-in proximity check
+          queueWalkTo(position[0], position[2]);
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'auto')}
+      >
         <cylinderGeometry args={[isSign ? 0.85 : 0.62, isSign ? 0.95 : 0.7, 0.14, 24]} />
         <meshStandardMaterial
           color={glow}
