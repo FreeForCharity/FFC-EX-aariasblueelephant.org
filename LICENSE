@@ -1,0 +1,19 @@
+Copyright © 2026 Aaria's Blue Elephant (aariasblueelephant.org)
+All rights reserved.
+
+The games, artwork, characters (including "Nilu"), game code under public/
+(blockcraft, doughlab, elly-tubbies, helpinghands, magnetblocks, roadsafety,
+craft3d) and the Belu's World / Nilu's World game code under components/game/
+are original works created for Aaria's Blue Elephant, a nonprofit supporting
+children with autism and their families.
+
+You may NOT copy, redistribute, modify, or reuse the games or their code,
+in whole or in part, for any purpose — commercial or non-commercial —
+without prior written permission.
+
+We're a small nonprofit and we usually say yes to good causes.
+Want to use something? Just ask: buddy@aariasblueelephant.org
+
+Website framework code (build scripts, site pages) may reference third-party
+open-source libraries (React, three.js, etc.) which remain under their own
+licenses.
