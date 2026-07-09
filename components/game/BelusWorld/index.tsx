@@ -436,9 +436,10 @@ export default function BelusWorldGame() {
       let nextProgress = res.progress;
       if (calmChoices && calmChoices.length > 0) nextProgress = saveCalmPlan(nextProgress, calmChoices);
 
-      // Nilu's Day arc: mastering an island (5/5) AFTER the fresh/continue
-      // choice records the stage — this is what the 'fresh' gating path reads.
-      if (completedLevels(nextProgress, zone) >= MAX_LEVEL) {
+      // Nilu's Day arc: finishing the island's current task (first completed
+      // level) AFTER the fresh/continue choice records the stage — the next
+      // island forms immediately. This is what the 'fresh' gating path reads.
+      if (completedLevels(nextProgress, zone) >= 1) {
         nextProgress = recordDayStage(nextProgress, zone);
       }
 

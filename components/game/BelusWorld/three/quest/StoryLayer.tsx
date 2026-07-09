@@ -22,7 +22,7 @@ import { makeLabelTexture } from './emojiTexture';
 import { MEADOW_STORY } from './storyContent';
 import type { QuestStatus } from './QuestLayer';
 import { Firefly, FloatingHeart, MeadowFinale, TrotGroup, GreetBurst } from './meadowExtras';
-import InviteBubble from './InviteBubble';
+import StartSign from './StartSign';
 
 const ZONE = 'meadow' as const;
 const APPROACH = 4.6; // stay this close to a friend while observing & choosing
@@ -70,6 +70,7 @@ interface State {
 interface Props {
   level: number;
   paused: boolean;
+  reduceMotion: boolean;
   /** animal species the child has healed before (they remember!) */
   healedFriends: string[];
   speak: (line: string) => void;
@@ -356,10 +357,11 @@ export default function StoryLayer(props: Props) {
       <Ticker fnRef={frame} />
       {/* the host friend waves you over — walk right up to them to begin */}
       {inviteHost && (
-        <InviteBubble
+        <StartSign
           position={[hostX, isl.top + 2.7, hostZ]}
           ground={[hostX, isl.top, hostZ]}
           color={isl.accent}
+          reduceMotion={props.reduceMotion}
         />
       )}
       {friends.map((fr, i) => {

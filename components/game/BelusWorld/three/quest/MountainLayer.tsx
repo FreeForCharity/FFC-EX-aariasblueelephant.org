@@ -22,7 +22,7 @@ import type { BeluEmotion } from '../../BeluCharacter';
 import { makeLabelTexture } from './emojiTexture';
 import { MOUNTAIN_ROUTINE, NIMBUS_LINES, type Station } from './mountainContent';
 import { MorningSun, Nimbus, StepStone, StarSpark } from './mountainExtras';
-import InviteBubble from './InviteBubble';
+import StartSign from './StartSign';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'mountain' as const;
@@ -61,6 +61,7 @@ interface State {
 interface Props {
   level: number;
   paused: boolean;
+  reduceMotion: boolean;
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
@@ -329,10 +330,11 @@ export default function MountainLayer(props: Props) {
 
       {/* Nimbus waves you over — walk right up to begin the morning routine */}
       {!S.current.active && !S.current.disarmed && (
-        <InviteBubble
+        <StartSign
           position={[isl.cx - 5.4, isl.top + 4.6, isl.cz - 4.6]}
           ground={[isl.cx - 5.4, isl.top, isl.cz - 4.6]}
           color={isl.accent}
+          reduceMotion={props.reduceMotion}
         />
       )}
 
@@ -408,12 +410,12 @@ function Station3D({
 }) {
   const grp = useRef<THREE.Group>(null);
   const t = useRef(seed);
-  const tex = useRef<THREE.CanvasTexture>(makeLabelTexture(emoji, label, true));
+  const tex = useRef<THREE.CanvasTexture>(makeLabelTexture(emoji, label, true, accent));
   const checkTex = useRef<THREE.CanvasTexture>(makeLabelTexture('✅'));
   // refresh the sign texture if the emoji/label ever changes for this slot
-  const key = `${emoji} ${label}`;
+  const key = `${emoji} ${label} ${accent}`;
   if ((tex.current as unknown as { __k?: string }).__k !== key) {
-    tex.current = makeLabelTexture(emoji, label, true);
+    tex.current = makeLabelTexture(emoji, label, true, accent);
     (tex.current as unknown as { __k?: string }).__k = key;
   }
 
@@ -442,18 +444,19 @@ function Station3D({
         <ringGeometry args={[0.5, 0.82, 28]} />
         <meshBasicMaterial color={done ? '#7CFC9A' : accent} transparent opacity={done ? 0.55 : 0.3} side={THREE.DoubleSide} />
       </mesh>
-      {/* a little pedestal you walk up to */}
+      {/* a little pedestal you walk up to — a subtle accent glow so it never reads as flat/pale */}
       <mesh castShadow position={[0, 0.35, 0]}>
         <cylinderGeometry args={[0.5, 0.6, 0.7, 16]} />
-        <meshStandardMaterial color={accent} roughness={0.55} metalness={0.1} emissive={accent} emissiveIntensity={done ? 0.5 : 0.18} />
+        <meshStandardMaterial color={accent} roughness={0.55} metalness={0.1} emissive={accent} emissiveIntensity={done ? 0.75 : 0.5} />
       </mesh>
       {/* signpost stalk */}
       <mesh position={[0, 0.95, 0]}>
         <cylinderGeometry args={[0.06, 0.06, 0.6, 8]} />
         <meshStandardMaterial color="#caa46a" roughness={0.8} />
       </mesh>
-      {/* the emoji + word sign (sprite always faces camera, drawn on top) */}
-      <sprite position={[0, 1.7, 0]} scale={[1.6, 1.6, 1]} renderOrder={11}>
+      {/* the emoji + word sign (sprite always faces camera, drawn on top) — 1.4x larger
+          so the card reads as a real 3D object, not a pale sticker */}
+      <sprite position={[0, 1.7, 0]} scale={[2.24, 2.24, 1]} renderOrder={11}>
         <spriteMaterial map={tex.current} transparent depthWrite={false} depthTest={false} />
       </sprite>
       {/* ✅ badge once done */}

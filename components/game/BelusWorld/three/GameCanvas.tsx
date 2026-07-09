@@ -149,7 +149,10 @@ export default function GameCanvas({
         antialias: false, // the composer + dpr handle edges; saves fill-rate
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.05,
+        // 1.05 washed the scene out once station/orb emissives were raised
+        // (bright sky + white cards were blowing past white); 0.95 keeps
+        // colour saturated while staying plenty bright for a kids' game.
+        toneMappingExposure: 0.95,
       }}
       camera={{
         fov: 50,
@@ -218,6 +221,7 @@ export default function GameCanvas({
         <StoryLayer
           level={islandNextLevel.meadow}
           paused={paused}
+          reduceMotion={reduceMotion}
           healedFriends={healedFriends}
           onFriendHealed={onFriendHealed}
           speak={speak}
@@ -229,6 +233,7 @@ export default function GameCanvas({
         <ForestLayer
           level={islandNextLevel.forest}
           paused={paused}
+          reduceMotion={reduceMotion}
           healedFriends={healedFriends}
           onFriendHealed={onFriendHealed}
           speak={speak}
@@ -240,6 +245,7 @@ export default function GameCanvas({
         <MountainLayer
           level={islandNextLevel.mountain}
           paused={paused}
+          reduceMotion={reduceMotion}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}
@@ -249,6 +255,7 @@ export default function GameCanvas({
         <CoveLayer
           level={islandNextLevel.cove}
           paused={paused}
+          reduceMotion={reduceMotion}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}
@@ -275,8 +282,12 @@ export default function GameCanvas({
       {!calmMode && (
         <EffectComposer multisampling={0}>
           <Bloom
-            intensity={0.6}
-            luminanceThreshold={0.55}
+            // lower intensity + a higher threshold so bright whites (sky,
+            // snow, cards) stop blooming into a hazy overexposed look, while
+            // glowing orbs/stations (which sit well above threshold) still
+            // read as lively and lit.
+            intensity={0.45}
+            luminanceThreshold={0.62}
             luminanceSmoothing={0.3}
             mipmapBlur
           />
