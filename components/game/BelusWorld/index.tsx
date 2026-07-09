@@ -1072,7 +1072,7 @@ function IslandFormedToast({ info, reduceMotion, onClose }: { info: { zone: Acti
         <div className="text-6xl">{info.emoji}</div>
         <h2 className="mt-2 text-xl font-black text-slate-800">A new island appeared!</h2>
         <p className="mt-1 text-base font-bold text-sky-600">{info.label} just formed in the sky ✨</p>
-        <p className="mt-1 text-xs font-semibold text-slate-400">Follow the new rainbow bridge from Home!</p>
+        <p className="mt-1 text-xs font-semibold text-slate-400">Follow the new rainbow bridge to explore!</p>
         <button
           onClick={onClose}
           className="mt-4 rounded-full bg-sky-500 px-7 py-2.5 text-base font-bold text-white shadow-lg transition active:scale-95"

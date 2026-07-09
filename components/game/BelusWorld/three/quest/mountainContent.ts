@@ -78,7 +78,10 @@ function st(
 
 // A ring of station spots around the island centre, so the routine is a little
 // walking loop. Index = the visit order for ordered levels.
-const RING: [number, number][] = [
+// Exported so MountainLayer can reshuffle WHICH physical slot each step lands
+// on each real day — the routine's authored ORDER never changes, only the
+// pedestal placement does (see MountainLayer's daily station shuffle).
+export const RING: [number, number][] = [
   [0, -5], // top
   [4.5, -2.5], // upper-right
   [4.5, 2.5], // lower-right
@@ -89,8 +92,8 @@ const RING: [number, number][] = [
 
 // L4 safety pairs sit side by side (safe on the left, twin on the right) at a
 // few spots around the ring, so Nilu chooses by walking to the safe one.
-const SAFE_SPOTS: [number, number][] = [[-2.6, -4], [2.6, -4], [-2.6, 4], [2.6, 4]];
-const TWIN_DX = 2.4;
+export const SAFE_SPOTS: [number, number][] = [[-2.6, -4], [2.6, -4], [-2.6, 4], [2.6, 4]];
+export const TWIN_DX = 2.4;
 
 export const MOUNTAIN_ROUTINE: MountainLevel[] = [
   {

@@ -81,13 +81,15 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         >
           {muted ? '🔇' : '🔊'}
         </button>
+        {/* labeled + emerald so a child hunting for "how do I get back?" spots it
+            among the icon-only buttons — it teleports Nilu straight to home base */}
         <button
           onClick={onGoHome}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Go to home island"
-          title="Home base"
+          className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full bg-emerald-500/95 px-3 text-lg shadow-lg backdrop-blur transition hover:bg-emerald-400"
+          aria-label="Go back to home base"
+          title="Go back to home base"
         >
-          🏡
+          🏡<span className="text-sm font-bold text-white">Home</span>
         </button>
         <button
           onClick={onOpenWardrobe}

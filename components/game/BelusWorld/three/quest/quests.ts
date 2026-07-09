@@ -17,7 +17,7 @@ export interface Orb {
   correct?: boolean;
 }
 
-export type RoundKind = 'choice' | 'sequence' | 'multiPick' | 'breathe';
+export type RoundKind = 'choice' | 'sequence' | 'multiPick' | 'breathe' | 'carry' | 'sort' | 'steps';
 
 export interface QuestRound {
   kind: RoundKind;
@@ -34,6 +34,17 @@ export interface QuestRound {
   picks?: number;
   /** breathe: how many calm breath cycles */
   cycles?: number;
+  /** carry: things to carry to numbered pads, in the CORRECT order — the
+   *  array order itself is the correct delivery order (slot 0 = pad 1, etc).
+   *  sort: things to carry to a table — `table` says which table (index into
+   *  `tables`) each one belongs on; any delivery order is fine. */
+  items?: (Orb & { table?: number })[];
+  /** sort: the labeled tables/bins the child sorts `items` onto */
+  tables?: Orb[];
+  /** steps: how many stepping stones to walk, in order, 1..count */
+  count?: number;
+  /** steps: optional short captions spoken instead of plain numbers */
+  labels?: string[];
   /** optional success line when the round is solved */
   doneLine?: string;
 }
@@ -687,14 +698,14 @@ const SCHOOL: Quest[] = [
     outro: 'You know just how to get ready to learn. Great job!',
     moment: 'got ready to learn on School Island',
     rounds: [
-      { kind: 'sequence', say: "Let's get ready to learn! Walk into the steps in order.",
-        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '🎒' } },
-        pool: [
-          step('👋', 'Say bye to my grown-up'), step('🎒', 'Put my backpack away'),
-          step('🪑', 'Sit at my spot'),
+      { kind: 'carry', say: "Let's pack the backpack! Pick up the book and carry it to spot 1!",
+        npc: { face: '🎒', mood: MOOD('happy') },
+        items: [
+          { emoji: '📚', caption: 'book' },
+          { emoji: '🥪', caption: 'lunchbox' },
+          { emoji: '💧', caption: 'water bottle' },
         ],
-        order: ['Put my backpack away', 'Say bye to my grown-up', 'Sit at my spot'],
-        doneLine: 'Backpack away, bye said, spot found — ready to learn!' },
+        doneLine: 'Packed and ready — book, lunchbox, water bottle!' },
       { kind: 'choice', say: 'The teacher is talking to the class. What do I do?',
         npc: { face: '🦉', mood: MOOD('happy') },
         options: [
@@ -752,11 +763,18 @@ const SCHOOL: Quest[] = [
         options: [
           step('🙏', 'Ask first', true), step('🤚', 'Take it without asking'), step('😋', 'Grab some'),
         ], doneLine: "Asking first is kind. Then it's Bear's choice to share." },
-      { kind: 'multiPick', say: "Let's find what's in YOUR lunch area. Walk into each one.", picks: 3,
+      { kind: 'sort', say: "Let's sort lunch things! Carry each one to whose it is.",
         npc: { face: '🦉', mood: MOOD('happy') },
-        options: [
-          step('🍱', 'My lunchbox'), step('💧', 'My water bottle'), step('🧻', 'My napkin'),
-        ], doneLine: "Those are all yours! Bear's cookie belongs to Bear." },
+        tables: [
+          { emoji: '🎒', caption: 'My things' },
+          { emoji: '🐻', caption: "Bear's things" },
+        ],
+        items: [
+          { emoji: '🍱', caption: 'My lunchbox', table: 0 },
+          { emoji: '💧', caption: 'My water bottle', table: 0 },
+          { emoji: '🍪', caption: "Bear's cookie", table: 1 },
+        ],
+        doneLine: "Yours stay with you, Bear's stay with Bear!" },
     ],
   },
   {
@@ -814,11 +832,19 @@ const AFTERNOON: Quest[] = [
     outro: 'That was the nicest snack time ever.',
     moment: 'shared snack time at the Fun Corner',
     rounds: [
-      { kind: 'choice', say: "It's snack time! Which is a healthy pick?",
+      { kind: 'sort', say: "Let's sort snacks! Carry each one to the right plate.",
         npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🍎' } },
-        options: [
-          step('🍎', 'An apple', true), step('🍬', 'Candy'), step('🍟', 'Chips'),
-        ], doneLine: 'Yes! An apple is a healthy pick.' },
+        tables: [
+          { emoji: '🍎', caption: 'Every day' },
+          { emoji: '🎉', caption: 'Sometimes' },
+        ],
+        items: [
+          { emoji: '🍎', caption: 'apple', table: 0 },
+          { emoji: '🥕', caption: 'carrot', table: 0 },
+          { emoji: '🍬', caption: 'candy', table: 1 },
+          { emoji: '🍟', caption: 'chips', table: 1 },
+        ],
+        doneLine: 'Every-day foods and sometimes-treats — both are okay, just not the same amount!' },
       { kind: 'choice', say: 'You want a snack from the kitchen. What do you do?',
         npc: { face: '🐕', mood: MOOD('happy') },
         options: [
@@ -837,13 +863,11 @@ const AFTERNOON: Quest[] = [
         options: [
           step('🧸', 'Play', true), step('📚', 'More homework'),
         ], doneLine: 'First homework, then play — that is the plan!' },
-      { kind: 'sequence', say: "Let's say the First-Then plan in order. Walk into the steps.",
+      { kind: 'steps', say: "Let's walk the plan: First, Then, Next!",
         npc: { face: '🐕', mood: MOOD('happy') },
-        pool: [
-          step('📝', 'First: homework'), step('🧸', 'Then: play'), step('🍎', 'Then: snack'),
-        ],
-        order: ['First: homework', 'Then: play'],
-        doneLine: '"First homework, then play." You did it!' },
+        count: 3,
+        labels: ['First: homework 📖', 'Then: puzzle 🧩', 'Next: play ⚽'],
+        doneLine: 'First homework, then puzzle, next play — you followed the whole plan!' },
     ],
   },
   {
@@ -875,14 +899,14 @@ const AFTERNOON: Quest[] = [
     outro: 'Everything back in its place — the Fun Corner sparkles!',
     moment: 'tidied up at the Fun Corner',
     rounds: [
-      { kind: 'sequence', say: 'Time to tidy up! Walk into the steps in order.',
+      { kind: 'carry', say: 'Time to tidy up! Pick up the toys and carry them to spot 1!',
         npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🧸' } },
-        pool: [
-          step('🧸', 'Toys in the bin'), step('📚', 'Books on the shelf'),
-          step('👕', 'Clothes in the basket'),
+        items: [
+          { emoji: '🧸', caption: 'toys' },
+          { emoji: '📚', caption: 'books' },
+          { emoji: '👕', caption: 'clothes' },
         ],
-        order: ['Toys in the bin', 'Books on the shelf', 'Clothes in the basket'],
-        doneLine: 'Tidy and cozy — great job!' },
+        doneLine: 'Toys in the bin, books on the shelf, clothes in the basket — tidy!' },
       { kind: 'choice', say: 'One lost sock is on the floor. Where does it go?',
         npc: { face: '🐕', mood: MOOD('happy') },
         options: [
@@ -945,11 +969,10 @@ const NIGHT: Quest[] = [
         pool: [step('🪥', 'Get my brush'), step('🧴', 'Add toothpaste'), step('😁', 'Brush!')],
         order: ['Get my brush', 'Add toothpaste', 'Brush!'],
         doneLine: 'Brush brush brush — sparkly!' },
-      { kind: 'choice', say: 'How long do we brush?',
-        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🎵' } },
-        options: [
-          step('🎵', 'Until the song ends', true), step('⏱️', 'Just one second'),
-        ], doneLine: 'Brushing until the song ends gets every tooth clean.' },
+      { kind: 'steps', say: 'Brush time! Count with me as you walk each number.',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🪥' } },
+        count: 4,
+        doneLine: 'One, two, three, four — every tooth is sparkly clean!' },
     ],
   },
   {
@@ -958,11 +981,14 @@ const NIGHT: Quest[] = [
     outro: 'Your bed is all ready for a cozy night!',
     moment: 'got my bed ready on Sleepy Island',
     rounds: [
-      { kind: 'multiPick', say: 'Walk into each thing your bed needs.', picks: 4,
+      { kind: 'carry', say: 'Pick up the pillow and carry it to spot 1 on the bed!',
         npc: { face: '🐑', mood: MOOD('calm') },
-        options: [
-          step('🛏️', 'My pillow'), step('🧣', 'My blanket'), step('🧸', 'My teddy'), step('🥤', 'My water cup'),
-        ], doneLine: 'Pillow, blanket, teddy, water cup — all ready!' },
+        items: [
+          { emoji: '🛏️', caption: 'pillow' },
+          { emoji: '🧸', caption: 'teddy' },
+          { emoji: '💧', caption: 'water cup' },
+        ],
+        doneLine: 'Pillow, teddy, water cup — your bed is all ready!' },
     ],
   },
   {

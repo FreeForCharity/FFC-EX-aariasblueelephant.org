@@ -146,12 +146,14 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'School Island',
     emoji: '🏫',
   },
-  // 🏡 Fun Corner — after-school play + home routines. North-west, between the
-  // Rainbow Playground and Feelings Meadow.
+  // 🏡 Fun Corner — after-school play + home routines. Continues the day's
+  // sweep south-east of School Island (chained FROM school, not home — the
+  // day arc reads as one continuous path: mountain → school → afternoon →
+  // night, so finishing a stage always leads onward, never back to base).
   afternoon: {
     id: 'afternoon',
-    cx: -27,
-    cz: -33,
+    cx: 44,
+    cz: -48,
     radius: 8.5,
     top: 2,
     grass: '#ffc9a3',
@@ -160,12 +162,13 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'Fun Corner',
     emoji: '🏡',
   },
-  // 🌙 Sleepy Island — winding down for the night. Due east, between Morning
-  // Mountain and Friendship Forest.
+  // 🌙 Sleepy Island — winding down for the night. Final stop of the day's
+  // sweep, chained FROM Fun Corner, curving back east toward Morning
+  // Mountain's side of the map so the day arc closes into a loop shape.
   night: {
     id: 'night',
-    cx: 46,
-    cz: 8,
+    cx: 62,
+    cz: -28,
     radius: 8.5,
     top: 1.5,
     grass: '#9aa4d8',
@@ -188,10 +191,13 @@ export const BRIDGES: BridgeDef[] = [
   { from: 'home', to: 'shore', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   // bridge to the reward island — only walkable once it's unlocked
   { from: 'home', to: 'rainbow', halfWidth: 2.4, colors: RAINBOW_STRIPES },
-  // Day Arc islands — bridges only form when their island does
-  { from: 'home', to: 'school', halfWidth: 2.2, colors: RAINBOW_STRIPES },
-  { from: 'home', to: 'afternoon', halfWidth: 2.2, colors: RAINBOW_STRIPES },
-  { from: 'home', to: 'night', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  // Day Arc islands — bridges only form when their island does. The day
+  // chains forward from wherever Nilu just was (not back to Home) so each
+  // new stage genuinely feels like leveling up: Home → Mountain is the day's
+  // one entrance, then Mountain → School → Afternoon → Night sweeps onward.
+  { from: 'mountain', to: 'school', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'school', to: 'afternoon', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'afternoon', to: 'night', halfWidth: 2.2, colors: RAINBOW_STRIPES },
 ];
 
 // The zone islands that host a learning activity (everything except home + the
