@@ -29,7 +29,7 @@ import { makeLabelTexture } from './emojiTexture';
 import { FOREST_STORY, FOREST_TWINKLES, TWINKLE_FINDS, type SpellWord } from './forestContent';
 import { Twinkle, Wisp, GlowMushroom, WishTree, WordTrail, seeded } from './forestExtras';
 import { TrotGroup, GreetBurst } from './meadowExtras';
-import InviteBubble from './InviteBubble';
+import StartSign from './StartSign';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'forest' as const;
@@ -95,6 +95,7 @@ interface State {
 interface Props {
   level: number;
   paused: boolean;
+  reduceMotion: boolean;
   /** animal species the child has healed before (they remember!) */
   healedFriends: string[];
   speak: (line: string) => void;
@@ -494,10 +495,11 @@ export default function ForestLayer(props: Props) {
 
       {/* the host friend waves you over — walk right up to them to begin */}
       {!S.current.active && !S.current.disarmed && (
-        <InviteBubble
+        <StartSign
           position={[isl.cx + friends[0].pos[0], isl.top + 2.7, isl.cz + friends[0].pos[1]]}
           ground={[isl.cx + friends[0].pos[0], isl.top, isl.cz + friends[0].pos[1]]}
           color={isl.accent}
+          reduceMotion={props.reduceMotion}
         />
       )}
 

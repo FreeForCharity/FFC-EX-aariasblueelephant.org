@@ -24,7 +24,7 @@ import BreatheOrb from './BreatheOrb';
 import { makeLabelTexture } from './emojiTexture';
 import { COVE_LEVELS, SHELL_FINDS, DOLPHIN_JOKES, type CoveLevel, type CoveTotem } from './coveContent';
 import { shellLayout, Shell, StormWaves, DolphinBuddy, PopBubbles, type ShellSpot } from './coveExtras';
-import InviteBubble from './InviteBubble';
+import StartSign from './StartSign';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'cove' as const;
@@ -78,6 +78,7 @@ interface State {
 interface Props {
   level: number;
   paused: boolean;
+  reduceMotion: boolean;
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
@@ -524,10 +525,11 @@ export default function CoveLayer(props: Props) {
 
       {/* the calm-friend waves you over — walk right up to it to begin */}
       {!S.current.active && !S.current.disarmed && (
-        <InviteBubble
+        <StartSign
           position={[isl.cx, isl.top + 2.8, isl.cz]}
           ground={[isl.cx, isl.top, isl.cz]}
           color={isl.accent}
+          reduceMotion={props.reduceMotion}
         />
       )}
 

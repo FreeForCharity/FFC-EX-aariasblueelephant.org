@@ -367,12 +367,14 @@ export function isIslandComplete(p: GameProgress, zone: ActivityZone): boolean {
 
 // ---- Nilu's Day arc (☀️ mountain → 🏫 school → 🏡 afternoon → 🌙 night) ----
 
-/** Is this day-arc stage "done" for gating purposes? A 'fresh' player must
- *  re-earn each stage AFTER their choice (stagesDone); everyone else counts
- *  their plain completed levels. */
+/** Is this day-arc stage "done" for gating purposes? Finishing the island's
+ *  CURRENT task (one completed level) advances the day — the next island forms
+ *  right away. Levels 2-5 stay as richer replays of the same routine; the day
+ *  never asks a child to grind an island (or detour) before moving on.
+ *  A 'fresh' player re-earns each stage AFTER their choice (stagesDone). */
 export function dayStageComplete(p: GameProgress, zone: ActivityZone): boolean {
   if (p.dayArc.choice === 'fresh') return p.dayArc.stagesDone.includes(zone);
-  return completedLevels(p, zone) >= MAX_LEVEL;
+  return completedLevels(p, zone) >= 1;
 }
 
 /** Has this day-arc island FORMED yet? The first stage (mountain) is always
