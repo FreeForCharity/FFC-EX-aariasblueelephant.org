@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "fetch-data": "tsx scripts/fetch-resilience-data.ts",
-    "build": "npm run fetch-data && tsc && vite build && node prerender.js",
+    "build": "npm run fetch-data && tsc && vite build && node prerender.js && node scripts/minify-games.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -35,9 +35,11 @@
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.27",
     "express": "^5.2.1",
+    "html-minifier-terser": "^7.2.0",
     "postcss": "^8.5.16",
     "puppeteer": "^24.38.0",
     "tailwindcss": "^4.2.2",
+    "terser": "^5.49.0",
     "tsx": "^4.23.0",
     "typescript": "~5.8.2",
     "vite": "^6.4.3"
