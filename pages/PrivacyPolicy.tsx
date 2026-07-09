@@ -28,7 +28,7 @@ const PrivacyPolicy: React.FC = () => {
                     <p className="text-xl font-medium text-sky-600 dark:text-sky-400">
                         Aaria's Blue Elephant is committed to transparency, inclusion, and the safeguarding of our community. The following documents detail our privacy, terms of use, donation policies, and security commitments.
                     </p>
-                    <p className="text-sm text-slate-500 mb-12">Last updated: February 28, 2025</p>
+                    <p className="text-sm text-slate-500 mb-12">Last updated: July 10, 2026</p>
 
                     {/* Table of Contents */}
                     <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 mb-12">
@@ -139,6 +139,23 @@ const PrivacyPolicy: React.FC = () => {
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Children's Participation</h3>
                         <p>
                             While our mission is to serve neurodivergent and neurotypical children at community events, all <strong>data collection through our digital platform is the responsibility of the attending adult</strong> (parent or legal guardian). We do not collect personal data directly from children. Parents who share any information about their children in testimonials or event registrations do so on behalf of their child as legal guardians.
+                        </p>
+
+                        <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Our Free Games for Children</h3>
+                        <p>
+                            Our website hosts free browser games designed for children (including Nilu's World, Block Craft 3D, Elly-Tubbies, Dough Lab, Magnet Blocks, Road Safety Heroes, and Nilu's Helping Hands). These games were deliberately built to <strong>collect no personal information from children</strong>:
+                        </p>
+                        <ul>
+                            <li><strong>No accounts, no sign-in.</strong> The games never ask a child to register, and playing them requires no personal information.</li>
+                            <li><strong>Everything stays on your device.</strong> Game progress, settings, creations, and in-game photos are saved only in your browser's local storage on your own device. None of it is transmitted to us or to any third party, and we cannot see it.</li>
+                            <li><strong>Names are optional and local.</strong> Some games let a child enter a first name or nickname so the game can greet them. That name is stored only on your device and is never sent anywhere. A nickname works just as well as a real name.</li>
+                            <li><strong>No advertising and no analytics in the games.</strong> The game pages contain no ads, no ad networks, and no analytics or tracking scripts.</li>
+                            <li><strong>Sharing is a file you control.</strong> Some games can export a creation or replay as a small file so a child can share it with a friend. These files contain only game data (blocks, paths, dough shapes) — never a name or any personal information. Sharing happens entirely outside our systems, through whatever channel the parent chooses.</li>
+                            <li><strong>Voice features use your browser.</strong> Read-aloud narration uses your device's built-in speech. One game offers an optional voice-answer mode that uses your browser's speech-recognition service; depending on your browser, audio may be processed by your browser's vendor (for example, Google for Chrome) to convert speech to text. We never receive or store any audio. This mode is off by default and can be disabled in the game's settings.</li>
+                            <li><strong>Printables stay with you.</strong> Certificates or photos a child can download are generated on your device and are not uploaded to us.</li>
+                        </ul>
+                        <p>
+                            <strong>Parents:</strong> you can erase all game data at any time by clearing your browser's site data for this website, or by using the "start over" / reset options inside each game. Several games also include a parent- or guardian-only summary panel (gated behind a simple adult question) showing what your child practiced — that summary is generated from the on-device data and is likewise never transmitted to us.
                         </p>
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Parental Consent</h3>
