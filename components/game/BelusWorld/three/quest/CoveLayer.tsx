@@ -28,6 +28,8 @@ import InviteBubble from './InviteBubble';
 import type { QuestStatus } from './QuestLayer';
 
 const ZONE = 'cove' as const;
+const POSE_HOLD_TICK = 0.9; // seconds between each spoken count of a pose hold
+const COUNT_WORDS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
 const TOTEM_DIST = 3.0; // how far the totems sit out in front, toward home
 const TOTEM_SPREAD = 2.9; // sideways gap between totems (no overlap)
 const TOTEM_PICK = 1.6; // walk this close to a totem to choose it
@@ -44,7 +46,14 @@ interface State {
   level: number;
   disarmed: boolean;
   // phase of play within an active session
-  phase: 'pre' | 'breathing' | 'done';
+  phase: 'pre' | 'senses' | 'pose' | 'breathing' | 'done';
+  // five-senses grounding round bookkeeping (index of the current step)
+  senseIdx: number;
+  // "copy the pose" round bookkeeping
+  poseHolding: boolean;
+  poseDone: boolean;
+  poseCountsLeft: number;
+  poseNextCountAt: number;
   // how calm the sea is, 0 (full storm) → 1 (fully calm). Animates toward target.
   calm: number;
   calmTarget: number;
@@ -99,7 +108,8 @@ export default function CoveLayer(props: Props) {
   const bump = () => force((v) => (v + 1) % 1_000_000);
   const S = useRef<State>({
     clock: 0, active: false, level: props.level, disarmed: false,
-    phase: 'pre', calm: 0, calmTarget: 0, picked: [],
+    phase: 'pre', senseIdx: 0, poseHolding: false, poseDone: false, poseCountsLeft: 0, poseNextCountAt: 0,
+    calm: 0, calmTarget: 0, picked: [],
     wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
     shells: [], shellFound: [], shellFoundAt: [], shellCount: 0,
     sparkleAt: null, sparkleUntil: 0, dolphinGreeted: false, jokeShown: false,
@@ -157,6 +167,11 @@ export default function CoveLayer(props: Props) {
     st.finishAt = 0;
     st.calm = 0;
     st.calmTarget = 0;
+    st.senseIdx = 0;
+    st.poseHolding = false;
+    st.poseDone = false;
+    st.poseCountsLeft = 0;
+    st.poseNextCountAt = 0;
     // scatter this level's hidden treasure shells (deterministic per level)
     st.shells = shellLayout(isl.cx, isl.cz, isl.radius, lvl.shells, (props.level + 1) * 5.13);
     st.shellFound = st.shells.map(() => false);
@@ -173,12 +188,73 @@ export default function CoveLayer(props: Props) {
       st.lockUntil = st.clock + 0.4;
       emitStatus('question', lvl.intro, preHint(lvl));
     } else {
-      // no pre-step → go straight to breathing
-      st.phase = 'breathing';
-      props.setEmotion('calm');
-      props.speak(lvl.breatheCue);
-      emitStatus('question', lvl.breatheCue, 'Follow the bubble and breathe 🫧');
+      // no pre-step → move on to the next round (senses → pose → breathing)
+      advancePhase(lvl);
     }
+    bump();
+  }
+
+  // decide + enter the next round in the sequence: five-senses grounding (if
+  // this level has one and it isn't done), then a "copy the pose" hold (if
+  // this level has one and it isn't done), then finally the calming breaths.
+  function advancePhase(lvl: CoveLevel) {
+    const st = S.current;
+    if (lvl.senses && lvl.senses.length > 0 && st.senseIdx < lvl.senses.length) {
+      st.phase = 'senses';
+      const step = lvl.senses[st.senseIdx];
+      props.setEmotion('curious');
+      props.speak(`Let's notice with our senses! Find something you can ${step.senseLabel} ${step.senseEmoji}`);
+      emitStatus('question', `Find something you can ${step.senseLabel} ${step.senseEmoji}`, `Walk to ${step.targetLabel} ${step.targetEmoji}`);
+      return;
+    }
+    if (lvl.pose && !st.poseDone) {
+      st.phase = 'pose';
+      st.poseHolding = false;
+      props.setEmotion('curious');
+      props.speak(`Let's do a pose together — ${lvl.pose.name} ${lvl.pose.emoji}! Walk to it.`);
+      emitStatus('question', `Walk to the ${lvl.pose.name} pose`, `${lvl.pose.emoji} ${lvl.pose.name}`);
+      return;
+    }
+    st.phase = 'breathing';
+    props.setEmotion('calm');
+    props.speak(lvl.breatheCue);
+    emitStatus('question', lvl.breatheCue, 'Follow the bubble and breathe 🫧');
+  }
+
+  // child walked into / tapped the current five-senses target
+  function pickSense() {
+    const st = S.current;
+    if (st.phase !== 'senses' || st.clock < st.lockUntil) return;
+    const lvl = COVE_LEVELS[clampLevel(st.level)];
+    const steps = lvl.senses ?? [];
+    const step = steps[st.senseIdx];
+    if (!step) return;
+    props.playSound('correct');
+    props.setEmotion('happy');
+    props.speak(`Yes! You found ${step.targetLabel} with what you ${step.senseLabel.toLowerCase()}. 🌟`);
+    st.senseIdx += 1;
+    st.lockUntil = st.clock + 0.6;
+    if (st.senseIdx >= steps.length) {
+      advancePhase(lvl);
+    } else {
+      const next = steps[st.senseIdx];
+      emitStatus('question', `Now find something you can ${next.senseLabel} ${next.senseEmoji}`, `Walk to ${next.targetLabel} ${next.targetEmoji}`);
+    }
+    bump();
+  }
+
+  // child walked into / tapped the pose totem → begin the slow 3-2-1 hold
+  function beginPoseHold() {
+    const st = S.current;
+    if (st.phase !== 'pose' || st.poseHolding || st.poseDone) return;
+    const lvl = COVE_LEVELS[clampLevel(st.level)];
+    if (!lvl.pose) return;
+    st.poseHolding = true;
+    st.poseCountsLeft = 3;
+    st.poseNextCountAt = st.clock + POSE_HOLD_TICK;
+    props.playSound('tap');
+    props.speak(lvl.pose.cue);
+    emitStatus('question', `Hold your ${lvl.pose.name}…`, 'Nice and steady 💙');
     bump();
   }
 
@@ -231,12 +307,9 @@ export default function CoveLayer(props: Props) {
     st.lockUntil = st.clock + 0.3;
     props.playSound('correct');
     if (st.picked.length >= need) {
-      // pre-step complete → begin the calming breaths
-      st.phase = 'breathing';
+      // pre-step complete → move on (senses → pose → breathing)
       st.lockUntil = st.clock + 0.5;
-      props.setEmotion('calm');
-      props.speak(lvl.breatheCue);
-      emitStatus('question', lvl.breatheCue, 'Follow the bubble and breathe 🫧');
+      advancePhase(lvl);
     } else {
       props.setEmotion('happy');
       emitStatus('question', lvl.intro, `Nice! Walk into ${need - st.picked.length} more 💙`);
@@ -264,15 +337,26 @@ export default function CoveLayer(props: Props) {
   // one notch (so the child SEES their breathing calm the storm).
   function onBreathPhase(label: string) {
     const st = S.current;
-    props.speak(label);
-    if (label.startsWith('Breathe out')) {
-      const lvl = COVE_LEVELS[clampLevel(st.level)];
-      // step the calm target up by one breath's worth toward fully calm
-      const stepEach = 1 / Math.max(1, lvl.cycles);
-      st.calmTarget = Math.min(1, st.calmTarget + stepEach);
-      props.playSound('tap'); // soft water "settle" tick
-      bump();
+    const lvl = COVE_LEVELS[clampLevel(st.level)];
+    if (!label.startsWith('Breathe out')) {
+      props.speak(label);
+      return;
     }
+    // step the calm target up by one breath's worth toward fully calm
+    const stepEach = 1 / Math.max(1, lvl.cycles);
+    st.calmTarget = Math.min(1, st.calmTarget + stepEach);
+    props.playSound('tap'); // soft water "settle" tick
+    if (lvl.counting) {
+      // counting-breath round: speak the running count instead of the label,
+      // with a visual counter shown via the task-card dots/hint
+      const breathNum = Math.min(lvl.cycles, Math.round(st.calmTarget * lvl.cycles));
+      const word = COUNT_WORDS[breathNum - 1] ?? String(breathNum);
+      props.speak(`${word}! 🦋`);
+      emitStatus('question', lvl.breatheCue, `Breath ${breathNum} of ${lvl.cycles} 🦋`);
+    } else {
+      props.speak(label);
+    }
+    bump();
   }
 
   function onBreatheDone() {
@@ -297,6 +381,8 @@ export default function CoveLayer(props: Props) {
     ];
     if (st.active && st.phase === 'pre') {
       totemLayout(preTotems(lvl).length).forEach((p) => solids.push({ x: p[0], z: p[2], r: 0.7 }));
+    } else if (st.active && (st.phase === 'senses' || st.phase === 'pose')) {
+      totemLayout(1).forEach((p) => solids.push({ x: p[0], z: p[2], r: 0.7 }));
     }
     dynamicSolids.cove = solids;
 
@@ -363,6 +449,36 @@ export default function CoveLayer(props: Props) {
       }
       if (best >= 0) pickTotem(best);
     }
+    // during the senses round, detect Nilu walking into the current target
+    if (st.phase === 'senses' && st.clock >= st.lockUntil) {
+      const pos = totemLayout(1)[0];
+      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
+      if (d < TOTEM_PICK) pickSense();
+    }
+    // during the pose round: detect Nilu walking up to begin the hold, then
+    // run the slow spoken 3-2-1 count while they hold it
+    if (st.phase === 'pose' && !st.poseHolding && !st.poseDone) {
+      const pos = totemLayout(1)[0];
+      const d = Math.hypot(beluPos.x - pos[0], beluPos.z - pos[2]);
+      if (d < TOTEM_PICK) beginPoseHold();
+    }
+    if (st.phase === 'pose' && st.poseHolding && st.clock >= st.poseNextCountAt) {
+      if (st.poseCountsLeft > 0) {
+        props.speak(String(st.poseCountsLeft));
+        props.playSound('tap');
+        emitStatus('question', `Hold your ${lvl.pose!.name}…`, String(st.poseCountsLeft));
+        st.poseCountsLeft -= 1;
+        st.poseNextCountAt = st.clock + POSE_HOLD_TICK;
+      } else {
+        st.poseHolding = false;
+        st.poseDone = true;
+        props.playSound('correct');
+        props.setEmotion('excited');
+        props.speak(`Lovely ${lvl.pose!.name}! You held so still. 🌟`);
+        advancePhase(lvl);
+      }
+      bump();
+    }
     // breathing & done phases drive themselves via BreatheOrb callbacks
   };
 
@@ -370,6 +486,8 @@ export default function CoveLayer(props: Props) {
   const lvl = COVE_LEVELS[clampLevel(S.current.level)];
   const totems = preTotems(lvl);
   const layout = S.current.active && S.current.phase === 'pre' ? totemLayout(totems.length) : [];
+  const singleLayout = S.current.active && (S.current.phase === 'senses' || S.current.phase === 'pose') ? totemLayout(1) : [];
+  const senseStep = lvl.senses?.[S.current.senseIdx];
   const calm = S.current.calm;
   const seaCalm = calm > 0.92; // fully-calm celebration threshold
 
@@ -442,6 +560,32 @@ export default function CoveLayer(props: Props) {
             />
           );
         })}
+
+      {/* five-senses grounding round — one tappable target at a time */}
+      {S.current.active && S.current.phase === 'senses' && senseStep && singleLayout[0] && (
+        <AnswerOrb
+          key={`${S.current.level}-sense-${S.current.senseIdx}`}
+          position={singleLayout[0]}
+          emoji={senseStep.targetEmoji}
+          caption={`${senseStep.senseLabel} ${senseStep.targetLabel}`}
+          color={isl.accent}
+          status="idle"
+          onPick={pickSense}
+        />
+      )}
+
+      {/* "copy the pose" totem — walk to it, then hold through the 3-2-1 count */}
+      {S.current.active && S.current.phase === 'pose' && !S.current.poseDone && lvl.pose && singleLayout[0] && (
+        <AnswerOrb
+          key={`${S.current.level}-pose`}
+          position={singleLayout[0]}
+          emoji={lvl.pose.emoji}
+          caption={lvl.pose.name}
+          color={isl.accent}
+          status={S.current.poseHolding ? 'chosen' : 'idle'}
+          onPick={beginPoseHold}
+        />
+      )}
 
       {/* the breathing bubble — appears once we're breathing the storm away */}
       {S.current.active && S.current.phase === 'breathing' && (

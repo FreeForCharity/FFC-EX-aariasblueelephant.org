@@ -15,6 +15,7 @@ import {
   ZONES,
   MAX_LEVEL,
   MAX_STARS_PER_ISLAND,
+  DAY_BOOK_STICKERS,
   getGrowth,
   islandStars,
   completedLevels,
@@ -29,6 +30,9 @@ const SKILLS: Record<ActivityZone, string> = {
   cove: 'Calm & Senses',
   forest: 'Expressive Language',
   shore: 'Sharing & Turns',
+  school: 'School Skills',
+  afternoon: 'Home Routines',
+  night: 'Bedtime Routines',
 };
 
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
@@ -159,6 +163,45 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
               </div>
             );
           })}
+        </div>
+
+        {/* My Day Book — one sticker per level, earned on first completion */}
+        <h3 className="mb-2 mt-5 text-sm font-bold uppercase tracking-wide text-slate-400">
+          My Day Book 📖 ({progress.dayBook?.length ?? 0}/{ZONES.length * MAX_LEVEL})
+        </h3>
+        <div className="flex flex-col gap-3">
+          {ZONES.map((z) => (
+            <div key={z}>
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                <span>{ISLANDS[z].emoji}</span>
+                <span>{SKILLS[z]}</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {Array.from({ length: MAX_LEVEL }).map((_, i) => {
+                  const id = `${z}-${i + 1}`;
+                  const sticker = DAY_BOOK_STICKERS[id];
+                  const earned = !!progress.dayBook?.includes(id);
+                  return (
+                    <div
+                      key={id}
+                      title={earned ? sticker?.label : 'Not earned yet'}
+                      className="flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-center"
+                      style={{
+                        borderColor: earned ? '#ffd43b' : '#eef1f6',
+                        background: earned ? 'linear-gradient(160deg,#fff9e0,#fff)' : '#f8fafc',
+                        opacity: earned ? 1 : 0.55,
+                      }}
+                    >
+                      <span className="text-2xl">{earned ? sticker?.emoji : '❔'}</span>
+                      <span className="text-[9px] font-bold leading-tight text-slate-600">
+                        {earned ? sticker?.label : ''}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         <button

@@ -45,6 +45,40 @@ export interface CoveLevel {
   shells: number;
   /** what the dolphin buddy squeaks when it surfaces on the calm sea */
   dolphin: string;
+  /** an optional "copy the pose" round the child walks to and holds, played
+   *  after the pre-step (if any) and before breathing */
+  pose?: CovePose;
+  /** when true, the breathing round speaks a running count ("One! Two!…")
+   *  on each breath-out instead of just the phase label */
+  counting?: boolean;
+  /** an optional five-senses grounding mini-round (2-3 tappable orbs walked to
+   *  in sequence), played after the pre-step and before any pose/breathing */
+  senses?: CoveSenseStep[];
+}
+
+/** A "copy the pose" round: Nilu's friend shows a pose, the child walks to the
+ *  totem, and holds it through a slow spoken 3-2-1 count. */
+export interface CovePose {
+  emoji: string;
+  name: string;
+  /** spoken the moment the child arrives and the hold begins */
+  cue: string;
+}
+
+export const POSES: Record<string, CovePose> = {
+  crisscross: { emoji: '🧘', name: 'Criss-cross sit', cue: 'Sit crossed and tall, just like me.' },
+  tree: { emoji: '🌳', name: 'Tree pose', cue: 'Stand tall like a tree — arms up like branches!' },
+  butterfly: { emoji: '🦋', name: 'Butterfly wings', cue: 'Flap your arms slowly, like soft butterfly wings.' },
+  star: { emoji: '⭐', name: 'Star pose', cue: 'Arms and legs wide, like a bright star!' },
+  turtle: { emoji: '🐢', name: 'Turtle curl', cue: 'Curl up small and hug your knees.' },
+};
+
+/** One step of the five-senses grounding round: "find something you can ___". */
+export interface CoveSenseStep {
+  senseEmoji: string;
+  senseLabel: string; // 'SEE' | 'HEAR' | 'FEEL' …
+  targetEmoji: string; // the thing to walk to / tap
+  targetLabel: string;
 }
 
 /** Kind, gentle lines Nilu says as the child finds hidden shells (cycled). */
@@ -100,9 +134,11 @@ export const COVE_LEVELS: CoveLevel[] = [
     moment: 'calmed the stormy sea at the cove',
     cycles: 3,
     pre: { kind: 'none' },
-    breatheCue: 'Breathe slowly with the bubble. Each breath calms the waves.',
+    breatheCue: "Let's count 3 butterfly breaths together — follow the bubble.",
     shells: 4,
     dolphin: 'Splash! The dolphin leaps for joy because YOU made the sea so calm. 🐬',
+    pose: POSES.tree,
+    counting: true,
   },
   {
     goal: 'Send calm to your body, then breathe',
@@ -114,6 +150,7 @@ export const COVE_LEVELS: CoveLevel[] = [
     breatheCue: 'Now breathe with me, sending calm to that spot — and watch the sea settle.',
     shells: 4,
     dolphin: 'A dolphin surfaces and nods, as if to say "well done, calm friend." 🐬',
+    pose: POSES.butterfly,
   },
   {
     goal: 'Pick a calm strategy, then breathe',
@@ -125,6 +162,11 @@ export const COVE_LEVELS: CoveLevel[] = [
     breatheCue: 'Now one calm breath together — let the sea grow calm.',
     shells: 5,
     dolphin: 'The dolphin spins a happy loop above the bright, calm water! 🐬',
+    senses: [
+      { senseEmoji: '👀', senseLabel: 'SEE', targetEmoji: '🌸', targetLabel: 'the flower' },
+      { senseEmoji: '👂', senseLabel: 'HEAR', targetEmoji: '🌊', targetLabel: 'the wave' },
+      { senseEmoji: '🤲', senseLabel: 'FEEL', targetEmoji: '🌬️', targetLabel: 'the breeze' },
+    ],
   },
   {
     goal: 'Build your calm plan, then breathe',

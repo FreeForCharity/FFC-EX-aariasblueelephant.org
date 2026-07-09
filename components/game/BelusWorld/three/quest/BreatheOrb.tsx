@@ -100,10 +100,10 @@ export default function BreatheOrb({ position, cycles, color, reduceMotion, onDo
           roughness={0.1}
           metalness={0.2}
           transparent
-          opacity={0.5}
+          opacity={0.75}
         />
       </mesh>
-      <sprite ref={labelRef} position={[0, 2.6, 0]} scale={[2.4, 2.4, 1]} renderOrder={10}>
+      <sprite ref={labelRef} position={[0, 2.6, 0]} scale={[2.8, 2.8, 1]} renderOrder={10}>
         <spriteMaterial map={textures[0]} transparent depthWrite={false} depthTest={false} />
       </sprite>
       <pointLight color={color} intensity={2} distance={10} />

@@ -18,7 +18,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
-import { ISLANDS, ZONE_ISLANDS, type ZoneId } from './worldConfig';
+import { ISLANDS, ZONE_ISLANDS, isZoneFormed, type ZoneId } from './worldConfig';
 import { beluPos, dynamicSolids } from './playerState';
 import { Flower, makeRng } from './Scenery';
 import { Firefly, GreetBurst, TrotGroup } from './quest/meadowExtras';
@@ -55,6 +55,7 @@ const SPARKLE_ISLANDS: ZoneId[] = ['home', ...ZONE_ISLANDS];
 
 export interface DailySparkleSpot {
   id: string;
+  zone: ZoneId;
   x: number;
   z: number;
   y: number;
@@ -74,6 +75,7 @@ export function dailySparkleSpots(dateKey: string): DailySparkleSpot[] {
       const r = (0.45 + rng() * 0.33) * isl.radius;
       out.push({
         id: `${zone}:${i}`,
+        zone,
         x: isl.cx + Math.cos(a) * r,
         z: isl.cz + Math.sin(a) * r,
         y: isl.top + 0.9,
@@ -140,6 +142,7 @@ export default function HomeLife({
 
     // ---- daily hidden sparkles ----
     for (const sp of spots) {
+      if (!isZoneFormed(sp.zone)) continue; // island hasn't formed yet
       if (sparklesFound.includes(sp.id) || claimed.current.has(sp.id)) continue;
       if (Math.hypot(beluPos.x - sp.x, beluPos.z - sp.z) < SPARKLE_FIND) {
         claimed.current.add(sp.id);
@@ -201,7 +204,7 @@ export default function HomeLife({
 
       {/* ---- today's hidden sparkles, across the islands ---- */}
       {spots.map((sp, i) =>
-        sparklesFound.includes(sp.id) ? null : (
+        sparklesFound.includes(sp.id) || !isZoneFormed(sp.zone) ? null : (
           <Firefly key={sp.id} position={[sp.x, sp.y, sp.z]} found={false} seed={i + 2} />
         ),
       )}

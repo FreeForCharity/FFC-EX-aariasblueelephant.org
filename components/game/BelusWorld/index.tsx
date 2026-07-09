@@ -59,6 +59,13 @@ import {
   isIslandComplete,
   islandStars,
   MAX_STARS_PER_ISLAND,
+  MAX_LEVEL,
+  DAY_ARC,
+  dayStageComplete,
+  isDayZoneUnlocked,
+  recordDayStage,
+  setDayChoice,
+  markDayCelebrated,
   type GameProgress,
   type ActivityZone,
   type CosmeticSlot,
@@ -111,6 +118,17 @@ const STICKER_KEYS: Record<ActivityZone, string> = {
   cove: '🌊',
   forest: '🌳',
   shore: '🏖️',
+  school: '🏫',
+  afternoon: '🏡',
+  night: '🌙',
+};
+
+// Nilu's Day arc — the four stages of one day, in order (☀️→🏫→🏡→🌙)
+const DAY_STAGE_META: Record<string, { emoji: string; name: string }> = {
+  mountain: { emoji: '☀️', name: 'Morning Mountain' },
+  school: { emoji: '🏫', name: 'School Island' },
+  afternoon: { emoji: '🏡', name: 'Fun Corner' },
+  night: { emoji: '🌙', name: 'Sleepy Island' },
 };
 
 interface RewardInfo {
@@ -125,6 +143,8 @@ interface RewardInfo {
   starQuest?: boolean;
   /** a brand-new badge earned by this play (first one, if several) */
   newBadge?: Achievement;
+  /** a My Day Book sticker earned by finishing this level for the first time */
+  dayBookSticker?: { emoji: string; label: string };
 }
 
 export default function BelusWorldGame() {
@@ -168,6 +188,51 @@ export default function BelusWorldGame() {
   const rainbowUnlocked = useMemo(() => totalCompletedLevels(progress) >= 1, [progress]);
   worldRuntime.rainbowUnlocked = rainbowUnlocked;
 
+  // ---- Nilu's Day arc: each stage's island only forms once the previous
+  // stage is complete (school ⇐ mountain 5/5, afternoon ⇐ school 5/5,
+  // night ⇐ afternoon 5/5). 'fresh' players re-earn stages post-choice. ----
+  const schoolUnlocked = useMemo(() => isDayZoneUnlocked(progress, 'school'), [progress]);
+  const afternoonUnlocked = useMemo(() => isDayZoneUnlocked(progress, 'afternoon'), [progress]);
+  const nightUnlocked = useMemo(() => isDayZoneUnlocked(progress, 'night'), [progress]);
+  worldRuntime.schoolUnlocked = schoolUnlocked;
+  worldRuntime.afternoonUnlocked = afternoonUnlocked;
+  worldRuntime.nightUnlocked = nightUnlocked;
+  const dayUnlocks = useMemo(
+    () => ({ school: schoolUnlocked, afternoon: afternoonUnlocked, night: nightUnlocked }),
+    [schoolUnlocked, afternoonUnlocked, nightUnlocked],
+  );
+  const unlockedDayZones = useMemo(
+    () => (['school', 'afternoon', 'night'] as ActivityZone[]).filter((z) => dayUnlocks[z as 'school' | 'afternoon' | 'night']),
+    [dayUnlocks],
+  );
+
+  // the one-time fresh/continue chooser (players updating with real progress)
+  const needsDayChoice = progress.dayArc.choice === null && totalCompletedLevels(progress) > 0;
+  // new players never see the chooser — they simply live the day in order
+  useEffect(() => {
+    if (progress.dayArc.choice === null && totalCompletedLevels(progress) === 0) {
+      setProgress((p) => {
+        if (p.dayArc.choice !== null) return p;
+        const next = setDayChoice(p, 'continue');
+        saveProgress(next);
+        return next;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
+  const handleDayChoice = useCallback((choice: 'fresh' | 'continue') => {
+    setProgress((p) => {
+      const next = setDayChoice(p, choice);
+      saveProgress(next);
+      return next;
+    });
+    playSound('tap', settingsRef.current.sound);
+  }, []);
+
+  // island-forming celebration — fires once per day-arc island, the moment its
+  // unlock condition flips true (and any reward toast is out of the way)
+  const [islandFormed, setIslandFormed] = useState<{ zone: ActivityZone; label: string; emoji: string } | null>(null);
+
   // ---- Home life: daily sparkles, garden, jar, remembered friends ----
   const dateKey = todayKey();
 
@@ -191,6 +256,27 @@ export default function BelusWorldGame() {
     const ms = Math.max(4000, line.length * 95) * sp.dur;
     lineTimer.current = setTimeout(() => setBeluLine(null), ms);
   }, []);
+
+  // ---- island-forming celebration (once per island; waits for reward toast) ----
+  useEffect(() => {
+    if (phase !== 'world' || reward !== null || islandFormed !== null) return;
+    if (progress.dayArc.choice === null) return; // chooser still open
+    const unlockedFlags: Record<'school' | 'afternoon' | 'night', boolean> = dayUnlocks;
+    for (const z of ['school', 'afternoon', 'night'] as const) {
+      if (!unlockedFlags[z] || progress.dayArc.celebrated.includes(z)) continue;
+      const isl = ISLANDS[z];
+      setProgress((p) => {
+        const next = markDayCelebrated(p, z);
+        if (next !== p) saveProgress(next);
+        return next;
+      });
+      setIslandFormed({ zone: z, label: isl.label, emoji: isl.emoji });
+      playSound('growup', settingsRef.current.sound);
+      speak(`Look! A new island appeared — ${isl.label}! Let's go!`);
+      setEmotion('excited');
+      break; // one celebration at a time
+    }
+  }, [phase, reward, islandFormed, progress, dayUnlocks, speak]);
 
   // persist comfort + speed settings so they don't reset each visit
   useEffect(() => {
@@ -264,7 +350,7 @@ export default function BelusWorldGame() {
     };
   }, [phase]);
 
-  const paused = showSettings || showMap || reward !== null || showWardrobe || showExitConfirm || manualPause || showGrownUpGate || showGrownUps;
+  const paused = showSettings || showMap || reward !== null || showWardrobe || showExitConfirm || manualPause || showGrownUpGate || showGrownUps || needsDayChoice;
 
   const handleProximity = useCallback((zone: ZoneId | null) => {
     setNearZone(zone);
@@ -350,6 +436,12 @@ export default function BelusWorldGame() {
       let nextProgress = res.progress;
       if (calmChoices && calmChoices.length > 0) nextProgress = saveCalmPlan(nextProgress, calmChoices);
 
+      // Nilu's Day arc: mastering an island (5/5) AFTER the fresh/continue
+      // choice records the stage — this is what the 'fresh' gating path reads.
+      if (completedLevels(nextProgress, zone) >= MAX_LEVEL) {
+        nextProgress = recordDayStage(nextProgress, zone);
+      }
+
       let starQuestDone = false;
       if (questWasAvailable) {
         const withQuest = completeStarQuest(nextProgress, zone, dateKey);
@@ -387,6 +479,9 @@ export default function BelusWorldGame() {
         unlockedItem: res.unlockedItem ? { name: res.unlockedItem.name, icon: res.unlockedItem.icon } : undefined,
         starQuest: starQuestDone,
         newBadge: earned[0],
+        dayBookSticker: res.dayBookSticker
+          ? { emoji: res.dayBookSticker.emoji, label: res.dayBookSticker.label }
+          : undefined,
       });
     },
     [progress, memory, dateKey],
@@ -432,6 +527,8 @@ export default function BelusWorldGame() {
           equipped={progress.equipped}
           islandLevels={islandLevels}
           rainbowUnlocked={rainbowUnlocked}
+          dayUnlocks={dayUnlocks}
+          unlockedDayZones={unlockedDayZones}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
           dateKey={dateKey}
@@ -480,7 +577,35 @@ export default function BelusWorldGame() {
         )}
       </AnimatePresence>
 
+      {/* Nilu's Day plan — ☀️→🏫→🏡→🌙, always visible so the child can see
+          where they are in the day */}
+      {!paused && (
+        <DayPlanChip
+          progress={progress}
+          reduceMotion={settings.reduceMotion || settings.calmMode}
+          onSpeakGoal={(line) => { speak(line); playSound('tap', settingsRef.current.sound); }}
+        />
+      )}
+
       {!paused && <TouchControls />}
+
+      {/* one-time fresh/continue chooser for players updating into Nilu's Day */}
+      <AnimatePresence>
+        {needsDayChoice && (
+          <FreshDayModal onChoose={handleDayChoice} />
+        )}
+      </AnimatePresence>
+
+      {/* "a new island formed!" celebration toast */}
+      <AnimatePresence>
+        {islandFormed && (
+          <IslandFormedToast
+            info={islandFormed}
+            reduceMotion={settings.reduceMotion || settings.calmMode}
+            onClose={() => setIslandFormed(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Reward / celebration */}
       <AnimatePresence>
@@ -809,6 +934,155 @@ function QuestPanel({ status }: { status: QuestStatus }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Nilu's Day plan chip — ☀️→🏫→🏡→🌙. Completed stages are bright, locked ones
+// dimmed, the current one pulses gently. Tapping it speaks the current goal.
+// ---------------------------------------------------------------------------
+function DayPlanChip({ progress, reduceMotion, onSpeakGoal }: { progress: GameProgress; reduceMotion: boolean; onSpeakGoal: (line: string) => void }) {
+  const done = DAY_ARC.map((z) => dayStageComplete(progress, z));
+  const unlocked = DAY_ARC.map((z) => isDayZoneUnlocked(progress, z));
+  const currentIdx = done.findIndex((d) => !d); // -1 → the whole day is done
+  const tap = () => {
+    if (currentIdx === -1) onSpeakGoal('You finished the whole day — morning to night! Amazing! 🌙✨');
+    else onSpeakGoal(`Next: finish ${DAY_STAGE_META[DAY_ARC[currentIdx]].name}!`);
+  };
+  return (
+    <button
+      onClick={tap}
+      className="fixed left-1/2 top-4 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-white/90 px-3 py-1.5 shadow-lg backdrop-blur transition hover:bg-white"
+      aria-label="Nilu's day plan"
+      title="Nilu's day — tap to hear what's next"
+    >
+      {DAY_ARC.map((z, i) => {
+        const meta = DAY_STAGE_META[z];
+        const isCurrent = i === currentIdx;
+        const isDim = !done[i] && !isCurrent && !unlocked[i];
+        return (
+          <span key={z} className="flex items-center">
+            {i > 0 && <span className="mx-0.5 text-[10px] text-slate-300">→</span>}
+            {isCurrent && !reduceMotion ? (
+              <motion.span
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                className="text-base"
+              >
+                {meta.emoji}
+              </motion.span>
+            ) : (
+              <span
+                className="text-base"
+                style={{
+                  opacity: done[i] || isCurrent ? 1 : 0.35,
+                  filter: isDim ? 'grayscale(1)' : 'none',
+                }}
+              >
+                {meta.emoji}
+              </span>
+            )}
+          </span>
+        );
+      })}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One-time gentle chooser when a player with existing progress updates into
+// the Nilu's Day world. 'Fresh' re-lives the day (stages re-earned); 'Keep
+// going' counts everything already done (School may form right away).
+// ---------------------------------------------------------------------------
+function FreshDayModal({ onChoose }: { onChoose: (choice: 'fresh' | 'continue') => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(20,28,46,0.5)', backdropFilter: 'blur(8px)' }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92 }}
+        className="w-full max-w-sm rounded-[26px] bg-gradient-to-b from-white to-sky-50 p-7 text-center shadow-2xl"
+      >
+        <div className="text-5xl">🌅🐘</div>
+        <h2 className="mt-2 text-2xl font-black text-sky-700">Nilu's world grew! ✨</h2>
+        <p className="mt-2 text-base font-semibold text-slate-600">
+          A whole day of adventures is here — morning ☀️, school 🏫, play time 🏡 and bedtime 🌙.
+        </p>
+        <div className="mt-5 flex flex-col gap-2.5">
+          <button
+            onClick={() => onChoose('fresh')}
+            className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 py-3 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] transition active:translate-y-1"
+          >
+            ☀️ Start a fresh day
+          </button>
+          <button
+            onClick={() => onChoose('continue')}
+            className="rounded-full bg-gradient-to-b from-green-300 to-green-500 py-3 text-base font-bold text-green-950 shadow-[0_5px_0_#2f9e44,0_8px_14px_rgba(0,0,0,0.15)] transition active:translate-y-1"
+          >
+            ▶️ Keep going where I was
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// "A new island formed!" — a bright, once-per-island celebration toast.
+// ---------------------------------------------------------------------------
+function IslandFormedToast({ info, reduceMotion, onClose }: { info: { zone: ActivityZone; label: string; emoji: string }; reduceMotion: boolean; onClose: () => void }) {
+  // gently auto-dismiss so it never blocks play for long
+  useEffect(() => {
+    const t = setTimeout(onClose, 7000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-x-0 top-1/3 z-50 flex justify-center px-6"
+    >
+      <motion.div
+        initial={reduceMotion ? { opacity: 0 } : { scale: 0.7, y: 24 }}
+        animate={reduceMotion ? { opacity: 1 } : { scale: 1, y: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { scale: 0.85 }}
+        transition={reduceMotion ? { duration: 0.25 } : { type: 'spring', stiffness: 240, damping: 18 }}
+        className="pointer-events-auto relative rounded-[26px] bg-white px-8 py-6 text-center shadow-2xl"
+        onClick={onClose}
+      >
+        {!reduceMotion && Array.from({ length: 10 }).map((_, i) => {
+          const a = (i / 10) * Math.PI * 2;
+          return (
+            <motion.span
+              key={i}
+              className="absolute left-1/2 top-8 text-lg"
+              initial={{ x: 0, y: 0, opacity: 1 }}
+              animate={{ x: Math.cos(a) * 110, y: Math.sin(a) * 110, opacity: 0 }}
+              transition={{ duration: 1.1, delay: 0.1 }}
+            >
+              {['✨', '🌈', '⭐'][i % 3]}
+            </motion.span>
+          );
+        })}
+        <div className="text-6xl">{info.emoji}</div>
+        <h2 className="mt-2 text-xl font-black text-slate-800">A new island appeared!</h2>
+        <p className="mt-1 text-base font-bold text-sky-600">{info.label} just formed in the sky ✨</p>
+        <p className="mt-1 text-xs font-semibold text-slate-400">Follow the new rainbow bridge from Home!</p>
+        <button
+          onClick={onClose}
+          className="mt-4 rounded-full bg-sky-500 px-7 py-2.5 text-base font-bold text-white shadow-lg transition active:scale-95"
+        >
+          Let's go! →
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function RewardToast({ reward, reduceMotion, onClose }: { reward: RewardInfo; reduceMotion: boolean; onClose: () => void }) {
   const headline = reward.grewUp ? 'Nilu Grew Up!' : reward.levelUp ? 'Level Complete!' : 'Great Job!';
   const hero = reward.grewUp ? '🐘✨' : reward.islandMastered ? '🌷' : '⭐';
@@ -901,6 +1175,11 @@ function RewardToast({ reward, reduceMotion, onClose }: { reward: RewardInfo; re
         {reward.newBadge && (
           <p className="mt-3 rounded-2xl bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">
             {reward.newBadge.icon} New badge: {reward.newBadge.name}! Check My Badges on the map.
+          </p>
+        )}
+        {reward.dayBookSticker && (
+          <p className="mt-3 rounded-2xl bg-pink-100 px-4 py-2 text-sm font-bold text-pink-700">
+            📖 New Day Book sticker: {reward.dayBookSticker.emoji} {reward.dayBookSticker.label}
           </p>
         )}
 

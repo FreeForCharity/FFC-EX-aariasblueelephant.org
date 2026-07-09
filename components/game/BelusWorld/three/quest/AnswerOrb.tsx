@@ -26,9 +26,17 @@ interface Props {
   onPick: () => void;
 }
 
+// Detect prefers-reduced-motion locally so the ring/pulse can respect it
+// without QuestLayer needing to pass a new prop through.
+const prefersReducedMotion =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+
 export default function AnswerOrb({ position, emoji, caption, color, status, bobSeed = 0, onPick }: Props) {
   const grp = useRef<THREE.Group>(null);
   const sphere = useRef<THREE.Mesh>(null);
+  const ring = useRef<THREE.Mesh>(null);
   const t = useRef(bobSeed);
   const shake = useRef(0);
   const nearRef = useRef(false);
@@ -70,16 +78,44 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
 
     if (sphere.current) {
       const m = sphere.current.material as THREE.MeshStandardMaterial;
-      const want = status !== 'idle' ? 1.5 : nearRef.current ? 1.3 : 0.7;
+      const want = status !== 'idle' ? 1.9 : nearRef.current ? 1.6 : 1.1;
       m.emissiveIntensity += (want - m.emissiveIntensity) * Math.min(1, dt * 6);
+    }
+
+    // gentle pulsing "tappable" ring at the orb's base — a slow breathing
+    // loop that invites a tap. Static (no pulse) when reduce-motion is on.
+    if (ring.current) {
+      const mat = ring.current.material as THREE.MeshBasicMaterial;
+      if (prefersReducedMotion) {
+        ring.current.scale.setScalar(1.1);
+        mat.opacity = 0.3;
+      } else {
+        const cycle = (Math.sin(t.current * 1.4) + 1) / 2; // 0..1
+        ring.current.scale.setScalar(1 + cycle * 0.25);
+        mat.opacity = 0.5 - cycle * 0.35;
+      }
     }
   });
 
   return (
     <group ref={grp} position={position}>
       {/* the glowing orb body — the thing you walk into / tap */}
+      <mesh ref={sphere}>
+        <sphereGeometry args={[0.6, 24, 18]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1.1}
+          roughness={0.25}
+          metalness={0.1}
+          transparent
+          opacity={0.85}
+          depthWrite
+        />
+      </mesh>
+      {/* invisible, larger hit-target so an imprecise tap still lands */}
       <mesh
-        ref={sphere}
+        visible={false}
         onPointerDown={(e) => {
           e.stopPropagation();
           onPick();
@@ -87,26 +123,22 @@ export default function AnswerOrb({ position, emoji, caption, color, status, bob
         onPointerOver={() => (document.body.style.cursor = 'pointer')}
         onPointerOut={() => (document.body.style.cursor = 'auto')}
       >
-        <sphereGeometry args={[0.6, 24, 18]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.7}
-          roughness={0.25}
-          metalness={0.1}
-          transparent
-          opacity={0.38}
-          depthWrite={false}
-        />
+        <sphereGeometry args={[1.1, 12, 10]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
       </mesh>
       {/* picture + word — always on top of the bubble & facing the camera */}
-      <sprite position={[0, 0, 0]} scale={[1.5, 1.5, 1]} renderOrder={10}>
+      <sprite position={[0, 0.15, 0]} scale={[2.1, 2.1, 1]} renderOrder={10}>
         <spriteMaterial map={tex} transparent depthWrite={false} depthTest={false} />
       </sprite>
       {/* soft glow ring under it on the ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.75, 0]}>
         <ringGeometry args={[0.45, 0.66, 28]} />
-        <meshBasicMaterial color={color} transparent opacity={0.35} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.55} side={THREE.DoubleSide} />
+      </mesh>
+      {/* pulsing "tap me" ring — a slow breathing loop inviting a tap */}
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.74, 0]}>
+        <ringGeometry args={[0.68, 0.8, 28]} />
+        <meshBasicMaterial color={color} transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
     </group>
   );

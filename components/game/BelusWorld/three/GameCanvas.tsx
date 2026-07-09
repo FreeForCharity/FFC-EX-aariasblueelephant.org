@@ -14,7 +14,7 @@ import { Sky, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Player, { type PlayerHandle } from './Player';
-import World from './World';
+import World, { type DayUnlocks } from './World';
 import HomeLife from './HomeLife';
 import RainbowPlay from './RainbowPlay';
 import type { AnimalSpecies } from './quest/Animal3D';
@@ -45,6 +45,10 @@ interface Props {
   islandLevels: Partial<Record<ZoneId, number>>;
   /** has the reward island formed? */
   rainbowUnlocked: boolean;
+  /** which Nilu's Day islands have formed (school/afternoon/night) */
+  dayUnlocks: DayUnlocks;
+  /** day-arc zones whose islands exist — these run on the generic QuestLayer */
+  unlockedDayZones: ActivityZone[];
   /** which level to play next on each zone island */
   islandNextLevel: Record<ActivityZone, number>;
   sound: boolean;
@@ -109,6 +113,8 @@ export default function GameCanvas({
   equipped,
   islandLevels,
   rainbowUnlocked,
+  dayUnlocks,
+  unlockedDayZones,
   islandNextLevel,
   sound,
   dateKey,
@@ -175,7 +181,7 @@ export default function GameCanvas({
       <Lighting calmMode={calmMode} />
 
       <Suspense fallback={null}>
-        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} />
+        <World activeZone={activeZone} reduceMotion={reduceMotion} islandLevels={islandLevels} rainbowUnlocked={rainbowUnlocked} dayUnlocks={dayUnlocks} />
         <Player
           ref={player}
           emotion={emotion}
@@ -249,10 +255,11 @@ export default function GameCanvas({
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
         />
-        {/* Sharing Shore runs on the generic quest engine: crab host + answer
-            orbs for the five Sharing & Turns levels. */}
+        {/* Sharing Shore + the Nilu's Day islands (School / Fun Corner /
+            Sleepy Island — only the ones that have formed) run on the generic
+            quest engine: island host + answer orbs, five levels each. */}
         <QuestLayer
-          zones={['shore']}
+          zones={['shore', ...unlockedDayZones]}
           islandNextLevel={islandNextLevel}
           paused={paused}
           reduceMotion={reduceMotion}
@@ -269,7 +276,7 @@ export default function GameCanvas({
         <EffectComposer multisampling={0}>
           <Bloom
             intensity={0.6}
-            luminanceThreshold={0.65}
+            luminanceThreshold={0.55}
             luminanceSmoothing={0.3}
             mipmapBlur
           />
