@@ -27,6 +27,7 @@ import CarrySlot, { type SlotStatus } from './CarrySlot';
 const ALL_ZONES: ActivityZone[] = [
   'meadow', 'mountain', 'cove', 'forest', 'shore',
   'school', 'afternoon', 'night',
+  'garden', 'deepforest', 'lagoon', 'bay',
 ];
 
 // idle "host" friends so each island feels inhabited before you arrive
@@ -39,6 +40,10 @@ const HOSTS: Record<ActivityZone, { face: string; mood: Mood }> = {
   school: { face: '🦉', mood: 'happy' },
   afternoon: { face: '🐕', mood: 'happy' },
   night: { face: '🐑', mood: 'calm' },
+  garden: { face: '🦋', mood: 'happy' },
+  deepforest: { face: '🦌', mood: 'happy' },
+  lagoon: { face: '🐬', mood: 'calm' },
+  bay: { face: '🦜', mood: 'happy' },
 };
 
 const PICK_RADIUS = 2.4; // how close Nilu must walk to choose an orb (generous +
@@ -913,6 +918,10 @@ export default function QuestLayer(props: Props) {
     school: ISLANDS.school.accent,
     afternoon: ISLANDS.afternoon.accent,
     night: ISLANDS.night.accent,
+    garden: ISLANDS.garden.accent,
+    deepforest: ISLANDS.deepforest.accent,
+    lagoon: ISLANDS.lagoon.accent,
+    bay: ISLANDS.bay.accent,
   };
 
   return (

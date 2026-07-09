@@ -348,6 +348,160 @@ function ZoneDecorContent({ isl, bloom }: { isl: IslandDef; bloom: number }) {
       </group>
     );
   }
+  if (isl.id === 'garden') {
+    // Feelings Garden — dense flower BEDS in pinks (rows/clusters, not just
+    // scattered singles like the meadow), plus a small trellis archway
+    const palette = ['#ff8fc8', '#ffb3d9', '#ff6ba3', '#ffd6e8', '#f472b6'];
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        {/* trellis archway at the back edge */}
+        <group position={[isl.radius * 0.45, y, -isl.radius * 0.35]}>
+          <mesh position={[-0.8, 1.1, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 2.2, 8]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.8, 1.1, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 2.2, 8]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 2.2, 0]}>
+            <torusGeometry args={[0.85, 0.08, 8, 20, Math.PI]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.8} />
+          </mesh>
+        </group>
+        {/* flower beds — small clustered patches instead of single stems */}
+        {items.map((it, i) => (
+          <group key={i} position={[it.x, y, it.z]}>
+            {[0, 1, 2].map((k) => (
+              <Flower
+                key={k}
+                position={[Math.cos(k * 2.1) * 0.35, 0, Math.sin(k * 2.1) * 0.35]}
+                color={palette[(i + k) % palette.length]}
+              />
+            ))}
+          </group>
+        ))}
+      </group>
+    );
+  }
+  if (isl.id === 'deepforest') {
+    // Deep Forest — denser, darker-green trees than Friendship Forest, plus
+    // little mushroom clusters filling in with the bloom
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        {items.map((it, i) => (
+          <Tree key={`t-${i}`} position={[it.x, y, it.z]} scale={0.9 + it.r * 0.7} leaf={i % 2 ? '#1f5c34' : '#245e2e'} />
+        ))}
+        {items.map((it, i) => (
+          <group key={`m-${i}`} position={[it.x * 0.55, y, it.z * 0.55]}>
+            <mesh position={[0, 0.12, 0]}>
+              <cylinderGeometry args={[0.05, 0.06, 0.24, 8]} />
+              <meshStandardMaterial color="#f2e3c9" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, 0.28, 0]}>
+              <sphereGeometry args={[0.16, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <meshStandardMaterial color={i % 2 ? '#e8736b' : '#caa46a'} roughness={0.7} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
+  }
+  if (isl.id === 'lagoon') {
+    // Quiet Lagoon — a calm pool ringed with lily pads + tall reeds
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        <mesh position={[0, y + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[isl.radius * 0.6, 36]} />
+          <meshStandardMaterial color="#3fb8c9" transparent opacity={0.82} roughness={0.1} metalness={0.15} emissive="#1f8a9c" emissiveIntensity={0.2} />
+        </mesh>
+        {items.map((it, i) => (
+          <mesh key={`lily-${i}`} position={[it.x, y + 0.08, it.z]} rotation={[-Math.PI / 2, 0, it.r * 5]}>
+            <circleGeometry args={[0.35 + it.r * 0.2, 10]} />
+            <meshStandardMaterial color="#3fae5a" roughness={0.7} />
+          </mesh>
+        ))}
+        {/* reeds around the rim */}
+        {[0, 1, 2, 3].map((i) => {
+          const a = (i / 4) * Math.PI * 2;
+          const rx = Math.cos(a) * isl.radius * 0.85;
+          const rz = Math.sin(a) * isl.radius * 0.85;
+          return (
+            <group key={`reed-${i}`} position={[rx, y, rz]}>
+              <mesh position={[0, 0.9, 0]}>
+                <cylinderGeometry args={[0.04, 0.05, 1.8, 6]} />
+                <meshStandardMaterial color="#2f7d4a" roughness={0.8} />
+              </mesh>
+              <mesh position={[0.08, 1.7, 0]} rotation={[0, 0, 0.3]}>
+                <coneGeometry args={[0.12, 0.5, 6]} />
+                <meshStandardMaterial color="#3fae5a" roughness={0.8} />
+              </mesh>
+            </group>
+          );
+        })}
+      </group>
+    );
+  }
+  if (isl.id === 'bay') {
+    // Treasure Bay — a beached boat hull, a treasure chest, and a leaning palm
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        {/* boat hull */}
+        <group position={[isl.radius * 0.45, y, -isl.radius * 0.3]} rotation={[0, 0.5, 0]}>
+          <mesh position={[0, 0.35, 0]}>
+            <cylinderGeometry args={[0.9, 0.55, 0.9, 16, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.8} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 1.1, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 1.6, 6]} />
+            <meshStandardMaterial color="#9a5a3b" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.35, 1.55, 0]} rotation={[0, 0, -0.2]}>
+            <planeGeometry args={[0.8, 0.6]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.6} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+        {/* treasure chest */}
+        <group position={[-isl.radius * 0.4, y, isl.radius * 0.2]}>
+          <mesh position={[0, 0.25, 0]}>
+            <boxGeometry args={[0.7, 0.5, 0.5]} />
+            <meshStandardMaterial color="#9a5a3b" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.55, 0]}>
+            <cylinderGeometry args={[0.35, 0.35, 0.5, 16, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.7} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0.42, 0.26]}>
+            <sphereGeometry args={[0.06, 10, 8]} />
+            <meshStandardMaterial color="#ffd166" emissive="#ffd166" emissiveIntensity={0.6} roughness={0.3} />
+          </mesh>
+        </group>
+        {/* leaning palm */}
+        <group position={[0, y, isl.radius * 0.55]} rotation={[0, 0, 0.15]}>
+          <mesh position={[0, 1.6, 0]}>
+            <cylinderGeometry args={[0.12, 0.18, 3.2, 8]} />
+            <meshStandardMaterial color="#a5824f" roughness={0.85} />
+          </mesh>
+          {[0, 1, 2, 3, 4].map((i) => {
+            const a = (i / 5) * Math.PI * 2;
+            return (
+              <mesh key={i} position={[Math.cos(a) * 0.5, 3.2, Math.sin(a) * 0.5]} rotation={[0.5, a, 0]}>
+                <coneGeometry args={[0.25, 1.4, 4]} />
+                <meshStandardMaterial color="#3fae5a" roughness={0.8} />
+              </mesh>
+            );
+          })}
+        </group>
+        {/* scattered shells/gold — fill in with the bloom, same contract as shore */}
+        {items.map((it, i) => (
+          <mesh key={i} position={[it.x, y + 0.05, it.z]} rotation={[-Math.PI / 2, 0, it.r * 6]}>
+            <circleGeometry args={[0.22 + it.r * 0.12, 8]} />
+            <meshStandardMaterial color={i % 2 ? '#ffd166' : '#ffffff'} roughness={0.5} metalness={i % 2 ? 0.3 : 0} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
   // cove — a calm pool + waterfall off the rim, with rocks filling in as
   // levels complete
   return (
@@ -444,6 +598,14 @@ export interface DayUnlocks {
   night: boolean;
 }
 
+/** Which advanced sister islands have formed (see progress.ts isAdvancedZoneUnlocked). */
+export interface AdvancedUnlocks {
+  garden: boolean;
+  deepforest: boolean;
+  lagoon: boolean;
+  bay: boolean;
+}
+
 interface Props {
   activeZone: ZoneId | null;
   reduceMotion: boolean;
@@ -452,18 +614,24 @@ interface Props {
   rainbowUnlocked: boolean;
   /** which Nilu's Day islands have formed */
   dayUnlocks: DayUnlocks;
+  /** which advanced sister islands have formed */
+  advancedUnlocks: AdvancedUnlocks;
 }
 
-export default function World({ activeZone, reduceMotion, islandLevels, rainbowUnlocked, dayUnlocks }: Props) {
+export default function World({ activeZone, reduceMotion, islandLevels, rainbowUnlocked, dayUnlocks, advancedUnlocks }: Props) {
   // a locked island physically does not exist yet: no island, no decor, no bridge
   const isHidden = (z: ZoneId): boolean => {
     if (z === 'rainbow') return !rainbowUnlocked;
     if (z === 'school') return !dayUnlocks.school;
     if (z === 'afternoon') return !dayUnlocks.afternoon;
     if (z === 'night') return !dayUnlocks.night;
+    if (z === 'garden') return !advancedUnlocks.garden;
+    if (z === 'deepforest') return !advancedUnlocks.deepforest;
+    if (z === 'lagoon') return !advancedUnlocks.lagoon;
+    if (z === 'bay') return !advancedUnlocks.bay;
     return false;
   };
-  const hiddenKey = `${rainbowUnlocked}-${dayUnlocks.school}-${dayUnlocks.afternoon}-${dayUnlocks.night}`;
+  const hiddenKey = `${rainbowUnlocked}-${dayUnlocks.school}-${dayUnlocks.afternoon}-${dayUnlocks.night}-${advancedUnlocks.garden}-${advancedUnlocks.deepforest}-${advancedUnlocks.lagoon}-${advancedUnlocks.bay}`;
   return (
     <group>
       <Clouds reduceMotion={reduceMotion} />

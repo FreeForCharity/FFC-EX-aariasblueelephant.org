@@ -66,6 +66,7 @@ import {
   recordDayStage,
   setDayChoice,
   markDayCelebrated,
+  isAdvancedZoneUnlocked,
   type GameProgress,
   type ActivityZone,
   type CosmeticSlot,
@@ -133,6 +134,10 @@ const STICKER_KEYS: Record<ActivityZone, string> = {
   school: '🏫',
   afternoon: '🏡',
   night: '🌙',
+  garden: '🌷',
+  deepforest: '🌲',
+  lagoon: '🪷',
+  bay: '⛵',
 };
 
 // Nilu's Day arc — the four stages of one day, in order (☀️→🏫→🏡→🌙)
@@ -221,6 +226,28 @@ export default function BelusWorldGame() {
     [dayUnlocks],
   );
 
+  // ---- Advanced sister islands: plain gating — each forms once its PARENT
+  // skill island reaches 5/5 completed levels (no dayArc/fresh choice). ----
+  const gardenUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'garden'), [progress]);
+  const deepforestUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'deepforest'), [progress]);
+  const lagoonUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'lagoon'), [progress]);
+  const bayUnlocked = useMemo(() => isAdvancedZoneUnlocked(progress, 'bay'), [progress]);
+  worldRuntime.gardenUnlocked = gardenUnlocked;
+  worldRuntime.deepforestUnlocked = deepforestUnlocked;
+  worldRuntime.lagoonUnlocked = lagoonUnlocked;
+  worldRuntime.bayUnlocked = bayUnlocked;
+  const advancedUnlocks = useMemo(
+    () => ({ garden: gardenUnlocked, deepforest: deepforestUnlocked, lagoon: lagoonUnlocked, bay: bayUnlocked }),
+    [gardenUnlocked, deepforestUnlocked, lagoonUnlocked, bayUnlocked],
+  );
+  const unlockedAdvancedZones = useMemo(
+    () =>
+      (['garden', 'deepforest', 'lagoon', 'bay'] as ActivityZone[]).filter(
+        (z) => advancedUnlocks[z as 'garden' | 'deepforest' | 'lagoon' | 'bay'],
+      ),
+    [advancedUnlocks],
+  );
+
   // the one-time fresh/continue chooser (players updating with real progress)
   const needsDayChoice = progress.dayArc.choice === null && totalCompletedLevels(progress) > 0;
   // new players never see the chooser — they simply live the day in order
@@ -244,8 +271,9 @@ export default function BelusWorldGame() {
     playSound('tap', settingsRef.current.sound);
   }, []);
 
-  // island-forming celebration — fires once per day-arc island, the moment its
-  // unlock condition flips true (and any reward toast is out of the way)
+  // island-forming celebration — fires once per day-arc OR advanced sister
+  // island, the moment its unlock condition flips true (and any reward toast
+  // is out of the way)
   const [islandFormed, setIslandFormed] = useState<{ zone: ActivityZone; label: string; emoji: string } | null>(null);
 
   // skill-island "it's growing!" celebration — queued by handleQuestComplete,
@@ -282,8 +310,15 @@ export default function BelusWorldGame() {
   useEffect(() => {
     if (phase !== 'world' || reward !== null || islandFormed !== null) return;
     if (progress.dayArc.choice === null) return; // chooser still open
-    const unlockedFlags: Record<'school' | 'afternoon' | 'night', boolean> = dayUnlocks;
-    for (const z of ['school', 'afternoon', 'night'] as const) {
+    // day-arc stages + advanced sister islands share the same "a new island
+    // formed!" celebration and the same tolerant `dayArc.celebrated` list —
+    // advanced zones just use plain parent-mastery gating (advancedUnlocks),
+    // no dayArc/fresh choice involved.
+    const unlockedFlags: Record<'school' | 'afternoon' | 'night' | 'garden' | 'deepforest' | 'lagoon' | 'bay', boolean> = {
+      ...dayUnlocks,
+      ...advancedUnlocks,
+    };
+    for (const z of ['school', 'afternoon', 'night', 'garden', 'deepforest', 'lagoon', 'bay'] as const) {
       if (!unlockedFlags[z] || progress.dayArc.celebrated.includes(z)) continue;
       const isl = ISLANDS[z];
       setProgress((p) => {
@@ -297,7 +332,7 @@ export default function BelusWorldGame() {
       setEmotion('excited');
       break; // one celebration at a time
     }
-  }, [phase, reward, islandFormed, progress, dayUnlocks, speak]);
+  }, [phase, reward, islandFormed, progress, dayUnlocks, advancedUnlocks, speak]);
 
   // persist comfort + speed settings so they don't reset each visit
   useEffect(() => {
@@ -560,6 +595,8 @@ export default function BelusWorldGame() {
           rainbowUnlocked={rainbowUnlocked}
           dayUnlocks={dayUnlocks}
           unlockedDayZones={unlockedDayZones}
+          advancedUnlocks={advancedUnlocks}
+          unlockedAdvancedZones={unlockedAdvancedZones}
           islandNextLevel={islandNextLevel}
           sound={settings.sound}
           dateKey={dateKey}

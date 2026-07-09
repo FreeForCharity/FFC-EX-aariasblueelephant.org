@@ -9,24 +9,20 @@
 // errorless, no timers, no losing. Faces vary per helper but each island has
 // a "home" face: garden 🦋, deepforest 🦌, lagoon 🐬, bay 🦜.
 //
-// TODO(engine agent): `Quest.zone` in quests.ts is typed `ActivityZone`, which
-// does not yet include 'garden' | 'deepforest' | 'lagoon' | 'bay'. Rather than
-// edit quests.ts (other agents are mid-edit on it), this file defines its own
-// `AdvancedZone` union and a local `AdvancedQuest` type — an `Omit<Quest,
-// 'zone'> & { zone: AdvancedZone }` — so this file compiles standalone today.
-// Once ActivityZone is widened to include the four advanced zones, the engine
-// agent can simply re-type ADVANCED_QUESTS as Record<ActivityZone, Quest[]>
-// (or merge these arrays into QUESTS) with no changes needed to the data below.
+// ActivityZone (belu/progress.ts) has been widened to include the four
+// advanced zones, so AdvancedQuest is now just an alias for Quest and
+// ADVANCED_QUESTS merges straight into QUESTS in quests.ts.
 // ---------------------------------------------------------------------------
 
 import type { Quest, Orb } from './quests';
 import type { Mood } from './QuestNPC';
+import type { ActivityZone } from '../../belu/progress';
 
-/** The four new zone ids — not yet part of ActivityZone. See TODO above. */
-export type AdvancedZone = 'garden' | 'deepforest' | 'lagoon' | 'bay';
+/** The four advanced zone ids — a subset of ActivityZone. */
+export type AdvancedZone = Extract<ActivityZone, 'garden' | 'deepforest' | 'lagoon' | 'bay'>;
 
-/** Same shape as Quest, but with our own zone union until quests.ts is widened. */
-export type AdvancedQuest = Omit<Quest, 'zone'> & { zone: AdvancedZone };
+/** Same shape as Quest — kept as its own name for readability in this file. */
+export type AdvancedQuest = Quest;
 
 const MOOD = (m: Mood): Mood => m;
 

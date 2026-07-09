@@ -9,6 +9,7 @@
 
 import type { ActivityZone } from '../../belu/progress';
 import type { Mood } from './QuestNPC';
+import { ADVANCED_QUESTS } from './advancedQuests';
 
 export interface Orb {
   emoji: string;
@@ -1027,6 +1028,8 @@ export const QUESTS: Record<ActivityZone, Quest[]> = {
   school: SCHOOL,
   afternoon: AFTERNOON,
   night: NIGHT,
+  // Advanced sister islands (garden/deepforest/lagoon/bay) — see advancedQuests.ts
+  ...ADVANCED_QUESTS,
 };
 
 /** Get the quest for a zone at a 1-based level (clamped to the available set). */

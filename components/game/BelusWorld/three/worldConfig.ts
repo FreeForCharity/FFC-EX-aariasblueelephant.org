@@ -7,7 +7,8 @@
 
 export type ZoneId =
   | 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore' | 'rainbow'
-  | 'school' | 'afternoon' | 'night';
+  | 'school' | 'afternoon' | 'night'
+  | 'garden' | 'deepforest' | 'lagoon' | 'bay';
 
 export interface IslandDef {
   id: ZoneId;
@@ -177,6 +178,59 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'Sleepy Island',
     emoji: '🌙',
   },
+  // ---- Advanced sister islands — these FORM once their parent skill island
+  // reaches 5/5 completed levels (plain gating, no dayArc/fresh choice
+  // involved). Each sits further out beyond its parent, away from home, so
+  // the bridge always runs parent → advanced (never home → advanced). See
+  // three/quest/advancedQuests.ts for the lesson content. ----
+  garden: {
+    id: 'garden',
+    cx: -75.18,
+    cz: -15.83,
+    radius: 8.5,
+    top: 3,
+    grass: '#ffd3e6',
+    rock: '#c98aa8',
+    accent: '#ec4899',
+    label: 'Feelings Garden',
+    emoji: '🌷',
+  },
+  deepforest: {
+    id: 'deepforest',
+    cx: 59.72,
+    cz: 56,
+    radius: 8.5,
+    top: 1.5,
+    grass: '#2f7d4a',
+    rock: '#4a5a3c',
+    accent: '#16a34a',
+    label: 'Deep Forest',
+    emoji: '🌲',
+  },
+  lagoon: {
+    id: 'lagoon',
+    cx: -53.93,
+    cz: 57.78,
+    radius: 8.5,
+    top: -1.5,
+    grass: '#8fd8d0',
+    rock: '#5a8a95',
+    accent: '#06b6d4',
+    label: 'Quiet Lagoon',
+    emoji: '🪷',
+  },
+  bay: {
+    id: 'bay',
+    cx: 3.73,
+    cz: 81.96,
+    radius: 8.5,
+    top: 1,
+    grass: '#f2dfa9',
+    rock: '#b09a72',
+    accent: '#f97316',
+    label: 'Treasure Bay',
+    emoji: '⛵',
+  },
 };
 
 export const ISLAND_LIST = Object.values(ISLANDS);
@@ -198,6 +252,12 @@ export const BRIDGES: BridgeDef[] = [
   { from: 'mountain', to: 'school', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   { from: 'school', to: 'afternoon', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   { from: 'afternoon', to: 'night', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  // Advanced sister islands — the bridge always runs FROM the parent skill
+  // island (never from home), so finishing that island always leads onward.
+  { from: 'meadow', to: 'garden', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'forest', to: 'deepforest', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'cove', to: 'lagoon', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'shore', to: 'bay', halfWidth: 2.2, colors: RAINBOW_STRIPES },
 ];
 
 // The zone islands that host a learning activity (everything except home + the
@@ -205,16 +265,22 @@ export const BRIDGES: BridgeDef[] = [
 export const ZONE_ISLANDS: ZoneId[] = [
   'meadow', 'mountain', 'cove', 'forest', 'shore',
   'school', 'afternoon', 'night',
+  'garden', 'deepforest', 'lagoon', 'bay',
 ];
 
-// Runtime flags: the reward island + the Day Arc islands (and their bridges)
-// only physically exist once earned. Rendering AND ground-collision both read
-// these so a locked island is neither visible nor walkable.
+// Runtime flags: the reward island + the Day Arc islands + the advanced
+// sister islands (and their bridges) only physically exist once earned.
+// Rendering AND ground-collision both read these so a locked island is
+// neither visible nor walkable.
 export const worldRuntime = {
   rainbowUnlocked: false,
   schoolUnlocked: false,
   afternoonUnlocked: false,
   nightUnlocked: false,
+  gardenUnlocked: false,
+  deepforestUnlocked: false,
+  lagoonUnlocked: false,
+  bayUnlocked: false,
 };
 
 /** Does this island physically exist right now? (locked islands are neither
@@ -224,6 +290,10 @@ export function isZoneFormed(id: ZoneId): boolean {
   if (id === 'school') return worldRuntime.schoolUnlocked;
   if (id === 'afternoon') return worldRuntime.afternoonUnlocked;
   if (id === 'night') return worldRuntime.nightUnlocked;
+  if (id === 'garden') return worldRuntime.gardenUnlocked;
+  if (id === 'deepforest') return worldRuntime.deepforestUnlocked;
+  if (id === 'lagoon') return worldRuntime.lagoonUnlocked;
+  if (id === 'bay') return worldRuntime.bayUnlocked;
   return true;
 }
 
