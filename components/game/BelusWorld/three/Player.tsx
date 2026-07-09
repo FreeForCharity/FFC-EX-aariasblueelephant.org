@@ -14,7 +14,7 @@ import Belu3D, { type MotionRef } from './Belu3D';
 import { sampleGround } from './worldMath';
 import { input } from './input';
 import { beluPos, beluState, dynamicSolids, playerImpulse, playerBoost, camZoom } from './playerState';
-import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, type ZoneId } from './worldConfig';
+import { ISLANDS, ZONE_ISLANDS, INTERACT_RADIUS, PLAYER_SPAWN, OBSTACLES, isZoneFormed, type ZoneId } from './worldConfig';
 import type { BeluEmotion } from '../BeluCharacter';
 import type { EquippedCosmetics } from '../belu/progress';
 
@@ -200,6 +200,7 @@ const Player = forwardRef<PlayerHandle, Props>(function Player(
     let found: ZoneId | null = null;
     let bestD = INTERACT_RADIUS;
     for (const z of ZONE_ISLANDS) {
+      if (!isZoneFormed(z)) continue; // locked day-arc islands don't exist yet
       const isl = ISLANDS[z];
       const d = Math.hypot(pos.current.x - isl.cx, pos.current.z - isl.cz);
       if (d < bestD) {

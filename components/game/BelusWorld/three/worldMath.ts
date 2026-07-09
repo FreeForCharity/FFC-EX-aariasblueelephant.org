@@ -6,7 +6,7 @@
 // ASD audience — completely predictable. No tunnelling, no jitter.
 // ---------------------------------------------------------------------------
 
-import { ISLAND_LIST, BRIDGES, ISLANDS, worldRuntime, type ZoneId } from './worldConfig';
+import { ISLAND_LIST, BRIDGES, ISLANDS, isZoneFormed, type ZoneId } from './worldConfig';
 
 export interface GroundSample {
   /** ground height at this point */
@@ -60,7 +60,7 @@ export function sampleGround(x: number, z: number): GroundSample {
 
   // Islands
   for (const isl of ISLAND_LIST) {
-    if (isl.id === 'rainbow' && !worldRuntime.rainbowUnlocked) continue; // not formed yet
+    if (!isZoneFormed(isl.id)) continue; // locked islands haven't formed yet
     const d = Math.hypot(x - isl.cx, z - isl.cz);
     if (d <= isl.radius + EDGE_FALLOFF) {
       const y = islandHeightAt(Math.min(d, isl.radius), isl.radius, isl.top);
@@ -70,7 +70,7 @@ export function sampleGround(x: number, z: number): GroundSample {
 
   // Bridges
   for (const s of BRIDGE_SEGMENTS) {
-    if (s.to === 'rainbow' && !worldRuntime.rainbowUnlocked) continue; // bridge not formed yet
+    if (!isZoneFormed(s.to)) continue; // bridge to a locked island hasn't formed
     const dx = s.bx - s.ax;
     const dz = s.bz - s.az;
     const len2 = dx * dx + dz * dz || 1;

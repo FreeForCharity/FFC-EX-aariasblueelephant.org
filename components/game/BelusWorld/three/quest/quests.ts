@@ -674,6 +674,327 @@ const SHORE: Quest[] = [
 ];
 
 // ===========================================================================
+// NILU'S DAY ARC — placeholder content (a content pass will deepen these).
+// Each island keeps the standard shape: 5 levels, simple choice rounds,
+// errorless, no timers, no losing.
+// ===========================================================================
+
+// ---- SCHOOL ISLAND — School Skills ----------------------------------------
+
+const SCHOOL: Quest[] = [
+  {
+    zone: 'school', level: 1, goal: 'Good morning, school!',
+    intro: "It's school time! Owl teacher is here. Let's practice how school mornings go.",
+    outro: 'You know just how school starts. Great job!',
+    moment: 'practiced school skills on School Island',
+    rounds: [
+      { kind: 'choice', say: 'We just arrived at school. What do we say to our teacher?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          { emoji: '👋', caption: 'Good morning!', correct: true },
+          { emoji: '🙈', caption: 'Hide away' },
+        ], doneLine: '"Good morning!" What a friendly start.' },
+      { kind: 'choice', say: 'Where does our school bag go?',
+        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '🎒' } },
+        options: [
+          { emoji: '🪝', caption: 'On my hook', correct: true },
+          { emoji: '🌊', caption: 'In the pond' },
+        ], doneLine: 'Yes — bags go on the hook!' },
+    ],
+  },
+  {
+    zone: 'school', level: 2, goal: 'Circle time',
+    intro: "It's circle time! Everyone sits together and listens.",
+    outro: 'You sat and listened so well. Circle time star!',
+    moment: 'practiced circle time on School Island',
+    rounds: [
+      { kind: 'choice', say: 'The teacher is talking. What do our ears do?',
+        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '👂' } },
+        options: [
+          { emoji: '👂', caption: 'Listen', correct: true },
+          { emoji: '📢', caption: 'Shout over' },
+        ], doneLine: 'Listening ears on!' },
+      { kind: 'choice', say: 'You want to say something in circle time. What do we do?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          { emoji: '🙋', caption: 'Raise my hand', correct: true },
+          { emoji: '🗣️', caption: 'Talk right away' },
+        ], doneLine: 'Hand up — and the teacher picks you!' },
+    ],
+  },
+  {
+    zone: 'school', level: 3, goal: 'Line up & wait',
+    intro: "Time to walk to the art room. Let's line up like a train!",
+    outro: 'What a wonderful line-walker you are.',
+    moment: 'practiced lining up on School Island',
+    rounds: [
+      { kind: 'choice', say: 'The class is lining up. Where do we go?',
+        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '🚶' } },
+        options: [
+          { emoji: '🚶', caption: 'Join the line', correct: true },
+          { emoji: '🏃', caption: 'Run past everyone' },
+        ], doneLine: 'You joined the line — choo choo!' },
+      { kind: 'choice', say: 'The line stops for a moment. What do we do?',
+        npc: { face: '🦉', mood: MOOD('calm'), thought: { emoji: '⏳' } },
+        options: [
+          { emoji: '🧍', caption: 'Wait calmly', correct: true },
+          { emoji: '😤', caption: 'Push forward' },
+        ], doneLine: 'Calm waiting — your feet stayed so still!' },
+    ],
+  },
+  {
+    zone: 'school', level: 4, goal: 'Ask for help',
+    intro: "Sometimes school work feels tricky. Asking for help is a superpower!",
+    outro: 'Asking for help is brave AND smart. You did it!',
+    moment: 'practiced asking for help on School Island',
+    rounds: [
+      { kind: 'choice', say: 'This puzzle is really tricky. What can we do?',
+        npc: { face: '🦉', mood: MOOD('neutral'), thought: { emoji: '🧩' } },
+        options: [
+          { emoji: '🙋', caption: 'Ask for help', correct: true },
+          { emoji: '😭', caption: 'Give up' },
+        ], doneLine: '"Can you help me, please?" — and help comes!' },
+      { kind: 'choice', say: 'The teacher helped you finish. What do we say?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          { emoji: '💗', caption: 'Thank you!', correct: true },
+          { emoji: '🤐', caption: 'Say nothing' },
+        ], doneLine: '"Thank you!" makes helpers feel happy too.' },
+    ],
+  },
+  {
+    zone: 'school', level: 5, goal: 'Pack up & goodbye',
+    intro: "School is nearly done! Let's pack up and say goodbye the friendly way.",
+    outro: 'You finished a whole school day — I am SO proud of you!',
+    moment: 'finished a whole school day on School Island',
+    rounds: [
+      { kind: 'choice', say: 'The bell rang! What goes back in our bag?',
+        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '📚' } },
+        options: [
+          { emoji: '📚', caption: 'My books', correct: true },
+          { emoji: '🪑', caption: 'A chair' },
+        ], doneLine: 'Books packed — all set!' },
+      { kind: 'choice', say: 'Time to go home. What do we say to our friends?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          { emoji: '👋', caption: 'Bye, see you tomorrow!', correct: true },
+          { emoji: '🚪', caption: 'Leave without a word' },
+        ], doneLine: '"See you tomorrow!" What a lovely school day.' },
+    ],
+  },
+];
+
+// ---- FUN CORNER — After-school home routines & play ------------------------
+
+const AFTERNOON: Quest[] = [
+  {
+    zone: 'afternoon', level: 1, goal: 'Home again!',
+    intro: "We're home from school! Puppy is SO happy to see you. What comes first?",
+    outro: 'Coming home the cozy way — you know just what to do!',
+    moment: 'practiced coming home at the Fun Corner',
+    rounds: [
+      { kind: 'choice', say: 'We just walked in the door. Where do our shoes go?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '👟' } },
+        options: [
+          { emoji: '🧺', caption: 'By the door', correct: true },
+          { emoji: '🛋️', caption: 'On the sofa' },
+        ], doneLine: 'Shoes by the door — tidy toes!' },
+      { kind: 'choice', say: 'Our hands played all day. What do they need before snack?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🧼' } },
+        options: [
+          { emoji: '🧼', caption: 'A wash', correct: true },
+          { emoji: '🍪', caption: 'Straight to cookies' },
+        ], doneLine: 'Clean hands, happy tummy!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 2, goal: 'Snack time',
+    intro: "Snack time at the little table! Let's make it yummy AND kind.",
+    outro: 'That was the nicest snack time ever.',
+    moment: 'shared snack time at the Fun Corner',
+    rounds: [
+      { kind: 'choice', say: 'Puppy looks hungry too. What is the kind thing to do?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🍎' } },
+        options: [
+          { emoji: '🫴', caption: 'Share a piece', correct: true },
+          { emoji: '🙈', caption: 'Hide the snack' },
+        ], doneLine: 'You shared! Puppy wags and wags.' },
+      { kind: 'choice', say: 'Snack is done. Where does our plate go?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🍽️' } },
+        options: [
+          { emoji: '🧽', caption: 'To the sink', correct: true },
+          { emoji: '🌳', caption: 'Under a tree' },
+        ], doneLine: 'Plate to the sink — helper of the day!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 3, goal: 'Play time!',
+    intro: "Now the BEST part — play time! Ball, kite... let's play the friendly way.",
+    outro: 'Playing with you is the best part of my day.',
+    moment: 'played the friendly way at the Fun Corner',
+    rounds: [
+      { kind: 'choice', say: 'Puppy brings you the ball. What do we do?',
+        npc: { face: '🐕', mood: MOOD('excited'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '⚽', caption: 'Throw it to play', correct: true },
+          { emoji: '🚶', caption: 'Walk away' },
+        ], doneLine: 'Wheee! Puppy loves playing with you.' },
+      { kind: 'choice', say: 'The kite gets stuck for a second. How do we fix it?',
+        npc: { face: '🐕', mood: MOOD('neutral'), thought: { emoji: '🪁' } },
+        options: [
+          { emoji: '🤲', caption: 'Gently untangle it', correct: true },
+          { emoji: '😡', caption: 'Yank it hard' },
+        ], doneLine: 'Gentle hands fixed it — up it flies!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 4, goal: 'Tidy-up time',
+    intro: "Play time is winding down. Tidying up can be a game too!",
+    outro: 'Everything back in its place — the Fun Corner sparkles!',
+    moment: 'tidied up at the Fun Corner',
+    rounds: [
+      { kind: 'choice', say: 'The toys are everywhere! Where do they sleep?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🧸' } },
+        options: [
+          { emoji: '📦', caption: 'In the toy box', correct: true },
+          { emoji: '🌧️', caption: 'Out in the rain' },
+        ], doneLine: 'Toys in the box — they say thank you!' },
+      { kind: 'choice', say: 'One block is left under the table. What do we do?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🧱' } },
+        options: [
+          { emoji: '🙋', caption: 'Pick it up too', correct: true },
+          { emoji: '🙈', caption: 'Pretend not to see' },
+        ], doneLine: 'You got the last one — tidy champion!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 5, goal: 'Family time',
+    intro: "The afternoon is ending. Let's spend a warm moment with our family.",
+    outro: 'What a full, happy afternoon we had together.',
+    moment: 'shared family time at the Fun Corner',
+    rounds: [
+      { kind: 'choice', say: 'A grown-up asks, "How was school today?" What can we say?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '💬' } },
+        options: [
+          { emoji: '😊', caption: 'Tell them one thing', correct: true },
+          { emoji: '🚪', caption: 'Run to another room' },
+        ], doneLine: 'You shared your day — they loved hearing it!' },
+      { kind: 'choice', say: 'Dinner is almost ready. How can we help?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🍽️' } },
+        options: [
+          { emoji: '🥄', caption: 'Set the table', correct: true },
+          { emoji: '📺', caption: 'Turn the TV up loud' },
+        ], doneLine: 'Table set! Dinner tastes better when we help.' },
+    ],
+  },
+];
+
+// ---- SLEEPY ISLAND — Bedtime routines ---------------------------------------
+
+const NIGHT: Quest[] = [
+  {
+    zone: 'night', level: 1, goal: 'Getting sleepy',
+    intro: "The moon is up. Sheep is here to help us wind down, nice and slow.",
+    outro: 'Winding down feels so cozy with you.',
+    moment: 'wound down on Sleepy Island',
+    rounds: [
+      { kind: 'choice', say: 'The sky is dark and we feel yawny. What time is it?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🌙' } },
+        options: [
+          { emoji: '🛏️', caption: 'Bedtime', correct: true },
+          { emoji: '🎉', caption: 'Party time' },
+        ], doneLine: 'Yes — the moon says bedtime.' },
+      { kind: 'choice', say: 'Before bed, screens go...',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '📱' } },
+        options: [
+          { emoji: '🔌', caption: 'Away to charge', correct: true },
+          { emoji: '🛏️', caption: 'Under the pillow' },
+        ], doneLine: 'Screens away — our eyes say thank you.' },
+    ],
+  },
+  {
+    zone: 'night', level: 2, goal: 'Pajama time',
+    intro: "Time to get comfy! Pajamas on, day clothes away.",
+    outro: 'Comfy, cozy, ready for dreams.',
+    moment: 'got comfy on Sleepy Island',
+    rounds: [
+      { kind: 'choice', say: 'What do we wear to sleep?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🩳' } },
+        options: [
+          { emoji: '🛌', caption: 'Pajamas', correct: true },
+          { emoji: '🥾', caption: 'Rain boots' },
+        ], doneLine: 'Soft pajamas — so comfy!' },
+      { kind: 'choice', say: 'Where do our day clothes go?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '👕' } },
+        options: [
+          { emoji: '🧺', caption: 'In the basket', correct: true },
+          { emoji: '💡', caption: 'On the lamp' },
+        ], doneLine: 'Into the basket they go!' },
+    ],
+  },
+  {
+    zone: 'night', level: 3, goal: 'Brush & wash',
+    intro: "Sparkly teeth and a clean face help us sleep sweet.",
+    outro: 'Sparkly clean from teeth to toes!',
+    moment: 'brushed and washed on Sleepy Island',
+    rounds: [
+      { kind: 'choice', say: 'Before bed, our teeth need a...',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🦷' } },
+        options: [
+          { emoji: '🪥', caption: 'Brush', correct: true },
+          { emoji: '🍬', caption: 'Candy' },
+        ], doneLine: 'Brush brush brush — sparkly!' },
+      { kind: 'choice', say: 'And our face gets a gentle...',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '💧' } },
+        options: [
+          { emoji: '🧼', caption: 'Wash', correct: true },
+          { emoji: '🖍️', caption: 'Drawing' },
+        ], doneLine: 'Fresh and clean for dreamland.' },
+    ],
+  },
+  {
+    zone: 'night', level: 4, goal: 'Story & snuggle',
+    intro: "Almost time to sleep. A story and a snuggle make the night gentle.",
+    outro: 'The story was lovely. Your eyes look sleepy and happy.',
+    moment: 'had story time on Sleepy Island',
+    rounds: [
+      { kind: 'choice', say: 'We are tucked in. What makes bedtime extra nice?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '📖' } },
+        options: [
+          { emoji: '📖', caption: 'A bedtime story', correct: true },
+          { emoji: '🥁', caption: 'A drum solo' },
+        ], doneLine: 'Once upon a time... perfect.' },
+      { kind: 'choice', say: 'Who snuggles with us tonight?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🧸' } },
+        options: [
+          { emoji: '🧸', caption: 'Teddy', correct: true },
+          { emoji: '🪨', caption: 'A rock' },
+        ], doneLine: 'Teddy is the best snuggler.' },
+    ],
+  },
+  {
+    zone: 'night', level: 5, goal: 'Goodnight, world',
+    intro: "The whole day is done — morning, school, play, and now sleep. One last goodnight.",
+    outro: 'Goodnight, my friend. What a wonderful day we lived together. 🌙',
+    moment: 'said goodnight on Sleepy Island',
+    rounds: [
+      { kind: 'choice', say: 'The lights are low. What do we say to our family?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '💤' } },
+        options: [
+          { emoji: '😴', caption: 'Goodnight!', correct: true },
+          { emoji: '🏃', caption: 'One more run around' },
+        ], doneLine: '"Goodnight!" Sweet and soft.' },
+      { kind: 'choice', say: 'Eyes closed, teddy hugged. What comes next?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🌙' } },
+        options: [
+          { emoji: '💭', caption: 'Sweet dreams', correct: true },
+          { emoji: '📣', caption: 'Loud noises' },
+        ], doneLine: 'Sweet dreams until the sun comes up. 🌙✨' },
+    ],
+  },
+];
+
+// ===========================================================================
 
 export const QUESTS: Record<ActivityZone, Quest[]> = {
   meadow: MEADOW,
@@ -681,6 +1002,9 @@ export const QUESTS: Record<ActivityZone, Quest[]> = {
   cove: COVE,
   forest: FOREST,
   shore: SHORE,
+  school: SCHOOL,
+  afternoon: AFTERNOON,
+  night: NIGHT,
 };
 
 /** Get the quest for a zone at a 1-based level (clamped to the available set). */

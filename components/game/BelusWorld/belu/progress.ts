@@ -8,9 +8,18 @@
 // No timers, no losing, no farming the same level past 3 stars.
 // ---------------------------------------------------------------------------
 
-export type ActivityZone = 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore';
+export type ActivityZone =
+  | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore'
+  | 'school' | 'afternoon' | 'night';
 
-export const ZONES: ActivityZone[] = ['meadow', 'mountain', 'cove', 'forest', 'shore'];
+export const ZONES: ActivityZone[] = [
+  'meadow', 'mountain', 'cove', 'forest', 'shore',
+  'school', 'afternoon', 'night',
+];
+
+/** Nilu's Day — the story arc through one day of Nilu's life. Each stage's
+ *  island only FORMS once the previous stage's island is fully completed. */
+export const DAY_ARC: ActivityZone[] = ['mountain', 'school', 'afternoon', 'night'];
 export const MAX_LEVEL = 5;
 export const MAX_STARS_PER_LEVEL = 3;
 export const MAX_STARS_PER_ISLAND = MAX_LEVEL * MAX_STARS_PER_LEVEL; // 15
@@ -46,13 +55,24 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'backpack', name: 'Explorer Backpack', icon: '🎒', slot: 'back' },
   { id: 'balloon', name: 'Sky Balloon', icon: '🎈', slot: 'back' },
   { id: 'wings', name: 'Fairy Wings', icon: '🧚', slot: 'back' },
+  // ---- Nilu's Day items — earned across the School / Fun Corner / Sleepy
+  // Island levels so the later day-arc levels keep paying out. ----
+  { id: 'schoolcap', name: 'School Cap', icon: '🧢', slot: 'head' },
+  { id: 'schoolbag', name: 'School Bag', icon: '🎒', slot: 'back' },
+  { id: 'starbadge', name: 'Star Badge', icon: '⭐', slot: 'face' },
+  { id: 'pajamahat', name: 'Pajama Hat', icon: '😴', slot: 'head' },
+  { id: 'teddy', name: 'Cuddly Teddy', icon: '🧸', slot: 'back' },
+  { id: 'moonpin', name: 'Moon Pin', icon: '🌙', slot: 'face' },
+  { id: 'kite', name: 'Play Kite', icon: '🪁', slot: 'back' },
+  { id: 'snackpin', name: 'Snack Pin', icon: '🍎', slot: 'face' },
 ];
 /** the order items unlock as the child completes levels — slots interleaved so
  *  every few levels the reward feels different (a hat, then something for the
- *  back, then the face…). 16 items across 25 total levels. */
+ *  back, then the face…). 24 items across 40 total levels. */
 export const UNLOCK_ORDER = [
   'cap', 'bow', 'glasses', 'scarf', 'party', 'flowercrown', 'cape', 'sunhat',
   'goggles', 'crown', 'backpack', 'beanie', 'hearts', 'wings', 'balloon', 'wizard',
+  'schoolcap', 'snackpin', 'schoolbag', 'kite', 'starbadge', 'teddy', 'moonpin', 'pajamahat',
 ];
 
 export interface EquippedCosmetics {
@@ -104,6 +124,18 @@ export interface GameProgress {
   /** the child's most recent self-chosen calm-plan totems from Calm Cove L5
    *  (e.g. ["Deep breaths", "Squeeze my hands", "Count to 5"]) — empty if never built */
   calmPlan: string[];
+  /** Nilu's Day arc bookkeeping:
+   *  - choice: what a pre-update player picked when the day arc arrived
+   *    ('fresh' = re-earn each stage post-choice, 'continue' = existing
+   *    completed levels count, null = not asked yet)
+   *  - stagesDone: day-arc zones mastered AFTER the choice (used by 'fresh')
+   *  - celebrated: day-arc islands whose "a new island formed!" celebration
+   *    has already fired (so it fires exactly once) */
+  dayArc: {
+    choice: 'fresh' | 'continue' | null;
+    stagesDone: string[];
+    celebrated: string[];
+  };
 }
 
 const KEY = 'belus_world_progress_v1';
@@ -119,6 +151,9 @@ function emptyPracticeStats(): Record<ActivityZone, { slips: number; rounds: num
     cove: { slips: 0, rounds: 0 },
     forest: { slips: 0, rounds: 0 },
     shore: { slips: 0, rounds: 0 },
+    school: { slips: 0, rounds: 0 },
+    afternoon: { slips: 0, rounds: 0 },
+    night: { slips: 0, rounds: 0 },
   };
 }
 
@@ -130,6 +165,9 @@ function defaults(): GameProgress {
       cove: emptyIsland(),
       forest: emptyIsland(),
       shore: emptyIsland(),
+      school: emptyIsland(),
+      afternoon: emptyIsland(),
+      night: emptyIsland(),
     },
     unlocked: [],
     equipped: {},
@@ -144,6 +182,7 @@ function defaults(): GameProgress {
     starQuests: { date: '', doneZones: [] },
     practiceStats: emptyPracticeStats(),
     calmPlan: [],
+    dayArc: { choice: null, stagesDone: [], celebrated: [] },
   };
 }
 
@@ -194,6 +233,18 @@ export function loadProgress(): GameProgress {
     }
     if (Array.isArray(parsed.calmPlan)) {
       base.calmPlan = parsed.calmPlan.filter((c): c is string => typeof c === 'string');
+    }
+    // older saves have no dayArc — they keep choice=null (which triggers the
+    // one-time fresh/continue chooser for players with real progress)
+    if (parsed.dayArc && typeof parsed.dayArc === 'object') {
+      const da = parsed.dayArc as Partial<GameProgress['dayArc']>;
+      if (da.choice === 'fresh' || da.choice === 'continue') base.dayArc.choice = da.choice;
+      if (Array.isArray(da.stagesDone)) {
+        base.dayArc.stagesDone = da.stagesDone.filter((s): s is string => typeof s === 'string');
+      }
+      if (Array.isArray(da.celebrated)) {
+        base.dayArc.celebrated = da.celebrated.filter((s): s is string => typeof s === 'string');
+      }
     }
     if (typeof parsed.growthFloor === 'number') {
       base.growthFloor = Math.max(0, Math.min(3, parsed.growthFloor));
@@ -247,6 +298,43 @@ export function isIslandComplete(p: GameProgress, zone: ActivityZone): boolean {
   return completedLevels(p, zone) >= MAX_LEVEL;
 }
 
+// ---- Nilu's Day arc (☀️ mountain → 🏫 school → 🏡 afternoon → 🌙 night) ----
+
+/** Is this day-arc stage "done" for gating purposes? A 'fresh' player must
+ *  re-earn each stage AFTER their choice (stagesDone); everyone else counts
+ *  their plain completed levels. */
+export function dayStageComplete(p: GameProgress, zone: ActivityZone): boolean {
+  if (p.dayArc.choice === 'fresh') return p.dayArc.stagesDone.includes(zone);
+  return completedLevels(p, zone) >= MAX_LEVEL;
+}
+
+/** Has this day-arc island FORMED yet? The first stage (mountain) is always
+ *  available; each later island forms once the previous stage is complete. */
+export function isDayZoneUnlocked(p: GameProgress, zone: ActivityZone): boolean {
+  const idx = DAY_ARC.indexOf(zone);
+  if (idx <= 0) return true; // mountain (and any non-arc zone) is always open
+  return dayStageComplete(p, DAY_ARC[idx - 1]);
+}
+
+/** Record that a day-arc stage was mastered (island reached 5/5) — feeds the
+ *  'fresh' gating path. No-op for already-recorded stages. */
+export function recordDayStage(p: GameProgress, zone: ActivityZone): GameProgress {
+  if (!DAY_ARC.includes(zone) || p.dayArc.stagesDone.includes(zone)) return p;
+  return { ...p, dayArc: { ...p.dayArc, stagesDone: [...p.dayArc.stagesDone, zone] } };
+}
+
+/** Set the one-time fresh/continue choice for the Nilu's Day update. */
+export function setDayChoice(p: GameProgress, choice: 'fresh' | 'continue'): GameProgress {
+  if (p.dayArc.choice !== null) return p;
+  return { ...p, dayArc: { ...p.dayArc, choice } };
+}
+
+/** Mark a day-arc island's "it formed!" celebration as played (fires once). */
+export function markDayCelebrated(p: GameProgress, zone: ActivityZone): GameProgress {
+  if (p.dayArc.celebrated.includes(zone)) return p;
+  return { ...p, dayArc: { ...p.dayArc, celebrated: [...p.dayArc.celebrated, zone] } };
+}
+
 // ---- totals ----
 
 export function totalStars(p: GameProgress): number {
@@ -273,11 +361,12 @@ export interface GrowthInfo {
   scale: number;
 }
 
-// Star thresholds for each growth stage. Tuned so the FINAL stage lands near
-// the end of the whole journey (22 of 25 levels) instead of leaving the last
-// islands with no growth payoff. Existing players are protected by
-// `growthFloor` — a stage once reached is never lost.
-const GROWTH_THRESHOLDS = [0, 15, 36, 66];
+// Star thresholds for each growth stage. Retuned for the Nilu's Day update
+// (8 islands × 15 stars = 120 max) so the FINAL stage lands near the end of
+// the whole journey instead of leaving the day-arc islands with no growth
+// payoff. Existing players are protected by `growthFloor` — a stage once
+// reached is never lost.
+const GROWTH_THRESHOLDS = [0, 18, 45, 84];
 const GROWTH_LABELS = ['Baby Nilu', 'Little Nilu', 'Big Nilu', 'Grown-Up Nilu'];
 const GROWTH_SCALES = [0.7, 0.85, 1.0, 1.15];
 

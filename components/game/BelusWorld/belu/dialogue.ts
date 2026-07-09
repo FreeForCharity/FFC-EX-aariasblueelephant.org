@@ -202,6 +202,63 @@ const DB: Record<string, Partial<Record<0 | 1 | 2 | 3, Line[]>>> = {
     ],
   },
 
+  zone_school: {
+    0: [
+      "This is School Island... school days have so many parts. We can practice them together.",
+      "The owl teacher is very kind. I still get a little nervous at school sometimes.",
+    ],
+    1: [
+      "School Island! I know where my bag hook is now. Want to see?",
+      "Circle time, lining up, snack time — school has a rhythm. I'm learning it!",
+    ],
+    2: [
+      "School Island! Remember when raising my hand felt hard? Now it's easy.",
+      "I asked the teacher for help yesterday, all by myself. Practicing here really works.",
+    ],
+    3: [
+      "SCHOOL ISLAND! I'm basically the line-leader now. Basically.",
+      "The owl says I'm her best listener. I only fell asleep in circle time once. ONCE.",
+    ],
+  },
+
+  zone_afternoon: {
+    0: [
+      "This is the Fun Corner... it's what happens after school. Snack, play, tidy-up.",
+      "Coming home has little steps too. Shoes, hands, snack. We can practice them.",
+    ],
+    1: [
+      "The Fun Corner! After-school time is my favorite — especially snack.",
+      "The puppy here ALWAYS wants to play. Want to say hi?",
+    ],
+    2: [
+      "The Fun Corner! Tidy-up used to feel boring. Now we make it a game.",
+      "I set the table last night without being asked. The Fun Corner taught me that!",
+    ],
+    3: [
+      "FUN CORNER! Snack, ball, kite, repeat. The perfect afternoon formula.",
+      "The puppy and I have a secret handshake now. Okay — a secret paw-shake.",
+    ],
+  },
+
+  zone_night: {
+    0: [
+      "This is Sleepy Island... where the day gets quiet and soft. I like it here.",
+      "Bedtime has gentle steps. Pajamas, teeth, story... we can do them together.",
+    ],
+    1: [
+      "Sleepy Island! The sheep talks very softly here. Everything is cozy.",
+      "Pajamas, teeth, story, goodnight. Four soft steps and then dreams.",
+    ],
+    2: [
+      "Sleepy Island... bedtime used to feel hard for me. The little steps made it easy.",
+      "I hugged my teddy and fell right asleep last night. This island taught me how.",
+    ],
+    3: [
+      "Sleepy Island — the coziest place in the whole sky. Yawn... see? It works already.",
+      "The sheep counted ME last night to fall asleep. True story.",
+    ],
+  },
+
   explorer_mode: {
     0: ["We can just... walk around? And see things?", "I like exploring. It feels calmer than having a plan."],
     1: ["Explorer mode! Let's see what we discover together.", "Who knows what we'll find? I love not knowing."],
@@ -257,6 +314,9 @@ export function getZoneDialogue(zone: string, ctx: DialogueContext): string {
     cove: 'zone_cove',
     forest: 'zone_forest',
     shore: 'zone_shore',
+    school: 'zone_school',
+    afternoon: 'zone_afternoon',
+    night: 'zone_night',
   };
   return getDialogue(keyMap[zone] ?? 'zone_meadow', ctx);
 }

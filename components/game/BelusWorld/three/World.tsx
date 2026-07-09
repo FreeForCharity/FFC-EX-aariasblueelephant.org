@@ -44,11 +44,11 @@ function Island({ isl }: { isl: IslandDef }) {
   );
 }
 
-function RainbowBridges({ rainbowUnlocked }: { rainbowUnlocked: boolean }) {
+function RainbowBridges({ hiddenKey, isHidden }: { hiddenKey: string; isHidden: (z: ZoneId) => boolean }) {
   const planks = useMemo(() => {
     const all: { pos: [number, number, number]; rot: number; color: string; w: number }[] = [];
     BRIDGE_SEGMENTS.forEach((s, bi) => {
-      if (s.to === 'rainbow' && !rainbowUnlocked) return; // bridge not formed yet
+      if (isHidden(s.to)) return; // bridge to a locked island hasn't formed yet
       const colors = BRIDGES[bi].colors;
       const SEGS = 14;
       const dx = s.bx - s.ax;
@@ -63,7 +63,8 @@ function RainbowBridges({ rainbowUnlocked }: { rainbowUnlocked: boolean }) {
       }
     });
     return all;
-  }, [rainbowUnlocked]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hiddenKey encodes everything isHidden reads
+  }, [hiddenKey]);
 
   return (
     <group>
@@ -144,6 +145,136 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
           <mesh key={i} position={[bx * 0.7 + it.x * 0.4, y + 0.2, bz * 0.7 + it.z * 0.4]}>
             <dodecahedronGeometry args={[0.5 + it.r * 0.4, 0]} />
             <meshStandardMaterial color="#aeb8c4" roughness={1} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+  if (isl.id === 'school') {
+    // a tiny schoolhouse (box + pyramid roof + bell) at the back edge, plus a
+    // few book stacks that fill in with the bloom
+    const len = Math.hypot(isl.cx, isl.cz) || 1;
+    const bx = (isl.cx / len) * 4.5; // toward the far edge (away from home)
+    const bz = (isl.cz / len) * 4.5;
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        <mesh position={[bx, y + 1.0, bz]}>
+          <boxGeometry args={[2.6, 2.0, 2.2]} />
+          <meshStandardMaterial color="#ffe0a3" roughness={0.8} />
+        </mesh>
+        <mesh position={[bx, y + 2.6, bz]} rotation={[0, Math.PI / 4, 0]}>
+          <coneGeometry args={[2.1, 1.3, 4]} />
+          <meshStandardMaterial color={isl.accent} roughness={0.7} />
+        </mesh>
+        <mesh position={[bx, y + 3.35, bz]}>
+          <sphereGeometry args={[0.22, 12, 10]} />
+          <meshStandardMaterial color="#ffd166" emissive="#ffd166" emissiveIntensity={0.4} roughness={0.3} />
+        </mesh>
+        {/* book stacks */}
+        {items.slice(0, 3).map((it, i) => (
+          <group key={i} position={[it.x * 0.6, y, it.z * 0.6]}>
+            <mesh position={[0, 0.09, 0]}>
+              <boxGeometry args={[0.7, 0.18, 0.5]} />
+              <meshStandardMaterial color="#f59e0b" roughness={0.7} />
+            </mesh>
+            <mesh position={[0.05, 0.27, 0]} rotation={[0, 0.4, 0]}>
+              <boxGeometry args={[0.6, 0.16, 0.45]} />
+              <meshStandardMaterial color="#7cc6ff" roughness={0.7} />
+            </mesh>
+            <mesh position={[-0.04, 0.42, 0]} rotation={[0, -0.3, 0]}>
+              <boxGeometry args={[0.5, 0.14, 0.4]} />
+              <meshStandardMaterial color="#ff8fc8" roughness={0.7} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
+  }
+  if (isl.id === 'afternoon') {
+    // after-school fun: a snack table, a ball and a kite on a string
+    const len = Math.hypot(isl.cx, isl.cz) || 1;
+    const bx = (isl.cx / len) * 4.0;
+    const bz = (isl.cz / len) * 4.0;
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        {/* snack table */}
+        <group position={[bx, y, bz]}>
+          <mesh position={[0, 0.62, 0]}>
+            <cylinderGeometry args={[1.0, 1.0, 0.12, 16]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.3, 0]}>
+            <cylinderGeometry args={[0.14, 0.18, 0.6, 8]} />
+            <meshStandardMaterial color="#9a5a3b" roughness={0.9} />
+          </mesh>
+          <mesh position={[0.3, 0.82, 0.1]}>
+            <sphereGeometry args={[0.16, 12, 10]} />
+            <meshStandardMaterial color="#ff7b7b" roughness={0.5} />
+          </mesh>
+          <mesh position={[-0.3, 0.78, -0.15]}>
+            <sphereGeometry args={[0.12, 12, 10]} />
+            <meshStandardMaterial color="#ffd166" roughness={0.5} />
+          </mesh>
+        </group>
+        {/* play ball — off to the side, clear of the answer-orb arc */}
+        <mesh position={[3.4, y + 0.35, -2.2]}>
+          <sphereGeometry args={[0.35, 16, 12]} />
+          <meshStandardMaterial color={isl.accent} roughness={0.4} />
+        </mesh>
+        {/* kite on a string */}
+        <group position={[-3.2, y, 1.6]}>
+          <mesh position={[0, 1.4, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, 2.8, 6]} />
+            <meshStandardMaterial color="#e8e8e8" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 3.0, 0]} rotation={[0, 0, Math.PI / 4]}>
+            <planeGeometry args={[0.9, 0.9]} />
+            <meshStandardMaterial color={isl.accent} roughness={0.5} side={THREE.DoubleSide} emissive={isl.accent} emissiveIntensity={0.15} />
+          </mesh>
+        </group>
+      </group>
+    );
+  }
+  if (isl.id === 'night') {
+    // a cozy bed, a crescent moon on a pole, and two soft stars
+    const len = Math.hypot(isl.cx, isl.cz) || 1;
+    const bx = (isl.cx / len) * 4.2;
+    const bz = (isl.cz / len) * 4.2;
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        {/* bed: base + pillow */}
+        <group position={[bx, y, bz]}>
+          <mesh position={[0, 0.35, 0]}>
+            <boxGeometry args={[2.4, 0.7, 1.4]} />
+            <meshStandardMaterial color="#b8a5e8" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.8, 0.82, 0]}>
+            <boxGeometry args={[0.7, 0.24, 1.0]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.6} />
+          </mesh>
+        </group>
+        {/* crescent moon on a pole (a bright sphere with an offset "bite"
+            sphere in the island color reads as a crescent) */}
+        <group position={[-2.8, y, 2.6]}>
+          <mesh position={[0, 1.4, 0]}>
+            <cylinderGeometry args={[0.08, 0.1, 2.8, 8]} />
+            <meshStandardMaterial color="#caa46a" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 3.0, 0]}>
+            <sphereGeometry args={[0.55, 16, 12]} />
+            <meshStandardMaterial color="#ffe9a3" emissive="#ffe9a3" emissiveIntensity={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[0.3, 3.15, 0.15]}>
+            <sphereGeometry args={[0.42, 16, 12]} />
+            <meshStandardMaterial color={isl.grass} roughness={0.9} />
+          </mesh>
+          <pointLight color="#ffe9a3" intensity={1.2} distance={9} position={[0, 3.0, 0]} />
+        </group>
+        {/* two soft stars */}
+        {[[2.6, 1.9], [-1.4, -2.8]].map(([sx, sz], i) => (
+          <mesh key={i} position={[sx, y + 1.6 + i * 0.7, sz]}>
+            <octahedronGeometry args={[0.3, 0]} />
+            <meshStandardMaterial color="#fff4b0" emissive={isl.accent} emissiveIntensity={0.9} roughness={0.2} />
           </mesh>
         ))}
       </group>
@@ -236,26 +367,41 @@ function Landmark({ isl }: { isl: IslandDef }) {
   );
 }
 
+export interface DayUnlocks {
+  school: boolean;
+  afternoon: boolean;
+  night: boolean;
+}
+
 interface Props {
   activeZone: ZoneId | null;
   reduceMotion: boolean;
   islandLevels: Partial<Record<ZoneId, number>>;
   /** has the reward island formed yet? (first level completed) */
   rainbowUnlocked: boolean;
+  /** which Nilu's Day islands have formed */
+  dayUnlocks: DayUnlocks;
 }
 
-export default function World({ activeZone, reduceMotion, islandLevels, rainbowUnlocked }: Props) {
+export default function World({ activeZone, reduceMotion, islandLevels, rainbowUnlocked, dayUnlocks }: Props) {
+  // a locked island physically does not exist yet: no island, no decor, no bridge
+  const isHidden = (z: ZoneId): boolean => {
+    if (z === 'rainbow') return !rainbowUnlocked;
+    if (z === 'school') return !dayUnlocks.school;
+    if (z === 'afternoon') return !dayUnlocks.afternoon;
+    if (z === 'night') return !dayUnlocks.night;
+    return false;
+  };
+  const hiddenKey = `${rainbowUnlocked}-${dayUnlocks.school}-${dayUnlocks.afternoon}-${dayUnlocks.night}`;
   return (
     <group>
       <Clouds reduceMotion={reduceMotion} />
       <WorldLife reduceMotion={reduceMotion} />
-      <RainbowBridges rainbowUnlocked={rainbowUnlocked} />
-      {ISLAND_LIST.map((isl) =>
-        isl.id === 'rainbow' && !rainbowUnlocked ? null : <Island key={isl.id} isl={isl} />,
-      )}
+      <RainbowBridges hiddenKey={hiddenKey} isHidden={isHidden} />
+      {ISLAND_LIST.map((isl) => (isHidden(isl.id) ? null : <Island key={isl.id} isl={isl} />))}
       <HomeDecor />
       {rainbowUnlocked && <RainbowDecor />}
-      {ISLAND_LIST.filter((i) => i.id !== 'home' && i.id !== 'rainbow').map((isl) => {
+      {ISLAND_LIST.filter((i) => i.id !== 'home' && i.id !== 'rainbow' && !isHidden(i.id)).map((isl) => {
         const bloom = islandLevels[isl.id] ?? 0;
         return (
           <group key={isl.id}>

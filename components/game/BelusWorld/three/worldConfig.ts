@@ -5,7 +5,9 @@
 // the ground-collision math, and the gameplay all read from one source.
 // ---------------------------------------------------------------------------
 
-export type ZoneId = 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore' | 'rainbow';
+export type ZoneId =
+  | 'home' | 'meadow' | 'mountain' | 'cove' | 'forest' | 'shore' | 'rainbow'
+  | 'school' | 'afternoon' | 'night';
 
 export interface IslandDef {
   id: ZoneId;
@@ -127,6 +129,51 @@ export const ISLANDS: Record<ZoneId, IslandDef> = {
     label: 'Rainbow Playground',
     emoji: '🌈',
   },
+  // ---- Nilu's Day arc islands — these are HIDDEN until the previous stage of
+  // the day is mastered, then they FORM with a celebration (see worldRuntime
+  // flags below + the rainbowUnlocked pattern in worldMath/World/index). ----
+  // 🏫 School Island — stage 2 of Nilu's day. North-east, between Morning
+  // Mountain and the Rainbow Playground.
+  school: {
+    id: 'school',
+    cx: 26,
+    cz: -34,
+    radius: 8.5,
+    top: 3.5,
+    grass: '#e3d38a',
+    rock: '#a08454',
+    accent: '#f59e0b',
+    label: 'School Island',
+    emoji: '🏫',
+  },
+  // 🏡 Fun Corner — after-school play + home routines. North-west, between the
+  // Rainbow Playground and Feelings Meadow.
+  afternoon: {
+    id: 'afternoon',
+    cx: -27,
+    cz: -33,
+    radius: 8.5,
+    top: 2,
+    grass: '#ffc9a3',
+    rock: '#a56b52',
+    accent: '#fb7185',
+    label: 'Fun Corner',
+    emoji: '🏡',
+  },
+  // 🌙 Sleepy Island — winding down for the night. Due east, between Morning
+  // Mountain and Friendship Forest.
+  night: {
+    id: 'night',
+    cx: 46,
+    cz: 8,
+    radius: 8.5,
+    top: 1.5,
+    grass: '#9aa4d8',
+    rock: '#6d6a94',
+    accent: '#818cf8',
+    label: 'Sleepy Island',
+    emoji: '🌙',
+  },
 };
 
 export const ISLAND_LIST = Object.values(ISLANDS);
@@ -141,16 +188,38 @@ export const BRIDGES: BridgeDef[] = [
   { from: 'home', to: 'shore', halfWidth: 2.2, colors: RAINBOW_STRIPES },
   // bridge to the reward island — only walkable once it's unlocked
   { from: 'home', to: 'rainbow', halfWidth: 2.4, colors: RAINBOW_STRIPES },
+  // Day Arc islands — bridges only form when their island does
+  { from: 'home', to: 'school', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'afternoon', halfWidth: 2.2, colors: RAINBOW_STRIPES },
+  { from: 'home', to: 'night', halfWidth: 2.2, colors: RAINBOW_STRIPES },
 ];
 
 // The zone islands that host a learning activity (everything except home + the
 // reward island). The rainbow playground has no lesson — it's just to explore.
-export const ZONE_ISLANDS: ZoneId[] = ['meadow', 'mountain', 'cove', 'forest', 'shore'];
+export const ZONE_ISLANDS: ZoneId[] = [
+  'meadow', 'mountain', 'cove', 'forest', 'shore',
+  'school', 'afternoon', 'night',
+];
 
-// Runtime flag: the reward island (and its bridge) only physically exist once
-// the child has finished their first level. Rendering AND ground-collision both
-// read this so a locked island is neither visible nor walkable.
-export const worldRuntime = { rainbowUnlocked: false };
+// Runtime flags: the reward island + the Day Arc islands (and their bridges)
+// only physically exist once earned. Rendering AND ground-collision both read
+// these so a locked island is neither visible nor walkable.
+export const worldRuntime = {
+  rainbowUnlocked: false,
+  schoolUnlocked: false,
+  afternoonUnlocked: false,
+  nightUnlocked: false,
+};
+
+/** Does this island physically exist right now? (locked islands are neither
+ *  visible nor walkable — same contract as the original rainbow island) */
+export function isZoneFormed(id: ZoneId): boolean {
+  if (id === 'rainbow') return worldRuntime.rainbowUnlocked;
+  if (id === 'school') return worldRuntime.schoolUnlocked;
+  if (id === 'afternoon') return worldRuntime.afternoonUnlocked;
+  if (id === 'night') return worldRuntime.nightUnlocked;
+  return true;
+}
 
 // Where the interaction crystal sits on each zone island (offset from centre)
 // and how close Nilu must be to trigger the "Play!" prompt.
