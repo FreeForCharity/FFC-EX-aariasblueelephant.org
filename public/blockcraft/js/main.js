@@ -1039,6 +1039,11 @@
     $('movieBtn').onclick = () => { ABC.startAdventureReplay && ABC.startAdventureReplay(); };
   }
 
+  /* ---------------- 📤 Share world — instant download straight from the HUD ---------------- */
+  if ($('shareBtn')) {
+    $('shareBtn').onclick = () => { ABC.ui.shareWorld && ABC.ui.shareWorld(); };
+  }
+
   /* full screen — works on Chrome/Edge/Firefox AND Safari (incl. iOS, which
      has no Fullscreen API, via a CSS faux-fullscreen fallback) */
   function nativeFsEl() { return document.fullscreenElement || document.webkitFullscreenElement; }
@@ -1125,6 +1130,19 @@
     }
   };
   $('howBtn').onclick = () => ABC.ui.showHelp();
+
+  /* ---------------- title-screen extras: ▶️ My Movie & 📥 Visit a friend's world ----------------
+     "My Movie" only appears for a returning builder — a saved world with at least
+     30 edits — so a brand-new player never sees an empty replay. Both buttons
+     start the game first (the normal playBtn flow), then open their feature. */
+  (function () {
+    const mv = $('titleMovieBtn'), vs = $('titleVisitBtn');
+    let edits = 0;
+    try { const s = ABC.world.serialize(); edits = s.d.length + s.r.length; } catch (e) { /* no world yet */ }
+    if (mv && hadSave && edits >= 30) mv.style.display = '';
+    if (mv) mv.onclick = () => { $('playBtn').click(); setTimeout(() => ABC.ui.startTimelapse && ABC.ui.startTimelapse(), 700); };
+    if (vs) vs.onclick = () => { $('playBtn').click(); setTimeout(() => ABC.ui.visitWorld && ABC.ui.visitWorld(), 700); };
+  })();
 
   /* ---------------- game speed (🐢 more time · 🐇 normal · 🚀 faster) ---------------- */
   ABC.refreshSpeedBtn = () => {
@@ -1325,6 +1343,7 @@
       'font-size:16px;font-weight:bold;cursor:pointer;padding:8px 14px;';
     rBar.innerHTML = '<span>🎬 My Adventure</span>' +
       `<button id="rpSpeed" style="${btnCss}background:linear-gradient(180deg,#a5d8ff,#74c0fc);color:#1864ab;">1x</button>` +
+      `<button id="rpShare" style="${btnCss}background:linear-gradient(180deg,#b2f2bb,#69db7c);color:#22400a;">📤 Share</button>` +
       `<button id="rpDone" style="${btnCss}background:linear-gradient(180deg,#ffe066,#ffd43b);color:#664d03;">⏹ Done</button>`;
     document.body.appendChild(rBar);
     rBar.querySelector('#rpSpeed').onclick = (e) => {
@@ -1332,6 +1351,7 @@
       e.target.textContent = rSpeed + 'x';
       ABC.audio.sfx.gentle();
     };
+    rBar.querySelector('#rpShare').onclick = () => { ABC.ui.shareWorld && ABC.ui.shareWorld(); };
     rBar.querySelector('#rpDone').onclick = () => endReplay();
     ABC.ui.toast('🎬 Watch where you went — here comes your adventure!', 3200, true);
   }
