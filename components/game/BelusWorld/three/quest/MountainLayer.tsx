@@ -12,15 +12,16 @@
 // Mirrors StoryLayer's frame-ref + arm/disarm/finish structure exactly.
 // ---------------------------------------------------------------------------
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { ISLANDS } from '../worldConfig';
 import { beluPos, dynamicSolids } from '../playerState';
+import { makeRng } from '../Scenery';
 import type { BeluEmotion } from '../../BeluCharacter';
 import { makeLabelTexture } from './emojiTexture';
-import { MOUNTAIN_ROUTINE, NIMBUS_LINES, type Station } from './mountainContent';
+import { MOUNTAIN_ROUTINE, NIMBUS_LINES, RING, SAFE_SPOTS, TWIN_DX, type Station } from './mountainContent';
 import { MorningSun, Nimbus, StepStone, StarSpark } from './mountainExtras';
 import StartSign from './StartSign';
 import type { QuestStatus } from './QuestLayer';
@@ -62,6 +63,10 @@ interface Props {
   level: number;
   paused: boolean;
   reduceMotion: boolean;
+  /** today's date key (e.g. "2026-07-09") — reshuffles station PLACEMENT once
+   *  per real day. The routine's authored order never changes, only which
+   *  pedestal spot each step lands on. */
+  dateKey: string;
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
@@ -71,6 +76,48 @@ interface Props {
 
 function clampLevel(level: number) {
   return Math.max(0, Math.min(MOUNTAIN_ROUTINE.length - 1, level - 1));
+}
+
+// ---- daily station shuffle -------------------------------------------------
+// Same tiny string→seed hash used by HomeLife's dailySparkleSpots, feeding the
+// shared makeRng LCG. Deterministic per dateKey: stable all day, fresh tomorrow.
+function seedFromKey(key: string): number {
+  let h = 7;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 2147483647;
+  return h || 1;
+}
+
+/** Fisher-Yates shuffle of [0..n-1], seeded so it's stable for a given day. */
+function seededPermutation(n: number, seed: number): number[] {
+  const rng = makeRng(seed);
+  const arr = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/** Builds today's slot-remap: which physical RING/SAFE_SPOTS slot each
+ *  authored slot now lands on. Stations still reference the SAME set of
+ *  well-spaced spots — just reassigned — so arc/spacing math is untouched. */
+function dailyStationShuffle(dateKey: string) {
+  const ringPerm = seededPermutation(RING.length, seedFromKey(`${dateKey}:mountain:ring`));
+  const safePerm = seededPermutation(SAFE_SPOTS.length, seedFromKey(`${dateKey}:mountain:safe`));
+  const ringIndexOf = (pos: [number, number]) =>
+    RING.findIndex(([x, z]) => x === pos[0] && z === pos[1]);
+  /** the SHUFFLED local [x,z] a given authored station should render/interact at today */
+  return function shuffledPos(s: Station): [number, number] {
+    if (s.kind === 'safe' || s.kind === 'unsafe') {
+      const pair = s.pair ?? 0;
+      const slot = SAFE_SPOTS[safePerm[pair] ?? pair];
+      return s.kind === 'unsafe' ? [slot[0] + TWIN_DX, slot[1]] : [slot[0], slot[1]];
+    }
+    const idx = ringIndexOf(s.pos);
+    if (idx < 0) return s.pos; // shouldn't happen — fall back to authored spot
+    const slot = RING[ringPerm[idx]];
+    return [slot[0], slot[1]];
+  };
 }
 
 /** stations that actually need visiting to finish (the un-safe twins don't). */
@@ -91,7 +138,13 @@ export default function MountainLayer(props: Props) {
   const frame = useRef<(dt: number) => void>(() => {});
   const isl = ISLANDS[ZONE];
 
-  const stationWorld = (s: Station): [number, number] => [isl.cx + s.pos[0], isl.cz + s.pos[1]];
+  // today's pedestal-placement shuffle — stable all day, fresh tomorrow
+  const shuffledPos = useMemo(() => dailyStationShuffle(props.dateKey), [props.dateKey]);
+
+  const stationWorld = (s: Station): [number, number] => {
+    const [lx, lz] = shuffledPos(s);
+    return [isl.cx + lx, isl.cz + lz];
+  };
   const starWorld = (p: [number, number]): [number, number] => [isl.cx + p[0], isl.cz + p[1]];
 
   // how far along the morning we are (0..1) — drives the rising sun + Nimbus

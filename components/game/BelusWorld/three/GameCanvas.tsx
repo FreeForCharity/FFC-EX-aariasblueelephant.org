@@ -246,6 +246,7 @@ export default function GameCanvas({
           level={islandNextLevel.mountain}
           paused={paused}
           reduceMotion={reduceMotion}
+          dateKey={dateKey}
           speak={speak}
           setEmotion={setEmotion}
           playSound={playSound}
