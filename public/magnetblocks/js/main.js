@@ -229,8 +229,11 @@ window.MB = window.MB || {};
     } else hidePalette();
     const count = MB.Builder.placedCount();
     $('pieceChip').textContent = '🧱 ' + count;
+    const readyToShow = (!MB.Builder.locked && MB.Bag.serializeTable().length >= 3) ? 'inline-block' : 'none';
     const rb = $('replayBtn');
-    if (rb) rb.style.display = (!MB.Builder.locked && MB.Bag.serializeTable().length >= 3) ? 'inline-block' : 'none';
+    if (rb) rb.style.display = readyToShow;
+    const sb = $('shareBtn');
+    if (sb) sb.style.display = readyToShow;
     if (count >= 10) ui.milestone('ten', '🎉 10 blocks! Wow, look at all you built!');
     if (count >= 20) ui.milestone('twenty', '🎉 20 blocks! You are building something amazing!');
     if (count >= 40) ui.milestone('forty', '🌟 40 blocks! You are a building superstar!');
@@ -384,7 +387,9 @@ window.MB = window.MB || {};
     window.addEventListener('keyup', ev => { MB.Animate.keys[ev.code] = false; });
 
     // HUD buttons
-    $('startBtn').addEventListener('click', () => {
+    // shared by all title-screen buttons: hide the title, wake audio, greet
+    function startGame(){
+      if (started) return;
       MB.Audio.init(); MB.Audio.bgm(true);
       $('titleScreen').style.display = 'none';
       $('hud').style.display = 'block';
@@ -399,6 +404,9 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 3);
         orbit.theta = th0 - 2.2*e + 0.5*0; orbit.radius = r0 - (r0-17)*e;
       });
+    }
+    $('startBtn').addEventListener('click', () => {
+      startGame();
       // offer to restore the last unsaved table, if any
       const auto = MB.Bag.loadAutosave();
       if (auto.length){
@@ -407,6 +415,20 @@ window.MB = window.MB || {};
           () => { MB.Bag.clearAutosave(); },
           'Yes! 🧲', 'Fresh table');
       }
+    });
+    // ▶️ My Movie from the title screen: restore the autosaved table (no confirm), then replay it
+    if (MB.Bag.loadAutosave().length >= 3) $('titleMovieBtn').style.display = 'inline-block';
+    $('titleMovieBtn').addEventListener('click', () => {
+      startGame();
+      const auto = MB.Bag.loadAutosave();
+      if (auto.length < 3) return; // autosave vanished under us — just start normally
+      MB.Bag.rebuildPieces(auto, scene); updateSelBar(); MB.Undo && MB.Undo.push();
+      setTimeout(() => MB.Replay.playTable(scene), 600);
+    });
+    // 📥 Bring a friend's build from the title screen: start, then open the import picker
+    $('titleImportBtn').addEventListener('click', () => {
+      startGame();
+      $('importFile').click();
     });
     $('homeBtn').addEventListener('click', () => ui.confirm('Leave the playroom? 🏠', 'Your school bag creations stay saved!', () => location.href = '/'));
     $('soundBtn').addEventListener('click', () => {
@@ -436,6 +458,9 @@ window.MB = window.MB || {};
     $('bagBtn').addEventListener('click', openBag);
     $('bagClose').addEventListener('click', () => ui.hide('bagModal'));
     $('replayBtn').addEventListener('click', () => MB.Replay.playTable(scene));
+    $('shareBtn').addEventListener('click', () => {
+      if (MB.Bag.exportTable()){ MB.Audio.sparkle(); ui.toast('Saved! Send it to a friend! 📤', 2600); }
+    });
     $('replayStopBtn').addEventListener('click', () => MB.Replay.stop());
     $('importBtn').addEventListener('click', () => $('importFile').click());
     $('importFile').addEventListener('change', (ev) => {

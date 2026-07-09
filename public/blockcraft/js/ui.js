@@ -200,7 +200,10 @@ ABC.ui = (function () {
       <div style="height:18px;background:#e9ecef;border-radius:10px;overflow:hidden;margin:14px 0;">
         <div id="tlFill" style="height:100%;width:0%;background:linear-gradient(90deg,#69db7c,#51cf66);transition:width .15s;"></div>
       </div>
-      <div class="dlgRow"><button class="bigBtn" id="tlStop" style="font-size:18px;padding:12px 30px;min-height:44px;">⏹ Stop</button></div>`);
+      <div class="dlgRow">
+        <button class="bigBtn" id="tlShare" style="font-size:18px;padding:12px 24px;min-height:44px;background:linear-gradient(180deg,#b2f2bb,#69db7c);color:#22400a;">📤 Share</button>
+        <button class="bigBtn" id="tlStop" style="font-size:18px;padding:12px 30px;min-height:44px;">⏹ Stop</button>
+      </div>`);
 
     let idx = 0, ticks = 0;
     const finish = () => {
@@ -209,6 +212,13 @@ ABC.ui = (function () {
       closeDialog();
       if (!ABC.audio.settings.calm) confetti(40);
       ABC.audio.say('Look how much you built!', { force: true });
+    };
+    $('tlShare').onclick = () => {
+      ABC.audio.sfx.pop();
+      if (tlTimer) { clearInterval(tlTimer); tlTimer = null; }
+      ABC.world.deserialize(snap);   // share the real, finished world — not a half-grown replay
+      closeDialog();
+      shareWorld();
     };
     $('tlStop').onclick = () => {
       ABC.audio.sfx.pop();
@@ -694,6 +704,9 @@ ABC.ui = (function () {
       { ico: '📔', label: 'Parks',      go: press('passportBtn') },
       { ico: '📸', label: 'Photo',      go: press('photoBtn') },
       { ico: '🖼️', label: 'Album',      go: press('albumBtn') },
+      { ico: '▶️', label: 'My Movie',   go: () => { closeDialog(); ABC.startAdventureReplay && ABC.startAdventureReplay(); } },
+      { ico: '📤', label: 'Share',      go: () => { closeDialog(); shareWorld(); } },
+      { ico: '📥', label: 'Visit',      go: () => { closeDialog(); visitWorld(); } },
       { ico: '👀', label: 'View',       go: press('viewBtn') },
       { ico: '🔍', label: 'Zoom +',     go: press('zoomInBtn') },
       { ico: '🔭', label: 'Zoom −',     go: press('zoomOutBtn') },
