@@ -464,6 +464,25 @@ HH.AFFIRMATIONS = [
   "You are never in trouble for telling.",
 ];
 
+/* ---------------- My Stickers (pure display, no new mechanics) ---------------- */
+HH.STICKER_BOOK = {
+  title: "My Stickers",
+  empty: "Play and practice to earn your first sticker! 🌟",
+  countText(n) {
+    if (!n || n <= 0) return "You have no stickers yet. Keep playing!";
+    return "You have " + n + " sticker" + (n === 1 ? "" : "s") + "!";
+  },
+};
+
+/* ---------------- first-run movement tutorial (interiors) ---------------- */
+HH.TUTORIAL_TEXT = "Use this stick to walk! 🕹️";
+
+/* ---------------- spaced re-practice nudge (Practice menu) ---------------- */
+HH.REVIEW_PROMPT = {
+  banner(title) { return "Let's practice " + title + " again! 💪"; },
+  button: "Let's go!",
+};
+
 /* ---------------- Grown-Ups Corner (parent-gated) ---------------- */
 HH.GROWNUPS = {
   what: [

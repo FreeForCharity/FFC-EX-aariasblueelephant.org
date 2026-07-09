@@ -226,12 +226,37 @@ const QUIZ = {
   ],
 };
 
+/* ---------- concept tracking + practice messaging ---------- */
+const CONCEPT_MAP = {
+  stopsign:"stopSign", redlight:"redLight", yield:"crosswalk", hitPed:"crosswalk",
+  emergency:"siren", cone:"cones", schoolSpeed:"schoolZone", festSpeed:"speeding", zoneSpeed:"speeding",
+};
+const PRACTICE_MSG = {
+  stopSign:   "stopping fully at stop signs 🛑",
+  redLight:   "stopping for red lights 🚦",
+  crosswalk:  "stopping for crosswalks 🚸",
+  siren:      "pulling over for sirens 🚑",
+  cones:      "steering clear of cones 🚧",
+  schoolZone: "slowing down in school zones 🏫",
+  speeding:   "watching your speed limit 🐢",
+};
+function practiceLine(counts){
+  let top = null, topN = 0;
+  for (const k in counts) if (counts[k] > topN){ topN = counts[k]; top = k; }
+  if (!top || topN === 0) return "Perfect safety — nothing to practice! 🌟";
+  return "Let's practice: " + (PRACTICE_MSG[top] || top);
+}
+
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
-let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{} };
+let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{}, concepts:{} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(save, s); } catch(e){}
 // one-time migration: default everyone into the new chase view
 if (!save.chaseDefault){ save.view = "fp"; save.chaseDefault = true; }
+// Calm Mode: default ON if the device asks for reduced motion, otherwise off, on first run only
+if (save.calm === undefined || save.calm === null){
+  save.calm = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
 function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
 
 /* ---------- game state ---------- */
@@ -242,6 +267,7 @@ const S = {
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
   streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1, safeStops:0,
   air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
+  paused:false, violCounts:{}, curve:[], curveNext:0, practiceLine:"",
 };
 let cam = null;
 const input = { left:false, right:false, go:false, stop:false };
@@ -287,7 +313,7 @@ function sirenStop(){
 /* engine hum — pitch rises with speed; the feel of motion (polite: soft, ducks) */
 let engOsc = null, engGain = null;
 function engineUpdate(){
-  if (!AC || muted || S.screen !== "playing"){ engineStop(); return; }
+  if (!AC || muted || S.screen !== "playing" || S.paused){ engineStop(); return; }
   if (!engOsc){
     engOsc = AC.createOscillator(); engGain = AC.createGain();
     engOsc.type = "sawtooth"; engGain.gain.value = 0;
@@ -342,6 +368,30 @@ document.getElementById("viewBtn").addEventListener("click", toggleView);
 document.getElementById("mapBtn").addEventListener("click", () => { save.minimap = !save.minimap; persist(); });
 document.getElementById("viewBtn").textContent = S.view === "top" ? "👁 View" : "🚁 View";
 
+/* ---------- pause (big ⏸️ button, auto-pause when the tab/window loses focus) ---------- */
+function pauseGame(){
+  if (S.screen !== "playing" || S.paused) return;
+  S.paused = true;
+  input.left = input.right = input.go = input.stop = false;
+  engineStop(); sirenStop();
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  document.getElementById("pauseBtn").textContent = "▶️";
+  document.getElementById("pauseOverlay").classList.remove("hidden");
+}
+function resumeGame(){
+  if (!S.paused) return;
+  S.paused = false;
+  document.getElementById("pauseBtn").textContent = "⏸️";
+  document.getElementById("pauseOverlay").classList.add("hidden");
+}
+document.getElementById("pauseBtn").addEventListener("click", () => {
+  ensureAudio();
+  S.paused ? resumeGame() : pauseGame();
+});
+document.getElementById("resumeBtn").addEventListener("click", () => { ensureAudio(); resumeGame(); });
+addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
+addEventListener("blur", () => pauseGame());
+
 /* ---------- input ---------- */
 const KEYMAP = {
   ArrowLeft:"left", a:"left", A:"left",
@@ -373,10 +423,16 @@ bindTouch("btnGo","go"); bindTouch("btnStop","stop");
 /* ---------- helpers ---------- */
 function toast(text, color){ S.toasts.push({ text, color: color||"#2d6a4f", t:1.8 }); }
 function setBanner(text){ S.banner = { text, until: S.time + 4 }; }
-function lightPhase(ev){
-  const c = (S.time + ev.offset) % 11;
-  return c < 4.5 ? "green" : c < 6 ? "yellow" : "red";
+const LIGHT_CYCLE = 11, LIGHT_GREEN_END = 4.5, LIGHT_YEL_END = 6;
+/* predictable-lights support: how long until this light's phase changes, so we
+   can show a "3…2…1" warning / shrinking bar and the change is never a surprise */
+function lightTiming(ev){
+  const c = (S.time + ev.offset) % LIGHT_CYCLE;
+  if (c < LIGHT_GREEN_END) return { phase:"green",  left: LIGHT_GREEN_END - c, dur: LIGHT_GREEN_END };
+  if (c < LIGHT_YEL_END)   return { phase:"yellow", left: LIGHT_YEL_END - c,   dur: LIGHT_YEL_END - LIGHT_GREEN_END };
+  return { phase:"red", left: LIGHT_CYCLE - c, dur: LIGHT_CYCLE - LIGHT_YEL_END };
 }
+function lightPhase(ev){ return lightTiming(ev).phase; }
 function currentLimit(){
   let lim = S.cfg.base;
   let zone = false;
@@ -405,12 +461,13 @@ function updateBoostCharge(){
 }
 
 /* ---------- screens ---------- */
-const SCREENS = ["title","menu","intro","tip","quiz","cert","retry","results","settings"];
+const SCREENS = ["title","menu","intro","tip","quiz","cert","retry","results","settings","buckle"];
 function show(id){
   for (const s of SCREENS) document.getElementById(s).classList.toggle("hidden", s !== id);
   document.getElementById("touch").classList.toggle("hidden",
     !(id === null && ("ontouchstart" in window)));
   document.getElementById("raceHud").classList.toggle("hidden", id !== null);
+  document.getElementById("pauseBtn").classList.toggle("hidden", id !== null);
   if (id !== null) document.getElementById("count").classList.add("hidden");
 }
 
@@ -609,10 +666,14 @@ function buildIntroPhotos(i){
   ph.appendChild(cap); ph.appendChild(strip); ph.appendChild(attr);
 }
 function beginRun(){
+  S.paused = false;
+  document.getElementById("pauseBtn").textContent = "⏸️";
+  document.getElementById("pauseOverlay").classList.add("hidden");
   S.t = 24; S.speed = 0; S.score = 100; S.time = 0;
   S.amb = null; S.toasts = []; S.banner = null; S.shake = 0;
   S.speedTimer = 0; S.quizBonus = 0; S.air = null; S.airPts = 0;
   S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0; S.safeStops = 0;
+  S.violCounts = {}; S.curve = []; S.curveNext = 0; S.practiceLine = "";
   refreshStreakChip(); document.getElementById("boostBtn").classList.add("hidden");
   updateBoostCharge();
   S.events = genEvents(S.li).map(e => initEvent(e, S.cfg));
@@ -623,9 +684,24 @@ function beginRun(){
   loadAerial(S.li);
   sirenStop();
   if (window.GL3D && GL3D.active()) try { GL3D.build(S.li); } catch(e){ console.warn("3D off:", e); }
+  showBuckle();
+}
+/* one-tap "buckle up" / "helmet on" beat before the countdown — predictable, never skipped mid-run */
+function showBuckle(){
+  const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
+  document.getElementById("buckleEmoji").textContent = isBike ? "⛑️" : "🔒";
+  document.getElementById("buckleTitle").textContent = isBike ? "Helmet on!" : "Buckle up!";
+  document.getElementById("buckleBtn").textContent = isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!";
+  S.screen = "buckle";
+  show("buckle");
+}
+document.getElementById("buckleBtn").addEventListener("click", () => {
+  ensureAudio(); ding();
+  const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
+  speak(isBike ? "Helmet on! Safety first!" : "Buckled up! Safety first!");
   show(null);
   startCountdown();
-}
+});
 /* 3·2·1·GO light tree */
 function startCountdown(){
   S.screen = "count";
@@ -655,8 +731,10 @@ function startCountdown(){
 function violation(key){
   const v = TIPS[key];
   breakStreak();
+  const concept = CONCEPT_MAP[key] || key;
+  S.violCounts[concept] = (S.violCounts[concept] || 0) + 1;
   S.score = Math.max(0, S.score - v.pts);
-  buzz(); S.shake = 10;
+  buzz(); S.shake = save.calm ? 0 : 10;
   document.getElementById("tipIcon").textContent = v.icon;
   document.getElementById("tipTitle").textContent = v.title;
   document.getElementById("tipText").textContent = v.text;
@@ -745,6 +823,11 @@ function update(dt){
   S.toasts = S.toasts.filter(t => t.t > 0);
   if (S.shake > 0) S.shake = Math.max(0, S.shake - 40 * dt);
 
+  // score-vs-progress ghost curve: record the running score once per 5% of route
+  const _p = clamp(S.t / S.rt.len, 0, 1);
+  const _b = Math.min(20, Math.floor(_p * 20));
+  while (S.curveNext <= _b){ S.curve[S.curveNext] = S.score; S.curveNext++; }
+
   if (S.score <= 0 && S.screen === "playing"){
     showRetry("Too many oopsies this time — and that's OK! Every safety hero practices. Let's ride it again, nice and careful.");
     return;
@@ -832,7 +915,7 @@ function updateEvent(ev, dt){
         if (c.hit) continue;
         if (Math.abs(c.w - t) < 38 && Math.abs(cx + c.jitter - S.o) < S.veh.w/2 + 13){
           c.hit = true; ev.penalized = true;
-          S.score = Math.max(0, S.score - 4); S.speed = Math.min(S.speed, 4); S.shake = 8; buzz();
+          S.score = Math.max(0, S.score - 4); S.speed = Math.min(S.speed, 4); S.shake = save.calm ? 0 : 8; buzz();
           if (!ev.coneWarned){ ev.coneWarned = true; violation("cone"); S.score = Math.min(100, S.score + TIPS.cone.pts - 4); }
           else toast("Hit a cone! −4", "#d62828");
         }
@@ -1138,7 +1221,7 @@ function drawEventTop(ev){
     case "light": {
       if (!vis(ev.at)) break;
       sprite(ev.at - 20, 0, () => stopLineT(HW));
-      const ph = lightPhase(ev);
+      const tm = lightTiming(ev), ph = tm.phase;
       sprite(ev.at, HW + 32, () => {
         ctx.fillStyle = "#222"; rounded(-10, -26, 20, 50, 5); ctx.fill();
         ctx.strokeStyle = "#000"; ctx.lineWidth = 1; ctx.stroke();
@@ -1148,6 +1231,17 @@ function drawEventTop(ev){
           ctx.beginPath(); ctx.arc(0, -17 + i * 16, 6, 0, 7); ctx.fill();
           if (ph === c){ ctx.fillStyle = cols[c] + "55"; ctx.beginPath(); ctx.arc(0, -17 + i * 16, 10, 0, 7); ctx.fill(); }
         });
+        // predictable-lights: a no-surprise warning before green ends, and a shrinking bar through amber
+        if (ph === "green" && tm.left <= 3.05){
+          ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1d3461"; ctx.lineWidth = 2;
+          ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+          const n = String(Math.max(1, Math.ceil(tm.left - 0.02)));
+          ctx.strokeText(n, 0, -38); ctx.fillText(n, 0, -38);
+        } else if (ph === "yellow"){
+          const frac = clamp(tm.left / tm.dur, 0, 1);
+          ctx.fillStyle = "rgba(0,0,0,.35)"; rounded(-11, -44, 22, 5, 2); ctx.fill();
+          ctx.fillStyle = "#ffd23f"; rounded(-11, -44, 22 * frac, 5, 2); ctx.fill();
+        }
       });
       break;
     }
@@ -1291,7 +1385,7 @@ function drawAmbTop(){
     ctx.fillRect(-21, -6, 42, 11);
     ctx.fillRect(-4, -27, 9, 24); ctx.fillRect(-12, -19, 25, 9);
     ctx.fillStyle = "#9bd1ff"; rounded(-15, 22, 30, 11, 3); ctx.fill();
-    const flash = Math.floor(S.time * 6) % 2;
+    const flash = save.calm ? 1 : Math.floor(S.time * 6) % 2;
     ctx.fillStyle = flash ? "#ff3b30" : "#3478f6"; ctx.fillRect(-15, -38, 11, 6);
     ctx.fillStyle = flash ? "#3478f6" : "#ff3b30"; ctx.fillRect(4, -38, 11, 6);
   });
@@ -1483,7 +1577,7 @@ function drawFP(){
 
   for (const ev of S.events){
     if (ev.type === "stopsign") add(ev.at, HW + 36, p => fpStopSign(p));
-    if (ev.type === "light")    add(ev.at, HW + 40, p => fpLight(p, lightPhase(ev)));
+    if (ev.type === "light")    add(ev.at, HW + 40, p => fpLight(p, lightTiming(ev)));
     if (ev.type === "kids" || ev.type === "festival"){
       const cw = ev.type === "kids" ? ev.at : (ev.from + ev.to) / 2;
       if (ev.kids) for (const k of ev.kids){
@@ -1523,7 +1617,7 @@ function drawFP(){
 
   // ambulance behind → flashing edges
   if (S.amb && S.amb.w <= S.t + 30){
-    const flash = Math.floor(S.time * 6) % 2;
+    const flash = save.calm ? 1 : Math.floor(S.time * 6) % 2;
     ctx.fillStyle = flash ? "rgba(255,59,48,.28)" : "rgba(52,120,246,.28)";
     ctx.fillRect(0, 0, 26, H); ctx.fillRect(W - 26, 0, 26, H);
   }
@@ -1621,7 +1715,8 @@ function fpStopSign(p){
   ctx.fillText("STOP", 0, -38);
   ctx.restore();
 }
-function fpLight(p, ph){
+function fpLight(p, tm){
+  const ph = tm.phase;
   const s = p.sc * 2;
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(s, s);
   ctx.strokeStyle = "#666"; ctx.lineWidth = 4;
@@ -1634,6 +1729,17 @@ function fpLight(p, ph){
     ctx.fillStyle = ph === c ? cols[c] : "#444";
     ctx.beginPath(); ctx.arc(-45.5, -72 + i * 10, 3.6, 0, 7); ctx.fill();
   });
+  // predictable-lights: no-surprise countdown before the light leaves green, shrinking bar through amber
+  if (ph === "green" && tm.left <= 3.05){
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1d3461"; ctx.lineWidth = 1.5;
+    ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+    const n = String(Math.max(1, Math.ceil(tm.left - 0.02)));
+    ctx.strokeText(n, -45.5, -92); ctx.fillText(n, -45.5, -92);
+  } else if (ph === "yellow"){
+    const frac = clamp(tm.left / tm.dur, 0, 1);
+    ctx.fillStyle = "rgba(0,0,0,.35)"; rounded(-54.5, -90, 18, 4, 2); ctx.fill();
+    ctx.fillStyle = "#ffd23f"; rounded(-54.5, -90, 18 * frac, 4, 2); ctx.fill();
+  }
   ctx.restore();
 }
 function fpWarn(p, emoji){
@@ -1746,7 +1852,7 @@ function fpAmb(p){
   ctx.fillStyle = "#fff"; rounded(-14, -34, 28, 34, 4); ctx.fill();
   ctx.fillStyle = "#d62828"; ctx.fillRect(-14, -14, 28, 7);
   ctx.fillStyle = "#9bd1ff"; rounded(-10, -30, 20, 8, 2); ctx.fill();
-  const flash = Math.floor(S.time * 6) % 2;
+  const flash = save.calm ? 1 : Math.floor(S.time * 6) % 2;
   ctx.fillStyle = flash ? "#ff3b30" : "#3478f6"; ctx.fillRect(-11, -38, 8, 4);
   ctx.fillStyle = flash ? "#3478f6" : "#ff3b30"; ctx.fillRect(3, -38, 8, 4);
   ctx.restore();
@@ -1754,7 +1860,7 @@ function fpAmb(p){
 function drawPlayerFP(jump){
   const v = S.veh;
   const lean = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-  const tilt = lean * .06;
+  const tilt = lean * (save.calm ? .02 : .06);
   const bob = Math.sin(S.time * 14) * Math.min(2.2, S.speed * .07);
   const moving = S.speed > 1;
   const twoWheel = !(v.id === "ev" || v.id === "car" || v.id === "monster");
@@ -1962,10 +2068,15 @@ function drawHUD(){
   }
   ctx.font = "11px sans-serif"; ctx.fillStyle = "#fff"; ctx.fillText("🏁", bx + bw + 5, 29);
   const _best = save.best[S.li];
-  if (_best && _best.time > 0){    // Safety Star ghost — its pace to beat
-    const gp = clamp(S.time / _best.time, 0, 1);
+  if (_best && _best.curve && _best.curve.length){    // Safety Star ghost — best SAFETY at this point of the route (never speed)
+    const gp = clamp(S.t / S.rt.len, 0, 1);
+    const gIdx = Math.min(_best.curve.length - 1, Math.floor(gp * 20));
+    const ghostScore = _best.curve[gIdx] ?? _best.score;
+    const ahead = S.score >= ghostScore;
     ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = ahead ? "#51cf66" : "#ff6b6b";
     ctx.fillText("⭐", bx + bw * gp, 17);
+    ctx.fillStyle = "#fff";
   }
   ctx.font = "9px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#9fb3c8";
   ctx.fillText(`LEVEL ${S.li + 1} • ${S.cfg.title.toUpperCase()}`, bx + bw / 2, 46);
@@ -1988,6 +2099,15 @@ function drawHUD(){
   const sw = ctx.measureText("📍 " + street).width + 18;
   ctx.fillStyle = "rgba(13,27,42,.78)"; rounded(8, 64, sw, 22, 11); ctx.fill();
   ctx.fillStyle = "#fff"; ctx.fillText("📍 " + street, 17, 79.5);
+
+  // real aerial photo still loading? a tiny, calm status pill instead of a blank ground
+  if (HAS_AERIAL && AERIAL[S.li] && (!aerialImg[S.li] || (aerialImg[S.li] && !aerialImg[S.li].complete))){
+    const msg = "🛰 Loading aerial photo" + ".".repeat(1 + Math.floor(S.time * 2) % 3);
+    ctx.font = "bold 11px sans-serif"; ctx.textAlign = "left";
+    const lw = ctx.measureText(msg).width + 16;
+    ctx.fillStyle = "rgba(13,27,42,.7)"; rounded(8, 92, lw, 19, 9); ctx.fill();
+    ctx.fillStyle = "#dfe7ee"; ctx.fillText(msg, 16, 105.5);
+  }
 
   // minimap
   if (save.minimap && S.mm) drawMinimap();
@@ -2022,8 +2142,8 @@ function drawSpeedo(lim){
   const speeding = S.speed > lim + 3, boosting = S.boost > 0;
   // bezel — glows red when speeding, electric green on a Green Wave
   ctx.fillStyle = "rgba(13,27,42,.85)";
-  if (speeding){ ctx.shadowColor = "#ff4d4d"; ctx.shadowBlur = 16 + Math.sin(S.time * 12) * 6; }
-  else if (boosting){ ctx.shadowColor = "#51cf66"; ctx.shadowBlur = 18 + Math.sin(S.time * 9) * 6; }
+  if (speeding){ ctx.shadowColor = "#ff4d4d"; ctx.shadowBlur = save.calm ? 16 : 16 + Math.sin(S.time * 12) * 6; }
+  else if (boosting){ ctx.shadowColor = "#51cf66"; ctx.shadowBlur = save.calm ? 18 : 18 + Math.sin(S.time * 9) * 6; }
   ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 7); ctx.fill();
   ctx.shadowBlur = 0;
   ctx.strokeStyle = speeding ? "rgba(255,107,107,.65)" : boosting ? "rgba(81,207,102,.7)" : "rgba(255,255,255,.25)";
@@ -2292,6 +2412,7 @@ function renderSettings(){
   document.getElementById("setSpeed").textContent = `🎛️ Game speed: ${GS_META[save.gspeed].ico} ${GS_META[save.gspeed].label}`;
   document.getElementById("setSound").textContent = muted ? "🔇 Sound: off — tap to turn on" : "🔊 Sound: on";
   document.getElementById("setVoice").textContent = save.voice ? "🗣️ Voice coach: on" : "🤫 Voice coach: off — tap to turn on";
+  document.getElementById("setCalm").textContent = save.calm ? "😌 Calm mode: on — less shake, flash & confetti" : "😌 Calm mode: off — tap to turn on";
 }
 function cycleSpeed(){
   const order = ["relaxed", "normal", "fast"];
@@ -2314,6 +2435,9 @@ document.getElementById("setSound").addEventListener("click", () => {
 document.getElementById("setVoice").addEventListener("click", () => {
   save.voice = !save.voice; persist(); renderSettings();
   if (save.voice) speak("Hi! I am your safety coach!"); else if (window.speechSynthesis) speechSynthesis.cancel();
+});
+document.getElementById("setCalm").addEventListener("click", () => {
+  save.calm = !save.calm; persist(); renderSettings(); ding();
 });
 document.getElementById("setFs").addEventListener("click", () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -2341,13 +2465,25 @@ function startQuiz(){
   sirenStop();
   S.screen = "quiz";
   const pool = [...QUIZ[S.veh.id]].sort(() => Math.random() - .5);
-  quizQs = pool.slice(0, 2); quizIdx = 0;
+  quizQs = pool.slice(0, 2).map(q => shuffleQuestion(q));
+  quizIdx = 0;
   showQuizQ();
   show("quiz");
 }
+/* shuffle a question's answer order (tracking the new correct index); keep the
+   original question object around (_src) so a wrong answer can be re-queued once */
+function shuffleQuestion(q){
+  const src = q._src || q;
+  const order = src.opts.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return { q: src.q, opts: order.map(i => src.opts[i]), a: order.indexOf(src.a), why: src.why, _src: src };
+}
 function showQuizQ(){
   const q = quizQs[quizIdx];
-  document.getElementById("quizQ").textContent = `${quizIdx + 1}/2: ${q.q}`;
+  document.getElementById("quizQ").textContent = `${quizIdx + 1}/${quizQs.length}: ${q.q}`;
   document.getElementById("quizWhy").classList.add("hidden");
   document.getElementById("quizNext").classList.add("hidden");
   const box = document.getElementById("quizOpts");
@@ -2361,7 +2497,11 @@ function showQuizQ(){
       [...box.children].forEach((c, j) => { if (j === q.a) c.classList.add("right"); });
       const why = document.getElementById("quizWhy");
       if (i === q.a){ S.quizBonus += 4; ding(); why.textContent = "✅ Correct! +4 — " + q.why; }
-      else { b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why; }
+      else {
+        b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why;
+        // missed it — give it one more try, re-shuffled, at the end of the quiz
+        if (!q._requeued){ q._requeued = true; const again = shuffleQuestion(q); again._requeued = true; quizQs.push(again); }
+      }
       speak(q.why);
       why.classList.remove("hidden");
       const next = document.getElementById("quizNext");
@@ -2381,6 +2521,11 @@ document.getElementById("quizNext").addEventListener("click", () => {
 function gradeOf(sc){ return sc >= 95 ? "S" : sc >= 85 ? "A" : sc >= 70 ? "B" : "C"; }
 function finishLevel(){
   S.finalScore = clamp(Math.round(S.score + S.quizBonus), 0, 100);
+  S.curve[20] = S.finalScore;                 // close out the safety curve at the finish line
+  S.practiceLine = practiceLine(S.violCounts);
+  // lifetime per-concept tally, for the "what to practice" nudge
+  save.concepts = save.concepts || {};
+  for (const k in S.violCounts) save.concepts[k] = (save.concepts[k] || 0) + S.violCounts[k];
   if (S.finalScore >= 70){
     const stars = S.finalScore >= 90 ? 3 : S.finalScore >= 78 ? 2 : 1;
     S.lastStars = stars;
@@ -2388,11 +2533,11 @@ function finishLevel(){
     const old = save.certs[S.veh.id];
     if (!old || S.finalScore > old.score)
       save.certs[S.veh.id] = { score: S.finalScore, stars, date: new Date().toLocaleDateString() };
-    // Safety Star ghost record (best score; its pace haunts the progress bar)
+    // Safety Star ghost record (best SCORE curve — beating it means safer, never faster)
     const prev = save.best[S.li];
     const newRecord = !prev || S.finalScore > prev.score;
     const beatGhost = prev && gradeOf(S.finalScore) < gradeOf(prev.score);   // "S"<"A"<"B"<"C" lexicographic
-    if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time) };
+    if (newRecord) save.best[S.li] = { score: S.finalScore, time: Math.round(S.time), curve: S.curve.slice() };
     // Personal-best Hero Streak (only celebrate an actual improvement, not a brand-new save)
     const prevStreak = save.bestStreak[S.li] || 0;
     const newStreakRecord = prevStreak > 0 && S.bestStreak > prevStreak;
@@ -2400,6 +2545,7 @@ function finishLevel(){
     persist();
     showResults(stars, newRecord && !!prev, beatGhost, newStreakRecord);
   } else {
+    persist();
     showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate. You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
   }
 }
@@ -2419,12 +2565,13 @@ function showResults(stars, newRecord, beatGhost, newStreakRecord){
   const m = Math.floor(S.time / 60), sec = Math.round(S.time % 60);
   document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
   document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
+  document.getElementById("resPractice").textContent = S.practiceLine;
   document.getElementById("resRecord").classList.toggle("hidden", !newRecord);
   document.getElementById("resStreakRecord").classList.toggle("hidden", !newStreakRecord);
   document.getElementById("resGhost").classList.toggle("hidden", !beatGhost);
   show("results");
   tone(523, .2); setTimeout(() => tone(659, .2), 150); setTimeout(() => tone(784, .35), 300);
-  if (newRecord || newStreakRecord) launchConfetti();
+  if (!save.calm && (newRecord || newStreakRecord)) launchConfetti();
   speak(g === "S" ? "Perfect run! You are a true safety hero!" :
         newStreakRecord ? "Great riding! And a brand new streak record!" : "Great riding! Level complete!");
 }
@@ -2509,6 +2656,8 @@ function drawCert(stars, champ, stunt){
     x.font = "bold 21px Georgia, serif"; x.fillStyle = "#b07d12";
     x.fillText("🏆 MOUNTAIN HOUSE ROAD SAFETY CHAMPION 🏆", CW/2, 538);
   }
+  x.font = "italic 13px Georgia, serif"; x.fillStyle = "#5a7d9a"; x.textAlign = "center";
+  x.fillText(S.practiceLine || "", CW/2, champ ? 558 : 538);
   x.font = "54px sans-serif"; x.textAlign = "left";
   x.fillText(S.veh.emoji, 70, 380);
   x.textAlign = "center";
@@ -2542,7 +2691,7 @@ function draw(){
   // NFS camera lean: the world banks gently into your steering at speed
   const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   const leanT = (S.screen === "playing" && S.view === "fp")
-    ? steer * Math.min(1, S.speed / Math.max(1, S.veh.max)) * 0.055 : 0;
+    ? steer * Math.min(1, S.speed / Math.max(1, S.veh.max)) * (save.calm ? 0.02 : 0.055) : 0;
   S.lean = lerp(S.lean || 0, leanT, 0.07);
   const use3d = S.view === "fp" && window.GL3D && GL3D.active();
   let drew3d = false;
@@ -2565,6 +2714,7 @@ const GS_X = { relaxed: 0.8, normal: 1, fast: 1.22 };
 function frame(ts){
   const dt = clamp((ts - last) / 1000, 0, .05) * (GS_X[save.gspeed] || 1);
   last = ts;
+  if (S.paused){ requestAnimationFrame(frame); return; }   // frozen: leaves the last drawn frame on screen, dimmed by the overlay
   if (S.screen === "playing"){ update(dt); if (S.screen === "playing" || S.screen === "tip") draw(); }
   else if (S.screen === "tip" || S.screen === "quiz" || S.screen === "count") draw();
   else engineStop();
@@ -2573,3 +2723,6 @@ function frame(ts){
 S.screen = "title";
 show("title");
 requestAnimationFrame(frame);
+// the game is fully built and its first frame is queued — drop the "getting the roads ready" overlay
+const loadEl = document.getElementById("loadingOverlay");
+if (loadEl) loadEl.classList.add("hidden");

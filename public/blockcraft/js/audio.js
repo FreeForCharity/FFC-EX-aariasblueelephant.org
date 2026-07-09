@@ -1,7 +1,7 @@
 /* Aaria's Block Craft 3D — audio: WebAudio synth SFX, gentle music, and text-to-speech */
 ABC.audio = (function () {
   let ctx = null, musicGain = null, musicTimer = null;
-  const S = { sound:true, music:false, readAloud:true, voiceMode:false, speed:'normal' };
+  const S = { sound:true, music:false, readAloud:true, voiceMode:false, speed:'normal', calm:false };
 
   /* Game pace 🐢🐇🚀 — kids who need more time stay Relaxed; kids who want it
      snappier go Fast. Scales how long messages linger AND the read-aloud rate.
@@ -81,9 +81,10 @@ ABC.audio = (function () {
   const sfx = {
     pop()      { tone(420, .12, 'square', .08); tone(640, .1, 'sine', .1, .02); },
     remove()   { tone(300, .15, 'triangle', .1, 0, 150); },
-    ding()     { tone(880, .3, 'sine', .14); tone(1320, .4, 'sine', .08, .05); },
-    star()     { [880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'sine',.1,i*.09)); },
-    fanfare()  { [523,659,784,1046,1318].forEach((f,i)=>tone(f,.35,'triangle',.12,i*.13)); },
+    /* 😌 Calm mode softens the celebration sounds — a gentler chime, not a fanfare blast */
+    ding()     { const v = S.calm ? .5 : 1; tone(880, .3, 'sine', .14*v); tone(1320, .4, 'sine', .08*v, .05); },
+    star()     { const v = S.calm ? .5 : 1; [880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'sine',.1*v,i*.09)); },
+    fanfare()  { const v = S.calm ? .45 : 1; [523,659,784,1046,1318].forEach((f,i)=>tone(f,.35,'triangle',.12*v,i*.13)); },
     squish()   { wet(0.22, 480, 110, 0.22); },                                  // press into dough
     squishBig(){ wet(0.4, 380, 70, 0.3); wet(0.18, 700, 200, 0.12); },          // deep two-stage splat
     stretchy() { wet(0.35, 140, 520, 0.16); },                                  // pulling taffy upward

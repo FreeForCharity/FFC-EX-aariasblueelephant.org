@@ -12,6 +12,9 @@ import { nudgeZoom, CAM_ZOOM_STEP } from '../three/playerState';
 interface Props {
   beluLine: string | null;
   nearZone: ZoneId | null;
+  /** a fully-bloomed island Nilu is standing on that still has today's Star
+   *  Quest waiting — shows a small glowing ⭐ banner */
+  starQuestZone?: ZoneId | null;
   stickers: string[];
   totalStars: number;
   isTouch: boolean;
@@ -21,12 +24,14 @@ interface Props {
   onToggleFullscreen: () => void;
   onGoHome: () => void;
   onExit: () => void;
+  onPause: () => void;
   onCycleSpeed: () => void;
   speedLabel: string;
 }
 
-export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onCycleSpeed, speedLabel }: Props) {
+export default function HUD({ beluLine, nearZone, starQuestZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
+  const hasStarQuest = !!starQuestZone && starQuestZone === nearZone;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
@@ -106,12 +111,12 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           ⛶
         </button>
         <button
-          onClick={onExit}
+          onClick={onPause}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Exit game"
-          title="Exit"
+          aria-label="Take a break"
+          title="Take a break"
         >
-          ✕
+          ⏸️
         </button>
         <button
           onClick={onOpenSettings}
@@ -119,6 +124,16 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
           aria-label="Settings"
         >
           ⚙️
+        </button>
+        {/* Exit — kept visually separate (left border gap + warmer tint) from
+            settings/pause so a stray tap doesn't read as "just another button" */}
+        <button
+          onClick={onExit}
+          className="pointer-events-auto ml-1.5 flex h-10 w-10 items-center justify-center rounded-full border-l-2 border-white/60 bg-rose-50/90 pl-0.5 text-lg text-rose-500 shadow-lg backdrop-blur transition hover:bg-rose-100"
+          aria-label="Exit game"
+          title="Exit"
+        >
+          ✕
         </button>
       </div>
 
@@ -158,6 +173,15 @@ export default function HUD({ beluLine, nearZone, stickers, totalStars, isTouch,
             <div className="text-2xl">{zoneMeta.emoji}</div>
             <div className="text-base font-extrabold text-slate-800">{zoneMeta.label}</div>
             <div className="mt-0.5 text-xs font-semibold text-slate-500">Walk up to your friend to begin ✨</div>
+            {hasStarQuest && (
+              <motion.div
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+                className="mt-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700"
+              >
+                ⭐ Today's Star Quest here!
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

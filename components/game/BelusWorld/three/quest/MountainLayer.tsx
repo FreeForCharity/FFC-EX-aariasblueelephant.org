@@ -48,6 +48,8 @@ interface State {
   wrongUntil: number;
   lockUntil: number;
   finishAt: number;
+  /** gentle re-prompts this session — grown-ups-only signal, never shown to the child */
+  slips: number;
   // hidden collectible stars: collect time per star (-99 = not yet)
   starsAt: number[];
   starsFound: number;
@@ -62,7 +64,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
-  onComplete: (zone: 'mountain', level: number, stars: number, moment: string) => void;
+  onComplete: (zone: 'mountain', level: number, stars: number, moment: string, slips?: number) => void;
   onStatus: (s: QuestStatus | null) => void;
 }
 
@@ -81,7 +83,7 @@ export default function MountainLayer(props: Props) {
   const S = useRef<State>({
     clock: 0, active: false, level: props.level,
     stations: MOUNTAIN_ROUTINE[clampLevel(props.level)].stations.map(() => ({ done: false, doneAt: -99 })),
-    doneCount: 0, disarmed: false, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0,
+    doneCount: 0, disarmed: false, wrongIdx: -1, wrongUntil: 0, lockUntil: 0, finishAt: 0, slips: 0,
     starsAt: (MOUNTAIN_ROUTINE[clampLevel(props.level)].stars ?? []).map(() => -99),
     starsFound: 0, cheerUntil: 0, nimbusLine: -1,
   });
@@ -142,6 +144,7 @@ export default function MountainLayer(props: Props) {
     S.current.starsFound = 0;
     S.current.cheerUntil = 0;
     S.current.nimbusLine = -1;
+    S.current.slips = 0;
     props.setEmotion('curious');
     props.speak(lvl.intro);
     emitStatus('question', lvl.intro, actionHint());
@@ -158,7 +161,7 @@ export default function MountainLayer(props: Props) {
 
   function finish() {
     const lvl = MOUNTAIN_ROUTINE[clampLevel(S.current.level)];
-    props.onComplete(ZONE, S.current.level, 3, lvl.moment);
+    props.onComplete(ZONE, S.current.level, 3, lvl.moment, S.current.slips);
     props.speak(lvl.outro);
     S.current.active = false;
     S.current.disarmed = true;
@@ -173,6 +176,7 @@ export default function MountainLayer(props: Props) {
     st.wrongIdx = i;
     st.wrongUntil = st.clock + 0.5;
     st.lockUntil = st.clock + 0.45;
+    st.slips += 1;
     props.playSound('tap');
     props.setEmotion('curious');
     props.speak(

@@ -14,7 +14,7 @@ const $$ = sel => Array.from(document.querySelectorAll(sel));
    SAVE DATA
    --------------------------------------------------------------- */
 const SAVE_KEY = "hh_save";
-function defaultSave() { return { friends: [], hand: [], stickers: 0, done: [], quizzed: [] }; }
+function defaultSave() { return { friends: [], hand: [], stickers: 0, done: [], quizzed: [], trials: {}, seenTutorial: false }; }
 let save = defaultSave();
 function loadSave() {
   try {
@@ -24,6 +24,16 @@ function loadSave() {
       save = Object.assign(defaultSave(), parsed);
       ["friends", "hand", "done", "quizzed"].forEach(k => { if (!Array.isArray(save[k])) save[k] = []; });
       if (typeof save.stickers !== "number" || isNaN(save.stickers)) save.stickers = 0;
+      if (!save.trials || typeof save.trials !== "object" || Array.isArray(save.trials)) save.trials = {};
+      // migrate older trial entries to include dates[] / completions used by
+      // the mastery criterion and progress report (see section below).
+      Object.keys(save.trials).forEach(k => {
+        const t = save.trials[k];
+        if (!t || typeof t !== "object") { delete save.trials[k]; return; }
+        if (!Array.isArray(t.dates)) t.dates = [];
+        if (typeof t.completions !== "number" || isNaN(t.completions)) t.completions = 0;
+      });
+      if (typeof save.seenTutorial !== "boolean") save.seenTutorial = false;
     }
   } catch (e) { save = defaultSave(); }
 }
@@ -134,6 +144,16 @@ function speak(text) {
     window.speechSynthesis.speak(u);
   } catch (e) {}
 }
+// auto-narration: setNilu()/showWorldBanner() call this so pre-readers hear
+// every screen without tapping 🔊 — but back-to-back calls with the SAME
+// text (e.g. a find-task line set on both Nilu and the banner) don't
+// restart the utterance. Manual 🔊 buttons keep calling speak() directly.
+let lastAutoSpokenText = null;
+function autoSpeak(text) {
+  if (!text || text === lastAutoSpokenText) return;
+  lastAutoSpokenText = text;
+  speak(text);
+}
 
 /* ---------------------------------------------------------------
    CONFETTI (lightweight canvas burst, calm colors, ~1s)
@@ -189,37 +209,41 @@ function confettiFrame() {
 /* ---------------------------------------------------------------
    SCREEN MANAGEMENT
    --------------------------------------------------------------- */
-const SCREEN_IDS = ["titleScreen", "menuScreen", "exploreScreen", "handScreen", "practiceScreen", "grownupsScreen"];
-const BELU_SCREENS = ["menuScreen", "exploreScreen", "handScreen", "practiceScreen"];
+const SCREEN_IDS = ["titleScreen", "menuScreen", "exploreScreen", "handScreen", "practiceScreen", "stickersScreen", "grownupsScreen"];
+const NILU_SCREENS = ["menuScreen", "exploreScreen", "handScreen", "practiceScreen"];
 
 function showScreen(id) {
   SCREEN_IDS.forEach(s => { $(s).hidden = (s !== id); });
-  $("beluBubble").hidden = !BELU_SCREENS.includes(id);
-  if (id === "menuScreen") setBelu("What do you want to do today? 💙");
+  $("niluBubble").hidden = !NILU_SCREENS.includes(id);
+  if (id === "menuScreen") setNilu("What do you want to do today? 💙");
   if (id === "exploreScreen") {
     requestAnimationFrame(() => { if (window.HH && HH.World) HH.World.resize(); });
   }
 }
 
 /* ---------------------------------------------------------------
-   BELU MASCOT BUBBLE (present across menu/explore/hand/practice)
+   NILU MASCOT BUBBLE (present across menu/explore/hand/practice)
    --------------------------------------------------------------- */
-let currentBeluText = "";
-function setBelu(text, opts) {
+let currentNiluText = "";
+function setNilu(text, opts) {
   opts = opts || {};
-  currentBeluText = text || "";
-  $("beluText").textContent = currentBeluText;
-  const nextBtn = $("beluNextBtn");
+  currentNiluText = text || "";
+  $("niluText").textContent = currentNiluText;
+  const nextBtn = $("niluNextBtn");
   if (opts.onNext) { nextBtn.hidden = false; nextBtn.onclick = opts.onNext; }
   else { nextBtn.hidden = true; nextBtn.onclick = null; }
   // while the world banner is up it carries the narration — Nilu waits
-  $("beluBubble").hidden = !$("worldBanner").hidden;
+  const bannerUp = !$("worldBanner").hidden;
+  $("niluBubble").hidden = bannerUp;
+  // pre-readers hear Nilu's line automatically — but only when Nilu's
+  // bubble is actually the thing on screen (the banner speaks for itself)
+  if (!bannerUp) autoSpeak(currentNiluText);
 }
 function playIntroSequence(lines, onDone) {
   let i = 0;
   function step() {
     if (i >= lines.length) { onDone(); return; }
-    setBelu(lines[i], { onNext: () => { i++; step(); } });
+    setNilu(lines[i], { onNext: () => { i++; step(); } });
   }
   step();
 }
@@ -236,7 +260,11 @@ function shuffleArr(arr) {
   }
   return a;
 }
-function buildChoices(container, options, feedbackEl, onCorrect) {
+// trial = optional { scenarioId, onWrong } — foundation for the clinical
+// progress report. onWrong lets the caller flag "this playthrough had at
+// least one wrong tap" without buildChoices needing to know which state
+// object (scenarioState vs practiceState) is currently active.
+function buildChoices(container, options, feedbackEl, onCorrect, trial) {
   container.innerHTML = "";
   if (feedbackEl) feedbackEl.textContent = "";
   const items = shuffleArr(options.map((text, i) => ({ text, correct: i === 0 })));
@@ -257,10 +285,62 @@ function buildChoices(container, options, feedbackEl, onCorrect) {
         SND.tryTone();
         btn.classList.remove("wiggle"); void btn.offsetWidth; btn.classList.add("wiggle");
         if (feedbackEl) feedbackEl.textContent = "Try again! 💙";
+        if (trial && trial.scenarioId) {
+          trialRecordWrong(trial.scenarioId);
+          if (trial.onWrong) trial.onWrong();
+        }
       }
     });
     container.appendChild(btn);
   });
+}
+/* ---------------------------------------------------------------
+   PER-TRIAL DATA — foundation for the clinical progress report.
+   save.trials = { [scenarioId]: {
+     attempts, firstTryCorrect, lastPlayed,
+     completions,   // total number of finished playthroughs
+     dates: []      // unique YYYY-MM-DD dates on which a playthrough was
+                     // completed with no wrong tap — 3 distinct dates = mastered
+   } }
+   --------------------------------------------------------------- */
+function newTrialEntry() { return { attempts: 0, firstTryCorrect: null, lastPlayed: null, completions: 0, dates: [] }; }
+function trialRecordWrong(scenarioId) {
+  if (!scenarioId) return;
+  if (!save.trials) save.trials = {};
+  const t = save.trials[scenarioId] || (save.trials[scenarioId] = newTrialEntry());
+  t.attempts = (t.attempts || 0) + 1;
+  saveSave();
+}
+function trialRecordCompletion(scenarioId, hadWrongTap) {
+  if (!scenarioId) return;
+  if (!save.trials) save.trials = {};
+  const t = save.trials[scenarioId] || (save.trials[scenarioId] = newTrialEntry());
+  // firstTryCorrect is decided only once — the first time this scenario
+  // is completed — and never overwritten by later replays.
+  if (t.firstTryCorrect === null) t.firstTryCorrect = !hadWrongTap;
+  t.completions = (t.completions || 0) + 1;
+  t.lastPlayed = new Date().toISOString().slice(0, 10);
+  if (!Array.isArray(t.dates)) t.dates = [];
+  // mastery criterion: a first-try-correct completion on 3 different dates
+  if (!hadWrongTap && t.dates.indexOf(t.lastPlayed) === -1) t.dates.push(t.lastPlayed);
+  saveSave();
+}
+function isScenarioMastered(scenarioId) {
+  const t = save.trials && save.trials[scenarioId];
+  return !!(t && Array.isArray(t.dates) && t.dates.length >= 3);
+}
+function daysSinceDate(isoDate) {
+  if (!isoDate) return Infinity;
+  const ms = Date.now() - new Date(isoDate + "T00:00:00").getTime();
+  return Math.floor(ms / 86400000);
+}
+/* one gentle re-practice nudge per browser session (see renderScenarioPicker) */
+function findReviewCandidate() {
+  if (!save.trials) return null;
+  return HH.SCENARIOS.find(sc => {
+    const t = save.trials[sc.id];
+    return t && t.lastPlayed && !isScenarioMastered(sc.id) && daysSinceDate(t.lastPlayed) >= 3;
+  }) || null;
 }
 function speakRow(card, text) {
   const row = document.createElement("div"); row.className = "step-text-row";
@@ -344,7 +424,45 @@ function renderMenuCards() {
 function wireMenu() { renderMenuCards(); }
 
 /* ---------------------------------------------------------------
-   4. EXPLORE MY WORLD (free-roam) + BELU'S GAME (find & do)
+   3b. MY STICKERS — a simple destination for the 🌟 counter.
+   Pure display: one big emoji per earned sticker, cycling through a
+   small set. No new mechanics, nothing to unlock here.
+   --------------------------------------------------------------- */
+const STICKER_CYCLE = ["⭐", "🌟", "💙"];
+function enterStickers() {
+  showScreen("stickersScreen");
+  renderStickerBook();
+}
+function renderStickerBook() {
+  const body = $("stickerBody"); body.innerHTML = "";
+  const wrap = document.createElement("div"); wrap.className = "sticker-book";
+  const title = document.createElement("h2"); title.className = "practice-title"; title.textContent = "🌟 " + HH.STICKER_BOOK.title;
+  wrap.appendChild(title);
+  const countText = HH.STICKER_BOOK.countText(save.stickers);
+  const countEl = document.createElement("p"); countEl.className = "sticker-count-text"; countEl.textContent = countText;
+  wrap.appendChild(countEl);
+  if (save.stickers > 0) {
+    const grid = document.createElement("div"); grid.className = "sticker-grid";
+    for (let i = 0; i < save.stickers; i++) {
+      const cell = document.createElement("div"); cell.className = "sticker-cell";
+      cell.textContent = STICKER_CYCLE[i % STICKER_CYCLE.length];
+      cell.style.animationDelay = (i * 0.05) + "s";
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+  } else {
+    const emptyEl = document.createElement("p"); emptyEl.className = "sticker-empty"; emptyEl.textContent = HH.STICKER_BOOK.empty;
+    wrap.appendChild(emptyEl);
+  }
+  body.appendChild(wrap);
+  speak(countText);
+}
+function wireStickers() {
+  $("stickerBookLinkMenu").addEventListener("click", () => { SND.init(); enterStickers(); });
+}
+
+/* ---------------------------------------------------------------
+   4. EXPLORE MY WORLD (free-roam) + NILU'S GAME (find & do)
    Quiz cards are gone — the child WALKS the world. Nilu's Game asks
    the child to find & tap the right object in the right room.
    --------------------------------------------------------------- */
@@ -382,6 +500,7 @@ function initWorldOnce() {
       onActor: handleActor,
       onRoomEnter: handleRoomEnter,
       onBump: () => SND.bump(),
+      onJoystickFirstUse: handleJoystickFirstUse,
     });
     HH.World.showHub();
     HH.World.resize();
@@ -408,7 +527,26 @@ function goHub() {
   $("findGameBtn").hidden = true;
   $("mapBtn").hidden = true;
   hideWorldBanner();
-  setBelu("Tap a building to explore! 🏠🏫");
+  hideMoveTutorial();
+  setNilu("Tap a building to explore! 🏠🏫");
+}
+
+/* ---- first-run movement tutorial: shown once on first interior entry,
+   dismissed the moment the child actually touches the joystick ---- */
+function maybeShowMoveTutorial() {
+  if (save.seenTutorial) return;
+  $("moveTutorialText").textContent = HH.TUTORIAL_TEXT;
+  $("moveTutorialOverlay").hidden = false;
+  speak(HH.TUTORIAL_TEXT);
+}
+function hideMoveTutorial() {
+  $("moveTutorialOverlay").hidden = true;
+}
+function handleJoystickFirstUse() {
+  if (save.seenTutorial) return;
+  save.seenTutorial = true;
+  saveSave();
+  hideMoveTutorial();
 }
 function handleBuilding(placeId) {
   if (scenarioState) return;
@@ -416,7 +554,7 @@ function handleBuilding(placeId) {
   if (!place) return;
   if (!place.unlocked) {
     showToast(place.comingSoon || "Coming soon!");
-    setBelu(place.comingSoon || "Coming soon!");
+    setNilu(place.comingSoon || "Coming soon!");
     return;
   }
   // per AJ: pop the building (it's clickable!) and offer the game choice
@@ -435,7 +573,7 @@ function walkThenEnter(placeId, afterEnter) {
   if (walkingTo) return;
   if (window.HH && HH.World && HH.World.hubWalkTo) {
     walkingTo = placeId;
-    setBelu("Here we go! 🚶");
+    setNilu("Here we go! 🚶");
     HH.World.hubWalkTo(placeId, () => {
       walkingTo = null;
       enterPlace(placeId);
@@ -453,10 +591,14 @@ function enterPlace(placeId) {
   const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
   $("findGameBtn").hidden = !hasTasks || findState.active;
   $("roomHeader").hidden = true;
+  maybeShowMoveTutorial();
 }
 function showEnterChoice(placeId, place) {
+  const done = save.quizzed.includes(placeId);
   $("enterChoiceEmoji").textContent = place.emoji;
-  $("enterChoiceTitle").textContent = place.name;
+  // progress marker only — nothing is hidden or locked because of this
+  $("enterChoiceTitle").textContent = place.name + (done ? " ✅" : "");
+  $("enterGameBtn").textContent = "⭐ Play Nilu's Game" + (done ? " ✅" : "");
   speak(place.name + ". What do you want to do?");
   $("enterExploreBtn").onclick = () => {
     $("enterChoiceModal").hidden = true;
@@ -483,11 +625,11 @@ function handleRoomEnter(roomId) {
     rh.textContent = info.room.emoji + " " + info.room.name;
     if (!visitedRoomsThisSession.has(roomId)) {
       visitedRoomsThisSession.add(roomId);
-      if (!findState.active) setBelu(info.room.action);
+      if (!findState.active) setNilu(info.room.action);
     }
   } else {
     rh.hidden = true;
-    if (!findState.active) setBelu("Walk through a door! 🚪");
+    if (!findState.active) setNilu("Walk through a door! 🚪");
   }
 }
 function handleObject(roomId, objIndex) {
@@ -553,21 +695,25 @@ function showWorldBanner(text, opts) {
   $("worldBannerChoices").innerHTML = "";
   $("worldBannerActions").innerHTML = "";
   banner.hidden = false;
-  $("beluBubble").hidden = true; // the banner IS the narration — don't double it
+  $("niluBubble").hidden = true; // the banner IS the narration — don't double it
+  autoSpeak(text || "");
 }
 function setBannerText(text) { $("worldBannerText").textContent = text || ""; }
 function hideWorldBanner() {
   $("worldBanner").hidden = true;
   $("worldBannerChoices").innerHTML = "";
   $("worldBannerActions").innerHTML = "";
-  if (BELU_SCREENS.includes(currentScreenId())) $("beluBubble").hidden = false;
+  if (NILU_SCREENS.includes(currentScreenId())) $("niluBubble").hidden = false;
 }
 function currentScreenId() {
   for (const id of SCREEN_IDS) { if (!$(id).hidden) return id; }
   return "";
 }
-function bannerChoices(options, onCorrect) {
-  buildChoices($("worldBannerChoices"), options, null, onCorrect);
+function bannerChoices(options, onCorrect, scenarioId) {
+  const trial = scenarioId
+    ? { scenarioId, onWrong: () => { if (scenarioState) scenarioState.hadWrongTap = true; } }
+    : null;
+  buildChoices($("worldBannerChoices"), options, null, onCorrect, trial);
 }
 function bannerActionButton(label, cls, onClick) {
   const btn = document.createElement("button");
@@ -590,7 +736,7 @@ function startFindGame() {
 function showFindTask() {
   const task = findState.tasks[findState.idx];
   if (!task) { finishFindGame(); return; }
-  setBelu(task.ask);
+  setNilu(task.ask);
   showWorldBanner(task.ask, { onClose: quitFindGame });
   if (window.HH && HH.World) HH.World.setTarget({ roomId: task.roomId, objIndex: task.objIndex });
 }
@@ -600,7 +746,7 @@ function handleFindObjectTap(roomId, objIndex) {
   if (roomId === task.roomId && objIndex === task.objIndex) {
     SND.chime();
     awardSticker(1);
-    setBelu(task.praise);
+    setNilu(task.praise);
     setBannerText(task.praise);
     if (window.HH && HH.World) HH.World.setTarget(null);
     findState.idx++;
@@ -610,7 +756,7 @@ function handleFindObjectTap(roomId, objIndex) {
     if (now - findState.lastWrongAt > 2500) {
       findState.lastWrongAt = now;
       SND.tryTone();
-      setBelu("Hmm, not that one — keep looking! 💙");
+      setNilu("Hmm, not that one — keep looking! 💙");
     }
   }
 }
@@ -623,7 +769,7 @@ function finishFindGame() {
   if (placeId && !save.quizzed.includes(placeId)) save.quizzed.push(placeId);
   saveSave();
   confettiBig(); SND.chime();
-  setBelu("You know your whole " + (place ? place.name : "place") + "! 🌟");
+  setNilu("You know your whole " + (place ? place.name : "place") + "! 🌟");
   if (place && exState.place === placeId) $("findGameBtn").hidden = false;
 }
 function quitFindGame() {
@@ -631,7 +777,7 @@ function quitFindGame() {
   hideWorldBanner();
   if (window.HH && HH.World) HH.World.setTarget(null);
   if (exState.place && HH.FIND_TASKS && HH.FIND_TASKS[exState.place]) $("findGameBtn").hidden = false;
-  setBelu("Let's keep exploring! 🌍");
+  setNilu("Let's keep exploring! 🌍");
 }
 
 function wireExplore() {
@@ -681,7 +827,7 @@ function enterHand() {
   // show the hand UI immediately — Nilu's intro plays alongside it, so the
   // screen is never a blank page with a lone bubble in the corner
   renderHandFill();
-  playIntroSequence(HH.HAND_INTRO, () => setBelu(HH.HAND_INTRO[3]));
+  playIntroSequence(HH.HAND_INTRO, () => setNilu(HH.HAND_INTRO[3]));
 }
 
 function handSVG() {
@@ -799,7 +945,7 @@ function renderHandFill() {
 
   if (filled.length < 5) {
     const left = 5 - filled.length;
-    setBelu("Pick " + left + " more helper" + (left === 1 ? "" : "s") + " for your hand!");
+    setNilu("Pick " + left + " more helper" + (left === 1 ? "" : "s") + " for your hand!");
   } else if (wheres.size >= 2) {
     // returning kid with a saved complete hand: offer the lessons directly
     const cont = document.createElement("button");
@@ -817,12 +963,12 @@ function checkHandComplete() {
   const wheres = new Set(filled.map(id => HH.HELPERS[id].where));
   if (wheres.size >= 2) {
     save.hand = handState.slots.slice(); saveSave();
-    setBelu("My hand is ready! 🖐️💙");
+    setNilu("My hand is ready! 🖐️💙");
     confettiBig(); SND.chime();
     awardSticker(1);
     setTimeout(showHandContinue, 1100);
   } else {
-    setBelu(HH.HAND_INTRO[2]);
+    setNilu(HH.HAND_INTRO[2]);
     SND.tryTone();
     setTimeout(() => {
       handState.slots = [null, null, null, null, null];
@@ -843,7 +989,7 @@ function showHandContinue() {
 function lessonStage(opts) {
   // opts: { title, icon, step, steps, niluText, onNext(nextBtnLabel), content(el) }
   const body = $("handBody"); body.innerHTML = "";
-  $("beluBubble").hidden = true; // Nilu is ON the stage, not in the corner
+  $("niluBubble").hidden = true; // Nilu is ON the stage, not in the corner
   const stage = document.createElement("section"); stage.className = "lesson-stage";
   const dots = Array.from({ length: opts.steps }, (_, i) =>
     '<span class="ls-dot' + (i === opts.step ? " on" : i < opts.step ? " done" : "") + '"></span>').join("");
@@ -998,7 +1144,7 @@ function renderSecretItem() {
 }
 function finishHandMode() {
   const body = $("handBody"); body.innerHTML = "";
-  $("beluBubble").hidden = false;
+  $("niluBubble").hidden = false;
   awardSticker(1);
   confettiBig(); SND.chime();
   const stage = document.createElement("section"); stage.className = "lesson-stage ls-done";
@@ -1010,7 +1156,7 @@ function finishHandMode() {
   btn.addEventListener("click", () => showScreen("menuScreen"));
   stage.appendChild(btn);
   body.appendChild(stage);
-  setBelu("You did it! I am so proud of you. 💙");
+  setNilu("You did it! I am so proud of you. 💙");
 }
 function wireHand() { /* interactions wired per-render */ }
 
@@ -1054,7 +1200,7 @@ function scenarioIsWalkable(sc) {
   return !!(place && place.rooms && place.rooms.some(r => r.id === sc.room) && window.HH && HH.World && worldReady);
 }
 function renderScenarioPicker(body) {
-  setBelu("Pick a story to practice! 💪");
+  setNilu("Pick a story to practice! 💪");
   const title = document.createElement("h2");
   title.className = "practice-title";
   title.textContent = "Practice Being Brave 💪";
@@ -1075,6 +1221,23 @@ function renderScenarioPicker(body) {
     adultBtn.addEventListener("click", () => startMasterReview({ onApproved: renderPractice }));
     body.appendChild(adultBtn);
   }
+  // spaced re-practice: one gentle nudge per browser session, only if a
+  // played-but-unmastered scenario has gone quiet for 3+ days.
+  if (sessionStorage.getItem("hh_review_suggested") !== "1") {
+    const cand = findReviewCandidate();
+    if (cand && isApproved("scenario:" + cand.id)) {
+      sessionStorage.setItem("hh_review_suggested", "1");
+      const banner = document.createElement("div"); banner.className = "review-suggest-banner";
+      const txt = document.createElement("p"); txt.className = "review-suggest-text";
+      txt.textContent = HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title);
+      const btn = document.createElement("button"); btn.className = "btn-primary review-suggest-btn";
+      btn.textContent = HH.REVIEW_PROMPT.button;
+      btn.addEventListener("click", () => attemptStartScenario(cand));
+      banner.appendChild(txt); banner.appendChild(btn);
+      body.appendChild(banner);
+      setNilu(HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title));
+    }
+  }
   const grid = document.createElement("div"); grid.className = "scenario-grid";
   visibleScenarios().forEach(sc => {
     const card = document.createElement("button");
@@ -1082,6 +1245,12 @@ function renderScenarioPicker(body) {
     if (!isApproved("scenario:" + sc.id)) {
       const badge = document.createElement("div"); badge.className = "lock-badge"; badge.textContent = "🔒";
       card.appendChild(badge);
+    } else if (save.done.includes(sc.id)) {
+      // progress marker only — nothing is hidden or locked because of this
+      const badge = document.createElement("div"); badge.className = "done-badge";
+      badge.textContent = isScenarioMastered(sc.id) ? "✅🏅" : "✅";
+      card.appendChild(badge);
+      card.classList.add("scenario-done");
     }
     const em = document.createElement("div"); em.className = "em"; em.textContent = sc.emoji;
     const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = sc.title;
@@ -1100,7 +1269,7 @@ function attemptStartScenario(sc) {
   if (scenarioIsWalkable(sc)) {
     startScenarioInWorld(sc);
   } else {
-    practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
+    practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1", hadWrongTap: false };
     renderPractice();
   }
 }
@@ -1112,7 +1281,7 @@ function renderSeeStep(body) {
   btn.addEventListener("click", () => { practiceState.step = "feel"; renderPractice(); });
   card.appendChild(btn);
   body.appendChild(card);
-  setBelu(sc.setup);
+  setNilu(sc.setup);
 }
 function renderFeelStep(body) {
   const sc = practiceState.scenario;
@@ -1124,8 +1293,8 @@ function renderFeelStep(body) {
   body.appendChild(card);
   buildChoices(answers, sc.feelA, feedback, () => {
     setTimeout(() => { practiceState.step = "react"; renderPractice(); }, 800);
-  });
-  setBelu(sc.feelQ);
+  }, { scenarioId: sc.id, onWrong: () => { practiceState.hadWrongTap = true; } });
+  setNilu(sc.feelQ);
 }
 function renderReactStep(body) {
   const sc = practiceState.scenario;
@@ -1137,8 +1306,8 @@ function renderReactStep(body) {
   body.appendChild(card);
   buildChoices(answers, sc.reactA, feedback, () => {
     setTimeout(() => { practiceState.step = "reactWhy"; renderPractice(); }, 800);
-  });
-  setBelu(sc.reactQ);
+  }, { scenarioId: sc.id, onWrong: () => { practiceState.hadWrongTap = true; } });
+  setNilu(sc.reactQ);
 }
 function renderReactWhyStep(body) {
   const sc = practiceState.scenario;
@@ -1148,7 +1317,7 @@ function renderReactWhyStep(body) {
   btn.addEventListener("click", () => { practiceState.step = "tell"; practiceState.tellPhase = "ask1"; renderPractice(); });
   card.appendChild(btn);
   body.appendChild(card);
-  setBelu(sc.reactWhy);
+  setNilu(sc.reactWhy);
 }
 function renderTellStep(body) {
   const sc = practiceState.scenario;
@@ -1161,7 +1330,7 @@ function renderTellStep(body) {
     btn.addEventListener("click", () => { practiceState.tellPhase = "keep"; renderPractice(); });
     card.appendChild(btn);
     body.appendChild(card);
-    setBelu(sc.busyLine);
+    setNilu(sc.busyLine);
     return;
   }
   if (phase === "keep") {
@@ -1171,7 +1340,7 @@ function renderTellStep(body) {
     btn.addEventListener("click", () => { practiceState.tellPhase = "ask2"; renderPractice(); });
     card.appendChild(btn);
     body.appendChild(card);
-    setBelu(sc.keepLine);
+    setNilu(sc.keepLine);
     return;
   }
 
@@ -1214,7 +1383,7 @@ function renderTellStep(body) {
   map.appendChild(feedback);
   card.appendChild(map);
   body.appendChild(card);
-  setBelu(promptText);
+  setNilu(promptText);
 }
 function renderResolveStep(body) {
   const sc = practiceState.scenario;
@@ -1222,6 +1391,7 @@ function renderResolveStep(body) {
     practiceState.resolvedAwarded = true;
     if (!save.done.includes(sc.id)) save.done.push(sc.id);
     saveSave();
+    trialRecordCompletion(sc.id, practiceState.hadWrongTap);
     awardSticker(1);
     confettiBig(); SND.chime();
   }
@@ -1233,7 +1403,7 @@ function renderResolveStep(body) {
   const actions = document.createElement("div"); actions.className = "resolve-actions";
   const again = document.createElement("button"); again.className = "btn-secondary"; again.textContent = "Play again 🔁";
   again.addEventListener("click", () => {
-    practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
+    practiceState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1", hadWrongTap: false };
     renderPractice();
   });
   const more = document.createElement("button"); more.className = "btn-primary"; more.textContent = "More practice ➡️";
@@ -1244,7 +1414,7 @@ function renderResolveStep(body) {
   actions.appendChild(again); actions.appendChild(more);
   card.appendChild(actions);
   body.appendChild(card);
-  setBelu(sc.resolve);
+  setNilu(sc.resolve);
 }
 function wirePractice() { /* interactions wired per-render */ }
 
@@ -1252,7 +1422,7 @@ function wirePractice() { /* interactions wired per-render */ }
 function startScenarioInWorld(sc) {
   if (findState.active) quitFindGame();
   if (window.HH && HH.World) HH.World.removeActor(sc.id); // defensive: idempotent if not present
-  scenarioState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1" };
+  scenarioState = { scenario: sc, step: "see", usedTell: [], tellPhase: "ask1", hadWrongTap: false };
   showScreen("exploreScreen");
   $("mapBtn").hidden = true;
   $("findGameBtn").hidden = true;
@@ -1262,6 +1432,7 @@ function startScenarioInWorld(sc) {
     HH.World.teleport(sc.room);
     HH.World.spawnActor(sc.id, sc.room);
   }
+  maybeShowMoveTutorial();
   runScenarioSee();
 }
 function runScenarioSee() {
@@ -1270,15 +1441,15 @@ function runScenarioSee() {
   if (actor && window.HH && HH.World) HH.World.say(sc.id, actor.bubble, 4500);
   showWorldBanner(sc.setup, { onClose: quitScenario });
   bannerActionButton("Next ➡️", "btn-primary", () => { scenarioState.step = "feel"; runScenarioFeel(); });
-  setBelu(sc.setup);
+  setNilu(sc.setup);
 }
 function runScenarioFeel() {
   const sc = scenarioState.scenario;
   showWorldBanner(sc.feelQ, { onClose: quitScenario });
   bannerChoices(sc.feelA, () => {
     setTimeout(() => { scenarioState.step = "react"; runScenarioReact(); }, 800);
-  });
-  setBelu(sc.feelQ);
+  }, sc.id);
+  setNilu(sc.feelQ);
 }
 function runScenarioReact() {
   const sc = scenarioState.scenario;
@@ -1287,21 +1458,21 @@ function runScenarioReact() {
     // the correct reaction always moves the child away from the situation
     if (window.HH && HH.World) HH.World.removeActor(sc.id);
     setTimeout(() => { scenarioState.step = "reactWhy"; runScenarioReactWhy(); }, 800);
-  });
-  setBelu(sc.reactQ);
+  }, sc.id);
+  setNilu(sc.reactQ);
 }
 function runScenarioReactWhy() {
   const sc = scenarioState.scenario;
   showWorldBanner(sc.reactWhy, { onClose: quitScenario });
   bannerActionButton("Next ➡️", "btn-primary", () => { startTellStep(); });
-  setBelu(sc.reactWhy);
+  setNilu(sc.reactWhy);
 }
 function startTellStep() {
   const sc = scenarioState.scenario;
   scenarioState.step = "tell";
   scenarioState.tellPhase = "ask1";
   showWorldBanner(sc.tellPrompt, { onClose: quitScenario });
-  setBelu(sc.tellPrompt);
+  setNilu(sc.tellPrompt);
   if (window.HH && HH.World) HH.World.setTarget({ helperId: sc.tellTo[0] });
 }
 function helperPlaceOf(helperId) {
@@ -1330,11 +1501,11 @@ function handleScenarioHelperTap(helperId) {
       HH.World.say(helperId, sc.busyLine, 3000);
     }
     setBannerText(sc.busyLine);
-    setBelu(sc.busyLine);
+    setNilu(sc.busyLine);
     setTimeout(() => {
       scenarioState.tellPhase = "keep";
       setBannerText(sc.keepLine);
-      setBelu(sc.keepLine);
+      setNilu(sc.keepLine);
       setTimeout(() => {
         scenarioState.tellPhase = "ask2";
         const nextHelper = sc.tellTo[1];
@@ -1343,7 +1514,7 @@ function handleScenarioHelperTap(helperId) {
           // the next helper lives in a different building — go there!
           const line = sc.goLine || "Let's go find another helper!";
           setBannerText(line);
-          setBelu(line);
+          setNilu(line);
           speak(line);
           setTimeout(() => {
             HH.World.enterBuilding(nextPlace);
@@ -1352,7 +1523,7 @@ function handleScenarioHelperTap(helperId) {
           }, 2600);
         } else {
           setBannerText("Who else can you tell?");
-          setBelu("Who else can you tell?");
+          setNilu("Who else can you tell?");
           if (window.HH && HH.World) HH.World.setTarget({ helperId: nextHelper });
         }
       }, 1800);
@@ -1371,6 +1542,7 @@ function runScenarioResolve() {
   }
   if (!save.done.includes(sc.id)) save.done.push(sc.id);
   saveSave();
+  trialRecordCompletion(sc.id, scenarioState.hadWrongTap);
   awardSticker(1);
   confettiBig(); SND.chime();
   const aff = HH.AFFIRMATIONS[Math.floor(Math.random() * HH.AFFIRMATIONS.length)];
@@ -1382,7 +1554,7 @@ function runScenarioResolve() {
     practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
     renderPractice();
   });
-  setBelu(sc.resolve);
+  setNilu(sc.resolve);
 }
 function endScenario() {
   if (scenarioState) {
@@ -1397,7 +1569,7 @@ function quitScenario() {
   showScreen("practiceScreen");
   practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
   renderPractice();
-  setBelu("Let's pick another story! 💪");
+  setNilu("Let's pick another story! 💪");
 }
 
 /* ---------------------------------------------------------------
@@ -1663,6 +1835,38 @@ function renderSignoffSection() {
     '<div class="gu-note">Every scenario and both lessons must be approved once before a child can play them. ' +
     "You can re-lock any section at any time.</div>";
 }
+/* ---- progress report: factual, adult-facing, print-friendly ---- */
+function renderProgressSection() {
+  const trials = save.trials || {};
+  const total = HH.SCENARIOS.length;
+  let practicedCount = 0, masteredCount = 0;
+  const rows = HH.SCENARIOS.map(sc => {
+    const t = trials[sc.id];
+    const practiced = !!(t && t.lastPlayed);
+    if (practiced) practicedCount++;
+    const mastered = isScenarioMastered(sc.id);
+    if (mastered) masteredCount++;
+    const timesPracticed = t && t.completions ? t.completions : 0;
+    const firstTry = t && t.firstTryCorrect !== null && t.firstTryCorrect !== undefined
+      ? (t.firstTryCorrect ? "✓" : "✗") : "—";
+    const dateCount = t && Array.isArray(t.dates) ? t.dates.length : 0;
+    const lastPlayed = t && t.lastPlayed ? formatDate(t.lastPlayed) : "—";
+    return "<tr><td>" + escHtml(sc.emoji + " " + sc.title) + "</td><td>" + timesPracticed + "</td><td>" +
+      firstTry + "</td><td>" + dateCount + " of 3</td><td>" + (mastered ? "🏅" : "—") + "</td><td>" +
+      lastPlayed + "</td></tr>";
+  }).join("");
+  const filledHand = (save.hand || []).filter(Boolean);
+  const placesCovered = new Set(filledHand.map(id => (HH.HELPERS[id] ? HH.HELPERS[id].where : null)).filter(Boolean));
+  const handStatus = filledHand.length + " of 5 helpers chosen" +
+    (placesCovered.size ? " — covers: " + Array.from(placesCovered).join(", ") : " — no places covered yet");
+  return "<h3>📊 Progress</h3>" +
+    "<p class=\"gu-summary\">" + practicedCount + " of " + total + " scenarios practiced &nbsp;•&nbsp; " +
+    masteredCount + " of " + total + " mastered (3 first-try-correct practice dates).</p>" +
+    "<p class=\"gu-summary\">Helping Hand: " + escHtml(handStatus) + ".</p>" +
+    '<table class="gu-table progress-table"><thead><tr><th>Scenario</th><th>Times Practiced</th>' +
+    "<th>First-Try Correct</th><th>Practice Dates</th><th>Mastered</th><th>Last Played</th></tr></thead><tbody>" +
+    rows + "</tbody></table>";
+}
 function renderGrownupsBody() {
   const body = $("guBody");
   body.hidden = false;
@@ -1670,6 +1874,7 @@ function renderGrownupsBody() {
   const esc = s => String(s);
   body.innerHTML =
     renderSignoffSection() +
+    renderProgressSection() +
     "<h3>What This Teaches</h3><ul>" + G.what.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>" +
     "<h3>If A Child Tells You Something</h3><ol>" + G.disclosure.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>" +
     "<h3>Where To Report</h3><table class=\"gu-table\">" +
@@ -1706,8 +1911,8 @@ function wireGrownups() {
 /* ---------------------------------------------------------------
    GLOBAL WIRING
    --------------------------------------------------------------- */
-function wireGlobalBelu() {
-  $("beluSpeakBtn").addEventListener("click", () => speak(currentBeluText));
+function wireGlobalNilu() {
+  $("niluSpeakBtn").addEventListener("click", () => speak(currentNiluText));
 }
 function wireGlobalChrome() {
   document.addEventListener("click", e => {
@@ -1731,20 +1936,21 @@ function boot() {
   wireGate();
   wireTitle();
   wireMenu();
+  wireStickers();
   wireExplore();
   wireFriendModal();
   wireHand();
   wirePractice();
   wireGrownups();
   wireAdultSignoff();
-  wireGlobalBelu();
+  wireGlobalNilu();
   wireGlobalChrome();
 
   // gate is hidden in the markup so the public build never flashes it;
   // review builds (REQUIRE_GATE=true) reveal it here instead
   if (HH.REQUIRE_GATE && sessionStorage.getItem("hh_gate") !== "1") {
     SCREEN_IDS.forEach(s => { $(s).hidden = true; });
-    $("beluBubble").hidden = true;
+    $("niluBubble").hidden = true;
     $("gateScreen").hidden = false;
   } else {
     showScreen("titleScreen");

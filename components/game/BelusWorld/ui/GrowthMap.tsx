@@ -20,6 +20,8 @@ import {
   completedLevels,
   totalStars,
 } from '../belu/progress';
+import type { BeluMemory } from '../belu/memory';
+import { ACHIEVEMENTS } from '../belu/achievements';
 
 const SKILLS: Record<ActivityZone, string> = {
   meadow: 'Reading Emotions',
@@ -32,7 +34,7 @@ const SKILLS: Record<ActivityZone, string> = {
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
 const GROWTH_SCALE = [44, 60, 78, 96];
 
-export default function GrowthMap({ progress, onClose }: { progress: GameProgress; onClose: () => void }) {
+export default function GrowthMap({ progress, memory, onClose }: { progress: GameProgress; memory?: BeluMemory; onClose: () => void }) {
   const growth = getGrowth(progress);
   const stars = totalStars(progress);
 
@@ -61,7 +63,16 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
         </button>
 
         <h2 className="mb-1 text-center text-2xl font-black text-slate-800">My Growth Map</h2>
-        <p className="mb-4 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
+        <p className="mb-1 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
+        {/* Visit-days chip — a warm, additive tally of days played, never a
+            "streak" that can break or shame a gap in play (see belu/memory.ts) */}
+        <div className="mb-4 flex justify-center">
+          {!!memory?.visitDays && (
+            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600">
+              🌈 {memory.visitDays} {memory.visitDays === 1 ? 'day' : 'days'} in Nilu's World!
+            </span>
+          )}
+        </div>
 
         {/* Nilu growth */}
         <div className="mb-5 rounded-3xl p-5 text-center" style={{ background: 'linear-gradient(160deg,#eaf6ff,#fff)' }}>
@@ -120,6 +131,31 @@ export default function GrowthMap({ progress, onClose }: { progress: GameProgres
                     {done >= MAX_LEVEL ? '🌷 Fully bloomed!' : `${done}/${MAX_LEVEL} levels grown`}
                   </div>
                 </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* My Badges — one-time achievements, all additive, nothing to lose */}
+        <h3 className="mb-2 mt-5 text-sm font-bold uppercase tracking-wide text-slate-400">
+          My Badges ({progress.achievementsEarned.length}/{ACHIEVEMENTS.length})
+        </h3>
+        <div className="grid grid-cols-4 gap-2">
+          {ACHIEVEMENTS.map((a) => {
+            const earned = progress.achievementsEarned.includes(a.id);
+            return (
+              <div
+                key={a.id}
+                title={earned ? `${a.name} — ${a.blurb}` : a.name}
+                className="flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-center"
+                style={{
+                  borderColor: earned ? '#ffd43b' : '#eef1f6',
+                  background: earned ? 'linear-gradient(160deg,#fff9e0,#fff)' : '#f8fafc',
+                  opacity: earned ? 1 : 0.55,
+                }}
+              >
+                <span className="text-2xl" style={{ filter: earned ? 'none' : 'grayscale(1)' }}>{a.icon}</span>
+                <span className="text-[10px] font-bold leading-tight text-slate-600">{a.name}</span>
               </div>
             );
           })}

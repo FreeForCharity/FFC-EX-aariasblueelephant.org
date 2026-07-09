@@ -390,6 +390,29 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+            {/* Play Nilu's World — free, kid-facing 3D game built for Aaria & friends.
+                Kept simple/warm rather than matching the marketing sections above,
+                since this card is for kids and parents to click through and play. */}
+            <section className="pb-20 bg-white dark:bg-slate-900 transition-colors">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <Link
+                        to="/nelus-world"
+                        className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:flex-row sm:text-left"
+                        style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
+                    >
+                        <div className="text-6xl transition-transform group-hover:scale-110">🐘🌈</div>
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-black text-sky-700">Play Nilu's World 🐘🌈</h3>
+                            <p className="mt-1 text-slate-600 dark:text-slate-500">
+                                A free, no-fail 3D adventure built for Aaria and her friends — explore sky islands, meet gentle friends, and help Nilu grow. No login needed.
+                            </p>
+                        </div>
+                        <span className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400">
+                            Play now ▶
+                        </span>
+                    </Link>
+                </div>
+            </section>
 
             {/* Join Herd QR Code */}
             <section id="join-herd" className="relative py-24 bg-sky-900 border-t-8 border-sky-500 overflow-hidden">

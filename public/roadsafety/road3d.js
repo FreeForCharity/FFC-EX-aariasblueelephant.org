@@ -584,7 +584,7 @@ window.GL3D = (function(){
     player.position.set(px, jump, pz);
     player.rotation.set(0, yaw + Math.PI, 0);
     const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    player.rotation.z = -steer * Math.min(1, S.speed / S.veh.max) * .22;   // bank!
+    player.rotation.z = -steer * Math.min(1, S.speed / S.veh.max) * (save.calm ? .08 : .22);   // bank!
     const spin = S.time * S.speed * .9;
     for (const w of P.wheels) w.rotation.x = spin;
     if (P.pedals){ P.pedals[0].position.y = .34 + Math.sin(S.time * 8) * .14;
@@ -606,7 +606,7 @@ window.GL3D = (function(){
     // traffic lights
     for (const o of evObjs){
       if (o.kind === "beacon"){
-        o.beacon.material.emissiveIntensity = Math.floor(S.time * 2.4) % 2 ? 2 : .15;
+        o.beacon.material.emissiveIntensity = save.calm ? 1.2 : (Math.floor(S.time * 2.4) % 2 ? 2 : .15);
       }
       if (o.kind === "light"){
         const ph = lightPhase(o.ev);
@@ -640,9 +640,14 @@ window.GL3D = (function(){
       const sa = sample(S.rt, clamp(a.w, 0, S.rt.len - 1));
       ambObj.grp.position.set((sa.x + sa.rx * a.lat) * M, 0, (sa.y + sa.ry * a.lat) * M);
       ambObj.grp.rotation.y = Math.atan2(sa.fx, sa.fy) + Math.PI;
-      const fl = Math.floor(S.time * 6) % 2;
-      ambObj.r.material.emissiveIntensity = fl ? 1.8 : .2;
-      ambObj.b.material.emissiveIntensity = fl ? .2 : 1.8;
+      if (save.calm){
+        ambObj.r.material.emissiveIntensity = 1.2;
+        ambObj.b.material.emissiveIntensity = 1.2;
+      } else {
+        const fl = Math.floor(S.time * 6) % 2;
+        ambObj.r.material.emissiveIntensity = fl ? 1.8 : .2;
+        ambObj.b.material.emissiveIntensity = fl ? .2 : 1.8;
+      }
     } else ambObj.grp.visible = false;
     renderer.render(scene, camera);
     return true;

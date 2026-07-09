@@ -13,6 +13,16 @@ window.MB = window.MB || {};
   let msMemory = {};
   try { msMemory = JSON.parse(localStorage.getItem(MS_KEY)) || {}; } catch(e){ msMemory = {}; }
 
+  // ---------- calm mode (persisted) — gentler sounds/animations, no tidy nagging ----------
+  let calm = localStorage.getItem('mb_calm') === '1';
+
+  // ---------- autosave: debounced, so a refresh never loses the live table ----------
+  let autosaveTimer = null;
+  function scheduleAutosave(){
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => MB.Bag.saveAutosave(), 2000);
+  }
+
   // ---------- biggest build record (kept in the HUD) ----------
   const BEST_KEY = 'mb_best_build_v1';
   let bestBuild = 0;
@@ -34,6 +44,7 @@ window.MB = window.MB || {};
 
   const ui = MB.ui = {
     muted: false,
+    calm: calm,
     show: id => { $(id).style.display = 'flex'; },
     hide: id => { $(id).style.display = 'none'; },
     toast(msg, ms){
@@ -42,6 +53,7 @@ window.MB = window.MB || {};
     },
     hint(msg){ const h = $('hintChip'); h.textContent = msg; h.style.display = msg ? 'block' : 'none'; },
     confetti(){
+      if (ui.calm) return; // calm mode: skip the confetti burst
       const ems = ['🎉','⭐','💛','🧡','💚','💙','💜','✨'];
       for (let i = 0; i < 26; i++){
         const d = document.createElement('div'); d.className = 'confettiBit';
@@ -53,11 +65,13 @@ window.MB = window.MB || {};
         setTimeout(() => d.remove(), 2400);
       }
     },
-    confirm(title, text, yes){
+    confirm(title, text, yes, no, yesLabel, noLabel){
       $('confirmTitle').textContent = title; $('confirmText').textContent = text;
+      $('confirmYes').textContent = yesLabel || 'Yes!';
+      $('confirmNo').textContent = noLabel || 'No';
       ui.show('confirmModal');
       $('confirmYes').onclick = () => { ui.hide('confirmModal'); yes(); };
-      $('confirmNo').onclick = () => ui.hide('confirmModal');
+      $('confirmNo').onclick = () => { ui.hide('confirmModal'); if (no) no(); };
     },
     // one-time celebration the first time a kid reaches a build milestone.
     // safe to call every frame/event — only fires once per key, ever (localStorage).
@@ -90,6 +104,7 @@ window.MB = window.MB || {};
   // room is 46×30×14 — keep the camera INSIDE it (never through walls = no white screen)
   const CAM_BOX = { x: 20.5, z: 12.5, yMin: 1.6, yMax: 8.7 }; // yMax below the bulbs (9.6)
   const orbit = { theta: 0.5, phi: 0.95, radius: 16, target: new V3(0, 4, 0), drag: null };
+  let DEFAULT_ORBIT = null; // captured once the table position is known (see boot)
   function applyCamera(){
     orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.32, 1.35);
     orbit.radius = THREE.MathUtils.clamp(orbit.radius, 5, 22);
@@ -112,6 +127,20 @@ window.MB = window.MB || {};
     MB.Builder.addTween(0.45, k => { orbit.theta = from + (to - from) * (1 - Math.pow(1-k, 3)); });
     MB.Audio.pick();
   }
+  // 🎯 recenter: smoothly tween the view back to the default look at the table
+  function recenterCam(){
+    if (!DEFAULT_ORBIT) return;
+    const from = { theta: orbit.theta, phi: orbit.phi, radius: orbit.radius, target: orbit.target.clone() };
+    const to = DEFAULT_ORBIT;
+    MB.Builder.addTween(0.8, k => {
+      const e = 1 - Math.pow(1-k, 3);
+      orbit.theta = from.theta + (to.theta - from.theta) * e;
+      orbit.phi = from.phi + (to.phi - from.phi) * e;
+      orbit.radius = from.radius + (to.radius - from.radius) * e;
+      orbit.target.lerpVectors(from.target, to.target, e);
+    });
+    MB.Audio.pick();
+  }
 
   // ---------- input ----------
   const pointers = new Map();
@@ -132,7 +161,7 @@ window.MB = window.MB || {};
     }
     hidePalette();
     const ray = rayFrom(ev);
-    if (MB.Cleanup.active){ MB.Cleanup.pointerDown(ray); return; }
+    if (MB.Cleanup.active){ if (MB.Cleanup.pointerDown(ray)) return; }
     // lamp bulbs: tap to switch on/off (works in any mode)
     {
       const hits = ray.intersectObjects(scene.children, true);
@@ -200,8 +229,18 @@ window.MB = window.MB || {};
     } else hidePalette();
     const count = MB.Builder.placedCount();
     $('pieceChip').textContent = '🧱 ' + count;
+    const rb = $('replayBtn');
+    if (rb) rb.style.display = (!MB.Builder.locked && MB.Bag.serializeTable().length >= 3) ? 'inline-block' : 'none';
     if (count >= 10) ui.milestone('ten', '🎉 10 blocks! Wow, look at all you built!');
+    if (count >= 20) ui.milestone('twenty', '🎉 20 blocks! You are building something amazing!');
+    if (count >= 40) ui.milestone('forty', '🌟 40 blocks! You are a building superstar!');
+    if (count >= 75) ui.milestone('seventyfive', '🏗️ 75 blocks! Incredible creation — you did it!');
     updateBestBuild();
+    scheduleAutosave();
+    updateUndoBtn();
+  }
+  function updateUndoBtn(){
+    const b = $('undoBtn'); if (b) b.style.opacity = (MB.Undo && MB.Undo.canUndo()) ? '1' : '.45';
   }
   function hidePalette(){ $('palettePop').style.display = 'none'; }
   function buildPalette(){
@@ -223,7 +262,13 @@ window.MB = window.MB || {};
     const item = MB.Bag.keep(renderer, scene, camera);
     MB.Builder.select(wasSel);
     if (!item) return;
+    if (MB.Stats) MB.Stats.bump('photosTaken');
     MB.Audio.camera();
+    if (ui.calm){ // calm mode: skip the flash + flying-photo animation, just confirm gently
+      MB.Bag.updateCount(); MB.Audio.sparkle();
+      ui.toast('🎒 Safe in your school bag! Take it out any time to keep building!', 2600);
+      return;
+    }
     const fl = $('flash'); fl.style.display = 'block'; fl.style.opacity = 0.9;
     setTimeout(() => { fl.style.opacity = 0; fl.style.display = 'none'; }, 180);
     // photo flies into the bag
@@ -236,23 +281,29 @@ window.MB = window.MB || {};
     setTimeout(() => { ph.style.display = 'none'; MB.Bag.updateCount(); MB.Audio.sparkle(); ui.toast('🎒 Safe in your school bag! Take it out any time to keep building!', 2600); }, 950);
   }
 
+  // shared by "tap to load" in the bag gallery and the "bring a friend's build" import flow
+  function loadBagItem(item){
+    const tableBusy = MB.Bag.serializeTable().length > 0;
+    const doLoad = () => {
+      const made = MB.Bag.rebuild(item, scene);
+      MB.Audio.sparkle(); MB.Audio.fanfare();
+      ui.toast('🎒→🧱 ' + item.name + ' is back on the table! Keep building on it!', 2800);
+      updateSelBar();
+    };
+    if (tableBusy){
+      ui.confirm('Swap builds? 🔁', 'The table is busy! Put those blocks back on the shelves and take out "' + item.name + '"? (Snap 📸 first if you want to keep the current one!)', () => {
+        for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
+        setTimeout(doLoad, 800);
+      });
+    } else doLoad();
+  }
+
   function openBag(){
-    MB.Bag.renderGrid(item => {
-      ui.hide('bagModal');
-      const tableBusy = MB.Bag.serializeTable().length > 0;
-      const doLoad = () => {
-        const made = MB.Bag.rebuild(item, scene);
-        MB.Audio.sparkle(); MB.Audio.fanfare();
-        ui.toast('🎒→🧱 ' + item.name + ' is back on the table! Keep building on it!', 2800);
-        updateSelBar();
-      };
-      if (tableBusy){
-        ui.confirm('Swap builds? 🔁', 'The table is busy! Put those blocks back on the shelves and take out "' + item.name + '"? (Snap 📸 first if you want to keep the current one!)', () => {
-          for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
-          setTimeout(doLoad, 800);
-        });
-      } else doLoad();
-    });
+    MB.Bag.renderGrid(
+      item => { ui.hide('bagModal'); loadBagItem(item); },
+      item => { ui.hide('bagModal'); MB.Replay.playCreation(item, scene); },
+      item => { MB.Bag.exportItem(item); MB.Audio.sparkle(); ui.toast('📤 Saved "' + item.name + '" — share the file with a friend!', 2600); }
+    );
     MB.Bag.updateCount();
     ui.show('bagModal');
   }
@@ -273,7 +324,7 @@ window.MB = window.MB || {};
   // ---------- audio mute wrapper ----------
   function wrapAudio(){
     for (const k of Object.keys(MB.Audio)){
-      if (typeof MB.Audio[k] !== 'function' || k === 'init') continue;
+      if (typeof MB.Audio[k] !== 'function' || k === 'init' || k === 'setCalm') continue;
       const orig = MB.Audio[k].bind(MB.Audio);
       MB.Audio[k] = (...a) => { if (ui.muted && !((k === 'bgm' || k === 'tidy') && a[0] === false)) return; return orig(...a); };
     }
@@ -294,6 +345,7 @@ window.MB = window.MB || {};
     room = MB.Playroom.build(scene);
     orbit.target.copy(room.tableCenter).add(new V3(0, 1.2, 0));
     applyCamera();
+    DEFAULT_ORBIT = { theta: orbit.theta, phi: orbit.phi, radius: orbit.radius, target: orbit.target.clone() };
 
     MB.Builder.init({ scene, camera, room });
     MB.Builder.onChange = updateSelBar;
@@ -301,7 +353,9 @@ window.MB = window.MB || {};
     MB.Bag.updateCount();
     buildPalette();
     wrapAudio();
+    MB.Audio.setCalm(calm);
     $('bestChip').textContent = '🏆 ' + bestBuild;
+    $('calmBtn').classList.toggle('on', calm);
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
@@ -335,6 +389,7 @@ window.MB = window.MB || {};
       $('titleScreen').style.display = 'none';
       $('hud').style.display = 'block';
       started = true;
+      if (MB.Stats) MB.Stats.bump('sessions');
       MB.Help.init();
       rotateHints(); setInterval(rotateHints, 13000);
       ui.toast('🧲 Welcome to the playroom! Tap any block on the shelves to start building!', 3200);
@@ -344,12 +399,27 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 3);
         orbit.theta = th0 - 2.2*e + 0.5*0; orbit.radius = r0 - (r0-17)*e;
       });
+      // offer to restore the last unsaved table, if any
+      const auto = MB.Bag.loadAutosave();
+      if (auto.length){
+        ui.confirm('Keep building your last creation? 🧲', 'We saved right where you left off!',
+          () => { MB.Bag.rebuildPieces(auto, scene); updateSelBar(); MB.Undo && MB.Undo.push(); },
+          () => { MB.Bag.clearAutosave(); },
+          'Yes! 🧲', 'Fresh table');
+      }
     });
     $('homeBtn').addEventListener('click', () => ui.confirm('Leave the playroom? 🏠', 'Your school bag creations stay saved!', () => location.href = '/'));
     $('soundBtn').addEventListener('click', () => {
       ui.muted = !ui.muted;
       $('soundBtn').textContent = ui.muted ? '🔇' : '🔊';
       if (ui.muted){ MB.Audio.bgm(false); MB.Audio.tidy(false); } else MB.Audio.bgm(true);
+    });
+    $('calmBtn').addEventListener('click', () => {
+      calm = !calm; ui.calm = calm;
+      try { localStorage.setItem('mb_calm', calm ? '1' : '0'); } catch(e){}
+      $('calmBtn').classList.toggle('on', calm);
+      MB.Audio.setCalm(calm);
+      ui.toast(calm ? '😌 Calm mode on — quieter and gentler!' : '🎉 Calm mode off — back to full sparkle!', 2200);
     });
     $('tidyForMeBtn').addEventListener('click', () => MB.Cleanup.autoTidy());
     $('tidyNowBtn').addEventListener('click', () => {
@@ -365,15 +435,59 @@ window.MB = window.MB || {};
     $('photoBtn').addEventListener('click', takePhoto);
     $('bagBtn').addEventListener('click', openBag);
     $('bagClose').addEventListener('click', () => ui.hide('bagModal'));
+    $('replayBtn').addEventListener('click', () => MB.Replay.playTable(scene));
+    $('replayStopBtn').addEventListener('click', () => MB.Replay.stop());
+    $('importBtn').addEventListener('click', () => $('importFile').click());
+    $('importFile').addEventListener('change', (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      MB.Bag.importFromFile(file, (item, err) => {
+        if (err){ ui.toast("Hmm, that file isn't a magnet build 💛", 2600); MB.Audio.no(); return; }
+        MB.Bag.updateCount();
+        MB.Audio.sparkle();
+        ui.hide('bagModal');
+        ui.confirm('Build it now? 🧲🎁', '"' + item.name + '" is safe in your school bag! Put it on the table right now?',
+          () => loadBagItem(item), () => {}, 'Yes! 🧲', 'Later');
+      });
+    });
     $('playBtn').addEventListener('click', () => ui.setPlay(!MB.Animate.on));
     $('helpBtn').addEventListener('click', () => MB.Help.openPicker());
     $('helpClose').addEventListener('click', () => ui.hide('helpModal'));
+    $('parentBtn').addEventListener('click', () => {
+      const answer = prompt('For grown-ups: what is 6 + 7?');
+      if (answer !== null){
+        if (String(answer).trim() === '13'){
+          // correct answer: show stats
+          const allStats = MB.Stats ? MB.Stats.getAll() : {};
+          $('statSessions').textContent = allStats.sessions || 0;
+          $('statBlocksPlaced').textContent = allStats.blocksPlaced || 0;
+          $('statBuildsSaved').textContent = allStats.buildsSaved || 0;
+          $('statPhotosTaken').textContent = allStats.photosTaken || 0;
+          $('statTidyUps').textContent = allStats.tidyUps || 0;
+          $('statBiggestBuild').textContent = bestBuild;
+          let milestoneCount = 0;
+          try { milestoneCount = Object.keys(msMemory).length; } catch(e){}
+          $('statMilestones').textContent = milestoneCount;
+          ui.show('parentModal');
+        } else {
+          ui.toast('Sorry, that\'s not quite right. Try again! 💭', 1800);
+          MB.Audio.no();
+        }
+      }
+    });
+    $('parentClose').addEventListener('click', () => ui.hide('parentModal'));
     $('rotBtn').addEventListener('click', () => MB.Builder.rotateSel());
     // view controls
     $('zoomInBtn').addEventListener('click', () => nudgeZoom(-3));
     $('zoomOutBtn').addEventListener('click', () => nudgeZoom(3));
     $('turnLBtn').addEventListener('click', () => nudgeTurn(Math.PI/4));
     $('turnRBtn').addEventListener('click', () => nudgeTurn(-Math.PI/4));
+    $('recenterBtn').addEventListener('click', recenterCam);
+    $('undoBtn').addEventListener('click', () => {
+      if (MB.Undo && MB.Undo.undo()){ MB.Audio.pop(); updateSelBar(); }
+      else ui.toast('Nothing to undo yet! ↩️', 1600);
+    });
     // rotate the block in your hand (touch-friendly)
     $('holdRotBtn').addEventListener('pointerdown', ev => { ev.stopPropagation(); MB.Builder.rotateSel(); });
     // table colors

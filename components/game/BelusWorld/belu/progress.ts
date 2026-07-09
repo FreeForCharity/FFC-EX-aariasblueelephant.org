@@ -98,12 +98,28 @@ export interface GameProgress {
   achievementsEarned: string[];
   /** today's Star Quests: which fully-bloomed islands' daily quest is done */
   starQuests: { date: string; doneZones: string[] };
+  /** lifetime per-zone "gentle re-prompt" (slip) + played-round tallies — never
+   *  shown to the child, only surfaced to grown-ups as "areas practicing most" */
+  practiceStats: Record<ActivityZone, { slips: number; rounds: number }>;
+  /** the child's most recent self-chosen calm-plan totems from Calm Cove L5
+   *  (e.g. ["Deep breaths", "Squeeze my hands", "Count to 5"]) — empty if never built */
+  calmPlan: string[];
 }
 
 const KEY = 'belus_world_progress_v1';
 
 function emptyIsland(): IslandProgress {
   return { levelStars: Array(MAX_LEVEL).fill(0) };
+}
+
+function emptyPracticeStats(): Record<ActivityZone, { slips: number; rounds: number }> {
+  return {
+    meadow: { slips: 0, rounds: 0 },
+    mountain: { slips: 0, rounds: 0 },
+    cove: { slips: 0, rounds: 0 },
+    forest: { slips: 0, rounds: 0 },
+    shore: { slips: 0, rounds: 0 },
+  };
 }
 
 function defaults(): GameProgress {
@@ -126,6 +142,8 @@ function defaults(): GameProgress {
     growthFloor: 0,
     achievementsEarned: [],
     starQuests: { date: '', doneZones: [] },
+    practiceStats: emptyPracticeStats(),
+    calmPlan: [],
   };
 }
 
@@ -164,6 +182,18 @@ export function loadProgress(): GameProgress {
     if (Array.isArray(parsed.achievementsEarned)) base.achievementsEarned = parsed.achievementsEarned;
     if (parsed.starQuests && typeof parsed.starQuests.date === 'string' && Array.isArray(parsed.starQuests.doneZones)) {
       base.starQuests = { date: parsed.starQuests.date, doneZones: parsed.starQuests.doneZones };
+    }
+    // older saves have no practiceStats — tolerate partial/missing per-zone entries
+    if (parsed.practiceStats && typeof parsed.practiceStats === 'object') {
+      for (const z of ZONES) {
+        const ps = (parsed.practiceStats as Record<string, { slips?: number; rounds?: number }>)[z];
+        if (ps && typeof ps.slips === 'number' && typeof ps.rounds === 'number') {
+          base.practiceStats[z] = { slips: Math.max(0, ps.slips), rounds: Math.max(0, ps.rounds) };
+        }
+      }
+    }
+    if (Array.isArray(parsed.calmPlan)) {
+      base.calmPlan = parsed.calmPlan.filter((c): c is string => typeof c === 'string');
     }
     if (typeof parsed.growthFloor === 'number') {
       base.growthFloor = Math.max(0, Math.min(3, parsed.growthFloor));
@@ -373,17 +403,29 @@ export interface AwardResult {
   replaySparkles: number;
 }
 
-/** Record a finished level. levelIdx is 0-based. stars is 1..3. Keeps the best. */
+/** Record a finished level. levelIdx is 0-based. stars is 1..3. Keeps the best.
+ *  `slips` (gentle re-prompts during this play) and `rounds` (questions/steps
+ *  played) accumulate lifetime into `practiceStats` — grown-ups-only, never
+ *  shown to the child and never affects stars or no-fail behavior. */
 export function awardLevel(
   p: GameProgress,
   zone: ActivityZone,
   levelIdx: number,
   stars: number,
+  slips = 0,
+  rounds = 1,
 ): AwardResult {
   const growthBefore = getGrowth(p).stage;
   const next: GameProgress = {
     ...p,
     islands: { ...p.islands, [zone]: { levelStars: [...p.islands[zone].levelStars] } },
+    practiceStats: {
+      ...p.practiceStats,
+      [zone]: {
+        slips: (p.practiceStats?.[zone]?.slips ?? 0) + Math.max(0, slips),
+        rounds: (p.practiceStats?.[zone]?.rounds ?? 0) + Math.max(1, rounds),
+      },
+    },
   };
   const prevBest = next.islands[zone].levelStars[levelIdx] ?? 0;
   const wasIncomplete = prevBest === 0;
@@ -452,6 +494,25 @@ export function completeStarQuest(p: GameProgress, zone: ActivityZone, date: str
 export function earnAchievement(p: GameProgress, id: string): GameProgress {
   if (p.achievementsEarned.includes(id)) return p;
   return { ...p, achievementsEarned: [...p.achievementsEarned, id] };
+}
+
+/** Save the child's freshly-built calm plan (Calm Cove L5) so grown-ups can see it. */
+export function saveCalmPlan(p: GameProgress, choices: string[]): GameProgress {
+  if (choices.length === 0) return p;
+  return { ...p, calmPlan: choices };
+}
+
+/** Zones ranked by how much gentle re-prompting they've needed (slips per
+ *  round played), most-practiced first. Zones with no rounds yet are skipped —
+ *  this is a "where might they want more support" signal, not a report card. */
+export function topPracticeZones(p: GameProgress): { zone: ActivityZone; rate: number; slips: number; rounds: number }[] {
+  return ZONES
+    .map((zone) => {
+      const s = p.practiceStats?.[zone] ?? { slips: 0, rounds: 0 };
+      return { zone, slips: s.slips, rounds: s.rounds, rate: s.rounds > 0 ? s.slips / s.rounds : 0 };
+    })
+    .filter((z) => z.rounds > 0)
+    .sort((a, b) => b.rate - a.rate);
 }
 
 export function equipCosmetic(p: GameProgress, slot: CosmeticSlot, id: string | null): GameProgress {

@@ -5,7 +5,9 @@ ABC.state = {
   unlocked: new Set(),        // unlocked block ids (locked blocks)
   foundShapes: new Set(),     // shapes hatched/unlocked via digging
   completed: new Set(),       // completed project ids
+  metrics: { digs: 0, treasures: 0, animalsTalked: 0, wordsPracticed: 0 },  // 👨‍👩‍👧 parent dashboard counters
   tutorialDone: false,
+  visiting: false,            // true while looking at a friend's shared world — never persisted, blocks auto-save
 };
 /* {player} templating — used across all game text */
 ABC.tpl = (s) => String(s).replaceAll('{player}', ABC.state.playerName || 'Aaria');
@@ -61,7 +63,9 @@ ABC.ui = (function () {
   /* ---------------- confetti & hearts ---------------- */
   const CONF = ['🎉','⭐','🌈','💖','✨','🎊','🌸','💙'];
   function confetti(n) {
-    for (let i=0;i<(n||34);i++) {
+    n = n || 34;
+    if (ABC.audio.settings.calm) n = Math.max(4, Math.round(n * 0.25));   // 😌 calm mode: gentler bursts
+    for (let i=0;i<n;i++) {
       const d = document.createElement('div');
       d.className = 'confetti';
       d.textContent = pick(CONF);
@@ -83,6 +87,147 @@ ABC.ui = (function () {
       document.body.appendChild(d);
       setTimeout(()=>d.remove(), 2400);
     }
+  }
+
+  /* ---------------- 📤 share my world / 📥 visit a friend's world ----------------
+     Export/import ONLY the world's block edits (ABC.world.serialize()) — never
+     playerName, stars/hearts/coins, or photos. Those are this child's own
+     personal progress and must never leave the device or be overwritten by
+     someone else's file. */
+  function shareWorld() {
+    try {
+      const payload = { app: 'blockcraft', v: 1, world: ABC.world.serialize() };
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'my-blockcraft-world.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('📦 Your world is packed up to share! 📦', 3600, true);
+    } catch (e) {
+      toast('Hmm, sharing didn’t work this time 💛', 3200, true);
+    }
+  }
+
+  function visitWorld() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data = null;
+        try { data = JSON.parse(reader.result); } catch (e) { data = null; }
+        const w = data && data.world;
+        const valid = data && data.app === 'blockcraft' && data.v === 1 &&
+                      w && typeof w === 'object' && Array.isArray(w.d) && w.inf === 1;
+        if (!valid) { toast('Hmm, that file isn’t a Block Craft world 💛', 3800, true); return; }
+        confirmVisit(w);
+      };
+      reader.onerror = () => toast('Hmm, that file isn’t a Block Craft world 💛', 3800, true);
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+  function confirmVisit(friendWorld) {
+    openDialog(`<div class="bigEmoji">🏡</div><h2>Visit your friend's world?</h2>
+      <div class="scene">Your own world stays safe! You can come home any time. 💙</div>
+      <div class="dlgRow">
+        <button class="bigBtn green" id="visitYes">Visit! 🚪</button>
+        <button class="bigBtn" id="visitNo" style="font-size:16px;padding:10px 18px;min-height:44px;">↩️ Not now</button>
+      </div>`);
+    ABC.audio.say('Visit your friend’s world? Your own world stays safe!', { force: true });
+    $('visitYes').onclick = () => { ABC.audio.sfx.pop(); closeDialog(); enterVisit(friendWorld); };
+    $('visitNo').onclick = () => { ABC.audio.sfx.pop(); closeDialog(); };
+  }
+  function enterVisit(friendWorld) {
+    ABC.state.visiting = true;          // pauses auto-save — the child's own world is never touched
+    ABC.world.deserialize(friendWorld);
+    showVisitChip();
+    toast('🏡 Welcome! You’re visiting a friend’s world.', 3800, true);
+  }
+  function showVisitChip() {
+    if ($('visitChip')) return;
+    const chip = document.createElement('button');
+    chip.id = 'visitChip';
+    chip.textContent = '🏡 Visiting! Tap to go home';
+    chip.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;' +
+      'min-height:44px;padding:10px 20px;border-radius:22px;border:none;font-family:inherit;' +
+      'background:linear-gradient(180deg,#ffe066,#ffd43b);color:#664d03;font-size:15px;font-weight:bold;' +
+      'box-shadow:0 4px 10px rgba(0,0,0,.25);cursor:pointer;';
+    chip.onclick = () => location.reload();   // safest way home: a fresh load of the child's own save
+    document.body.appendChild(chip);
+  }
+
+  /* ---------------- 🎬 build timelapse — replay the child's own building ----------------
+     Uses the edits-only save (ABC.world.serialize()) — Map/Set insertion order
+     approximates the order things were placed/dug. We reset to bare base terrain,
+     replay every edit forward in small chunks for the "growing" effect, then ALWAYS
+     finish by restoring the exact original snapshot (deserialize), so the world can
+     never end up different from how it started — whether it finishes naturally or
+     the child taps Stop. */
+  let tlTimer = null;
+  function startTimelapse() {
+    if (tlTimer) return;
+    const snap = ABC.world.serialize();   // {d:[...], r:[...], inf:1} — the true, current world
+    const dels = snap.r.slice();
+    const sets = snap.d.slice();
+    const total = dels.length + sets.length;
+    if (!total) { toast('Build something first, then come watch it grow! 🧱', 3400, true); return; }
+
+    ABC.world.deserialize({ d: [], r: [], inf: 1 });   // bare base terrain — nothing built yet
+
+    const queue = [];
+    dels.forEach((k) => { const [x, y, z] = k.split(',').map(Number); queue.push(() => ABC.world.remove(x, y, z)); });
+    sets.forEach((e) => {
+      const parts = e.split(':');
+      const [x, y, z] = parts[0].split(',').map(Number);
+      const t = parts[1], rot = +parts[2] || 0;
+      queue.push(() => ABC.world.set(x, y, z, t, rot));
+    });
+
+    const TICK_MS = 160, MAX_MS = 20000;
+    const maxTicks = Math.max(1, Math.floor(MAX_MS / TICK_MS));
+    const chunkSize = Math.max(8, Math.ceil(queue.length / maxTicks));   // 8-15 normally; scales up for huge worlds
+
+    openDialog(`<div class="bigEmoji">🎬</div><h2>My world grew!</h2>
+      <div class="scene">Watch it grow, block by block! 🌱</div>
+      <div style="height:18px;background:#e9ecef;border-radius:10px;overflow:hidden;margin:14px 0;">
+        <div id="tlFill" style="height:100%;width:0%;background:linear-gradient(90deg,#69db7c,#51cf66);transition:width .15s;"></div>
+      </div>
+      <div class="dlgRow"><button class="bigBtn" id="tlStop" style="font-size:18px;padding:12px 30px;min-height:44px;">⏹ Stop</button></div>`);
+
+    let idx = 0, ticks = 0;
+    const finish = () => {
+      if (tlTimer) { clearInterval(tlTimer); tlTimer = null; }
+      ABC.world.deserialize(snap);   // guarantee: world ends up exactly as it started
+      closeDialog();
+      if (!ABC.audio.settings.calm) confetti(40);
+      ABC.audio.say('Look how much you built!', { force: true });
+    };
+    $('tlStop').onclick = () => {
+      ABC.audio.sfx.pop();
+      if (tlTimer) { clearInterval(tlTimer); tlTimer = null; }
+      ABC.world.deserialize(snap);   // instantly show the finished world
+      closeDialog();
+    };
+    tlTimer = setInterval(() => {
+      const n = Math.min(chunkSize, queue.length - idx);
+      for (let i = 0; i < n; i++) queue[idx + i]();
+      idx += n;
+      ABC.world.flush();
+      ticks++;
+      const soundEvery = ABC.audio.settings.calm ? 4 : 2;   // soft, rate-limited, gentler in calm mode
+      if (ticks % soundEvery === 0) ABC.audio.sfx.pop();
+      const fill = $('tlFill');
+      if (fill) fill.style.width = Math.round(idx / queue.length * 100) + '%';
+      if (idx >= queue.length) finish();
+    }, TICK_MS);
   }
 
   /* ---------------- score ---------------- */
@@ -116,6 +261,7 @@ ABC.ui = (function () {
   function addStars(n) {
     const before = ABC.state.stars;
     ABC.state.stars += n;
+    ABC.replayEvent && ABC.replayEvent('star');   // 🎬 adventure recorder
     refreshScore();
     ABC.audio.sfx.star();
     if (Math.floor(before/10) !== Math.floor(ABC.state.stars/10)) {
@@ -127,6 +273,7 @@ ABC.ui = (function () {
   }
   function addHearts(n) {
     ABC.state.hearts += n;
+    ABC.replayEvent && ABC.replayEvent('heart');  // 🎬 adventure recorder
     refreshScore();
     floatHearts(4);
     const m = ABC.KIND_MILESTONES[ABC.state.hearts];
@@ -199,6 +346,7 @@ ABC.ui = (function () {
             closeDialog();
             confetti(18);
             addStars(opts.stars != null ? opts.stars : 1);
+            ABC.state.metrics.wordsPracticed++;    // 👨‍👩‍👧 parent dashboard: expressive success
             ABC.portal && ABC.portal.charge(1);    // word power 🌀
             toast('🌟 ' + praise, 3600, true);
             onSuccess && onSuccess(o);
@@ -243,6 +391,7 @@ ABC.ui = (function () {
       setTimeout(() => {
         closeDialog(); confetti(22);
         addStars((opts.stars != null ? opts.stars : 1) + 1);  // bonus star for using voice!
+        ABC.state.metrics.wordsPracticed++;    // 👨‍👩‍👧 parent dashboard: expressive success
         ABC.portal && ABC.portal.charge(1);    // word power 🌀
         toast('🌟 ' + pick(ABC.PRAISE) + ' (+1 voice bonus ⭐)', 3800, true);
         onSuccess && onSuccess(best);
@@ -579,6 +728,12 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setSound">${chk(s.sound)} 🎵 Sound effects</button>
       <button class="choiceBtn" id="setMusic">${chk(s.music)} 🎶 Gentle music</button>
       <button class="choiceBtn" id="setWeather">${chk(s.weather !== false)} 🌦️ Gentle weather (rain &amp; snow)</button>
+      <button class="choiceBtn" id="setCalm">${chk(s.calm)} 😌 Calm mode — softer sounds &amp; less bouncy camera</button>
+      <button class="choiceBtn" id="setShare">📤 Share world — save a file of your build to send a friend</button>
+      <button class="choiceBtn" id="setVisit">📥 Visit a friend's world — open a world file they shared</button>
+      <button class="choiceBtn" id="setTimelapse">🎬 My world grew! — watch your build come together again</button>
+      <button class="choiceBtn" id="setAdventure">🎬 Watch my adventure — replay your last walk around!</button>
+      <button class="choiceBtn" id="setParent">👨‍👩‍👧 For grown-ups — progress dashboard</button>
       <button class="choiceBtn" id="setReset" style="border-color:#ffa8a8;">🧹 Start a brand-new world (erases this one)</button>
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>
       <div class="dlgRow"><button class="bigBtn green" id="setDone">Done ✔</button></div>`);
@@ -623,16 +778,71 @@ ABC.ui = (function () {
                  toast(c.t.ico + ' ' + c.t.label + '!', 2600, true); }, '🎨');
     });
     wire('setRead',  () => { s.readAloud = !s.readAloud; ABC.saveSoon(); showSettings(); });
-    wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); showSettings(); });
-    wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); showSettings(); });
+    wire('setSound', () => { s.sound = !s.sound; ABC.saveSoon(); ABC.refreshMuteBtn && ABC.refreshMuteBtn(); showSettings(); });
+    wire('setMusic', () => { s.music = !s.music; ABC.saveSoon(); ABC.refreshMuteBtn && ABC.refreshMuteBtn(); showSettings(); });
     wire('setWeather', () => { s.weather = s.weather === false; ABC.saveSoon(); showSettings(); });
+    wire('setCalm', () => { s.calm = !s.calm; ABC.saveSoon(); showSettings(); });
+    wire('setShare', () => shareWorld());
+    wire('setVisit', () => visitWorld());
+    wire('setTimelapse', () => { closeDialog(); startTimelapse(); });
+    wire('setAdventure', () => { closeDialog(); ABC.startAdventureReplay && ABC.startAdventureReplay(); });
+    wire('setParent', () => showParentGate());
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {
+        localStorage.removeItem('aariasBlockCraft3');
         localStorage.removeItem('aariasBlockCraft2');
         location.reload();
       }, '🧹');
     });
+  }
+
+  /* ---------------- 👨‍👩‍👧 for grown-ups: a quiet, read-only progress dashboard ----------------
+     Gated by a simple math check so it stays a grown-up-only screen. */
+  function showParentGate() {
+    openDialog(`<div class="bigEmoji">🔒</div><h2>For Grown-ups</h2>
+      <div class="scene">Quick check — what is <b>6 + 7</b>?</div>
+      <input id="gateInput" type="number" inputmode="numeric"
+        style="font-family:inherit;font-size:24px;text-align:center;padding:12px;border:3px solid #74c0fc;border-radius:16px;width:60%;">
+      <div class="dlgRow">
+        <button class="bigBtn green" id="gateOk">Enter</button>
+        <button class="bigBtn" id="gateBack" style="background:#eee;color:#333;box-shadow:0 4px 0 #ccc;">Back</button>
+      </div>`);
+    const inp = $('gateInput'); inp.focus();
+    const tryGo = () => {
+      if (+inp.value === 13) showParentDashboard();
+      else { inp.value = ''; toast('Not quite — try again!', 2200); inp.focus(); }
+    };
+    $('gateOk').onclick = tryGo;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryGo(); });
+    $('gateBack').onclick = () => showSettings();
+  }
+
+  function showParentDashboard() {
+    const st = ABC.state, m = st.metrics || {};
+    const days = ABC.overnight && ABC.overnight.petals ? ABC.overnight.petals() : 0;
+    const photos = ABC.photo && ABC.photo.count ? ABC.photo.count() : 0;
+    const befriended = ABC.friends && ABC.friends.metCount ? ABC.friends.metCount() : 0;
+    const row = (ico, label, val) =>
+      `<div style="display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px solid #e7ecf3;font-size:17px;">
+        <span>${ico} ${esc(label)}</span><b>${val}</b></div>`;
+    const html = `<div class="bigEmoji">👨‍👩‍👧</div><h2>For Grown-ups</h2>
+      <div class="scene" style="text-align:left; max-width:360px; margin:0 auto;">
+        ${row('🌻', 'Days played', days)}
+        ${row('⭐', 'Stars', st.stars || 0)}
+        ${row('💗', 'Hearts', st.hearts || 0)}
+        ${row('🪙', 'Coins', st.coins || 0)}
+        ${row('🧱', 'Blocks placed', st.placedCount || 0)}
+        ${row('💎', 'Treasures found', m.treasures || 0)}
+        ${row('🐾', 'Animals befriended', befriended)}
+        ${row('🏗️', 'Projects done', st.completed ? st.completed.size : 0)}
+        ${row('💬', 'Words practiced', m.wordsPracticed || 0)}
+        ${row('🔷', 'Shapes found', st.foundShapes ? st.foundShapes.size : 0)}
+        ${row('📸', 'Photos taken', photos)}
+      </div>
+      <div class="dlgRow"><button class="bigBtn green" id="pdOk" style="font-size:20px; padding:14px 32px;">Close ✔</button></div>`;
+    openDialog(html);
+    $('pdOk').onclick = () => { ABC.audio.sfx.pop(); showSettings(); };
   }
 
   function showHelp(onClose) {
@@ -651,5 +861,6 @@ ABC.ui = (function () {
            refreshScore, addStars, addHearts, addCoins, checkBuildMilestone, askExpressive, askBuilder, pickCard, message,
            buildHotbar, selectBlock, selectByIndex, getSelected, unlockBlock,
            getHand, setHand, openBag, openQuickMenu,
-           showSettings, showHelp, pick, pick3, esc };
+           shareWorld, visitWorld, startTimelapse,
+           showSettings, showParentGate, showParentDashboard, showHelp, pick, pick3, esc };
 })();

@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--belu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
+  :root{--nilu:#2563eb; --ink:#3a3a5a; --sun:#ffd23f; --glow:#fff3b0; --pink:#ff8fb1;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#7cc4ff;
     font-family:'Baloo 2','Comic Sans MS','Chalkboard SE','Segoe UI',system-ui,sans-serif;
@@ -169,7 +169,7 @@
 
   /* ---------- context action button ---------- */
   #actBtn{position:absolute;right:18px;bottom:max(26px,calc(env(safe-area-inset-bottom) + 8px));z-index:9;
-    display:none;cursor:pointer;border:none;background:var(--belu);color:#fff;font-weight:900;
+    display:none;cursor:pointer;border:none;background:var(--nilu);color:#fff;font-weight:900;
     font-size:clamp(17px,4.8vw,22px);border-radius:28px;padding:16px 26px;
     box-shadow:0 7px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);animation:bob 1.3s ease-in-out infinite;
     font-family:inherit;}
@@ -201,6 +201,19 @@
     font-size:clamp(30px,8vw,42px);transition:.1s;}
   .mv:active{transform:translateY(4px);box-shadow:0 2px 0 #cfd6ee;}
 
+  /* ---------- 🎬 replay bar: shown only while watching a recorded adventure ---------- */
+  #replayBar{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);
+    z-index:13;display:flex;align-items:center;gap:8px;pointer-events:auto;
+    background:rgba(255,255,255,.92);border:2.5px solid #fff;border-radius:22px;padding:8px 14px;
+    box-shadow:0 8px 22px rgba(58,58,90,.25);}
+  .rbLabel{font-weight:900;font-size:clamp(13px,3.6vw,16px);color:var(--ink);white-space:nowrap;}
+  .rbtn{cursor:pointer;border:none;border-radius:14px;min-width:48px;min-height:48px;
+    font-weight:900;font-size:15px;background:linear-gradient(160deg,#fff6d5,#ffd97a);
+    box-shadow:0 4px 0 #e0a92e;font-family:inherit;padding:6px 10px;transition:.12s;}
+  .rbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #e0a92e;}
+  .rbDone{background:linear-gradient(160deg,#ffd2de,#ff8fb1);box-shadow:0 4px 0 #d6547d;}
+  .rbDone:active{box-shadow:0 1px 0 #d6547d;}
+
   /* ---------- overlays (intro / book / finale only) ---------- */
   .overlay{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
     padding:16px;pointer-events:auto;background:rgba(40,60,120,.25);}
@@ -208,10 +221,10 @@
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .panel{background:rgba(255,255,255,.97);border-radius:30px;max-width:620px;width:100%;
     padding:22px;box-shadow:0 20px 60px rgba(58,58,90,.35);text-align:center;max-height:92vh;overflow:auto;}
-  .panel h1{font-size:clamp(26px,7.5vw,42px);margin:.1em 0;color:var(--belu);}
+  .panel h1{font-size:clamp(26px,7.5vw,42px);margin:.1em 0;color:var(--nilu);}
   .panel p{font-size:clamp(15px,4.3vw,19px);line-height:1.45;margin:.45em 0;}
   .big{cursor:pointer;border:none;border-radius:24px;padding:15px 28px;margin:8px 5px 2px;
-    font-size:clamp(17px,4.8vw,23px);font-weight:900;color:#fff;background:var(--belu);
+    font-size:clamp(17px,4.8vw,23px);font-weight:900;color:#fff;background:var(--nilu);
     box-shadow:0 8px 0 #1a4bbf,0 12px 22px rgba(37,99,235,.4);transition:.12s;font-family:inherit;}
   .big:active{transform:translateY(4px);box-shadow:0 4px 0 #1a4bbf;}
   .tubRow{display:flex;justify-content:center;gap:8px;margin:8px 0;flex-wrap:wrap;}
@@ -252,6 +265,8 @@
       <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
       <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
+      <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
+      <button class="mbtn" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure">🎬</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
     </div>
@@ -263,6 +278,16 @@
 
   <!-- Sun Baby's never-ending quest — tap for a sparkle trail -->
   <div class="chip quest" id="questChip" style="display:none" title="Sun Baby's quest — tap for a sparkle trail!"></div>
+
+  <!-- 🎬 Replay bar — shown only while watching a recorded adventure -->
+  <div id="replayBar" class="hidden">
+    <span class="rbLabel">🎬 Nilu's Adventure</span>
+    <button class="rbtn" id="replaySpeedBtn" title="Change speed" aria-label="Playback speed">1x</button>
+    <button class="rbtn" id="replayShareBtn" title="Share adventure" aria-label="Share adventure">📤</button>
+    <button class="rbtn rbDone" id="replayDoneBtn" title="Done watching" aria-label="Done watching">⏹ Done</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+
 
   <!-- celebration toast: names what was just earned (backs up the spoken line) -->
   <div id="celebToast" aria-live="polite"></div>
@@ -284,9 +309,41 @@
       <button class="big" id="setSpeed" style="font-size:17px"></button>
       <button class="big" id="setSound" style="font-size:17px"></button>
       <button class="big" id="setVoice" style="font-size:17px"></button>
+      <button class="big" id="setCalm" style="font-size:17px"></button>
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
+      <button class="big" id="setReplay" style="font-size:17px">🎬 Watch my adventure</button>
+      <button class="big" id="setImportReplay" style="font-size:17px">📥 Watch a friend's adventure</button>
+      <button class="big" id="setParent" style="font-size:17px">👨‍👩‍👧 For grown-ups</button>
     </div>
     <button class="big" id="setClose">Done ▶</button>
+  </div></div>
+
+  <!-- Grown-up gate: a tiny typed math check keeps this out of kid-taps -->
+  <div class="overlay" id="parentGate"><div class="panel" style="max-width:380px">
+    <h1>👨‍👩‍👧 For grown-ups</h1>
+    <p>Quick check — what is <b>6 + 7</b>?</p>
+    <input id="parentAns" type="text" inputmode="numeric" autocomplete="off"
+      style="font-size:20px;padding:10px;border-radius:12px;border:2px solid #ddd;width:100%;box-sizing:border-box;margin:8px 0"
+      placeholder="Your answer">
+    <div id="parentGateErr" style="color:#e0521f;min-height:20px;font-size:14px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="big" id="parentGateGo" style="font-size:17px">Continue ▶</button>
+      <button class="big" id="parentGateCancel" style="font-size:17px">Cancel</button>
+    </div>
+  </div></div>
+
+  <!-- Grown-up summary: read-only stats, plain list -->
+  <div class="overlay" id="parentPanel"><div class="panel" style="max-width:460px">
+    <h1>👨‍👩‍👧 Grown-up Summary</h1>
+    <div id="parentStats" style="text-align:left;font-size:15px;line-height:1.8;max-height:52vh;overflow:auto"></div>
+    <button class="big" id="parentClose" style="font-size:17px">Done ▶</button>
+  </div></div>
+
+  <!-- Pause: a calm, no-fail break screen. Freezes the whole frame loop. -->
+  <div class="overlay" id="pauseOv"><div class="panel" style="max-width:380px">
+    <h1>Taking a break 💙</h1>
+    <p>Trunkland is waiting patiently for you!</p>
+    <button class="big" id="resumeBtn" style="font-size:22px">Keep playing ▶️</button>
   </div></div>
 
   <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob">🐘</div>
@@ -397,7 +454,7 @@ const TUBBIES={
   rosy:{name:'Skydah', body:'#ffdc00', dark:'#e0b800', antenna:'star', antCol:'#ffe68a',
     zone:'Dreamy Hills', likes:'hide & seek', game:'hide', hello:'Skydah the dreamer loves hide and seek! Come find me?'},
 };
-const BELU={name:'Nilu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
+const NILU={name:'Nilu', body:'#2563eb', dark:'#1a4bbf', antenna:'circle', antCol:'#8fd0ff'};
 
 const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
   {e:'😊',w:'Happy',   hint:'A big smile means happy!'},
@@ -410,12 +467,18 @@ const FEELINGS=[   // Minty's Tummy-TV — emotion recognition
   {e:'🥳',w:'Proud',   hint:'A party face means proud — you did it!'},
   {e:'😳',w:'Shy',     hint:'Pink cheeks can mean shy. That\'s okay!'},
   {e:'😌',w:'Calm',    hint:'Soft eyes and a little smile mean calm.'},
+  {e:'🤔',w:'Confused',hint:'A tilted head and squished brows mean confused. Asking helps!'},
+  {e:'🙁',w:'Worried', hint:'A little frown and quiet eyes can mean worried. A hug helps!'},
+  {e:'🥰',w:'Loving',  hint:'Soft smiling eyes and a warm smile mean loving!'},
 ];
 const MOVES=[      // Tinko's dance moves (each has a 3D animation)
   {k:'jump', e:'🦘', w:'Jump'},
   {k:'spin', e:'🌀', w:'Spin'},
   {k:'wave', e:'👋', w:'Wave'},
   {k:'stomp',e:'🦶', w:'Stomp'},
+  {k:'nod',  e:'🙆', w:'Nod'},
+  {k:'wiggle',e:'🕺', w:'Wiggle'},
+  {k:'clap', e:'👏', w:'Clap'},
 ];
 const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
   {name:'Tubby Custard', steps:[{e:'🧼',w:'Wash hands'},{e:'🥣',w:'Get the bowl'},{e:'🥛',w:'Pour the milk'},{e:'🥄',w:'Stir it round'},{e:'💞',w:'Share with friends'}]},
@@ -423,6 +486,9 @@ const RECIPES=[    // Sunny's kitchen — everyday sequencing, one per day
   {name:'Bedtime', steps:[{e:'🛁',w:'Warm bath'},{e:'🪥',w:'Brush teeth'},{e:'📖',w:'Story time'},{e:'🤗',w:'Big hug'},{e:'😴',w:'Sleep tight'}]},
   {name:'Morning Time', steps:[{e:'⏰',w:'Wake up'},{e:'🚽',w:'Go potty'},{e:'🪥',w:'Brush teeth'},{e:'🥣',w:'Eat breakfast'},{e:'🎒',w:'Ready to go'}]},
   {name:'Tidy Up', steps:[{e:'🧸',w:'Pick up toys'},{e:'📚',w:'Books on shelf'},{e:'🧺',w:'Clothes in basket'},{e:'🧹',w:'Sweep sweep'},{e:'🌟',w:'All done!'}]},
+  {name:'Snack Time', steps:[{e:'🧼',w:'Wash hands'},{e:'🍌',w:'Pick a snack'},{e:'🍽️',w:'Put on a plate'},{e:'😋',w:'Enjoy'},{e:'🧹',w:'Clean up crumbs'}]},
+  {name:'Getting Dressed', steps:[{e:'🧦',w:'Socks on'},{e:'👕',w:'Shirt on'},{e:'👖',w:'Pants on'},{e:'👟',w:'Shoes on'},{e:'🪞',w:'Check the mirror'}]},
+  {name:'Watering Plants', steps:[{e:'🪣',w:'Fill the can'},{e:'🌱',w:'Find the plant'},{e:'💧',w:'Pour gently'},{e:'☀️',w:'Find a sunny spot'},{e:'🌸',w:'Watch it grow'}]},
 ];
 /* Story scenes — enacted in 3D: each choice becomes a character/bubble standing
    in the world. `s` = short label under the figure. 3 stories star each day. */
@@ -473,11 +539,15 @@ const SUN_NUDGE=['Take your time, look again!','You\'re so close!','Try the calm
 
 /* ============================== SAVE STATE =============================== */
 const KEY='ellyTubbies.v3';
-let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
+let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,calm:false,secrets:{},found:{},gear:{},friend:{},hatched:[],egg:null,lastDay:'',visitDays:0,
+       lastGiftDay:'',milestonesShown:{},lifeSparks:0,               // daily gift + streak milestones + parent summary
+       learn:{feelings:{},recipes:{},stories:{}},                    // practice counters, for the grown-up panel
        stickers:{},                         // id -> true
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
+S.learn=Object.assign({feelings:{},recipes:{},stories:{}},S.learn);
+function addSparks(n){S.sparks+=n;S.lifeSparks=(S.lifeSparks||0)+n;}
 S.today=Object.assign({stars:{},seeds:{},stories:{},wantsDone:{}},S.today);if(!S.today.wantsDone)S.today.wantsDone={};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const STAR_GOAL=5;
@@ -504,6 +574,7 @@ let AC=null;const ac=()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitA
 /* polite audio: never let effect-beeps pile up or drown the voice */
 const _toneLog=[];
 function tone(f,d,type='sine',v=.13,delay=0){if(S.muted)return;const a=ac();if(!a)return;
+  if(S.calm)v*=0.5;                                 // 😌 Calm: gentler on the ears
   const nowMs=performance.now();
   while(_toneLog.length&&nowMs-_toneLog[0]>350)_toneLog.shift();
   if(_toneLog.length>=6)return;                     // enough beeps already — stay calm
@@ -703,8 +774,8 @@ function makeWaterMat(o={}){
     uDeep:{value:new T.Color(o.deep||'#155f9c')},
     uShallow:{value:new T.Color(o.shallow||'#3cb1d4')},
     uSky:{value:new T.Color('#bfe0ff')},
-    uFoam:{value:o.foam?1:0},uAmp:{value:o.amp??0.16},
-    uFlow:{value:o.flow||0},uAlpha:{value:o.alpha??0.92},uIsland:{value:ISLAND}};
+    uFoam:{value:o.foam?1:0},uAmp:{value:(o.amp??0.16)*(REDUCE_MOTION?0.35:1)},
+    uFlow:{value:(o.flow||0)*(REDUCE_MOTION?0.4:1)},uAlpha:{value:o.alpha??0.92},uIsland:{value:ISLAND}};
   const mat=new T.ShaderMaterial({uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,u]),
     transparent:true,fog:true,side:T.DoubleSide,
     vertexShader:`
@@ -805,7 +876,7 @@ const clouds=[];
       p.scale.y=0.55;g.add(p);}
     const a=rnd()*Math.PI*2,r=30+rnd()*(ISLAND+20);
     g.position.set(Math.cos(a)*r,23+rnd()*9,Math.sin(a)*r);
-    scene.add(g);clouds.push({g,sp:0.55+rnd()*0.7});}
+    scene.add(g);clouds.push({g,sp:(0.55+rnd()*0.7)*(REDUCE_MOTION?0.35:1)});}
 })();
 
 /* ---- sprite helpers ---- */
@@ -933,7 +1004,10 @@ function animEllie(e,time,dt,walking){
     else if(a.move==='stomp'){a.inner.scale.y*=1-p*0.25;a.inner.scale.x*=1+p*0.18;e.group.position.y=a.baseY+(t>0.5?0:p*0.5);}
     else if(a.move==='happy'){e.group.position.y=a.baseY+Math.abs(Math.sin(t*Math.PI*3))*1.1;a.inner.rotation.y=Math.sin(t*Math.PI*2)*0.4;}
     else if(a.move==='sad'){a.head.rotation.x=p*0.4;}
-    if(t>=1){a.move=null;a.inner.rotation.y=0;a.head.rotation.x=0;e.group.position.y=a.baseY;}}
+    else if(a.move==='nod'){a.head.rotation.x=Math.sin(t*Math.PI*3)*0.3;}
+    else if(a.move==='wiggle'){a.inner.rotation.z=Math.sin(t*Math.PI*4)*0.25;}
+    else if(a.move==='clap'&&a.arms){a.arms.forEach(({piv})=>{piv.rotation.x=Math.sin(t*Math.PI*6)*0.5;});}
+    if(t>=1){a.move=null;a.inner.rotation.y=0;a.inner.rotation.z=0;a.head.rotation.x=0;e.group.position.y=a.baseY;}}
 }
 function doMove(e,k,dur=0.9){e.anim.move=k;e.anim.moveT=0;e.anim.moveDur=dur;e.anim.baseY=e.group.position.y;}
 
@@ -1214,7 +1288,7 @@ function gardenProximity(){
     if(d<3.2){
       if(g.lastGreet!==todayKey()){                 // first hello today: wake + tiny gift
         g.lastGreet=todayKey();save();
-        stickerReact(st);S.sparks++;hud();save();
+        stickerReact(st);addSparks(1);hud();save();
         floatSprite('✨',s.position,3,1.4,1.1);sfx.seed();
       }else if(!g._cool||performance.now()-g._cool>6000){g._cool=performance.now();stickerReact(st);}
     }});
@@ -1225,7 +1299,7 @@ function refreshStickers(){STICKERS.forEach(st=>{if(S.stickers[st.id])placeStick
     c.position.set(0,4.6,0.05);player.anim.head.add(c);stickerNodes.crown=c;}}
 
 /* ============================ CHARACTERS ================================= */
-const player=makeEllie(BELU);
+const player=makeEllie(NILU);
 player.group.position.set(0,0,-9);scene.add(player.group);
 player.anim.tv('💙');
 
@@ -1303,7 +1377,7 @@ function registerTickles(){for(const id in tubbies){
     floatSprite('💕',t.group.position,3,1.2,1.1);
     tickles[id]=(tickles[id]||0)+1;
     if(tickles[id]%3===0){burst(t.group.position,20,'#ffdc00');sfx.star();
-      S.sparks++;save();hud();floatSprite('✨',t.group.position,3.5,1.5,1.4);}
+      addSparks(1);save();hud();floatSprite('✨',t.group.position,3.5,1.5,1.4);}
   },true,true);})(id);
 }}
 function refreshMarks(){for(const id in tubbies){
@@ -1360,6 +1434,19 @@ async function wakeRitual(){
   await say('☀️','Elly-elly… TUBBIES! Good morning, Trunkland! ☀️');
   if(S.lastDay!==todayKey()){
     const newDayReal=S.lastDay!=='';S.lastDay=todayKey();S.visitDays=(S.visitDays||0)+1;save();hud();
+    if(S.lastGiftDay!==todayKey()){                    // 🎁 daily gift: first visit each real day
+      S.lastGiftDay=todayKey();addSparks(10);save();hud();
+      sfx.good();burst(player.group.position,20,'#ffd23f');
+      celebToast('✨ Daily gift! +10 ✨');
+      say('☀️','A new day in Trunkland! Here are 10 sparkles! ✨');
+    }
+    const MS=[3,7,14,30];                               // 🎉 streak milestones — never shame a gap
+    if(MS.includes(S.visitDays)&&!(S.milestonesShown||{})[S.visitDays]){
+      S.milestonesShown=S.milestonesShown||{};S.milestonesShown[S.visitDays]=1;save();
+      burst(player.group.position,26,'#8fd0ff');
+      celebToast(`🎉 ${S.visitDays} days in Trunkland!`);
+      say('☀️',`${S.visitDays} days in Trunkland! 🎉`);
+    }
     if(newDayReal){
       // the nearest friend runs over for a hug + remembers yesterday
       const p=player.group.position;
@@ -1457,7 +1544,7 @@ function tubbyWantsUpdate(){
     const t=tubbies[id];
     if(t.group.position.distanceTo(p)<3.4){
       S.today.wantsDone[id]=1;
-      S.friend[id]=(S.friend[id]||0)+1;S.sparks+=3;save();hud();
+      S.friend[id]=(S.friend[id]||0)+1;addSparks(3);save();hud();
       player.group.remove(carrySprite);carrySprite=null;carried=null;
       if(t.bubble){t.group.remove(t.bubble);t.bubble=null;}
       doMove(t,'happy',1.5);doMove(player,'happy',1.5);
@@ -1571,8 +1658,8 @@ function questUpdate(dt){
   try{done=quest.check();}catch(e){}
   if(done){
     const q=quest;quest=null;
-    S.questN++;S.sparks+=4;save();hud();
-    sfx.good();reactSun();
+    S.questN++;addSparks(4);save();hud();
+    sfx.good();reactSun();recEvent('quest');
     celebToast(`🌟 Quest ${S.questN} done! +4 ✨`);
     const el=$('questChip');if(el){el.classList.remove('donePulse');void el.offsetWidth;el.classList.add('donePulse');}
     say('☀️',`Quest complete! Did you know? ${q.fact}`).then(newQuest);
@@ -1588,7 +1675,9 @@ $('questChip').onclick=()=>{sfx.tap();
 /* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
 const NAVY='#12244f';
 const girlImg=new Image();let girlReady=false;
-girlImg.onload=()=>{girlReady=true;repaintSun();};girlImg.src='girl.png';
+girlImg.onload=()=>{girlReady=true;repaintSun();tryHideLoading();};
+girlImg.onerror=()=>{girlReady=true;tryHideLoading();};   // never let a bad network hang the loading screen
+girlImg.src='girl.png';
 const GW=172,GH=240;
 const EYES=[{x:70/GW,y:126/GH,rx:27/GW,ry:19/GH},{x:117/GW,y:120/GH,rx:28/GW,ry:18/GH}];
 const CHEEKS=[{x:44/GW,y:150/GH},{x:132/GW,y:146/GH}];
@@ -1725,6 +1814,7 @@ function spawnSeeds(){
 /* burst of celebration sparkles at a world point */
 const bursts=[];
 function burst(pos,n=16,col='#ffd23f'){
+  if(S.calm)n=Math.max(4,Math.round(n*0.4));         // 😌 Calm: fewer sparkly particles
   const geo=new T.BufferGeometry();const p=[],v=[];
   for(let i=0;i<n;i++){p.push(pos.x,pos.y+1,pos.z);
     const a=Math.random()*Math.PI*2,e2=Math.random()*Math.PI;
@@ -1787,11 +1877,197 @@ function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
   const s=emojiSprite(ch,scale);s.position.copy(pos);scene.add(s);
   tween(dur,k=>{s.position.y=pos.y+k*rise;s.material.opacity=1-k;}).then(()=>scene.remove(s));}
 
+/* ===================== 🎬 ADVENTURE RECORDER / REPLAY =====================
+   A gentle "watch what you just did" feature. While playing normally (not
+   paused, not already watching a replay) we quietly sample Nilu's position
+   every ~250ms into a small ring buffer (last 5 minutes, session-only RAM —
+   never saved), plus a few fun moments (jump, trumpet, mystery tricks,
+   stickers, stars, quests). Replay ONLY ever moves Nilu and re-plays a
+   little sound/sparkle — it never re-awards sparkles/stars or advances
+   quests/friendship/state. Samples: [tMs,x,z,rotY]. Events: [tMs,type,extra].
+   ========================================================================== */
+const REC_SAMPLE_MS=250, REC_MAX_SAMPLES=1200, REC_MAX_EVENTS=500, REC_MIN_MS=20000;
+let REC={t0:0,acc:0,samples:[],events:[]};
+let replaying=false,replayData=null,replayIdx=0,replayElapsed=0,replaySpeed=1,replaySaved=null;
+function recTick(dt,now){
+  if(paused||replaying||mode==='intro'||mode==='finale')return;
+  REC.acc+=dt*1000;
+  if(REC.acc<REC_SAMPLE_MS)return;
+  REC.acc=0;
+  if(!REC.t0)REC.t0=now;
+  const p=player.group.position;
+  REC.samples.push([Math.round(now-REC.t0),Math.round(p.x*100)/100,Math.round(p.z*100)/100,
+    Math.round(player.group.rotation.y*1000)/1000]);
+  if(REC.samples.length>REC_MAX_SAMPLES){
+    REC.samples.shift();
+    const cutoff=REC.samples[0][0];
+    while(REC.events.length&&REC.events[0][0]<cutoff)REC.events.shift();
+  }
+}
+/* call from wherever a fun, recordable moment happens — cheap, no-op while paused/replaying */
+function recEvent(type,extra){
+  if(paused||replaying||mode==='intro'||mode==='finale')return;
+  if(!REC.t0)REC.t0=performance.now();
+  REC.events.push([Math.round(performance.now()-REC.t0),type,extra===undefined?0:extra]);
+  if(REC.events.length>REC_MAX_EVENTS)REC.events.shift();
+}
+function recordedSpanMs(){const s=REC.samples;return s.length<2?0:s[s.length-1][0]-s[0][0];}
+/* re-fire ONLY the visual/sound flourish for a recorded moment — never state! */
+function replayFireEvent(type,extra){
+  const p=player.group.position;
+  const at=(dy=1)=>new T.Vector3(p.x,p.y+dy,p.z);
+  switch(type){
+    case 'jump':
+      sfx.boing();if(!REDUCE_MOTION)burst(at(0.3),8,'#ffe9a8');
+      break;
+    case 'trumpet':
+      sfx.trumpet();
+      if(!REDUCE_MOTION)['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>{
+        if(mode==='replay')floatSprite(n,new T.Vector3(p.x+(i-1)*0.9,p.y+3.4,p.z),3,1.6);},i*220));
+      break;
+    case 'mystery':{
+      const col={spray:'#6fd0ff',dance:'#ff8fb1',bubbles:'#bfe9ff',confetti:'#ff8fb1',
+        growshrink:'#c8b6ff',rainbowarc:'#ffd23f'}[extra]||'#b8a4ff';
+      const em={spray:'💦',dance:'💃',bubbles:'🫧',confetti:'🎉',growshrink:'✨',rainbowarc:'🌈'}[extra]||'✨';
+      sfx.good();if(!REDUCE_MOTION)burst(at(1.5),16,col);
+      floatSprite(em,at(2.6),3,1.4,1.6);
+      break;}
+    case 'sticker':{
+      const st=STICKERS[extra];
+      sfx.star();if(!REDUCE_MOTION)burst(at(1),14,'#ffd23f');
+      floatSprite(st?st.e:'🌸',at(2),2.4,1.2,1.4);
+      break;}
+    case 'star':
+      sfx.star();if(!REDUCE_MOTION)burst(at(1),18,'#ffd23f');
+      celebToast('⭐ New Star!',1600);
+      break;
+    case 'quest':
+      sfx.good();if(!REDUCE_MOTION)burst(at(1),14,'#8fd0ff');
+      celebToast('🌟 Quest done!',1600);
+      break;
+  }
+}
+function angLerp(a,b,k){const d=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI;return a+d*k;}
+function startReplay(data){
+  if(replaying||!data||!data.samples||data.samples.length<2)return;
+  replaySaved={x:player.group.position.x,y:player.group.position.y,z:player.group.position.z,
+    ry:player.group.rotation.y,mode,trav,
+    jumpCount,trumpetCount,lastTrumpetNear,lastTrampAt,mischiefT,sunActT,questPoll};
+  replaying=true;replayData={samples:data.samples,events:data.events||[],_evIdx:0};
+  replayIdx=0;replayElapsed=0;replaySpeed=1;
+  clearNarr();freeCam();clearChoices();
+  duck=false;jumping=false;jumpY=0;kd=null;
+  player.group.rotation.x=0;player.anim.inner.rotation.x=0;player.anim.inner.rotation.z=0;
+  if(player.vel){player.vel.x=0;player.vel.z=0;player.vel.sp=0;}
+  mode='replay';
+  $('stick').classList.add('hidden');$('jumpCol').classList.add('hidden');
+  $('funRow').classList.add('hidden');$('moves').classList.remove('show');
+  $('actBtn').classList.remove('show');
+  const rs=$('replaySpeedBtn');if(rs)rs.textContent='1x';
+  const rb=$('replayBar');if(rb)rb.classList.remove('hidden');
+}
+function endReplay(){
+  if(!replaying)return;
+  replaying=false;
+  const sv=replaySaved;replaySaved=null;
+  if(sv){
+    player.group.position.set(sv.x,sv.y,sv.z);player.group.rotation.y=sv.ry;
+    trav=sv.trav;
+    jumpCount=sv.jumpCount;trumpetCount=sv.trumpetCount;lastTrumpetNear=sv.lastTrumpetNear;
+    lastTrampAt=sv.lastTrampAt;mischiefT=sv.mischiefT;sunActT=sv.sunActT;questPoll=sv.questPoll;
+    mode=sv.mode;
+  }
+  const rb=$('replayBar');if(rb)rb.classList.add('hidden');
+  if(mode==='roam'){$('stick').classList.remove('hidden');$('jumpCol').classList.remove('hidden');
+    $('funRow').classList.remove('hidden');}
+  updateActBtn();
+  sfx.tap();celebToast('What an adventure! 🌟',2400);
+}
+function updateReplay(dt,time){
+  const data=replayData;const samples=data.samples;
+  replayElapsed+=dt*1000*replaySpeed;
+  const t0=samples[0][0];
+  while(replayIdx<samples.length-1&&(samples[replayIdx+1][0]-t0)<=replayElapsed)replayIdx++;
+  const cur=samples[replayIdx],nxt=samples[Math.min(replayIdx+1,samples.length-1)];
+  const t1=cur[0]-t0,t2=nxt[0]-t0;
+  const k=t2>t1?Math.max(0,Math.min(1,(replayElapsed-t1)/(t2-t1))):0;
+  const x=cur[1]+(nxt[1]-cur[1])*k,z=cur[2]+(nxt[2]-cur[2])*k;
+  const ry=angLerp(cur[3],nxt[3],k);
+  const p=player.group.position;
+  p.set(x,terrainH(x,z),z);player.group.rotation.y=ry;
+  const spd=Math.hypot(nxt[1]-cur[1],nxt[2]-cur[2])/((Math.max(1,t2-t1))/1000);
+  player.anim.baseY=p.y;
+  animEllie(player,time,dt,spd>1.2);
+  while(data._evIdx<data.events.length&&(data.events[data._evIdx][0]-t0)<=replayElapsed){
+    try{replayFireEvent(data.events[data._evIdx][1],data.events[data._evIdx][2]);}catch(e){}
+    data._evIdx++;
+  }
+  const lastT=samples[samples.length-1][0]-t0;
+  if(replayElapsed>=lastT)endReplay();
+}
+function tryStartOwnReplay(){
+  if(mode!=='roam'){sfx.soft();celebToast('Let\'s finish this first! 💛',2000);return;}
+  if(recordedSpanMs()<REC_MIN_MS){sfx.soft();celebToast('Play a little first, then watch your adventure! 🎬',2800);return;}
+  startReplay({samples:REC.samples.map(s=>s.slice()),events:REC.events.map(e=>e.slice())});
+}
+function buildExportPayload(){
+  const samples=replaying?replayData.samples:REC.samples;
+  const events=replaying?replayData.events:REC.events;
+  if(!samples||samples.length<2)return null;
+  const t0=samples[0][0];
+  return {app:'ellytubbies',v:1,day:S.day,
+    samples:samples.map(s=>[Math.round(s[0]-t0),s[1],s[2],s[3]]),
+    events:events.map(e=>[Math.round(e[0]-t0),e[1],e[2]])};
+}
+function shareAdventure(){
+  try{
+    const payload=buildExportPayload();
+    if(!payload){celebToast('Play a little first! 🎬',2000);return;}
+    const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='my-adventure.ellytubbies.json';document.body.appendChild(a);a.click();
+    setTimeout(()=>{try{URL.revokeObjectURL(a.href);}catch(e){}a.remove();},1500);
+  }catch(e){celebToast('Hmm, could not share that 💛',2200);}
+}
+function validateAdventureImport(obj){
+  try{
+    if(!obj||typeof obj!=='object')return null;
+    if(obj.app!=='ellytubbies'||obj.v!==1)return null;
+    if(!Array.isArray(obj.samples)||!Array.isArray(obj.events))return null;
+    const B=ISLAND+20;
+    const samples=[];
+    for(const s of obj.samples){
+      if(!Array.isArray(s)||s.length<4)continue;
+      const t=+s[0],x=+s[1],z=+s[2],ry=+s[3];
+      if(![t,x,z,ry].every(Number.isFinite))continue;
+      samples.push([Math.max(0,t),Math.max(-B,Math.min(B,x)),Math.max(-B,Math.min(B,z)),ry]);
+      if(samples.length>=REC_MAX_SAMPLES)break;
+    }
+    if(samples.length<2)return null;
+    samples.sort((a,b)=>a[0]-b[0]);
+    const lastT=samples[samples.length-1][0];
+    const okTypes=new Set(['jump','trumpet','mystery','sticker','star','quest']);
+    const events=[];
+    for(const ev of (obj.events||[])){
+      if(!Array.isArray(ev)||ev.length<2)continue;
+      const t=+ev[0],type=ev[1];let extra=ev[2];
+      if(!Number.isFinite(t)||typeof type!=='string'||!okTypes.has(type))continue;
+      if(extra===undefined||extra===null)extra=0;
+      if(typeof extra!=='number'&&typeof extra!=='string')extra=0;
+      events.push([Math.max(0,Math.min(lastT,t)),type,extra]);
+      if(events.length>=REC_MAX_EVENTS)break;
+    }
+    events.sort((a,b)=>a[0]-b[0]);
+    return {samples,events};
+  }catch(e){return null;}
+}
+
 /* ========================= FUN ACTIONS (Nilu!) =========================== */
 let actionBusy=false;
 let trumpetTimes=[];
 async function actTrumpet(){
   if(actionBusy)return;actionBusy=true;
+  recEvent('trumpet');
   sfx.trumpet();doMove(player,'stomp',0.9);
   const p=player.group.position;
   ['🎵','🎶','🎵'].forEach((n,i)=>setTimeout(()=>
@@ -1870,6 +2146,47 @@ async function actDance(){
   }
   burst(p,18,'#ff8fb1');if(crowd.length)reactSun();
   actionBusy=false;
+}
+async function actBubbles(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.soft();doMove(player,'wave',1);giggle();
+  const p=player.group.position;
+  for(let i=0;i<8;i++){setTimeout(()=>{
+    if(mode!=='roam')return;
+    const s=emojiSprite('🫧',0.7+Math.random()*0.6);
+    s.position.set(p.x+(Math.random()-0.5)*1.6,p.y+1.2,p.z+(Math.random()-0.5)*1.6);
+    scene.add(s);
+    const rise=3.5+Math.random()*2;
+    tween(1.5+Math.random()*0.8,k=>{s.position.y=p.y+1.2+k*rise;
+      s.position.x+=Math.sin(k*9+i)*0.02;s.material.opacity=1-k;}).then(()=>scene.remove(s));
+  },i*140);}
+  await wait(900);actionBusy=false;
+}
+async function actConfetti(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.star();doMove(player,'jump',1);
+  const p=player.group.position.clone();
+  burst(new T.Vector3(p.x,p.y+2.4,p.z),26,'#ff8fb1');
+  ['🎉','🎊','✨'].forEach((n,i)=>setTimeout(()=>
+    floatSprite(n,new T.Vector3(p.x+(i-1)*1.1,p.y+3,p.z),3,1.5),i*180));
+  reactSun();
+  await wait(700);actionBusy=false;
+}
+async function actGrowShrink(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.boing();floatSprite('✨',player.group.position,3,1.2,1.4);
+  await tween(0.55,k=>{const s=1+Math.sin(k*Math.PI)*0.5;player.group.scale.setScalar(s);});
+  player.group.scale.setScalar(1);giggle();
+  await wait(250);actionBusy=false;
+}
+async function actRainbowArc(){
+  if(actionBusy||mode!=='roam')return;actionBusy=true;
+  sfx.good();doMove(player,'spin',1);
+  const p=player.group.position.clone();
+  const cols=['#ff5f6d','#ffa53f','#ffd23f','#6dd47e','#5fb4ff','#a78bfa'];
+  cols.forEach((c,i)=>setTimeout(()=>{if(mode==='roam')burst(new T.Vector3(p.x,p.y+1.4,p.z),6,c);},i*90));
+  floatSprite('🌈',new T.Vector3(p.x,p.y+2.6,p.z),3,1.6,1.8);
+  await wait(700);actionBusy=false;
 }
 
 /* ================= MISCHIEF! holes, disappearing & BOO! ================== */
@@ -2015,7 +2332,7 @@ function camFollow(dt){
   const k=Math.min(1,dt*3);
   camState.pos.lerp(wantPos,k);camState.look.lerp(wantLook,k);
   camera.position.copy(camState.pos);
-  if(camShake>0.004&&!REDUCE_MOTION){                    // landing thump rattles the camera
+  if(camShake>0.004&&!REDUCE_MOTION&&!S.calm){           // landing thump rattles the camera
     camera.position.x+=(Math.random()-0.5)*camShake;
     camera.position.y+=(Math.random()-0.5)*camShake*0.7;
     camShake*=Math.pow(0.0008,dt);}
@@ -2115,7 +2432,7 @@ function knockdown(nx,nz,style){
   knockdown.n=(knockdown.n||0)+1;
   if(knockdown.n<=2)say('☀️','Whoopsie-daisy! Bonk! 🤭');
 }
-function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();jumpCount++;}}
+function tryJump(){if(mode==='roam'&&!kd&&!jumping){jumping=true;jumpV=9;sfx.boing();jumpCount++;recEvent('jump');}}
 function updateRoam(dt,time){
   const p=player.group.position;
   // --- knocked down: roll like a teletubby, no control ---
@@ -2284,7 +2601,7 @@ function updateRoam(dt,time){
   // seeds pickup
   for(let i=seeds.length-1;i>=0;i--){const s=seeds[i];
     if(Math.hypot(p.x-s.x,p.z-s.z)<1.7){
-      S.today.seeds[s.i]=1;S.sparks++;save();hud();sfx.seed();
+      S.today.seeds[s.i]=1;addSparks(1);save();hud();sfx.seed();
       burst(s.g.position,10);scene.remove(s.g);seeds.splice(i,1);}}
   // trampoline: land on it -> BOING sky-high!
   {const [tx,tz]=POI.tramp;
@@ -2300,7 +2617,7 @@ function updateRoam(dt,time){
     if(sc.need&&sc.need!==trav)continue;
     if(sc.need==='fly'&&Math.abs(p.y-sc.hy)>4)continue;
     if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.6){
-      S.secrets[sc.id]=1;S.sparks+=5;save();hud();refreshSecrets();
+      S.secrets[sc.id]=1;addSparks(5);save();hud();refreshSecrets();
       burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
       say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
     }}
@@ -2359,8 +2676,8 @@ function exitScene(){clearChoices();clearNarr();freeCam();mode='roam';
 
 async function giveStar(id,tub){
   const first=!S.today.stars[id];
-  if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();}
-  S.sparks+=first?5:2;save();hud();
+  if(first){S.today.stars[id]=1;save();hud();refreshMarks();renderSched();sfx.star();recEvent('star');}
+  addSparks(first?5:2);save();hud();
   reactSun();sfx.good();
   doMove(tub,'happy',1.6);doMove(player,'happy',1.6);
   burst(tub.group.position,22,'#ffd23f');burst(player.group.position,18,'#ff8fb1');
@@ -2425,7 +2742,7 @@ async function runStory(st,tub){
         clearChoices();
         burst(pos,16,'#8fd0ff');
         await say('🎉',c.fb);
-        S.today.stories[st.id]=1;save();
+        S.today.stories[st.id]=1;S.learn.stories[st.id]=(S.learn.stories[st.id]||0)+1;save();
         const over=await giveStar('story-'+st.id,tub);
         if(!over)exitScene();
       }else{
@@ -2446,9 +2763,10 @@ async function gameFeelings(tub){
   sceneCam(tp.x,tp.z,14,8.5);
   await say('💚','Watch my Tummy-TV! What feeling do you see?');
   const R=dayRnd(21);const pool=[...FEELINGS].sort(()=>R()-0.5);
+  const ROUNDS=3+((S.day-1)%3);              // 3-5 rounds, predictable within a day
   let round=0,wins=0;
   const next=async()=>{
-    if(round>=3){
+    if(round>=ROUNDS){
       tub.anim.tv('💚');
       const over=await giveStar('minty',tub);
       if(!over)exitScene();
@@ -2465,6 +2783,7 @@ async function gameFeelings(tub){
       const pos=base.clone();pos.x+=xs[k];pos.z-=7;pos.y=terrainH(pos.x,pos.z);
       makeChoiceFigure('💭',o.w,pos,async()=>{
         if(o.w===f.w){sfx.good();clearChoices();wins++;
+          S.learn.feelings[f.w]=(S.learn.feelings[f.w]||0)+1;save();
           burst(tub.group.position,14,'#6dd47e');
           await say('💚',`Yes! ${f.e} means ${f.w}! ${f.hint}`);
           next();
@@ -2541,6 +2860,7 @@ async function gameKitchen(tub){
         await say('💛',`${stp.e} ${stp.w}! ${idx<rec.steps.length?'What\'s next?':''}`);
         if(idx>=rec.steps.length){
           tub.anim.tv('🍲');
+          S.learn.recipes[rec.name]=(S.learn.recipes[rec.name]||0)+1;save();
           const over=await giveStar('sunny',tub);
           if(!over)exitScene();}
       }else{sfx.soft();careSun();fig.userData.wob=1;
@@ -2618,7 +2938,7 @@ async function startGearVisit(k){
         clearChoices();sfx.good();
         S.gear[k]=1;
         const first=!S.today.stars['gear_'+k];
-        if(first){S.today.stars['gear_'+k]=1;S.sparks+=5;save();hud();sfx.star();}
+        if(first){S.today.stars['gear_'+k]=1;addSparks(5);save();hud();sfx.star();}
         else save();
         reactSun();burst(player.group.position,22,'#ffd23f');
         doMove(player,'happy',1.4);
@@ -2652,6 +2972,7 @@ function openBook(){
     else{const b=document.createElement('button');b.textContent='✨'+st.cost;
       b.onclick=()=>{if(S.sparks<st.cost){sfx.soft();say('☀️','Collect more ✨ sparkles first — they\'re hiding all over Trunkland!');$('book').classList.remove('show');return;}
         S.sparks-=st.cost;S.stickers[st.id]=true;save();hud();refreshStickers();sfx.star();
+        recEvent('sticker',STICKERS.indexOf(st));
         openBook();};
       d.appendChild(b);}
     grid.appendChild(d);});
@@ -2701,10 +3022,10 @@ function fxTap(i,el){
     const el2=[...$('fxGrid').children][i];el2.classList.add('pop');
     sfx.good();
     if(t.i+1===t.ch.tiers.length-1){             // chain complete!
-      S.fixit.done[t.ch.id]=1;cells[i]=null;S.sparks+=8;save();hud();
+      S.fixit.done[t.ch.id]=1;cells[i]=null;addSparks(8);save();hud();
       renderFixit();refreshFixit();reactSun();sfx.star();
       $('fxGoal').innerHTML=`<b style="color:#2f9e44">${t.ch.tiers[t.ch.tiers.length-1]} ${t.ch.story} ✨+8</b>`;
-      if(FX_CHAINS.every(c=>S.fixit.done[c.id])){S.sparks+=20;save();hud();
+      if(FX_CHAINS.every(c=>S.fixit.done[c.id])){addSparks(20);save();hud();
         setTimeout(()=>{$('fixit').classList.remove('show');say('☀️','You fixed the WHOLE garden! Trunkland is so happy! ✨+20 🌟');exitScene();},1400);}
     }
   }else{el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),350);sfx.soft();}
@@ -2755,8 +3076,20 @@ async function showFinale(){
   $('nextDayN').textContent=S.day+1;
   setTimeout(()=>$('finale').classList.add('show'),2600*SPEED[S.speed]);
 }
-$('newDay').onclick=()=>{
-  sfx.tap();S.day++;S.today={stars:{},seeds:{},stories:{}};save();hud();
+/* a mis-tap shouldn't end the day: first tap arms a 3s confirm window */
+const newDayBtn=$('newDay');
+const newDayOrigHTML=newDayBtn.innerHTML;
+let newDayArmed=false,newDayTimer=null;
+function newDayDisarm(){newDayArmed=false;clearTimeout(newDayTimer);newDayBtn.innerHTML=newDayOrigHTML;}
+newDayBtn.onclick=()=>{
+  sfx.tap();
+  if(!newDayArmed){
+    newDayArmed=true;newDayBtn.textContent='Ready? ☀️';
+    clearTimeout(newDayTimer);newDayTimer=setTimeout(newDayDisarm,3000);
+    return;
+  }
+  newDayDisarm();
+  S.day++;S.today={stars:{},seeds:{},stories:{},wantsDone:{}};save();hud();
   $('finale').classList.remove('show');
   // reset world to morning
   scene.background.copy(DAY_SKY);scene.fog.color.copy(DAY_FOG);
@@ -2771,11 +3104,32 @@ $('newDay').onclick=()=>{
 
 /* ============================== RENDER LOOP ============================== */
 let lastT=performance.now(),t0=lastT;
+let firstFrameRendered=false,loadingHidden=false;
+function tryHideLoading(){                 // hide only once the girl.png art AND a first real frame are ready
+  if(loadingHidden)return;
+  if(!(girlReady||girlImg.complete)||!firstFrameRendered)return;
+  loadingHidden=true;$('loading').classList.add('hidden');
+}
+setTimeout(()=>{if(!loadingHidden){loadingHidden=true;$('loading').classList.add('hidden');}},4500);  // safety net
+let paused=false;
+function setPaused(v){
+  paused=v;
+  if(v){$('pauseOv').classList.add('show');}
+  else{$('pauseOv').classList.remove('show');lastT=performance.now();}   // avoid a giant dt jump on resume
+}
 function frame(now){
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+  if(paused){                          // ⏸️ frozen: no world updates, no mischief/quest timers — just a still frame
+    renderer.render(scene,camera);
+    if(!firstFrameRendered){firstFrameRendered=true;tryHideLoading();}
+    requestAnimationFrame(frame);
+    return;
+  }
   const time=(now-t0)/1000;
+  recTick(dt,now);            // 🎬 quietly sample the adventure (no-op while paused/replaying)
 
   if(mode==='roam')updateRoam(dt,time);
+  else if(mode==='replay')updateReplay(dt,time);   // 🎬 play back a recorded path — visuals/sound only
   else animEllie(player,time,dt,false);
   for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
 
@@ -2810,8 +3164,8 @@ function frame(now){
     const k=Math.min(1,f.t/f.dur);
     try{f.fn(k);}catch(e){}
     if(k>=1){fx.splice(i,1);f.res();}}
-  // mischief timer (roam only)
-  if(mode==='roam'){mischiefT-=dt;
+  // mischief timer (roam only) — 😌 Calm mode turns the BOO! surprises off entirely
+  if(mode==='roam'&&!S.calm){mischiefT-=dt;
     if(mischiefT<=0){mischiefT=15+Math.random()*18;runMischief();}}
   // the never-ending quest watches for its moment
   questUpdate(dt);
@@ -2858,6 +3212,7 @@ function frame(now){
 
   camFollow(dt);
   renderer.render(scene,camera);
+  if(!firstFrameRendered){firstFrameRendered=true;tryHideLoading();}
   requestAnimationFrame(frame);
 }
 let sunBaseY=5.2;
@@ -2900,7 +3255,8 @@ function cycleSpeed(){const order=['relaxed','normal','fast'];
 function renderSettings(){
   $('setSpeed').innerHTML=`🎛️ Game speed: <b>${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}</b>`;
   $('setSound').textContent=S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on';
-  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';}
+  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';
+  $('setCalm').textContent=S.calm?'😌 Calm mode: on — extra gentle':'😌 Calm mode: off — tap for extra gentle';}
 $('speedBtn').onclick=cycleSpeed;
 $('settingsBtn').onclick=()=>{sfx.tap();renderSettings();$('settings').classList.add('show');};
 $('setClose').onclick=()=>{sfx.tap();$('settings').classList.remove('show');};
@@ -2908,9 +3264,64 @@ $('setSpeed').onclick=cycleSpeed;
 $('setSound').onclick=()=>{S.muted=!S.muted;save();renderSettings();if(!S.muted)sfx.tap();};
 $('setVoice').onclick=()=>{S.voice=!S.voice;save();renderSettings();
   if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+$('setCalm').onclick=()=>{S.calm=!S.calm;save();renderSettings();sfx.tap();
+  say('☀️',S.calm?'Calm mode on — everything is extra gentle now.':'Calm mode off — back to the usual fun!');};
 $('setFs').onclick=()=>{sfx.tap();
   if(document.fullscreenElement)document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(()=>{});};
+/* 👨‍👩‍👧 grown-up summary: gated by a typed math check, read-only stats */
+function topN(obj,n){return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,n);}
+function renderParentPanel(){
+  const learn=S.learn||{feelings:{},recipes:{},stories:{}};
+  const top=[...topN(learn.feelings,3).map(([k,v])=>`${k} ×${v}`),
+             ...topN(learn.recipes,3).map(([k,v])=>`${k} ×${v}`),
+             ...topN(learn.stories,3).map(([k,v])=>`${k} ×${v}`)].slice(0,3);
+  const friends=Object.keys(TUBBIES).map(id=>`${TUBBIES[id].name} Lv${S.friend[id]||0}`).join(', ');
+  $('parentStats').innerHTML=
+    `<div>📅 Days visited: <b>${S.visitDays||1}</b></div>
+     <div>☀️ Current day: <b>${S.day}</b></div>
+     <div>✨ Total sparkles earned: <b>${S.lifeSparks||0}</b></div>
+     <div>⭐ Stars today: <b>${starCount()}</b> / ${STAR_GOAL}</div>
+     <div>🌸 Stickers owned: <b>${Object.keys(S.stickers).length}</b> / ${STICKERS.length}</div>
+     <div>🌟 Quests completed: <b>${S.questN||0}</b></div>
+     <div>💜 Friends: ${friends}</div>
+     <div>📖 Practiced most: ${top.length?top.join(', '):'—'}</div>`;
+}
+$('setParent').onclick=()=>{sfx.tap();$('settings').classList.remove('show');
+  $('parentAns').value='';$('parentGateErr').textContent='';$('parentGate').classList.add('show');};
+$('parentGateCancel').onclick=()=>{sfx.tap();$('parentGate').classList.remove('show');$('settings').classList.add('show');};
+$('parentGateGo').onclick=()=>{
+  if(($('parentAns').value||'').trim()===String(6+7)){
+    sfx.tap();$('parentGate').classList.remove('show');renderParentPanel();$('parentPanel').classList.add('show');
+  }else{$('parentGateErr').textContent='Not quite — try again!';sfx.soft();}};
+$('parentClose').onclick=()=>{sfx.tap();$('parentPanel').classList.remove('show');};
+/* ⏸️ pause: freezes the whole frame loop (see setPaused/frame) */
+$('pauseBtn').onclick=()=>{sfx.tap();setPaused(true);};
+$('resumeBtn').onclick=()=>{sfx.tap();setPaused(false);};
+/* 🎬 replay: watch a recording of recent play (own, or an imported friend's) */
+$('replayBtn').onclick=()=>{sfx.tap();tryStartOwnReplay();};
+$('setReplay').onclick=()=>{sfx.tap();$('settings').classList.remove('show');tryStartOwnReplay();};
+$('setImportReplay').onclick=()=>{sfx.tap();$('importFile').click();};
+$('importFile').addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0];e.target.value='';
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let data=null;
+    try{data=validateAdventureImport(JSON.parse(reader.result));}catch(err){data=null;}
+    if(!data){sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);return;}
+    $('settings').classList.remove('show');
+    if(mode!=='roam'){sfx.soft();celebToast('Let\'s finish this first! 💛',2200);return;}
+    startReplay(data);
+  };
+  reader.onerror=()=>{sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);};
+  try{reader.readAsText(file);}catch(err){sfx.soft();celebToast('Hmm, that file isn\'t an adventure 💛',2600);}
+});
+$('replaySpeedBtn').onclick=()=>{sfx.tap();
+  replaySpeed=replaySpeed>=4?1:replaySpeed*2;
+  $('replaySpeedBtn').textContent=replaySpeed+'x';};
+$('replayShareBtn').onclick=()=>{sfx.tap();shareAdventure();};
+$('replayDoneBtn').onclick=()=>{sfx.tap();endReplay();};
 // jump / duck / fun buttons
 $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();ac();
   if(trav==='fly')flyRise=true; else tryJump();});
@@ -2957,7 +3368,11 @@ $('wmapClose').onclick=()=>{sfx.tap();$('wmap').classList.remove('show');};
 /* ONE mystery button — every tap a surprise! Undiscovered tricks come first
    (with a celebration), then it keeps shuffling them forever. */
 const MYSTERY=[{k:'spray',e:'💦',name:'Water Rainbow',fn:actSpray},
-               {k:'dance',e:'💃',name:'Dance Party',fn:actDance}];
+               {k:'dance',e:'💃',name:'Dance Party',fn:actDance},
+               {k:'bubbles',e:'🫧',name:'Bubble Pop',fn:actBubbles},
+               {k:'confetti',e:'🎉',name:'Confetti Party',fn:actConfetti},
+               {k:'growshrink',e:'✨',name:'Wiggly Grow',fn:actGrowShrink},
+               {k:'rainbowarc',e:'🌈',name:'Rainbow Arc',fn:actRainbowArc}];
 $('trumpetBtn').onclick=()=>{ac();actTrumpet();};   // Nilu's signature — always right there
 $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   const fresh=MYSTERY.filter(m=>!S.found[m.k]);
@@ -2966,6 +3381,7 @@ $('surpriseBtn').onclick=()=>{ac();sfx.tap();
   if(!S.found[m.k]){S.found[m.k]=1;save();
     burst(player.group.position,16,'#b8a4ff');sfx.star();
     say('☀️',`Surprise! You discovered the ${m.name}! ${m.e}`);}
+  recEvent('mystery',m.k);
   m.fn();};
 
 /* debug/testing hook (harmless in production) */
@@ -2986,7 +3402,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();registerTickles();refreshStickers();refreshSecrets();
 renderSched();setupWants();spawnEggNode();renderNest();newQuest();
-$('loading').classList.add('hidden');   // title screen (#title) greets first
+// #loading hides only once girl.png has loaded AND the first frame has rendered (see tryHideLoading)
 requestAnimationFrame(frame);
 </script>
 </body>

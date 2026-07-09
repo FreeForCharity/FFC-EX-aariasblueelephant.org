@@ -121,6 +121,14 @@
   ABC.signs.init(scene);
   ABC.signs.placeAll();
 
+  /* 🌈 the world is built — dismiss the loading overlay shown since page load */
+  (function hideLoadingOverlay() {
+    const ov = document.getElementById('loadingOverlay');
+    if (!ov) return;
+    ov.classList.add('hide');
+    setTimeout(() => ov.remove(), 650);
+  })();
+
   ABC.teleport = (x, y, z) => { feet.set(x, y, z); vy = 0; };
   ABC.setLook = (y, p) => { yaw = y; pitch = p; };   // test/debug: aim the camera
 
@@ -204,16 +212,18 @@
     if (now - lastSpaceTap < 320) {           // double-tap = toggle fly
       flying = !flying; vy = 0;
       $('flyBtn').classList.toggle('active', flying);
+      if (flying) ABC.replayEvent && ABC.replayEvent('jump');   // 🎬 fly start
       ABC.ui.toast(flying ? '🕊️ Flying! Hold ⬆ to go up — tap 🕊️ to drop!' : '🚶 Walking again — wheee!', 2400);
       ABC.audio.sfx.gentle();
     } else if (!flying && grounded) {
       vy = 7.5; grounded = false;             // jump
+      ABC.replayEvent && ABC.replayEvent('jump');               // 🎬 adventure recorder
     }
     lastSpaceTap = now;
   }
 
   document.addEventListener('keydown', (e) => {
-    if (ABC.ui.isOpen()) return;
+    if (ABC.ui.isOpen() || replaying) return;
     if (e.code === 'Space' && !e.repeat) tapSpace();
     if ((e.code === 'KeyW' || e.code === 'ArrowUp') && !e.repeat) fwdTap();
     if (e.code === 'KeyV' && !e.repeat) toggleView();
@@ -489,6 +499,7 @@
         clearInterval(t);
         ABC.ui.confetti(14); ABC.audio.sfx.ding();
         ABC.ui.toast('🌳 Your tree is all grown! You are a nature helper!', 3600, true);
+        ABC.quests.mark('plant');
         saveSoon();
         return;
       }
@@ -514,7 +525,7 @@
     const hand = ABC.ui.getHand();
     if (!info) return;
     // friends & magic things respond first
-    if (info.kind === 'animal')  { ABC.activities.talkToAnimal(info.animal); return; }
+    if (info.kind === 'animal')  { ABC.replayEvent && ABC.replayEvent('friend'); ABC.activities.talkToAnimal(info.animal); return; }
     if (info.kind === 'portal')  { ABC.portal.use(info.portal); return; }
     if (info.kind === 'note')    { ABC.music.handleClick(info.mesh); return; }
     if (info.kind === 'squishy') {
@@ -531,12 +542,14 @@
         const t = ABC.world.get(info.cell.x, info.cell.y, info.cell.z);
         if (ABC.world.remove(info.cell.x, info.cell.y, info.cell.z)) {
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
+          ABC.state.metrics.digs++;                              // 👨‍👩‍👧 parent dashboard
+          ABC.replayEvent && ABC.replayEvent('dig');             // 🎬 adventure recorder
           pulverize(info.cell.x, info.cell.y, info.cell.z, t);   // 💥 crumble!
           collapseCheck(info.cell);                              // 🌳 unsupported parts fall
           // 🪙 dig up buried treasure — the dug marker block IS the reward (no random roll)
           ABC.dig && ABC.dig.noteDig && ABC.dig.noteDig();      // feeds the ⭐ hint timer
           const treasureKind = ABC.dig && ABC.dig.kindForBlock(t);
-          if (treasureKind) ABC.dig.reward(treasureKind, info.cell);
+          if (treasureKind) { ABC.replayEvent && ABC.replayEvent('treasure'); ABC.dig.reward(treasureKind, info.cell); }
         } else if (info.cell.y === ABC.world.MIN_Y) {
           ABC.ui.toast('🪨 That is the super-strong bottom rock!', 2400);
         }
@@ -559,6 +572,7 @@
       const rot = def.rotates ? ((Math.round(yaw / (Math.PI / 2)) % 4) + 4) % 4 : 0;
       if (ABC.world.set(p.x, p.y, p.z, id, rot)) {
         ABC.world.flush(); ABC.audio.sfx.pop(); saveSoon();
+        ABC.replayEvent && ABC.replayEvent('place');            // 🎬 adventure recorder
         ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;
         ABC.activities.maybeShowTell(ABC.state.placedCount);   // Show & Tell moments
         ABC.ui.checkBuildMilestone(ABC.state.placedCount);     // 🧱 10/50/100… celebration
@@ -597,7 +611,7 @@
   }
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (!started || ABC.ui.isOpen()) return;
+    if (!started || ABC.ui.isOpen() || replaying) return;
     canvas.setPointerCapture(e.pointerId);
     pDown = true; pMoved = 0;
     pLast = { x: e.clientX, y: e.clientY };
@@ -627,7 +641,7 @@
       ABC.squishy.release(dragS);
       if (pMoved < 9) ABC.squishy.poke(dragS);   // quick tap = squish!
       dragS = null;
-    } else if (pDown && pMoved < 9 && !ABC.ui.isOpen()) {
+    } else if (pDown && pMoved < 9 && !ABC.ui.isOpen() && !replaying) {
       const info = aim(e.clientX, e.clientY);
       // right-click does the opposite of the current mode (handy for grown-ups)
       const m = e.button === 2 ? (mode === 'dig' ? 'place' : 'dig') : mode;
@@ -709,7 +723,7 @@
   }
 
   function updatePlayer(dt) {
-    if (ABC.ui.isOpen()) return;
+    if (ABC.ui.isOpen() || replaying) return;   // 🎬 replay drives the avatar itself
     const speed = flying ? 9 : 5.2;
     const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
     const r = new THREE.Vector3(-f.z, 0, f.x);
@@ -760,7 +774,8 @@
         } else {
           // modern game-feel: a firm landing dips the camera for a beat,
           // scaled by how hard you hit (camera-only — physics untouched)
-          if (ABC.MODERN && !grounded && vy < -7) {
+          // 😌 calm mode skips this — no camera jolt on landing
+          if (ABC.MODERN && !grounded && vy < -7 && !ABC.audio.settings.calm) {
             landDipT = 0.3; landDipK = Math.min(1, (-vy - 7) / 14);
           }
           feet.y = gy; vy = 0; grounded = true;
@@ -816,7 +831,7 @@
         ABC.world.footstep(feet.x, feet.y, feet.z, yaw, strideSide);
       }
     }
-    if (ABC.MODERN && !thirdPerson) {
+    if (ABC.MODERN && !thirdPerson && !ABC.audio.settings.calm) {   // 😌 calm mode: no head-bob
       if (moving && grounded && !flying) {
         bobPhase += dt * (sprint ? 11.5 : 8.5);
         camera.position.y += Math.sin(bobPhase) * 0.045;
@@ -861,6 +876,7 @@
   const SAVE_KEY = 'aariasBlockCraft3';   // v3: infinite world (edits-only saves)
   let saveTimer = null;
   function saveNow() {
+    if (ABC.state.visiting) return;   // visiting a friend's world — never touch the child's own save
     try {
       const s = ABC.audio.settings;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
@@ -875,6 +891,7 @@
         portalCharge: ABC.state.portalCharge || 0,
         quests: ABC.state.quests || null,
         placedCount: ABC.state.placedCount || 0,
+        postCapDigs: ABC.state.postCapDigs || 0,
         friends: ABC.state.friends || [],
         pocket: ABC.state.pocket || null,
         skyEgg: ABC.state.skyEgg || null,
@@ -882,14 +899,16 @@
         stars: ABC.state.stars, hearts: ABC.state.hearts, coins: ABC.state.coins,
         unlocked: [...ABC.state.unlocked], completed: [...ABC.state.completed],
         foundShapes: [...ABC.state.foundShapes],
+        metrics: ABC.state.metrics,
         tutorialDone: ABC.state.tutorialDone,
         settings: { sound: s.sound, music: s.music, readAloud: s.readAloud, voiceMode: s.voiceMode,
-                    theme: s.theme, voiceName: s.voiceName, speed: s.speed },
+                    theme: s.theme, voiceName: s.voiceName, speed: s.speed, weather: s.weather, calm: s.calm },
       }));
     } catch (e) { /* storage blocked — keep playing */ }
   }
   function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1500); }
   ABC.saveSoon = saveSoon;
+  ABC.saveNow = saveNow;
   window.addEventListener('beforeunload', saveNow);
 
   function load() {
@@ -915,6 +934,7 @@
       ABC.state.portalCharge = d.portalCharge || 0;
       ABC.state.quests = d.quests || null;
       ABC.state.placedCount = d.placedCount || 0;
+      ABC.state.postCapDigs = d.postCapDigs || 0;
       ABC.state.friends = d.friends || [];
       ABC.state.pocket = d.pocket || null;
       ABC.state.skyEgg = d.skyEgg || null;
@@ -928,6 +948,7 @@
       (d.foundShapes || []).forEach(s => ABC.state.foundShapes.add(s));
       (d.unlocked || []).forEach(b => ABC.state.unlocked.add(b));
       (d.completed || []).forEach(p => ABC.state.completed.add(p));
+      Object.assign(ABC.state.metrics, d.metrics || {});
       ABC.state.tutorialDone = !!d.tutorialDone;
       if (d.settings) Object.assign(ABC.audio.settings, d.settings);
       return true;
@@ -950,14 +971,67 @@
   $('zoomOutBtn').onclick  = () => setZoom(+0.18);
   $('mapBtn').onclick      = () => showMap();
   $('passportBtn').onclick = () => ABC.parks.openPassport();
-  $('photoBtn').onclick    = () => ABC.photo.takePhoto();
+  $('photoBtn').onclick    = () => { ABC.photo.takePhoto(); ABC.quests.mark('photo'); };
   $('albumBtn').onclick    = () => ABC.photo.openAlbum();
-  $('stickersBtn').onclick = () => ABC.stickers.openBook();
+  $('stickersBtn').onclick = () => { ABC.stickers.openBook(); ABC.quests.mark('sticker'); };
   $('friendsBtn').onclick  = () => ABC.friends.openBook();
   $('flowerChip').onclick  = () => ABC.overnight.showFlower();
   $('moreBtn').onclick     = () => ABC.ui.openQuickMenu();
   $('tFly').addEventListener('click', () => $('flyBtn').click());
   $('questChip').onclick   = () => ABC.quests.showBoard();
+
+  /* ---------------- 🔊 one-tap mute ---------------- */
+  function refreshMuteBtn() {
+    const b = $('muteBtn'); if (!b) return;
+    const muted = !ABC.audio.settings.sound;
+    b.textContent = muted ? '🔇' : '🔊';
+    b.title = muted ? 'Unmute — tap to hear sound again' : 'Mute — tap to turn off sound';
+  }
+  ABC.refreshMuteBtn = refreshMuteBtn;
+  if ($('muteBtn')) {
+    $('muteBtn').onclick = () => {
+      const s = ABC.audio.settings;
+      const turningOn = !s.sound;
+      s.sound = turningOn; s.music = turningOn;
+      refreshMuteBtn();
+      saveSoon();
+      if (turningOn) ABC.audio.sfx.pop();
+      ABC.ui.toast(turningOn ? '🔊 Sound is back on!' : '🔇 Sound is off — tap 🔇 to hear again!', 2000);
+    };
+    refreshMuteBtn();
+  }
+
+  /* ---------------- ⏸️ pause / take-a-break ---------------- */
+  function showPauseDialog() {
+    ABC.ui.openDialog(`<div class="bigEmoji">⏸️</div><h2>Taking a break?</h2>
+      <div class="scene">No hurry, {player} — your world will be right here when you come back!</div>
+      <div class="dlgRow">
+        <button class="bigBtn green" id="pauseKeep">Keep playing ▶️</button>
+        <button class="bigBtn" id="pauseSave" style="background:linear-gradient(180deg,#d0ebff,#a5d8ff); color:#1864ab; box-shadow:0 4px 0 #4dabf7;">Save &amp; rest 💤</button>
+      </div>`);
+    ABC.audio.say('Taking a break? You can keep playing, or save and rest.', { force: true });
+    $('pauseKeep').onclick = () => { ABC.audio.sfx.pop(); ABC.ui.closeDialog(); };
+    $('pauseSave').onclick = () => {
+      ABC.audio.sfx.gentle();
+      saveNow();
+      ABC.ui.closeDialog();
+      showRestOverlay();
+    };
+  }
+  function showRestOverlay() {
+    started = false;   // freeze the world underneath (same as ABC.ui.isOpen elsewhere)
+    const ov = document.createElement('div');
+    ov.id = 'restOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;'
+      + 'align-items:center;justify-content:center;gap:20px;text-align:center;color:#fff;'
+      + 'background:linear-gradient(180deg,#1a2a52,#0d1830);';
+    ov.innerHTML = `<div style="font-size:64px;">🌙💙</div>
+      <div style="font-size:26px;max-width:80vw;line-height:1.4;">Your world is saved!<br>See you soon 🌙</div>
+      <button class="bigBtn green" id="restPlayAgain" style="font-size:20px;padding:14px 32px;">▶ Play again</button>`;
+    document.body.appendChild(ov);
+    $('restPlayAgain').onclick = () => { ov.remove(); started = true; };
+  }
+  if ($('pauseBtn')) $('pauseBtn').onclick = showPauseDialog;
 
   /* full screen — works on Chrome/Edge/Firefox AND Safari (incl. iOS, which
      has no Fullscreen API, via a CSS faux-fullscreen fallback) */
@@ -1101,7 +1175,7 @@
   }
 
   /* emotion spawner: gentle pace */
-  setInterval(() => { if (started && !ABC.ui.isOpen()) ABC.activities.emotionTick(); }, 25000);
+  setInterval(() => { if (started && !ABC.ui.isOpen() && !replaying) ABC.activities.emotionTick(); }, 25000);
 
   /* ---------------- idle build-idea hints 💡 ----------------
      If {player} stands still with no building for a while, Bella gently suggests
@@ -1110,7 +1184,7 @@
   let idleTicks = 0, idleIdeaIdx = 0, lastIdlePos = null, lastIdlePlaced = -1;
   const IDLE_TICKS_TO_HINT = 9;   // ~9 * 6s = 54s of true idle
   setInterval(() => {
-    if (!started || ABC.ui.isOpen()) { idleTicks = 0; return; }
+    if (!started || ABC.ui.isOpen() || replaying) { idleTicks = 0; return; }
     const pos = { x: Math.round(feet.x * 2), z: Math.round(feet.z * 2) };
     const placed = ABC.state.placedCount || 0;
     const moved = !lastIdlePos || pos.x !== lastIdlePos.x || pos.z !== lastIdlePos.z;
@@ -1165,6 +1239,140 @@
     }
   }
 
+  /* ---------------- 🎬 adventure replay — "watch my adventure" ----------------
+     A rolling, RAM-only recorder: while playing normally we sample position+yaw
+     every 250ms into a flat ring buffer (max 5 minutes ≈ 1200 samples), plus a
+     tiny list of fun moments (place/dig/jump/friend/star/heart/treasure).
+     Nothing is persisted; replay only MOVES the camera & avatar and fires
+     sound/particle cues — it never touches the world, scores, or quests. */
+  const REC_MS = 250, REC_MAX = 1200;                 // 1200 × 250ms = 5 minutes
+  const recPos = new Float32Array(REC_MAX * 4);       // x, y, z, yaw per sample
+  let recHead = 0;                                    // total samples ever taken
+  let recCount = 0;                                   // how many are valid (≤ REC_MAX)
+  let recTimer = 0;
+  const recEvents = [];                               // { i: absolute sample index, k: kind }
+  let replaying = false;
+
+  ABC.replayEvent = (k) => {                          // cheap hook — called from act()/ui
+    if (!started || replaying) return;
+    recEvents.push({ i: recHead, k });
+    while (recEvents.length && recEvents[0].i < recHead - REC_MAX) recEvents.shift();
+    if (recEvents.length > 400) recEvents.shift();
+  };
+
+  function recordSample(dt) {
+    if (!started || replaying || ABC.ui.isOpen()) return;
+    recTimer += dt;
+    if (recTimer < REC_MS / 1000) return;
+    recTimer = 0;
+    const o = (recHead % REC_MAX) * 4;
+    recPos[o] = feet.x; recPos[o + 1] = feet.y; recPos[o + 2] = feet.z; recPos[o + 3] = yaw;
+    recHead++;
+    recCount = Math.min(recCount + 1, REC_MAX);
+    while (recEvents.length && recEvents[0].i < recHead - REC_MAX) recEvents.shift();
+  }
+
+  /* angle-aware lerp so the avatar turns the short way round */
+  function lerpAngle(a, b, t) {
+    let d = (b - a) % (Math.PI * 2);
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return a + d * t;
+  }
+
+  let rT = 0, rSpeed = 1, rEvtPtr = 0, rSaved = null, rBar = null, rSfxCool = 0;
+  function replayCue(k) {
+    const calm = ABC.audio.settings.calm;
+    const canSfx = rSfxCool <= 0;                     // rate-limit: one sound per ~0.25s
+    if (canSfx) rSfxCool = 0.25;
+    if (k === 'place')    { if (canSfx) ABC.audio.sfx.pop(); }
+    else if (k === 'dig') { if (canSfx) ABC.audio.sfx.remove();
+                            pulverize(Math.floor(feet.x), Math.floor(feet.y), Math.floor(feet.z), 'grass'); }
+    else if (k === 'jump')     { if (canSfx) ABC.audio.sfx.gentle(); }
+    else if (k === 'friend')   { if (canSfx) ABC.audio.sfx.ding(); ABC.ui.floatHearts(2); }
+    else if (k === 'star')     { if (canSfx) ABC.audio.sfx.star(); if (!calm) ABC.ui.confetti(6); }
+    else if (k === 'heart')    { ABC.ui.floatHearts(3); }
+    else if (k === 'treasure') { if (canSfx) ABC.audio.sfx.ding(); if (!calm) ABC.ui.confetti(8); }
+  }
+  function startReplay() {
+    if (replaying || !started || ABC.ui.isOpen()) return;
+    if (recCount * REC_MS / 1000 < 20) {
+      ABC.ui.toast('Play a little first, then watch your adventure! 🎬', 3400, true);
+      return;
+    }
+    rSaved = { x: feet.x, y: feet.y, z: feet.z, yaw, pitch, zoom, flying, vy, grounded };
+    for (const c of ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight'])
+      keys[c] = false;                                // let go of everything held
+    replaying = true;
+    rT = 0; rSpeed = 1; rEvtPtr = 0; rSfxCool = 0;
+    $('hud').style.pointerEvents = 'none';            // HUD buttons sleep during the show
+    if (!thirdPerson) { zoom = 2.2; applyZoom(); }    // see your own character walk!
+    avatar.visible = true;
+    // slim overlay bar — 🎬 title · speed toggle · ⏹ Done (all ≥44px targets)
+    rBar = document.createElement('div');
+    rBar.id = 'replayBar';
+    rBar.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;' +
+      'display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:26px;' +
+      'background:rgba(20,40,80,.72);color:#fff;font-family:inherit;font-size:16px;font-weight:bold;' +
+      'box-shadow:0 4px 12px rgba(0,0,0,.3);';
+    const btnCss = 'min-width:44px;min-height:44px;border:none;border-radius:22px;font-family:inherit;' +
+      'font-size:16px;font-weight:bold;cursor:pointer;padding:8px 14px;';
+    rBar.innerHTML = '<span>🎬 My Adventure</span>' +
+      `<button id="rpSpeed" style="${btnCss}background:linear-gradient(180deg,#a5d8ff,#74c0fc);color:#1864ab;">1x</button>` +
+      `<button id="rpDone" style="${btnCss}background:linear-gradient(180deg,#ffe066,#ffd43b);color:#664d03;">⏹ Done</button>`;
+    document.body.appendChild(rBar);
+    rBar.querySelector('#rpSpeed').onclick = (e) => {
+      rSpeed = rSpeed === 1 ? 2 : rSpeed === 2 ? 4 : 1;
+      e.target.textContent = rSpeed + 'x';
+      ABC.audio.sfx.gentle();
+    };
+    rBar.querySelector('#rpDone').onclick = () => endReplay();
+    ABC.ui.toast('🎬 Watch where you went — here comes your adventure!', 3200, true);
+  }
+  ABC.startAdventureReplay = startReplay;
+  function endReplay() {
+    if (!replaying) return;
+    replaying = false;
+    if (rBar) { rBar.remove(); rBar = null; }
+    $('hud').style.pointerEvents = '';
+    // put everything back exactly as it was — position, look, camera mode
+    feet.set(rSaved.x, rSaved.y, rSaved.z);
+    yaw = rSaved.yaw; pitch = rSaved.pitch;
+    vy = rSaved.vy; grounded = rSaved.grounded; flying = rSaved.flying;
+    $('flyBtn').classList.toggle('active', flying);
+    zoom = rSaved.zoom; applyZoom();
+    rSaved = null;
+    ABC.ui.toast('What an adventure that was! 💙', 3200, true);
+  }
+  function updateReplay(dt) {
+    if (!replaying) return;
+    rSfxCool = Math.max(0, rSfxCool - dt);
+    rT += dt * rSpeed;
+    const start = recHead - recCount;                 // oldest absolute sample index
+    const fi = Math.min(rT / (REC_MS / 1000), recCount - 1);
+    const j0 = Math.floor(fi), frac = fi - j0;
+    const j1 = Math.min(j0 + 1, recCount - 1);
+    const o0 = ((start + j0) % REC_MAX) * 4, o1 = ((start + j1) % REC_MAX) * 4;
+    feet.x = recPos[o0]     + (recPos[o1]     - recPos[o0])     * frac;
+    feet.y = recPos[o0 + 1] + (recPos[o1 + 1] - recPos[o0 + 1]) * frac;
+    feet.z = recPos[o0 + 2] + (recPos[o1 + 2] - recPos[o0 + 2]) * frac;
+    yaw = lerpAngle(recPos[o0 + 3], recPos[o1 + 3], frac);
+    pitch = -0.16;
+    // fire the fun-moment cues we've passed (sound + sparkle only — no game state)
+    while (rEvtPtr < recEvents.length && recEvents[rEvtPtr].i - start <= fi) {
+      const e = recEvents[rEvtPtr++];
+      if (e.i >= start) replayCue(e.k);
+    }
+    // camera trails behind the avatar (same math as third-person follow)
+    camera.rotation.set(0, 0, 0);
+    camera.rotateY(yaw); camera.rotateX(pitch);
+    const back = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    camera.position.set(feet.x, feet.y + EYE + 2.2 * zoom, feet.z).addScaledVector(back, 4.0 * zoom);
+    avatar.position.set(feet.x, feet.y, feet.z);
+    avatar.rotation.y = yaw + Math.PI;
+    if (fi >= recCount - 1) endReplay();              // reached "now" — welcome back!
+  }
+
   /* ---------------- main loop ---------------- */
   let last = performance.now();
   let chunkTimer = 0;
@@ -1178,14 +1386,18 @@
       if (chunkTimer > 0.3) {
         chunkTimer = 0;
         ABC.world.ensureChunks(feet.x, feet.z);
-        const reg = ABC.parks.check(feet);                          // park arrival + passport
-        const w = reg.weather;
-        // fireflies are magical, not weather — they shine even if weather is off
-        ABC.weather.setType((ABC.audio.settings.weather === false && w !== 'fireflies') ? 'clear' : w);
+        if (!replaying) {                                           // replay never stamps passports
+          const reg = ABC.parks.check(feet);                        // park arrival + passport
+          const w = reg.weather;
+          // fireflies are magical, not weather — they shine even if weather is off
+          ABC.weather.setType((ABC.audio.settings.weather === false && w !== 'fireflies') ? 'clear' : w);
+        }
       }
       ABC.world.gradeFrame(feet.x, feet.z, dt);                     // color-grade the sky by region
       ABC.world.updateSun(feet.x, feet.z);                          // smooth skin: sun shadow follows you ☀️
       ABC.world.updateSky(camera.position, dt);                     // stars + Milky Way at night 🌌
+      recordSample(dt);            // 🎬 rolling 5-minute adventure recorder (RAM only)
+      updateReplay(dt);            // 🎬 replay drives the avatar & camera while active
       updatePlayer(dt);
       updateFly(dt);
       updateParticles(dt);
@@ -1198,9 +1410,9 @@
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);
       ABC.portal.update(dt);
-      if (!ABC.ui.isOpen()) ABC.portal.checkWalkIn(feet, dt);
+      if (!ABC.ui.isOpen() && !replaying) ABC.portal.checkWalkIn(feet, dt);
       // hover highlight follows the mouse
-      if (!ABC.ui.isOpen() && !pDown) {
+      if (!ABC.ui.isOpen() && !pDown && !replaying) {
         const info = aim(hover.x, hover.y);
         if (info && info.kind === 'block') {
           hl.position.set(info.cell.x + 0.5, info.cell.y + 0.5, info.cell.z + 0.5);

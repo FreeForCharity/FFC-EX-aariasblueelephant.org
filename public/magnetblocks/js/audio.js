@@ -9,6 +9,9 @@ MB.Audio = (function () {
   var master = null;
   var tidyTimer = null;
   var bgmTimer = null;
+  var calmScale = 1; // calm mode: quieter celebration sounds
+
+  function setCalm(on) { calmScale = on ? 0.45 : 1; }
 
   function makeCtx() {
     try {
@@ -168,12 +171,12 @@ MB.Audio = (function () {
     var t = now();
     var melody = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
     for (var i = 0; i < melody.length; i++) {
-      tone({ startTime: t + i * 0.12, duration: 0.2, type: 'triangle', freq: melody[i], peak: 0.22, attack: 0.005, decayTo: 0.0001 });
+      tone({ startTime: t + i * 0.12, duration: 0.2, type: 'triangle', freq: melody[i], peak: 0.22 * calmScale, attack: 0.005, decayTo: 0.0001 });
     }
     var chordTime = t + melody.length * 0.12 + 0.02;
     var chord = [783.99, 1046.5, 1318.51]; // G5 C6 E6
     for (var j = 0; j < chord.length; j++) {
-      tone({ startTime: chordTime, duration: 0.45, type: 'sine', freq: chord[j], peak: 0.14, attack: 0.01, decayTo: 0.0001 });
+      tone({ startTime: chordTime, duration: 0.45, type: 'sine', freq: chord[j], peak: 0.14 * calmScale, attack: 0.01, decayTo: 0.0001 });
     }
   }
 
@@ -246,6 +249,7 @@ MB.Audio = (function () {
 
   return {
     init: init,
+    setCalm: setCalm,
     snap: snap,
     pop: pop,
     pick: pick,

@@ -23,6 +23,10 @@
 <body>
     <!-- Google Tag Manager (noscript) --><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WD789BVB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript><!-- End Google Tag Manager (noscript) -->
 <canvas id="gl" aria-hidden="true"></canvas>
+<div id="loadingOverlay">
+  <div id="loadingSpinner" aria-hidden="true"></div>
+  <p>Getting the roads ready… 🚗</p>
+</div>
 <div id="wrap">
   <canvas id="game" width="520" height="760" role="application" aria-label="Road Safety Heroes — drive the real streets of Mountain House"></canvas>
   <div id="topbtns">
@@ -31,6 +35,15 @@
     <button id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🎛️</button>
     <button id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
     <button id="muteBtn" title="Sound on/off" aria-label="Sound">🔊</button>
+  </div>
+  <button id="pauseBtn" class="hidden" title="Pause (tap to freeze the game)" aria-label="Pause game">⏸️</button>
+  <div id="pauseOverlay" class="hidden">
+    <div class="pausecard">
+      <div class="bigemoji">⏸️</div>
+      <h2>Paused</h2>
+      <p>tap ▶️ to keep going</p>
+      <button class="bigbtn green" id="resumeBtn">▶️ Resume</button>
+    </div>
   </div>
 
   <!-- Race HUD (DOM overlay — streak, boost & reward popups) -->
@@ -125,6 +138,7 @@
     <div id="resRecord" class="hidden">🎉 NEW RECORD!</div>
     <div id="resStreakRecord" class="hidden">🔥 NEW STREAK RECORD!</div>
     <div id="resGhost" class="hidden">👑 You beat your Safety Star!</div>
+    <div id="resPractice"></div>
     <div class="btnrow">
       <button class="bigbtn green" id="resCert">🎓 My Certificate</button>
       <button class="bigbtn" id="resRetry">🔄 Retry</button>
@@ -139,6 +153,7 @@
       <button class="bigbtn" id="setSpeed"></button>
       <button class="bigbtn" id="setSound"></button>
       <button class="bigbtn" id="setVoice"></button>
+      <button class="bigbtn" id="setCalm"></button>
       <button class="bigbtn" id="setFs">⛶ Full screen</button>
       <button class="smallbtn" id="setClose">Done ▶</button>
     </div>
@@ -192,6 +207,15 @@
       <button class="bigbtn" id="certDownload">⬇️ Download Certificate</button>
       <button class="bigbtn" id="certNext">Next Level →</button>
       <button class="smallbtn" id="certMenu">Menu</button>
+    </div>
+  </div>
+
+  <!-- BUCKLE-UP / HELMET-ON PRE-RIDE STEP (one tap, always the same beat before every countdown) -->
+  <div id="buckle" class="screen hidden">
+    <div class="card">
+      <div class="bigemoji" id="buckleEmoji">🔒</div>
+      <h2 id="buckleTitle">Buckle up!</h2>
+      <button class="bigbtn green" id="buckleBtn">🔒 Buckled up!</button>
     </div>
   </div>
 

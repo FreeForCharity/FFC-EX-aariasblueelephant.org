@@ -72,7 +72,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
-  onComplete: (zone: 'cove', level: number, stars: number, moment: string) => void;
+  onComplete: (zone: 'cove', level: number, stars: number, moment: string, slips?: number, calmChoices?: string[]) => void;
   onStatus: (s: QuestStatus | null) => void;
 }
 
@@ -204,8 +204,13 @@ export default function CoveLayer(props: Props) {
 
   function finish() {
     const lvl = COVE_LEVELS[clampLevel(S.current.level)];
+    // the child's own calm-plan picks (only present on the "plan" pre-step) —
+    // saved so a grown-up can later see which strategies their child chose
+    const calmChoices = lvl.pre.kind === 'plan'
+      ? S.current.picked.map((i) => preTotems(lvl)[i]?.label).filter((l): l is string => !!l)
+      : undefined;
     // always errorless: a finished level is always worth 3 stars
-    props.onComplete(ZONE, S.current.level, 3, lvl.moment);
+    props.onComplete(ZONE, S.current.level, 3, lvl.moment, 0, calmChoices);
     props.speak(lvl.outro);
     S.current.active = false;
     S.current.disarmed = true;

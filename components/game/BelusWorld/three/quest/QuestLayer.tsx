@@ -117,7 +117,7 @@ interface Props {
   speak: (line: string) => void;
   setEmotion: (e: BeluEmotion) => void;
   playSound: (kind: 'tap' | 'correct' | 'star' | 'levelup' | 'growup') => void;
-  onComplete: (zone: ActivityZone, level: number, stars: number, moment: string) => void;
+  onComplete: (zone: ActivityZone, level: number, stars: number, moment: string, slips?: number) => void;
   onStatus: (s: QuestStatus | null) => void;
   /** which islands this layer owns (others are handled elsewhere, e.g. StoryLayer) */
   zones?: ActivityZone[];
@@ -198,7 +198,7 @@ export default function QuestLayer(props: Props) {
     const stars = starsFromSlips(S.current.slips);
     const zone = S.current.zone!;
     const level = S.current.level;
-    props.onComplete(zone, level, stars, q.moment);
+    props.onComplete(zone, level, stars, q.moment, S.current.slips);
     props.speak(q.outro);
     S.current.disarmed = zone;
     S.current.zone = null;
