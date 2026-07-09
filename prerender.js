@@ -53,7 +53,13 @@ async function prerender() {
                 const url = `http://localhost:${PORT}${route}`;
                 console.log(`Prerendering ${url}...`);
 
-                await page.goto(url, { waitUntil: 'networkidle0' });
+                // networkidle0 can hang on analytics keep-alives — retry with a looser wait
+                try {
+                    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+                } catch (e) {
+                    console.warn(`  networkidle0 timed out for ${route}, retrying with networkidle2…`);
+                    await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
+                }
 
                 // Ensure animations/hydration complete
                 await new Promise(r => setTimeout(r, 1500));

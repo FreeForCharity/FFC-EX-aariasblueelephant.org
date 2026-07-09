@@ -197,6 +197,19 @@ export default function BelusWorldGame() {
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
   }, [settings]);
 
+  // stamp "last game played" so the Home page's smart Play button can offer
+  // to resume Nilu's World alongside the other static games
+  useEffect(() => {
+    try {
+      localStorage.setItem('abe_last_game', JSON.stringify({
+        url: '/nelus-world',
+        name: "Nilu's World",
+        emoji: '🌈',
+        at: Date.now(),
+      }));
+    } catch { /* ignore */ }
+  }, []);
+
   const cycleSpeed = useCallback(() => {
     setSettings((s) => {
       const next = SPEED_ORDER[(SPEED_ORDER.indexOf(s.speed) + 1) % SPEED_ORDER.length];
