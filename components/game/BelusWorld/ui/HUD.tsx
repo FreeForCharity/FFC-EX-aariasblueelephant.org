@@ -5,6 +5,7 @@
 // them, so movement taps still reach the canvas underneath.
 // ---------------------------------------------------------------------------
 
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ISLANDS, type ZoneId } from '../three/worldConfig';
 import { nudgeZoom, CAM_ZOOM_STEP } from '../three/playerState';
@@ -34,6 +35,24 @@ interface Props {
 export default function HUD({ beluLine, nearZone, starQuestZone, stickers, totalStars, isTouch, onOpenSettings, onOpenMap, onOpenWardrobe, onToggleFullscreen, onGoHome, onExit, onPause, onCycleSpeed, speedLabel, onToggleMute, muted }: Props) {
   const zoneMeta = nearZone && nearZone !== 'home' ? ISLANDS[nearZone] : null;
   const hasStarQuest = !!starQuestZone && starQuestZone === nearZone;
+  const [showMore, setShowMore] = useState(false);
+
+  // Tucked into the "More" popover so a stray tap can't dress up Nilu, open the
+  // map, change speed, go fullscreen, open settings, or exit by accident — a
+  // child should only ever see mute / pause / home / more as instant taps.
+  const moreRows: Array<{ label: string; onClick: () => void; ariaLabel: string }> = [
+    { label: '🎩 Dress up', onClick: onOpenWardrobe, ariaLabel: 'Dress up Nilu' },
+    { label: '🗺️ Growth map', onClick: onOpenMap, ariaLabel: 'Growth map' },
+    { label: `🎛️ Speed: ${speedLabel}`, onClick: onCycleSpeed, ariaLabel: `Game speed: ${speedLabel} — tap for more time or faster` },
+    { label: '⛶ Full screen', onClick: onToggleFullscreen, ariaLabel: 'Full screen' },
+    { label: '⚙️ For grown-ups & settings', onClick: onOpenSettings, ariaLabel: 'Settings' },
+    { label: '🚪 Leave game', onClick: onExit, ariaLabel: 'Exit game' },
+  ];
+
+  const runMoreAction = (fn: () => void) => {
+    fn();
+    setShowMore(false);
+  };
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
@@ -60,97 +79,97 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         </AnimatePresence>
       </div>
 
-      {/* Stars + stickers + map + settings — top right */}
+      {/* Stars + stickers — top right, info only so it's small */}
       <div className="absolute right-4 top-4 flex items-center gap-2">
-        <div className="flex items-center gap-1 rounded-full bg-white/90 px-3 py-1.5 shadow-lg backdrop-blur">
-          <span className="text-sm">⭐</span>
-          <span className="text-sm font-bold text-slate-700">{totalStars}</span>
+        <div className="flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 shadow backdrop-blur">
+          <span className="text-xs">⭐</span>
+          <span className="text-xs font-bold text-slate-700">{totalStars}</span>
           {stickers.length > 0 && (
-            <span className="ml-1 flex gap-0.5">
+            <span className="ml-0.5 flex gap-0.5">
               {stickers.map((s, i) => (
-                <span key={i} className="text-base">{s}</span>
+                <span key={i} className="text-sm">{s}</span>
               ))}
             </span>
           )}
         </div>
+      </div>
+
+      {/* Always-visible controls — big (48px+) and few, for a 4-10yo audience.
+          Everything else (wardrobe/map/speed/fullscreen/settings/exit) lives
+          behind "More" so a stray tap can't dress up Nilu or exit the game. */}
+      <div className="absolute right-4 top-14 flex items-center gap-2">
         <button
           onClick={onToggleMute}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
           aria-label={muted ? 'Unmute sound' : 'Mute sound'}
           title={muted ? 'Unmute sound' : 'Mute sound'}
         >
           {muted ? '🔇' : '🔊'}
         </button>
-        {/* labeled + emerald so a child hunting for "how do I get back?" spots it
-            among the icon-only buttons — it teleports Nilu straight to home base */}
-        <button
-          onClick={onGoHome}
-          className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full bg-emerald-500/95 px-3 text-lg shadow-lg backdrop-blur transition hover:bg-emerald-400"
-          aria-label="Go back to home base"
-          title="Go back to home base"
-        >
-          🏡<span className="text-sm font-bold text-white">Home</span>
-        </button>
-        <button
-          onClick={onOpenWardrobe}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Dress up Nilu"
-          title="Dress up Nilu"
-        >
-          🎩
-        </button>
-        <button
-          onClick={onOpenMap}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Growth map"
-        >
-          🗺️
-        </button>
-        <button
-          onClick={onCycleSpeed}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Game speed"
-          title={`Game speed: ${speedLabel} — tap for more time 🐢 or faster 🚀`}
-        >
-          🎛️
-        </button>
-        <button
-          onClick={onToggleFullscreen}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Full screen"
-          title="Full screen"
-        >
-          ⛶
-        </button>
         <button
           onClick={onPause}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
           aria-label="Take a break"
           title="Take a break"
         >
           ⏸️
         </button>
+        {/* labeled + emerald so a child hunting for "how do I get back?" spots it
+            among the icon-only buttons — it teleports Nilu straight to home base */}
         <button
-          onClick={onOpenSettings}
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-lg backdrop-blur transition hover:bg-white"
-          aria-label="Settings"
+          onClick={onGoHome}
+          className="pointer-events-auto flex h-12 items-center gap-1.5 rounded-full bg-emerald-500/95 px-4 text-xl shadow-lg backdrop-blur transition hover:bg-emerald-400 active:scale-95"
+          aria-label="Go back to home base"
+          title="Go back to home base"
         >
-          ⚙️
+          🏡<span className="text-base font-bold text-white">Home</span>
         </button>
-        {/* Exit — kept visually separate (left border gap + warmer tint) from
-            settings/pause so a stray tap doesn't read as "just another button" */}
         <button
-          onClick={onExit}
-          className="pointer-events-auto ml-1.5 flex h-10 w-10 items-center justify-center rounded-full border-l-2 border-white/60 bg-rose-50/90 pl-0.5 text-lg text-rose-500 shadow-lg backdrop-blur transition hover:bg-rose-100"
-          aria-label="Exit game"
-          title="Exit"
+          onClick={() => setShowMore(v => !v)}
+          className="pointer-events-auto flex h-12 items-center gap-1 rounded-full bg-white/90 px-4 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
+          aria-label="More options"
+          title="More options"
+          aria-expanded={showMore}
         >
-          ✕
+          ⋯<span className="text-base font-bold text-slate-700">More</span>
         </button>
       </div>
 
+      {/* "More" popover — big labeled rows for dress up / map / speed /
+          fullscreen / settings / exit, kept one deliberate tap away. */}
+      <AnimatePresence>
+        {showMore && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            className="pointer-events-auto absolute right-4 top-28 z-40 flex w-64 flex-col overflow-hidden rounded-3xl bg-white/95 shadow-2xl backdrop-blur"
+          >
+            {moreRows.map(row => (
+              <button
+                key={row.ariaLabel}
+                onClick={() => runMoreAction(row.onClick)}
+                className="flex h-14 items-center px-5 text-left text-base font-bold text-slate-700 transition hover:bg-slate-100 active:bg-slate-200"
+                aria-label={row.ariaLabel}
+                title={row.ariaLabel}
+              >
+                {row.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowMore(false)}
+              className="flex h-14 items-center border-t border-slate-200 px-5 text-left text-base font-bold text-rose-500 transition hover:bg-rose-50 active:bg-rose-100"
+              aria-label="Close menu"
+              title="Close menu"
+            >
+              ✕ Close
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Camera zoom — under the top-right menu, clear of the bottom controls */}
-      <div className="absolute right-4 top-16 flex flex-col gap-2">
+      <div className="absolute right-4 top-32 flex flex-col gap-2">
         <button
           onClick={() => nudgeZoom(-CAM_ZOOM_STEP)}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white active:scale-90"

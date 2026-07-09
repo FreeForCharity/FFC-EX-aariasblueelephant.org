@@ -30,8 +30,11 @@ import type { QuestStatus } from './QuestLayer';
 const ZONE = 'cove' as const;
 const POSE_HOLD_TICK = 0.9; // seconds between each spoken count of a pose hold
 const COUNT_WORDS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
-const TOTEM_DIST = 3.0; // how far the totems sit out in front, toward home
-const TOTEM_SPREAD = 2.9; // sideways gap between totems (no overlap)
+const TOTEM_DIST = 2.0; // how far the FRONT row of totems sits, toward home
+const TOTEM_ROW_GAP = 4.8; // depth between the front and back row (plan round)
+const TOTEM_SPREAD = 5.0; // sideways gap between totems (a parent reported the
+// Forest word-orb version of this same fan being too tight to steer between —
+// PICK_RADIUS-sized circles need real daylight between centres)
 const TOTEM_PICK = 1.6; // walk this close to a totem to choose it
 const SHELL_FIND = 1.5; // walk this close to a hidden shell to discover it
 const INVITE_START = 2.6; // walk this close to the calm-friend to BEGIN (consent)
@@ -125,24 +128,33 @@ export default function CoveLayer(props: Props) {
     return [isl.cx + (-isl.cx / len) * 2.6, isl.top + 2.4, isl.cz + (-isl.cz / len) * 2.6];
   };
 
-  // lay the pre-step totems out in an arc on the home-facing side of the cove
+  // lay the pre-step totems out on the home-facing side of the cove. Up to 4
+  // fit comfortably in one row at the ≥5-apart spacing; the level-5 calm-plan
+  // round offers all 6 strategies, which needs a second row (further back)
+  // to keep every totem inside the island's walkable radius.
   function totemLayout(n: number): [number, number, number][] {
     const len = Math.hypot(isl.cx, isl.cz) || 1;
     const dx = -isl.cx / len; // toward home
     const dz = -isl.cz / len;
     const px = -dz;
     const pz = dx;
-    const out: [number, number, number][] = [];
-    for (let i = 0; i < n; i++) {
-      const frac = n === 1 ? 0 : i / (n - 1) - 0.5;
-      const off = frac * (n - 1) * TOTEM_SPREAD;
-      out.push([
-        isl.cx + dx * TOTEM_DIST + px * off,
-        isl.top + 1.0,
-        isl.cz + dz * TOTEM_DIST + pz * off,
-      ]);
-    }
-    return out;
+    const row = (count: number, dist: number): [number, number, number][] => {
+      const out: [number, number, number][] = [];
+      for (let i = 0; i < count; i++) {
+        const frac = count === 1 ? 0 : i / (count - 1) - 0.5;
+        const off = frac * (count - 1) * TOTEM_SPREAD;
+        out.push([
+          isl.cx + dx * dist + px * off,
+          isl.top + 1.0,
+          isl.cz + dz * dist + pz * off,
+        ]);
+      }
+      return out;
+    };
+    if (n <= 4) return row(n, TOTEM_DIST);
+    const front = Math.ceil(n / 2);
+    const back = n - front;
+    return [...row(front, TOTEM_DIST), ...row(back, TOTEM_DIST + TOTEM_ROW_GAP)];
   }
 
   function emitStatus(phase: 'question' | 'correct', instruction: string, hint?: string) {

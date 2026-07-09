@@ -4,7 +4,8 @@
 // (which crystal is glowing because Nilu is near it).
 // ---------------------------------------------------------------------------
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { ISLAND_LIST, ISLANDS, BRIDGES, type ZoneId, type IslandDef } from './worldConfig';
 import { BRIDGE_SEGMENTS } from './worldMath';
@@ -85,7 +86,43 @@ function RainbowBridges({ hiddenKey, isHidden }: { hiddenKey: string; isHidden: 
 
 const MAX_BLOOM = 5;
 
-function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
+// Wraps the zone-specific decor with a visible "the island grew!" cue: a
+// short accent-coloured sparkle burst the moment `bloom` ticks up (a level
+// just finished), rather than the new decor simply existing on next render.
+// Static and skipped entirely under reduce-motion so the growth still reads
+// via the decor itself, without the extra flourish.
+function ZoneDecor({ isl, bloom, reduceMotion = false }: { isl: IslandDef; bloom: number; reduceMotion?: boolean }) {
+  const prevBloom = useRef(bloom);
+  const [justGrew, setJustGrew] = useState(false);
+  useEffect(() => {
+    if (bloom > prevBloom.current) {
+      prevBloom.current = bloom;
+      if (reduceMotion) return;
+      setJustGrew(true);
+      const t = setTimeout(() => setJustGrew(false), 2000);
+      return () => clearTimeout(t);
+    }
+    prevBloom.current = bloom;
+  }, [bloom, reduceMotion]);
+
+  return (
+    <>
+      <ZoneDecorContent isl={isl} bloom={bloom} />
+      {justGrew && (
+        <Sparkles
+          count={36}
+          scale={[isl.radius * 1.5, 3.2, isl.radius * 1.5]}
+          size={5}
+          speed={0.6}
+          color={isl.accent}
+          position={[isl.cx, isl.top + 1.4, isl.cz]}
+        />
+      )}
+    </>
+  );
+}
+
+function ZoneDecorContent({ isl, bloom }: { isl: IslandDef; bloom: number }) {
   const allItems = useMemo(() => {
     const rng = makeRng(isl.cx * 31 + isl.cz * 17 + 7);
     const out: { x: number; z: number; r: number }[] = [];
@@ -141,7 +178,7 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
           <coneGeometry args={[1.1, 1.5, 5]} />
           <meshStandardMaterial color="#ffffff" roughness={0.7} />
         </mesh>
-        {items.slice(0, 3).map((it, i) => (
+        {items.map((it, i) => (
           <mesh key={i} position={[bx * 0.7 + it.x * 0.4, y + 0.2, bz * 0.7 + it.z * 0.4]}>
             <dodecahedronGeometry args={[0.5 + it.r * 0.4, 0]} />
             <meshStandardMaterial color="#aeb8c4" roughness={1} />
@@ -171,7 +208,7 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
           <meshStandardMaterial color="#ffd166" emissive="#ffd166" emissiveIntensity={0.4} roughness={0.3} />
         </mesh>
         {/* book stacks */}
-        {items.slice(0, 3).map((it, i) => (
+        {items.map((it, i) => (
           <group key={i} position={[it.x * 0.6, y, it.z * 0.6]}>
             <mesh position={[0, 0.09, 0]}>
               <boxGeometry args={[0.7, 0.18, 0.5]} />
@@ -232,6 +269,13 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
             <meshStandardMaterial color={isl.accent} roughness={0.5} side={THREE.DoubleSide} emissive={isl.accent} emissiveIntensity={0.15} />
           </mesh>
         </group>
+        {/* scattered toys — fill in with the bloom, same as every other zone */}
+        {items.map((it, i) => (
+          <mesh key={i} position={[it.x * 0.7, y + 0.2, it.z * 0.7]}>
+            <boxGeometry args={[0.3 + it.r * 0.15, 0.3 + it.r * 0.15, 0.3 + it.r * 0.15]} />
+            <meshStandardMaterial color={i % 2 ? '#fb7185' : '#ffd166'} roughness={0.6} />
+          </mesh>
+        ))}
       </group>
     );
   }
@@ -270,9 +314,9 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
           </mesh>
           <pointLight color="#ffe9a3" intensity={1.2} distance={9} position={[0, 3.0, 0]} />
         </group>
-        {/* two soft stars */}
-        {[[2.6, 1.9], [-1.4, -2.8]].map(([sx, sz], i) => (
-          <mesh key={i} position={[sx, y + 1.6 + i * 0.7, sz]}>
+        {/* soft stars — fill in with the bloom, same as every other zone */}
+        {items.map((it, i) => (
+          <mesh key={i} position={[it.x * 0.5, y + 1.6 + it.r * 1.2, it.z * 0.5]}>
             <octahedronGeometry args={[0.3, 0]} />
             <meshStandardMaterial color="#fff4b0" emissive={isl.accent} emissiveIntensity={0.9} roughness={0.2} />
           </mesh>
@@ -280,7 +324,32 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
       </group>
     );
   }
-  // cove — a calm pool + waterfall off the rim
+  if (isl.id === 'shore') {
+    // a beach: a driftwood sandcastle backdrop + scattered shells that fill in
+    // with the bloom, same "island visibly grows" contract as every other zone
+    return (
+      <group position={[isl.cx, 0, isl.cz]}>
+        <group position={[isl.radius * 0.5, y, -isl.radius * 0.3]}>
+          <mesh position={[0, 0.5, 0]}>
+            <cylinderGeometry args={[0.55, 0.7, 1.0, 12]} />
+            <meshStandardMaterial color="#f2dfa9" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 1.15, 0]}>
+            <coneGeometry args={[0.5, 0.5, 12]} />
+            <meshStandardMaterial color="#e8c67a" roughness={0.9} />
+          </mesh>
+        </group>
+        {items.map((it, i) => (
+          <mesh key={i} position={[it.x, y + 0.03, it.z]} rotation={[-Math.PI / 2, 0, it.r * 6]}>
+            <circleGeometry args={[0.28 + it.r * 0.14, 8]} />
+            <meshStandardMaterial color={i % 2 ? '#ffb066' : '#ffffff'} roughness={0.6} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+  // cove — a calm pool + waterfall off the rim, with rocks filling in as
+  // levels complete
   return (
     <group position={[isl.cx, 0, isl.cz]}>
       <mesh position={[0, y + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -288,10 +357,12 @@ function ZoneDecor({ isl, bloom }: { isl: IslandDef; bloom: number }) {
         <meshStandardMaterial color="#4fc3e0" transparent opacity={0.8} roughness={0.1} metalness={0.2} emissive="#2a9fc0" emissiveIntensity={0.2} />
       </mesh>
       <Waterfall position={[0, y - 2.5, isl.radius - 0.5]} />
-      <mesh position={[-isl.radius * 0.55, y + 0.2, isl.radius * 0.3]}>
-        <dodecahedronGeometry args={[0.7, 0]} />
-        <meshStandardMaterial color="#8aa0b0" roughness={1} />
-      </mesh>
+      {items.map((it, i) => (
+        <mesh key={i} position={[it.x, y + 0.2, it.z]}>
+          <dodecahedronGeometry args={[0.4 + it.r * 0.4, 0]} />
+          <meshStandardMaterial color="#8aa0b0" roughness={1} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -405,7 +476,7 @@ export default function World({ activeZone, reduceMotion, islandLevels, rainbowU
         const bloom = islandLevels[isl.id] ?? 0;
         return (
           <group key={isl.id}>
-            <ZoneDecor isl={isl} bloom={bloom} />
+            <ZoneDecor isl={isl} bloom={bloom} reduceMotion={reduceMotion} />
             {bloom >= MAX_BLOOM && <Landmark isl={isl} />}
           </group>
         );

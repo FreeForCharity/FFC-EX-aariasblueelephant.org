@@ -35,9 +35,15 @@ import type { QuestStatus } from './QuestLayer';
 const ZONE = 'forest' as const;
 const APPROACH = 4.8; // stay this close to a friend while it listens & you cast
 const LINGER = 1.4; // seconds close before the word bubbles appear
-const WORD_DIST = 3.0; // how far the word bubbles sit in front of the friend
-const WORD_SPREAD = 2.6; // sideways gap between word bubbles (no overlap)
-const WORD_PICK = 1.5; // walk this close to a word bubble to "say" it
+const WORD_DIST = 2.0; // how far the word bubbles sit in front of the friend
+// Sideways gap between word bubbles. A parent reported these exact orbs
+// ("sleeping/eating/running") sitting "too close together to navigate
+// precisely". Several forest friends are authored close to the island's
+// edge, so this is the largest spread that still keeps every word bubble on
+// the island for the biggest round (4 words); WORD_PICK is trimmed slightly
+// too, so the gap still clears it with real room to spare.
+const WORD_SPREAD = 3.0;
+const WORD_PICK = 1.3; // walk this close to a word bubble to "say" it
 const TWINKLE_PICK = 1.9; // walk this close to a hidden twinkle to collect it
 const INVITE_START = 2.4; // walk this close to the waving host to BEGIN (consent)
 const GREET_DIST = 4.0; // a healed friend recognises Nilu from this far

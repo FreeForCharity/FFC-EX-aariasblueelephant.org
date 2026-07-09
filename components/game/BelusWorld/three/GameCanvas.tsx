@@ -8,7 +8,7 @@
 // shadow map is modest, and the composer runs without extra multisampling.
 // ---------------------------------------------------------------------------
 
-import { Suspense, useRef, useState } from 'react';
+import { Suspense, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -74,6 +74,9 @@ interface Props {
   onPlant: () => void;
   onPetal: () => void;
   onFriendHealed: (species: string) => void;
+  /** the DOM "🤝 Help me" button (index.tsx QuestPanel) calls this when
+   *  tapped — QuestLayer and MountainLayer each claim it while active */
+  helpRequestRef?: MutableRefObject<() => void>;
 }
 
 function Lighting({ calmMode }: { calmMode: boolean }) {
@@ -134,6 +137,7 @@ export default function GameCanvas({
   onPlant,
   onPetal,
   onFriendHealed,
+  helpRequestRef,
 }: Props) {
   const player = useRef<PlayerHandle>(null);
   // start at a safe-ish ratio and let the monitor scale it to the device
@@ -252,6 +256,7 @@ export default function GameCanvas({
           playSound={playSound}
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
+          helpRequestRef={helpRequestRef}
         />
         <CoveLayer
           level={islandNextLevel.cove}
@@ -277,6 +282,7 @@ export default function GameCanvas({
           playSound={playSound}
           onComplete={onQuestComplete}
           onStatus={onQuestStatus}
+          helpRequestRef={helpRequestRef}
         />
       </Suspense>
 
