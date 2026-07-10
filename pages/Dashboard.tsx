@@ -39,8 +39,10 @@ import {
     Bike,
     Cookie,
     Sun,
-    Magnet
+    Magnet,
+    RefreshCw
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
@@ -67,6 +69,7 @@ type ViewState =
     | 'volunteers' 
     | 'manage-testimonials' 
     | 'media-outreach'
+    | 'game-plays'
     | 'games'
     | 'wheel'
     | 'blockcraft'
@@ -81,6 +84,23 @@ type ViewState =
     | 'my-volunteering' 
     | 'testimonial'
     | 'buddy-up';
+
+// Game analytics: slug -> friendly label (public.game_play_counts)
+const GAME_PLAY_LABELS: Record<string, string> = {
+    'elly-tubbies': 'Elly-Tubbies 🐘',
+    'blockcraft': 'Block Craft 3D 🧱',
+    'nilus-world': "Nilu's World 🌈",
+    'roadsafety': 'Road Safety Heroes 🚴',
+    'doughlab': 'Dough Lab 🌈',
+    'magnetblocks': 'Magnet Blocks 🧲',
+    'helpinghands': "Nilu's Helping Hands 🖐️",
+};
+
+interface GamePlayRow {
+    game: string;
+    day: string; // YYYY-MM-DD (UTC)
+    plays: number;
+}
 
 const Dashboard: React.FC = () => {
     const { user, isBoard, isDonor, updateAvatar } = useAuth();
@@ -130,6 +150,37 @@ const Dashboard: React.FC = () => {
     const [testimonialEditForm, setTestimonialEditForm] = useState<Partial<TestimonialType>>({});
     const [albumUrlInput, setAlbumUrlInput] = useState(mediaAlbumUrl || '');
     const [albumUrlSaved, setAlbumUrlSaved] = useState(false);
+    const [gamePlayRows, setGamePlayRows] = useState<GamePlayRow[] | null>(null);
+    const [gamePlaysLoading, setGamePlaysLoading] = useState(false);
+    const [gamePlaysError, setGamePlaysError] = useState<string | null>(null);
+
+    const fetchGamePlays = async () => {
+        setGamePlaysLoading(true);
+        setGamePlaysError(null);
+        try {
+            const { data, error } = await supabase.from('game_play_counts').select('*');
+            if (error) throw error;
+            setGamePlayRows(
+                (data || []).map((r: any) => ({
+                    game: String(r.game),
+                    day: String(r.day).slice(0, 10),
+                    plays: Number(r.plays) || 0,
+                }))
+            );
+        } catch (err: any) {
+            setGamePlaysError(err?.message || 'Failed to load game play counts');
+        } finally {
+            setGamePlaysLoading(false);
+        }
+    };
+
+    // Fetch once when the Game Plays tab is opened
+    useEffect(() => {
+        if (activeView === 'game-plays' && gamePlayRows === null && !gamePlaysLoading) {
+            fetchGamePlays();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeView]);
 
     // Sync input with context
     useEffect(() => {
@@ -393,6 +444,7 @@ const Dashboard: React.FC = () => {
         { id: 'manage-registrations', label: 'Manage Registrations', icon: Users, role: 'board' },
         { id: 'volunteers', label: 'Review Volunteers', icon: Heart, role: 'board' },
         { id: 'manage-testimonials', label: 'Manage Stories', icon: MessageSquare, role: 'board' },
+        { id: 'game-plays', label: 'Game Plays', icon: Gamepad2, role: 'board' },
         
         // User View (Standard)
         { id: 'my-events', label: 'My Events', icon: Calendar, role: 'user' },
@@ -2159,6 +2211,168 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
+    const renderGamePlaysSection = () => {
+        const rows = gamePlayRows || [];
+
+        const gameLabel = (slug: string) => GAME_PLAY_LABELS[slug] || slug;
+
+        // UTC day helpers (table stores UTC dates)
+        const utcDay = (offset: number) => {
+            const d = new Date();
+            d.setUTCDate(d.getUTCDate() - offset);
+            return d.toISOString().slice(0, 10);
+        };
+        const today = utcDay(0);
+        const last7 = Array.from({ length: 7 }, (_, i) => utcDay(6 - i)); // oldest -> newest
+        const cutoff7 = utcDay(6);
+        const cutoff30 = utcDay(29);
+
+        const totalPlays = rows.reduce((sum, r) => sum + r.plays, 0);
+        const playsToday = rows.filter(r => r.day === today).reduce((sum, r) => sum + r.plays, 0);
+        const plays7 = rows.filter(r => r.day >= cutoff7).reduce((sum, r) => sum + r.plays, 0);
+        const plays30 = rows.filter(r => r.day >= cutoff30).reduce((sum, r) => sum + r.plays, 0);
+
+        // Per-game all-time totals, sorted desc
+        const perGame = new Map<string, number>();
+        rows.forEach(r => perGame.set(r.game, (perGame.get(r.game) || 0) + r.plays));
+        const ranked = Array.from(perGame.entries()).sort((a, b) => b[1] - a[1]);
+        const maxPlays = ranked.length > 0 ? ranked[0][1] : 0;
+
+        // Per-game plays keyed by day for the 7-day mini-table
+        const byGameDay = new Map<string, number>();
+        rows.forEach(r => byGameDay.set(`${r.game}|${r.day}`, (byGameDay.get(`${r.game}|${r.day}`) || 0) + r.plays));
+
+        const statCards = [
+            { label: 'Total Plays (All-Time)', value: totalPlays, iconClass: 'bg-brand-purple/10 text-brand-purple' },
+            { label: 'Plays Today', value: playsToday, iconClass: 'bg-brand-cyan/10 text-brand-cyan' },
+            { label: 'Last 7 Days', value: plays7, iconClass: 'bg-brand-green/10 text-brand-green' },
+            { label: 'Last 30 Days', value: plays30, iconClass: 'bg-amber-500/10 text-amber-500' },
+        ];
+
+        return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Game Plays 🎮</h2>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                            Anonymous tally only — no personal data, no identifiers; one count per game per session.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={fetchGamePlays}
+                        disabled={gamePlaysLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-purple/10 text-brand-purple dark:text-purple-300 text-xs font-black uppercase tracking-widest hover:bg-brand-purple/20 transition-colors disabled:opacity-50 shrink-0"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${gamePlaysLoading ? 'animate-spin' : ''}`} /> Refresh
+                    </button>
+                </div>
+
+                {gamePlaysError && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-red-700 dark:text-red-400">{gamePlaysError}</p>
+                    </div>
+                )}
+
+                {gamePlaysLoading && gamePlayRows === null ? (
+                    <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+                        <RefreshCw className="h-8 w-8 text-brand-purple animate-spin mx-auto mb-4" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">Loading play counts…</p>
+                    </div>
+                ) : rows.length === 0 && !gamePlaysError ? (
+                    <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+                        <Gamepad2 className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">
+                            No plays recorded yet — counts appear as soon as someone plays a game 🎮
+                        </p>
+                    </div>
+                ) : rows.length > 0 && (
+                    <>
+                        {/* Summary Stat Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {statCards.map((card) => (
+                                <div key={card.label} className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`h-12 w-12 rounded-xl ${card.iconClass} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                            <Play className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">{card.label}</p>
+                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{card.value.toLocaleString()}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Per-Game Ranked Bars */}
+                        <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 text-brand-purple" /> Most Played (All-Time)
+                            </h3>
+                            <div className="space-y-3">
+                                {ranked.map(([slug, count], idx) => (
+                                    <div key={slug} className="flex items-center gap-3">
+                                        <span className="w-6 text-xs font-black text-slate-400 text-right shrink-0">#{idx + 1}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{gameLabel(slug)}</span>
+                                                <span className="text-xs font-black text-brand-purple dark:text-purple-300 ml-2 shrink-0">{count.toLocaleString()}</span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-brand-purple transition-all duration-500"
+                                                    style={{ width: `${maxPlays > 0 ? Math.max((count / maxPlays) * 100, 2) : 0}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Last 7 Days Per-Game Mini-Table */}
+                        <div className="bg-white dark:bg-brand-card rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-brand-cyan" /> Last 7 Days (UTC)
+                            </h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                                            <th className="py-2 pr-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Game</th>
+                                            {last7.map(day => (
+                                                <th key={day} className="py-2 px-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-center whitespace-nowrap">
+                                                    {day.slice(5)}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ranked.map(([slug]) => (
+                                            <tr key={slug} className="border-b border-slate-100 dark:border-slate-800/50 last:border-0">
+                                                <td className="py-2 pr-4 text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">{gameLabel(slug)}</td>
+                                                {last7.map(day => {
+                                                    const n = byGameDay.get(`${slug}|${day}`) || 0;
+                                                    return (
+                                                        <td key={day} className={`py-2 px-2 text-xs text-center ${n > 0 ? 'font-black text-brand-purple dark:text-purple-300' : 'text-slate-300 dark:text-slate-600'}`}>
+                                                            {n > 0 ? n.toLocaleString() : '·'}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        );
+    };
+
     const renderGamesGallerySection = () => (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
@@ -2284,6 +2498,7 @@ const Dashboard: React.FC = () => {
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
             case 'media-outreach': return renderMediaOutreachSection();
+            case 'game-plays': return renderGamePlaysSection();
             case 'games': return renderGamesGallerySection();
             case 'wheel': return renderWheelSection();
             case 'blockcraft': return renderBlockCraftSection();

@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { BeluEmotion } from './BeluCharacter';
 import { ISLANDS, worldRuntime, type ZoneId } from './three/worldConfig';
 import { attachKeyboard, queueGoHome } from './three/input';
+import { supabase } from '../../../lib/supabase';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
 import GrowthMap from './ui/GrowthMap';
@@ -349,6 +350,13 @@ export default function BelusWorldGame() {
         emoji: '🌈',
         at: Date.now(),
       }));
+    } catch { /* ignore */ }
+    // anonymous play tally — one count per session, NO identifiers (COPPA-safe)
+    try {
+      if (!sessionStorage.getItem('abe_played_nilus-world')) {
+        sessionStorage.setItem('abe_played_nilus-world', '1');
+        void supabase.rpc('record_game_play', { g: 'nilus-world' });
+      }
     } catch { /* ignore */ }
   }, []);
 
