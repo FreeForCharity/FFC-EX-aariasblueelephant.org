@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- No analytics or tracking on this page: it is made for children. -->
+    <!-- No ads or tracking on this page (made for children) — only an anonymous play tally with zero identifiers. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mountain House Road Safety Heroes — Aaria's Blue Elephant</title>
@@ -11,6 +11,9 @@
 <script>
 (function(){
 try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/roadsafety/index.html',name:'Road Safety Heroes',emoji:'🚴',at:Date.now()}))}catch(e){}
+/* anonymous play tally — one count per game per session, NO identifiers (COPPA-safe) */
+try{if(!sessionStorage.getItem('abe_played_roadsafety')){sessionStorage.setItem('abe_played_roadsafety','1');fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Content-Type':'application/json'},body:JSON.stringify({g:'roadsafety'}),keepalive:true}).catch(function(){});}}catch(e){}
+
 try{
   var qs=location.search||'';
   if(/(^|[?&])sampler=1(&|$)/.test(qs)){
