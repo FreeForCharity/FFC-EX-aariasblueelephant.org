@@ -2,29 +2,33 @@
 <html lang="en" class="dark">
 
 <head>
-    <!-- Google Tag Manager -->
+    <!-- Analytics is skipped entirely on child-directed routes (Nilu's World) — COPPA.
+         Landing on a game route also sets the GA opt-out flag so analytics stays
+         off for the whole session even if the visitor later navigates elsewhere. -->
     <script>
-      ;(function (w, d, s, l, i) {
-        w[l] = w[l] || []
-        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : ''
-        j.async = true
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl
-        f.parentNode.insertBefore(j, f)
-      })(window, document, 'script', 'dataLayer', 'GTM-WD789BVB')
+      ;(function () {
+        var kidRoute = /^\/(nelus-world|nilus-world|belus-world)\/?$/.test(location.pathname)
+        if (kidRoute) { window['ga-disable-G-66RGGXFPWC'] = true; return }
+        ;(function (w, d, s, l, i) {
+          w[l] = w[l] || []
+          w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
+          var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s),
+            dl = l != 'dataLayer' ? '&l=' + l : ''
+          j.async = true
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl
+          f.parentNode.insertBefore(j, f)
+        })(window, document, 'script', 'dataLayer', 'GTM-WD789BVB')
+        var g = document.createElement('script')
+        g.async = true
+        g.src = 'https://www.googletagmanager.com/gtag/js?id=G-66RGGXFPWC'
+        document.head.appendChild(g)
+        window.dataLayer = window.dataLayer || []
+        window.gtag = function () { dataLayer.push(arguments) }
+        gtag('js', new Date())
+        gtag('config', 'G-66RGGXFPWC')
+      })()
     </script>
-    <!-- End Google Tag Manager -->
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-66RGGXFPWC"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-
-    gtag('config', 'G-66RGGXFPWC');
-  </script>
   <!-- Suppress Google Identity Services (GIS) automatic silent sign-in/One Tap -->
   <script>
     window.google_identity_auto_select = false;
