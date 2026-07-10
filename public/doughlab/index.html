@@ -98,11 +98,13 @@
     position: absolute; top: 10px; right: 10px; z-index: 15; display: flex; gap: 6px;
   }
   .hudBtn {
-    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
-    background: rgba(255,255,255,.9); color: #5c4a32; font-size: 21px;
+    min-width: 52px; min-height: 52px; border-radius: 16px; border: 0; cursor: pointer;
+    background: rgba(255,255,255,.9); color: #5c4a32; font-size: 20px;
     box-shadow: 0 3px 8px rgba(0,0,0,.18); transition: transform .1s;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1px; padding: 4px 8px;
   }
+  .hudLbl { font-size: 9px; font-weight: 800; letter-spacing: .2px; line-height: 1; }
   .hudBtn:active { transform: scale(.88); }
   .hudBtn.on { background: linear-gradient(180deg,#a5d8ff,#74c0fc); }
   #resetBtn.confirm { background: linear-gradient(180deg,#ff8787,#fa5252); color: #fff; box-shadow: 0 4px 0 #c92a2a; }
@@ -129,7 +131,8 @@
     .tool { width: 52px; min-height: 60px; font-size: 22px; }
     .tool svg { width: 28px; height: 28px; }
     .tool .toolLabel { font-size: 9px; }
-    .hudBtn { width: 44px; height: 44px; font-size: 18px; }
+    .hudBtn { min-width: 46px; min-height: 46px; font-size: 17px; }
+    .hudLbl { font-size: 8px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -266,13 +269,13 @@ try{
   <canvas id="ui"></canvas>
   <div id="chip">🍪 Shapes made: <span id="chipCount">0</span></div>
   <div id="hudBtns">
-    <button id="muteBtn" class="hudBtn" title="Mute sound">🔊</button>
-    <button id="calmBtn" class="hudBtn" title="Calm mode — locks the camera and calms things down">😌</button>
-    <button id="viewBtn" class="hudBtn" title="Reset the camera view">🔄</button>
-    <button id="photoBtn" class="hudBtn" title="Save a photo of your dough">📸</button>
-    <button id="exportBtn" class="hudBtn" title="Share your dough — save a file">📤</button>
-    <button id="importBtn" class="hudBtn" title="Load a friend's dough file">📥</button>
-    <button id="parentBtn" class="hudBtn" title="Parent stats">👨‍👩‍👧</button>
+    <button id="muteBtn" class="hudBtn" title="Mute sound">🔊<span class="hudLbl">Sound</span></button>
+    <button id="calmBtn" class="hudBtn" title="Calm mode — locks the camera and calms things down">😌<span class="hudLbl">Calm</span></button>
+    <button id="viewBtn" class="hudBtn" title="Reset the camera view">🔄<span class="hudLbl">View</span></button>
+    <button id="photoBtn" class="hudBtn" title="Save a photo of your dough">📸<span class="hudLbl">Photo</span></button>
+    <button id="exportBtn" class="hudBtn" title="Share your dough — save a file">📤<span class="hudLbl">Share</span></button>
+    <button id="importBtn" class="hudBtn" title="Load a friend's dough file">📥<span class="hudLbl">Friend's</span></button>
+    <button id="parentBtn" class="hudBtn" title="Parent stats">👨‍👩‍👧<span class="hudLbl">Grown-ups</span></button>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
   <div id="toast"></div>

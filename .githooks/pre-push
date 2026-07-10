@@ -1,0 +1,7 @@
+#!/bin/sh
+# Enforce the game-control standard before anything leaves this machine.
+echo "pre-push: checking game-control standard…"
+node scripts/check-game-controls.mjs || {
+  echo "\npush blocked — fix the control-standard violations above (see scripts/check-game-controls.mjs)"
+  exit 1
+}
