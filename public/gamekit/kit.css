@@ -43,7 +43,9 @@ body {
   position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; border-radius: 50%;
   background: var(--k-card); box-shadow: 0 4px 10px rgba(40,40,90,.25);
   transform: translate(-50%, -50%);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
+#kKnob img { width: 46px; height: 46px; border-radius: 50%; pointer-events: none; }
 #kActs {
   position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 10px; z-index: 40;

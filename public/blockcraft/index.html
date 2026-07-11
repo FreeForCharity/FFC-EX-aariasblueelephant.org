@@ -162,7 +162,8 @@
   #padKnob { position:absolute; left:50%; top:50%; width:58px; height:58px; border-radius:50%;
     transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center;
     font-size:27px; background:linear-gradient(160deg,#ffffff,#ffe9f2); border:3px solid #fff;
-    box-shadow:0 5px 0 #f3c1d6, 0 8px 16px rgba(0,0,0,.25); pointer-events:none; }
+    box-shadow:0 5px 0 #f3c1d6, 0 8px 16px rgba(0,0,0,.25); pointer-events:none; overflow:hidden; }
+  #padKnob img { width:48px; height:48px; border-radius:50%; pointer-events:none; }
   #touchActs .tBtn { position:static; width:64px; height:64px; font-size:28px; }
   #tMode { box-shadow:0 0 0 3px #51cf66, 0 3px 8px rgba(0,0,0,.25); }
   #tMode.digMode { box-shadow:0 0 0 3px #ff922b, 0 3px 8px rgba(0,0,0,.25); }
@@ -543,7 +544,7 @@ try{
     <span class="padArrow" style="bottom:6px;left:50%;transform:translateX(-50%)">▼</span>
     <span class="padArrow" style="left:9px;top:50%;transform:translateY(-50%)">◀</span>
     <span class="padArrow" style="right:9px;top:50%;transform:translateY(-50%)">▶</span>
-    <div id="padKnob">🐘</div>
+    <div id="padKnob"><img src="logo.png" alt=""></div>
   </div>
   <div id="touchActs">
     <button class="tBtn" id="tJump" title="Jump / fly up (double-tap = fly)">⬆</button>

@@ -130,7 +130,8 @@
   #knob{position:absolute;left:50%;top:50%;width:60px;height:60px;border-radius:50%;
     background:linear-gradient(160deg,#ffffff,#ffe9f2);border:3px solid #fff;
     box-shadow:0 5px 0 #f3c1d6,0 8px 16px rgba(58,58,90,.25);
-    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:28px;}
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;}
+  #knob img{width:50px;height:50px;border-radius:50%;pointer-events:none;}
   .stickArrow{position:absolute;font-size:17px;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.45);
     pointer-events:none;font-weight:900;}
   .sa-u{top:5px;left:50%;transform:translateX(-50%);} .sa-d{bottom:5px;left:50%;transform:translateX(-50%);}
@@ -420,7 +421,7 @@ try{
     <button class="big" id="resumeBtn" style="font-size:22px">Keep playing ▶️</button>
   </div></div>
 
-  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob">🐘</div>
+  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob"><img src="logo.png" alt=""></div>
     <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
     <span class="stickArrow sa-l">◀</span><span class="stickArrow sa-r">▶</span>
   </div>
