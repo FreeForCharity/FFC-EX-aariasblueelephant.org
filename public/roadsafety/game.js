@@ -428,8 +428,31 @@ function bindTouch(id, key){
   el.addEventListener("pointercancel", off);
   el.addEventListener("pointerleave", off);
 }
-bindTouch("btnL","left"); bindTouch("btnR","right");
 bindTouch("btnGo","go"); bindTouch("btnStop","stop");
+/* kit-standard joystick: steer with x, push up = go, pull down = stop */
+{
+  const stick = document.getElementById("rsStick"), knob = document.getElementById("rsKnob");
+  let pid = null;
+  const DEAD = 0.32;
+  const set = e => {
+    const r = stick.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
+    const m = Math.hypot(dx, dy), max = r.width/2 - 18;
+    if (m > max){ dx *= max/m; dy *= max/m; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const nx = dx/max, ny = dy/max;
+    input.left = nx < -DEAD; input.right = nx > DEAD;
+    input.go = ny < -DEAD; input.stop = ny > DEAD;
+  };
+  const end = () => {
+    pid = null; knob.style.transform = "translate(-50%,-50%)";
+    input.left = input.right = input.go = input.stop = false;
+  };
+  stick.addEventListener("pointerdown", e => { e.preventDefault(); ensureAudio(); pid = e.pointerId; stick.setPointerCapture(pid); set(e); });
+  stick.addEventListener("pointermove", e => { if (e.pointerId === pid) set(e); });
+  stick.addEventListener("pointerup", end);
+  stick.addEventListener("pointercancel", end);
+}
 
 /* ---------- helpers ---------- */
 function toast(text, color){ S.toasts.push({ text, color: color||"#2d6a4f", t:1.8 }); }
