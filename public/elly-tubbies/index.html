@@ -249,6 +249,26 @@
     font-weight:900;padding:4px 10px;font-family:inherit;font-size:12px;box-shadow:0 3px 0 #d9a800;}
   .stk .own{color:#2f9e44;font-weight:900;}
 
+  /* book tabs + collection */
+  #bookTabs{display:flex;justify-content:center;gap:8px;margin-bottom:6px;}
+  .btab{cursor:pointer;border:none;border-radius:16px;padding:9px 16px;font-family:inherit;
+    font-weight:900;font-size:clamp(14px,3.8vw,17px);background:#e8ecfb;color:#5a6285;transition:.12s;}
+  .btab.on{background:var(--nilu);color:#fff;box-shadow:0 4px 0 #1a4bbf;}
+  body.rm .btab{transition:none;}
+  .collH{font-weight:900;font-size:clamp(15px,4.2vw,18px);color:var(--nilu);margin:12px 0 4px;text-align:left;}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:6px 0;}
+  .ctile{cursor:pointer;border:none;font-family:inherit;background:#f2f5ff;border-radius:18px;
+    padding:8px 4px;font-weight:800;font-size:11px;text-align:center;color:inherit;}
+  .ctile .ico{font-size:28px;display:block;}
+  .ctile.mys{opacity:.35;filter:grayscale(1);}
+  .cfriend{display:flex;align-items:center;gap:10px;background:#f2f5ff;border-radius:18px;
+    padding:8px 12px;margin:6px 0;font-weight:800;font-size:14px;text-align:left;}
+  .cfriend .dot{width:38px;height:38px;border-radius:50%;flex:none;
+    box-shadow:inset 0 -5px 0 rgba(0,0,0,.12);}
+  .cfriend .hearts{margin-left:auto;font-size:15px;white-space:nowrap;}
+  #collStats{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0;}
+  #collStats .cs{background:#fff4d6;border-radius:14px;padding:6px 12px;font-weight:900;font-size:13px;}
+
   #loading{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:14px;background:linear-gradient(160deg,#6cbcff,#9fd4ff,#d6f0ff);color:#fff;}
   #loading .lbl{font-weight:900;font-size:clamp(20px,6vw,30px);text-shadow:0 3px 10px rgba(58,58,90,.3);}
@@ -311,7 +331,7 @@ try{
       <button class="mbtn mbtnLabeled" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure — My Movie">▶️<span class="mbtnLbl">My Movie</span></button>
       <button class="mbtn mbtnLabeled" id="shareBtn" title="Share my adventure!" aria-label="Share my adventure">📤<span class="mbtnLbl">Share</span></button>
       <button class="mbtn" id="mapBtn" title="Map — fly to a friend!" aria-label="Map">🗺️</button>
-      <button class="mbtn" id="bookBtn" title="Sticker garden" aria-label="Sticker garden">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
+      <button class="mbtn" id="bookBtn" title="Sticker garden & my collection" aria-label="Sticker garden and my collection">📖<span id="stkBadge" class="mbadge" style="display:none"></span></button>
       <button class="mbtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀" aria-label="Game speed">🐇</button>
       <button class="mbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
       <button class="mbtn" id="helpBtn" title="How to play" aria-label="How to play">❔</button>
@@ -470,11 +490,28 @@ try{
   </div></div>
 
   <div class="overlay" id="book"><div class="panel">
-    <h1>🌸 Sticker Garden</h1>
-    <p>Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.</p>
-    <div class="chip" style="display:inline-flex">✨ <span id="sparkN2">0</span></div>
-    <div id="bookGrid"></div>
-    <button class="big" id="bookClose">Back to play ▶</button>
+    <div id="bookTabs">
+      <button class="btab on" id="tabStk" title="Sticker garden — plant things in Trunkland">🌱 Stickers</button>
+      <button class="btab" id="tabColl" title="My collection — everything you have found">📖 My Collection</button>
+    </div>
+    <div id="bookStkPane">
+      <h1>🌸 Sticker Garden</h1>
+      <p>Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.</p>
+      <div class="chip" style="display:inline-flex">✨ <span id="sparkN2">0</span></div>
+      <div id="bookGrid"></div>
+    </div>
+    <div id="bookCollPane" style="display:none">
+      <h1>📖 My Collection</h1>
+      <p>Everything you've found in Trunkland lives here. Tap a friend to hear about it!</p>
+      <div id="collStats"></div>
+      <div class="collH">🥚 Critters hatched <span id="collCritN"></span></div>
+      <div class="cgrid" id="collCritters"></div>
+      <div class="collH">✨ Secrets found <span id="collSecN"></span></div>
+      <div class="cgrid" id="collSecrets"></div>
+      <div class="collH">💗 Friend hearts</div>
+      <div id="collFriends"></div>
+    </div>
+    <button class="big" id="bookClose" title="Close the book and keep playing">Back to play ▶</button>
   </div></div>
 
   <!-- Finale -->
@@ -1264,6 +1301,11 @@ const SECRETS=[
   {id:'rainbow',e:'🌈', x:-52, z:34,  need:'fly', hy:12, fact:'Rainbows are sunlight split into every colour by tiny raindrops!'},
   {id:'eagle',  e:'🦅', x:64,  z:56,  need:'fly', hy:13, fact:'Eagles can spot a bunny from three whole kilometres away!'},
 ];
+// friendly names for the Collection book (facts live on the SECRETS entries above)
+const SECRET_NAMES={turtle:'Sleepy Sea Turtle',shells:'Whisper Shells',mush:'Magic Mushroom',owl:'Wise Old Owl',
+  geode:'Sparkle Geode',frog:'Pond Frog',cactus:'Desert Cactus',stars:'Shining Star',
+  dolphin:'Winky Dolphin',octopus:'Three-Heart Octopus',whale:'Big Blue Whale',
+  balloon:'Sky Balloon',rainbow:'High Rainbow',eagle:'Eagle Eye'};
 SECRETS.forEach(sc=>{
   const g=new T.Group();
   const y=sc.need==='swim'?SEA_Y+0.4 : sc.need==='fly'?sc.hy : terrainH(sc.x,sc.z);
@@ -1452,7 +1494,21 @@ function refreshMarks(){for(const id in tubbies){
    The engines that make Trunkland a place that REMEMBERED you.            */
 
 /* ---- overnight eggs: first star of the day drops one; it hatches TOMORROW ---- */
-const CRITTERS=['🐣','🐸','🦋','🐞','🐿️','🦔','🐌','🐢','🦆','🐰','🌟','🐘'];
+const CRITTER_INFO=[   // hatchable nest friends — name + a warm fact for the Collection book
+  {e:'🐣',name:'Pip the Chick',      fact:'Pip peeps hello every morning — chicks can sing before they can walk!'},
+  {e:'🐸',name:'Boing the Frog',     fact:'Boing can jump twenty times his own size. Boing-boing-BOING!'},
+  {e:'🦋',name:'Flutter the Butterfly',fact:'Flutter tastes flowers with her feet. Tickly AND tasty!'},
+  {e:'🐞',name:'Dot the Ladybug',    fact:'Dot\'s spots are like freckles — every ladybug wears her own pattern!'},
+  {e:'🐿️',name:'Nibbles the Squirrel',fact:'Nibbles hides snacks everywhere and forgets some — that\'s how new trees grow!'},
+  {e:'🦔',name:'Prickle the Hedgehog',fact:'Prickle rolls into a fuzzy ball when it\'s cuddle time. So cozy!'},
+  {e:'🐌',name:'Dawdle the Snail',   fact:'Dawdle carries his house everywhere, so he\'s always home. Slow and happy!'},
+  {e:'🐢',name:'Tuttle the Turtle',  fact:'Tuttle never hurries and always gets there. Steady wins with a smile!'},
+  {e:'🦆',name:'Puddles the Duck',   fact:'Puddles\' feathers shrug off water — rain just makes her giggle!'},
+  {e:'🐰',name:'Hoppy the Bunny',    fact:'Hoppy\'s big ears can turn all the way around to hear friends coming!'},
+  {e:'🌟',name:'Twinkle the Star',   fact:'Twinkle fell out of the night sky just to play with you. Make a wish!'},
+  {e:'🐘',name:'Little Belu',        fact:'Little Belu the elephant never forgets a friend — especially you! 💙'},
+];
+const CRITTERS=CRITTER_INFO.map(c=>c.e);
 const NEST_AT=[3,-12];
 let eggNode=null;
 function spawnEggNode(){
@@ -1483,7 +1539,8 @@ async function maybeHatch(){                   // called during the morning ritu
   S.hatched=(S.hatched||[]);S.hatched.push(ci);S.egg=null;save();
   if(eggNode){burst(eggNode.position,26,'#ffd23f');scene.remove(eggNode);eggNode=null;}
   renderNest();sfx.win();reactSun();
-  await say('🥚',`CRACK! Your egg hatched into a little ${CRITTERS[ci]}! It lives by the nest now — go say hello!`);
+  await say('🥚',`CRACK! Your egg hatched into ${CRITTER_INFO[ci].name} ${CRITTERS[ci]}! It lives by the nest now — go say hello!`);
+  celebToast('New in your Collection! 📖',2400);
 }
 
 /* ---- morning ritual: identical every day (comfort!), memory on a new day ---- */
@@ -2723,6 +2780,7 @@ function updateRoam(dt,time){
     if(Math.hypot(p.x-sc.x,p.z-sc.z)<3.6){
       S.secrets[sc.id]=1;addSparks(5);save();hud();refreshSecrets();
       burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
+      celebToast('New in your Collection! 📖',2400);
       say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
     }}
   // nearest interactive
@@ -3065,23 +3123,71 @@ function startTravel(k){
   }
 }
 
-/* ====================== STICKER GARDEN (shop) ============================ */
-function openBook(){
+/* ============== BOOK: Sticker Garden (shop) + My Collection ============== */
+function openBook(tab){
   hud();
+  if(tab)openBook._tab=tab;
+  const onColl=openBook._tab==='coll';
+  $('tabStk').classList.toggle('on',!onColl);$('tabColl').classList.toggle('on',onColl);
+  $('bookStkPane').style.display=onColl?'none':'';
+  $('bookCollPane').style.display=onColl?'':'none';
   const grid=$('bookGrid');grid.innerHTML='';
   STICKERS.forEach(st=>{
     const d=document.createElement('div');d.className='stk'+(S.stickers[st.id]?'':S.sparks>=st.cost?'':' locked');
     d.innerHTML=`<div class="ico">${st.e}</div>${st.name}<br>`;
     if(S.stickers[st.id]){d.innerHTML+='<span class="own">Planted! ✓</span>';}
     else{const b=document.createElement('button');b.textContent='✨'+st.cost;
+      b.title=`Plant ${st.name} for ${st.cost} sparkles`;
       b.onclick=()=>{if(S.sparks<st.cost){sfx.soft();say('☀️','Collect more ✨ sparkles first — they\'re hiding all over Trunkland!');$('book').classList.remove('show');return;}
         S.sparks-=st.cost;S.stickers[st.id]=true;save();hud();refreshStickers();sfx.star();
         recEvent('sticker',STICKERS.indexOf(st));
         openBook();};
       d.appendChild(b);}
     grid.appendChild(d);});
+  if(onColl)renderCollection();
   $('book').classList.add('show');
 }
+/* a tile: found → emoji + name, tap to hear a fun fact; not yet → dimmed ❔ mystery */
+function collTile(found,e,name,fact){
+  const b=document.createElement('button');
+  b.className='ctile'+(found?'':' mys');
+  if(found){b.title=`${name} — tap to hear a fun fact`;
+    b.innerHTML=`<span class="ico">${e}</span>${name}`;
+    b.onclick=()=>{sfx.tap();say(e,`${name}! ${fact}`);};
+  }else{b.title='A mystery — keep exploring Trunkland to find it!';
+    b.innerHTML=`<span class="ico">❔</span>???`;
+    b.onclick=()=>{sfx.soft();say('❔','A mystery! Keep exploring Trunkland — you\'ll find it! ✨');};
+  }
+  return b;
+}
+function renderCollection(){
+  // little stats row
+  const storiesHeard=Object.keys((S.learn&&S.learn.stories)||{}).length;
+  $('collStats').innerHTML=
+    `<span class="cs" title="Days you visited Trunkland">📅 ${S.visitDays||1} days</span>`+
+    `<span class="cs" title="Quests you completed">🌟 ${S.questN||0} quests</span>`+
+    `<span class="cs" title="Stories you heard">🎭 ${storiesHeard} stories</span>`;
+  // critters hatched from overnight eggs
+  const cg=$('collCritters');cg.innerHTML='';
+  const have=new Set((S.hatched||[]).map(ci=>ci%CRITTER_INFO.length));
+  CRITTER_INFO.forEach((c,i)=>cg.appendChild(collTile(have.has(i),c.e,c.name,c.fact)));
+  $('collCritN').textContent=`(${have.size}/${CRITTER_INFO.length})`;
+  // secrets discovered out in the world
+  const sg=$('collSecrets');sg.innerHTML='';
+  SECRETS.forEach(sc=>sg.appendChild(collTile(!!S.secrets[sc.id],sc.e,SECRET_NAMES[sc.id]||'Secret',sc.fact)));
+  $('collSecN').textContent=`(${Object.keys(S.secrets||{}).length}/${SECRETS.length})`;
+  // friend hearts — 5 hearts = best friend
+  const fg=$('collFriends');fg.innerHTML='';
+  for(const id in TUBBIES){const t=TUBBIES[id];
+    const lvl=Math.min(S.friend[id]||0,5);
+    const row=document.createElement('div');row.className='cfriend';
+    row.title=`${t.name} — friendship ${lvl} of 5`;
+    row.innerHTML=`<span class="dot" style="background:${t.body}"></span>${t.name}`+
+      `<span class="hearts">${'💗'.repeat(lvl)}${'🤍'.repeat(5-lvl)}${lvl>=5?' best friend! 💖':''}</span>`;
+    fg.appendChild(row);}
+}
+$('tabStk').onclick=()=>{sfx.tap();openBook('stk');};
+$('tabColl').onclick=()=>{sfx.tap();openBook('coll');};
 $('bookBtn').onclick=()=>{sfx.tap();openBook();};
 $('bookClose').onclick=()=>{sfx.tap();$('book').classList.remove('show');};
 

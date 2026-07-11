@@ -576,6 +576,7 @@
         ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;
         ABC.activities.maybeShowTell(ABC.state.placedCount);   // Show & Tell moments
         ABC.ui.checkBuildMilestone(ABC.state.placedCount);     // 🧱 10/50/100… celebration
+        ABC.copycat && ABC.copycat.checkPlacement();           // 🐱 Copy Cat pattern match
         idleTicks = 0;                                          // building counts as activity
       }
     }
@@ -884,6 +885,7 @@
         squishies: ABC.squishy.serialize(),
         pet: ABC.pet.serialize(),
         stickers: ABC.stickers.serialize(),
+        copycat: ABC.copycat ? ABC.copycat.serialize() : null,
         overnight: ABC.overnight.serialize(),
         photo: ABC.photo.serialize(),
         parks: ABC.parks.serialize(),
@@ -929,6 +931,7 @@
       ABC.pet.deserialize(d.pet);
       ABC.parks.deserialize(d.parks);
       ABC.stickers.deserialize(d.stickers);
+      if (ABC.copycat) ABC.copycat.deserialize(d.copycat);
       ABC.overnight.deserialize(d.overnight);
       ABC.photo.deserialize(d.photo);
       if (d.playerName) ABC.state.playerName = d.playerName;
@@ -957,15 +960,19 @@
   }
 
   /* ---------------- HUD wiring ---------------- */
-  $('buildMenuBtn').onclick = () => ABC.activities.showBuildMenu();
+  $('buildMenuBtn').onclick = () => { ABC.copycat && ABC.copycat.quit(true); ABC.activities.showBuildMenu(); };
   $('bagBtn').onclick      = () => ABC.ui.openBag();
   $('kindBtn').onclick     = () => ABC.activities.kindWords();
   $('slimeBtn').onclick    = () => ABC.activities.slimeLab();
   $('oreoBtn').onclick     = () => ABC.activities.oreoKitchen();
+  $('copycatBtn').onclick  = () => { ABC.activities.quitProject(true); ABC.copycat.showMenu(); };
   $('settingsBtn').onclick = () => ABC.ui.showSettings();
   $('helpBtn').onclick     = () => ABC.ui.showHelp();
   $('magicBtn').onclick    = () => ABC.activities.magicFill();
-  $('quitProjBtn').onclick = () => ABC.activities.quitProject();
+  $('quitProjBtn').onclick = () => {
+    if (ABC.copycat && ABC.copycat.hasActive()) ABC.copycat.quit();
+    else ABC.activities.quitProject();
+  };
   $('viewBtn').onclick     = () => toggleView();
   $('portalChip').onclick  = () => ABC.portal.findPortal();
   $('zoomInBtn').onclick   = () => setZoom(-0.18);

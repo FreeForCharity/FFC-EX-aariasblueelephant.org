@@ -696,6 +696,7 @@ ABC.ui = (function () {
       { ico: '🌈', label: 'Slime',      go: press('slimeBtn') },
       { ico: '🍪', label: 'Oreo',       go: press('oreoBtn') },
       { ico: '💌', label: 'Kind Words', go: press('kindBtn') },
+      { ico: '🐱', label: 'Copy Cat',   go: press('copycatBtn') },
       { ico: '🏅', label: 'Stickers',   go: press('stickersBtn') },
       { ico: '📖', label: 'Friends',    go: press('friendsBtn') },
       { ico: '📋', label: 'Adventures', go: () => { closeDialog(); ABC.quests.showBoard(); } },

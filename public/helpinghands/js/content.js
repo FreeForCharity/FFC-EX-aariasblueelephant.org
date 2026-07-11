@@ -464,6 +464,91 @@ HH.AFFIRMATIONS = [
   "You are never in trouble for telling.",
 ];
 
+/* ---------------- Getting Ready: appointment-prep walkthroughs ----------------
+   ADDED 2026-07-11 — desensitization / predictability rehearsals for common
+   appointments (doctor, dentist, haircut). These are NOT safety scenarios:
+   there are no wrong answers and no danger. The child walks through exactly
+   what will happen — what they will SEE, HEAR and FEEL — with ONE gentle
+   coping tool practiced inside each walkthrough:
+     doctor  = 3 slow breaths        (coping: "breath")
+     dentist = raise-your-hand pause (coping: "hand")
+     haircut = squeeze-hands trick   (coping: "squeeze")
+   Same language rules as the rest of this file: short literal sentences,
+   present tense, never scary, first-person-supportive. Individually gated
+   behind per-item adult sign-off like every other section (Tier A level).
+   step = { label, emoji, text, coping?, copingPrompt?, copingDone? } */
+HH.PREP_TITLE = "Getting Ready 🩺";
+HH.PREP_SUB = "Practice what happens at an appointment — step by step, so nothing is a surprise.";
+HH.PREP_DONE_LINE = "You knew everything that would happen. You were so brave!";
+HH.PREP = [
+  {
+    id: "doctorvisit", title: "Doctor Visit", emoji: "🩺", place: "clinic",
+    intro: "Let's practice a doctor visit! I will show you everything that happens. No surprises.",
+    steps: [
+      { label: "See", emoji: "🪑",
+        text: "First we sit in the waiting room. The waiting room has chairs and books. We wait for our turn." },
+      { label: "Hear", emoji: "📣",
+        text: "Someone calls your name. That is how you know it is your turn. You walk with your grown-up." },
+      { label: "See", emoji: "📏",
+        text: "Next we see how big you are growing! You stand on the scale, then stand tall by the wall. Easy!" },
+      { label: "See", emoji: "🚪",
+        text: "Then we go to a little room and sit on the soft exam bed. The doctor comes to see you there." },
+      { label: "Feel + Practice", emoji: "🫁", coping: "breath",
+        text: "The doctor listens to your heart with a little circle. The circle feels a little cold. It only takes a few seconds.",
+        copingPrompt: "While the doctor listens, we take 3 slow breaths. Tap the circle to breathe with me!",
+        copingDone: "Three slow breaths! Your body feels calm. You can use slow breaths any time." },
+      { label: "See", emoji: "👂",
+        text: "The doctor looks in your ears with a tiny light. It does not hurt. It tickles a little bit." },
+      { label: "All done", emoji: "🌟",
+        text: "All done! The doctor says you are growing great. You get a sticker!" },
+    ],
+  },
+  {
+    id: "dentistvisit", title: "Dentist Visit", emoji: "🦷", place: "clinic",
+    intro: "Let's practice a dentist visit! I will show you everything that happens. No surprises.",
+    steps: [
+      { label: "See", emoji: "🪑",
+        text: "At the dentist there is a big special chair. The chair moves up and down slowly. You get to ride it!" },
+      { label: "See", emoji: "💡",
+        text: "There is a bright light so the dentist can see your teeth. You can close your eyes if it is too bright. That is okay!" },
+      { label: "Feel", emoji: "🪞",
+        text: "The dentist counts your teeth with a tiny mirror. One, two, three… It does not hurt. It just feels a little funny." },
+      { label: "Practice", emoji: "✋", coping: "hand",
+        text: "Here is your special tool: if you want a break, you raise your hand. The dentist stops and waits for you.",
+        copingPrompt: "Let's practice one time. Tap the hand to raise your hand!",
+        copingDone: "You raised your hand! The dentist stops and waits. You can do that any time you need a pause." },
+      { label: "Hear", emoji: "🪥",
+        text: "The tickly toothbrush makes a buzzing sound. Bzzz! It tickles your teeth. Remember — you can raise your hand to pause!" },
+      { label: "Do", emoji: "💧",
+        text: "Then you get a little cup of water. You rinse and spit into the tiny sink. Whoosh!" },
+      { label: "All done", emoji: "✨",
+        text: "All done! Your teeth are clean and shiny. You get to pick a prize!" },
+    ],
+  },
+  {
+    id: "haircut", title: "Haircut", emoji: "💇", place: "house",
+    intro: "Let's practice getting a haircut! I will show you everything that happens. No surprises.",
+    steps: [
+      { label: "See", emoji: "🦸",
+        text: "At the haircut you sit in a big chair. You wear a cape — like a superhero! The cape keeps hair off your clothes." },
+      { label: "Feel", emoji: "💦",
+        text: "The hair helper sprays a little water on your hair. The water feels a little cold. It is just a tiny sprinkle." },
+      { label: "Practice", emoji: "🤲", coping: "squeeze",
+        text: "Here is your special tool: the squeeze-hands trick. If a feeling gets big, you squeeze your own hands together… and let go.",
+        copingPrompt: "Let's practice! Tap the hands to squeeze… and let go.",
+        copingDone: "Squeeze… and let go! Your hands help your body feel calm. You can do that any time in the chair." },
+      { label: "Hear", emoji: "✂️",
+        text: "The scissors make a snip-snip sound near your ears. The scissors never touch you. Only your hair gets cut — and hair does not feel anything." },
+      { label: "Feel", emoji: "🪶",
+        text: "Little hairs fall down like soft feathers. Sometimes it feels itchy. Itchy is normal. You can use your squeeze-hands trick." },
+      { label: "See", emoji: "🪞",
+        text: "Then you look in the mirror. You see your brand-new haircut. Looking good!" },
+      { label: "All done", emoji: "🎉",
+        text: "All done! The cape comes off. You shake off the itchy hairs." },
+    ],
+  },
+];
+
 /* ---------------- My Stickers (pure display, no new mechanics) ---------------- */
 HH.STICKER_BOOK = {
   title: "My Stickers",

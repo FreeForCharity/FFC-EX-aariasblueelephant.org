@@ -67,6 +67,7 @@ const RANDOM_GAMES: PlayGame[] = [
     { url: '/roadsafety/index.html', name: 'Road Safety Heroes', emoji: '🚴', sampler: true },
     { url: '/doughlab/index.html', name: 'Dough Lab', emoji: '🌈', sampler: true },
     { url: '/magnetblocks/index.html', name: 'Magnet Blocks', emoji: '🧲', sampler: true },
+    { url: '/grocery/index.html', name: "Aaria's Grocery Store", emoji: '🛒' },
 ];
 
 type LastGame = { url: string; name: string; emoji: string; at: number };

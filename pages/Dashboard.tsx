@@ -94,6 +94,7 @@ const GAME_PLAY_LABELS: Record<string, string> = {
     'doughlab': 'Dough Lab 🌈',
     'magnetblocks': 'Magnet Blocks 🧲',
     'helpinghands': "Nilu's Helping Hands 🖐️",
+    'grocery': "Aaria's Grocery Store 🛒",
 };
 
 interface GamePlayRow {
@@ -480,6 +481,7 @@ const Dashboard: React.FC = () => {
         { id: 'blockcraft', title: "Aaria's Block Craft 3D", emoji: '🧱', oneLiner: 'Building, animal friends, slime & cookies!', img: '/images/games/blockcraft.jpg', view: 'blockcraft' },
         { id: 'elly-tubbies', title: 'Elly-Tubbies', emoji: '☀️', oneLiner: 'Bouncy elephant friends in sunny Trunkland!', img: '/images/games/elly-tubbies.jpg', view: 'elly-tubbies' },
         { id: 'roadsafety', title: 'Road Safety Heroes', emoji: '🚦', oneLiner: 'Ride & drive the REAL streets of Mountain House!', img: '/images/games/roadsafety.jpg', view: 'roadsafety' },
+        { id: 'grocery', title: "Aaria's Grocery Store", emoji: '🛒', oneLiner: 'Bring your list, find the food, wait your turn, pay & bag!', img: '/images/games/grocery.jpg', path: '/8' },
         { id: 'wheel', title: 'Wheel of Fun', emoji: '🎡', oneLiner: 'Spin the rainbow wheel for surprises & giggles!', img: '/images/games/wheel.jpg', view: 'wheel' },
     ];
 

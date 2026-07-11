@@ -299,6 +299,10 @@ try{
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M12 3v8m0 0-3-3m3 3 3-3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><ellipse class="ink" cx="12" cy="17" rx="7" ry="3.4" stroke-width="1.7"/></svg>
       <span class="toolLabel">Poke</span>
     </button>
+    <button class="tool" data-tool="roll" title="Roller — drag to roll the dough into a snake">
+      <svg viewBox="0 0 24 24" fill="none"><rect class="ink" x="5.5" y="9" width="13" height="6" rx="3" stroke-width="1.7"/><path class="ink" d="M2.5 12h3m13 0h3" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span class="toolLabel">Roll</span>
+    </button>
     <button class="tool" data-tool="knife" title="Knife — slice through">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M4 20 18.5 5.5c1.3-1.3 3.3.7 2 2L9.5 18.5c-1.6 1.6-4 1.9-5.5 1.5Z" stroke-width="1.7" stroke-linejoin="round"/></svg>
       <span class="toolLabel">Cut</span>
@@ -318,6 +322,10 @@ try{
     <button class="tool" data-tool="flower" title="Flower cutter">
       <svg viewBox="0 0 24 24" fill="none"><path class="ink" d="M12 4.2c1.8-2.4 5.4-.4 4.3 2.3 2.9-.4 3.8 3.6 1 4.5 2.4 1.7.4 5.2-2.3 4.2.5 2.9-3.5 3.8-4.4 1-1.7 2.4-5.3.4-4.2-2.3-2.9.4-3.8-3.6-1-4.5-2.4-1.7-.4-5.2 2.3-4.2-.5-2.9 3.5-3.8 4.3-1Z" stroke-width="1.5" stroke-linejoin="round"/><circle class="inkf" cx="12" cy="10.6" r="1.6"/></svg>
       <span class="toolLabel">Flower</span>
+    </button>
+    <button class="tool" data-tool="decor" title="Decorate — tap the dough to add eyes and sprinkles; tap this button again to switch decoration">
+      <span id="decoEmoji">👀</span>
+      <span class="toolLabel">Decorate</span>
     </button>
   </div>
   <div class="row" id="bottomRow">
@@ -354,7 +362,7 @@ try{
 const S = 0.26;                 // particle spacing (world units)
 const HW = 3.5;                 // half width of the world / metaball field
 const BALL_R = 0.92;            // spawn ball radius
-const GRAB_R = 0.45, POKE_R = 0.72, CUT_R = 0.85, GAP = 0.22;
+const GRAB_R = 0.45, POKE_R = 0.72, CUT_R = 0.85, GAP = 0.22, ROLL_R = 0.85;
 const MAX_PARTICLES = 560;
 
 const MODES = {
@@ -593,13 +601,16 @@ function serializeDough() {
     if (c.dead) continue;
     C.push([c.a, c.b, Math.round(c.rest * 1000) / 1000]);
   }
-  return { app: "doughlab", v: 1, mode, particles: P, constraints: C };
+  // decorations: {p: anchor particle index, k: kind} — old loaders just ignore "d"
+  const D = decos.map(d => ({ p: d.i, k: d.kind }));
+  return { app: "doughlab", v: 1, mode, particles: P, constraints: C, d: D };
 }
 // replace the current dough with saved/imported data — defensive: clamps everything,
 // never throws past this function, works even on a hand-edited or malformed file.
 function loadDoughData(data) {
   particles = []; constraints = []; linkSet = new Set(); linkCount = [];
-  grabbed = null; pokePoint = null; lastKnife = null; trail = []; flashes = [];
+  grabbed = null; pokePoint = null; lastKnife = null; lastRoll = null; trail = []; flashes = [];
+  clearDecos();
   const inP = Array.isArray(data.particles) ? data.particles : [];
   const n = Math.min(inP.length, MAX_PARTICLES);
   for (let i = 0; i < n; i++) {
@@ -624,6 +635,17 @@ function loadDoughData(data) {
   }
   if (data.mode === "slime" || data.mode === "dough") mode = data.mode;
   if (!particles.length) spawnBall(0, BALL_R + 0.55, 0, BALL_R, currentColor); // never leave an empty table
+  // decorations (optional "d" — files from before decorations simply don't have it)
+  const inD = Array.isArray(data.d) ? data.d : [];
+  const capD = Math.min(inD.length, MAX_DECOS);
+  for (let i = 0; i < capD; i++) {
+    const row = inD[i];
+    if (!row || typeof row !== "object") continue;
+    const pi = row.p | 0;
+    if (pi < 0 || pi >= particles.length) continue;
+    if (DECO_KINDS.indexOf(row.k) < 0) continue;
+    addDeco(pi, row.k); // addDeco re-validates and enforces the cap
+  }
 }
 let autosaveTimer = null, doughDirty = false;
 function scheduleAutosave() {
@@ -666,6 +688,7 @@ function spawnBall(cx, cy, cz, R, colorHex) {
 function reset() {
   particles = []; constraints = []; linkSet = new Set(); linkCount = [];
   grabbed = null; trail = []; flashes = [];
+  clearDecos();
   spawnBall(0, BALL_R + 0.55, 0, BALL_R, currentColor);
 }
 
@@ -945,6 +968,128 @@ function cutSpot(ray) {
   return rayOnTable(ray);
 }
 
+/* ---------- roller: drag = a palm rolling the dough into a snake ----------
+   Directional nudge: particles within ROLL_R of the stroke get a positional
+   bias along the drag axis — ahead of the palm pushed forward, behind pulled
+   back — so constraints stretch naturally (plastic creep locks the length in,
+   the normal tear rule snaps it if you overdo one spot). A gentle downward
+   press keeps it snake-shaped instead of a taller blob. */
+function rollStroke(a, b) {
+  let ax = b.x - a.x, az = b.z - a.z;
+  const len = Math.hypot(ax, az);
+  if (len < 1e-4) return;
+  const step = Math.min(len, 0.22);   // clamp wild pointer jumps
+  ax /= len; az /= len;
+  const push = step * 0.28;           // carried along with the palm
+  const stretch = step * 0.55;        // elongation along the drag axis
+  for (const p of particles) {
+    const dx = p.x - b.x, dz = p.z - b.z;
+    const d = Math.hypot(dx, dz);
+    if (d > ROLL_R) continue;
+    const w = 1 - d / ROLL_R;
+    const s = Math.sign(dx * ax + dz * az) || 1;
+    const mx = (push + stretch * s) * ax * w;
+    const mz = (push + stretch * s) * az * w;
+    p.x += mx; p.z += mz;
+    p.px += mx * 0.55; p.pz += mz * 0.55;   // keep the verlet kick doughy, not springy
+    if (p.y > S * 1.7) p.y -= Math.min(0.05 * step * 4 * w, p.y - S * 1.7); // palm pressure
+  }
+}
+
+/* ---------- decorations: googly eyes & sprinkles that ride the dough ---------- */
+const DECO_KINDS = ["eye", "dot", "star", "sprinkle"];
+const DECO_INFO = {
+  eye:      { emoji: "👀", name: "googly eye" },
+  dot:      { emoji: "🔴", name: "button nose" },
+  star:     { emoji: "⭐", name: "sprinkle star" },
+  sprinkle: { emoji: "🌈", name: "rainbow sprinkle" },
+};
+const MAX_DECOS = 24;
+let decos = [];              // {i: anchor particle index, kind, mesh, off}
+let decoKind = "eye";
+function makeDecoMesh(kind, idx) {
+  const g = new THREE.Group();
+  if (kind === "eye") {
+    const white = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 }));
+    white.scale.z = 0.55;
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.2 }));
+    pupil.position.z = 0.07;
+    g.add(white); g.add(pupil);
+  } else if (kind === "dot") {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xe8554d, roughness: 0.4 }));
+    m.scale.z = 0.5; g.add(m);
+  } else if (kind === "star") {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0xffd43b, emissive: 0xffc078, emissiveIntensity: 0.7, roughness: 0.3 }));
+    m.scale.z = 0.45; g.add(m);
+  } else { // sprinkle — deterministic rainbow colour per slot
+    const col = new THREE.Color(PALETTE[idx % PALETTE.length]);
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8),
+      new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.35 })));
+  }
+  return g;
+}
+function addDeco(i, kind) {
+  if (decos.length >= MAX_DECOS) return null;
+  if (!particles[i] || DECO_KINDS.indexOf(kind) < 0) return null;
+  const mesh = makeDecoMesh(kind, decos.length);
+  const d = { i, kind, mesh, off: kind === "eye" ? 0.15 : 0.12 };
+  scene.add(mesh);
+  decos.push(d);
+  return d;
+}
+function removeDeco(d) {
+  const k = decos.indexOf(d);
+  if (k < 0) return;
+  decos.splice(k, 1);
+  scene.remove(d.mesh);
+}
+function clearDecos() {
+  for (const d of decos) scene.remove(d.mesh);
+  decos = [];
+}
+// approximate outward surface normal at a particle: away from the local blob centre
+const _dn = new THREE.Vector3();
+function decoNormal(i) {
+  const p = particles[i];
+  let sx = 0, sy = 0, sz = 0, n = 0;
+  const R2 = (S * 2) * (S * 2);
+  for (const q of particles) {
+    const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z;
+    if (dx * dx + dy * dy + dz * dz < R2) { sx += q.x; sy += q.y; sz += q.z; n++; }
+  }
+  if (n > 1) _dn.set(p.x - sx / n, p.y - sy / n, p.z - sz / n);
+  if (n <= 1 || _dn.lengthSq() < 1e-6) _dn.set(0, 1, 0); else _dn.normalize();
+  return _dn;
+}
+// decorations follow their anchor particle every frame, so they ride the wobble
+function updateDecos() {
+  for (const d of decos) {
+    const p = particles[d.i];
+    if (!p) continue;
+    const n = decoNormal(d.i);
+    d.mesh.position.set(p.x + n.x * d.off, p.y + n.y * d.off, p.z + n.z * d.off);
+    d.mesh.lookAt(p.x + n.x * 2, p.y + n.y * 2, p.z + n.z * 2);
+  }
+}
+// nearest decoration the ray passes close to (for tap-to-remove)
+function pickDeco(ray) {
+  let best = null;
+  const o = ray.origin, dir = ray.direction;
+  for (const d of decos) {
+    const v = d.mesh.position;
+    const wx = v.x - o.x, wy = v.y - o.y, wz = v.z - o.z;
+    const t = wx * dir.x + wy * dir.y + wz * dir.z;
+    if (t < 0) continue;
+    const qx = wx - dir.x * t, qy = wy - dir.y * t, qz = wz - dir.z * t;
+    if (Math.sqrt(qx * qx + qy * qy + qz * qz) < 0.2 && (!best || t < best.t)) best = { d, t };
+  }
+  return best ? best.d : null;
+}
+
 /* ---------- squishy sounds (tiny WebAudio synth, gentle for little ears) ---------- */
 const SND = (() => {
   let ctx = null, master = null;
@@ -1060,17 +1205,21 @@ const ACHIEVEMENTS = {
   color_mixer:     "🎨 Colour mixer! You blended two colours together!",
   mode_explorer:   "🫧 Mode explorer! You tried playdough and slime!",
   shape_master:    "🏆 Shape master! 10 shapes stamped!",
+  first_roll:      "🥖 Roll the dough into a snake! 🐍 Swipe back and forth!",
+  first_decoration:"🎨 Decorating! Tap the dough for eyes and sprinkles — tap 🎨 again to switch!",
 };
 const ACH_KEY = "doughlab_achievements_v1", STATS_KEY = "doughlab_stats_v1";
 let unlocked = new Set();
 try { unlocked = new Set(JSON.parse(localStorage.getItem(ACH_KEY) || "[]")); } catch (e) {}
-let stats = { shapes: 0, shapeTypes: {}, squishes: 0, tears: 0, slices: 0, colorMixes: 0, sessionSeconds: 0 };
+let stats = { shapes: 0, shapeTypes: {}, squishes: 0, tears: 0, slices: 0, colorMixes: 0, rolls: 0, decorations: 0, sessionSeconds: 0 };
 try { Object.assign(stats, JSON.parse(localStorage.getItem(STATS_KEY) || "{}")); } catch (e) {}
 if (!stats.shapeTypes) stats.shapeTypes = {};
 if (typeof stats.squishes !== "number") stats.squishes = 0;
 if (typeof stats.tears !== "number") stats.tears = 0;
 if (typeof stats.slices !== "number") stats.slices = 0;
 if (typeof stats.colorMixes !== "number") stats.colorMixes = 0;
+if (typeof stats.rolls !== "number") stats.rolls = 0;
+if (typeof stats.decorations !== "number") stats.decorations = 0;
 if (typeof stats.sessionSeconds !== "number") stats.sessionSeconds = 0;
 function saveAch() { try { localStorage.setItem(ACH_KEY, JSON.stringify([...unlocked])); } catch (e) {} }
 function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {} }
@@ -1112,6 +1261,8 @@ const ATTRACT = [
   "🌈 Squish two colours together to mix a new one!",
   "🫧 Try Slime mode up top — it wobbles and drips!",
   "👐 Pull a piece off and watch it stretch and snap!",
+  "🥖 Try the roller — drag across the dough to roll a snake!",
+  "👀 Tap Decorate to give your dough googly eyes!",
 ];
 let lastInteract = performance.now(), attractOn = false, attractIdx = 0, attractTimer = null;
 function markInteract() {
@@ -1140,6 +1291,8 @@ setInterval(() => {
 /* ---------- input ---------- */
 let pokePoint = null;
 let lastKnife = null;
+let lastRoll = null;
+let lastDecoCapToast = 0;
 
 function localXY(e) {
   const r = stage.getBoundingClientRect();
@@ -1194,6 +1347,44 @@ uiC.addEventListener("pointerdown", e => {
       SND.squish();
       haptic(15);
     } else pointer.mode = "orbit";
+  } else if (tool === "roll") {
+    const hit = pickParticle(ray, ROLL_R);
+    const w = rayOnTable(ray);
+    if (hit && w) {
+      lastRoll = w;
+      pointer.mode = "tool";
+      try { stats.rolls++; saveStats(); } catch (e) {}
+      unlock("first_roll");
+      SND.squish();
+      haptic(15);
+    } else pointer.mode = "orbit";
+  } else if (tool === "decor") {
+    const hitD = pickDeco(ray);
+    if (hitD) {                       // tap a decoration to gently pop it off
+      removeDeco(hitD);
+      pointer.mode = "tool";
+      SND.pop();
+      haptic(15);
+    } else {
+      const hit = pickParticle(ray, 0.4);
+      if (hit) {
+        if (decos.length >= MAX_DECOS) {
+          const now = performance.now();
+          if (now - lastDecoCapToast > 4000) {
+            lastDecoCapToast = now;
+            toastQueue.push("So sparkly! Tap a decoration to take one off ✨");
+            pumpToast();
+          }
+        } else {
+          addDeco(hit.i, decoKind);
+          try { stats.decorations++; saveStats(); } catch (e) {}
+          unlock("first_decoration");
+          SND.pop();
+          haptic(15);
+        }
+        pointer.mode = "tool";
+      } else pointer.mode = "orbit";
+    }
   } else if (tool === "knife") {
     const w = rayOnTable(ray);
     lastKnife = w;
@@ -1243,6 +1434,14 @@ uiC.addEventListener("pointermove", e => {
     if (hit) { const a = particles[hit.i]; pokePoint = { x: a.x, y: a.y, z: a.z }; }
     SND.squish();
     haptic(8, 180);
+  } else if (tool === "roll" && lastRoll) {
+    const w = rayOnTable(ray);
+    if (w) {
+      rollStroke(lastRoll, w);
+      lastRoll = w;
+      SND.squish();        // internally rate-limited
+      haptic(8, 180);
+    }
   } else if (tool === "knife" && lastKnife) {
     const w = rayOnTable(ray);
     if (w) {
@@ -1257,7 +1456,7 @@ uiC.addEventListener("pointermove", e => {
 
 const release = e => {
   touches.delete(e.pointerId);
-  pointer.down = false; grabbed = null; pokePoint = null; lastKnife = null;
+  pointer.down = false; grabbed = null; pokePoint = null; lastKnife = null; lastRoll = null;
   pointer.mode = "tool";
 };
 uiC.addEventListener("pointerup", release);
@@ -1342,6 +1541,7 @@ function frame() {
   fpsWatch(Math.min(0.1, (now - lastT) / 1000)); lastT = now;
   step();
   skin();
+  updateDecos();
   drawShadow();
   applyCamera();
   renderer.render(scene, camera);
@@ -1353,6 +1553,7 @@ function frame() {
 const HINTS = {
   grab: "👐 Grab the dough — squish, stretch, pluck a piece off!",
   poke: "👇 Press and rub to smoosh dents into it",
+  roll: "🥖 Drag across the dough to roll it into a snake!",
   knife: "🔪 Drag across the table to slice right through",
   circle: "⭕ Tap the dough to punch out a circle",
   star: "⭐ Tap the dough to punch out a star",
@@ -1361,10 +1562,27 @@ const HINTS = {
 };
 const hint = document.getElementById("hint");
 
+function decoHint() {
+  const info = DECO_INFO[decoKind];
+  return `${info.emoji} Tap the dough to add a ${info.name} — tap the 🎨 button again to switch!`;
+}
+function syncDecoUI() {
+  document.getElementById("decoEmoji").textContent = DECO_INFO[decoKind].emoji;
+  HINTS.decor = decoHint(); // keep the attract-mode restore text current
+}
+syncDecoUI();
+
 document.getElementById("tools").addEventListener("click", e => {
   const btn = e.target.closest(".tool");
   if (!btn) return;
   markInteract();
+  if (btn.dataset.tool === "decor" && tool === "decor") { // second tap cycles the sub-palette
+    decoKind = DECO_KINDS[(DECO_KINDS.indexOf(decoKind) + 1) % DECO_KINDS.length];
+    syncDecoUI();
+    hint.textContent = HINTS.decor;
+    SND.init(); SND.pop();
+    return;
+  }
   tool = btn.dataset.tool;
   document.querySelectorAll(".tool").forEach(b => b.classList.toggle("on", b === btn));
   hint.textContent = HINTS[tool];
@@ -1595,6 +1813,8 @@ document.getElementById("parentBtn").addEventListener("click", () => {
         <div><span class="label">Tears:</span><span class="value">${stats.tears}</span></div>
         <div><span class="label">Slices:</span><span class="value">${stats.slices}</span></div>
         <div><span class="label">Colors mixed:</span><span class="value">${stats.colorMixes}</span></div>
+        <div><span class="label">Rolls:</span><span class="value">${stats.rolls}</span></div>
+        <div><span class="label">Decorations:</span><span class="value">${stats.decorations}</span></div>
         <div><span class="label">Time played:</span><span class="value">${timeMinutes}m</span></div>
       `;
       document.getElementById("parentStatsContent").innerHTML = html;
@@ -1628,6 +1848,9 @@ window.DL = {
     return n;
   },
   knifeCutWorld, stamp, spawnBall, camera, orbit, SKIN,
+  rollStroke, addDeco, removeDeco, clearDecos,
+  get decos() { return decos; },
+  get decoKind() { return decoKind; },
   get mc() { return mc; },
   get stats() { return stats; },
   get unlocked() { return unlocked; },

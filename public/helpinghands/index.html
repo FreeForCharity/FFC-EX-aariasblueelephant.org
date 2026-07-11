@@ -367,6 +367,29 @@
   .step-label { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #9c36b5; text-transform: uppercase; }
   .step-text-row { display: flex; align-items: flex-start; gap: 10px; }
   .step-text { font-size: 17px; font-weight: 700; color: #3b2a55; line-height: 1.4; flex: 1; text-align: left; }
+  /* ---------- Getting Ready (appointment-prep walkthroughs) ---------- */
+  .prep-title { margin-top: clamp(20px, 4vh, 40px); }
+  .prep-hero { font-size: clamp(56px, 9vw, 84px); text-align: center; line-height: 1.1; }
+  .prep-coping-prompt { background: #eef6ff; border: 2px dashed #9cc7f0; border-radius: 14px; padding: 10px 12px; }
+  .prep-coping-wrap { display: flex; justify-content: center; }
+  .prep-coping-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: linear-gradient(180deg,#e0f2ff,#fff); border: 3px solid #74c0fc; border-radius: 24px;
+    padding: 16px 26px; min-width: 170px; min-height: 96px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 8px 18px rgba(60,40,100,.14);
+  }
+  .prep-coping-btn:active { transform: scale(.96); }
+  .prep-coping-btn:disabled { opacity: .8; cursor: default; }
+  .prep-coping-btn .em { font-size: 44px; }
+  .prep-coping-btn .nm { font-size: 15px; font-weight: 800; color: #1c5d99; }
+  .breath-circle { border-radius: 50%; width: 170px; height: 170px; justify-content: center; }
+  .breath-circle.breathing { animation: prepBreath 2.4s ease-in-out; }
+  @keyframes prepBreath { 0% { transform: scale(1); } 45% { transform: scale(1.16); } 100% { transform: scale(1); } }
+  .prep-coping-btn.raised .em { display: inline-block; transform: translateY(-8px) rotate(-10deg); }
+  .prep-coping-btn.squeezing { animation: prepSqueeze 1.2s ease-in-out; }
+  @keyframes prepSqueeze { 0% { transform: scale(1); } 35% { transform: scale(.86); } 100% { transform: scale(1); } }
+  .reduced-motion .breath-circle.breathing, .reduced-motion .prep-coping-btn.squeezing { animation: none; }
+
   .tell-map { background: #eef7ff; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .tell-place-emoji { font-size: 40px; }
   .tell-helpers { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }

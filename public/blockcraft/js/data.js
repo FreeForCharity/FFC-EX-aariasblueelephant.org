@@ -783,6 +783,39 @@ ABC.KIND_MILESTONES = {
   20:'💖🐘 20 hearts! Nilu the Blue Elephant is SO proud — you are Building a New Inclusive World!',
 };
 
+/* ============================================================
+   COPY CAT 🐱 — little builds to copy anywhere in the world.
+   Each pattern: relative offsets {dx,dy,dz,type} (dy 0 = bottom).
+   Ordered small → big (3 → 8 blocks). Spatial reasoning, no-fail:
+   any spot, any of the 4 directions, extra blocks nearby are fine.
+   ============================================================ */
+ABC.COPYCAT_PATTERNS = [
+  { id:'tower', name:'Little Tower', emoji:'🗼', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},{dx:0,dy:2,dz:0,type:'wood'} ] },
+  { id:'traffic', name:'Traffic Light', emoji:'🚦', blocks:[
+      {dx:0,dy:0,dz:0,type:'black'},{dx:0,dy:1,dz:0,type:'yellow'},{dx:0,dy:2,dz:0,type:'red'} ] },
+  { id:'snowman', name:'Snow Friend', emoji:'⛄', blocks:[
+      {dx:0,dy:0,dz:0,type:'snow'},{dx:0,dy:1,dz:0,type:'snow'},
+      {dx:0,dy:2,dz:0,type:'snow'},{dx:0,dy:3,dz:0,type:'black'} ] },
+  { id:'flowerbed', name:'Flower Bed', emoji:'🌸', blocks:[
+      {dx:1,dy:0,dz:0,type:'flower'},{dx:0,dy:0,dz:1,type:'flower'},{dx:1,dy:0,dz:1,type:'flower'},
+      {dx:2,dy:0,dz:1,type:'flower'},{dx:1,dy:0,dz:2,type:'flower'} ] },
+  { id:'doghouse', name:'Doggy House', emoji:'🐶', blocks:[
+      {dx:0,dy:0,dz:0,type:'brick'},{dx:2,dy:0,dz:0,type:'brick'},
+      {dx:0,dy:1,dz:0,type:'wood'},{dx:1,dy:1,dz:0,type:'wood'},{dx:2,dy:1,dz:0,type:'wood'} ] },
+  { id:'steps', name:'Little Steps', emoji:'🪜', blocks:[
+      {dx:0,dy:0,dz:0,type:'plank'},{dx:1,dy:0,dz:0,type:'plank'},{dx:1,dy:1,dz:0,type:'plank'},
+      {dx:2,dy:0,dz:0,type:'plank'},{dx:2,dy:1,dz:0,type:'plank'},{dx:2,dy:2,dz:0,type:'plank'} ] },
+  { id:'arch', name:'Rainbow Arch', emoji:'🌈', blocks:[
+      {dx:0,dy:0,dz:0,type:'rainbow'},{dx:0,dy:1,dz:0,type:'rainbow'},
+      {dx:2,dy:0,dz:0,type:'rainbow'},{dx:2,dy:1,dz:0,type:'rainbow'},
+      {dx:0,dy:2,dz:0,type:'rainbow'},{dx:1,dy:2,dz:0,type:'rainbow'},{dx:2,dy:2,dz:0,type:'rainbow'} ] },
+  { id:'tree', name:'Little Tree', emoji:'🌳', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},
+      {dx:0,dy:2,dz:0,type:'leaf'},{dx:1,dy:2,dz:0,type:'leaf'},{dx:-1,dy:2,dz:0,type:'leaf'},
+      {dx:0,dy:2,dz:1,type:'leaf'},{dx:0,dy:2,dz:-1,type:'leaf'},{dx:0,dy:3,dz:0,type:'leaf'} ] },
+];
+
 /* Build-count milestones 🧱 — celebrate blocks placed, separate from the one-time stickers */
 ABC.BUILD_MILESTONES = {
   10:  '🧱 10 blocks placed! You are becoming a real builder!',
