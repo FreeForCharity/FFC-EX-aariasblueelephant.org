@@ -20,6 +20,7 @@ ABC.stickers = (function () {
     { id:'25-stars',        emoji:'⭐', label:'Star Collector',  hint:'Earn 25 shiny stars!' },
     { id:'all-quests-day',  emoji:'🎆', label:'Adventure Ace',   hint:'Finish all 3 adventures in one day!' },
     { id:'surprise-pocket', emoji:'🎁', label:'Lucky Find',      hint:'Open the surprise pocket in your bag!' },
+    { id:'copycat',         emoji:'🐱', label:'Copy Cat',        hint:'Copy a Copy Cat pattern perfectly!' },
   ];
 
   const earned = new Set();

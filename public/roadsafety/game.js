@@ -246,6 +246,17 @@ function practiceLine(counts){
   if (!top || topN === 0) return "Perfect safety — nothing to practice! 🌟";
   return "Let's practice: " + (PRACTICE_MSG[top] || top);
 }
+/* which safety concepts each event type exercises (for adaptive practice + mastery decay) */
+const EVENT_CONCEPTS = {
+  light:["redLight"], stopsign:["stopSign"], kids:["crosswalk"],
+  festival:["crosswalk","speeding"], emergency:["siren"],
+  construction:["cones","speeding"], school:["schoolZone","speeding"],
+};
+/* warm, never-failure names used by the intro briefing and the results cheer */
+const PRACTICE_NAME = {
+  stopSign:"stop signs 🛑", redLight:"red lights 🚦", crosswalk:"crosswalks 🚸",
+  siren:"pulling over for sirens 🚑", cones:"construction cones 🚧",
+};
 
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
@@ -267,7 +278,7 @@ const S = {
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
   streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1, safeStops:0,
   air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
-  paused:false, violCounts:{}, curve:[], curveNext:0, practiceLine:"",
+  paused:false, violCounts:{}, curve:[], curveNext:0, practiceLine:"", practiceFocus:[],
 };
 let cam = null;
 const input = { left:false, right:false, go:false, stop:false };
@@ -552,7 +563,74 @@ function genEvents(li){
       take(d - 150, d + 150);
     }
   }
+  /* ---------- adaptive practice: a little extra of what this child finds hard ----
+     Looks at lifetime per-concept violation totals (save.concepts), picks the 1-2
+     weakest concepts that this level can actually host, and gently adds AT MOST 2
+     extra events total — placed through the same overlap/`busy` spacing rules as
+     everything else, so the route never gets crowded. Deterministic per run
+     (placement comes from hash(len)+fixed fractions, not Math.random). */
+  const practiced = [];
+  addAdaptivePractice: {
+    const hist = save && save.concepts;
+    if (!hist) break addAdaptivePractice;
+    const CAN = {                       // concepts this level's CFG can host as extra events
+      stopSign:  cfg.stops  > 0,
+      redLight:  cfg.lights > 0,
+      crosswalk: true,                  // a kids crosswalk fits any route
+      siren:     cfg.emerg  > 0,
+      cones:     cfg.constr > 0,
+    };
+    const weak = Object.keys(hist)
+      .filter(k => hist[k] > 0 && CAN[k])
+      .sort((a, b) => (hist[b] - hist[a]) || (a < b ? -1 : 1))   // deterministic tie-break
+      .slice(0, 2);
+    if (!weak.length) break addAdaptivePractice;
+    const FRACS = [.34, .58, .78];
+    const placePractice = (concept, n) => {
+      const fr = FRACS[(n + Math.floor(hash(len * .001 + concept.length) * 3)) % 3];
+      const before = evs.length;
+      if (concept === "stopSign"){ place("stopsign", fr); return evs.length > before; }
+      if (concept === "redLight"){ place("light", fr);    return evs.length > before; }
+      if (concept === "crosswalk"){
+        for (let k = 0; k < 26; k++){
+          const d = len * fr + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * 130;
+          if (d < 750 || d > len - 950 || overlaps(d - 320, d + 320)) continue;
+          evs.push({ type:"kids", at:d, count:2 }); take(d - 320, d + 320);
+          return true;
+        }
+        return false;
+      }
+      if (concept === "siren"){
+        for (let d = Math.max(1400, len * fr); d < len - 1700; d += 160){
+          if (overlaps(d - 700, d + 950)) continue;
+          evs.push({ type:"emergency", at:d }); take(d - 700, d + 950);
+          return true;
+        }
+        return false;
+      }
+      if (concept === "cones"){
+        for (let s = len * fr; s < len - 1400; s += 140){
+          if (overlaps(s - 240, s + 1140)) continue;
+          evs.push({ type:"construction", from:s, to:s + 900, limit:10,
+                     lane: Math.floor(hash(s) * cfg.lanes) });
+          take(s - 280, s + 1180);
+          return true;
+        }
+        return false;
+      }
+      return false;
+    };
+    let budget = 2;                                    // hard cap on extra events per run
+    for (const c of weak){
+      if (budget <= 0) break;
+      const want = Math.min(budget, (c === weak[0] && hist[c] >= 3) ? 2 : 1);
+      let got = 0;
+      for (let n = 0; n < want; n++) if (placePractice(c, n)) got++;
+      if (got){ practiced.push(c); budget -= got; }
+    }
+  }
   evs.sort((a, b) => (a.at ?? a.from) - (b.at ?? b.from));
+  evs._practice = practiced;   // which concepts got extra events (for intro line + results cheer)
   return evs;
 }
 function laneCFor(cfg, i){ return -(cfg.lanes * LANE_W / 2) + LANE_W * (i + .5); }
@@ -620,7 +698,9 @@ function openIntro(i){
   S.li = i; S.veh = VEHICLES[i]; S.cfg = CFG[i]; S.rt = ROUTES[i];
   document.getElementById("introTitle").textContent = `Level ${i+1}: ${S.cfg.title}`;
   document.getElementById("introRoute").textContent = `📍 ${S.rt.name} • real Mountain House streets`;
-  const types = [...new Set(genEvents(i).map(e => e.type))];
+  const gevs = genEvents(i);
+  const types = [...new Set(gevs.map(e => e.type))];
+  const practicing = gevs._practice || [];
   const RL = {
     light:"🚦 Stop at red lights", stopsign:"🛑 FULL stop at stop signs",
     kids:"🚸 Stop for people in crosswalks", school:"🏫 15 mph in school zones",
@@ -632,6 +712,7 @@ function openIntro(i){
     `<div class="rule">⚡ Speed limit: ${S.cfg.base} mph (lower in special zones)</div>` +
     types.map(t => `<div class="rule">${RL[t]}</div>`).join("") +
     (S.cfg.bumps ? `<div class="rule">⚠️ Jumps are ONLY ok at closed events like this — never on open streets!</div>` : "") +
+    (practicing.length ? `<div class="rule">💙 Today we'll practice ${practicing.map(c => PRACTICE_NAME[c] || c).join(" and ")} a little extra!</div>` : "") +
     `<div class="rule">🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!</div>` +
     `<div class="rule" style="font-size:11px;opacity:.7;margin-top:6px">🛰 Real aerial imagery: USDA NAIP (public domain) • streets © OpenStreetMap</div>`;
   drawIntroMap(i);
@@ -673,10 +754,12 @@ function beginRun(){
   S.amb = null; S.toasts = []; S.banner = null; S.shake = 0;
   S.speedTimer = 0; S.quizBonus = 0; S.air = null; S.airPts = 0;
   S.streak = 0; S.bestStreak = 0; S.mult = 1; S.boostCharge = 0; S.boost = 0; S.safeStops = 0;
-  S.violCounts = {}; S.curve = []; S.curveNext = 0; S.practiceLine = "";
+  S.violCounts = {}; S.curve = []; S.curveNext = 0; S.practiceLine = ""; S.practiceFocus = [];
   refreshStreakChip(); document.getElementById("boostBtn").classList.add("hidden");
   updateBoostCharge();
-  S.events = genEvents(S.li).map(e => initEvent(e, S.cfg));
+  const gevs = genEvents(S.li);           // deterministic — matches what the intro promised
+  S.practiceFocus = gevs._practice || [];
+  S.events = gevs.map(e => initEvent(e, S.cfg));
   S.o = laneC(S.cfg.lanes - 1);
   S.houses = genHouses(S.li);
   S.props = genProps(S.li);
@@ -2523,9 +2606,21 @@ function finishLevel(){
   S.finalScore = clamp(Math.round(S.score + S.quizBonus), 0, 100);
   S.curve[20] = S.finalScore;                 // close out the safety curve at the finish line
   S.practiceLine = practiceLine(S.violCounts);
+  // if the extra-practice concept came out clean, celebrate that instead of a generic nudge
+  const nailed = (S.practiceFocus || []).filter(c => !S.violCounts[c]);
+  if (nailed.length){
+    const cheer = `You nailed your ${(PRACTICE_NAME[nailed[0]] || nailed[0])} practice! 🌟`;
+    const hadOops = Object.keys(S.violCounts).some(k => S.violCounts[k] > 0);
+    S.practiceLine = hadOops ? cheer + " " + S.practiceLine : cheer;
+  }
   // lifetime per-concept tally, for the "what to practice" nudge
   save.concepts = save.concepts || {};
   for (const k in S.violCounts) save.concepts[k] = (save.concepts[k] || 0) + S.violCounts[k];
+  // mastery decay: a clean run on a concept that was present fades its practice weighting
+  const present = new Set();
+  for (const e of S.events) (EVENT_CONCEPTS[e.type] || []).forEach(c => present.add(c));
+  for (const c of present)
+    if (!S.violCounts[c] && save.concepts[c] > 0) save.concepts[c]--;
   if (S.finalScore >= 70){
     const stars = S.finalScore >= 90 ? 3 : S.finalScore >= 78 ? 2 : 1;
     S.lastStars = stars;

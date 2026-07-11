@@ -82,6 +82,8 @@ function gatedItems() {
   const items = HH.SCENARIOS.map(sc => ({ id: "scenario:" + sc.id, title: sc.emoji + " " + sc.title }));
   items.push({ id: "lesson:feelings", title: "💓 Feelings Lesson" });
   items.push({ id: "lesson:secrets", title: "🤫 Secrets Lesson" });
+  // Getting Ready appointment-prep walkthroughs (Tier-A level content)
+  (HH.PREP || []).forEach(p => items.push({ id: "prep:" + p.id, title: p.emoji + " " + p.title + " (Getting Ready)" }));
   return items;
 }
 function formatDate(iso) {
@@ -1171,6 +1173,7 @@ let practiceState = null;
 
 function enterPractice() {
   showScreen("practiceScreen");
+  prepState = null;
   practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
   renderPractice();
 }
@@ -1256,6 +1259,43 @@ function renderScenarioPicker(body) {
     const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = sc.title;
     card.appendChild(em); card.appendChild(tt);
     card.addEventListener("click", () => attemptStartScenario(sc));
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+  renderPrepSection(body);
+}
+/* ---- Getting Ready: appointment-prep picker section (below the
+   safety scenarios, clearly grouped — no wrong answers inside) ---- */
+function renderPrepSection(body) {
+  if (!HH.PREP || !HH.PREP.length) return;
+  const title = document.createElement("h2");
+  title.className = "practice-title prep-title";
+  title.textContent = HH.PREP_TITLE;
+  body.appendChild(title);
+  const sub = document.createElement("p");
+  sub.className = "practice-sub";
+  sub.textContent = HH.PREP_SUB;
+  body.appendChild(sub);
+  const grid = document.createElement("div"); grid.className = "scenario-grid";
+  HH.PREP.forEach(p => {
+    const doneKey = "prep:" + p.id;
+    const card = document.createElement("button");
+    card.className = "scenario-card"; card.dataset.prepId = p.id;
+    card.title = "Practice: " + p.title;
+    if (!isApproved("prep:" + p.id)) {
+      const badge = document.createElement("div"); badge.className = "lock-badge"; badge.textContent = "🔒";
+      card.appendChild(badge);
+    } else if (save.done.includes(doneKey)) {
+      // progress marker only — nothing is hidden or locked because of this
+      const badge = document.createElement("div"); badge.className = "done-badge";
+      badge.textContent = isScenarioMastered(doneKey) ? "✅🏅" : "✅";
+      card.appendChild(badge);
+      card.classList.add("scenario-done");
+    }
+    const em = document.createElement("div"); em.className = "em"; em.textContent = p.emoji;
+    const tt = document.createElement("div"); tt.className = "tt"; tt.textContent = p.title;
+    card.appendChild(em); card.appendChild(tt);
+    card.addEventListener("click", () => attemptStartPrep(p));
     grid.appendChild(card);
   });
   body.appendChild(grid);
@@ -1573,6 +1613,158 @@ function quitScenario() {
 }
 
 /* ---------------------------------------------------------------
+   6b. GETTING READY — appointment-prep walkthroughs
+   Sequential step cards (reuses the step-card renderer): big emoji
+   scene per step, auto-narrated, Next-only — NO quizzes and NO wrong
+   answers. Each walkthrough embeds exactly one interactive coping
+   beat (breath circle / raise-your-hand / squeeze-hands). Completion
+   awards a sticker + calm-aware confetti and records a trial entry
+   under "prep:<id>" (firstTryCorrect true — there are no wrong
+   answers) so it shows in the Grown-Ups progress report.
+   --------------------------------------------------------------- */
+let prepState = null; // { prep, idx } while a walkthrough is running
+
+function attemptStartPrep(p) {
+  const itemId = "prep:" + p.id;
+  if (!isApproved(itemId)) {
+    showKidLockModal(itemId, () => attemptStartPrep(p));
+    return;
+  }
+  prepState = { prep: p, idx: -1 }; // -1 = intro card
+  renderPrepStep();
+}
+function prepNextBtn(card, label) {
+  const btn = document.createElement("button");
+  btn.className = "btn-primary";
+  btn.textContent = label || "Next ▶";
+  btn.title = "Go to the next step";
+  btn.addEventListener("click", () => { SND.pop(); prepState.idx++; renderPrepStep(); });
+  card.appendChild(btn);
+  return btn;
+}
+function renderPrepStep() {
+  if (!prepState) return;
+  const p = prepState.prep;
+  const body = $("practiceBody"); body.innerHTML = "";
+  if (prepState.idx >= p.steps.length) { renderPrepDone(body); return; }
+
+  if (prepState.idx === -1) {
+    // intro card
+    const card = stepCardShell(p.emoji + " " + p.title);
+    const hero = document.createElement("div"); hero.className = "prep-hero"; hero.textContent = p.emoji;
+    card.appendChild(hero);
+    speakRow(card, p.intro);
+    prepNextBtn(card, "Let's go! ▶");
+    body.appendChild(card);
+    setNilu(p.intro);
+    return;
+  }
+
+  const step = p.steps[prepState.idx];
+  const card = stepCardShell("Step " + (prepState.idx + 1) + " of " + p.steps.length + " · " + step.label);
+  const hero = document.createElement("div"); hero.className = "prep-hero"; hero.textContent = step.emoji;
+  card.appendChild(hero);
+  speakRow(card, step.text);
+  if (step.coping) buildCopingBeat(card, step);
+  else prepNextBtn(card);
+  body.appendChild(card);
+  setNilu(step.text);
+}
+/* one gentle interactive coping beat; Next appears once it is practiced */
+function buildCopingBeat(card, step) {
+  const promptRow = speakRow(card, step.copingPrompt);
+  promptRow.classList.add("prep-coping-prompt");
+  const wrap = document.createElement("div"); wrap.className = "prep-coping-wrap";
+  card.appendChild(wrap);
+
+  function copingComplete(btn) {
+    btn.disabled = true;
+    SND.chime();
+    const r = btn.getBoundingClientRect();
+    confettiBurst(r.left + r.width / 2, r.top + r.height / 2, 10);
+    speakRow(card, step.copingDone);
+    speak(step.copingDone);
+    prepNextBtn(card);
+  }
+
+  if (step.coping === "breath") {
+    // tap-along breath circle: 3 slow breaths
+    const need = 3;
+    let taps = 0;
+    const circle = document.createElement("button");
+    circle.className = "prep-coping-btn breath-circle";
+    circle.title = "Tap to take a slow breath";
+    circle.innerHTML = '<span class="em">🫧</span><span class="nm">Breathe (' + need + ' left)</span>';
+    circle.addEventListener("click", () => {
+      taps++;
+      circle.classList.remove("breathing"); void circle.offsetWidth; circle.classList.add("breathing");
+      speak("Breathe in… and out.");
+      if (taps >= need) { copingComplete(circle); return; }
+      circle.querySelector(".nm").textContent = "Breathe (" + (need - taps) + " left)";
+    });
+    wrap.appendChild(circle);
+  } else if (step.coping === "hand") {
+    // practice the raise-your-hand pause once
+    const btn = document.createElement("button");
+    btn.className = "prep-coping-btn";
+    btn.title = "Tap to practice raising your hand";
+    btn.innerHTML = '<span class="em">✋</span><span class="nm">Raise your hand!</span>';
+    btn.addEventListener("click", () => {
+      btn.classList.add("raised");
+      copingComplete(btn);
+    });
+    wrap.appendChild(btn);
+  } else if (step.coping === "squeeze") {
+    // squeeze-hands trick: press once
+    const btn = document.createElement("button");
+    btn.className = "prep-coping-btn";
+    btn.title = "Tap to practice the squeeze-hands trick";
+    btn.innerHTML = '<span class="em">🤲</span><span class="nm">Squeeze… and let go!</span>';
+    btn.addEventListener("click", () => {
+      btn.classList.remove("squeezing"); void btn.offsetWidth; btn.classList.add("squeezing");
+      copingComplete(btn);
+    });
+    wrap.appendChild(btn);
+  } else {
+    // unknown coping type: never block the child — just show Next
+    prepNextBtn(card);
+  }
+}
+function renderPrepDone(body) {
+  const p = prepState.prep;
+  const doneKey = "prep:" + p.id;
+  if (!prepState.awarded) {
+    prepState.awarded = true;
+    if (!save.done.includes(doneKey)) save.done.push(doneKey);
+    saveSave();
+    // completion record: there are no wrong answers in a walkthrough,
+    // so every finished run counts as a first-try-correct completion.
+    trialRecordCompletion(doneKey, false);
+    awardSticker(1);
+    confettiBig(); SND.chime(); // confettiBig is calm-aware (reduced-motion no-op)
+  }
+  const card = stepCardShell("You Did It!");
+  const hero = document.createElement("div"); hero.className = "prep-hero"; hero.textContent = p.emoji + "🌟";
+  card.appendChild(hero);
+  speakRow(card, HH.PREP_DONE_LINE);
+  const actions = document.createElement("div"); actions.className = "resolve-actions";
+  const again = document.createElement("button"); again.className = "btn-secondary"; again.textContent = "Practice again 🔁";
+  again.title = "Practice this walkthrough again";
+  again.addEventListener("click", () => { prepState = { prep: p, idx: -1 }; renderPrepStep(); });
+  const more = document.createElement("button"); more.className = "btn-primary"; more.textContent = "All stories ➡️";
+  more.title = "Back to the practice picker";
+  more.addEventListener("click", () => {
+    prepState = null;
+    practiceState = { scenario: null, step: "pick", usedTell: [], tellPhase: "ask1" };
+    renderPractice();
+  });
+  actions.appendChild(again); actions.appendChild(more);
+  card.appendChild(actions);
+  body.appendChild(card);
+  setNilu(HH.PREP_DONE_LINE);
+}
+
+/* ---------------------------------------------------------------
    7. ADULT SIGN-OFF: adult check challenge, review sheet, kid lock
    --------------------------------------------------------------- */
 let globalToastTimer = null;
@@ -1718,6 +1910,21 @@ function buildReviewScriptHTML(itemId) {
       F.signs.map(s => "<li>" + s.emoji + " " + escHtml(s.text) + "</li>").join("") + "</ul></div>";
     html += reviewField("Lesson", F.lesson);
     html += reviewChoiceBlock("Quiz", F.quiz.q, F.quiz.a);
+  } else if (itemId.indexOf("prep:") === 0) {
+    const prepId = itemId.slice("prep:".length);
+    const p = (HH.PREP || []).find(x => x.id === prepId);
+    if (!p) return "<p>Item not found.</p>";
+    html += '<div class="review-header"><span class="review-emoji">' + p.emoji + "</span><h2>" + escHtml(p.title) + " (Getting Ready)</h2></div>";
+    html += reviewField("What this is", "An appointment-preparation walkthrough (no safety choices, no wrong answers): the child steps through exactly what happens, what they will see, hear and feel, and practices one gentle coping tool.");
+    html += reviewField("Intro", p.intro);
+    p.steps.forEach((st, i) => {
+      html += reviewField("Step " + (i + 1) + " — " + st.label + " " + st.emoji, st.text);
+      if (st.coping) {
+        html += reviewField("Coping practice (interactive)", st.copingPrompt);
+        html += reviewField("After practicing", st.copingDone);
+      }
+    });
+    html += reviewField("Ending line (every walkthrough)", HH.PREP_DONE_LINE);
   } else if (itemId === "lesson:secrets") {
     const S = HH.SECRETS;
     html += '<div class="review-header"><span class="review-emoji">🤫</span><h2>Secrets Lesson</h2></div>';
@@ -1832,19 +2039,23 @@ function renderSignoffSection() {
       : '<p class="gu-note">All sections are approved on this device. ✓</p>') +
     "<p>Reviewer on file: <b>" + (signoff.reviewer ? escHtml(signoff.reviewer) : "—") + "</b></p>" +
     '<table class="gu-table signoff-table"><thead><tr><th>Item</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows + "</tbody></table>" +
-    '<div class="gu-note">Every scenario and both lessons must be approved once before a child can play them. ' +
+    '<div class="gu-note">Every scenario, both lessons and the Getting Ready walkthroughs must be approved once before a child can play them. ' +
     "You can re-lock any section at any time.</div>";
 }
 /* ---- progress report: factual, adult-facing, print-friendly ---- */
 function renderProgressSection() {
   const trials = save.trials || {};
-  const total = HH.SCENARIOS.length;
+  // scenarios use their raw id as the trial key; Getting Ready walkthroughs
+  // use "prep:<id>" (there are no wrong answers, so first-try is always ✓)
+  const reportItems = HH.SCENARIOS.map(sc => ({ key: sc.id, emoji: sc.emoji, title: sc.title }))
+    .concat((HH.PREP || []).map(p => ({ key: "prep:" + p.id, emoji: p.emoji, title: p.title + " (Getting Ready)" })));
+  const total = reportItems.length;
   let practicedCount = 0, masteredCount = 0;
-  const rows = HH.SCENARIOS.map(sc => {
-    const t = trials[sc.id];
+  const rows = reportItems.map(sc => {
+    const t = trials[sc.key];
     const practiced = !!(t && t.lastPlayed);
     if (practiced) practicedCount++;
-    const mastered = isScenarioMastered(sc.id);
+    const mastered = isScenarioMastered(sc.key);
     if (mastered) masteredCount++;
     const timesPracticed = t && t.completions ? t.completions : 0;
     const firstTry = t && t.firstTryCorrect !== null && t.firstTryCorrect !== undefined
@@ -1860,10 +2071,10 @@ function renderProgressSection() {
   const handStatus = filledHand.length + " of 5 helpers chosen" +
     (placesCovered.size ? " — covers: " + Array.from(placesCovered).join(", ") : " — no places covered yet");
   return "<h3>📊 Progress</h3>" +
-    "<p class=\"gu-summary\">" + practicedCount + " of " + total + " scenarios practiced &nbsp;•&nbsp; " +
+    "<p class=\"gu-summary\">" + practicedCount + " of " + total + " activities practiced &nbsp;•&nbsp; " +
     masteredCount + " of " + total + " mastered (3 first-try-correct practice dates).</p>" +
     "<p class=\"gu-summary\">Helping Hand: " + escHtml(handStatus) + ".</p>" +
-    '<table class="gu-table progress-table"><thead><tr><th>Scenario</th><th>Times Practiced</th>' +
+    '<table class="gu-table progress-table"><thead><tr><th>Activity</th><th>Times Practiced</th>' +
     "<th>First-Try Correct</th><th>Practice Dates</th><th>Mastered</th><th>Last Played</th></tr></thead><tbody>" +
     rows + "</tbody></table>";
 }
@@ -1965,6 +2176,8 @@ window.__HHTEST = {
   handleBuilding, handleObject, handleHelper, handleActor, handleRoomEnter, showScreen,
   startFindGame, quitFindGame,
   attemptStartScenario, quitScenario, handleScenarioHelperTap,
+  attemptStartPrep,
+  get prepState() { return prepState; },
   getSignoffState,
   approveItemForTest(itemId, name) { approveItem(itemId, name); },
   lockItemForTest(itemId) { lockItem(itemId); },

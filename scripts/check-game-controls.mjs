@@ -52,6 +52,23 @@ for (const [game, cfg] of Object.entries(GAMES)) {
   }
 }
 
+// ABE Game Kit (grocery + every future kit game): the HUD is built from a JS
+// template in kit.js, so we check the kit once and all kit games inherit it.
+{
+  const src = readFileSync('public/gamekit/kit.js', 'utf8');
+  const btns = clusterButtons(src, 'kHud');
+  if (!btns || btns.length === 0) fail('gamekit', 'R1', 'HUD cluster #kHud not found in kit.js');
+  else {
+    if (idOf(btns[0]) !== 'kMute') fail('gamekit', 'R1', `mute (#kMute) must be FIRST in #kHud; found #${idOf(btns[0])} first`);
+    for (const b of btns) if (!hasTitle(b)) fail('gamekit', 'R2', `#${idOf(b)} has no title tooltip`);
+    for (const id of ['kMovie', 'kShare']) {
+      const b = btns.find((x) => idOf(x) === id);
+      if (!b) fail('gamekit', 'R3', `expected button #${id} not found in #kHud`);
+      else if (!hasVisibleLabel(b)) fail('gamekit', 'R3', `#${id} needs a visible text label`);
+    }
+  }
+}
+
 // helpinghands: mute is a repeated .mute-btn on each screen, not one cluster
 {
   const html = readFileSync('public/helpinghands/index.html', 'utf8');
@@ -81,4 +98,4 @@ if (errors.length) {
   console.error('\nThe standard lives in scripts/check-game-controls.mjs — fix the game or (deliberately) update the rule.\n');
   process.exit(1);
 }
-console.log('check-game-controls: all 7 games pass the control standard ✓');
+console.log('check-game-controls: all 7 games + the game kit pass the control standard ✓');

@@ -503,6 +503,7 @@ try{
     <button class="menuBtn deskOnly" id="slimeBtn" title="Slime Lab — mix and describe your slime">🌈<span class="btnTxt"> Slime Lab</span></button>
     <button class="menuBtn deskOnly" id="oreoBtn" title="Oreo Kitchen — make cookie treats">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn deskOnly" id="kindBtn" title="Kind Words — practice friendly sentences">💌<span class="btnTxt"> Kind Words</span></button>
+    <button class="menuBtn deskOnly" id="copycatBtn" title="Copy Cat — build a copy of the glowing pattern">🐱<span class="btnTxt"> Copy Cat</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>
@@ -563,7 +564,7 @@ try{
    window.__ABC_SKIN so js/world.js derives ABC.SKIN/MODERN/SMOOTH from the
    exact same value. Modern is the new default. */
 (function () {
-  var V = 42;                                   // cache-bust for all game scripts
+  var V = 43;                                   // cache-bust for all game scripts
   var skin = null;
   try { skin = localStorage.getItem('abcSkin'); } catch (e) {}
   if (skin !== 'modern' && skin !== 'smooth' && skin !== 'classic') skin = 'modern';
@@ -573,7 +574,7 @@ try{
   var FILES = [
     'js/data.js', 'js/audio.js', 'js/world.js', 'js/animals.js', 'js/squishy.js',
     'js/weather.js', 'js/parks.js', 'js/shops.js', 'js/signs.js', 'js/portal.js',
-    'js/ui.js', 'js/activities.js', 'js/music.js', 'js/pet.js', 'js/stickers.js',
+    'js/ui.js', 'js/activities.js', 'js/copycat.js', 'js/music.js', 'js/pet.js', 'js/stickers.js',
     'js/friends.js', 'js/overnight.js', 'js/photo.js', 'js/dig.js', 'js/main.js'
   ];
 
