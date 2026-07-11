@@ -92,13 +92,14 @@ try{
 
   <!-- Touch controls -->
   <div id="touch" class="hidden">
-    <div class="tgroup">
-      <button class="tbtn" id="btnL">◀</button>
-      <button class="tbtn" id="btnR">▶</button>
+    <!-- kit-standard joystick (same as every other ABE game): steer left/right,
+         push up to GO, pull down to STOP — the elephant rides the knob -->
+    <div id="rsStick" title="Steer with the stick — push up to go, pull down to stop">
+      <div id="rsKnob"><img src="/abe-logo.png" alt=""></div>
     </div>
     <div class="tgroup right">
-      <button class="tbtn go" id="btnGo">▲<br>GO</button>
-      <button class="tbtn stop" id="btnStop">✋<br>STOP</button>
+      <button class="tbtn go" id="btnGo" title="Pedal — go forward">▲<br>GO</button>
+      <button class="tbtn stop" id="btnStop" title="Brake — stop safely">✋<br>STOP</button>
     </div>
   </div>
 
