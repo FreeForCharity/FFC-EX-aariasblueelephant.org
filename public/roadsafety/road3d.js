@@ -123,13 +123,28 @@ window.GL3D = (function(){
     g.rotation.x = -Math.PI / 2; g.position.y = -.05; g.receiveShadow = true;
     const mid = rp(S.rt.len / 2, 0); g.position.x = mid.x; g.position.z = mid.z;
     grpStatic.add(g);
-    // soft hills ring
+    // soft hills ring — pushed outward until clear of the ROAD, so a dome never
+    // sits on the street (it used to swallow the level-2 spawn near Questa Park)
     const hillM = new T.MeshLambertMaterial({ color: new T.Color(TH.g2).multiplyScalar(.75) });
+    const roadClear = (x, z, rad) => {
+      for (let d = 0; d <= S.rt.len; d += 30){
+        const p = rp(d, 0);
+        if (Math.hypot(p.x - x, p.z - z) < rad + 45) return false;
+      }
+      return true;
+    };
     for (let i = 0; i < 14; i++){
       const a = i / 14 * Math.PI * 2;
-      const h = new T.Mesh(new T.SphereGeometry(140 + hash(i) * 90, 24, 12), hillM);
+      const rad = 140 + hash(i) * 90;
+      const h = new T.Mesh(new T.SphereGeometry(rad, 24, 12), hillM);
       h.scale.y = .16 + hash(i + 3) * .1;
-      h.position.set(mid.x + Math.cos(a) * (560 + hash(i + 7) * 160), -12, mid.z + Math.sin(a) * (560 + hash(i + 7) * 160));
+      let ring = 560 + hash(i + 7) * 160, x, z, ok = false;
+      for (let tries = 0; tries < 14 && !ok; tries++, ring += 90){
+        x = mid.x + Math.cos(a) * ring; z = mid.z + Math.sin(a) * ring;
+        ok = roadClear(x, z, rad);
+      }
+      if (!ok) continue;               // no clear spot on this bearing — skip the hill
+      h.position.set(x, -12, z);
       grpStatic.add(h);
     }
     // instanced trees & houses along the route
