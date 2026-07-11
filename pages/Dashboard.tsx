@@ -103,7 +103,15 @@ interface GamePlayRow {
     game: string;
     day: string; // YYYY-MM-DD (UTC)
     plays: number;
+    seconds: number; // aggregate anonymous play time (0 for rows predating time tracking)
 }
+
+// "3h 24m" / "18m" style label for aggregate seconds
+const fmtDuration = (s: number): string => {
+    if (s < 60) return s > 0 ? '<1m' : '0m';
+    const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
 
 const Dashboard: React.FC = () => {
     const { user, isBoard, isDonor, updateAvatar } = useAuth();
@@ -168,6 +176,7 @@ const Dashboard: React.FC = () => {
                     game: String(r.game),
                     day: String(r.day).slice(0, 10),
                     plays: Number(r.plays) || 0,
+                    seconds: Number(r.seconds) || 0,
                 }))
             );
         } catch (err: any) {
@@ -2226,9 +2235,17 @@ const Dashboard: React.FC = () => {
         const plays7 = rows.filter(r => r.day >= cutoff7).reduce((sum, r) => sum + r.plays, 0);
         const plays30 = rows.filter(r => r.day >= cutoff30).reduce((sum, r) => sum + r.plays, 0);
 
+        // Aggregate play time (rows from before time tracking simply contribute 0)
+        const totalSeconds = rows.reduce((sum, r) => sum + r.seconds, 0);
+        const seconds7 = rows.filter(r => r.day >= cutoff7).reduce((sum, r) => sum + r.seconds, 0);
+
         // Per-game all-time totals, sorted desc
         const perGame = new Map<string, number>();
-        rows.forEach(r => perGame.set(r.game, (perGame.get(r.game) || 0) + r.plays));
+        const perGameSeconds = new Map<string, number>();
+        rows.forEach(r => {
+            perGame.set(r.game, (perGame.get(r.game) || 0) + r.plays);
+            perGameSeconds.set(r.game, (perGameSeconds.get(r.game) || 0) + r.seconds);
+        });
         const ranked = Array.from(perGame.entries()).sort((a, b) => b[1] - a[1]);
         const maxPlays = ranked.length > 0 ? ranked[0][1] : 0;
 
@@ -2237,10 +2254,12 @@ const Dashboard: React.FC = () => {
         rows.forEach(r => byGameDay.set(`${r.game}|${r.day}`, (byGameDay.get(`${r.game}|${r.day}`) || 0) + r.plays));
 
         const statCards = [
-            { label: 'Total Plays (All-Time)', value: totalPlays, iconClass: 'bg-brand-purple/10 text-brand-purple' },
-            { label: 'Plays Today', value: playsToday, iconClass: 'bg-brand-cyan/10 text-brand-cyan' },
-            { label: 'Last 7 Days', value: plays7, iconClass: 'bg-brand-green/10 text-brand-green' },
-            { label: 'Last 30 Days', value: plays30, iconClass: 'bg-amber-500/10 text-amber-500' },
+            { label: 'Total Plays (All-Time)', value: totalPlays.toLocaleString(), iconClass: 'bg-brand-purple/10 text-brand-purple' },
+            { label: 'Plays Today', value: playsToday.toLocaleString(), iconClass: 'bg-brand-cyan/10 text-brand-cyan' },
+            { label: 'Last 7 Days', value: plays7.toLocaleString(), iconClass: 'bg-brand-green/10 text-brand-green' },
+            { label: 'Last 30 Days', value: plays30.toLocaleString(), iconClass: 'bg-amber-500/10 text-amber-500' },
+            { label: 'Time Played (All-Time)', value: fmtDuration(totalSeconds), iconClass: 'bg-rose-500/10 text-rose-500' },
+            { label: 'Time · Last 7 Days', value: fmtDuration(seconds7), iconClass: 'bg-sky-500/10 text-sky-500' },
         ];
 
         return (
@@ -2249,7 +2268,7 @@ const Dashboard: React.FC = () => {
                     <div>
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Game Plays 🎮</h2>
                         <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-                            Anonymous tally only — no personal data, no identifiers; one count per game per session.
+                            Anonymous tally only — no personal data, no identifiers; one count per game per session, plus aggregate active-play time.
                         </p>
                     </div>
                     <button
@@ -2284,7 +2303,7 @@ const Dashboard: React.FC = () => {
                 ) : rows.length > 0 && (
                     <>
                         {/* Summary Stat Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {statCards.map((card) => (
                                 <div key={card.label} className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                                     <div className="flex items-center gap-4">
@@ -2293,7 +2312,7 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div>
                                             <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">{card.label}</p>
-                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{card.value.toLocaleString()}</h3>
+                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{card.value}</h3>
                                         </div>
                                     </div>
                                 </div>
@@ -2312,7 +2331,15 @@ const Dashboard: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-1">
                                                 <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{gameLabel(slug)}</span>
-                                                <span className="text-xs font-black text-brand-purple dark:text-purple-300 ml-2 shrink-0">{count.toLocaleString()}</span>
+                                                <span className="text-xs font-black text-brand-purple dark:text-purple-300 ml-2 shrink-0">
+                                                    {count.toLocaleString()}
+                                                    {(perGameSeconds.get(slug) || 0) >= 60 && (
+                                                        <span className="text-slate-400 dark:text-slate-500 font-bold">
+                                                            {' '}· {fmtDuration(perGameSeconds.get(slug) || 0)}
+                                                            {count > 0 && ` (~${fmtDuration(Math.round((perGameSeconds.get(slug) || 0) / count))}/play)`}
+                                                        </span>
+                                                    )}
+                                                </span>
                                             </div>
                                             <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                                 <div

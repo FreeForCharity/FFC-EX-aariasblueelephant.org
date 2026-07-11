@@ -41,3 +41,31 @@ $$;
 
 revoke all on function public.record_game_play(text) from public;
 grant execute on function public.record_game_play(text) to anon, authenticated;
+
+-- Anonymous aggregate play TIME (seconds per game per day; no identifiers).
+-- Clients flush small batches of active-play seconds; clamped server-side.
+alter table public.game_play_counts add column if not exists seconds bigint not null default 0;
+
+create or replace function public.record_game_time(g text, s int)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if s is null or s < 5 then return; end if;
+  if s > 600 then s := 600; end if;
+  -- same allowlist as record_game_play — keep both in sync (and in the live DB)
+  if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
+               'doughlab','magnetblocks','helpinghands','grocery','dayplanner') then
+    return;
+  end if;
+  insert into public.game_play_counts (game, day, plays, seconds)
+  values (g, (now() at time zone 'utc')::date, 0, s)
+  on conflict (game, day)
+  do update set seconds = public.game_play_counts.seconds + excluded.seconds;
+end;
+$$;
+
+revoke all on function public.record_game_time(text, int) from public;
+grant execute on function public.record_game_time(text, int) to anon, authenticated;

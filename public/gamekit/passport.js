@@ -20,3 +20,35 @@
     }
   } catch (e) {}
 })();
+
+/* Anonymous aggregate play-time for legacy games (same posture as the play
+ * tally each game already sends: seconds per game per day, NO identifiers).
+ * Counts only visible-tab time, flushed in small batches. The anon key below
+ * is the same public key already inline in every game's page. */
+(function () {
+  try {
+    var slug = (document.currentScript && document.currentScript.dataset.game) || "";
+    if (!slug || slug === "nilus-world") return; // Nilu's World route stays analytics-free (COPPA follow-up)
+    var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM";
+    var acc = 0, last = performance.now();
+    function tick() {
+      var now = performance.now();
+      if (!document.hidden) acc += (now - last) / 1000;
+      last = now;
+    }
+    function flush() {
+      var s = Math.floor(acc);
+      if (s < 5) return;
+      acc -= s;
+      try {
+        fetch("https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_time", {
+          method: "POST", keepalive: true,
+          headers: { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ g: slug, s: s }),
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    setInterval(function () { tick(); if (acc >= 60) flush(); }, 5000);
+    addEventListener("pagehide", function () { tick(); flush(); });
+  } catch (e) {}
+})();
