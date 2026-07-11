@@ -136,7 +136,18 @@
   let scene, camera, renderer, player, beaconArrow, beaconRing, sun, ambient;
   const stations = {};          // id -> { x, z, sprite, baseY, mesh }
   const colliders = [];
+  const poofs = [];             // transient sparkle sprites when a step completes
   const W = 13, D = 10;
+
+  function sparkleBurst(x, y, z) {
+    if (K.reduceMotion) return;
+    for (let i = 0; i < 6; i++) {
+      const s = emojiSprite(["✨", "⭐", "💫"][i % 3], 0.7);
+      s.position.set(x + (Math.random() - 0.5) * 0.8, y, z + (Math.random() - 0.5) * 0.8);
+      scene.add(s);
+      poofs.push({ s, vy: 1.6 + Math.random(), vx: (Math.random() - 0.5) * 1.4, life: 1 });
+    }
+  }
 
   function emojiTexture(emoji, size) {
     const c = document.createElement("canvas"); c.width = c.height = size || 128;
@@ -385,6 +396,7 @@
     const st = stations[cur.station];
     st.sprite.scale.set(2.1, 2.1, 1);
     setTimeout(() => st.sprite.scale.set(1.5, 1.5, 1), 700 * K.speed());
+    sparkleBurst(st.sprite.position.x, st.baseY + 0.4, st.sprite.position.z);
     K.sfx.yes(); K.say(cur.line);
     K.toast(`${cur.emoji} ${cur.label} — done! ✅`);
     K.recordEvent("step", G.idx);
@@ -488,6 +500,13 @@
     for (const id in stations) {
       const st = stations[id];
       st.sprite.position.y = st.baseY + Math.sin(bob * 1.6 + st.x) * 0.06;
+    }
+    for (let i = poofs.length - 1; i >= 0; i--) {
+      const p = poofs[i];
+      p.life -= dt;
+      p.s.position.y += p.vy * dt; p.s.position.x += p.vx * dt;
+      p.s.material.opacity = Math.max(0, p.life);
+      if (p.life <= 0) { scene.remove(p.s); poofs.splice(i, 1); }
     }
     const curStep = G.plan[G.idx] && stepOf(G.plan[G.idx]);
     if (beaconArrow.visible && curStep) {
