@@ -125,8 +125,9 @@
     { id: "orange", emoji: "🍊", name: "an orange" },
     { id: "corn",   emoji: "🌽", name: "some corn" },
   ];
-  const MAX_LEVEL = 7;                 // one level per denomination taught (12 foods exist total)
-  const levelSize = (lvl) => Math.min(lvl, MAX_LEVEL);
+  const MAX_LEVEL = 7;                 // one level per denomination taught (7 coins & bills)
+  const MAX_LIST = 6;                  // the shopping list itself never grows past 6 of the 12 foods
+  const levelSize = (lvl) => Math.min(lvl, MAX_LIST);
   const REVEAL_BASE = 2.4, REVEAL_PER_ITEM = 1.7;   // seconds to look at the list before it hides
   const HINT_DELAY = 14;               // seconds of quiet shopping before the Hint button appears
 
@@ -332,14 +333,20 @@
     G.phase = "shop";
     document.getElementById("gLevel").style.display = "none";
     renderList(); refreshPhase();
-    K.say("Now find them! You can do it from memory. 🧠");
-    K.toast("Go find your list from memory! 🧠", 3200);
+    if (K.calm()) {
+      K.say("Now find them! Your list is right there to help you.");
+      K.toast("Go find your list — it's right there 📋💙", 3200);
+    } else {
+      K.say("Now find them! You can do it from memory. 🧠");
+      K.toast("Go find your list from memory! 🧠", 3200);
+    }
   }
   const foodById = (id) => FOODS.find((f) => f.id === id);
 
   function renderList() {
     const el = document.getElementById("gListItems");
-    const showAll = G.phase === "reveal";
+    // Calm Mode removes the memory pressure entirely: the list stays visible
+    const showAll = G.phase === "reveal" || K.calm();
     el.innerHTML = G.list.map((id) => {
       const got = G.got.includes(id);
       const peeked = G.peeked.includes(id);
@@ -355,7 +362,9 @@
     if (G.phase === "reveal") K.chip("Look and remember! 👀🧠");
     else if (G.phase === "shop") {
       K.chip(remaining.length
-        ? `Find ${remaining.length} more from memory! 🧠`
+        ? (K.calm()
+            ? "Find: " + remaining.map((id) => foodById(id).emoji).join(" ")
+            : `Find ${remaining.length} more from memory! 🧠`)
         : "All done! Go to the checkout ➡️ 🧾");
     } else if (G.phase === "line") K.chip("Waiting our turn 🌸");
     else if (G.phase === "scan") K.chip("Beep! Scan each food 🧾");
@@ -491,7 +500,11 @@
     // the cashier asks for one denomination (by level); the child finds it in a
     // purse holding ALL the coins (or all the bills). Wrong taps just teach the
     // other coin's name — no fail, no math, every tap says a money word out loud.
-    const target = DENOMS[Math.min(G.level, DENOMS.length) - 1];
+    // one new denomination per level; once every one is learned, practice them
+    // all — a different coin or bill each trip, chosen at random
+    const target = G.level >= MAX_LEVEL
+      ? DENOMS[Math.floor(Math.random() * DENOMS.length)]
+      : DENOMS[Math.min(G.level, DENOMS.length) - 1];
     const purse = DENOMS.filter((d) => d.kind === target.kind);
     const p = panel(`<h2>👛 Time to pay!</h2>
       <p>The cashier asks: <b>“One ${target.name}, please!”</b></p>
@@ -550,7 +563,7 @@
     panel(`<h2>🌟 What a memory!</h2>
       <p>You remembered your list, waited your turn, paid and bagged — a whole shopping trip!</p>
       <div class="gStamps">${"⭐".repeat(stamps)}${"☆".repeat(Math.max(0, 5 - stamps))}</div>
-      <p style="font-size:14px">Shopping trips: <b>${G.trips}</b>${leveledUp ? ` · Next time: <b>${levelSize(G.level)}</b> things to remember and a <b>${DENOMS[Math.min(G.level, DENOMS.length) - 1].name}</b>! 🧠💵` : " · You've learned every coin and bill! 🏆"}</p>
+      <p style="font-size:14px">Shopping trips: <b>${G.trips}</b>${leveledUp ? ` · Next time: <b>${levelSize(G.level)}</b> things to remember and a <b>${DENOMS[Math.min(G.level, DENOMS.length) - 1].name}</b>! 🧠💵` : " · You know every coin and bill — now we practice them all! 🏆"}</p>
       <button class="kBig" id="gAgain" title="Shop with a new list">🛒 New list!</button>`);
     document.getElementById("gAgain").addEventListener("pointerdown", () => { closePanel(); newList(); });
   }
