@@ -498,8 +498,9 @@ function updateBoostCharge(){
 const SCREENS = ["title","menu","intro","tip","quiz","cert","retry","results","settings","buckle"];
 function show(id){
   for (const s of SCREENS) document.getElementById(s).classList.toggle("hidden", s !== id);
-  document.getElementById("touch").classList.toggle("hidden",
-    !(id === null && ("ontouchstart" in window)));
+  // on-screen controls show on EVERY device while driving (kit standard —
+  // the joystick works with a mouse too, not just touch)
+  document.getElementById("touch").classList.toggle("hidden", id !== null);
   document.getElementById("raceHud").classList.toggle("hidden", id !== null);
   document.getElementById("pauseBtn").classList.toggle("hidden", id !== null);
   if (id !== null) document.getElementById("count").classList.add("hidden");
