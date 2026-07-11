@@ -2898,7 +2898,15 @@
     joystickEl = document.createElement('div');
     joystickEl.style.cssText = 'position:absolute; left:18px; bottom:18px; width:112px; height:112px; border-radius:50%; background:rgba(255,255,255,0.25); border:3px solid rgba(255,255,255,0.6); touch-action:none; z-index:40; display:none;';
     var knob = document.createElement('div');
-    knob.style.cssText = 'position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px; border-radius:50%; background:rgba(255,255,255,0.9); border:3px solid rgba(120,120,120,0.4);';
+    knob.style.cssText = 'position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px; border-radius:50%; background:rgba(255,255,255,0.9); border:3px solid rgba(120,120,120,0.4); display:flex; align-items:center; justify-content:center; overflow:hidden;';
+    var knobImg = document.createElement('img');
+    knobImg.src = 'logo.png';
+    knobImg.alt = '';
+    knobImg.width = 42;
+    knobImg.height = 42;
+    knobImg.style.borderRadius = '50%';
+    knobImg.style.pointerEvents = 'none';
+    knob.appendChild(knobImg);
     joystickEl.appendChild(knob);
     if (container) container.appendChild(joystickEl);
     joystickKnob = knob;

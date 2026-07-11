@@ -90,10 +90,10 @@ export default function ScreenControls() {
             left: '50%', top: '50%', width: KNOB, height: KNOB, borderRadius: '50%',
             transform: 'translate(-50%, -50%)', fontSize: 28,
             background: 'linear-gradient(160deg,#ffffff,#ffe9f2)', border: '3px solid #fff',
-            boxShadow: '0 5px 0 #f3c1d6, 0 8px 16px rgba(58,58,90,.25)',
+            boxShadow: '0 5px 0 #f3c1d6, 0 8px 16px rgba(58,58,90,.25)', overflow: 'hidden',
           }}
         >
-          🐘
+          <img src="/abe-logo.png" alt="" style={{ width: KNOB - 10, height: KNOB - 10, borderRadius: '50%', pointerEvents: 'none' }} />
         </div>
       </div>
 

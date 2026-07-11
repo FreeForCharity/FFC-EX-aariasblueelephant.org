@@ -328,7 +328,7 @@
     <button class="kBtn" id="kSettings" title="Settings">⚙️<span class="kLbl">More</span></button>
   </div>
   <div id="kChip" style="display:none"></div>
-  <div id="kStick" style="display:none"><div id="kKnob"></div></div>
+  <div id="kStick" style="display:none"><div id="kKnob"><img src="logo.png" alt=""></div></div>
   <div id="kActs" style="display:none"></div>
   <div id="kToast"></div>
   <div id="kReplayBar" style="display:none">
