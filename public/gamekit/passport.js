@@ -37,6 +37,7 @@
       last = now;
     }
     function flush() {
+      if (window.Capacitor) return;   // native app builds send NOTHING (Kids Category)
       var s = Math.floor(acc);
       if (s < 5) return;
       acc -= s;
