@@ -439,7 +439,8 @@
     const r = ROUTINES[G.routine];
     K.say(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`);
     const other = G.routine === "morning" ? "evening" : "morning";
-    panel(`<h2>🌟 Plan complete!</h2>
+    const streak = K.streakBump();
+    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">🔥 ${streak.n} days planned in a row!</div>` : ""}<h2>🌟 Plan complete!</h2>
       <p>You made the plan AND lived it — every step, in your order!</p>
       <div style="font-size:28px;margin:6px 0">${G.plan.map((id) => stepOf(id).emoji).join(" → ")}</div>
       <p style="font-size:14px">Days planned: <b>${G.days}</b></p>

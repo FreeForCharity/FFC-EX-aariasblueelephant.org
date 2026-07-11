@@ -313,6 +313,9 @@
       const i = Math.floor(Math.random() * pool.length);
       G.list.push(pool.splice(i, 1)[0].id);
     }
+    // food of the day — a different daily special is on every list (come back tomorrow!)
+    const special = FOODS[Math.floor(Date.now() / 864e5) % FOODS.length];
+    if (!G.list.includes(special.id)) G.list[0] = special.id;
     G.got = []; G.peeked = [];
     G.hintTimer = 0; G.hintShown = false;
     document.getElementById("gHint").style.display = "none";
@@ -327,6 +330,7 @@
     document.getElementById("gLevel").textContent = `Level ${G.level} · Remember ${size} ${size === 1 ? "thing" : "things"}!`;
     document.getElementById("gLevel").style.display = "block";
     K.say("Look and remember! " + G.list.map((id) => foodById(id).name).join(", "));
+    K.toast(`⭐ Today's special: ${special.emoji}!`, 3000);
   }
 
   function endReveal() {
@@ -560,7 +564,8 @@
     K.sfx.star(); K.recordEvent("trip", G.trips);
     K.say("Thank you for shopping! You remembered the whole list!");
     const stamps = Math.min(G.trips, 10);
-    panel(`<h2>🌟 What a memory!</h2>
+    const streak = K.streakBump();
+    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">🔥 ${streak.n} days of shopping in a row!</div>` : ""}<h2>🌟 What a memory!</h2>
       <p>You remembered your list, waited your turn, paid and bagged — a whole shopping trip!</p>
       <div class="gStamps">${"⭐".repeat(stamps)}${"☆".repeat(Math.max(0, 5 - stamps))}</div>
       <p style="font-size:14px">Shopping trips: <b>${G.trips}</b>${leveledUp ? ` · Next time: <b>${levelSize(G.level)}</b> things to remember and a <b>${DENOMS[Math.min(G.level, DENOMS.length) - 1].name}</b>! 🧠💵` : " · You know every coin and bill — now we practice them all! 🏆"}</p>

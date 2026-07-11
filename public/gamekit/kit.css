@@ -97,6 +97,33 @@ body {
 .kBig.kAlt { background: linear-gradient(180deg, #93c5fd, #3b82f6); box-shadow: 0 6px 0 #1d4ed8; font-size: clamp(14px, 4vw, 17px); padding: 10px 22px; }
 .kCredit { font-size: 12px; opacity: .75; margin-top: 12px; }
 
+/* ---------- profile picker (siblings each get their own saves) ---------- */
+.kAvatars { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 10px; flex-wrap: wrap; }
+.kAvLbl { font-size: 14px; font-weight: 800; margin-right: 4px; }
+.kAvatar {
+  width: 50px; height: 50px; border-radius: 50%; border: 3px solid transparent; cursor: pointer;
+  font: inherit; font-size: 26px; background: rgba(255,255,255,.8);
+  box-shadow: 0 3px 8px rgba(40,40,90,.15); display: flex; align-items: center; justify-content: center;
+}
+.kAvatar:active { transform: scale(.9); }
+.kAvatar.on { border-color: var(--k-accent); background: #fff; transform: scale(1.12); }
+
+/* ---------- game passport shelf ---------- */
+.kPassSub { font-size: 14px; font-weight: 800; margin: 0 0 10px; }
+.kPassRow {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 5px 0;
+  background: rgba(255,255,255,.7); border-radius: 12px; opacity: .62;
+}
+.kPassRow.got { opacity: 1; background: #fff; box-shadow: 0 2px 6px rgba(40,40,90,.12); }
+.kPassEmoji { font-size: 24px; }
+.kPassName { flex: 1; font-size: 14px; font-weight: 800; text-align: left; }
+.kPassName small { font-weight: 700; opacity: .7; }
+.kPassStars { font-size: 13px; letter-spacing: 1px; }
+.kPassGo {
+  min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  border-radius: 12px; background: #eef2ff; text-decoration: none; font-size: 18px;
+}
+
 /* ---------- panels (settings / grown-ups / help) ---------- */
 .kPanel {
   position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center;
