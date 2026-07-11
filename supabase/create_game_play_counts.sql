@@ -26,8 +26,10 @@ set search_path = public
 as $$
 begin
   -- allowlist keeps junk out of the table
+  -- NEW GAMES: add the slug here AND re-run this function block in the
+  -- Supabase SQL editor (the allowlist lives in the DB, not just this file).
   if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
-               'doughlab','magnetblocks','helpinghands') then
+               'doughlab','magnetblocks','helpinghands','grocery','dayplanner') then
     return;
   end if;
   insert into public.game_play_counts (game, day, plays)
