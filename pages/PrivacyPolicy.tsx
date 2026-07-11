@@ -143,7 +143,7 @@ const PrivacyPolicy: React.FC = () => {
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Our Free Games for Children</h3>
                         <p>
-                            Our website hosts free browser games designed for children (including Nilu's World, Block Craft 3D, Elly-Tubbies, Dough Lab, Magnet Blocks, Road Safety Heroes, Aaria's Grocery Store, My Day Planner, and Nilu's Helping Hands). These games were deliberately built to <strong>collect no personal information from children</strong>:
+                            Our website hosts free browser games designed for children (including Nilu's World, Block Craft 3D, Elly-Tubbies, Dough Lab, Magnet Blocks, Road Safety Heroes, Aaria's Grocery Store, Aaria's Day Planner, and Nilu's Helping Hands). These games were deliberately built to <strong>collect no personal information from children</strong>:
                         </p>
                         <ul>
                             <li><strong>No accounts, no sign-in.</strong> The games never ask a child to register, and playing them requires no personal information.</li>
