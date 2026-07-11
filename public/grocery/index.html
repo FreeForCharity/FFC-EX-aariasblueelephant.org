@@ -69,6 +69,15 @@
     background: #fff8e1; border: 2px dashed #f59e0b; border-radius: 14px;
     padding: 10px 14px; margin: 10px 0; font-size: 16px; font-weight: 700;
   }
+  #gPurse {
+    display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(180deg,#fce3ef,#f8c6dd); border-radius: 20px; padding: 16px 12px; margin: 10px 0;
+    box-shadow: inset 0 3px 8px rgba(150,60,110,.18);
+  }
+  #gPurse .gMoneyCoin { margin: 0; }
+  #gPurse .gMoneyBill { margin: 0; width: 118px; height: 60px; font-size: 20px; padding: 0 10px; }
+  #gPurse .gMoneyBill .gBillIco { font-size: 22px; }
+  .gPurseItem:disabled { cursor: default; }
   .gScanItem {
     width: 84px; height: 84px; border-radius: 20px; border: 0; cursor: pointer; margin: 6px;
     font: inherit; font-size: 44px; background: #fff;
@@ -123,18 +132,18 @@
 
   /* ---------- real US money, taught one denomination per level — names & values only, no math ---------- */
   const DENOMS = [
-    { id: "penny",   name: "Penny",           value: 1,    kind: "coin", sz: 50, c1: "#e8a06b", c2: "#a85a2c", fact: "A penny means 1 cent! It's the copper-colored one. 🟤" },
-    { id: "nickel",  name: "Nickel",          value: 5,    kind: "coin", sz: 58, c1: "#e7e9ee", c2: "#9aa0ab", fact: "A nickel means 5 cents! 🪙" },
-    { id: "dime",    name: "Dime",            value: 10,   kind: "coin", sz: 44, c1: "#eef0f3", c2: "#a7acb6", fact: "A dime means 10 cents! It's our smallest coin. ⚪" },
-    { id: "quarter", name: "Quarter",         value: 25,   kind: "coin", sz: 66, c1: "#eef0f3", c2: "#9aa0ab", fact: "A quarter means 25 cents! It's our biggest coin. ⚪" },
-    { id: "dollar",  name: "Dollar bill",     value: 100,  kind: "bill", bc: "#3f9142", bd: "#2c6b31", fact: "A dollar bill means 100 cents — that's $1! 💵" },
-    { id: "five",    name: "Five-dollar bill", value: 500,  kind: "bill", bc: "#2f7a6b", bd: "#20564b", fact: "A five-dollar bill means $5! 💵" },
-    { id: "ten",     name: "Ten-dollar bill",  value: 1000, kind: "bill", bc: "#3a6ea8", bd: "#294d78", fact: "A ten-dollar bill means $10! 💵" },
+    { id: "penny",   name: "Penny",           value: 1,    kind: "coin", sz: 50, c1: "#e8a06b", c2: "#a85a2c", desc: "the little copper one", fact: "A penny means 1 cent! It's the copper-colored one. 🟤" },
+    { id: "nickel",  name: "Nickel",          value: 5,    kind: "coin", sz: 58, c1: "#e7e9ee", c2: "#9aa0ab", desc: "the chunky silver one", fact: "A nickel means 5 cents! 🪙" },
+    { id: "dime",    name: "Dime",            value: 10,   kind: "coin", sz: 44, c1: "#eef0f3", c2: "#a7acb6", desc: "the tiniest one", fact: "A dime means 10 cents! It's our smallest coin. ⚪" },
+    { id: "quarter", name: "Quarter",         value: 25,   kind: "coin", sz: 66, c1: "#eef0f3", c2: "#9aa0ab", desc: "the biggest one", fact: "A quarter means 25 cents! It's our biggest coin. ⚪" },
+    { id: "dollar",  name: "Dollar bill",     value: 100,  kind: "bill", bc: "#3f9142", bd: "#2c6b31", desc: "the one with a 1", fact: "A dollar bill means 100 cents — that's $1! 💵" },
+    { id: "five",    name: "Five-dollar bill", value: 500,  kind: "bill", bc: "#2f7a6b", bd: "#20564b", desc: "the one with a 5", fact: "A five-dollar bill means $5! 💵" },
+    { id: "ten",     name: "Ten-dollar bill",  value: 1000, kind: "bill", bc: "#3a6ea8", bd: "#294d78", desc: "the one with a 10", fact: "A ten-dollar bill means $10! 💵" },
   ];
   const fmtMoney = (cents) => cents < 100 ? `${cents}¢` : `$${cents / 100}`;
 
   /* ---------- three.js scene ---------- */
-  let scene, camera, renderer, player, cart, cashier, npc, beacon, hintBeacon;
+  let scene, camera, renderer, player, cart, cashier, npc, beacon, hintBeacon, grabRing;
   const stands = [];           // { food, mesh, x, z }
   const colliders = [];        // AABBs {x1,z1,x2,z2}
   const cartItems = [];        // sprites riding in the cart
@@ -257,6 +266,12 @@
     hintBeacon = emojiSprite("💡", 1.5);
     hintBeacon.visible = false; scene.add(hintBeacon);
 
+    // grab preview: a soft ring under whichever stand ✋ Grab would take right now
+    grabRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 40),
+      new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    grabRing.rotation.x = -Math.PI / 2; grabRing.position.y = 0.03;
+    grabRing.visible = false; scene.add(grabRing);
+
     // one friendly shopper who pays ahead of us (skipped in Calm Mode)
     npc = buildElephant(0xf0a8b8); npc.position.set(9.6, 0, 7);
     npc.rotation.y = Math.PI / 2; npc.visible = false; scene.add(npc);
@@ -274,6 +289,7 @@
     revealT: 0, revealDur: 0,
     hintTimer: 0, hintShown: false,
     panelOpen: false,
+    grabPreview: null,       // the stand ✋ Grab would take right now (highlighted in-world)
   };
   const P = { x: 0, z: 9, ry: Math.PI }; // player pose (spawn on the door mat)
 
@@ -382,10 +398,12 @@
     return best;
   }
 
-  function tryGrab() {
+  function tryGrab(target) {
     if (G.phase !== "shop" || K.replaying) return;
-    const st = nearestStand(2.4);
+    // grab the stand the child TAPPED when there is one — never a surprise neighbor
+    const st = target || nearestStand(2.4);
     if (!st) { K.toast("Walk close to a food to grab it ✋"); return; }
+    if (Math.hypot(st.x - P.x, st.z - P.z) > 2.6) { K.toast("Walk a little closer ✋"); return; }
     const f = st.food;
     if (G.got.includes(f.id)) { K.toast(`We already have ${f.name} ✅`); K.sfx.pop(); return; }
     if (!G.list.includes(f.id)) {
@@ -462,25 +480,43 @@
     });
   }
 
+  function moneyBtnHTML(d, i) {
+    return d.kind === "coin"
+      ? `<button class="gMoneyCoin gPurseItem" data-i="${i}" title="A coin from your purse" style="--sz:${d.sz}px;--c1:${d.c1};--c2:${d.c2}"><span>${fmtMoney(d.value)}</span></button>`
+      : `<button class="gMoneyBill gPurseItem" data-i="${i}" title="A bill from your purse" style="--bc:${d.bc};--bd:${d.bd}"><span class="gBillIco">🐘</span><span>${fmtMoney(d.value)}</span></button>`;
+  }
+
   function startPay() {
     G.phase = "pay"; refreshPhase();
-    // one denomination per level — a naming/value moment, never a math test
-    const denom = DENOMS[Math.min(G.level, DENOMS.length) - 1];
-    const moneyHTML = denom.kind === "coin"
-      ? `<button class="gMoneyCoin" id="gMoneyBtn" title="${denom.name}" style="--sz:${denom.sz}px;--c1:${denom.c1};--c2:${denom.c2}"><span>${fmtMoney(denom.value)}</span></button>`
-      : `<button class="gMoneyBill" id="gMoneyBtn" title="${denom.name}" style="--bc:${denom.bc};--bd:${denom.bd}"><span class="gBillIco">🐘</span><span>${fmtMoney(denom.value)}</span></button>`;
-    const p = panel(`<h2>💵 Time to pay!</h2>
-      <p>This is a <b>${denom.name}</b>!</p>
-      ${moneyHTML}
-      <div id="gPayBubble">${denom.fact}</div>
-      <button class="kBig" id="gPayDone" title="Give the cashier the money">✅ Pay</button>`);
-    K.say(`This is a ${denom.name}! ${denom.fact}`);
-    const confirm = () => {
-      K.sfx.yes(); K.recordEvent("pay", DENOMS.indexOf(denom));
-      setTimeout(startBag, 500 * K.speed());
-    };
-    p.querySelector("#gMoneyBtn").addEventListener("pointerdown", () => { K.sfx.tap(); K.say(denom.name + "!"); });
-    p.querySelector("#gPayDone").addEventListener("pointerdown", confirm);
+    // the cashier asks for one denomination (by level); the child finds it in a
+    // purse holding ALL the coins (or all the bills). Wrong taps just teach the
+    // other coin's name — no fail, no math, every tap says a money word out loud.
+    const target = DENOMS[Math.min(G.level, DENOMS.length) - 1];
+    const purse = DENOMS.filter((d) => d.kind === target.kind);
+    const p = panel(`<h2>👛 Time to pay!</h2>
+      <p>The cashier asks: <b>“One ${target.name}, please!”</b></p>
+      <div id="gPurse">${purse.map((d) => moneyBtnHTML(d, DENOMS.indexOf(d))).join("")}</div>
+      <div id="gPayBubble">Which one is the <b>${target.name}</b> — ${target.desc}?</div>`);
+    K.say(`One ${target.name}, please! Can you find it? It's ${target.desc}.`);
+    p.querySelectorAll(".gPurseItem").forEach((b) => {
+      b.addEventListener("pointerdown", () => {
+        if (b.disabled) return;
+        const d = DENOMS[+b.dataset.i];
+        if (d === target) {
+          b.style.outline = "4px solid #34d399";
+          p.querySelectorAll(".gPurseItem").forEach((x) => { x.disabled = true; if (x !== b) x.style.opacity = .3; });
+          p.querySelector("#gPayBubble").innerHTML = `✅ ${target.fact}`;
+          K.sfx.star(); K.say(`Yes! That's the ${target.name}! ${target.fact}`);
+          K.recordEvent("pay", DENOMS.indexOf(target));
+          setTimeout(startBag, 2600 * K.speed());
+        } else {
+          // a wrong tap is just another money word learned
+          K.sfx.pop();
+          p.querySelector("#gPayBubble").innerHTML = `That's the <b>${d.name}</b> (${fmtMoney(d.value)})! The ${target.name} is ${target.desc} 💛`;
+          K.say(`That's the ${d.name}! The ${target.name} is ${target.desc}.`);
+        }
+      });
+    });
   }
 
   function startBag() {
@@ -536,7 +572,7 @@
         const dx = t.x - P.x, dz = t.z - P.z, d = Math.hypot(dx, dz);
         if (d < 0.25) {
           K.clearWalkTarget();
-          if (G.walkTapTarget) { tryGrab(); G.walkTapTarget = null; }
+          if (G.walkTapTarget) { tryGrab(G.walkTapTarget); G.walkTapTarget = null; }
         } else { vx = dx / d; vz = dz / d; }
       }
     }
@@ -574,6 +610,20 @@
     bob += dt;
     stands.forEach((st, i) => { st.sprite.position.y = st.baseY + Math.sin(bob * 1.6 + i) * 0.07; });
     if (beacon.visible) beacon.position.y = 3.2 + Math.abs(Math.sin(bob * 2.2)) * 0.5;
+
+    // grab preview: mark the stand ✋ Grab would take, so it's never a surprise
+    const near = (!K.replaying && G.phase === "shop" && !G.panelOpen) ? nearestStand(2.4) : null;
+    if (near !== G.grabPreview) {
+      if (G.grabPreview) G.grabPreview.sprite.scale.set(1.4, 1.4, 1);
+      G.grabPreview = near;
+    }
+    if (near) {
+      grabRing.visible = true;
+      grabRing.position.x = near.x; grabRing.position.z = near.z - 0.55;
+      const s = 1 + Math.sin(bob * 3) * 0.08;
+      grabRing.scale.set(s, s, 1);
+      near.sprite.scale.set(1.85, 1.85, 1);
+    } else grabRing.visible = false;
 
     if (K.replaying) {
       if (G.panelOpen) closePanel();
@@ -613,16 +663,24 @@
       ndc.x = (e.clientX / innerWidth) * 2 - 1;
       ndc.y = -(e.clientY / innerHeight) * 2 + 1;
       ray.setFromCamera(ndc, camera);
+      // tapping the food itself targets that exact stand — the intuitive path
+      let st = null;
+      const sprHit = ray.intersectObjects(stands.map((s) => s.sprite))[0];
+      if (sprHit) st = stands.find((s) => s.sprite === sprHit.object);
       const hit = new THREE.Vector3();
-      if (!ray.ray.intersectPlane(floorPlane, hit)) return;
-      // tapping near a stand walks there and grabs it on arrival
-      let target = { x: hit.x, z: hit.z }, st = null, bd = 4;
-      for (const s of stands) {
-        const d = Math.hypot(s.x - hit.x, s.z - hit.z);
-        if (d < bd) { bd = d; st = s; }
+      if (!st) {
+        // otherwise: a floor tap near a stand still means "that one"
+        if (!ray.ray.intersectPlane(floorPlane, hit)) return;
+        let bd = 4;
+        for (const s of stands) {
+          const d = Math.hypot(s.x - hit.x, s.z - hit.z);
+          if (d < bd) { bd = d; st = s; }
+        }
+        if (st && bd >= 1.6) st = null;
       }
-      if (st && bd < 1.6) { target = { x: st.x, z: st.z + 1.3 }; G.walkTapTarget = st; }
-      else G.walkTapTarget = null;
+      let target = st ? { x: st.x, z: st.z + 1.3 } : { x: hit.x, z: hit.z };
+      G.walkTapTarget = st;
+      if (st && Math.hypot(st.x - P.x, st.z - P.z) < 2.4) { tryGrab(st); G.walkTapTarget = null; return; } // already close — grab right now
       K.queueWalkTo(Math.max(-W + 0.8, Math.min(W - 0.8, target.x)),
                     Math.max(-D + 0.8, Math.min(D - 0.8, target.z)));
       K.sfx.tap();
@@ -663,7 +721,7 @@
       ["👆", "Tap the floor or a food to walk there"],
       ["✋", "Stand close and tap Grab"],
       ["💡", "Stuck? A Hint button appears to help"],
-      ["💵", "Learn a coin or bill's name every trip!"],
+      ["👛", "Find the right coin in your purse to pay!"],
       ["🧾", "Got everything? Go to the checkout!"],
     ],
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM",
