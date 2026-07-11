@@ -301,6 +301,30 @@
     cfg.onPause && cfg.onPause(p);
   }
 
+  // ---------- anonymous play-time tally (aggregate seconds only, ZERO identifiers) ----------
+  // Counts only ACTIVE play: after Play is pressed, not paused, tab visible.
+  // Flushed in small batches so a closed tab loses at most a minute.
+  const TIME = { acc: 0, last: 0, on: false };
+  function timeFlush() {
+    const s = Math.floor(TIME.acc);
+    if (s < 5 || !cfg.anonKey) { return; }
+    TIME.acc -= s;
+    try {
+      fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_time', {
+        method: 'POST', keepalive: true,
+        headers: { apikey: cfg.anonKey, Authorization: `Bearer ${cfg.anonKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ g: cfg.slug, s }),
+      }).catch(() => {});
+    } catch (e) {}
+  }
+  function timeTick() {
+    const now = performance.now();
+    if (TIME.on && !K.paused && !document.hidden) TIME.acc += (now - TIME.last) / 1000;
+    TIME.last = now;
+  }
+  setInterval(() => { timeTick(); if (TIME.acc >= 60) timeFlush(); }, 5000);
+  addEventListener('pagehide', () => { timeTick(); timeFlush(); });
+
   // ---------- anonymous play tally (one per session, ZERO identifiers) ----------
   function ping() {
     try {
@@ -464,6 +488,7 @@
       $('kTitle').style.display = 'none';
       $('kHud').style.display = 'flex'; $('kStick').style.display = 'block'; $('kActs').style.display = 'flex';
       ac(); ping(); startMusic();
+      TIME.on = true; TIME.last = performance.now();
       if (stampToday()) setTimeout(() => { K.toast('🛂 Passport stamped! ⭐'); K.sfx.pop(); }, 1500);
       cfg.onStart && cfg.onStart(); then && then();
     };
