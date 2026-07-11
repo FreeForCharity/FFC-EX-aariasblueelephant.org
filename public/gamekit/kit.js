@@ -24,15 +24,72 @@
   const $ = (id) => document.getElementById(id);
   let cfg = null;
 
-  // ---------- persistence (per-game namespace, on-device only) ----------
-  K.save = (key, val) => { try { localStorage.setItem(`abe.${cfg.slug}.${key}`, JSON.stringify(val)); } catch (e) {} };
+  // ---------- profiles (siblings share a tablet without clobbering each other) ----------
+  // Profile p1 maps to the ORIGINAL unprefixed keys so nobody's saves are lost.
+  const AVATARS = [
+    { id: 'p1', emoji: '🐘' }, { id: 'p2', emoji: '🦊' }, { id: 'p3', emoji: '🐰' }, { id: 'p4', emoji: '🦄' },
+  ];
+  let prof = 'p1';
+  try { prof = localStorage.getItem('abe.profile.current') || 'p1'; } catch (e) {}
+  if (!AVATARS.some((a) => a.id === prof)) prof = 'p1';
+  K.profile = () => prof;
+  const kk = (key) => prof === 'p1' ? `abe.${cfg.slug}.${key}` : `abe.${cfg.slug}.${prof}.${key}`;
+
+  // ---------- persistence (per-game, per-profile namespace, on-device only) ----------
+  K.save = (key, val) => { try { localStorage.setItem(kk(key), JSON.stringify(val)); } catch (e) {} };
   K.load = (key, fallback) => {
-    try { const v = localStorage.getItem(`abe.${cfg.slug}.${key}`); return v === null ? fallback : JSON.parse(v); }
+    try { const v = localStorage.getItem(kk(key)); return v === null ? fallback : JSON.parse(v); }
     catch (e) { return fallback; }
   };
 
+  // ---------- daily streak helper (any game: K.streakBump() on its "completed something today") ----------
+  const dayStr = (off) => new Date(Date.now() - (off || 0) * 86400000).toISOString().slice(0, 10);
+  K.streak = () => K.load('streak', { last: '', n: 0 }).n;
+  K.streakBump = () => {
+    const s = K.load('streak', { last: '', n: 0 });
+    if (s.last === dayStr(0)) return { n: s.n, grew: false };
+    s.n = s.last === dayStr(1) ? s.n + 1 : 1; s.last = dayStr(0);
+    K.save('streak', s);
+    return { n: s.n, grew: true };
+  };
+
+  // ---------- season helper (date-driven freshness, shared by every kit game) ----------
+  K.season = () => {
+    const m = new Date().getMonth();
+    return m === 11 || m < 2 ? { id: 'winter', emoji: '❄️' }
+      : m < 5 ? { id: 'spring', emoji: '🌸' }
+      : m < 8 ? { id: 'summer', emoji: '☀️' }
+      : { id: 'fall', emoji: '🍂' };
+  };
+
+  // ---------- game passport (cross-game sticker shelf; one stamp per game per day) ----------
+  // FUTURE GAMES: add one line here and the passport, /games page, and offline
+  // cache (public/sw.js) are the only three registration spots outside the game.
+  const CATALOG = [
+    { slug: 'nilus-world', name: "Nilu's World", emoji: '🐘', url: '/nelus-world' },
+    { slug: 'elly-tubbies', name: 'Elly-Tubbies', emoji: '☀️', url: '/1' },
+    { slug: 'blockcraft', name: 'Block Craft 3D', emoji: '🧱', url: '/2' },
+    { slug: 'roadsafety', name: 'Road Safety Heroes', emoji: '🚦', url: '/4' },
+    { slug: 'doughlab', name: 'Dough Lab 3D', emoji: '🫓', url: '/5' },
+    { slug: 'magnetblocks', name: 'Magnet Blocks', emoji: '🧲', url: '/6' },
+    { slug: 'helpinghands', name: "Nilu's Helping Hands", emoji: '🖐️', url: '/7' },
+    { slug: 'grocery', name: "Aaria's Grocery Store", emoji: '🛒', url: '/8' },
+    { slug: 'dayplanner', name: 'My Day Planner', emoji: '📅', url: '/9' },
+  ];
+  const passKey = () => prof === 'p1' ? 'abe.passport.v1' : `abe.passport.${prof}.v1`;
+  function passGet() { try { return JSON.parse(localStorage.getItem(passKey())) || {}; } catch (e) { return {}; } }
+  function stampToday() {
+    try {
+      const p = passGet(), e = p[cfg.slug] || { days: 0, last: '' };
+      if (e.last === dayStr(0)) return false;
+      e.days++; e.last = dayStr(0); p[cfg.slug] = e;
+      localStorage.setItem(passKey(), JSON.stringify(p));
+      return true;
+    } catch (e) { return false; }
+  }
+
   // ---------- settings (shared shape across all kit games) ----------
-  const S = { sound: true, calm: false, speed: 'normal', voice: true };
+  const S = { sound: true, calm: false, speed: 'normal', voice: true, music: true };
   const SPEED = { relaxed: { ico: '🐢', mul: 1.5 }, normal: { ico: '🐇', mul: 1 }, fast: { ico: '🚀', mul: 0.6 } };
   K.calm = () => S.calm;
   K.speed = () => SPEED[S.speed].mul;
@@ -59,6 +116,51 @@
     no: () => { tone(360, 0.12, 'sine', 0.07); setTimeout(() => tone(300, 0.14, 'sine', 0.07), 110); },
     pop: () => tone(300, 0.09, 'square', 0.06),
   };
+  // ---------- ambient music: a very soft generative loop, no audio files ----------
+  // Gentle pad chords + sparse plucks. OFF automatically in Calm Mode (sensory-
+  // friendly), OFF with mute, toggleable in settings for every kit game.
+  let mus = null;
+  function startMusic() {
+    if (mus || muted || !S.music || S.calm) return;
+    try {
+      const c = ac(), g = c.createGain();
+      g.gain.value = 0.04; g.connect(c.destination);
+      mus = { g, t1: 0, t2: 0, stop: false };
+      const CHORDS = [[262, 330, 392], [220, 262, 330], [175, 220, 262], [196, 247, 294]];
+      let ci = 0;
+      const pad = () => {
+        if (mus.stop) return;
+        for (const f of CHORDS[ci++ % 4]) {
+          const o = c.createOscillator(), og = c.createGain(), t = c.currentTime;
+          o.type = 'triangle'; o.frequency.value = f / 2;
+          og.gain.setValueAtTime(0.0001, t);
+          og.gain.linearRampToValueAtTime(0.5, t + 2.5);
+          og.gain.linearRampToValueAtTime(0.0001, t + 7.6);
+          o.connect(og).connect(g); o.start(t); o.stop(t + 8);
+        }
+        mus.t1 = setTimeout(pad, 7200);
+      };
+      const pluck = () => {
+        if (mus.stop) return;
+        const o = c.createOscillator(), og = c.createGain(), t = c.currentTime;
+        o.type = 'sine'; o.frequency.value = [523, 587, 659, 784, 880][Math.floor(Math.random() * 5)];
+        og.gain.setValueAtTime(0.0001, t);
+        og.gain.exponentialRampToValueAtTime(0.35, t + 0.03);
+        og.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+        o.connect(og).connect(g); o.start(t); o.stop(t + 1.5);
+        mus.t2 = setTimeout(pluck, 2800 + Math.random() * 2800);
+      };
+      pad(); setTimeout(pluck, 1600);
+    } catch (e) { mus = null; }
+  }
+  function stopMusic() {
+    if (!mus) return;
+    mus.stop = true; clearTimeout(mus.t1); clearTimeout(mus.t2);
+    try { mus.g.disconnect(); } catch (e) {}
+    mus = null;
+  }
+  function refreshMusic() { stopMusic(); if ($('kTitle').style.display === 'none' && !K.paused) startMusic(); }
+
   K.say = (text) => {
     if (muted || !S.voice || !window.speechSynthesis) return;
     try {
@@ -246,10 +348,13 @@
       <p>Built for <b>Aaria and Her Friends</b> 💖 — ${cfg.tagline}</p>
       <a id="kDisclosure" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
       <div class="kTitleEmojis">${(cfg.emojis || []).join('')}</div>
+      <div class="kAvatars"><span class="kAvLbl">Who is playing?</span>${AVATARS.map((a) =>
+        `<button class="kAvatar" data-p="${a.id}" title="Play as ${a.emoji}">${a.emoji}</button>`).join('')}</div>
       <button class="kBig" id="kPlay" title="Start playing">▶️ Play</button>
       <div id="kTitleExtras" style="display:none;margin-top:6px">
         <button class="kBig kAlt" id="kTitleMovie" title="Watch your last adventure">▶️ My Movie</button>
         <button class="kBig kAlt" id="kTitleImport" title="Watch a friend's adventure file">📥 Friend's adventure</button>
+        <button class="kBig kAlt" id="kTitlePass" title="See your stamps from every game">🛂 Passport</button>
       </div>
       <div id="kHow" style="text-align:left;margin-top:10px"></div>
       <div class="kOrgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org</div>
@@ -271,6 +376,45 @@
 
   function refreshMute() { $('kMute').innerHTML = muted ? '🔇<span class="kLbl">Sound</span>' : '🔊<span class="kLbl">Sound</span>'; }
 
+  function refreshAvatars() {
+    document.querySelectorAll('.kAvatar').forEach((b) => b.classList.toggle('on', b.dataset.p === prof));
+  }
+  function switchProfile(id) {
+    prof = id;
+    try { localStorage.setItem('abe.profile.current', id); } catch (e) {}
+    // this profile's own settings + saved adventure take over
+    Object.assign(S, { sound: true, calm: false, speed: 'normal', voice: true, music: true }, K.load('settings', {}));
+    const saved = K.load('replay.v1', null);
+    REC.samples = (saved && saved.samples) || []; REC.events = (saved && saved.events) || [];
+    REC.resumeAt = (REC.samples.length ? REC.samples[REC.samples.length - 1][0] : 0) + 1000;
+    $('kTitleMovie').style.display = recSpan() >= REC_MIN ? '' : 'none';
+    refreshAvatars(); K.sfx.tap();
+  }
+
+  // ---------- passport shelf (the cross-game collection that ties all games together) ----------
+  function openPassport() {
+    const p = document.createElement('div'); p.className = 'kPanel'; p.id = 'kPass';
+    const stamps = passGet();
+    const seen = CATALOG.filter((g) => stamps[g.slug] && stamps[g.slug].days > 0).length;
+    const av = AVATARS.find((a) => a.id === prof) || AVATARS[0];
+    p.innerHTML = `<div class="kPanelCard"><h2>🛂 ${av.emoji} My Game Passport</h2>
+      <p class="kPassSub">${seen} of ${CATALOG.length} games explored${seen >= CATALOG.length ? ' — you found them ALL! 🏆' : ' — collect them all!'}</p>
+      ${CATALOG.map((g) => {
+        const st = stamps[g.slug], here = g.slug === cfg.slug;
+        const days = st ? st.days : 0;
+        const stars = days ? '⭐'.repeat(Math.min(days, 5)) + (days > 5 ? ` ×${days}` : '') : '';
+        return `<div class="kPassRow ${days ? 'got' : ''}">
+          <span class="kPassEmoji">${g.emoji}</span>
+          <span class="kPassName">${g.name}${here ? ' <small>· you are here</small>' : ''}</span>
+          <span class="kPassStars">${days ? stars : '· · ·'}</span>
+          ${here ? '' : `<a class="kPassGo" href="${g.url}" title="Go play ${g.name}">▶️</a>`}
+        </div>`;
+      }).join('')}
+      <button class="kRow" id="kPassClose" title="Close the passport">✔️ Done</button></div>`;
+    document.body.appendChild(p);
+    $('kPassClose').onclick = () => p.remove();
+  }
+
   function openSettings() {
     const p = document.createElement('div'); p.className = 'kPanel'; p.id = 'kSet';
     const row = (id, txt) => `<button class="kRow" id="${id}" title="${txt.replace(/<[^>]*>/g, '')}">${txt}</button>`;
@@ -278,12 +422,16 @@
       ${row('ksCalm', `😌 Calm mode: <b>${S.calm ? 'ON' : 'off'}</b>`)}
       ${row('ksSpeed', `${SPEED[S.speed].ico} Game speed`)}
       ${row('ksVoice', `🗣️ Read aloud: <b>${S.voice ? 'ON' : 'off'}</b>`)}
+      ${row('ksMusic', `🎵 Music: <b>${S.music ? 'ON' : 'off'}</b>`)}
+      ${row('ksPass', `🛂 My Game Passport`)}
       ${row('ksImport', `📥 Watch a friend's adventure`)}
       ${row('ksHome', `🏠 More games (back to the site)`)}
       ${row('ksClose', `✔️ Done`)}</div>`;
     document.body.appendChild(p);
     const saveS = () => K.save('settings', S);
-    $('ksCalm').onclick = () => { S.calm = !S.calm; saveS(); p.remove(); openSettings(); };
+    $('ksCalm').onclick = () => { S.calm = !S.calm; saveS(); refreshMusic(); p.remove(); openSettings(); };
+    $('ksMusic').onclick = () => { S.music = !S.music; saveS(); refreshMusic(); p.remove(); openSettings(); };
+    $('ksPass').onclick = () => { p.remove(); openPassport(); };
     $('ksSpeed').onclick = () => {
       const o = ['relaxed', 'normal', 'fast']; S.speed = o[(o.indexOf(S.speed) + 1) % 3]; saveS();
       K.toast(`${SPEED[S.speed].ico} Speed: ${S.speed}`); p.remove(); openSettings();
@@ -315,15 +463,22 @@
     const begin = (then) => {
       $('kTitle').style.display = 'none';
       $('kHud').style.display = 'flex'; $('kStick').style.display = 'block'; $('kActs').style.display = 'flex';
-      ac(); ping(); cfg.onStart && cfg.onStart(); then && then();
+      ac(); ping(); startMusic();
+      if (stampToday()) setTimeout(() => { K.toast('🛂 Passport stamped! ⭐'); K.sfx.pop(); }, 1500);
+      cfg.onStart && cfg.onStart(); then && then();
     };
     $('kPlay').onclick = () => { K.sfx.yes(); begin(); };
+    $('kTitlePass').onclick = openPassport;
+    document.querySelectorAll('.kAvatar').forEach((b) => b.addEventListener('pointerdown', () => switchProfile(b.dataset.p)));
+    refreshAvatars();
+    // offline: cache this game (and every other one visited) for cars & waiting rooms
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/sw.js'); } catch (e) {} }
     $('kTitleMovie').onclick = () => { K.sfx.tap(); begin(() => startReplay({ samples: REC.samples, events: REC.events }, true)); };
     $('kTitleImport').onclick = () => { begin(); $('kImportFile').click(); };
     $('kImportFile').addEventListener('change', (e) => { if (e.target.files[0]) importAdventure(e.target.files[0]); e.target.value = ''; });
-    $('kMute').onclick = () => { muted = !muted; if (muted && window.speechSynthesis) speechSynthesis.cancel(); refreshMute(); K.toast(muted ? '🔇 Sound is off' : '🔊 Sound is on!'); };
-    $('kPauseBtn').onclick = () => setPaused(true);
-    $('kResume').onclick = () => setPaused(false);
+    $('kMute').onclick = () => { muted = !muted; if (muted && window.speechSynthesis) speechSynthesis.cancel(); refreshMute(); refreshMusic(); K.toast(muted ? '🔇 Sound is off' : '🔊 Sound is on!'); };
+    $('kPauseBtn').onclick = () => { setPaused(true); stopMusic(); };
+    $('kResume').onclick = () => { setPaused(false); refreshMusic(); };
     $('kMovie').onclick = () => { recSpan() >= REC_MIN ? startReplay({ samples: REC.samples, events: REC.events }, true) : K.toast('Play a little first, then watch your movie! ▶️'); };
     $('kShare').onclick = shareAdventure;
     $('kRShare').onclick = shareAdventure;

@@ -93,6 +93,16 @@ for (const [game, cfg] of Object.entries(GAMES)) {
   }
 }
 
+// Offline coverage: every game folder the build minifies must be cached by the
+// service worker, so no future game silently ships without offline support.
+{
+  const sw = readFileSync('public/sw.js', 'utf8');
+  const dirs = (readFileSync('scripts/minify-games.mjs', 'utf8').match(/GAME_DIRS = \[([^\]]+)\]/) || [])[1] || '';
+  for (const m of dirs.matchAll(/'([a-z0-9-]+)'/g)) {
+    if (!sw.includes(m[1])) fail('sw.js', 'R5', `game folder '${m[1]}' missing from GAME_RX in public/sw.js (no offline cache)`);
+  }
+}
+
 if (errors.length) {
   console.error('\nGame-control standard violations:\n' + errors.join('\n'));
   console.error('\nThe standard lives in scripts/check-game-controls.mjs — fix the game or (deliberately) update the rule.\n');

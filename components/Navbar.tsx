@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
@@ -86,6 +86,7 @@ const Navbar: React.FC = () => {
     { name: 'Events', path: '/events', icon: Stars, color: '#8b5cf6' },
     { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
     { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
+    { name: 'Games', path: '/games', icon: Gamepad2, color: '#ec4899' },
   ];
 
   const isActive = (path: string) => location.pathname === path;

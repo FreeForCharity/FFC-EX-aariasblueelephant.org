@@ -360,6 +360,30 @@ export default function BelusWorldGame() {
     } catch { /* ignore */ }
   }, []);
 
+  // stamp one passport day for Nilu's World — mirrors public/gamekit/passport.js
+  // inline (this is a React game, not a plain <script> include), so kit games
+  // and legacy games share the same on-device passport shelf. No identifiers,
+  // nothing transmitted.
+  useEffect(() => {
+    try {
+      const slug = 'nilus-world';
+      if (sessionStorage.getItem('abe_stamp_' + slug)) return;
+      sessionStorage.setItem('abe_stamp_' + slug, '1');
+      const prof = localStorage.getItem('abe.profile.current') || 'p1';
+      const key = prof === 'p1' ? 'abe.passport.v1' : `abe.passport.${prof}.v1`;
+      let p: Record<string, { days: number; last: string }> = {};
+      try { p = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch { /* ignore */ }
+      const today = new Date().toISOString().slice(0, 10);
+      const entry = p[slug] || { days: 0, last: '' };
+      if (entry.last !== today) {
+        entry.days++;
+        entry.last = today;
+        p[slug] = entry;
+        localStorage.setItem(key, JSON.stringify(p));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   const cycleSpeed = useCallback(() => {
     setSettings((s) => {
       const next = SPEED_ORDER[(SPEED_ORDER.indexOf(s.speed) + 1) % SPEED_ORDER.length];

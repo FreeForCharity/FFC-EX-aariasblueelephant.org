@@ -1,0 +1,14 @@
+export type GameCard = { id: string; title: string; emoji: string; oneLiner: string; img: string; view?: string; path?: string };
+
+export const GAME_CARDS: GameCard[] = [
+    { id: 'belus-world', title: "Nilu's World", emoji: '🐘', oneLiner: 'Explore islands, meet friends & help Nilu grow!', img: '/images/games/belus-world.jpg', path: '/nelus-world' },
+    { id: 'magnetblocks', title: "Aaria's Magnet Blocks", emoji: '🧲', oneLiner: 'Magnetic blocks that click, stack & drive!', img: '/images/games/magnetblocks.jpg', view: 'magnetblocks' },
+    { id: 'helpinghands', title: "Nilu's Helping Hands", emoji: '🖐️', oneLiner: 'Learn your world & how to get help — walk, explore, be brave!', img: '/images/games/helpinghands.jpg', view: 'helpinghands' },
+    { id: 'doughlab', title: 'Dough Lab 3D', emoji: '🫓', oneLiner: 'Squish, slice & sculpt real 3D dough!', img: '/images/games/doughlab.jpg', view: 'doughlab' },
+    { id: 'blockcraft', title: "Aaria's Block Craft 3D", emoji: '🧱', oneLiner: 'Building, animal friends, slime & cookies!', img: '/images/games/blockcraft.jpg', view: 'blockcraft' },
+    { id: 'elly-tubbies', title: 'Elly-Tubbies', emoji: '☀️', oneLiner: 'Bouncy elephant friends in sunny Trunkland!', img: '/images/games/elly-tubbies.jpg', view: 'elly-tubbies' },
+    { id: 'roadsafety', title: 'Road Safety Heroes', emoji: '🚦', oneLiner: 'Ride & drive the REAL streets of Mountain House!', img: '/images/games/roadsafety.jpg', view: 'roadsafety' },
+    { id: 'grocery', title: "Aaria's Grocery Store", emoji: '🛒', oneLiner: 'Bring your list, find the food, wait your turn, pay & bag!', img: '/images/games/grocery.jpg', path: '/8' },
+    { id: 'dayplanner', title: 'My Day Planner', emoji: '📅', oneLiner: 'Plan your day with picture cards, then live it with Nilu!', img: '/images/games/dayplanner.jpg', path: '/9' },
+    { id: 'wheel', title: 'Wheel of Fun', emoji: '🎡', oneLiner: 'Spin the rainbow wheel for surprises & giggles!', img: '/images/games/wheel.jpg', view: 'wheel' },
+];

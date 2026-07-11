@@ -98,6 +98,7 @@ const Interventions = lazy(() => import('./pages/Interventions'));
 const Screening = lazy(() => import('./pages/Screening'));
 const CircleOfFriends = lazy(() => import('./pages/CircleOfFriends'));
 const BelusWorld = lazy(() => import('./pages/BelusWorld'));
+const Games = lazy(() => import('./pages/Games'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -149,6 +150,7 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
+                <Route path="/games" element={<Games />} />
                 <Route path="/nelus-world" element={<BelusWorld />} />
                 {/* aliases: old link + likely spelling both land on the game */}
                 <Route path="/belus-world" element={<Navigate to="/nelus-world" replace />} />
