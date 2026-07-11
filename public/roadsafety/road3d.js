@@ -445,6 +445,48 @@ window.GL3D = (function(){
         sh.position.set(shp.x, 0, shp.z); sh.rotation.y = sy + Math.PI;
         grpStatic.add(sh);
       }
+      if (ev.type === "festival"){
+        // festival gateway: banner across the road + kites, so the zone is
+        // OBVIOUS before the child reaches it (was just a road-color change)
+        const fs2 = sample(S.rt, ev.from - 30);
+        const fy = Math.atan2(fs2.fx, fs2.fy);
+        const gate = new T.Group();
+        const gw = HWf() * 2 + 6;
+        for (const sx of [-1, 1]) {
+          const pole = new T.Mesh(new T.CylinderGeometry(.1, .12, 5.4, 6), mat("#c9584a"));
+          pole.position.set(sx * gw / 2, 2.7, 0); gate.add(pole);
+        }
+        const bannerTxt = (ev.label || "FESTIVAL").replace(/[^\x20-\x7E]/g, "").trim() || "FESTIVAL";
+        const ban = texPlane(gw, 1.5, g2 => {
+          g2.fillStyle = "#ffd43b"; g2.fillRect(0, 78, 256, 100);
+          g2.fillStyle = "#c9584a"; g2.textAlign = "center"; g2.textBaseline = "middle";
+          g2.font = "bold 44px sans-serif"; g2.fillText(bannerTxt.toUpperCase().slice(0, 18), 128, 128);
+        });
+        ban.position.y = 4.7; gate.add(ban);
+        // bunting kites along the banner
+        for (let i = -2; i <= 2; i++) {
+          const kite = new T.Mesh(new T.PlaneGeometry(.9, .9),
+            new T.MeshBasicMaterial({ color: [0xff6b8b, 0x4dabf7, 0x69db7c, 0xffa94d, 0xb197fc][i + 2], side: T.DoubleSide }));
+          kite.rotation.z = Math.PI / 4;
+          kite.position.set(i * gw / 5.2, 3.7, 0);
+          gate.add(kite);
+        }
+        const gp = rp(ev.from - 30, 0);
+        gate.position.set(gp.x, 0, gp.z); gate.rotation.y = fy + Math.PI;
+        grpStatic.add(gate);
+        // a couple of tall kites flying over the zone itself
+        for (const [fr, off, col] of [[.3, 1, 0xff6b8b], [.7, -1, 0x4dabf7]]) {
+          const d = ev.from + (ev.to - ev.from) * fr;
+          const kp = rp(d, off * (HWf() + 14));
+          const bigKite = new T.Mesh(new T.PlaneGeometry(1.6, 1.6),
+            new T.MeshBasicMaterial({ color: col, side: T.DoubleSide }));
+          bigKite.rotation.z = Math.PI / 4;
+          bigKite.position.set(kp.x, 9 + off, kp.z);
+          const string = new T.Mesh(new T.CylinderGeometry(.015, .015, 8, 4), mat("#e7e9ee"));
+          string.position.set(kp.x, 4.5, kp.z);
+          grpStatic.add(bigKite, string);
+        }
+      }
       if (ev.type === "kids" || ev.type === "festival"){
         const cw = ev.type === "kids" ? ev.at : (ev.from + ev.to) / 2;
         const kids = [];

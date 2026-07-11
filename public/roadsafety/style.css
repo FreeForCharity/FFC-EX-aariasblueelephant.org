@@ -244,6 +244,7 @@ h1.rainbow {
 .resRow:nth-child(3){ animation-delay: .44s; } .resRow:nth-child(4){ animation-delay: .56s; }
 .resRow:nth-child(5){ animation-delay: .68s; } .resRow:nth-child(6){ animation-delay: .8s; }
 @keyframes rowIn { from { opacity: 0; transform: translateX(-26px);} to { opacity: 1; } }
+#resUnlock { color: #69db7c; font-size: 20px; font-weight: bold; }
 #resRecord, #resGhost, #resStreakRecord { color: #ffd43b; font-size: 19px; font-weight: bold;
   animation: recFlash .8s ease-in-out infinite alternate; }
 #resStreakRecord { color: #ff9f43; }

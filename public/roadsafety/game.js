@@ -2494,7 +2494,7 @@ function buildMenu(){          // the GARAGE
   document.getElementById("garGo").classList.toggle("hidden", locked);
   lock.classList.toggle("hidden", !locked);
   lock.textContent = secretLocked ? "🔒 Earn all 5 certificates to wake it up!"
-    : locked ? `🔒 Finish Level ${garIdx} to unlock` : "";
+    : locked ? `🔒 One great ride away! Score 70+ on Level ${garIdx} (${VEHICLES[garIdx - 1].emoji} ${VEHICLES[garIdx - 1].name}) to unlock` : "";
 }
 document.getElementById("garPrev").addEventListener("click", () => {
   ensureAudio(); tone(400, .06); garIdx = (garIdx + VEHICLES.length - 1) % VEHICLES.length; buildMenu(); });
@@ -2648,7 +2648,12 @@ function finishLevel(){
   if (S.finalScore >= 70){
     const stars = S.finalScore >= 90 ? 3 : S.finalScore >= 78 ? 2 : 1;
     S.lastStars = stars;
+    const prevUnlocked = save.unlocked;
     save.unlocked = Math.max(save.unlocked, S.li + 2);
+    // tell the child EXACTLY what this great ride just earned them
+    S.unlockLine = save.unlocked > prevUnlocked && VEHICLES[S.li + 1]
+      ? `🔓 ${VEHICLES[S.li + 1].emoji} ${VEHICLES[S.li + 1].name} UNLOCKED — find it in the Garage!`
+      : "";
     const old = save.certs[S.veh.id];
     if (!old || S.finalScore > old.score)
       save.certs[S.veh.id] = { score: S.finalScore, stars, date: new Date().toLocaleDateString() };
@@ -2665,7 +2670,10 @@ function finishLevel(){
     showResults(stars, newRecord && !!prev, beatGhost, newStreakRecord);
   } else {
     persist();
-    showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate. You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
+    const nextV = VEHICLES[S.li + 1];
+    showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate.`
+      + (nextV && S.li + 1 >= save.unlocked ? ` One more great ride and the ${nextV.emoji} ${nextV.name} is yours!` : "")
+      + ` You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
   }
 }
 function showResults(stars, newRecord, beatGhost, newStreakRecord){
@@ -2685,6 +2693,9 @@ function showResults(stars, newRecord, beatGhost, newStreakRecord){
   document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
   document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
   document.getElementById("resPractice").textContent = S.practiceLine;
+  const ru = document.getElementById("resUnlock");
+  ru.textContent = S.unlockLine || "";
+  ru.classList.toggle("hidden", !S.unlockLine);
   document.getElementById("resRecord").classList.toggle("hidden", !newRecord);
   document.getElementById("resStreakRecord").classList.toggle("hidden", !newStreakRecord);
   document.getElementById("resGhost").classList.toggle("hidden", !beatGhost);

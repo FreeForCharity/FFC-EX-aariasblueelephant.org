@@ -74,7 +74,7 @@
     { slug: 'magnetblocks', name: 'Magnet Blocks', emoji: '🧲', url: '/6' },
     { slug: 'helpinghands', name: "Nilu's Helping Hands", emoji: '🖐️', url: '/7' },
     { slug: 'grocery', name: "Aaria's Grocery Store", emoji: '🛒', url: '/8' },
-    { slug: 'dayplanner', name: 'My Day Planner', emoji: '📅', url: '/9' },
+    { slug: 'dayplanner', name: "Aaria's Day Planner", emoji: '📅', url: '/9' },
   ];
   const passKey = () => prof === 'p1' ? 'abe.passport.v1' : `abe.passport.${prof}.v1`;
   function passGet() { try { return JSON.parse(localStorage.getItem(passKey())) || {}; } catch (e) { return {}; } }
@@ -380,7 +380,8 @@
         <button class="kBig kAlt" id="kTitleImport" title="Watch a friend's adventure file">📥 Friend's adventure</button>
         <button class="kBig kAlt" id="kTitlePass" title="See your stamps from every game">🛂 Passport</button>
       </div>
-      <div id="kHow" style="text-align:left;margin-top:10px"></div>
+      <div id="kHow" style="text-align:left;margin-top:10px;display:inline-block"></div>
+      <div><button class="kSmall" id="kFs" title="Play in full screen">⛶ Full Screen</button></div>
       <div class="kOrgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org</div>
     </div>
   </div>
@@ -494,6 +495,9 @@
     };
     $('kPlay').onclick = () => { K.sfx.yes(); begin(); };
     $('kTitlePass').onclick = openPassport;
+    $('kFs').onclick = () => {
+      try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {}
+    };
     document.querySelectorAll('.kAvatar').forEach((b) => b.addEventListener('pointerdown', () => switchProfile(b.dataset.p)));
     refreshAvatars();
     // offline: cache this game (and every other one visited) for cars & waiting rooms

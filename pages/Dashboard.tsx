@@ -96,7 +96,7 @@ const GAME_PLAY_LABELS: Record<string, string> = {
     'magnetblocks': 'Magnet Blocks 🧲',
     'helpinghands': "Nilu's Helping Hands 🖐️",
     'grocery': "Aaria's Grocery Store 🛒",
-    'dayplanner': 'My Day Planner 📅',
+    'dayplanner': "Aaria's Day Planner 📅",
 };
 
 interface GamePlayRow {
