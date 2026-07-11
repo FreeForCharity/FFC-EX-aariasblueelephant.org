@@ -9,7 +9,7 @@ import { minify as htmlMinify } from 'html-minifier-terser';
 
 const DIST = new URL('../dist/', import.meta.url).pathname;
 const GAME_DIRS = ['blockcraft', 'doughlab', 'elly-tubbies', 'helpinghands',
-  'magnetblocks', 'roadsafety', 'craft3d', 'grocery', 'gamekit'];
+  'magnetblocks', 'roadsafety', 'craft3d', 'grocery', 'dayplanner', 'gamekit'];
 
 const BANNER = `/*! © ${new Date().getFullYear()} Aaria's Blue Elephant · aariasblueelephant.org · All rights reserved.
  * Built by Aaria and her Friends 💙 — please don't copy; ask us instead: buddy@aariasblueelephant.org */`;

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Day Planner | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     My Day Planner — a visual-schedule builder as a game. The child is the AUTHOR:
+     they arrange picture cards into their own morning or evening plan, then live it
+     with Nilu, walking station to station through a cozy house. First/then language,
+     any order is a good order, no timers, no mistakes. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+<link rel="stylesheet" href="../gamekit/kit.css">
+<style>
+  /* ---------- planner overlay (the picture-card schedule builder) ---------- */
+  #dpPlanner {
+    position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
+    background: rgba(60, 50, 110, .35); backdrop-filter: blur(3px);
+  }
+  #dpPlanner .dpCard {
+    background: var(--k-card); border-radius: 26px; padding: 18px 20px;
+    width: min(94vw, 560px); max-height: 92vh; overflow-y: auto; text-align: center;
+    box-shadow: 0 18px 50px rgba(60, 60, 120, .3);
+  }
+  #dpPlanner h2 { margin: 2px 0 2px; font-size: 24px; color: var(--k-accent); }
+  #dpPlanner .dpSub { font-size: 14px; margin: 0 0 10px; }
+  #dpSlots { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
+  .dpSlot {
+    width: 64px; height: 78px; border-radius: 14px; border: 3px dashed #b9a7f0; cursor: pointer;
+    background: rgba(185,167,240,.12); font: inherit; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    position: relative;
+  }
+  .dpSlot .n {
+    position: absolute; top: -9px; left: -7px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--k-accent); color: #fff; font-size: 13px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dpSlot .em { font-size: 30px; }
+  .dpSlot .lb { font-size: 8.5px; font-weight: 800; line-height: 1.05; }
+  .dpSlot.filled { border-style: solid; border-color: var(--k-accent); background: #fff; }
+  .dpSlot.next { animation: dpSlotPulse 1.4s ease-in-out infinite; }
+  @keyframes dpSlotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  #dpTray { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
+  .dpCardBtn {
+    width: 74px; height: 86px; border-radius: 16px; border: 0; cursor: pointer; font: inherit; padding: 0;
+    background: #fff; box-shadow: 0 4px 10px rgba(60,50,120,.18);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .dpCardBtn .em { font-size: 34px; }
+  .dpCardBtn .lb { font-size: 9.5px; font-weight: 800; line-height: 1.1; }
+  .dpCardBtn:active { transform: scale(.92); }
+  .dpCardBtn.used { opacity: .28; transform: scale(.9); box-shadow: none; }
+  .dpRow { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  #dpPlay:disabled { opacity: .45; filter: grayscale(.5); }
+  .dpMini {
+    border: 0; cursor: pointer; font: inherit; font-weight: 800; font-size: 13px;
+    background: rgba(255,255,255,.85); border-radius: 12px; padding: 9px 14px; min-height: 44px;
+    box-shadow: 0 2px 6px rgba(40,40,90,.12); color: var(--k-ink);
+  }
+
+  /* ---------- in-day progress strip (mini visual schedule, always visible) ---------- */
+  #dpStrip {
+    position: fixed; top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left));
+    z-index: 45; background: var(--k-card); border-radius: 16px; padding: 8px 10px;
+    box-shadow: 0 4px 12px rgba(40,40,90,.18); border: 2px solid var(--k-accent);
+    display: none; max-width: 46vw;
+  }
+  #dpStrip h3 { margin: 0 0 4px; font-size: 12px; letter-spacing: .4px; }
+  .dpStep {
+    display: inline-flex; flex-direction: column; align-items: center; width: 36px; margin: 1px 3px;
+    font-size: 22px; opacity: .45;
+  }
+  .dpStep .tick { font-size: 12px; height: 14px; }
+  .dpStep.now { opacity: 1; transform: scale(1.15); }
+  .dpStep.done { opacity: .8; }
+  .dpStep.done .em { filter: grayscale(.3); opacity: .6; }
+  @media (prefers-reduced-motion: reduce) { .dpSlot.next { animation: none; } }
+</style>
+</head>
+<body>
+<div id="kStage"></div>
+
+<!-- the planner (author phase) -->
+<div id="dpPlanner">
+  <div class="dpCard">
+    <h2 id="dpTitle">🌅 My Morning Plan</h2>
+    <p class="dpSub">Tap the picture cards in <b>your</b> order — you're the planner!</p>
+    <div id="dpSlots"></div>
+    <div id="dpTray"></div>
+    <div class="dpRow">
+      <button class="kBig" id="dpPlay" title="Start living your plan with Nilu">▶️ Live my plan!</button>
+    </div>
+    <div class="dpRow">
+      <button class="dpMini" id="dpSwap" title="Switch between morning and evening plans">🌙 Make an evening plan</button>
+      <button class="dpMini" id="dpClear" title="Take all the cards back out">🧹 Start over</button>
+    </div>
+  </div>
+</div>
+
+<!-- mini schedule strip while living the day -->
+<div id="dpStrip"><h3 id="dpStripTitle">🌅 My plan</h3><div id="dpStripSteps"></div></div>
+
+<script src="lib/three.min.js"></script>
+<script src="../gamekit/kit.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = window.ABEKit;
+
+  /* ---------- the picture cards (steps) and where each happens ---------- */
+  // station: which piece of furniture enacts this step
+  const STEPS = {
+    wake:    { emoji: "🛏️", label: "Wake up",       station: "bed",    line: "Good morning! Up and at 'em!" },
+    potty:   { emoji: "🚽", label: "Potty",          station: "toilet", line: "Potty time. Flush and done!" },
+    teeth:   { emoji: "🪥", label: "Brush teeth",    station: "sink",   line: "Brush brush brush! Sparkly clean teeth!" },
+    face:    { emoji: "🧼", label: "Wash face",      station: "sink",   line: "Splash splash! Fresh clean face!" },
+    dress:   { emoji: "👕", label: "Get dressed",    station: "closet", line: "Clothes on! Looking great!" },
+    brekkie: { emoji: "🥣", label: "Breakfast",      station: "table",  line: "Yum yum breakfast! Growing strong!" },
+    bag:     { emoji: "🎒", label: "Pack my bag",    station: "door",   line: "Bag packed! Ready to go!" },
+    shoes:   { emoji: "👟", label: "Shoes on",       station: "door",   line: "Shoes on! Out the door we go!" },
+    dinner:  { emoji: "🍽️", label: "Dinner",         station: "table",  line: "Mmm, dinner together!" },
+    bath:    { emoji: "🛁", label: "Bath time",      station: "tub",    line: "Splish splash! Bubbly clean!" },
+    pjs:     { emoji: "🩱", label: "Pajamas",        station: "closet", line: "Cozy pajamas on!" },
+    story:   { emoji: "📖", label: "Story time",     station: "rug",    line: "Once upon a time… what a good story!" },
+    hug:     { emoji: "🤗", label: "Goodnight hug",  station: "rug",    line: "Big warm hug. I love you!" },
+    lights:  { emoji: "🌙", label: "Lights out",     station: "bed",    line: "Lights out. Sweet dreams, Nilu." },
+  };
+  const ROUTINES = {
+    morning: { emoji: "🌅", name: "Morning", cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes"] },
+    evening: { emoji: "🌙", name: "Evening", cards: ["dinner", "bath", "pjs", "teeth", "potty", "story", "hug", "lights"] },
+  };
+  const MIN_STEPS = 3, MAX_STEPS = 6;
+
+  /* ---------- three.js scene ---------- */
+  let scene, camera, renderer, player, beaconArrow, beaconRing, sun, ambient;
+  const stations = {};          // id -> { x, z, sprite, baseY, mesh }
+  const colliders = [];
+  const W = 13, D = 10;
+
+  function emojiTexture(emoji, size) {
+    const c = document.createElement("canvas"); c.width = c.height = size || 128;
+    const g = c.getContext("2d");
+    g.font = (c.width * 0.8) + "px serif";
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(emoji, c.width / 2, c.height / 2 + c.width * 0.05);
+    const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
+  }
+  function emojiSprite(emoji, scale) {
+    const m = new THREE.SpriteMaterial({ map: emojiTexture(emoji), transparent: true });
+    const s = new THREE.Sprite(m); s.scale.set(scale || 1.4, scale || 1.4, 1); return s;
+  }
+  function box(w, h, d, color, x, y, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+    m.position.set(x, y, z); scene.add(m); return m;
+  }
+
+  function buildElephant(color) {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({ color });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 18, 14), mat);
+    body.position.y = 0.55; body.scale.y = 1.1; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 14), mat);
+    head.position.set(0, 1.35, 0.12); g.add(head);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), mat);
+      ear.position.set(0.42 * s, 1.45, -0.05); ear.scale.set(0.5, 1, 0.9); g.add(ear);
+    }
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.55, 10), mat);
+    trunk.position.set(0, 1.1, 0.42); trunk.rotation.x = 0.9; g.add(trunk);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x2a2a3a });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), eyeMat);
+      eye.position.set(0.16 * s, 1.45, 0.44); g.add(eye);
+    }
+    return g;
+  }
+
+  // one cozy room: furniture around the walls, open floor in the middle
+  function furniture(id, emoji, x, z, w, d, h, color) {
+    const m = box(w, h, d, color, x, h / 2, z);
+    colliders.push({ x1: x - w / 2, z1: z - d / 2, x2: x + w / 2, z2: z + d / 2 });
+    const s = emojiSprite(emoji, 1.5);
+    s.position.set(x, h + 1.0, z); scene.add(s);
+    // stand point: nudged toward the room center so Nilu stops on open floor
+    const sx = x - Math.sign(x) * (w / 2 + 0.9) * (Math.abs(x) > Math.abs(z) ? 1 : 0);
+    const sz = z - Math.sign(z) * (d / 2 + 0.9) * (Math.abs(x) > Math.abs(z) ? 0 : 1);
+    stations[id] = { x: sx || x, z: sz || z, sprite: s, baseY: h + 1.0, mesh: m };
+  }
+
+  function buildHouse() {
+    ambient = new THREE.AmbientLight(0xffffff, 0.75); scene.add(ambient);
+    sun = new THREE.DirectionalLight(0xfff4e0, 0.55); sun.position.set(6, 12, 4); scene.add(sun);
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, D * 2),
+      new THREE.MeshLambertMaterial({ color: 0xffe3b3 }));
+    floor.rotation.x = -Math.PI / 2; scene.add(floor);
+
+    // walls — cozy candy colors, low front ledge so the camera sees in
+    box(W * 2, 3, 0.4, 0xc9b8f5, 0, 1.5, -D);            // back — lavender
+    box(0.4, 3, D * 2, 0xffc2d4, -W, 1.5, 0);            // left — pink
+    box(0.4, 3, D * 2, 0xaadcf7, W, 1.5, 0);             // right — sky
+    box(W - 3, 1.2, 0.4, 0xffd9a0, -(W / 2 + 1.5), 0.6, D);
+    box(W - 3, 1.2, 0.4, 0xffd9a0, W / 2 + 1.5, 0.6, D); // doorway gap in front
+
+    // big soft rug in the middle
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(3.4, 40),
+      new THREE.MeshLambertMaterial({ color: 0xffd1dc }));
+    rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.01, 0); scene.add(rug);
+
+    // furniture stations around the walls
+    furniture("bed",    "🛏️", -10,  -6.5, 3.6, 2.4, 1.0, 0xf49ab5);  // bed, back-left
+    furniture("toilet", "🚽", -3.5, -7.6, 1.5, 1.4, 1.0, 0xdfe8f2);  // bathroom row on the back wall
+    furniture("sink",   "🚰",  0.8, -7.6, 1.7, 1.4, 1.2, 0x9fd7f0);
+    furniture("tub",    "🛁",  5.2, -7.4, 3.0, 1.8, 0.9, 0xbfe6f7);
+    furniture("closet", "👚", 10.8, -2.5, 1.6, 3.0, 2.2, 0xc79ef2);  // wardrobe, right wall
+    furniture("table",  "🍎", 10.4,  4.0, 2.8, 2.6, 0.9, 0xffca7a);  // kitchen table, right-front
+    furniture("rug",    "🧸", -10.2,  3.5, 3.0, 3.0, 0.35, 0xa5e6b8); // reading corner, left-front
+    furniture("door",   "🚪",  0,    9.85, 2.4, 0.3, 1.15, 0xc98d5f); // low door ledge in the gap — camera must see over it
+
+    // a sunny window on the back wall
+    const win = box(3.2, 1.6, 0.1, 0xfff3c4, 5.5, 1.9, -D + 0.18); win.material.emissive = new THREE.Color(0x665522);
+
+    // current-step beacon: floating arrow + pulsing floor ring
+    beaconArrow = emojiSprite("⬇️", 1.5); beaconArrow.visible = false; scene.add(beaconArrow);
+    beaconRing = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 40),
+      new THREE.MeshBasicMaterial({ color: 0xffd43b, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+    beaconRing.rotation.x = -Math.PI / 2; beaconRing.position.y = 0.03;
+    beaconRing.visible = false; scene.add(beaconRing);
+  }
+
+  // dawn ↔ dusk mood for morning vs evening plans
+  function setMood(routine) {
+    const morning = routine === "morning";
+    const bg = new THREE.Color(morning ? 0x8fd0ff : 0x5f5a9e);
+    scene.background = bg; scene.fog = new THREE.Fog(bg.getHex(), 30, 60);
+    ambient.intensity = morning ? 0.75 : 0.5;
+    sun.intensity = morning ? 0.55 : 0.28;
+    sun.color.set(morning ? 0xfff4e0 : 0xb9a7f0);
+  }
+
+  /* ---------- game state ---------- */
+  const G = {
+    mode: "plan",            // plan → live → done
+    routine: "morning",
+    plan: [],                // chosen step ids, in the child's order
+    idx: 0,                  // current step while living the day
+    days: 0,
+    walkTapGo: false,
+    panelOpen: false,
+  };
+  const P = { x: 0, z: 2.5, ry: Math.PI };
+
+  const $ = (id) => document.getElementById(id);
+  const stepOf = (id) => STEPS[id];
+
+  function snapshot() {
+    return JSON.parse(JSON.stringify({ mode: G.mode, routine: G.routine, plan: G.plan, idx: G.idx, x: P.x, z: P.z }));
+  }
+  function restore(s) {
+    G.mode = s.mode === "plan" ? "live" : s.mode; G.routine = s.routine; G.plan = s.plan; G.idx = s.idx;
+    P.x = s.x; P.z = s.z;
+    setMood(G.routine);
+    $("dpPlanner").style.display = "none"; G.panelOpen = false;
+    closePanel(); renderStrip(); refreshChip(); placeBeacon();
+  }
+
+  /* ---------- planner (author phase) ---------- */
+  function openPlanner() {
+    G.mode = "plan"; G.panelOpen = true; G.idx = 0;
+    const r = ROUTINES[G.routine];
+    setMood(G.routine);
+    $("dpPlanner").style.display = "flex";
+    $("dpStrip").style.display = "none";
+    beaconArrow.visible = beaconRing.visible = false;
+    $("dpTitle").textContent = `${r.emoji} My ${r.name} Plan`;
+    $("dpSwap").textContent = G.routine === "morning" ? "🌙 Make an evening plan" : "🌅 Make a morning plan";
+    K.chip("");
+    renderPlanner();
+  }
+
+  function renderPlanner() {
+    const r = ROUTINES[G.routine];
+    const slots = $("dpSlots");
+    slots.innerHTML = "";
+    for (let i = 0; i < MAX_STEPS; i++) {
+      const id = G.plan[i];
+      const b = document.createElement("button");
+      b.className = "dpSlot" + (id ? " filled" : "") + (!id && i === G.plan.length ? " next" : "");
+      b.title = id ? `Take ${stepOf(id).label} back out` : `Step ${i + 1} of your plan`;
+      b.innerHTML = `<span class="n">${i + 1}</span>` +
+        (id ? `<span class="em">${stepOf(id).emoji}</span><span class="lb">${stepOf(id).label}</span>` : `<span class="em" style="opacity:.25">✨</span>`);
+      if (id) b.addEventListener("pointerdown", () => {
+        G.plan.splice(i, 1); K.sfx.pop(); renderPlanner();
+      });
+      slots.appendChild(b);
+    }
+    const tray = $("dpTray");
+    tray.innerHTML = "";
+    for (const id of r.cards) {
+      const used = G.plan.includes(id);
+      const s = stepOf(id);
+      const b = document.createElement("button");
+      b.className = "dpCardBtn" + (used ? " used" : "");
+      b.title = used ? `${s.label} is already in your plan` : `Add ${s.label} to your plan`;
+      b.innerHTML = `<span class="em">${s.emoji}</span><span class="lb">${s.label}</span>`;
+      b.addEventListener("pointerdown", () => {
+        if (G.plan.includes(id) || G.plan.length >= MAX_STEPS) {
+          if (G.plan.length >= MAX_STEPS && !G.plan.includes(id)) K.toast("Your plan is full — 6 steps is a big day! 💛");
+          return;
+        }
+        G.plan.push(id);
+        K.sfx.tap(); K.say(s.label);
+        renderPlanner();
+      });
+      tray.appendChild(b);
+    }
+    const play = $("dpPlay");
+    play.disabled = G.plan.length < MIN_STEPS;
+    play.textContent = G.plan.length < MIN_STEPS
+      ? `▶️ Pick ${MIN_STEPS - G.plan.length} more…`
+      : "▶️ Live my plan!";
+  }
+
+  function startDay() {
+    if (G.plan.length < MIN_STEPS) return;
+    K.save(`plan.${G.routine}`, G.plan);
+    K.save("routine", G.routine);
+    G.mode = "live"; G.idx = 0; G.panelOpen = false;
+    $("dpPlanner").style.display = "none";
+    $("dpStrip").style.display = "block";
+    $("dpStripTitle").textContent = `${ROUTINES[G.routine].emoji} My plan`;
+    P.x = 0; P.z = 2.5; P.ry = Math.PI; // start on the rug, in clear view
+    renderStrip(); refreshChip(); placeBeacon();
+    K.sfx.yes();
+    const names = G.plan.map((id) => stepOf(id).label);
+    K.say(`Here is your plan! First ${names[0]}` + names.slice(1).map((n) => `, then ${n}`).join("") + ". Let's go!");
+    K.recordEvent("planstart", G.plan.length);
+  }
+
+  /* ---------- living the day ---------- */
+  function renderStrip() {
+    $("dpStripSteps").innerHTML = G.plan.map((id, i) => {
+      const cls = i < G.idx ? "done" : i === G.idx ? "now" : "";
+      return `<span class="dpStep ${cls}"><span class="em">${stepOf(id).emoji}</span><span class="tick">${i < G.idx ? "✅" : i === G.idx ? "⭐" : ""}</span></span>`;
+    }).join("");
+  }
+
+  function refreshChip() {
+    if (G.mode !== "live") { K.chip(""); return; }
+    const cur = G.plan[G.idx], nxt = G.plan[G.idx + 1];
+    if (!cur) return;
+    K.chip(nxt
+      ? `First ${stepOf(cur).emoji} ${stepOf(cur).label} · then ${stepOf(nxt).emoji}`
+      : `Last one: ${stepOf(cur).emoji} ${stepOf(cur).label}!`);
+  }
+
+  function placeBeacon() {
+    if (G.mode !== "live" || !G.plan[G.idx]) { beaconArrow.visible = beaconRing.visible = false; return; }
+    const st = stations[stepOf(G.plan[G.idx]).station];
+    beaconArrow.position.set(st.sprite.position.x, st.baseY + 1.6, st.sprite.position.z);
+    beaconRing.position.x = st.x; beaconRing.position.z = st.z;
+    beaconArrow.visible = beaconRing.visible = true;
+  }
+
+  function nearStation(id, dist) {
+    const st = stations[id];
+    return Math.hypot(st.x - P.x, st.z - P.z) < (dist || 2.2);
+  }
+
+  function tryDo() {
+    if (G.mode !== "live" || K.replaying || G.panelOpen) return;
+    const curId = G.plan[G.idx];
+    if (!curId) return;
+    const cur = stepOf(curId);
+    if (!nearStation(cur.station)) {
+      // is the child at a DIFFERENT station? gently point back to the plan
+      const other = Object.keys(stations).find((s) => nearStation(s, 1.9));
+      K.sfx.no();
+      if (other) { K.toast(`Our plan says ${cur.emoji} ${cur.label} next — this way! 💛`); K.say(`Our plan says ${cur.label} next!`); }
+      else K.toast(`Walk to the glowing spot ✨ ${cur.emoji}`);
+      return;
+    }
+    // enact the step
+    const st = stations[cur.station];
+    st.sprite.scale.set(2.1, 2.1, 1);
+    setTimeout(() => st.sprite.scale.set(1.5, 1.5, 1), 700 * K.speed());
+    K.sfx.yes(); K.say(cur.line);
+    K.toast(`${cur.emoji} ${cur.label} — done! ✅`);
+    K.recordEvent("step", G.idx);
+    G.idx++;
+    renderStrip();
+    if (G.idx >= G.plan.length) { setTimeout(finishDay, 1100 * K.speed()); }
+    else {
+      refreshChip(); placeBeacon();
+      const nxt = stepOf(G.plan[G.idx]);
+      setTimeout(() => K.say(`Now, ${nxt.label}!`), 1400 * K.speed());
+    }
+  }
+
+  function readPlan() {
+    if (G.mode !== "live") return;
+    const cur = G.plan[G.idx];
+    if (!cur) return;
+    const left = G.plan.length - G.idx;
+    K.say(`Now it's ${stepOf(cur).label}. ${left - 1 > 0 ? `${left - 1} more after this!` : "It's the last one!"}`);
+    refreshChip();
+  }
+
+  /* ---------- day complete ---------- */
+  function panel(html) {
+    closePanel();
+    const p = document.createElement("div");
+    p.className = "kPanel"; p.id = "dpPanel";
+    p.innerHTML = `<div class="kPanelCard" style="text-align:center">${html}</div>`;
+    document.body.appendChild(p);
+    G.panelOpen = true;
+    return p;
+  }
+  function closePanel() { const p = $("dpPanel"); if (p) p.remove(); G.panelOpen = false; }
+
+  function finishDay() {
+    G.mode = "done";
+    beaconArrow.visible = beaconRing.visible = false;
+    G.days++; K.save("days", G.days);
+    K.sfx.star(); K.recordEvent("day", G.days);
+    const r = ROUTINES[G.routine];
+    K.say(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`);
+    const other = G.routine === "morning" ? "evening" : "morning";
+    panel(`<h2>🌟 Plan complete!</h2>
+      <p>You made the plan AND lived it — every step, in your order!</p>
+      <div style="font-size:28px;margin:6px 0">${G.plan.map((id) => stepOf(id).emoji).join(" → ")}</div>
+      <p style="font-size:14px">Days planned: <b>${G.days}</b></p>
+      <button class="kBig" id="dpAgain" title="Plan this routine again">${r.emoji} Plan again</button>
+      <button class="kBig kAlt" id="dpOther" title="Make the other plan">${ROUTINES[other].emoji} ${ROUTINES[other].name} plan</button>`);
+    $("dpAgain").addEventListener("pointerdown", () => { closePanel(); openPlanner(); });
+    $("dpOther").addEventListener("pointerdown", () => {
+      G.routine = other;
+      G.plan = K.load(`plan.${other}`, []).filter((id) => ROUTINES[other].cards.includes(id));
+      closePanel(); openPlanner();
+    });
+  }
+
+  /* ---------- movement + camera (kit joystick / tap-to-walk) ---------- */
+  function collide(nx, nz) {
+    for (const c of colliders) {
+      if (nx > c.x1 - 0.45 && nx < c.x2 + 0.45 && nz > c.z1 - 0.45 && nz < c.z2 + 0.45) return true;
+    }
+    return false;
+  }
+
+  function movePlayer(dt) {
+    if (G.panelOpen || G.mode === "plan") return;
+    let vx = 0, vz = 0;
+    if (K.joy.active) { vx = K.joy.x; vz = K.joy.z; G.walkTapGo = false; }
+    else {
+      const t = K.consumeWalkTarget();
+      if (t) {
+        const dx = t.x - P.x, dz = t.z - P.z, d = Math.hypot(dx, dz);
+        if (d < 0.25) {
+          K.clearWalkTarget();
+          if (G.walkTapGo) { tryDo(); G.walkTapGo = false; }
+        } else { vx = dx / d; vz = dz / d; }
+      }
+    }
+    const sp = 4.6;
+    if (vx || vz) {
+      const m = Math.hypot(vx, vz); vx /= m; vz /= m;
+      const nx = P.x + vx * sp * dt, nz = P.z + vz * sp * dt;
+      if (!collide(nx, P.z)) P.x = Math.max(-W + 0.8, Math.min(W - 0.8, nx));
+      if (!collide(P.x, nz)) P.z = Math.max(-D + 0.8, Math.min(D - 0.8, nz));
+      P.ry = Math.atan2(vx, vz);
+    }
+  }
+
+  function placeActors() {
+    player.position.set(P.x, 0, P.z);
+    player.rotation.y = P.ry;
+    camera.position.set(P.x * 0.8, 7.2, P.z * 0.5 + 10.8);
+    camera.lookAt(P.x, 0.9, P.z - 1.2);
+  }
+
+  /* ---------- per-frame ---------- */
+  let bob = 0;
+  function frame(dt) {
+    dt = dt || 0;
+    bob += dt;
+    for (const id in stations) {
+      const st = stations[id];
+      st.sprite.position.y = st.baseY + Math.sin(bob * 1.6 + st.x) * 0.06;
+    }
+    const curStep = G.plan[G.idx] && stepOf(G.plan[G.idx]);
+    if (beaconArrow.visible && curStep) {
+      beaconArrow.position.y = (stations[curStep.station].baseY + 1.4) + Math.abs(Math.sin(bob * 2.2)) * 0.4;
+      const s = 1 + Math.sin(bob * 3) * 0.12;
+      beaconRing.scale.set(s, s, 1);
+    } else if (beaconArrow.visible) {
+      beaconArrow.visible = beaconRing.visible = false; // last step just finished — nothing left to point at
+    }
+    if (K.replaying) {
+      if (G.panelOpen) closePanel();
+      $("dpPlanner").style.display = "none";
+      const pose = K.replayPose(dt);
+      if (pose) { P.x = pose.x; P.z = pose.z; P.ry = pose.ry; }
+      placeActors();
+    } else {
+      movePlayer(dt);
+      placeActors();
+    }
+    renderer.render(scene, camera);
+  }
+
+  /* ---------- tap-to-walk ---------- */
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function wireTap() {
+    renderer.domElement.addEventListener("pointerdown", (e) => {
+      if (K.paused || K.replaying || G.panelOpen || G.mode !== "live") return;
+      ndc.x = (e.clientX / innerWidth) * 2 - 1;
+      ndc.y = -(e.clientY / innerHeight) * 2 + 1;
+      ray.setFromCamera(ndc, camera);
+      const hit = new THREE.Vector3();
+      if (!ray.ray.intersectPlane(floorPlane, hit)) return;
+      // tapping near a station walks there and does the step on arrival
+      let target = { x: hit.x, z: hit.z }, best = null, bd = 4;
+      for (const id in stations) {
+        const st = stations[id];
+        const d = Math.hypot(st.x - hit.x, st.z - hit.z);
+        if (d < bd) { bd = d; best = st; }
+      }
+      G.walkTapGo = !!(best && bd < 1.8);
+      if (G.walkTapGo) target = { x: best.x, z: best.z };
+      K.queueWalkTo(Math.max(-W + 0.8, Math.min(W - 0.8, target.x)),
+                    Math.max(-D + 0.8, Math.min(D - 0.8, target.z)));
+      K.sfx.tap();
+    });
+  }
+
+  /* ---------- boot ---------- */
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 100);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  document.getElementById("kStage").appendChild(renderer.domElement);
+  addEventListener("resize", () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  buildHouse();
+  setMood("morning");
+  player = buildElephant(0x7ec8f7); scene.add(player);
+  // debug/test handle, same convention as grocery's window.GS
+  window.DP = { G, P, stations, tryDo: () => tryDo(), startDay: () => startDay(), openPlanner: () => openPlanner() };
+  frame(0);
+
+  K.init({
+    slug: "dayplanner",
+    name: "My Day Planner",
+    emoji: "📅",
+    accent: "#8b5cf6",
+    tagline: "make your plan with picture cards, then live it with Nilu!",
+    emojis: ["📅", "🛏️", "🪥", "🥣", "👟"],
+    howTo: [
+      ["📅", "Tap picture cards into YOUR order"],
+      ["▶️", "Then live your plan with Nilu!"],
+      ["🕹️", "Walk with the stick, arrows, or a tap"],
+      ["✅", "At each glowing spot, tap Do it"],
+      ["🌅🌙", "Make a morning AND an evening plan"],
+    ],
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM",
+    actions: [
+      { emoji: "✅", label: "Do it", title: "Do the plan step you are next to", onTap: tryDo },
+      { emoji: "📅", label: "My Plan", title: "Hear which step is next", onTap: readPlan },
+    ],
+    playerPos: () => ({ x: P.x, z: P.z, ry: P.ry }),
+    replayableState: { get: snapshot, set: restore },
+    onStart() {
+      G.days = K.load("days", 0);
+      G.routine = K.load("routine", "morning");
+      if (!ROUTINES[G.routine]) G.routine = "morning";
+      G.plan = K.load(`plan.${G.routine}`, []).filter((id) => ROUTINES[G.routine].cards.includes(id));
+      $("dpPlay").addEventListener("pointerdown", startDay);
+      $("dpClear").addEventListener("pointerdown", () => { G.plan = []; K.sfx.pop(); renderPlanner(); });
+      $("dpSwap").addEventListener("pointerdown", () => {
+        G.routine = G.routine === "morning" ? "evening" : "morning";
+        G.plan = K.load(`plan.${G.routine}`, []).filter((id) => ROUTINES[G.routine].cards.includes(id));
+        openPlanner(); K.sfx.tap();
+      });
+      wireTap();
+      openPlanner();
+    },
+    onPause(p) {},
+    onFrame: frame,
+    onReplayEvent(ev) {
+      if (ev.kind === "step") { K.toast("✅ Another step done!"); K.sfx.yes(); }
+      else if (ev.kind === "day") { K.toast("🌟 A whole day, planned and done!"); K.sfx.star(); }
+      else if (ev.kind === "planstart") { K.toast("📅 The plan begins!"); K.sfx.tap(); }
+    },
+  });
+})();
+</script>
+</body>
+</html>
