@@ -24,8 +24,10 @@ const ParentalGate: React.FC = () => {
       const a = (e.target as HTMLElement)?.closest?.('a');
       if (!a) return;
       const href = a.getAttribute('href') || '';
-      // gate: external links, and the donate flow (leads to payment pages)
-      if (/^https?:\/\//i.test(href) || href === '/donate' || href.startsWith('/donate?')) {
+      // gate: external links, and the donate flow (leads to payment pages).
+      // Our own domain is exempt — live-catalog games play from there.
+      const external = /^https?:\/\//i.test(href) && !/^https?:\/\/(www\.)?aariasblueelephant\.org(\/|$)/i.test(href);
+      if (external || href === '/donate' || href.startsWith('/donate?')) {
         e.preventDefault();
         e.stopPropagation();
         newQuestion();

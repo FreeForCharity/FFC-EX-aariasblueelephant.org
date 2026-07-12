@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "fetch-data": "tsx scripts/fetch-resilience-data.ts",
-    "build": "npm run check:controls && npm run fetch-data && tsc && vite build && node prerender.js && node scripts/minify-games.mjs",
+    "build": "npm run check:controls && npm run fetch-data && tsc && vite build && cp data/games.json dist/games-catalog.json && node prerender.js && node scripts/minify-games.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "check:controls": "node scripts/check-game-controls.mjs"
