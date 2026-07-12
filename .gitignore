@@ -62,3 +62,5 @@ Thumbs.db
 # === Production Data Backups (Private) ===
 *_rows.csv
 restored_data.json
+android/keystore/
+android/keystore.properties

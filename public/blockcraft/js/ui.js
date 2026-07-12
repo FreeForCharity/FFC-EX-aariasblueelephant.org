@@ -94,10 +94,14 @@ ABC.ui = (function () {
      playerName, stars/hearts/coins, or photos. Those are this child's own
      personal progress and must never leave the device or be overwritten by
      someone else's file. */
-  function shareWorld() {
+  async function shareWorld() {
     try {
       const payload = { app: 'blockcraft', v: 1, world: ABC.world.serialize() };
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      if (window.ABEShare && await window.ABEShare('my-blockcraft-world.json', blob)) {
+        toast('📦 Your world is packed up to share! 📦', 3600, true);
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'my-blockcraft-world.json';

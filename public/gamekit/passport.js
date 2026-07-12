@@ -21,6 +21,35 @@
   } catch (e) {}
 })();
 
+/* Native share bridge: in the mobile app, file "downloads" (adventure files,
+ * world shares, photos, certificates) route to the OS share sheet instead of
+ * <a download> (which silently fails in iOS WKWebView). On the web this is a
+ * no-op and games keep their normal download path.
+ *   window.ABEShare(filename, data) -> Promise<boolean handled>
+ *   data: Blob, data: URL string, or plain string (JSON) */
+(function () {
+  window.ABEShare = async function (filename, data) {
+    try {
+      var C = window.Capacitor;
+      if (!C || !C.Plugins || !C.Plugins.Share || !C.Plugins.Filesystem) return false;
+      var b64;
+      if (typeof data === "string" && data.indexOf("data:") === 0) b64 = data.split(",")[1];
+      else {
+        var blob = data instanceof Blob ? data : new Blob([String(data)]);
+        b64 = await new Promise(function (res, rej) {
+          var r = new FileReader();
+          r.onload = function () { res(String(r.result).split(",")[1]); };
+          r.onerror = rej;
+          r.readAsDataURL(blob);
+        });
+      }
+      var w = await C.Plugins.Filesystem.writeFile({ path: filename, data: b64, directory: "CACHE" });
+      await C.Plugins.Share.share({ title: filename, url: w.uri });
+      return true;
+    } catch (e) { return e && e.message === "Share canceled" ? true : false; }
+  };
+})();
+
 /* Anonymous aggregate play-time for legacy games (same posture as the play
  * tally each game already sends: seconds per game per day, NO identifiers).
  * Counts only visible-tab time, flushed in small batches. The anon key below

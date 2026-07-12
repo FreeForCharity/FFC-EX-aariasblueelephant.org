@@ -1687,16 +1687,21 @@ document.getElementById("viewBtn").addEventListener("click", () => {
   orbit.az = ORBIT_DEFAULT.az; orbit.pol = ORBIT_DEFAULT.pol; orbit.r = ORBIT_DEFAULT.r;
 });
 
-document.getElementById("photoBtn").addEventListener("click", () => {
+document.getElementById("photoBtn").addEventListener("click", async () => {
   markInteract();
   try {
     renderer.render(scene, camera); // make sure the freshest frame is in the buffer
     const url = renderer.domElement.toDataURL("image/png");
+    SND.init(); SND.plop();
+    haptic(20, 0);
+    if (window.ABEShare && await window.ABEShare("my-dough.png", url)) {
+      toastQueue.push("📸 Saved your dough photo!");
+      pumpToast();
+      return;
+    }
     const a = document.createElement("a");
     a.href = url; a.download = "my-dough.png";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    SND.init(); SND.plop();
-    haptic(20, 0);
     toastQueue.push("📸 Saved your dough photo!");
     pumpToast();
   } catch (e) {
@@ -1705,16 +1710,21 @@ document.getElementById("photoBtn").addEventListener("click", () => {
   }
 });
 
-document.getElementById("exportBtn").addEventListener("click", () => {
+document.getElementById("exportBtn").addEventListener("click", async () => {
   try {
     const blob = new Blob([JSON.stringify(serializeDough())], { type: "application/json" });
+    SND.init(); SND.plop();
+    haptic(20, 0);
+    if (window.ABEShare && await window.ABEShare("my-dough.doughlab.json", blob)) {
+      toastQueue.push("📤 Saved! Share this file with a friend");
+      pumpToast();
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "my-dough.doughlab.json";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    SND.init(); SND.plop();
-    haptic(20, 0);
     toastQueue.push("📤 Saved! Share this file with a friend");
     pumpToast();
   } catch (e) {

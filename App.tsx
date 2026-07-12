@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import PermissionDenied from './pages/PermissionDenied';
 import ProtectedRoute from './components/ProtectedRoute';
 import Delight from './components/Delight';
+import ParentalGate from './components/ParentalGate';
 import ScrollToTop from './components/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
@@ -178,6 +179,7 @@ const App: React.FC = () => {
             </Suspense>
           </Layout>
           <Delight />
+          <ParentalGate />
         </Router>
       </DataProvider>
     </AuthProvider>
