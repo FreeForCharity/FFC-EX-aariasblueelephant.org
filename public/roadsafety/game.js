@@ -2800,12 +2800,15 @@ function drawCert(stars, champ, stunt){
   x.font = "12px Georgia, serif"; x.fillStyle = "#5a7d9a";
   x.fillText("Building a New Inclusive World 🌈 ♾️ • aariasblueelephant.org", CW/2, 612);
 }
-document.getElementById("certDownload").addEventListener("click", () => {
+document.getElementById("certDownload").addEventListener("click", async () => {
   try {
-    const a = document.createElement("a");
-    a.href = document.getElementById("certCanvas").toDataURL("image/png");
+    const dataUrl = document.getElementById("certCanvas").toDataURL("image/png");
     const nm = (save.name || "hero").replace(/[^a-z0-9]/gi, "_");
-    a.download = `${nm}_${S.veh.id}_certificate.png`;
+    const filename = `${nm}_${S.veh.id}_certificate.png`;
+    if (window.ABEShare && await window.ABEShare(filename, dataUrl)) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
     a.click();
   } catch (e){
     alert("Couldn't download — try running the game from a local web server (see README).");

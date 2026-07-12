@@ -270,9 +270,27 @@
     }
     return { x: a[1] + (b[1] - a[1]) * f, z: a[2] + (b[2] - a[2]) * f, ry: a[3] + (b[3] - a[3]) * f };
   };
-  function shareAdventure() {
+  // native share bridge (mirrors window.ABEShare in passport.js for legacy games):
+  // in the mobile app, file saves go to the OS share sheet — <a download> is a
+  // silent no-op in iOS WKWebView. On the web, the normal download is kept.
+  K.shareFile = async (filename, blob) => {
+    try {
+      const C = window.Capacitor;
+      if (!C || !C.Plugins || !C.Plugins.Share || !C.Plugins.Filesystem) return false;
+      const b64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(',')[1]);
+        r.onerror = rej; r.readAsDataURL(blob);
+      });
+      const w = await C.Plugins.Filesystem.writeFile({ path: filename, data: b64, directory: 'CACHE' });
+      await C.Plugins.Share.share({ title: filename, url: w.uri });
+      return true;
+    } catch (e) { return e && e.message === 'Share canceled'; }
+  };
+  async function shareAdventure() {
     if (recSpan() < REC_MIN) { K.toast('Play a little first, then share your adventure! 📤'); return; }
     const blob = new Blob([JSON.stringify({ app: cfg.slug, v: 1, kind: 'adventure', samples: REC.samples, events: REC.events })], { type: 'application/json' });
+    if (await K.shareFile(`my-adventure.${cfg.slug}.json`, blob)) { K.toast('Adventure shared! 📤'); K.sfx.yes(); return; }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `my-adventure.${cfg.slug}.json`; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);

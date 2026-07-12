@@ -305,7 +305,7 @@ window.MB = window.MB || {};
     MB.Bag.renderGrid(
       item => { ui.hide('bagModal'); loadBagItem(item); },
       item => { ui.hide('bagModal'); MB.Replay.playCreation(item, scene); },
-      item => { MB.Bag.exportItem(item); MB.Audio.sparkle(); ui.toast('📤 Saved "' + item.name + '" — share the file with a friend!', 2600); }
+      item => { MB.Bag.exportItem(item).then(() => { MB.Audio.sparkle(); ui.toast('📤 Saved "' + item.name + '" — share the file with a friend!', 2600); }); }
     );
     MB.Bag.updateCount();
     ui.show('bagModal');
@@ -458,8 +458,8 @@ window.MB = window.MB || {};
     $('bagBtn').addEventListener('click', openBag);
     $('bagClose').addEventListener('click', () => ui.hide('bagModal'));
     $('replayBtn').addEventListener('click', () => MB.Replay.playTable(scene));
-    $('shareBtn').addEventListener('click', () => {
-      if (MB.Bag.exportTable()){ MB.Audio.sparkle(); ui.toast('Saved! Send it to a friend! 📤', 2600); }
+    $('shareBtn').addEventListener('click', async () => {
+      if (await MB.Bag.exportTable()){ MB.Audio.sparkle(); ui.toast('Saved! Send it to a friend! 📤', 2600); }
     });
     $('replayStopBtn').addEventListener('click', () => MB.Replay.stop());
     $('importBtn').addEventListener('click', () => $('importFile').click());

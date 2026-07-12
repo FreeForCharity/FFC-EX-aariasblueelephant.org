@@ -2178,11 +2178,12 @@ function buildExportPayload(){
     samples:samples.map(s=>[Math.round(s[0]-t0),s[1],s[2],s[3]]),
     events:events.map(e=>[Math.round(e[0]-t0),e[1],e[2]])};
 }
-function shareAdventure(){
+async function shareAdventure(){
   try{
     const payload=buildExportPayload();
     if(!payload){celebToast('Play a little first! 🎬',2000);return;}
     const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    if(window.ABEShare&&await window.ABEShare('my-adventure.ellytubbies.json',blob))return;
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);
     a.download='my-adventure.ellytubbies.json';document.body.appendChild(a);a.click();
     setTimeout(()=>{try{URL.revokeObjectURL(a.href);}catch(e){}a.remove();},1500);

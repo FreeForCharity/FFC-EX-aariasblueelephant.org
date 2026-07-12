@@ -79,26 +79,27 @@ window.MB = window.MB || {};
   Bag.remove = function(id){ Bag.items = Bag.items.filter(i => i.id !== id); save(); };
 
   // ---- share/export: a tiny, personal-data-free JSON file a friend can bring back in ----
-  function downloadBuild(name, pieces){
+  async function downloadBuild(name, pieces){
     const payload = { app:'magnetblocks', v:1, name: name, pieces: pieces };
     const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
-    const url = URL.createObjectURL(blob);
     const slug = (name || 'creation').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'creation';
+    if (window.ABEShare && await window.ABEShare(slug + '.magnetblocks.json', blob)) return;
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = slug + '.magnetblocks.json';
     document.body.appendChild(a); a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
   }
 
-  Bag.exportItem = function(item){
-    downloadBuild(item.name, item.pieces);
+  Bag.exportItem = async function(item){
+    await downloadBuild(item.name, item.pieces);
   };
 
   // share the LIVE table (not a saved school-bag item) — used by the 📤 share HUD button
-  Bag.exportTable = function(){
+  Bag.exportTable = async function(){
     const pieces = Bag.serializeTable();
     if (!pieces.length) return false;
-    downloadBuild('My Magnet Build', pieces);
+    await downloadBuild('My Magnet Build', pieces);
     return true;
   };
 
