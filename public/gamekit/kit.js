@@ -306,6 +306,7 @@
   // Flushed in small batches so a closed tab loses at most a minute.
   const TIME = { acc: 0, last: 0, on: false };
   function timeFlush() {
+    if (window.Capacitor) return;     // native app builds send NOTHING (Kids Category)
     const s = Math.floor(TIME.acc);
     if (s < 5 || !cfg.anonKey) { return; }
     TIME.acc -= s;
@@ -328,6 +329,7 @@
   // ---------- anonymous play tally (one per session, ZERO identifiers) ----------
   function ping() {
     try {
+      if (window.Capacitor) return;   // native app builds send NOTHING (Kids Category)
       if (sessionStorage.getItem(`abe_played_${cfg.slug}`)) return;
       sessionStorage.setItem(`abe_played_${cfg.slug}`, '1');
       const KEY = cfg.anonKey; if (!KEY) return;

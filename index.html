@@ -158,6 +158,11 @@
 
   <!-- Hoperise Charity Layout Fonts Removed for Performance & Consistency -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script>
+    /* Native app (Capacitor): land on the games launcher, not the nonprofit
+       homepage — the app is the game arcade; the website remains the website. */
+    if (window.Capacitor && location.pathname === '/') history.replaceState(null, '', '/games');
+  </script>
 </head>
 
 <body>
