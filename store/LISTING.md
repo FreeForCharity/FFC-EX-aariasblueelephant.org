@@ -58,8 +58,10 @@ In-app purchases: none · Ads: none
 Data collected: NONE.
 - No identifiers, no usage data, no diagnostics, no location, no contacts.
 - All progress is stored locally on the device (localStorage), never transmitted.
-- The app makes no network requests. (Web analytics are compile-time disabled
-  in the native app: window.Capacitor guards in the game kit and games.)
+- The app SENDS nothing. Its only network use is fetching game content from
+  our own website (aariasblueelephant.org) — the launcher's game catalog and
+  any games added after this build. Web analytics are disabled in the native
+  app (window.Capacitor guards in the game kit and games).
 Privacy policy URL: https://aariasblueelephant.org/privacy-policy
 
 ## Parental gate (Apple Kids Category note for review)
