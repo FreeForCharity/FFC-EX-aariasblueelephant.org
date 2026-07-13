@@ -1,5 +1,5 @@
 // ===========================================================================
-// Nilu's World — a 3D floating-island adventure for kids on the autism
+// Aaria's Floating Islands — a 3D floating-island adventure for kids on the autism
 // spectrum. The child walks/jumps Nilu (a blue elephant) across magical sky
 // islands. Each island teaches one ASD skill area across 5 levels. As the
 // child earns stars, two things VISIBLY happen: Nilu grows up (baby → grown)
@@ -341,12 +341,12 @@ export default function BelusWorldGame() {
   }, [settings]);
 
   // stamp "last game played" so the Home page's smart Play button can offer
-  // to resume Nilu's World alongside the other static games
+  // to resume Aaria's Floating Islands alongside the other static games
   useEffect(() => {
     try {
       localStorage.setItem('abe_last_game', JSON.stringify({
         url: '/nelus-world',
-        name: "Nilu's World",
+        name: "Aaria's Floating Islands",
         emoji: '🌈',
         at: Date.now(),
       }));
@@ -360,7 +360,7 @@ export default function BelusWorldGame() {
     } catch { /* ignore */ }
   }, []);
 
-  // stamp one passport day for Nilu's World — mirrors public/gamekit/passport.js
+  // stamp one passport day for Aaria's Floating Islands — mirrors public/gamekit/passport.js
   // inline (this is a React game, not a plain <script> include), so kit games
   // and legacy games share the same on-device passport shelf. No identifiers,
   // nothing transmitted.
@@ -864,7 +864,7 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
         animate={reduceMotion ? {} : { y: [0, -10, 0] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
       >
-        Nilu's World
+        Aaria's Floating Islands
       </motion.h1>
 
       <motion.p
@@ -1396,7 +1396,7 @@ function ExitConfirm({ onStay, onLeave }: { onStay: () => void; onLeave: () => v
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-4xl">🌈🐘</div>
-        <h2 className="mt-2 text-lg font-extrabold text-slate-800">Leave Nilu's World? 🌈</h2>
+        <h2 className="mt-2 text-lg font-extrabold text-slate-800">Leave Aaria's Floating Islands? 🌈</h2>
         <div className="mt-4 flex flex-col gap-2">
           <button
             onClick={onStay}
@@ -1471,7 +1471,7 @@ function SettingsPanel({
             ✕
           </button>
         </div>
-        <p className="mb-4 text-sm text-slate-500">Make Nilu's World feel just right for you. 💙</p>
+        <p className="mb-4 text-sm text-slate-500">Make Aaria's Floating Islands feel just right for you. 💙</p>
 
         {/* Game speed — more time to read/listen 🐢 or snappier 🚀 */}
         <div className="mb-3 rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
@@ -1606,7 +1606,7 @@ function GrownUpsPanel({ progress, memory, onClose }: { progress: GameProgress; 
           <h2 className="text-xl font-extrabold text-slate-800">Progress notes</h2>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">✕</button>
         </div>
-        <p className="mb-4 text-xs text-slate-400">Read-only, for grown-ups. Nilu's World is always no-fail for the child — nothing here is a score.</p>
+        <p className="mb-4 text-xs text-slate-400">Read-only, for grown-ups. Aaria's Floating Islands is always no-fail for the child — nothing here is a score.</p>
 
         <Section title="Days visited">
           <p className="text-2xl font-black text-slate-700">{memory.visitDays}</p>

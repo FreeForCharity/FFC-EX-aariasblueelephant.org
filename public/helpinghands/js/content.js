@@ -1,5 +1,5 @@
 /* =====================================================================
-   Nilu's Helping Hands — curriculum content
+   Aaria's Helping Hands — curriculum content
    ---------------------------------------------------------------------
    ALL child-facing language lives in this file so it can be reviewed
    line-by-line by a clinical reviewer (RBT / Clinical Supervisor)

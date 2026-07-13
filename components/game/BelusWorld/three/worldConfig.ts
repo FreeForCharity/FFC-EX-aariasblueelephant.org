@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Nilu's World — 3D world configuration
+// Aaria's Floating Islands — 3D world configuration
 // A cluster of floating sky-islands connected by rainbow bridges.
 // Everything the world needs to lay itself out lives here so the geometry,
 // the ground-collision math, and the gameplay all read from one source.

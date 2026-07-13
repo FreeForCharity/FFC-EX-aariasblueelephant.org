@@ -58,7 +58,7 @@ const imagesToPreload = [
 let isAppInitialLoad = true;
 
 // The games kids can play — used to power the smart "Play" button on Home.
-// Nilu's Helping Hands is excluded from the random "surprise me" pool since
+// Aaria's Helping Hands is excluded from the random "surprise me" pool since
 // it's password-gated safety-ed content, not open-ended free play.
 type PlayGame = { url: string; name: string; emoji: string; isReactRoute?: boolean; sampler?: boolean };
 const RANDOM_GAMES: PlayGame[] = [
@@ -495,7 +495,7 @@ const Home: React.FC = () => {
                     >
                         <div className="text-6xl transition-transform group-hover:scale-110">🐘🌈</div>
                         <div className="flex-1">
-                            <h3 className="text-2xl font-black text-sky-700">Play Nilu's World 🐘🌈</h3>
+                            <h3 className="text-2xl font-black text-sky-700">Play Aaria's Floating Islands 🐘🌈</h3>
                             <p className="mt-1 text-slate-600 dark:text-slate-500">
                                 A free, no-fail 3D adventure built for Aaria and her friends — explore sky islands, meet gentle friends, and help Nilu grow. No login needed.
                             </p>

@@ -66,13 +66,13 @@
   // FUTURE GAMES: add one line here and the passport, /games page, and offline
   // cache (public/sw.js) are the only three registration spots outside the game.
   const CATALOG = [
-    { slug: 'nilus-world', name: "Nilu's World", emoji: '🐘', url: '/nelus-world' },
+    { slug: 'nilus-world', name: "Aaria's Floating Islands", emoji: '🐘', url: '/nelus-world' },
     { slug: 'elly-tubbies', name: "Aaria's Elly-Tubbies", emoji: '☀️', url: '/1' },
     { slug: 'blockcraft', name: 'Block Craft 3D', emoji: '🧱', url: '/2' },
     { slug: 'roadsafety', name: "Aaria's Road Safety Heroes", emoji: '🚦', url: '/4' },
     { slug: 'doughlab', name: "Aaria's Dough Lab 3D", emoji: '🫓', url: '/5' },
     { slug: 'magnetblocks', name: 'Magnet Blocks', emoji: '🧲', url: '/6' },
-    { slug: 'helpinghands', name: "Nilu's Helping Hands", emoji: '🖐️', url: '/7' },
+    { slug: 'helpinghands', name: "Aaria's Helping Hands", emoji: '🖐️', url: '/7' },
     { slug: 'grocery', name: "Aaria's Grocery Store", emoji: '🛒', url: '/8' },
     { slug: 'dayplanner', name: "Aaria's Day Planner", emoji: '📅', url: '/9' },
   ];

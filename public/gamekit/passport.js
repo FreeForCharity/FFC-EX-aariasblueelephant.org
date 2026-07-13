@@ -57,7 +57,7 @@
 (function () {
   try {
     var slug = (document.currentScript && document.currentScript.dataset.game) || "";
-    if (!slug || slug === "nilus-world") return; // Nilu's World route stays analytics-free (COPPA follow-up)
+    if (!slug || slug === "nilus-world") return; // the /nelus-world route stays analytics-free (COPPA follow-up)
     var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM";
     var acc = 0, last = performance.now();
     function tick() {

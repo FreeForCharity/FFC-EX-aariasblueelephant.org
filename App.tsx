@@ -166,7 +166,7 @@ const App: React.FC = () => {
                 <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Aaria's Road Safety Heroes… 🚲" />} />
                 <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Aaria's Dough Lab… 🍪" />} />
                 <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message="Loading Aaria's Magnet Blocks… 🧲🧱" />} />
-                <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message="Loading Nilu's Helping Hands… 🖐️💙" />} />
+                <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message="Loading Aaria's Helping Hands… 🖐️💙" />} />
                 <Route path="/8" element={<ExternalRedirect url="/grocery/index.html" message="Loading Aaria's Grocery Store… 🛒🍎" />} />
                 <Route path="/9" element={<ExternalRedirect url="/dayplanner/index.html" message="Loading Aaria's Day Planner… 📅🌅" />} />
 

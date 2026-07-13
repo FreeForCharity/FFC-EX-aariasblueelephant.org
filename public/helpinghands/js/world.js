@@ -1,4 +1,4 @@
-// Nilu's Helping Hands — HH.World
+// Aaria's Helping Hands — HH.World
 // Plain script, no imports. THREE is a global (r128 API). Depends on HH.PLACES / HH.HELPERS /
 // HH.HELPER_SPOTS / HH.SCENARIO_ACTORS from content.js.
 //

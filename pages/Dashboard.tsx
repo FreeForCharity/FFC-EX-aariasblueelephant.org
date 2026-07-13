@@ -90,11 +90,11 @@ type ViewState =
 const GAME_PLAY_LABELS: Record<string, string> = {
     'elly-tubbies': "Aaria's Elly-Tubbies 🐘",
     'blockcraft': 'Block Craft 3D 🧱',
-    'nilus-world': "Nilu's World 🌈",
+    'nilus-world': "Aaria's Floating Islands 🌈",
     'roadsafety': "Aaria's Road Safety Heroes 🚴",
     'doughlab': "Aaria's Dough Lab 🌈",
     'magnetblocks': 'Magnet Blocks 🧲',
-    'helpinghands': "Nilu's Helping Hands 🖐️",
+    'helpinghands': "Aaria's Helping Hands 🖐️",
     'grocery': "Aaria's Grocery Store 🛒",
     'dayplanner': "Aaria's Day Planner 📅",
 };
@@ -2126,7 +2126,7 @@ const Dashboard: React.FC = () => {
             <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Nilu's Helping Hands 🖐️💙</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Helping Hands 🖐️💙</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-sm">
                         Walk through a 3D house &amp; school with Nilu, learn what happens in every room, build your Helping Hand of five trusted adults, and practice being brave — noticing the uh-oh feeling, saying no, and telling a helper until someone helps. A Grown-Ups Corner has guidance for parents.
                     </p>
@@ -2143,7 +2143,7 @@ const Dashboard: React.FC = () => {
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
                 <iframe
                     src="/helpinghands/index.html"
-                    title="Nilu's Helping Hands"
+                    title="Aaria's Helping Hands"
                     className="w-full h-full"
                     allow="autoplay; fullscreen"
                     allowFullScreen
