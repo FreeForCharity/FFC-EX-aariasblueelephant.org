@@ -4,7 +4,7 @@
     <!-- No ads or tracking on this page (made for children) — only an anonymous play tally with zero identifiers. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Dough Lab 3D — playdough & slime simulator</title>
+<title>Aaria's Dough Lab 3D — playdough & slime simulator</title>
 <link rel="icon" href="../favicon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -209,7 +209,7 @@
 <body>
 <script>
 (function(){
-try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/doughlab/index.html',name:'Dough Lab',emoji:'🌈',at:Date.now()}))}catch(e){}
+try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/doughlab/index.html',name:'Aaria's Dough Lab',emoji:'🌈',at:Date.now()}))}catch(e){}
 /* anonymous play tally — one count per game per session, NO identifiers (COPPA-safe) */
 try{if(!window.Capacitor&&!sessionStorage.getItem('abe_played_doughlab')){sessionStorage.setItem('abe_played_doughlab','1');fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Content-Type':'application/json'},body:JSON.stringify({g:'doughlab'}),keepalive:true}).catch(function(){});}}catch(e){}
 
@@ -247,7 +247,7 @@ try{
 
 <div id="titleScreen">
   <img id="logoImg" src="logo.png" alt="Aaria's Blue Elephant" onerror="this.style.display='none'">
-  <h2>Dough Lab</h2>
+  <h2>Aaria's Dough Lab</h2>
   <div class="byline">Built for <b>Aaria and Her Friends</b> 💖 — squish, slice &amp; sculpt real 3D dough!</div>
   <div class="titleEmojis">🫓 🫧 🔪 💛 ⭐ 🌸</div>
   <div class="subtitle">A real 3D ball of playdough on your table! Squish it, stretch it, pluck pieces off, slice it, punch out cookie shapes — or switch to wobbly slime. Mix colours by squishing lumps together!</div>
@@ -257,7 +257,7 @@ try{
 </div>
 
 <header>
-  <h1>🧁 Dough Lab<small>squish it · slice it · sculpt it — in real 3D 🌈</small></h1>
+  <h1>🧁 Aaria's Dough Lab<small>squish it · slice it · sculpt it — in real 3D 🌈</small></h1>
   <div class="seg" id="modeSeg">
     <button data-mode="dough" class="on">🫓 Playdough</button>
     <button data-mode="slime">🫧 Slime</button>
@@ -344,7 +344,7 @@ try{
 "use strict";
 
 /* ============================================================
-   Dough Lab 3D — a real volumetric soft body on a table
+   Aaria's Dough Lab 3D — a real volumetric soft body on a table
    ------------------------------------------------------------
    The dough is a 3D lattice of particles joined by distance
    constraints (Verlet). Gravity squashes it onto the table.

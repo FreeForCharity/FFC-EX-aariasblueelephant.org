@@ -62,10 +62,10 @@ let isAppInitialLoad = true;
 // it's password-gated safety-ed content, not open-ended free play.
 type PlayGame = { url: string; name: string; emoji: string; isReactRoute?: boolean; sampler?: boolean };
 const RANDOM_GAMES: PlayGame[] = [
-    { url: '/elly-tubbies/index.html', name: 'Elly-Tubbies', emoji: '🐘', sampler: true },
+    { url: '/elly-tubbies/index.html', name: "Aaria's Elly-Tubbies", emoji: '🐘', sampler: true },
     { url: '/blockcraft/index.html', name: 'Block Craft 3D', emoji: '🧱', sampler: true },
-    { url: '/roadsafety/index.html', name: 'Road Safety Heroes', emoji: '🚴', sampler: true },
-    { url: '/doughlab/index.html', name: 'Dough Lab', emoji: '🌈', sampler: true },
+    { url: '/roadsafety/index.html', name: "Aaria's Road Safety Heroes", emoji: '🚴', sampler: true },
+    { url: '/doughlab/index.html', name: "Aaria's Dough Lab", emoji: '🌈', sampler: true },
     { url: '/magnetblocks/index.html', name: 'Magnet Blocks', emoji: '🧲', sampler: true },
     { url: '/grocery/index.html', name: "Aaria's Grocery Store", emoji: '🛒' },
     { url: '/dayplanner/index.html', name: "Aaria's Day Planner", emoji: '📅' },

@@ -160,11 +160,11 @@ const App: React.FC = () => {
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
 
                 {/* Short game links — aariasblueelephant.org/1, /2, … */}
-                <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message="Loading Elly-Tubbies… 🐘☀️" />} />
+                <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message="Loading Aaria's Elly-Tubbies… 🐘☀️" />} />
                 <Route path="/2" element={<ExternalRedirect url="/blockcraft/index.html" message="Loading Aaria's Block Craft 3D… 🧱🌈" />} />
                 <Route path="/3" element={<Navigate to="/nelus-world" replace />} />
-                <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Road Safety Heroes… 🚲" />} />
-                <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Dough Lab… 🍪" />} />
+                <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Aaria's Road Safety Heroes… 🚲" />} />
+                <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Aaria's Dough Lab… 🍪" />} />
                 <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message="Loading Aaria's Magnet Blocks… 🧲🧱" />} />
                 <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message="Loading Nilu's Helping Hands… 🖐️💙" />} />
                 <Route path="/8" element={<ExternalRedirect url="/grocery/index.html" message="Loading Aaria's Grocery Store… 🛒🍎" />} />
