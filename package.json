@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "check:controls": "node scripts/check-game-controls.mjs",
-    "smoke:controls": "node scripts/smoke-controls.mjs"
+    "smoke:controls": "node scripts/smoke-controls.mjs",
+    "smoke": "npm run check:controls && npm run smoke:controls",
+    "full-ci": "npm run lint && npm run smoke && npm run build"
   },
   "dependencies": {
     "@capacitor/filesystem": "^8.1.2",
