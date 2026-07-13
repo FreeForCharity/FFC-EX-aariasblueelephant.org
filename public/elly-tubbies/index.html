@@ -271,6 +271,7 @@
     flex-direction:column;gap:14px;background:linear-gradient(160deg,#6cbcff,#9fd4ff,#d6f0ff);color:#fff;}
   #loading .lbl{font-weight:900;font-size:clamp(20px,6vw,30px);text-shadow:0 3px 10px rgba(58,58,90,.3);}
   #loading .ele{font-size:clamp(52px,16vw,90px);animation:bob 1.2s ease-in-out infinite;}
+.abeJoyArrow{position:absolute;font-size:13px;font-weight:900;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.5);pointer-events:none;z-index:1;}
 </style>
 </head>
 <body>
@@ -419,7 +420,7 @@ try{
     <button class="big" id="resumeBtn" style="font-size:22px">Keep playing ▶️</button>
   </div></div>
 
-  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><div id="knob"><img src="logo.png" alt=""></div>
+  <div id="stick" role="application" aria-label="Movement joystick — drag to walk Nilu"><span class="abeJoyArrow" style="top:6px;left:50%;transform:translateX(-50%)">▲</span><span class="abeJoyArrow" style="bottom:6px;left:50%;transform:translateX(-50%)">▼</span><span class="abeJoyArrow" style="left:8px;top:50%;transform:translateY(-50%)">◀</span><span class="abeJoyArrow" style="right:8px;top:50%;transform:translateY(-50%)">▶</span><div id="knob"><img src="logo.png" alt=""></div>
     <span class="stickArrow sa-u">▲</span><span class="stickArrow sa-d">▼</span>
     <span class="stickArrow sa-l">◀</span><span class="stickArrow sa-r">▶</span>
   </div>

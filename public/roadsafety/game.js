@@ -2156,17 +2156,18 @@ function drawHUD(){
   drawSpeedStreaks();
   const sc = Math.round(S.score), lim = currentLimit();
 
-  // glass top bar
+  // glass top bar — starts right of the Exit + Pause buttons (ABE canon corner)
+  const BARX = 132;
   ctx.fillStyle = "rgba(13,27,42,.78)";
-  rounded(8, 8, W - 16, 48, 12); ctx.fill();
+  rounded(BARX, 8, W - BARX - 8, 48, 12); ctx.fill();
   ctx.textAlign = "left"; ctx.font = "bold 17px sans-serif";
   ctx.fillStyle = sc >= 70 ? "#7ae582" : sc >= 40 ? "#ffd23f" : "#ff6b6b";
-  ctx.fillText(`🛡 ${sc}`, 20, 30);
+  ctx.fillText(`🛡 ${sc}`, BARX + 12, 30);
   ctx.font = "9px sans-serif"; ctx.fillStyle = "#9fb3c8";
-  ctx.fillText("SAFETY SCORE", 20, 46);
+  ctx.fillText("SAFETY SCORE", BARX + 12, 46);
 
   // progress
-  const bx = 116, bw = W - 240;
+  const bx = BARX + 124, bw = W - 124 - bx;
   ctx.fillStyle = "rgba(255,255,255,.18)"; rounded(bx, 20, bw, 10, 5); ctx.fill();
   ctx.fillStyle = "#4ea8de"; rounded(bx, 20, Math.max(8, bw * clamp(S.t / S.rt.len, 0, 1)), 10, 5); ctx.fill();
   for (const ev of S.events){

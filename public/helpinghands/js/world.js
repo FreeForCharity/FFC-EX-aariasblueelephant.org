@@ -2907,6 +2907,7 @@
     knobImg.style.borderRadius = '50%';
     knobImg.style.pointerEvents = 'none';
     knob.appendChild(knobImg);
+    (function(){var dirs=[['▲','top:6px;left:50%;transform:translateX(-50%)'],['▼','bottom:6px;left:50%;transform:translateX(-50%)'],['◀','left:8px;top:50%;transform:translateY(-50%)'],['▶','right:8px;top:50%;transform:translateY(-50%)']];for(var i=0;i<dirs.length;i++){var a=document.createElement('span');a.textContent=dirs[i][0];a.style.cssText='position:absolute;font-size:13px;font-weight:900;color:#fff;text-shadow:0 2px 5px rgba(58,58,90,.5);pointer-events:none;'+dirs[i][1].replace(/;/g,';');a.style.cssText+=';'+dirs[i][1];joystickEl.appendChild(a);}})();
     joystickEl.appendChild(knob);
     if (container) container.appendChild(joystickEl);
     joystickKnob = knob;
