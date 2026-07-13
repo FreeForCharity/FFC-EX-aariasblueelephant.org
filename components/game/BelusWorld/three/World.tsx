@@ -545,7 +545,7 @@ function ZoneDecorContent({ isl, bloom }: { isl: IslandDef; bloom: number }) {
 }
 
 // The multicolour autism-acceptance infinity symbol, floating over home as a
-// gentle welcoming landmark (and a quiet nod to what Nilu's World is for).
+// gentle welcoming landmark (and a quiet nod to what Aaria's Floating Islands is for).
 function AutismInfinity() {
   const grp = useRef<THREE.Group>(null);
   const tex = useMemo(() => makeInfinityTexture(), []);

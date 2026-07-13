@@ -1,7 +1,7 @@
 [
-    { "id": "belus-world", "title": "Nilu's World", "emoji": "🐘", "oneLiner": "Explore islands, meet friends & help Nilu grow!", "img": "/images/games/belus-world.jpg", "path": "/nelus-world" },
+    { "id": "belus-world", "title": "Aaria's Floating Islands", "emoji": "🐘", "oneLiner": "Explore islands, meet friends & help Nilu grow!", "img": "/images/games/belus-world.jpg", "path": "/nelus-world" },
     { "id": "magnetblocks", "title": "Aaria's Magnet Blocks", "emoji": "🧲", "oneLiner": "Magnetic blocks that click, stack & drive!", "img": "/images/games/magnetblocks.jpg", "view": "magnetblocks" },
-    { "id": "helpinghands", "title": "Nilu's Helping Hands", "emoji": "🖐️", "oneLiner": "Learn your world & how to get help — walk, explore, be brave!", "img": "/images/games/helpinghands.jpg", "view": "helpinghands" },
+    { "id": "helpinghands", "title": "Aaria's Helping Hands", "emoji": "🖐️", "oneLiner": "Learn your world & how to get help — walk, explore, be brave!", "img": "/images/games/helpinghands.jpg", "view": "helpinghands" },
     { "id": "doughlab", "title": "Aaria's Dough Lab 3D", "emoji": "🫓", "oneLiner": "Squish, slice & sculpt real 3D dough!", "img": "/images/games/doughlab.jpg", "view": "doughlab" },
     { "id": "blockcraft", "title": "Aaria's Block Craft 3D", "emoji": "🧱", "oneLiner": "Building, animal friends, slime & cookies!", "img": "/images/games/blockcraft.jpg", "view": "blockcraft" },
     { "id": "elly-tubbies", "title": "Aaria's Elly-Tubbies", "emoji": "☀️", "oneLiner": "Bouncy elephant friends in sunny Trunkland!", "img": "/images/games/elly-tubbies.jpg", "view": "elly-tubbies" },

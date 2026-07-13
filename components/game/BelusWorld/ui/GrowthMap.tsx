@@ -77,7 +77,7 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
         <div className="mb-4 flex justify-center">
           {!!memory?.visitDays && (
             <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600">
-              🌈 {memory.visitDays} {memory.visitDays === 1 ? 'day' : 'days'} in Nilu's World!
+              🌈 {memory.visitDays} {memory.visitDays === 1 ? 'day' : 'days'} in Aaria's Floating Islands!
             </span>
           )}
         </div>

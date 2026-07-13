@@ -1,5 +1,5 @@
 /* =====================================================================
-   Nilu's Helping Hands — game shell (screens, systems, logic)
+   Aaria's Helping Hands — game shell (screens, systems, logic)
    All child-facing strings come from js/content.js (window.HH.*).
    This file only invents chrome labels (buttons like "Play", "Menu").
    ===================================================================== */

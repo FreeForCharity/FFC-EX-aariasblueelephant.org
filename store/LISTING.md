@@ -18,7 +18,7 @@ skills through play — life skills (shopping, daily routines), safety skills
 and emotional skills — always by doing, never by quizzing.
 
 THE GAMES
-• Nilu's World — explore islands and help a little elephant grow
+• Aaria's Floating Islands — explore islands and help a little elephant grow
 • Aaria's Grocery Store — shop from memory, wait your turn, learn real coins
 • Aaria's Day Planner — build a picture schedule, then live it with Nilu
 • Aaria's Block Craft 3D — build, meet animal friends, make slime & cookies
@@ -26,7 +26,7 @@ THE GAMES
 • Aaria's Dough Lab 3D — squish, slice and sculpt real 3D playdough
 • Aaria's Elly-Tubbies — bouncy elephant friends in sunny Trunkland
 • Aaria's Road Safety Heroes — ride the real streets of Mountain House, safely
-• Nilu's Helping Hands — learn your world and how to get help
+• Aaria's Helping Hands — learn your world and how to get help
 • Aaria's Wheel of Fun — spin for surprises and giggles
 
 MADE FOR FAMILIES
