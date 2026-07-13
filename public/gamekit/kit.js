@@ -373,7 +373,7 @@
     <button class="kBtn" id="kSettings" data-abe="settings" title="Settings">⚙️<span class="kLbl">Settings</span></button>
   </div>
   <div id="kChip" style="display:none"></div>
-  <div id="kStick" style="display:none"><div id="kKnob"><img src="logo.png" alt=""></div></div>
+  <div id="kStick" style="display:none"><span class="abeJoyArrow" style="top:6px;left:50%;transform:translateX(-50%)">▲</span><span class="abeJoyArrow" style="bottom:6px;left:50%;transform:translateX(-50%)">▼</span><span class="abeJoyArrow" style="left:8px;top:50%;transform:translateY(-50%)">◀</span><span class="abeJoyArrow" style="right:8px;top:50%;transform:translateY(-50%)">▶</span><div id="kKnob"><img src="logo.png" alt=""></div></div>
   <div id="kActs" style="display:none"></div>
   <div id="kToast"></div>
   <div id="kReplayBar" style="display:none">
