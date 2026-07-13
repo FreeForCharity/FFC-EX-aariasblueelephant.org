@@ -61,7 +61,7 @@
 
   /* ---------- in-day progress strip (mini visual schedule, always visible) ---------- */
   #dpStrip {
-    position: fixed; top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left));
+    position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
     z-index: 45; background: var(--k-card); border-radius: 16px; padding: 8px 10px;
     box-shadow: 0 4px 12px rgba(40,40,90,.18); border: 2px solid var(--k-accent);
     display: none; max-width: 46vw;

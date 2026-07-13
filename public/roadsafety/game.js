@@ -400,6 +400,7 @@ document.getElementById("pauseBtn").addEventListener("click", () => {
   S.paused ? resumeGame() : pauseGame();
 });
 document.getElementById("resumeBtn").addEventListener("click", () => { ensureAudio(); resumeGame(); });
+document.getElementById("exitBtn").addEventListener("click", () => { pauseGame(); location.href = "/games"; });
 addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
 addEventListener("blur", () => pauseGame());
 
@@ -503,6 +504,7 @@ function show(id){
   document.getElementById("touch").classList.toggle("hidden", id !== null);
   document.getElementById("raceHud").classList.toggle("hidden", id !== null);
   document.getElementById("pauseBtn").classList.toggle("hidden", id !== null);
+  document.getElementById("exitBtn").classList.toggle("hidden", id !== null);
   if (id !== null) document.getElementById("count").classList.add("hidden");
 }
 

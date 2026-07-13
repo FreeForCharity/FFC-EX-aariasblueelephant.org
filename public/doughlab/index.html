@@ -56,7 +56,7 @@
   }
 
   #chip {
-    position: absolute; top: 10px; left: 10px; z-index: 15;
+    position: absolute; top: 10px; left: 76px; z-index: 15;
     background: rgba(255,255,255,.88); color: #5c4a32; font-weight: 700; font-size: 12px;
     padding: 6px 13px; border-radius: 16px; box-shadow: 0 3px 8px rgba(0,0,0,.15);
     pointer-events: none;
@@ -268,8 +268,9 @@ try{
   <canvas id="three"></canvas>
   <canvas id="ui"></canvas>
   <div id="chip">🍪 Shapes made: <span id="chipCount">0</span></div>
+  <button id="abeExitBtn" class="hudBtn" data-abe="exit" title="Leave the game — back to all games" style="position:absolute;top:10px;left:10px;z-index:15">🏠<span class="hudLbl">Exit</span></button>
   <div id="hudBtns">
-    <button id="muteBtn" class="hudBtn" title="Mute sound">🔊<span class="hudLbl">Sound</span></button>
+    <button id="muteBtn" class="hudBtn" data-abe="sound" title="Mute sound">🔊<span class="hudLbl">Sound</span></button>
     <button id="calmBtn" class="hudBtn" title="Calm mode — locks the camera and calms things down">😌<span class="hudLbl">Calm</span></button>
     <button id="viewBtn" class="hudBtn" title="Reset the camera view">🔄<span class="hudLbl">View</span></button>
     <button id="photoBtn" class="hudBtn" title="Save a photo of your dough">📸<span class="hudLbl">Photo</span></button>
@@ -1898,6 +1899,8 @@ applyCamera();
 frame();
 })();
 </script>
-<script src="/gamekit/passport.js" data-game="doughlab" defer></script>
+<script src="/gamekit/passport.js" data-game="doughlab" defer>
+document.getElementById("abeExitBtn").onclick = () => { location.href = "/games"; };
+</script>
 </body>
 </html>

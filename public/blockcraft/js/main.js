@@ -966,6 +966,7 @@
   $('slimeBtn').onclick    = () => ABC.activities.slimeLab();
   $('oreoBtn').onclick     = () => ABC.activities.oreoKitchen();
   $('copycatBtn').onclick  = () => { ABC.activities.quitProject(true); ABC.copycat.showMenu(); };
+  $('abeExitBtn').onclick = () => { location.href = '/games'; };
   $('settingsBtn').onclick = () => ABC.ui.showSettings();
   $('helpBtn').onclick     = () => ABC.ui.showHelp();
   $('magicBtn').onclick    = () => ABC.activities.magicFill();

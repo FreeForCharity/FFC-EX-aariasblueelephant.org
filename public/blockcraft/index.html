@@ -68,7 +68,10 @@
   #hud { position:fixed; inset:0; z-index:10; pointer-events:none; display:none; }
   #crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     font-size:22px; color:#fff; text-shadow:0 0 6px rgba(0,0,0,.6); }
-  #scoreBar { position:absolute; top:12px; left:12px; display:flex; gap:10px; }
+  #scoreBar { position:absolute; top:12px; left:76px; display:flex; gap:10px; }
+  #abeExitBtn { position:absolute; top:12px; left:12px; pointer-events:auto; min-width:52px; min-height:52px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; font-size:19px; }
+  #abeExitBtn .btnTxt { font-size:10px; font-weight:800; }
   .scoreChip { background:rgba(255,255,255,.88); border-radius:20px; padding:8px 16px; font-size:20px;
     box-shadow:0 3px 8px rgba(0,0,0,.18); color:#333; }
   #portalChip, #questChip, #flowerChip { pointer-events:auto; cursor:pointer; }
@@ -322,7 +325,7 @@
   body.skin-smooth #bagBtn:active { transform:scale(.93); background:rgba(31,182,166,.26); }
 
   /* spacious edge placement — replaces the cramped defaults */
-  body.skin-smooth #scoreBar { top:var(--hud-pad); left:var(--hud-pad); gap:12px; }
+  body.skin-smooth #scoreBar { top:var(--hud-pad); left:calc(var(--hud-pad) + 66px); gap:12px; }
   body.skin-smooth #menuBar  { top:var(--hud-pad); right:var(--hud-pad); gap:10px; }
   body.skin-smooth #sideBtns { right:var(--hud-pad); top:86px; gap:13px; }
   body.skin-smooth .sideBtn  { width:60px; height:60px; border-radius:17px; font-size:22px; }
@@ -487,6 +490,7 @@ try{
 </div>
 
 <div id="hud">
+  <button class="menuBtn" id="abeExitBtn" data-abe="exit" title="Leave the game — back to all games">🏠<span class="btnTxt">Exit</span></button>
   <div id="scoreBar">
     <div class="scoreChip" id="starChip">⭐ 0</div>
     <div class="scoreChip" id="heartChip">💖 0</div>
@@ -496,7 +500,7 @@ try{
     <div class="scoreChip" id="flowerChip" title="Days of adventures">🌻 0</div>
   </div>
   <div id="menuBar">
-    <button class="menuBtn" id="muteBtn" title="Mute — tap to turn off sound" style="min-width:44px;min-height:44px;">🔊</button>
+    <button class="menuBtn" id="muteBtn" data-abe="sound" title="Mute — tap to turn off sound" style="min-width:44px;min-height:44px;">🔊</button>
     <button class="menuBtn" id="pauseBtn" title="Take a break" style="min-width:44px;min-height:44px;">⏸️</button>
     <button class="menuBtn" id="movieBtn" title="Watch your last adventure!" style="min-width:44px;min-height:44px;">▶️<span class="btnTxt"> My Movie</span></button>
     <button class="menuBtn" id="shareBtn" title="Share your world with a friend" style="min-width:44px;min-height:44px;">📤<span class="btnTxt"> Share</span></button>

@@ -364,12 +364,13 @@
     document.documentElement.style.setProperty('--k-accent', cfg.accent);
     const el = document.createElement('div');
     el.innerHTML = `
-  <div id="kHud" style="display:none">
-    <button class="kBtn" id="kMute" title="Sound on or off">🔊<span class="kLbl">Sound</span></button>
+  <button id="kExit" data-abe="exit" style="display:none" title="Leave the game — back to all games">🏠<span class="kLbl">Exit</span></button>
+  <div id="kHud" data-abe="hud" style="display:none">
+    <button class="kBtn" id="kMute" data-abe="sound" title="Sound on or off">🔊<span class="kLbl">Sound</span></button>
     <button class="kBtn" id="kPauseBtn" title="Take a break">⏸️<span class="kLbl">Pause</span></button>
     <button class="kBtn" id="kMovie" title="Watch your adventure like a movie!">▶️<span class="kLbl">My Movie</span></button>
     <button class="kBtn" id="kShare" title="Save your adventure as a file to share">📤<span class="kLbl">Share</span></button>
-    <button class="kBtn" id="kSettings" title="Settings">⚙️<span class="kLbl">More</span></button>
+    <button class="kBtn" id="kSettings" data-abe="settings" title="Settings">⚙️<span class="kLbl">Settings</span></button>
   </div>
   <div id="kChip" style="display:none"></div>
   <div id="kStick" style="display:none"><div id="kKnob"><img src="logo.png" alt=""></div></div>
@@ -483,7 +484,7 @@
     };
     $('ksVoice').onclick = () => { S.voice = !S.voice; saveS(); p.remove(); openSettings(); };
     $('ksImport').onclick = () => { p.remove(); $('kImportFile').click(); };
-    $('ksHome').onclick = () => { location.href = '/'; };
+    $('ksHome').onclick = () => { location.href = '/games'; };
     $('ksClose').onclick = () => p.remove();
   }
 
@@ -508,6 +509,7 @@
     const begin = (then) => {
       $('kTitle').style.display = 'none';
       $('kHud').style.display = 'flex'; $('kStick').style.display = 'block'; $('kActs').style.display = 'flex';
+      $('kExit').style.display = 'flex';
       ac(); ping(); startMusic();
       TIME.on = true; TIME.last = performance.now();
       if (stampToday()) setTimeout(() => { K.toast('🛂 Passport stamped! ⭐'); K.sfx.pop(); }, 1500);
@@ -526,6 +528,7 @@
     $('kTitleImport').onclick = () => { begin(); $('kImportFile').click(); };
     $('kImportFile').addEventListener('change', (e) => { if (e.target.files[0]) importAdventure(e.target.files[0]); e.target.value = ''; });
     $('kMute').onclick = () => { muted = !muted; if (muted && window.speechSynthesis) speechSynthesis.cancel(); refreshMute(); refreshMusic(); K.toast(muted ? '🔇 Sound is off' : '🔊 Sound is on!'); };
+    $('kExit').onclick = () => { location.href = '/games'; };
     $('kPauseBtn').onclick = () => { setPaused(true); stopMusic(); };
     $('kResume').onclick = () => { setPaused(false); refreshMusic(); };
     $('kMovie').onclick = () => { recSpan() >= REC_MIN ? startReplay({ samples: REC.samples, events: REC.events }, true) : K.toast('Play a little first, then watch your movie! ▶️'); };
