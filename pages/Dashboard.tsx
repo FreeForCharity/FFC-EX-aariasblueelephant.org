@@ -88,11 +88,11 @@ type ViewState =
 
 // Game analytics: slug -> friendly label (public.game_play_counts)
 const GAME_PLAY_LABELS: Record<string, string> = {
-    'elly-tubbies': 'Elly-Tubbies 🐘',
+    'elly-tubbies': "Aaria's Elly-Tubbies 🐘",
     'blockcraft': 'Block Craft 3D 🧱',
     'nilus-world': "Nilu's World 🌈",
-    'roadsafety': 'Road Safety Heroes 🚴',
-    'doughlab': 'Dough Lab 🌈',
+    'roadsafety': "Aaria's Road Safety Heroes 🚴",
+    'doughlab': "Aaria's Dough Lab 🌈",
     'magnetblocks': 'Magnet Blocks 🧲',
     'helpinghands': "Nilu's Helping Hands 🖐️",
     'grocery': "Aaria's Grocery Store 🛒",
@@ -2063,7 +2063,7 @@ const Dashboard: React.FC = () => {
             <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Mountain House Road Safety Heroes 🚲🛡</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Mountain House Aaria's Road Safety Heroes 🚲🛡</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-sm">
                         Learn road safety on the real streets of Mountain House, CA — graduate from bike to e-bike, scooter, EV and car, and earn printable certificates along the way.
                     </p>
@@ -2080,7 +2080,7 @@ const Dashboard: React.FC = () => {
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
                 <iframe
                     src="/roadsafety/index.html"
-                    title="Mountain House Road Safety Heroes"
+                    title="Mountain House Aaria's Road Safety Heroes"
                     className="w-full h-full"
                     allow="autoplay; fullscreen"
                     allowFullScreen
@@ -2094,7 +2094,7 @@ const Dashboard: React.FC = () => {
             <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Dough Lab 🫧</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Dough Lab 🫧</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-sm">
                         A squishy playdough &amp; slime sensory simulator — pinch, stretch, squish and mix colors. Calming, creative fun for all ages.
                     </p>
@@ -2111,7 +2111,7 @@ const Dashboard: React.FC = () => {
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
                 <iframe
                     src="/doughlab/index.html"
-                    title="Dough Lab"
+                    title="Aaria's Dough Lab"
                     className="w-full h-full"
                     allow="autoplay; fullscreen"
                     allowFullScreen
@@ -2188,7 +2188,7 @@ const Dashboard: React.FC = () => {
             <button onClick={() => setActiveView('games')} className="inline-flex items-center gap-1 text-sm font-bold text-brand-purple dark:text-purple-300 hover:underline">← Games Gallery</button>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Elly-Tubbies 🐘☀️</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Aaria's Elly-Tubbies 🐘☀️</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-sm">
                         A bright, gentle Teletubbies-inspired world of antenna-hatted blue elephants. Explore Trunkland, meet Bluebo, Skydah, Pebbo &amp; Lulla, and learn real-life skills — spotting helpers, patience, kindness, making friends and staying safe — with a smiling Sun cheering you on.
                     </p>
@@ -2205,7 +2205,7 @@ const Dashboard: React.FC = () => {
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900" style={{ height: '75vh' }}>
                 <iframe
                     src="/elly-tubbies/index.html"
-                    title="Elly-Tubbies"
+                    title="Aaria's Elly-Tubbies"
                     className="w-full h-full"
                     allow="autoplay; fullscreen"
                     allowFullScreen
