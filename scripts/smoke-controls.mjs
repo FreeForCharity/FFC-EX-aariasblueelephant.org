@@ -42,9 +42,16 @@ const GAMES = [
 ];
 
 const srv = http.createServer(async (req, res) => {
+  const path = decodeURIComponent(req.url.split('?')[0]);
+  if (path === '/games' || path === '/') {
+    // launcher stub — Exit buttons navigate here; C4 asserts the arrival
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<title>games launcher stub</title>');
+    return;
+  }
   try {
-    const d = await readFile(join(ROOT, decodeURIComponent(req.url.split('?')[0])));
-    res.writeHead(200, { 'Content-Type': MIME[extname(req.url.split('?')[0])] || 'application/octet-stream' });
+    const d = await readFile(join(ROOT, path));
+    res.writeHead(200, { 'Content-Type': MIME[extname(path)] || 'application/octet-stream' });
     res.end(d);
   } catch { res.writeHead(404); res.end(); }
 });
@@ -92,6 +99,18 @@ for (const g of GAMES) {
     if (res.sound && (res.sound.y > 130 || res.sound.clusterRight < res.vw - 60 || res.sound.x < 140))
       failures.push(`${g.slug}: C2 sound cluster not top-right (btn x=${Math.round(res.sound.x)}, cluster right=${Math.round(res.sound.clusterRight)}/${res.vw})`);
     if (res.settings && res.sound && res.settings.w > 0 && res.settings.x < res.sound.x) failures.push(`${g.slug}: C3 settings not right of sound`);
+    // C4: Exit actually WORKS — clicking it must navigate to the games launcher
+    if (res.exit && res.exit.visible) {
+      await page.evaluate(() => document.querySelector('[data-abe="exit"]').click());
+      await new Promise((r) => setTimeout(r, 800));
+      // some games confirm first (e.g. Magnet Blocks) — accept a visible confirm dialog as working too
+      const after = await page.evaluate(() => ({
+        path: location.pathname,
+        confirm: [...document.querySelectorAll('button')].some((b) => b.offsetParent && /leave|exit|yes|stay/i.test(b.textContent)),
+      }));
+      if (!after.path.startsWith('/games') && !after.confirm)
+        failures.push(`${g.slug}: C4 exit click did nothing (still on ${after.path})`);
+    }
   } catch (e) {
     failures.push(`${g.slug}: smoke error — ${e.message.slice(0, 90)}`);
   }
