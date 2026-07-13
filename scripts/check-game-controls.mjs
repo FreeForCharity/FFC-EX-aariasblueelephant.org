@@ -93,6 +93,26 @@ for (const [game, cfg] of Object.entries(GAMES)) {
   }
 }
 
+// R6 — ABE CONTROL CANON: every game has exactly one 🏠 Exit (data-abe="exit")
+// with a title, plus a data-abe="sound" mute. Placement (top-left corner etc.)
+// is verified at runtime by scripts/smoke-controls.mjs.
+{
+  const CANON_FILES = {
+    grocery: 'public/gamekit/kit.js', dayplanner: 'public/gamekit/kit.js',
+    blockcraft: 'public/blockcraft/index.html', doughlab: 'public/doughlab/index.html',
+    'elly-tubbies': 'public/elly-tubbies/index.html', magnetblocks: 'public/magnetblocks/index.html',
+    roadsafety: 'public/roadsafety/index.html', helpinghands: 'public/helpinghands/index.html',
+    'nilus-world': 'components/game/BelusWorld/ui/HUD.tsx',
+  };
+  for (const [game, file] of Object.entries(CANON_FILES)) {
+    let src = '';
+    try { src = readFileSync(file, 'utf8'); } catch (e) { fail(game, 'R6', `cannot read ${file}`); continue; }
+    const exits = src.match(/data-abe="exit"/g) || [];
+    if (exits.length !== 1) fail(game, 'R6', `expected exactly one data-abe="exit" in ${file}, found ${exits.length}`);
+    if (!/data-abe="sound"/.test(src)) fail(game, 'R6', `missing data-abe="sound" on the mute button in ${file}`);
+  }
+}
+
 // Offline coverage: every game folder the build minifies must be cached by the
 // service worker, so no future game silently ships without offline support.
 {

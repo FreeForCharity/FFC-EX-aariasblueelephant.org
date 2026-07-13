@@ -217,6 +217,9 @@ const NILU_SCREENS = ["menuScreen", "exploreScreen", "handScreen", "practiceScre
 function showScreen(id) {
   SCREEN_IDS.forEach(s => { $(s).hidden = (s !== id); });
   $("niluBubble").hidden = !NILU_SCREENS.includes(id);
+  // ABE control canon — Exit is visible during actual gameplay screens,
+  // hidden on the title screen and Grown-Ups Corner (adult-only area)
+  $("exitGameBtn").hidden = !NILU_SCREENS.concat(["stickersScreen"]).includes(id);
   if (id === "menuScreen") setNilu("What do you want to do today? 💙");
   if (id === "exploreScreen") {
     requestAnimationFrame(() => { if (window.HH && HH.World) HH.World.resize(); });

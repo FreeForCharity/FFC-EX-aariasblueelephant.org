@@ -56,8 +56,20 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30">
-      {/* Nilu speech — top left */}
-      <div className="absolute left-4 top-4 flex max-w-[78%] items-start gap-2">
+      {/* ABE control canon: 🏠 Exit ALWAYS owns the top-left corner, every game */}
+      <button
+        data-abe="exit"
+        onClick={() => { window.location.href = '/games'; }}
+        className="pointer-events-auto absolute left-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
+        aria-label="Leave the game — back to all games"
+        title="Leave the game — back to all games"
+      >
+        <span className="text-xl leading-none">🏠</span>
+        <span className="text-[10px] font-extrabold text-slate-600">Exit</span>
+      </button>
+
+      {/* Nilu speech — right of the Exit button */}
+      <div className="absolute left-20 top-4 flex max-w-[70%] items-start gap-2">
         <div
           className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-2xl"
           style={{ background: 'linear-gradient(140deg,#7ec0ff,#5fa8e8)', boxShadow: '0 6px 18px rgba(40,90,160,0.4)' }}
@@ -100,6 +112,7 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
       <div className="absolute right-4 top-14 flex items-center gap-2">
         <button
           onClick={onToggleMute}
+          data-abe="sound"
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
           aria-label={muted ? 'Unmute sound' : 'Mute sound'}
           title={muted ? 'Unmute sound' : 'Mute sound'}

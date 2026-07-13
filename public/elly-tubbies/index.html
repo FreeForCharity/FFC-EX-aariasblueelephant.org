@@ -315,6 +315,7 @@ try{
   <div id="loading"><div class="ele">🐘</div><div class="lbl">Waking up Trunkland…</div></div>
 
   <div id="topbar">
+    <button class="mbtn mbtnLabeled" id="abeExitBtn" data-abe="exit" title="Leave the game — back to all games" style="pointer-events:auto;align-self:flex-start">🏠<span class="mbtnLbl">Exit</span></button>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
       <div class="chip">🌞 Day <span id="dayN">1</span></div>
       <div class="chip" id="visitChip" style="display:none" title="Days you've visited Trunkland — thank you for coming back!">🗓️ <span id="visitN">1</span></div>
@@ -324,7 +325,7 @@ try{
       <div class="chip" id="sched" style="pointer-events:auto;gap:4px" title="Today's plan"></div>
     </div>
     <div id="menu">
-      <button class="mbtn" id="soundBtn" title="Sound — tap to mute or unmute" aria-label="Sound on or off">🔊</button>
+      <button class="mbtn" id="soundBtn" data-abe="sound" title="Sound — tap to mute or unmute" aria-label="Sound on or off">🔊</button>
       <button class="mbtn" id="pauseBtn" title="Take a break" aria-label="Pause">⏸️</button>
       <button class="mbtn mbtnLabeled" id="replayBtn" title="Watch my adventure!" aria-label="Watch my adventure — My Movie">▶️<span class="mbtnLbl">My Movie</span></button>
       <button class="mbtn mbtnLabeled" id="shareBtn" title="Share my adventure!" aria-label="Share my adventure">📤<span class="mbtnLbl">Share</span></button>
@@ -3485,6 +3486,7 @@ function toggleMute(){S.muted=!S.muted;save();
   if(S.muted&&voiceOK)try{speechSynthesis.cancel();}catch(e){}
   updateSoundBtn();renderSettings();if(!S.muted)sfx.tap();}
 $('soundBtn').onclick=toggleMute;
+$('abeExitBtn').onclick=()=>{location.href='/games';};
 updateSoundBtn();updateSpeedBtn();
 $('speedBtn').onclick=cycleSpeed;
 $('settingsBtn').onclick=()=>{sfx.tap();renderSettings();$('settings').classList.add('show');};

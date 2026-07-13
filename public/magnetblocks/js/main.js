@@ -430,7 +430,7 @@ window.MB = window.MB || {};
       startGame();
       $('importFile').click();
     });
-    $('homeBtn').addEventListener('click', () => ui.confirm('Leave the playroom? 🏠', 'Your school bag creations stay saved!', () => location.href = '/'));
+    $('homeBtn').addEventListener('click', () => ui.confirm('Leave the playroom? 🏠', 'Your school bag creations stay saved!', () => location.href = '/games'));
     $('soundBtn').addEventListener('click', () => {
       ui.muted = !ui.muted;
       $('soundBtn').textContent = ui.muted ? '🔇' : '🔊';
