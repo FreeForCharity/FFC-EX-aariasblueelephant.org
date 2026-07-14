@@ -19,11 +19,18 @@
     font-weight: 900; font-size: 16px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
   }
   #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
+  #fFriend {
+    position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 112px); left: max(10px, env(safe-area-inset-left));
+    z-index: 40; background: var(--k-card); border-radius: 14px; padding: 6px 12px;
+    font-weight: 800; font-size: 13.5px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
+  }
+  #fFriend[hidden] { display: none; }
 </style>
 </head>
 <body>
 <div id="kStage"></div>
 <div id="fRings">⭐ 0/5</div>
+<div id="fFriend" hidden></div>
 
 <script src="lib/three.min.js"></script>
 <script src="../gamekit/kit.js"></script>
@@ -103,7 +110,8 @@
     const g = new THREE.Group();
     const blue = new THREE.MeshLambertMaterial({ color: 0x6db9f2 });
     const blueLight = new THREE.MeshLambertMaterial({ color: 0x8fcdf8 });
-    const pink = new THREE.MeshLambertMaterial({ color: 0xf7c8dc });
+    // pink needs the same emissive lift as the ears — unlit angles go gray otherwise
+    const pink = new THREE.MeshLambertMaterial({ color: 0xf7c8dc, emissive: 0x8a6274 });
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 18), blue);
     body.scale.set(1, 0.92, 1.28); g.add(body);
     const belly = new THREE.Mesh(new THREE.SphereGeometry(0.62, 18, 14), blueLight);
@@ -161,6 +169,202 @@
     const tuft = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), pink);
     tuft.position.set(0, -0.08, -1.42); g.add(tuft);
     return g;
+  }
+
+  /* ---------- mystic sky friends: they fly WITH Nilu and teach ----------
+     Each friend is a gentle lesson woven into the flying itself:
+       Misty (cloud whale)  → counting 1-5, one number per ring
+       Ember (baby dragon)  → colors: the rings bloom into colors to find
+       Stella (star fairy)  → UP / DOWN spatial words, narrated, no-fail
+     A friend greets you, flies alongside for a while, then waves goodbye. */
+  function buildWhale() {
+    const g = new THREE.Group();
+    const cloud = new THREE.MeshLambertMaterial({ color: 0xdceefe, emissive: 0x8496ad });
+    const bellyM = new THREE.MeshLambertMaterial({ color: 0xf6fbff, emissive: 0x9aa8bd });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(1.9, 20, 16), cloud);
+    body.scale.set(1, 0.72, 1.5); g.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(1.55, 16, 12), bellyM);
+    belly.scale.set(0.9, 0.55, 1.35); belly.position.y = -0.55; g.add(belly);
+    const tail = new THREE.Group();
+    for (const s of [-1, 1]) {
+      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 8), cloud);
+      fl.scale.set(1.2, 0.25, 0.7); fl.position.set(0.7 * s, 0.15, -0.5); fl.rotation.z = 0.3 * s;
+      tail.add(fl);
+    }
+    tail.position.set(0, 0.4, -2.9); g.add(tail);
+    for (const s of [-1, 1]) {
+      const fin = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), cloud);
+      fin.scale.set(1.1, 0.2, 0.55); fin.position.set(1.6 * s, -0.5, 0.6); fin.rotation.z = 0.5 * s; g.add(fin);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: 0x2a2a3a }));
+      eye.position.set(1.05 * s, 0.3, 2.05); g.add(eye);
+    }
+    const spout = glowSprite('rgba(255,255,255,0.9)', 'rgba(255,255,255,0)', 1.6);
+    spout.position.set(0, 1.55, 0.8); g.add(spout);
+    g.userData.tail = tail;
+    return g;
+  }
+  function buildDragon() {
+    const g = new THREE.Group();
+    const teal = new THREE.MeshLambertMaterial({ color: 0x63c9a8, emissive: 0x1f5f4a });
+    const cream = new THREE.MeshLambertMaterial({ color: 0xfff3d6, emissive: 0x8a7f60 });
+    const wingM = new THREE.MeshLambertMaterial({ color: 0xffb35c, emissive: 0x8a5a20, side: THREE.DoubleSide });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.72, 16, 14), teal);
+    body.scale.set(1, 0.95, 1.25); g.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), cream);
+    belly.scale.set(0.85, 0.7, 1); belly.position.set(0, -0.22, 0.3); g.add(belly);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 14), teal);
+    head.position.set(0, 0.5, 0.95); g.add(head);
+    const wingGeo = new THREE.CircleGeometry(0.85, 20);
+    const wl = new THREE.Group(), wr = new THREE.Group();
+    for (const [grp, s] of [[wl, -1], [wr, 1]]) {
+      const w = new THREE.Mesh(wingGeo, wingM);
+      w.scale.set(0.8, 1.25, 1); w.position.set(0.72 * s, 0.35, 0);   // TALL bat-style wings
+      grp.add(w); grp.position.set(0.3 * s, 0.6, 0);
+      g.add(grp);
+    }
+    for (let i = 0; i < 3; i++) {                     // spikes along the spine
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.3, 6), cream);
+      spike.position.set(0, 0.72 - i * 0.14, 0.15 - i * 0.5);
+      spike.rotation.x = -0.25; g.add(spike);
+    }
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), teal);
+    snout.scale.set(1, 0.7, 1.1); snout.position.set(0, 0.38, 1.36); g.add(snout);
+    for (const s of [-1, 1]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.28, 8), cream);
+      horn.position.set(0.2 * s, 0.98, 0.85); g.add(horn);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0x2a2a3a }));
+      eye.position.set(0.2 * s, 0.62, 1.34); g.add(eye);
+    }
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 8), teal);
+    tail.position.set(0, 0.1, -1.15); tail.rotation.x = -Math.PI / 2 - 0.25; g.add(tail);
+    const flame = glowSprite('rgba(255,170,80,0.95)', 'rgba(255,120,40,0)', 1.1);
+    flame.position.set(0, 0.35, -1.75); g.add(flame);
+    g.userData.wl = wl; g.userData.wr = wr;
+    return g;
+  }
+  function buildFairy() {
+    const g = new THREE.Group();
+    g.add(glowSprite('rgba(255,240,170,1)', 'rgba(255,210,90,0)', 3.4));
+    const fairy = emojiSprite('🧚', 2); fairy.position.y = 0.1; g.add(fairy);
+    const orbs = [];
+    for (let i = 0; i < 4; i++) {
+      const o = glowSprite('rgba(255,255,255,0.9)', 'rgba(255,230,140,0)', 0.7);
+      o.userData = { a: (i * Math.PI) / 2 };
+      g.add(o); orbs.push(o);
+    }
+    g.userData.orbs = orbs;
+    return g;
+  }
+
+  const NUM_EN = ['One', 'Two', 'Three', 'Four', 'Five'];
+  const NUM_ES = ['Uno', 'Dos', 'Tres', 'Cuatro', 'Cinco'];
+  const RING_COLORS = [
+    { c: 0xff6b6b, en: 'RED', es: 'ROJO' },
+    { c: 0x4dabf7, en: 'BLUE', es: 'AZUL' },
+    { c: 0x69db7c, en: 'GREEN', es: 'VERDE' },
+    { c: 0xffd43b, en: 'YELLOW', es: 'AMARILLO' },
+    { c: 0xb197fc, en: 'PURPLE', es: 'MORADO' },
+  ];
+  const FRIENDS = [
+    { key: 'misty', icon: '🐋', teach: 'count', build: buildWhale, home: { x: -24, y: 19, z: -60 }, side: 1, short: 'Misty',
+      greet: ["Hello, little flyer! I am Misty the cloud whale. Let's count the star rings together!",
+              '¡Hola! Soy Misty, la ballena de nubes. ¡Contemos los anillos de estrellas juntos!'],
+      bye: ['Counting with you was wonderful! Bye-bye!', '¡Contar contigo fue maravilloso! ¡Adiós!'] },
+    { key: 'ember', icon: '🐉', teach: 'color', build: buildDragon, home: { x: 22, y: 20, z: -100 }, side: -1, short: 'Ember',
+      greet: ['I am Ember the little dragon! Look — the rings turned into colors! Can you find them?',
+              '¡Soy Ember, el dragoncito! ¡Mira, los anillos tienen colores! ¿Puedes encontrarlos?'],
+      bye: ['You found the colors! Roar-yay! Bye!', '¡Encontraste los colores! ¡Grrr-hurra! ¡Adiós!'] },
+    { key: 'stella', icon: '🧚', teach: 'updown', build: buildFairy, home: { x: -8, y: 26, z: -128 }, side: 1, short: 'Stella',
+      greet: ["I am Stella the star fairy! Let's play UP and DOWN while we fly!",
+              '¡Soy Stella, el hada estrella! ¡Juguemos a SUBIR y BAJAR mientras volamos!'],
+      bye: ['Up, down, and all around — you fly beautifully! Bye!', 'Arriba, abajo… ¡vuelas precioso! ¡Adiós!'] },
+  ];
+  const FR = { list: [], active: null, t: 0, count: 0, prompt: null, promptT: 3, dir: 'down' };
+
+  function friendChip() {
+    const el = $('fFriend');
+    if (FR.active) {
+      el.hidden = false;
+      el.textContent = FR.active.icon + ' ' + K.tr(FR.active.short + ' is flying with you!', '¡' + FR.active.short + ' vuela contigo!');
+    } else if (FR.count > 0) {
+      el.hidden = false;
+      el.textContent = '💫 ' + K.tr('Friend flights: ', 'Vuelos con amigos: ') + FR.count;
+    } else el.hidden = true;
+  }
+  function colorRings(on) {
+    rings.forEach((r, i) => {
+      if (r.userData.got) return;
+      if (on) {
+        const col = RING_COLORS[i % RING_COLORS.length];
+        r.userData.col = col;
+        r.userData.torus.material.color.setHex(col.c);
+        r.userData.torus.material.emissive.setHex(col.c).multiplyScalar(0.5);
+        r.userData.glow.material.color.setHex(col.c);
+      } else {
+        r.userData.col = null;
+        r.userData.torus.material.color.setHex(0xffd43b);
+        r.userData.torus.material.emissive.setHex(0x9a7a00);
+        r.userData.glow.material.color.setHex(0xffffff);
+      }
+    });
+  }
+  function startFriend(f) {
+    FR.active = f; FR.t = 0;
+    FR.prompt = null; FR.promptT = 3.5; FR.dir = 'down';
+    f.cd = 999;
+    if (f.teach === 'color') colorRings(true);
+    K.sfx.star();
+    K.say(K.tr(f.greet[0], f.greet[1]));
+    K.toast(f.icon + ' ' + K.tr(f.short + ' joins you!', '¡' + f.short + ' te acompaña!'), 3200);
+    K.recordEvent('friend', FRIENDS.indexOf(f));
+    friendChip();
+  }
+  function endFriend(quiet) {
+    const f = FR.active;
+    if (!f) return;
+    FR.active = null;
+    f.cd = 55;
+    if (f.teach === 'color') colorRings(false);
+    FR.count++; K.save('friends', FR.count);
+    if (!quiet) {
+      K.sfx.yes();
+      K.say(K.tr(f.bye[0], f.bye[1]));
+      K.toast(f.icon + ' ' + K.tr('Bye, ' + f.short + '! 💙', '¡Adiós, ' + f.short + '! 💙'), 3000);
+    }
+    friendChip();
+  }
+  /* Stella's no-fail UP/DOWN game: ask, watch, and warmly narrate whatever
+     the child does — praise a match, gently model the word otherwise. */
+  function stella(dt) {
+    FR.promptT -= dt;
+    if (!FR.prompt && FR.promptT <= 0) {
+      FR.dir = FR.dir === 'up' ? 'down' : 'up';
+      if (FR.dir === 'up') {
+        K.say(K.tr("Let's fly UP, up, up!", '¡Volemos hacia ARRIBA!'));
+        K.toast('⬆️ ' + K.tr('UP!', '¡ARRIBA!'), 2600);
+      } else {
+        K.say(K.tr('Now swoop DOWN, down!', '¡Ahora bajemos, ABAJO!'));
+        K.toast('⬇️ ' + K.tr('DOWN!', '¡ABAJO!'), 2600);
+      }
+      FR.prompt = { y0: P.y, t: 4.5 };
+    } else if (FR.prompt) {
+      FR.prompt.t -= dt;
+      if (FR.prompt.t <= 0) {
+        const dy = P.y - FR.prompt.y0;
+        const hit = FR.dir === 'up' ? dy > 2.2 : dy < -2.2;
+        if (hit) {
+          K.sfx.yes();
+          K.say(FR.dir === 'up'
+            ? K.tr('Wheee! You flew UP! So high!', '¡Uiii! ¡Volaste hacia ARRIBA! ¡Qué alto!')
+            : K.tr('Wooosh! You swooped DOWN! Wonderful!', '¡Fiuuu! ¡Bajaste, ABAJO! ¡Qué bien!'));
+        } else {
+          K.say(FR.dir === 'up'
+            ? K.tr('UP is where the sun lives — push the stick up and away we go!', 'ARRIBA está el sol — ¡empuja la palanca hacia arriba y vamos!')
+            : K.tr('DOWN is toward the sparkly sea — pull the stick down, wheee!', 'ABAJO está el mar brillante — ¡jala la palanca hacia abajo!'));
+        }
+        FR.prompt = null; FR.promptT = 6;
+      }
+    }
   }
 
   /* islands v2: craggy rock, rounded lawn, trees, flowers — and SOLID */
@@ -304,6 +508,14 @@
       b.userData = { t: Math.random() * 9 };
       scene.add(b); birds.push(b);
     }
+    // the mystic sky friends, waiting near the flight path
+    for (const f of FRIENDS) {
+      f.g = f.build();
+      f.g.position.set(f.home.x, f.home.y, f.home.z);
+      f.cd = 0; f.bob = Math.random() * 9;
+      scene.add(f.g);
+      FR.list.push(f);
+    }
     // wind streaks: thin lines that appear as you speed up
     for (let i = 0; i < 16; i++) {
       const s = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 2.6),
@@ -325,6 +537,7 @@
     for (const [x, y, z] of set) rings.push(makeRing(x, y, z));
     G.got = 0;
     $('fRings').textContent = '⭐ ' + G.got + '/' + rings.length;
+    if (FR.active && FR.active.teach === 'color') colorRings(true);
   }
 
   /* ---------- flight model v2: bank to turn, trade height for speed ---------- */
@@ -416,14 +629,27 @@
           K.say(K.tr('All the stars! Fly to the rainbow island to rest, or keep soaring!',
                      '¡Todas las estrellas! Vuela a la isla arcoíris a descansar, ¡o sigue volando!'));
           K.toast(K.tr('🌈 All stars! The rainbow island is waiting…', '🌈 ¡Todas! La isla arcoíris te espera…'), 3600);
+        } else if (FR.active && FR.active.teach === 'count') {
+          K.say(K.tr(NUM_EN[G.got - 1] + '!', '¡' + NUM_ES[G.got - 1] + '!'));
+        } else if (FR.active && FR.active.teach === 'color' && r.userData.col) {
+          K.say(K.tr('You found the ' + r.userData.col.en + ' ring!', '¡Encontraste el anillo ' + r.userData.col.es + '!'));
         } else {
           K.say(K.tr(`Star ${G.got}!`, `¡Estrella ${G.got}!`));
         }
       }
     }
+    // a sky friend nearby? they join you for a while
+    for (const f of FR.list) {
+      f.cd = Math.max(0, f.cd - dt);
+      if (!FR.active && f.cd <= 0 &&
+          Math.hypot(P.x - f.g.position.x, P.y - f.g.position.y, P.z - f.g.position.z) < 13) {
+        startFriend(f);
+      }
+    }
   }
 
   function land() {
+    endFriend(true);
     G.flying = false; G.landT = 0;
     G.course++;
     K.save('course', G.course);
@@ -459,6 +685,19 @@
   }
 
   /* ---------- per-frame ---------- */
+  const CAMS = ['back', 'front', 'side'];
+  let camMode = 0;
+  function cycleCam() {
+    camMode = (camMode + 1) % CAMS.length;
+    camP = null;                                       // snap to the new view
+    K.sfx.tap();
+    const names = {
+      back: K.tr('🎥 Behind Nilu', '🎥 Detrás de Nilu'),
+      front: K.tr("🎥 Nilu's face!", '🎥 ¡La carita de Nilu!'),
+      side: K.tr('🎥 Side view', '🎥 Vista lateral'),
+    };
+    K.toast(names[CAMS[camMode]], 2200);
+  }
   let t = 0, blinkT = 2.5, camP = null, fovNow = 60;
   function frame(dt) {
     dt = dt || 0; t += dt;
@@ -488,13 +727,56 @@
     for (const e of eyes) e.scale.y = blink;
     if (blinkT <= 0) blinkT = 2 + Math.random() * 3;
 
-    // chase camera: smoothed follow, banks with Nilu, FOV opens with speed
-    const back = 11.5, up = 3.6;
-    const ideal = {
-      x: P.x + Math.sin(P.yaw) * back * Math.cos(P.pitch * 0.5),
-      y: P.y + up - Math.sin(P.pitch) * 3.5,
-      z: P.z + Math.cos(P.yaw) * back * Math.cos(P.pitch * 0.5),
-    };
+    // sky friends: fly alongside Nilu, or drift near home waiting to be met
+    for (const f of FR.list) {
+      f.bob += dt;
+      const g = f.g;
+      if (FR.active === f && G.flying && !K.replaying) {
+        FR.t += dt;
+        const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
+        const tx = P.x + fx * 3.6 - fz * f.side * 3.6;
+        const ty = P.y + 1.1 + Math.sin(f.bob * 2) * 0.5;
+        const tz = P.z + fz * 3.6 + fx * f.side * 3.6;
+        const fk = 1 - Math.exp(-dt * 2.6);
+        g.position.x += (tx - g.position.x) * fk;
+        g.position.y += (ty - g.position.y) * fk;
+        g.position.z += (tz - g.position.z) * fk;
+        g.rotation.y = P.yaw + Math.PI;
+        if (f.teach === 'updown') stella(dt);
+        if (FR.t > 34) endFriend();
+      } else {
+        g.position.x = f.home.x + Math.cos(f.bob * 0.5) * 3;
+        g.position.z = f.home.z + Math.sin(f.bob * 0.5) * 3;
+        g.position.y = f.home.y + Math.sin(f.bob * 1.3) * 0.8;
+        g.rotation.y = f.bob * 0.5 + Math.PI / 2;
+      }
+      if (g.userData.tail) g.userData.tail.rotation.x = Math.sin(f.bob * 3) * 0.35;
+      if (g.userData.wl) {
+        const wf = Math.sin(f.bob * 9) * 0.5;
+        g.userData.wl.rotation.z = 0.2 + wf;
+        g.userData.wr.rotation.z = -0.2 - wf;
+      }
+      if (g.userData.orbs) for (const o of g.userData.orbs) {
+        o.userData.a += dt * 2.4;
+        o.position.set(Math.cos(o.userData.a) * 1.5, Math.sin(o.userData.a * 1.7) * 0.9, Math.sin(o.userData.a) * 1.5);
+      }
+    }
+
+    // camera: three views — behind (chase), front (see Nilu's face!), side
+    const mode = CAMS[camMode];
+    let ideal;
+    if (mode === 'front') {
+      ideal = { x: P.x - Math.sin(P.yaw) * 10, y: P.y + 2.1, z: P.z - Math.cos(P.yaw) * 10 };
+    } else if (mode === 'side') {
+      ideal = { x: P.x - Math.cos(P.yaw) * 10.5, y: P.y + 2.6, z: P.z + Math.sin(P.yaw) * 10.5 };
+    } else {
+      const back = 11.5, up = 3.6;
+      ideal = {
+        x: P.x + Math.sin(P.yaw) * back * Math.cos(P.pitch * 0.5),
+        y: P.y + up - Math.sin(P.pitch) * 3.5,
+        z: P.z + Math.cos(P.yaw) * back * Math.cos(P.pitch * 0.5),
+      };
+    }
     if (!camP) camP = { ...ideal };
     const ck = 1 - Math.exp(-dt * 4.2);
     camP.x += (ideal.x - camP.x) * ck;
@@ -505,10 +787,15 @@
       camP.x + (Math.random() - 0.5) * G.shake,
       camP.y + (Math.random() - 0.5) * G.shake,
       camP.z + (Math.random() - 0.5) * G.shake);
-    const ahead = 5;
-    camera.lookAt(P.x - Math.sin(P.yaw) * ahead * 0.6, P.y + 1.6 + P.pitch * 2.5, P.z - Math.cos(P.yaw) * ahead * 0.6);
-    camera.rotateZ(-P.roll * 0.22);
-    const fovT = 58 + Math.max(0, P.sp - F.cruise) * 1.4;
+    if (mode === 'back') {
+      const ahead = 5;
+      camera.lookAt(P.x - Math.sin(P.yaw) * ahead * 0.6, P.y + 1.6 + P.pitch * 2.5, P.z - Math.cos(P.yaw) * ahead * 0.6);
+      camera.rotateZ(-P.roll * 0.22);
+    } else {
+      camera.lookAt(P.x, P.y + 0.7, P.z);
+      camera.rotateZ(-P.roll * 0.1);
+    }
+    const fovT = mode === 'back' ? 58 + Math.max(0, P.sp - F.cruise) * 1.4 : 58;
     if (Math.abs(fovT - fovNow) > 0.1) {
       fovNow += (fovT - fovNow) * Math.min(1, dt * 3);
       camera.fov = fovNow; camera.updateProjectionMatrix();
@@ -573,7 +860,7 @@
     }
     // gentle hint: a little star floats toward the nearest un-got ring
     const next = rings.find((r) => !r.userData.got);
-    if (next && G.flying) {
+    if (next && G.flying && mode === 'back') {        // in front/side views it would block Nilu
       hintArrow.visible = true;
       const dx = next.position.x - P.x, dy = next.position.y - P.y, dz = next.position.z - P.z;
       const d = Math.hypot(dx, dy, dz) || 1;
@@ -599,7 +886,7 @@
 
   buildWorld();
   nilu = buildNilu(); scene.add(nilu);
-  window.FL = { P, G, rings: () => rings, land, takeOff, trumpet, ISLES };   // debug/test handle
+  window.FL = { P, G, FR, rings: () => rings, land, takeOff, trumpet, cycleCam, startFriend, endFriend, ISLES, cam: () => camera.position };   // debug/test handle
   frame(0);
 
   K.init({
@@ -614,19 +901,22 @@
       ['🕹️', 'Tilt the stick to bank and turn — like a real flyer'],
       ['⬇️', 'Dive to zoom faster, climb to float slower'],
       ['⭐', 'Glide through the glowing star rings'],
-      ['🏝️', 'Islands are solid — bump one and you bounce off, softly'],
+      ['🐋', 'Meet magical sky friends — they fly and learn with you!'],
+      ['🎥', 'Tap Camera to see Nilu from the front'],
       ['🌈', 'All stars? Land gently on the rainbow island'],
     ],
     howToEs: [
       ['🕹️', 'Inclina la palanca para girar — como un aviador de verdad'],
       ['⬇️', 'Baja en picada para ir rápido, sube para flotar despacio'],
       ['⭐', 'Pasa por los anillos de estrellas que brillan'],
-      ['🏝️', 'Las islas son sólidas — si chocas, rebotas suavecito'],
+      ['🐋', 'Conoce amigos mágicos del cielo — ¡vuelan y aprenden contigo!'],
+      ['🎥', 'Toca Cámara para ver a Nilu de frente'],
       ['🌈', '¿Todas las estrellas? Aterriza en la isla arcoíris'],
     ],
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
     actions: [
       { emoji: '🎺', label: 'Trumpet', labelEs: 'Trompeta', title: 'Say hello to the sky!', titleEs: '¡Saluda al cielo!', onTap: trumpet },
+      { emoji: '🎥', label: 'Camera', labelEs: 'Cámara', title: 'Change the view!', titleEs: '¡Cambia la vista!', onTap: cycleCam },
     ],
     playerPos: () => ({ x: P.x, z: P.z, ry: P.yaw }),
     replayableState: {
@@ -636,6 +926,8 @@
     onStart() {
       G.stars = K.load('stars', 0);
       G.course = K.load('course', 0);
+      FR.count = K.load('friends', 0);
+      friendChip();
       spawnRings();
       K.say(K.tr('Flap those big ears, Nilu! Fly through the star rings!',
                  '¡Aletea esas orejotas, Nilu! ¡Vuela por los anillos de estrellas!'));
@@ -646,6 +938,7 @@
       if (ev.kind === 'ring') { K.toast('⭐!'); K.sfx.yes(); }
       else if (ev.kind === 'land') { K.toast(K.tr('🌈 Soft landing!', '🌈 ¡Aterrizaje suave!')); K.sfx.star(); }
       else if (ev.kind === 'trumpet') { K.toast('🎺'); }
+      else if (ev.kind === 'friend') { K.toast((FRIENDS[ev.n] ? FRIENDS[ev.n].icon : '💫') + '!'); K.sfx.star(); }
     },
   });
 })();
