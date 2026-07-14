@@ -65,6 +65,27 @@ const THEMES = [   // sky/grass per level — mornings to golden hour
   { skyT:"#7ec8ff", skyB:"#cfeaff", g1:"#9ed98f", g2:"#92cf83", sun:"#fff3b0" },
   { skyT:"#69d2ff", skyB:"#e0f7ff", g1:"#a8d999", g2:"#9bce8c", sun:"#fff3b0" },
 ];
+/* WEATHER RIDES: a garage toggle (sun/rain/dusk), not new levels — blends the
+   level's THEME rather than replacing it, so every route keeps its identity. */
+function mixHex(a, b, t){
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ar=(pa>>16)&255, ag=(pa>>8)&255, ab=pa&255, br=(pb>>16)&255, bg=(pb>>8)&255, bb=pb&255;
+  const r = Math.round(ar+(br-ar)*t), g = Math.round(ag+(bg-ag)*t), bl = Math.round(ab+(bb-ab)*t);
+  return "#" + [r,g,bl].map(x => x.toString(16).padStart(2,"0")).join("");
+}
+function weatherTheme(li){
+  const base = THEMES[li];
+  if (S.weather === "dusk"){
+    const gold = THEMES[4];    // reuse the existing golden-hour treatment
+    return { skyT: mixHex(base.skyT, gold.skyT, .6), skyB: mixHex(base.skyB, gold.skyB, .6),
+              g1: mixHex(base.g1, gold.g1, .4), g2: mixHex(base.g2, gold.g2, .4), sun: mixHex(base.sun, gold.sun, .6) };
+  }
+  if (S.weather === "rain"){
+    return { skyT: mixHex(base.skyT, "#5b6b78", .5), skyB: mixHex(base.skyB, "#8797a3", .45),
+              g1: mixHex(base.g1, "#5f6f5a", .3), g2: mixHex(base.g2, "#57664f", .3), sun: base.sun };
+  }
+  return base;
+}
 
 /* ---------- map data → px space ---------- */
 function pxify(flat){ const o = new Float32Array(flat.length); for (let i = 0; i < flat.length; i++) o[i] = flat[i] * PXM; return o; }
@@ -239,6 +260,12 @@ const QUIZ = {
 
 /* ---------- Spanish dictionary (kid-level, Latin-American, tú form) ---------- */
 ABELang.register({
+  /* weather rides */
+  "☀️ Sunny":"☀️ Soleado", "🌧️ Rainy":"🌧️ Lluvia", "🌆 Dusk":"🌆 Atardecer",
+  "🌧️ Rain: go slower, lights on!":"🌧️ Lluvia: ¡ve más despacio y enciende las luces!",
+  "🌆 Dusk: lights on so everyone sees you!":"🌆 Atardecer: ¡enciende las luces para que todos te vean!",
+  "Raincoat on!":"¡Impermeable puesto!",
+
   /* vehicles */
   "Bicycle":"Bicicleta", "E-Bike":"Bici eléctrica", "E-Scooter":"Monopatín eléctrico",
   "EV Car":"Auto eléctrico", "Car":"Auto", "Walking Hero":"Héroe Caminante", "Monster Truck":"Camión monstruo",
@@ -578,7 +605,7 @@ const PRACTICE_NAME = {
 
 /* ---------- save / load ---------- */
 const SAVE_KEY = "abeRoadSafety2";
-let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, best:{}, bestStreak:{}, concepts:{} };
+let save = { name:"", unlocked:1, certs:{}, view:"fp", minimap:true, gspeed:"normal", voice:true, weather:"sun", best:{}, bestStreak:{}, concepts:{} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(save, s); } catch(e){}
 // one-time migration: default everyone into the new chase view
 if (!save.chaseDefault){ save.view = "fp"; save.chaseDefault = true; }
@@ -595,7 +622,7 @@ const S = {
   events:[], amb:null, toasts:[], banner:null,
   shake:0, speedTimer:0, quizBonus:0, finalScore:0,
   streak:0, bestStreak:0, mult:1, boostCharge:0, boost:0, lastStars:1, safeStops:0,
-  air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp",
+  air:null, airPts:0, houses:[], props:[], mm:null, view: save.view || "fp", weather: save.weather || "sun",
   paused:false, violCounts:{}, curve:[], curveNext:0, practiceLine:"", practiceFocus:[],
 };
 let cam = null;
@@ -794,6 +821,8 @@ function currentLimit(){
   for (const ev of S.events)
     if ((ev.type === "school" || ev.type === "festival" || ev.type === "construction")
         && S.t >= ev.from - 350 && S.t <= ev.to){ lim = Math.min(lim, ev.limit); zone = true; }
+  // Weather Rides: rain always trims the limit — lights on, slower in rain
+  if (S.weather === "rain") lim = Math.max(6, lim - 5);
   // Green Wave boost: a LEGAL surge on open road only — never inside slow zones
   if (S.boost > 0 && !zone) lim += 8;
   return lim;
@@ -1043,6 +1072,7 @@ function initEvent(e, cfg){
 function lvlLabel(){ return ABELang.es ? "Nivel" : "Level"; }
 function openIntro(i){
   S.li = i; S.veh = VEHICLES[i]; S.cfg = CFG[i]; S.rt = ROUTES[ridx(i)];
+  S.weather = save.weather || "sun";
   document.getElementById("introTitle").textContent = `${lvlLabel()} ${i+1}: ${ABELang.t(S.cfg.title)}`;
   document.getElementById("introRoute").textContent = `📍 ${S.rt.name} • ${ABELang.t("real Mountain House streets")}`;
   const gevs = genEvents(i);
@@ -1059,6 +1089,8 @@ function openIntro(i){
     `<div class="rule">${ABELang.t(`⚡ Speed limit: ${S.cfg.base} mph (lower in special zones)`)}</div>` +
     types.map(t => `<div class="rule">${ABELang.t(RL[t])}</div>`).join("") +
     (S.cfg.bumps ? `<div class="rule">${ABELang.t("⚠️ Jumps are ONLY ok at closed events like this — never on open streets!")}</div>` : "") +
+    (S.weather === "rain" ? `<div class="rule">${ABELang.t("🌧️ Rain: go slower, lights on!")}</div>` : "") +
+    (S.weather === "dusk" ? `<div class="rule">${ABELang.t("🌆 Dusk: lights on so everyone sees you!")}</div>` : "") +
     (practicing.length ? `<div class="rule">${ABELang.t("💙 Today we'll practice {#} a little extra!")
       .replace("{#}", practicing.map(c => ABELang.t(PRACTICE_NAME[c] || c)).join(ABELang.es ? " y " : " and "))}</div>` : "") +
     `<div class="rule">${ABELang.t(`🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!`)}</div>` +
@@ -1123,7 +1155,9 @@ function showBuckle(){
   const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
   const isWalk = !!S.cfg.walking;
   document.getElementById("buckleEmoji").textContent = isWalk ? "🧢" : isBike ? "⛑️" : "🔒";
-  document.getElementById("buckleTitle").textContent = ABELang.t(isWalk ? "Hat on! Eyes up!" : isBike ? "Helmet on!" : "Buckle up!");
+  const buckleTitle = ABELang.t(isWalk ? "Hat on! Eyes up!" : isBike ? "Helmet on!" : "Buckle up!");
+  const rainNote = S.weather === "rain" ? ` <small style="font-size:.55em;opacity:.85">${ABELang.t("Raincoat on!")}</small>` : "";
+  document.getElementById("buckleTitle").innerHTML = buckleTitle + rainNote;
   document.getElementById("buckleBtn").textContent = ABELang.t(isWalk ? "🧢 Hat's on!" : isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!");
   S.screen = "buckle";
   show("buckle");
@@ -1451,7 +1485,7 @@ function drawAerialGround(){
 }
 
 function drawTop(){
-  const TH = THEMES[S.li], HW = HWf();
+  const TH = weatherTheme(S.li), HW = HWf();
   const shx = S.shake ? (Math.random() - .5) * S.shake : 0;
   ctx.save();
   ctx.translate(shx, 0);
@@ -1834,6 +1868,15 @@ function drawPlayerTop(){
   const so = S.air ? 10 * Math.sin(Math.PI * S.air.p) : 3;
   ctx.beginPath(); ctx.ellipse(so * .6, so, v.w * .55, v.h * .5, 0, 0, 7); ctx.fill();
   ctx.scale(airS, airS);
+  if (S.weather === "dusk"){        // headlights on — cheap forward beam, top-down only
+    const beam = ctx.createRadialGradient(0, -v.h/2, 0, 0, -v.h/2 - 66, 52);
+    beam.addColorStop(0, "rgba(255,248,196,.4)"); beam.addColorStop(1, "rgba(255,248,196,0)");
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(-9, -v.h/2); ctx.lineTo(9, -v.h/2);
+    ctx.lineTo(24, -v.h/2 - 66); ctx.lineTo(-24, -v.h/2 - 66);
+    ctx.closePath(); ctx.fill();
+  }
   if (v.id === "ev" || v.id === "car" || v.id === "monster"){
     const col = v.id === "ev" ? "#2a9d8f" : v.id === "car" ? "#4361ee" : "#7b2cbf";
     ctx.fillStyle = "#222";
@@ -1870,7 +1913,7 @@ function drawPlayerTop(){
    FIRST-PERSON RENDERER (the thrill cam)
    ============================================================ */
 function drawFP(){
-  const TH = THEMES[S.li], HW = HWf();
+  const TH = weatherTheme(S.li), HW = HWf();
   const N = 88;
   const jump = S.air ? 60 * Math.sin(Math.PI * S.air.p) : 0;
   const cwx = cam.x + cam.rx * S.o, cwy = cam.y + cam.ry * S.o;
@@ -2477,7 +2520,26 @@ function drawSpeedStreaks(){
   }
   ctx.restore();
 }
+/* Weather Rides overlay — drawn on the transparent HUD canvas, which sits on
+   top of BOTH the 2D top-down/FP renderer and the 3D GL3D canvas, so one
+   cheap effect covers every view mode. */
+function drawWeatherFX(){
+  if (S.weather === "rain"){
+    ctx.fillStyle = "rgba(18,26,40,.14)"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(206,226,255,.35)"; ctx.lineWidth = 1.4; ctx.lineCap = "round";
+    const t = S.time * 640;
+    for (let i = 0; i < 60; i++){
+      const seed = i * 137.51;
+      const x = ((seed * 13 + t * .1) % (W + 40)) - 20;
+      const y = ((seed * 71 + t) % (H + 40)) - 20;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 16); ctx.stroke();
+    }
+  } else if (S.weather === "dusk"){
+    ctx.fillStyle = "rgba(40,22,58,.09)"; ctx.fillRect(0, 0, W, H);
+  }
+}
 function drawHUD(){
+  drawWeatherFX();
   drawSpeedStreaks();
   const sc = Math.round(S.score), lim = currentLimit();
 
@@ -2826,7 +2888,24 @@ function buildMenu(){          // the GARAGE
         .replace("{#}", "70").replace("{#}", String(garIdx))
         .replace("{#}", VEHICLES[garIdx - 1].emoji).replace("{#}", ABELang.t(VEHICLES[garIdx - 1].name))
     : "";
+  renderWeatherChips();
 }
+/* Weather Rides toggle — persists in save.weather, applied on run start */
+const WCHIP_LABEL = { sun:"☀️ Sunny", rain:"🌧️ Rainy", dusk:"🌆 Dusk" };
+function renderWeatherChips(){
+  document.querySelectorAll(".wchip").forEach(btn => {
+    const w = btn.dataset.w;
+    btn.textContent = ABELang.t(WCHIP_LABEL[w]);
+    btn.classList.toggle("active", (save.weather || "sun") === w);
+  });
+}
+document.querySelectorAll(".wchip").forEach(btn => {
+  btn.addEventListener("click", () => {
+    ensureAudio(); tone(440, .06);
+    save.weather = btn.dataset.w; persist();
+    renderWeatherChips();
+  });
+});
 document.getElementById("garPrev").addEventListener("click", () => {
   ensureAudio(); tone(400, .06); garIdx = (garIdx + VEHICLES.length - 1) % VEHICLES.length; buildMenu(); });
 document.getElementById("garNext").addEventListener("click", () => {

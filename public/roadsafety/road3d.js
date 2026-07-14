@@ -614,10 +614,11 @@ window.GL3D = (function(){
     grpStatic = new T.Group(); grpDyn = new T.Group();
     scene.add(grpStatic, grpDyn);
     player = null;
-    const TH = THEMES[li];
+    const TH = typeof weatherTheme === "function" ? weatherTheme(li) : THEMES[li];
     scene.background = new T.Color(TH.skyT);
-    scene.fog = new T.Fog(new T.Color(TH.skyB), 90, 460);
-    const golden = li === 3 || li === 4;
+    const rainy = typeof S !== "undefined" && S.weather === "rain";
+    scene.fog = new T.Fog(new T.Color(TH.skyB), rainy ? 55 : 90, rainy ? 300 : 460);
+    const golden = li === 3 || li === 4 || (typeof S !== "undefined" && S.weather === "dusk");
     sunL.color.set(golden ? 0xffc27a : 0xfff2d0);
     sunL.intensity = golden ? .8 : .95;
     hemi.intensity = golden ? .38 : .5;

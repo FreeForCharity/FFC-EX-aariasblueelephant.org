@@ -29,7 +29,7 @@ begin
   -- NEW GAMES: add the slug here AND re-run this function block in the
   -- Supabase SQL editor (the allowlist lives in the DB, not just this file).
   if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
-               'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings') then
+               'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings','rhythm') then
     return;
   end if;
   insert into public.game_play_counts (game, day, plays)
@@ -57,7 +57,7 @@ begin
   if s > 600 then s := 600; end if;
   -- same allowlist as record_game_play — keep both in sync (and in the live DB)
   if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
-               'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings') then
+               'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings','rhythm') then
     return;
   end if;
   insert into public.game_play_counts (game, day, plays, seconds)

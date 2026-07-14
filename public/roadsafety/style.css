@@ -226,6 +226,13 @@ h1.rainbow {
 .garSub { color: #b9c6e8; font-size: 14px; min-height: 18px; }
 #garMedal { font-size: 16px; }
 #specs { width: min(300px, 80vw); display: flex; flex-direction: column; gap: 6px; }
+#weatherRow { display: flex; gap: 8px; justify-content: center; margin-top: 2px; }
+.wchip { font-family: inherit; font-size: 13px; font-weight: bold; color: #cdd8f5;
+  background: #202a44; border: 2px solid #3a4a72; border-radius: 12px;
+  padding: 7px 12px; cursor: pointer; }
+.wchip:active { transform: translateY(1px); }
+.wchip.active { color: #5c3c00; background: linear-gradient(180deg, #ffd43b, #ffa94d);
+  border-color: #e8920c; box-shadow: 0 3px 0 #e8920c; }
 .spec { display: flex; align-items: center; gap: 8px; }
 .spec span { width: 92px; text-align: right; font-size: 11px; font-weight: bold;
   color: #8fa3d8; letter-spacing: 1px; }
