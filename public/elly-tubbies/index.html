@@ -277,7 +277,7 @@
 <body>
 <script>
 (function(){
-try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/elly-tubbies/index.html',name:'Aaria's Elly-Tubbies',emoji:'🐘',at:Date.now()}))}catch(e){}
+try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/elly-tubbies/index.html',name:"Aaria's Elly-Tubbies",emoji:'🐘',at:Date.now()}))}catch(e){}
 /* anonymous play tally — one count per game per session, NO identifiers (COPPA-safe) */
 try{if(!window.Capacitor&&!sessionStorage.getItem('abe_played_elly-tubbies')){sessionStorage.setItem('abe_played_elly-tubbies','1');fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Content-Type':'application/json'},body:JSON.stringify({g:'elly-tubbies'}),keepalive:true}).catch(function(){});}}catch(e){}
 
@@ -451,6 +451,7 @@ try{
     <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
       <button class="bigBtn" id="titleHowBtn" style="font-size:20px;padding:12px 30px;">❓ How to Play</button>
       <button class="bigBtn" id="titleFsBtn" style="font-size:20px;padding:12px 30px;">⛶ Full Screen</button>
+      <button class="bigBtn" id="titleLangBtn" data-abe="lang" title="Español / English" style="font-size:20px;padding:12px 30px;">🌐 Español</button>
     </div>
     <!-- shown only when a saved adventure (≥20s) is waiting from last visit -->
     <div id="titleMovieRow" style="display:none;gap:14px;flex-wrap:wrap;justify-content:center;">
@@ -523,6 +524,457 @@ try{
     <button class="big" id="newDay">Start Day <span id="nextDayN">2</span> ☀️</button>
   </div></div>
 
+<script src="/gamekit/lang.js"></script>
+<script>
+ABELang.register({
+/* ---------------- title screen / static chrome ---------------- */
+"Built for":"Hecho para",
+"— bouncy elephant friends in sunny Trunkland!":"— ¡amigos elefantes saltarines en el soleado Trunkland!",
+"▶ Play!":"▶ ¡Jugar!",
+"❓ How to Play":"❓ Cómo Jugar",
+"⛶ Full Screen":"⛶ Pantalla Completa",
+"▶️ My Movie":"▶️ Mi Película",
+"📥 Watch a friend's adventure":"📥 Ver la aventura de un amigo",
+/* ---------------- settings / overlay chrome ---------------- */
+"⚙️ Settings":"⚙️ Configuración",
+"⛶ Full screen":"⛶ Pantalla completa",
+"▶️ My Movie — watch your adventure!":"▶️ Mi Película — ¡mira tu aventura!",
+"👨‍👩‍👧 For grown-ups":"👨‍👩‍👧 Para adultos",
+"Done ▶":"Listo ▶",
+"🗺️ Trunkland Map":"🗺️ Mapa de Trunkland",
+"Back ▶":"Atrás ▶",
+"Quick check — what is":"Verificación rápida — ¿cuánto es",
+"Continue ▶":"Continuar ▶",
+"Cancel":"Cancelar",
+"Not quite — try again!":"No es correcto — ¡inténtalo de nuevo!",
+"👨‍👩‍👧 Grown-up Summary":"👨‍👩‍👧 Resumen para Adultos",
+"Taking a break 💙":"Tomando un descanso 💙",
+"Trunkland is waiting patiently for you!":"¡Trunkland te espera pacientemente!",
+"Keep playing ▶️":"Seguir jugando ▶️",
+"How to Play 🐘":"Cómo Jugar 🐘",
+"Over the hills and far away, in sunny <b>Trunkland</b>, live four bouncy elephant friends with magic <b>Tummy-TVs</b>:":"Allá lejos, sobre las colinas, en el soleado <b>Trunkland</b>, viven cuatro amigos elefantes saltarines con <b>Tele-Pancitas</b> mágicas:",
+"You are <b>Nilu</b> 🐘💙. Move with the <b>joystick</b> (or arrow keys), <b>🦘 jump</b>, <b>🙈 duck</b> — and tap the <b>❓ mystery buttons</b> to discover silly surprises!":"Tú eres <b>Nilu</b> 🐘💙. Muévete con el <b>joystick</b> (o las flechas), <b>🦘 salta</b>, <b>🙈 agáchate</b> — ¡y toca los <b>❓ botones misteriosos</b> para descubrir sorpresas divertidas!",
+"🌊 <b>Swim</b> the sea, ✈️ <b>fly</b> the sky, 🚗 <b>zoom</b> a bumper car — find <b>Splash Cove</b>, <b>Sky Hill</b> and the <b>Zoomy Garage</b>, and pick the <b>right gear</b> to unlock each one! Collect <b>✨ sparkles</b>, find <b>secret wonders</b>, and play with every friend to earn <b>⭐ stars</b>.":"🌊 <b>Nada</b> en el mar, ✈️ <b>vuela</b> por el cielo, 🚗 <b>zumba</b> en un carrito chocón — encuentra <b>Cala Chapoteo</b>, <b>Colina del Cielo</b> y el <b>Garaje Veloz</b>, ¡y elige el <b>equipo correcto</b> para desbloquear cada uno! Junta <b>✨ destellos</b>, encuentra <b>maravillas secretas</b>, y juega con cada amigo para ganar <b>⭐ estrellas</b>.",
+"Careful — bonk into something solid and you'll tumble like a tubby! 🤭 And watch out… friends love popping out of holes to say <b>BOO!</b>":"Cuidado — ¡si chocas con algo sólido te caerás como un tubby! 🤭 Y ten cuidado… ¡a los amigos les encanta salir de los agujeros para decir <b>BU!</b>",
+"Fill the star bar and the giggling <b>Sun Baby</b> tucks Trunkland in for the night — then a brand-new day of games begins! 🌈":"Llena la barra de estrellas y la risueña <b>Bebé Sol</b> arropa a Trunkland para dormir — ¡y luego comienza un día totalmente nuevo de juegos! 🌈",
+"Got it! ▶":"¡Entendido! ▶",
+"🔨 Fix-It Garden":"🔨 Jardín de Arreglos",
+"Merge two matching things to make something better!":"¡Combina dos cosas iguales para hacer algo mejor!",
+"🧺 Get a piece":"🧺 Consigue una pieza",
+"🌱 Stickers":"🌱 Estampas",
+"📖 My Collection":"📖 Mi Colección",
+"🌸 Sticker Garden":"🌸 Jardín de Estampas",
+"Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.":"¡Usa tus ✨ destellos para hacer crecer Trunkland! Todo lo que plantas se queda para siempre.",
+"Everything you've found in Trunkland lives here. Tap a friend to hear about it!":"Todo lo que has encontrado en Trunkland vive aquí. ¡Toca a un amigo para escuchar sobre él!",
+"🥚 Critters hatched":"🥚 Criaturas nacidas",
+"✨ Secrets found":"✨ Secretos encontrados",
+"💗 Friend hearts":"💗 Corazones de amigos",
+"Back to play ▶":"Volver a jugar ▶",
+"Goodnight, Trunkland 🌙":"Buenas noches, Trunkland 🌙",
+"You earned every star today! The tubbies hug you goodnight. 🤗":"¡Ganaste todas las estrellas hoy! Los tubbies te abrazan para las buenas noches. 🤗",
+"The Sun Baby yawns and slides behind the hills… stars bloom in the sky…":"La Bebé Sol bosteza y se desliza detrás de las colinas… las estrellas florecen en el cielo…",
+"Tomorrow brings NEW sparkles, NEW games and NEW surprises! ☀️":"¡Mañana trae NUEVOS destellos, NUEVOS juegos y NUEVAS sorpresas! ☀️",
+"Start Day":"Comienza el Día",
+"Share this adventure? 📤":"¿Compartir esta aventura? 📤",
+"📤 Share":"📤 Compartir",
+"Not now":"Ahora no",
+"Ready? ☀️":"¿Listo? ☀️",
+/* ---------------- narration / toasts (static) ---------------- */
+"New in your Collection! 📖":"¡Nuevo en tu colección! 📖",
+"✨ Daily gift! +10 ✨":"✨ ¡Regalo del día! +10 ✨",
+"⭐ New Star! +5 ✨":"⭐ ¡Nueva estrella! +5 ✨",
+"✨ +2 sparkles!":"✨ ¡+2 destellos!",
+"⭐ New Star!":"⭐ ¡Nueva estrella!",
+"🌟 Quest done!":"🌟 ¡Misión completa!",
+"What an adventure! 🌟":"¡Qué aventura! 🌟",
+"Let's finish this first! 💛":"¡Primero terminemos esto! 💛",
+"Play a little first, then watch your adventure! 🎬":"¡Juega un poco primero, luego mira tu aventura! 🎬",
+"Play a little first! 🎬":"¡Juega un poco primero! 🎬",
+"Hmm, could not share that 💛":"Hmm, no pudimos compartir eso 💛",
+"Adventure saved! Send it to a friend! 📤":"¡Aventura guardada! ¡Envíasela a un amigo! 📤",
+"Play a little first, then share your adventure! 📤":"¡Juega un poco primero, luego comparte tu aventura! 📤",
+"Hmm, that file isn't an adventure 💛":"Hmm, ese archivo no es una aventura 💛",
+"Oh! A little egg appeared by the nest! 🥚 Keep it warm — it will hatch TOMORROW!":"¡Oh! ¡Apareció un huevito junto al nido! 🥚 Mantenlo calentito — ¡se abrirá MAÑANA!",
+"Elly-elly… TUBBIES! Good morning, Trunkland! ☀️":"¡Elly-elly… TUBBIES! ¡Buenos días, Trunkland! ☀️",
+"A new day in Trunkland! Here are 10 sparkles! ✨":"¡Un nuevo día en Trunkland! ¡Aquí tienes 10 destellos! ✨",
+"Follow the sparkles to today's special place! ✨":"¡Sigue los destellos hasta el lugar especial de hoy! ✨",
+"Follow the sparkles to your quest! ✨":"¡Sigue los destellos hasta tu misión! ✨",
+"Whoopsie-daisy! Bonk! 🤭":"¡Uy uy uy! ¡Pum! 🤭",
+"That's the deep-deep sea — even brave swimmers turn back here! 🌊":"Ese es el mar bien profundo — ¡hasta los nadadores valientes regresan aquí! 🌊",
+"Beep beep — bumper cars can't swim! 🚗🌊":"¡Bip bip — los carritos chocones no pueden nadar! 🚗🌊",
+"Splash! To swim in the sparkly sea, visit Splash Cove and pick the right gear! 🌊":"¡Splash! Para nadar en el mar brillante, visita la Cala Chapoteo y elige el equipo correcto! 🌊",
+"Watch my Tummy-TV! What feeling do you see?":"¡Mira mi Tele-Pancita! ¿Qué sentimiento ves?",
+"Watch Tinko dance… then copy the moves with the big buttons!":"Mira a Tinko bailar… ¡luego copia los movimientos con los botones grandes!",
+"Your turn! Tap the moves in order!":"¡Tu turno! ¡Toca los movimientos en orden!",
+"Oopsie! Watch once more…":"¡Uy! Mira una vez más…",
+'Rosy giggles: "Close your eyes… I\'ll hide behind a bush! Come find me!"':'Rosy se ríe: "Cierra los ojos… ¡me esconderé detrás de un arbusto! ¡Ven a encontrarme!"',
+'"You FOUND me! Hee hee!" Rosy bounces with joy!':'"¡Me ENCONTRASTE! ¡Jiji!" ¡Rosy salta de alegría!',
+"Not here… but you are SO warm! 🔥":"Aquí no… ¡pero estás MUY caliente! 🔥",
+"Not here… try a bush further away! ❄️":"Aquí no… ¡prueba con un arbusto más lejos! ❄️",
+"Tap a bush! Psst… a trumpet toot 🎺 might make the right bush wiggle!":"¡Toca un arbusto! Psst… ¡un toque de trompeta 🎺 podría hacer temblar al arbusto correcto!",
+"Collect more ✨ sparkles first — they're hiding all over Trunkland!":"Recolecta más ✨ destellos primero — ¡están escondidos por todo Trunkland!",
+"A mystery! Keep exploring Trunkland — you'll find it! ✨":"¡Un misterio! Sigue explorando Trunkland — ¡lo encontrarás! ✨",
+"You fixed the WHOLE garden! Trunkland is so happy! ✨+20 🌟":"¡Arreglaste TODO el jardín! ¡Trunkland está tan feliz! ✨+20 🌟",
+"The board is full! Merge two matching pieces to make room.":"¡El tablero está lleno! Combina dos piezas iguales para hacer espacio.",
+"Calm mode on — everything is extra gentle now.":"Modo calma activado — todo es más suave ahora.",
+"Calm mode off — back to the usual fun!":"Modo calma desactivado — ¡de vuelta a la diversión de siempre!",
+"Hello! I will read for you!":"¡Hola! ¡Voy a leer para ti!",
+"Where shall we fly, little friend? ✈️":"¿A dónde volamos, pequeño amigo? ✈️",
+/* ---------------- numeric templates ---------------- */
+"🎉 {#} days in Trunkland!":"🎉 ¡{#} días en Trunkland!",
+"{#} days in Trunkland! 🎉":"¡{#} días en Trunkland! 🎉",
+"🌟 Quest {#} done! +4 ✨":"🌟 ¡Misión {#} completa! +4 ✨",
+"Collect {#} ✨ sparkles":"Recolecta {#} ✨ destellos",
+"Do {#} big elephant jumps! 🦘":"¡Haz {#} grandes saltos de elefante! 🦘",
+"Nilu's wings are resting… ready in {#} min! Walk for now 🚶":"Las alas de Nilu están descansando… ¡listas en {#} min! Camina por ahora 🚶",
+"Good morning! Day {#} in Trunkland! {#} new stories and fresh sparkles await!":"¡Buenos días! ¡Día {#} en Trunkland! ¡Te esperan {#} historias nuevas y destellos frescos!",
+/* ---------------- speed / settings labels ---------------- */
+"Game speed:":"Velocidad del juego:",
+"More time":"Más tiempo",
+"Just right":"Perfecto",
+"Faster":"Más rápido",
+"🐢 More time!":"🐢 ¡Más tiempo!",
+"🐇 Just right!":"🐇 ¡Perfecto!",
+"🚀 Faster!":"🚀 ¡Más rápido!",
+"🔇 Sound: off — tap to turn on":"🔇 Sonido: apagado — toca para encender",
+"🔊 Sound: on":"🔊 Sonido: encendido",
+"🗣️ Read aloud: on":"🗣️ Leer en voz alta: activado",
+"🤫 Read aloud: off — tap to turn on":"🤫 Leer en voz alta: apagado — toca para activar",
+"😌 Calm mode: on — extra gentle":"😌 Modo calma: activado — extra suave",
+"😌 Calm mode: off — tap for extra gentle":"😌 Modo calma: apagado — toca para más calma",
+/* ---------------- reusable phrase fragments (dynamic compositions) ---------------- */
+"Sticker Garden 📖":"Jardín de Estampas 📖",
+"Planted! ✓":"¡Plantado! ✓",
+"Fix it up! 🔨":"¡Arréglalo! 🔨",
+"Play with":"¡Juega con",
+"Play again with":"¡Juega otra vez con",
+"and earn a ⭐":"y gana una ⭐",
+"Water the":"Riega",
+"(tap it!)":"(¡tócalo!)",
+"Visit":"Visita",
+"the lily pond 🪷":"el estanque de lirios 🪷",
+"the windmill 🌬️":"el molino de viento 🌬️",
+"the bunny arch 🐇":"el arco de conejitos 🐇",
+"the Fix-It Garden 🔨":"el Jardín de Arreglos 🔨",
+"Find a hidden secret, far far away!":"¡Encuentra un secreto escondido, muy muy lejos!",
+"Splash across the Giggle River!":"¡Salpica cruzando el Río de la Risa!",
+"Cross the wooden bridge!":"¡Cruza el puente de madera!",
+"Trumpet 🎺 a song near a friend!":"¡Toca una canción con la trompeta 🎺 cerca de un amigo!",
+"Boing on the trampoline!":"¡Salta en el trampolín!",
+"Tickle a friend — tap them! 💕":"¡Haz cosquillas a un amigo — tócalo! 💕",
+"Bring a friend what they wish for 💭":"Llévale a un amigo lo que desea 💭",
+"You can do it!":"¡Tú puedes!",
+"Quest":"Misión",
+"Quest complete! Did you know?":"¡Misión completa! ¿Sabías que…?",
+"would love to":"le encantaría",
+"dance":"bailar",
+"watch Tummy-TV":"ver la Tele-Pancita",
+"cook":"cocinar",
+"play hide & seek":"jugar a las escondidas",
+"is waiting to be explored!":"¡está esperando ser explorado!",
+"Some hidden surprises are out there in Trunkland! ✨":"¡Hay sorpresas escondidas por ahí en Trunkland! ✨",
+"The Sticker Garden has more to discover! 📖":"¡El Jardín de Estampas tiene más para descubrir! 📖",
+'hugs Nilu! "You came back!!':'¡abraza a Nilu! "¡Volviste!!',
+"You found the":"Encontraste el",
+"secret!":"secreto!",
+"You learned to SWIM!":"¡Aprendiste a NADAR!",
+"You learned to FLY!":"¡Aprendiste a VOLAR!",
+"You played so nicely!":"¡Jugaste tan bien!",
+"LOVES you! Best friends —":"¡te AMA! Mejores amigos —",
+"will follow you all day! 💕":"¡te seguirá todo el día! 💕",
+"wanted":"quería",
+"CRACK! Your egg hatched into":"¡CRAC! Tu huevo se convirtió en",
+"It lives by the nest now — go say hello!":"Ahora vive junto al nido — ¡ve a saludar!",
+"You discovered a secret!":"¡Descubriste un secreto!",
+"You earned a ⭐ and ✨5!":"¡Ganaste una ⭐ y ✨5!",
+"✨2 more sparkles!":"✨¡2 destellos más!",
+"giggles!":"¡se ríe!",
+"Yes!":"¡Sí!",
+"means":"significa",
+"Hmm, look again at the Tummy-TV!":"Hmm, ¡mira de nuevo la Tele-Pancita!",
+"Today we make":"Hoy hacemos",
+"Tap the steps in the RIGHT order!":"¡Toca los pasos en el orden CORRECTO!",
+"What's next?":"¿Qué sigue?",
+"Not yet! First we need:":"¡Todavía no! Primero necesitamos:",
+"Merge two matching pieces! Still to fix:":"¡Combina dos piezas iguales! Todavía falta arreglar:",
+"Everything is fixed! You are Trunkland's hero! 🌟":"¡Todo está arreglado! ¡Eres el héroe de Trunkland! 🌟",
+"Wheee! Nilu flew to":"¡Wiii! Nilu voló a",
+"Surprise! You discovered the":"¡Sorpresa! Descubriste",
+"Your":"Tu",
+"is FULLY grown! Look how happy it is! 🌟":"¡está COMPLETAMENTE crecido! ¡Mira qué feliz está! 🌟",
+/* ---------------- tubby dialogue ---------------- */
+"Bluebo the leader loves to bounce! Copy my moves?":"¡Bluebo el líder ama saltar! ¿Copias mis movimientos?",
+"Lulla's Tummy-TV shows feelings! Can you guess them?":"¡La Tele-Pancita de Lulla muestra sentimientos! ¿Puedes adivinarlos?",
+"Pebbo keeps things tidy! Help me do the steps in order?":"¡Pebbo mantiene todo ordenado! ¿Me ayudas a hacer los pasos en orden?",
+"Skydah the dreamer loves hide and seek! Come find me?":"¡Skydah la soñadora ama las escondidas! ¿Vienes a encontrarme?",
+/* ---------------- feelings ---------------- */
+"Happy":"Feliz","Sad":"Triste","Angry":"Enojado","Scared":"Asustado","Surprised":"Sorprendido",
+"Sleepy":"Con sueño","Silly":"Chistoso","Proud":"Orgulloso","Shy":"Tímido","Calm":"Tranquilo",
+"Confused":"Confundido","Worried":"Preocupado","Loving":"Cariñoso",
+"A big smile means happy!":"¡Una gran sonrisa significa feliz!",
+"Tears mean sad. A hug helps!":"Las lágrimas significan triste. ¡Un abrazo ayuda!",
+"Frowny brows mean angry. Deep breaths help!":"Las cejas fruncidas significan enojado. ¡Respirar hondo ayuda!",
+"Wide eyes mean scared. A grown-up can help!":"Los ojos bien abiertos significan asustado. ¡Un adulto puede ayudar!",
+"A big round mouth means surprised!":"¡Una boca bien abierta significa sorprendido!",
+"A yawn means sleepy. Time to rest!":"Un bostezo significa con sueño. ¡Hora de descansar!",
+"A wiggly face means silly and playful!":"¡Una cara juguetona significa chistoso y divertido!",
+"A party face means proud — you did it!":"¡Una cara de fiesta significa orgulloso — lo lograste!",
+"Pink cheeks can mean shy. That's okay!":"Las mejillas rosaditas pueden significar tímido. ¡Está bien!",
+"Soft eyes and a little smile mean calm.":"Ojos suaves y una pequeña sonrisa significan tranquilo.",
+"A tilted head and squished brows mean confused. Asking helps!":"Una cabeza inclinada y cejas arrugadas significan confundido. ¡Preguntar ayuda!",
+"A little frown and quiet eyes can mean worried. A hug helps!":"Un pequeño ceño y ojos calladitos pueden significar preocupado. ¡Un abrazo ayuda!",
+"Soft smiling eyes and a warm smile mean loving!":"¡Ojos sonrientes y una sonrisa cálida significan cariñoso!",
+/* ---------------- dance moves ---------------- */
+"Jump":"Salta","Spin":"Gira","Wave":"Saluda","Stomp":"Zapatea","Nod":"Asiente","Wiggle":"Muévete","Clap":"Aplaude",
+/* ---------------- recipes ---------------- */
+"Tubby Custard":"Natillas Tubby","Fruit Salad":"Ensalada de Frutas","Bedtime":"Hora de Dormir",
+"Morning Time":"Hora de la Mañana","Tidy Up":"A Ordenar","Snack Time":"Hora de la Merienda",
+"Getting Dressed":"Vestirse","Watering Plants":"Regar las Plantas",
+"Wash hands":"Lávate las manos","Get the bowl":"Busca el tazón","Pour the milk":"Sirve la leche",
+"Stir it round":"Revuélvelo","Share with friends":"Comparte con amigos","Wash the fruit":"Lava la fruta",
+"Grown-up cuts":"El adulto corta","Mix it up":"Mézclalo","Warm bath":"Baño calentito",
+"Brush teeth":"Cepíllate los dientes","Story time":"Hora del cuento","Big hug":"Un gran abrazo",
+"Sleep tight":"Duerme bien","Wake up":"Despiértate","Go potty":"Ve al baño","Eat breakfast":"Come el desayuno",
+"Ready to go":"Listo para salir","Pick up toys":"Recoge los juguetes","Books on shelf":"Libros en el estante",
+"Clothes in basket":"Ropa en la canasta","Sweep sweep":"Barre barre","All done!":"¡Todo listo!",
+"Pick a snack":"Elige una merienda","Put on a plate":"Ponlo en un plato","Enjoy":"Disfrútalo",
+"Clean up crumbs":"Limpia las migas","Socks on":"Ponte las medias","Shirt on":"Ponte la camisa",
+"Pants on":"Ponte el pantalón","Shoes on":"Ponte los zapatos","Check the mirror":"Mírate al espejo",
+"Fill the can":"Llena la regadera","Find the plant":"Encuentra la planta","Pour gently":"Riega con cuidado",
+"Find a sunny spot":"Busca un lugar soleado","Watch it grow":"Míralo crecer",
+/* ---------------- stories ---------------- */
+"Nilu's tummy hurts. Look — three helpers are here!":"A Nilu le duele la pancita. Mira — ¡tres ayudantes están aquí!",
+"Tap the DOCTOR who can help a sore tummy.":"Toca al DOCTOR que puede ayudar con una pancita adolorida.",
+"White coat":"Bata blanca",
+"Yes! A white coat and stethoscope means doctor. Well spotted!":"¡Sí! Una bata blanca y un estetoscopio significan doctor. ¡Bien visto!",
+"Ice cream seller":"Vendedor de helados",
+"Yummy, but ice cream can't fix tummies. Find the white coat!":"Rico, pero el helado no arregla pancitas. ¡Busca la bata blanca!",
+"Dog walker":"Paseador de perros",
+"So kind, but not a doctor. Look for the stethoscope!":"Muy amable, pero no es doctor. ¡Busca el estetoscopio!",
+"Nilu scraped a knee and needs a bandage.":"Nilu se raspó la rodilla y necesita una curita.",
+"Tap the NURSE who can help.":"Toca a la ENFERMERA que puede ayudar.",
+"Scrubs + badge":"Uniforme y placa",
+"Yes! Nurses wear scrubs and a name badge. They love to help!":"¡Sí! Las enfermeras usan uniforme y una placa con su nombre. ¡Les encanta ayudar!",
+"Mail carrier":"Cartero",
+"They bring letters, not bandages. Find the scrubs!":"Ellos traen cartas, no curitas. ¡Busca el uniforme!",
+"Painter":"Pintor",
+"They paint walls! A nurse wears scrubs. Look again!":"¡Ellos pintan paredes! Una enfermera usa uniforme. ¡Mira de nuevo!",
+"Smoke! Someone needs a brave helper at the fire station.":"¡Humo! Alguien necesita un ayudante valiente en la estación de bomberos.",
+"Tap the FIREFIGHTER.":"Toca al BOMBERO.",
+"Helmet + coat":"Casco y chaqueta",
+"Yes! The big helmet and yellow coat keep firefighters safe!":"¡Sí! El casco grande y la chaqueta amarilla mantienen seguros a los bomberos!",
+"Chef":"Chef",
+"Chefs cook food! Firefighters wear a helmet. Try again!":"¡Los chefs cocinan comida! Los bomberos usan casco. ¡Inténtalo de nuevo!",
+"Swimmer":"Nadador",
+"Swimmers wear goggles. Look for the helmet!":"Los nadadores usan gafas. ¡Busca el casco!",
+"Nilu feels lost in Friendly Town and wants a safe helper.":"Nilu se siente perdido en el Pueblo Amigo y quiere un ayudante seguro.",
+"Tap the POLICE OFFICER who keeps people safe.":"Toca al OFICIAL DE POLICÍA que mantiene segura a la gente.",
+"Blue + badge":"Uniforme azul y placa",
+"Yes! Blue uniform and a shiny badge — a safe helper!":"¡Sí! Uniforme azul y una placa brillante — ¡un ayudante seguro!",
+"Juggler":"Malabarista",
+"Fun! But for safety, find the shiny badge.":"¡Divertido! Pero para estar seguro, busca la placa brillante.",
+"Balloon seller":"Vendedor de globos",
+"Balloons are lovely, but the officer has the badge!":"Los globos son lindos, ¡pero el oficial tiene la placa!",
+"A sign at the help desk says: “HELP DESK — MISS ROSA”.":"Un cartel en el mostrador dice: “AYUDA — SEÑORITA ROSA”.",
+"Who do you ask for help?":"¿A quién le pides ayuda?",
+"Ask Miss Rosa":"Preguntarle a la Señorita Rosa",
+"Yes! The sign tells you Miss Rosa helps here. Reading signs is a superpower!":"¡Sí! El cartel te dice que la Señorita Rosa ayuda aquí. ¡Leer carteles es un superpoder!",
+"A far stranger":"Un desconocido lejano",
+"They're busy and far away. The sign says Miss Rosa!":"Están ocupados y lejos. ¡El cartel dice Señorita Rosa!",
+"Wait quietly":"Esperar en silencio",
+"Waiting forever is tricky. The sign says ask Miss Rosa!":"Esperar para siempre es difícil. ¡El cartel dice pregúntale a la Señorita Rosa!",
+"Nilu needs to cross the street.":"Nilu necesita cruzar la calle.",
+"What is the SAFE way to cross?":"¿Cuál es la forma SEGURA de cruzar?",
+"Stop, look, green":"Detente, mira, luz verde",
+"Yes! Stop, look both ways, wait for green, then walk!":"¡Sí! Detente, mira a ambos lados, espera la luz verde, y luego camina!",
+"Run across":"Cruzar corriendo",
+"Running without looking is not safe. Stop and look first!":"Correr sin mirar no es seguro. ¡Detente y mira primero!",
+"Eyes closed":"Con los ojos cerrados",
+"Eyes stay open to stay safe! Stop, look, then go!":"¡Los ojos se mantienen abiertos para estar seguro! ¡Detente, mira, y luego ve!",
+"Someone Nilu does not know asks where Nilu lives.":"Alguien que Nilu no conoce le pregunta dónde vive.",
+"What should Nilu say?":"¿Qué debería decir Nilu?",
+"“No thank you” + tell grown-up":"“No, gracias” y avisarle a un adulto",
+"Yes! Home and name are private. Tell a trusted grown-up!":"¡Sí! La casa y el nombre son privados. ¡Avísale a un adulto de confianza!",
+"Tell the address":"Decir la dirección",
+"Where you live is private — we keep it safe!":"Dónde vives es privado — ¡lo mantenemos seguro!",
+"Give phone number":"Dar el número de teléfono",
+"Phone numbers are private too! Say no thank you.":"¡Los números de teléfono también son privados! Di no, gracias.",
+"A new bunny sits alone on the hill. Nilu wants to play together.":"Un conejito nuevo está solo en la colina. Nilu quiere jugar con él.",
+"How do you make a new friend?":"¿Cómo haces un nuevo amigo?",
+"Smile, say hi + name":"Sonreír, decir hola y tu nombre",
+"Yes! A friendly hi and your name is how friendship begins!":"¡Sí! Un hola amistoso y tu nombre es cómo empieza una amistad!",
+"Grab their toy":"Agarrarle su juguete",
+"Grabbing can upset a friend. Say hi and ask first!":"Agarrar puede molestar a un amigo. ¡Di hola y pregunta primero!",
+"Stare quietly":"Mirarlo fijamente en silencio",
+"Staring feels funny. A warm hi is friendlier!":"Mirar fijamente se siente raro. ¡Un hola cálido es más amigable!",
+"Nilu's shoe hurts, but nobody knows!":"El zapato de Nilu le duele, ¡pero nadie lo sabe!",
+"How does Nilu get help?":"¿Cómo consigue ayuda Nilu?",
+'"My shoe hurts, help?"':'"Me duele el zapato, ¿me ayudas?"',
+"Yes! Using your words lets people help you. Super talking!":"¡Sí! Usar tus palabras deja que la gente te ayude. ¡Súper bien hablado!",
+"Stay quiet":"Quedarse callado",
+"If we stay quiet, nobody knows. Use your words!":"Si nos quedamos callados, nadie sabe. ¡Usa tus palabras!",
+"Throw the shoe":"Tirar el zapato",
+"Throwing doesn't explain. Words work best!":"Tirar cosas no explica nada. ¡Las palabras funcionan mejor!",
+"Oh no — a friend dropped a basket and apples rolled everywhere!":"Oh no — ¡un amigo dejó caer una canasta y las manzanas rodaron por todos lados!",
+"What is the KIND thing to do?":"¿Cuál es la acción AMABLE?",
+"Help pick up":"Ayudar a recogerlas",
+"Yes! Helping and asking “are you okay?” is so kind!":"¡Sí! Ayudar y preguntar “¿estás bien?” es muy amable!",
+"Laugh, walk away":"Reírse e irse",
+"Laughing can hurt feelings. Helping is kinder!":"Reírse puede herir los sentimientos. ¡Ayudar es más amable!",
+"Take one apple":"Tomar una manzana",
+"Those are your friend's apples. Let's help instead!":"Esas son las manzanas de tu amigo. ¡Mejor ayudemos!",
+"Lunch time! But Nilu's hands are muddy from playing.":"¡Hora de almorzar! Pero las manos de Nilu están sucias de jugar.",
+"What comes FIRST before eating?":"¿Qué se hace PRIMERO antes de comer?",
+"Wash with soap":"Lavarse con jabón",
+"Yes! Soap, water, scrub and dry — germs all gone!":"¡Sí! Jabón, agua, frotar y secar — ¡los gérmenes se van!",
+"Wipe on shirt":"Limpiarse en la camisa",
+"Shirts don't wash away germs. Soap does!":"Las camisas no quitan los gérmenes. ¡El jabón sí!",
+"Just eat":"Comer sin más",
+"Muddy hands carry germs. Wash first!":"Las manos sucias tienen gérmenes. ¡Lávate primero!",
+"Nilu can't find a grown-up at the park and feels worried.":"Nilu no encuentra a un adulto en el parque y se siente preocupado.",
+"What is a good thing to do?":"¿Cuál es una buena acción?",
+"Ask a park helper":"Pedirle ayuda a alguien del parque",
+"Yes! Stay put and tell a safe helper — they'll help you find your grown-up!":"¡Sí! Quédate en tu lugar y avísale a un ayudante seguro — ¡te ayudará a encontrar a tu adulto!",
+"Run everywhere":"Correr por todos lados",
+"Running can get you more lost. Ask a helper!":"Correr puede hacer que te pierdas más. ¡Pide ayuda!",
+"Hide behind tree":"Esconderse detrás de un árbol",
+"Hiding makes it hard to be found. Ask a helper!":"Esconderse hace difícil que te encuentren. ¡Pide ayuda!",
+"One swing. Another kid is on it right now.":"Un columpio. Otro niño lo está usando ahora mismo.",
+"What do you do while you wait?":"¿Qué haces mientras esperas?",
+"Wait + deep breaths":"Esperar y respirar hondo",
+"Yes! Waiting your turn is calm and kind. Your turn comes soon!":"¡Sí! Esperar tu turno es tranquilo y amable. ¡Tu turno llega pronto!",
+"Push them off":"Empujarlo para bajarlo",
+"Pushing hurts. We wait our turn!":"Empujar lastima. ¡Esperamos nuestro turno!",
+"Cry loudly":"Llorar fuerte",
+"It's okay to feel impatient — calm waiting works best!":"Está bien sentirse impaciente — ¡esperar con calma funciona mejor!",
+'A grown-up Nilu does NOT know says: “Come to my car for candy.”':'Un adulto que Nilu NO conoce dice: “Ven a mi carro por dulces.”',
+"What is the SAFE thing to do?":"¿Cuál es la acción SEGURA?",
+"Say NO + tell grown-up":"Decir NO y avisarle a un adulto",
+"Yes! Never go with strangers. Say no and tell a safe grown-up. So brave!":"¡Sí! Nunca vayas con desconocidos. Di que no y avísale a un adulto de confianza. ¡Qué valiente!",
+"Go get candy":"Ir por los dulces",
+"We never go with strangers, even for candy!":"¡Nunca vamos con desconocidos, ni siquiera por dulces!",
+"Keep it secret":"Guardarlo en secreto",
+"Never a secret! Safe grown-ups need to know.":"¡Nunca un secreto! Los adultos de confianza necesitan saber.",
+"CRASH! Nilu's block tower fell down. Nilu feels a BIG mad feeling.":"¡CRASH! La torre de bloques de Nilu se cayó. Nilu siente un gran enojo.",
+"What helps the mad feeling get smaller?":"¿Qué ayuda a que el enojo se haga más pequeño?",
+"Slow deep breaths":"Respiraciones lentas y profundas",
+"Yes! Breathe in soft, breathe out kind — big feelings get smaller!":"¡Sí! Inhala suave, exhala con calma — ¡los grandes sentimientos se hacen pequeños!",
+"Throw the blocks":"Tirar los bloques",
+"Throwing can hurt. Deep breaths help more!":"Tirar cosas puede lastimar. ¡Respirar hondo ayuda más!",
+"Yell at a friend":"Gritarle a un amigo",
+"Yelling hurts feelings. Slow breaths help!":"Gritar hiere los sentimientos. ¡Respirar despacio ayuda!",
+/* ---------------- stickers ---------------- */
+"Flower Patch":"Parcela de Flores","Bunny Friend":"Amigo Conejito","Pond Duck":"Pato del Estanque",
+"Balloon Tree":"Árbol de Globos","Butterflies":"Mariposas","Slide":"Resbaladilla",
+"Big Rainbow":"Gran Arcoíris","Nilu's Crown":"Corona de Nilu",
+/* ---------------- sun cheer / nudge ---------------- */
+"You did it! Hooray!":"¡Lo lograste! ¡Hurra!","I'm so proud of you!":"¡Estoy muy orgullosa de ti!",
+"What a superstar!":"¡Qué superestrella!","That was kind and brave!":"¡Eso fue amable y valiente!",
+"Wonderful try!":"¡Qué buen intento!","Yay! Amazing!":"¡Yay! ¡Increíble!",
+"Take your time, look again!":"Tómate tu tiempo, ¡mira otra vez!","You're so close!":"¡Estás tan cerca!",
+"Try the calm, kind one!":"¡Prueba con la opción tranquila y amable!","I'm right here with you!":"¡Estoy aquí contigo!",
+/* ---------------- secrets ---------------- */
+"Sea turtles can nap underwater, holding their breath for hours!":"¡Las tortugas marinas pueden dormir bajo el agua, aguantando la respiración por horas!",
+"If you hold a big shell to your ear, it whispers like the sea!":"Si pones una concha grande en tu oreja, ¡susurra como el mar!",
+"Mushrooms are not plants — they are their own living kingdom, fungi!":"¡Los hongos no son plantas — son su propio reino, los hongos!",
+"Owls can turn their heads almost all the way around. Whooo!":"¡Los búhos pueden girar la cabeza casi por completo! ¡Buuu!",
+"Some plain-looking rocks hide sparkly crystals inside. Surprises everywhere!":"Algunas rocas comunes esconden cristales brillantes por dentro. ¡Sorpresas por todos lados!",
+"Frogs drink water through their skin — no cup needed!":"¡Las ranas beben agua por la piel — no necesitan vaso!",
+"A cactus stores water in its body like a big green bottle!":"¡Un cactus guarda agua en su cuerpo como una gran botella verde!",
+"The sun is a star — the closest one to your home!":"¡El sol es una estrella — la más cercana a tu hogar!",
+"Dolphins sleep with one eye open — half their brain naps at a time!":"¡Los delfines duermen con un ojo abierto — la mitad de su cerebro descansa a la vez!",
+"An octopus has THREE hearts and can taste with its arms!":"¡Un pulpo tiene TRES corazones y puede saborear con sus brazos!",
+"A blue whale's heart is as big as a bumper car!":"¡El corazón de una ballena azul es tan grande como un carrito chocón!",
+"Hot-air balloons fly because warm air floats up — like a happy sigh!":"¡Los globos aerostáticos vuelan porque el aire caliente flota — como un suspiro feliz!",
+"Rainbows are sunlight split into every colour by tiny raindrops!":"¡Los arcoíris son la luz del sol dividida en todos los colores por pequeñas gotas de lluvia!",
+"Eagles can spot a bunny from three whole kilometres away!":"¡Las águilas pueden ver un conejito desde tres kilómetros de distancia!",
+"Sleepy Sea Turtle":"Tortuga Marina Dormilona","Whisper Shells":"Conchas Susurrantes","Magic Mushroom":"Hongo Mágico",
+"Wise Old Owl":"Búho Sabio","Sparkle Geode":"Geoda Brillante","Pond Frog":"Rana del Estanque",
+"Desert Cactus":"Cactus del Desierto","Shining Star":"Estrella Brillante","Winky Dolphin":"Delfín Guiñón",
+"Three-Heart Octopus":"Pulpo de Tres Corazones","Big Blue Whale":"Gran Ballena Azul","Sky Balloon":"Globo del Cielo",
+"High Rainbow":"Arcoíris Alto","Eagle Eye":"Ojo de Águila",
+/* ---------------- critters ---------------- */
+"Pip the Chick":"Pip el Pollito",
+"Pip peeps hello every morning — chicks can sing before they can walk!":"Pip pía un saludo cada mañana — ¡los pollitos pueden cantar antes de poder caminar!",
+"Boing the Frog":"Boing la Rana",
+"Boing can jump twenty times his own size. Boing-boing-BOING!":"Boing puede saltar veinte veces su propio tamaño. ¡Boing-boing-BOING!",
+"Flutter the Butterfly":"Flutter la Mariposa",
+"Flutter tastes flowers with her feet. Tickly AND tasty!":"Flutter saborea las flores con sus patas. ¡Cosquilloso Y delicioso!",
+"Dot the Ladybug":"Dot la Mariquita",
+"Dot's spots are like freckles — every ladybug wears her own pattern!":"Los puntos de Dot son como pecas — ¡cada mariquita tiene su propio patrón!",
+"Nibbles the Squirrel":"Nibbles la Ardilla",
+"Nibbles hides snacks everywhere and forgets some — that's how new trees grow!":"Nibbles esconde bocadillos por todos lados y olvida algunos — ¡así crecen árboles nuevos!",
+"Prickle the Hedgehog":"Prickle el Erizo",
+"Prickle rolls into a fuzzy ball when it's cuddle time. So cozy!":"Prickle se hace una bolita peluda cuando es hora de abrazos. ¡Qué acogedor!",
+"Dawdle the Snail":"Dawdle el Caracol",
+"Dawdle carries his house everywhere, so he's always home. Slow and happy!":"Dawdle lleva su casa a todos lados, así que siempre está en casa. ¡Lento y feliz!",
+"Tuttle the Turtle":"Tuttle la Tortuga",
+"Tuttle never hurries and always gets there. Steady wins with a smile!":"Tuttle nunca se apura y siempre llega. ¡Con calma se gana, sonriendo!",
+"Puddles the Duck":"Puddles el Pato",
+"Puddles' feathers shrug off water — rain just makes her giggle!":"Las plumas de Puddles no se mojan — ¡la lluvia solo la hace reír!",
+"Hoppy the Bunny":"Hoppy el Conejito",
+"Hoppy's big ears can turn all the way around to hear friends coming!":"¡Las grandes orejas de Hoppy pueden girar por completo para escuchar a los amigos llegar!",
+"Twinkle the Star":"Twinkle la Estrellita",
+"Twinkle fell out of the night sky just to play with you. Make a wish!":"Twinkle cayó del cielo nocturno solo para jugar contigo. ¡Pide un deseo!",
+"Little Belu":"Pequeño Belu",
+"Little Belu the elephant never forgets a friend — especially you! 💙":"El elefantito Belu nunca olvida a un amigo — ¡especialmente a ti! 💙",
+/* ---------------- want pool ---------------- */
+"a seashell":"una concha de mar","a berry":"una baya","a sunflower":"un girasol","a lily":"un lirio",
+/* ---------------- quest facts ---------------- */
+"Elephants say hello by twining their trunks together — a trunk-hug!":"¡Los elefantes se saludan enredando sus trompas — un abrazo de trompas!",
+"A group of elephants is called a parade. A PARADE!":"¡A un grupo de elefantes se le llama desfile. UN DESFILE!",
+"Bees do a waggle dance to tell friends where the flowers are!":"¡Las abejas hacen un baile especial para decirles a sus amigas dónde están las flores!",
+"Rivers always flow downhill, all the way home to the sea.":"Los ríos siempre fluyen cuesta abajo, todo el camino a casa, hacia el mar.",
+"Your heart is about the same size as your fist. Squeeze!":"Tu corazón es casi del mismo tamaño que tu puño. ¡Apriétalo!",
+"Butterflies taste with their FEET. Imagine tasting your socks!":"¡Las mariposas saborean con las PATAS! Imagina saborear tus medias.",
+"The moon makes the sea rise and fall — it's called the tide.":"La luna hace que el mar suba y baje — se llama marea.",
+"Elephants can hear storms rumbling from very far away with their feet!":"¡Los elefantes pueden escuchar tormentas retumbando desde muy lejos con sus patas!",
+"Sunflowers turn their faces to follow the sun across the sky.":"Los girasoles giran su cara para seguir al sol por el cielo.",
+"Snails can sleep for a very long nap — even years!":"¡Los caracoles pueden dormir una siesta muy larga — hasta años!",
+"Raindrops start as tiny clouds droplets hugging specks of dust.":"Las gotas de lluvia empiezan como pequeñas gotitas de nube abrazando motitas de polvo.",
+"An elephant's trunk has no bones — it bends any way it likes!":"¡La trompa de un elefante no tiene huesos — se dobla como quiera!",
+"Sharing a smile is contagious — smiles love to bounce between friends!":"Compartir una sonrisa es contagioso — ¡a las sonrisas les encanta rebotar entre amigos!",
+"Trees talk to each other through their roots, like whispering.":"Los árboles se hablan entre ellos a través de sus raíces, como susurrando.",
+"Deep breaths make big feelings smaller. In… and out… ahh.":"Las respiraciones profundas hacen que los grandes sentimientos se hagan pequeños. Inhala… y exhala… ahh.",
+'Ladybugs\' spots warn birds: "I taste yucky!" Clever little dots!':'Los puntos de las mariquitas advierten a los pájaros: "¡Sabo feo!" ¡Qué puntitos tan listos!',
+"Sea otters hold hands while they sleep so they don't drift apart.":"Las nutrias marinas se toman de las manitas mientras duermen para no separarse.",
+'Saying "thank you" makes TWO people feel warm — you and your friend!':'Decir "gracias" hace que DOS personas se sientan bien — ¡tú y tu amigo!',
+/* ---------------- stations ---------------- */
+"Splash Cove":"Cala Chapoteo","Sky Hill":"Colina del Cielo","Zoomy Garage":"Garaje Veloz",
+"Splash Cove 🌊":"Cala Chapoteo 🌊","Sky Hill 🪁":"Colina del Cielo 🪁","Zoomy Garage 🚗":"Garaje Veloz 🚗",
+"The sparkly sea! Nilu wants to swim. But wait — what should Nilu wear to stay safe in the water?":"¡El mar brillante! Nilu quiere nadar. Pero espera — ¿qué debería ponerse Nilu para estar seguro en el agua?",
+"Whoosh! The wind on Sky Hill is strong enough to fly! What does a safe little flyer need?":"¡Fiuu! El viento en la Colina del Cielo es suficiente para volar! ¿Qué necesita un volador seguro?",
+"A bouncy bumper car! Nilu wants to zoom. What must every driver put on FIRST?":"¡Un carrito chocón saltarín! Nilu quiere ir rápido. ¿Qué debe ponerse PRIMERO todo conductor?",
+"Floaty vest":"Chaleco flotador","Bike helmet":"Casco de bicicleta","Wooly mittens":"Mitones de lana",
+"Goggles + cape":"Gafas y capa","Flip-flops":"Chanclas","Heavy backpack":"Mochila pesada",
+"Helmet, buckled":"Casco abrochado","Sparkly crown":"Corona brillante","Extra socks":"Medias extra",
+"Yes! A floaty keeps you safe and bobbing on top of the water!":"¡Sí! Un flotador te mantiene seguro y flotando sobre el agua!",
+"A helmet is for riding, not swimming. What helps you float?":"Un casco es para andar en bici, no para nadar. ¿Qué te ayuda a flotar?",
+"Mittens are for snow! Soggy mittens can't help you swim.":"¡Los mitones son para la nieve! Los mitones mojados no te ayudan a nadar.",
+"Yes! Goggles keep the wind out of your eyes, and the cape catches the breeze!":"¡Sí! Las gafas mantienen el viento fuera de tus ojos, ¡y la capa atrapa la brisa!",
+"Flip-flops would blow right off! What protects your eyes up high?":"¡Las chanclas se volarían enseguida! ¿Qué protege tus ojos allá arriba?",
+"Too heavy to fly! Light and safe is the way.":"¡Muy pesado para volar! Ligero y seguro es el camino.",
+"Yes! Helmet first, every time. Safe heads have the most fun!":"¡Sí! Casco primero, siempre. ¡Las cabezas seguras se divierten más!",
+"A crown is fancy but it won't protect your head. What's made for safety?":"Una corona es elegante pero no protegerá tu cabeza. ¿Qué está hecho para la seguridad?",
+"Socks keep toes cosy, not heads safe! Think about your head.":"¡Las medias mantienen los deditos calientitos, no la cabeza segura! Piensa en tu cabeza.",
+"Nilu puts on the floaty! Now you can SWIM in the sea! 🏊 Look for sea friends out there…":"¡Nilu se pone el flotador! ¡Ahora puedes NADAR en el mar! 🏊 Busca amigos marinos por ahí…",
+"Goggles on, cape flapping! Hold 🦘 to rise — you can FLY over Trunkland! ✈️":"¡Gafas puestas, capa ondeando! Mantén presionado 🦘 para subir — ¡puedes VOLAR sobre Trunkland! ✈️",
+"Helmet clicked! Hop in and ZOOM — the bumper car loves gentle bumps! 🚗💨":"¡Casco puesto! Súbete y ¡ZOOM! — al carrito chocón le encantan los golpecitos suaves! 🚗💨",
+"Splash in! 🏊":"¡Nada! 🏊","Take off! ✈️":"¡Despega! ✈️","Hop in! 🚗":"¡Súbete! 🚗",
+/* ---------------- fix-it chains ---------------- */
+"Flower Bed":"Cantero de Flores","Picnic Basket":"Canasta de Picnic","Music Corner":"Rincón Musical",
+"The flower bed is blooming! Now the butterflies have a home. 🦋":"¡El cantero de flores está floreciendo! Ahora las mariposas tienen un hogar. 🦋",
+"A picnic basket! Now every friend can share lunch together. 💞":"¡Una canasta de picnic! Ahora todos los amigos pueden compartir el almuerzo juntos. 💞",
+"A music corner! Trunkland hums with happy songs now. 🎶":"¡Un rincón musical! Trunkland ahora tararea canciones felices. 🎶",
+/* ---------------- mystery surprises ---------------- */
+"Water Rainbow":"Arcoíris de Agua","Dance Party":"Fiesta de Baile","Bubble Pop":"Pompas de Burbujas",
+"Confetti Party":"Fiesta de Confeti","Wiggly Grow":"Crece y Encoge","Rainbow Arc":"Arco Iris",
+/* ---------------- map spots ---------------- */
+"🏠 Trunk Dome":"🏠 Domo Trunk","🤸 Trampoline":"🤸 Trampolín","🔨 Fix-It":"🔨 Arréglalo",
+"🌊 Splash Cove":"🌊 Cala Chapoteo","🪁 Sky Hill":"🪁 Colina del Cielo","🚗 Garage":"🚗 Garaje",
+"Today's special!":"¡Especial de hoy!"
+});
+</script>
 <script src="lib/three.min.js"></script>
 <script>
 "use strict";
@@ -535,6 +987,87 @@ try{
    ========================================================================== */
 
 const $=id=>document.getElementById(id);
+/* ---------------- Spanish mode: static-HTML swap + language flag ---------------- */
+(function(){
+  const t=ABELang.t;
+  // title screen
+  const tagEl=document.querySelector('#title .tSubtitle');
+  if(tagEl)tagEl.innerHTML=`${t('Built for')} <b>Aaria and Her Friends</b> 💖 ${t('— bouncy elephant friends in sunny Trunkland!')}`;
+  if($('titlePlayBtn'))$('titlePlayBtn').textContent=t('▶ Play!');
+  if($('titleHowBtn'))$('titleHowBtn').textContent=t('❓ How to Play');
+  if($('titleFsBtn'))$('titleFsBtn').textContent=t('⛶ Full Screen');
+  if($('titleMovieBtn'))$('titleMovieBtn').textContent=t('▶️ My Movie');
+  if($('titleImportBtn'))$('titleImportBtn').textContent=t('📥 Watch a friend\'s adventure');
+  // language flag button (static in markup so the control checker sees it)
+  if($('titleLangBtn')){
+    $('titleLangBtn').textContent=ABELang.label();
+    $('titleLangBtn').onclick=()=>ABELang.toggle();
+  }
+  // settings overlay
+  if($('setFs'))$('setFs').textContent=t('⛶ Full screen');
+  if($('setReplay'))$('setReplay').textContent=t('▶️ My Movie — watch your adventure!');
+  if($('setImportReplay'))$('setImportReplay').textContent=t('📥 Watch a friend\'s adventure');
+  if($('setParent'))$('setParent').textContent=t('👨‍👩‍👧 For grown-ups');
+  {const h=document.querySelector('#settings h1');if(h)h.textContent=t('⚙️ Settings');}
+  if($('setClose'))$('setClose').textContent=t('Done ▶');
+  // settings language row
+  {const settingsBody=document.querySelector('#settings .panel > div');
+   if(settingsBody){
+     const langBtn=document.createElement('button');
+     langBtn.className='big';langBtn.style.fontSize='17px';
+     langBtn.setAttribute('data-abe-settings-lang','1');
+     langBtn.textContent=ABELang.label();
+     langBtn.title='Español / English';
+     langBtn.onclick=()=>ABELang.toggle();
+     settingsBody.appendChild(langBtn);
+   }}
+  // map overlay
+  {const h=document.querySelector('#wmap h1');if(h)h.textContent=t('🗺️ Trunkland Map');}
+  if($('wmapClose'))$('wmapClose').textContent=t('Back ▶');
+  // parent gate / summary
+  {const h=document.querySelector('#parentGate h1');if(h)h.textContent=t('👨‍👩‍👧 For grown-ups');}
+  {const p=document.querySelector('#parentGate p');if(p)p.innerHTML=`${t('Quick check — what is')} <b>6 + 7</b>?`;}
+  if($('parentGateGo'))$('parentGateGo').textContent=t('Continue ▶');
+  if($('parentGateCancel'))$('parentGateCancel').textContent=t('Cancel');
+  {const h=document.querySelector('#parentPanel h1');if(h)h.textContent=t('👨‍👩‍👧 Grown-up Summary');}
+  if($('parentClose'))$('parentClose').textContent=t('Done ▶');
+  // pause overlay
+  {const h=document.querySelector('#pauseOv h1');if(h)h.textContent=t('Taking a break 💙');}
+  {const p=document.querySelector('#pauseOv p');if(p)p.textContent=t('Trunkland is waiting patiently for you!');}
+  if($('resumeBtn'))$('resumeBtn').textContent=t('Keep playing ▶️');
+  // how-to-play / tutorial
+  {const h=document.querySelector('#intro h1');if(h)h.textContent=t('How to Play 🐘');}
+  document.querySelectorAll('#intro p').forEach(p=>{const tr=t(p.innerHTML);if(tr!==p.innerHTML)p.innerHTML=tr;});
+  if($('startBtn'))$('startBtn').textContent=t('Got it! ▶');
+  // fix-it garden overlay
+  {const h=document.querySelector('#fixit h1');if(h)h.textContent=t('🔨 Fix-It Garden');}
+  {const p=$('fxGoal');if(p&&!ABELang.es===false&&p.textContent)p.textContent=t(p.textContent);}
+  if($('fxBasket'))$('fxBasket').textContent=t('🧺 Get a piece');
+  if($('fxClose'))$('fxClose').textContent=t('Done ▶');
+  // sticker book overlay
+  if($('tabStk'))$('tabStk').textContent=t('🌱 Stickers');
+  if($('tabColl'))$('tabColl').textContent=t('📖 My Collection');
+  {const h=document.querySelector('#bookStkPane h1');if(h)h.textContent=t('🌸 Sticker Garden');}
+  {const p=document.querySelector('#bookStkPane p');if(p)p.textContent=t('Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.');}
+  {const h=document.querySelector('#bookCollPane h1');if(h)h.textContent=t('📖 My Collection');}
+  {const p=document.querySelector('#bookCollPane p');if(p)p.textContent=t('Everything you\'ve found in Trunkland lives here. Tap a friend to hear about it!');}
+  document.querySelectorAll('.collH').forEach(h=>{
+    if(h.firstChild&&h.firstChild.nodeType===3){
+      const label=h.textContent.replace(/\s*\(.*$/,'').trim();
+      const tr=t(label);if(tr!==label)h.firstChild.textContent=tr+' ';
+    }});
+  if($('bookClose'))$('bookClose').textContent=t('Back to play ▶');
+  // finale
+  {const h=document.querySelector('#finale h1');if(h)h.textContent=t('Goodnight, Trunkland 🌙');}
+  document.querySelectorAll('#finale p').forEach(p=>{const tr=t(p.textContent);if(tr!==p.textContent)p.textContent=tr;});
+  {const btn=$('newDay');if(btn){const span=$('nextDayN');const n=span?span.textContent:'';
+    btn.childNodes[0].textContent=t('Start Day')+' ';
+    if(btn.lastChild&&btn.lastChild.nodeType===3)btn.lastChild.textContent=' ☀️';}}
+  // share prompt
+  {const d=document.querySelector('#sharePrompt > div');if(d)d.textContent=t('Share this adventure? 📤');}
+  if($('sharePromptYes'))$('sharePromptYes').textContent=t('📤 Share');
+  if($('sharePromptNo'))$('sharePromptNo').textContent=t('Not now');
+})();
 const SPEED={relaxed:1.7, normal:1.0, fast:0.62};       // multiplies every wait
 
 /* ========================== CONTENT (EXPAND ME!) ========================= */
@@ -716,6 +1249,7 @@ function speak(txt,who,onend){if(!S.voice||!voiceOK||S.muted)return false;
   u.voice=kid?VOICES.kid:VOICES.narrator;
   u.pitch=kid?TUBBY_PITCH[who]:1.12;
   u.rate=(S.speed==='relaxed'?0.82:S.speed==='fast'?1.08:0.95)*(kid?1.02:1);
+  ABELang.voice(u);
   if(onend){u.onend=onend;u.onerror=onend;}
   speechSynthesis.speak(u);return true;}catch(e){return false;}}
 
@@ -1354,7 +1888,7 @@ function placeSticker(st){
       s.scale.set(sc,sc,1);burst(s.position,14,'#7ec7ef');sfx.good();
       floatSprite('💧',s.position,3,1.2,1.2);
       if(g.stage===3){burst(s.position,24,'#ffd23f');sfx.star();
-        say('☀️',`Your ${st.name} is FULLY grown! Look how happy it is! 🌟`);}
+        say('☀️',`${ABELang.t('Your')} ${ABELang.t(st.name)} ${ABELang.t('is FULLY grown! Look how happy it is! 🌟')}`);}
     }else{stickerReact(st);}
     save();
   },true,true);   // persist: survives scene transitions
@@ -1539,7 +2073,7 @@ async function maybeHatch(){                   // called during the morning ritu
   S.hatched=(S.hatched||[]);S.hatched.push(ci);S.egg=null;save();
   if(eggNode){burst(eggNode.position,26,'#ffd23f');scene.remove(eggNode);eggNode=null;}
   renderNest();sfx.win();reactSun();
-  await say('🥚',`CRACK! Your egg hatched into ${CRITTER_INFO[ci].name} ${CRITTERS[ci]}! It lives by the nest now — go say hello!`);
+  await say('🥚',`${ABELang.t('CRACK! Your egg hatched into')} ${ABELang.t(CRITTER_INFO[ci].name)} ${CRITTERS[ci]}! ${ABELang.t('It lives by the nest now — go say hello!')}`);
   celebToast('New in your Collection! 📖',2400);
 }
 
@@ -1561,7 +2095,7 @@ async function wakeRitual(){
       S.milestonesShown=S.milestonesShown||{};S.milestonesShown[S.visitDays]=1;save();
       burst(player.group.position,26,'#8fd0ff');
       celebToast(`🎉 ${S.visitDays} days in Trunkland!`);
-      say('☀️',`${S.visitDays} days in Trunkland! 🎉`);
+      say('☀️',ABELang.t(`{#} days in Trunkland! 🎉`.replace('{#}',S.visitDays)));
     }
     if(newDayReal){
       // the nearest friend runs over for a hug + remembers yesterday
@@ -1573,9 +2107,9 @@ async function wakeRitual(){
       await tween(1.1,k=>{t.group.position.lerpVectors(from,to,k);
         t.group.position.y=terrainH(t.group.position.x,t.group.position.z);});
       doMove(t,'happy',1.4);doMove(player,'happy',1.4);burst(p,16,'#ff8fb1');
-      const mem=Object.keys(S.secrets).length?`You found the ${SECRETS.find(s=>S.secrets[s.id])?.e||'✨'} secret!`
-        :S.gear.swim?'You learned to SWIM!':S.gear.fly?'You learned to FLY!':'You played so nicely!';
-      await say('💗',`${TUBBIES[nid].name} hugs Nilu! "You came back!! ${mem}"`);
+      const mem=Object.keys(S.secrets).length?`${ABELang.t('You found the')} ${SECRETS.find(s=>S.secrets[s.id])?.e||'✨'} ${ABELang.t('secret!')}`
+        :S.gear.swim?ABELang.t('You learned to SWIM!'):S.gear.fly?ABELang.t('You learned to FLY!'):ABELang.t('You played so nicely!');
+      await say('💗',`${TUBBIES[nid].name} ${ABELang.t('hugs Nilu! "You came back!!')} ${mem}"`);
       await maybeHatch();
       const t2=tubbies[nid],back=t2.group.position.clone();
       tween(1.1,k=>{t2.group.position.lerpVectors(back,from,k);
@@ -1597,7 +2131,7 @@ function renderSched(){
     el.appendChild(b);});
   const q=document.createElement('span');                    // the one novelty slot
   q.style.cssText='cursor:pointer;font-size:16px;';
-  q.textContent='❔';q.title='Today\'s special!';
+  q.textContent='❔';q.title=ABELang.t('Today\'s special!');
   q.onclick=()=>{sfx.tap();
     const spots=[POI.cove,POI.skyhill,POI.garage,POI.fixit,NEST_AT];
     const s=spots[(S.day+new Date().getDate())%spots.length];
@@ -1667,8 +2201,8 @@ function tubbyWantsUpdate(){
       burst(t.group.position,22,'#ff8fb1');sfx.good();reactSun();
       const lvl=S.friend[id];
       if(lvl>=5&&!t.follow){t.follow=true;
-        say('💗',`${TUBBIES[id].name} LOVES you! Best friends — ${TUBBIES[id].name} will follow you all day! 💕`);}
-      else say('💗',`${TUBBIES[id].name} wanted ${wants[id].name}! +💕 (${Math.min(lvl,5)}/5) ✨+3`);
+        say('💗',`${TUBBIES[id].name} ${ABELang.t('LOVES you! Best friends —')} ${TUBBIES[id].name} ${ABELang.t('will follow you all day! 💕')}`);}
+      else say('💗',`${TUBBIES[id].name} ${ABELang.t('wanted')} ${ABELang.t(wants[id].name)}! +💕 (${Math.min(lvl,5)}/5) ✨+3`);
       break;}}
   // best friends follow Nilu around
   for(const id in tubbies){const t=tubbies[id];
@@ -1712,44 +2246,44 @@ let quest=null,questPoll=0,jumpCount=0,trumpetCount=0,lastTrumpetNear=0,lastTram
 const Q_TEMPLATES=[
   {id:'star',gen:R=>{const ids=['tinko','minty','sunny','rosy'].filter(id=>!S.today.stars[id]);
     if(!ids.length)return null;const id=ids[(R()*ids.length)|0];
-    return{text:`Play with ${TUBBIES[id].name} and earn a ⭐`,icon:'⭐',
+    return{text:`${ABELang.t('Play with')} ${TUBBIES[id].name} ${ABELang.t('and earn a ⭐')}`,icon:'⭐',
       target:()=>TUBBY_POS[id],check:()=>!!S.today.stars[id]};}},
   {id:'sparks',gen:R=>{const n=4+((R()*4)|0),start=S.sparks;
-    return{text:`Collect ${n} ✨ sparkles`,icon:'✨',target:null,
+    return{text:ABELang.t(`Collect ${n} ✨ sparkles`),icon:'✨',target:null,
       check:()=>S.sparks>=start+n};}},
   {id:'secret',gen:R=>{const left=SECRETS.filter(sc=>!S.secrets[sc.id]&&(!sc.need||S.gear[sc.need]));
     if(!left.length)return null;const sc=left[(R()*left.length)|0];
     const start=Object.keys(S.secrets).length;
-    return{text:'Find a hidden secret, far far away!',icon:'🔭',
+    return{text:ABELang.t('Find a hidden secret, far far away!'),icon:'🔭',
       target:()=>[sc.x,sc.z],check:()=>Object.keys(S.secrets).length>start};}},
   {id:'water',gen:R=>{const owned=STICKERS.filter(st=>S.stickers[st.id]&&st.at&&(S.garden[st.id]||{}).lastWater!==todayKey());
     if(!owned.length)return null;const st=owned[(R()*owned.length)|0];
-    return{text:`Water the ${st.name} ${st.e} (tap it!)`,icon:'💧',
+    return{text:`${ABELang.t('Water the')} ${ABELang.t(st.name)} ${st.e} ${ABELang.t('(tap it!)')}`,icon:'💧',
       target:()=>st.at,check:()=>(S.garden[st.id]||{}).lastWater===todayKey()};}},
-  {id:'river',gen:R=>({text:'Splash across the Giggle River!',icon:'🌊',
+  {id:'river',gen:R=>({text:ABELang.t('Splash across the Giggle River!'),icon:'🌊',
     target:()=>[riverX(RIVER.bridgeZ+16),RIVER.bridgeZ+16],
     check:()=>trav==='walk'&&riverDepth(player.group.position.x,player.group.position.z)>0.35})},
-  {id:'bridge',gen:R=>({text:'Cross the wooden bridge!',icon:'🌉',
+  {id:'bridge',gen:R=>({text:ABELang.t('Cross the wooden bridge!'),icon:'🌉',
     target:()=>[riverX(RIVER.bridgeZ),RIVER.bridgeZ],
     check:()=>{const p=player.group.position;
       return Math.abs(p.z-RIVER.bridgeZ)<1.6&&Math.abs(p.x-riverX(RIVER.bridgeZ))<4&&p.y>0.45;}})},
   {id:'jump',gen:R=>{const n=3+((R()*3)|0),start=jumpCount;
-    return{text:`Do ${n} big elephant jumps! 🦘`,icon:'🦘',target:null,
+    return{text:ABELang.t(`Do ${n} big elephant jumps! 🦘`),icon:'🦘',target:null,
       check:()=>jumpCount>=start+n};}},
-  {id:'trumpet',gen:R=>({text:'Trumpet 🎺 a song near a friend!',icon:'🎺',
+  {id:'trumpet',gen:R=>({text:ABELang.t('Trumpet 🎺 a song near a friend!'),icon:'🎺',
     target:()=>TUBBY_POS.tinko,check:function(){return lastTrumpetNear>this._t0;}}),},
-  {id:'tramp',gen:R=>({text:'Boing on the trampoline!',icon:'🤸',
+  {id:'tramp',gen:R=>({text:ABELang.t('Boing on the trampoline!'),icon:'🤸',
     target:()=>POI.tramp,check:function(){return lastTrampAt>this._t0;}})},
   {id:'tickle',gen:R=>{const start=Object.values(tickles).reduce((a,b)=>a+b,0);
-    return{text:'Tickle a friend — tap them! 💕',icon:'💕',
+    return{text:ABELang.t('Tickle a friend — tap them! 💕'),icon:'💕',
       target:()=>TUBBY_POS.rosy,check:()=>Object.values(tickles).reduce((a,b)=>a+b,0)>start};}},
-  {id:'place',gen:R=>{const spots=[['pond','the lily pond 🪷'],['mill','the windmill 🌬️'],['arch','the bunny arch 🐇'],['fixit','the Fix-It Garden 🔨']];
+  {id:'place',gen:R=>{const spots=[['pond',ABELang.t('the lily pond 🪷')],['mill',ABELang.t('the windmill 🌬️')],['arch',ABELang.t('the bunny arch 🐇')],['fixit',ABELang.t('the Fix-It Garden 🔨')]];
     const [k,name]=spots[(R()*spots.length)|0];
-    return{text:`Visit ${name}`,icon:'🧭',target:()=>POI[k],
+    return{text:`${ABELang.t('Visit')} ${name}`,icon:'🧭',target:()=>POI[k],
       check:()=>{const p=player.group.position;return Math.hypot(p.x-POI[k][0],p.z-POI[k][1])<7;}};}},
   {id:'deliver',gen:R=>{const open=Object.keys(wants).filter(id=>!S.today.wantsDone[id]);
     if(!open.length)return null;const start=Object.keys(S.today.wantsDone).length;
-    return{text:'Bring a friend what they wish for 💭',icon:'🎁',
+    return{text:ABELang.t('Bring a friend what they wish for 💭'),icon:'🎁',
       target:()=>TUBBY_POS[open[0]],check:()=>Object.keys(S.today.wantsDone).length>start};}},
 ];
 function newQuest(){
@@ -1765,7 +2299,7 @@ function renderQuestChip(){
   const el=$('questChip');if(!el)return;
   if(!quest){el.style.display='none';return;}
   el.style.display='block';
-  el.textContent=`${quest.icon} Quest ${S.questN+1}: ${quest.text}`;
+  el.textContent=`${quest.icon} ${ABELang.t('Quest')} ${S.questN+1}: ${quest.text}`;
 }
 function questUpdate(dt){
   if(!quest||mode!=='roam')return;
@@ -1778,7 +2312,7 @@ function questUpdate(dt){
     sfx.good();reactSun();recEvent('quest');
     celebToast(`🌟 Quest ${S.questN} done! +4 ✨`);
     const el=$('questChip');if(el){el.classList.remove('donePulse');void el.offsetWidth;el.classList.add('donePulse');}
-    say('☀️',`Quest complete! Did you know? ${q.fact}`).then(newQuest);
+    say('☀️',`${ABELang.t('Quest complete! Did you know?')} ${ABELang.t(q.fact)}`).then(newQuest);
   }
 }
 $('questChip').onclick=()=>{sfx.tap();
@@ -1786,7 +2320,7 @@ $('questChip').onclick=()=>{sfx.tap();
   if(quest.target){const t=quest.target();
     breadcrumbTo(new T.Vector3(t[0],0,t[1]));
     say('☀️','Follow the sparkles to your quest! ✨');}
-  else say('☀️',quest.text+' You can do it!');};
+  else say('☀️',quest.text+' '+ABELang.t('You can do it!'));};
 
 /* ---------- Sun Baby (real ABE-logo girl in the sun) ---------- */
 const NAVY='#12244f';
@@ -1944,7 +2478,7 @@ function burst(pos,n=16,col='#ffd23f'){
    for kids who read faster than they listen (or play muted) ---- */
 function celebToast(text,dur=2200){
   const el=$('celebToast');if(!el)return;
-  el.textContent=text;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+  el.textContent=ABELang.t(text);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
   clearTimeout(celebToast._t);
   celebToast._t=setTimeout(()=>el.classList.remove('show'),dur*(SPEED[S.speed]||1));
 }
@@ -1958,17 +2492,17 @@ addEventListener('pointerdown',()=>{lastInputAt=performance.now();},{capture:tru
 addEventListener('keydown',()=>{lastInputAt=performance.now();},{capture:true});
 function idleHintPool(){
   const list=[];
-  const gameVerb={dance:['dance',  '💃'],feelings:['watch Tummy-TV','📺'],
-                  kitchen:['cook','🍲'],  hide:['play hide & seek', '🙈']};
+  const gameVerb={dance:[ABELang.t('dance'),  '💃'],feelings:[ABELang.t('watch Tummy-TV'),'📺'],
+                  kitchen:[ABELang.t('cook'),'🍲'],  hide:[ABELang.t('play hide & seek'), '🙈']};
   ['tinko','minty','sunny','rosy'].forEach(id=>{
     const st=todayStories().find(s=>s.tub===id);
     const doneToday=!!S.today.stars[id]||(st&&!!S.today.stars['story-'+st.id]);
     if(!doneToday){const cfg=TUBBIES[id],[verb,e]=gameVerb[cfg.game];
-      list.push(`${cfg.name} would love to ${verb}! ${e}`);}
+      list.push(`${cfg.name} ${ABELang.t('would love to')} ${verb}! ${e}`);}
   });
-  for(const k in STATIONS){if(!S.gear[k])list.push(`${STATIONS[k].name} is waiting to be explored! ${STATIONS[k].e}`);}
-  if(SECRETS.some(sc=>!S.secrets[sc.id]))list.push('Some hidden surprises are out there in Trunkland! ✨');
-  if(Object.keys(S.stickers).length<STICKERS.length)list.push('The Sticker Garden has more to discover! 📖');
+  for(const k in STATIONS){if(!S.gear[k])list.push(`${ABELang.t(STATIONS[k].name)} ${ABELang.t('is waiting to be explored!')} ${STATIONS[k].e}`);}
+  if(SECRETS.some(sc=>!S.secrets[sc.id]))list.push(ABELang.t('Some hidden surprises are out there in Trunkland! ✨'));
+  if(Object.keys(S.stickers).length<STICKERS.length)list.push(ABELang.t('The Sticker Garden has more to discover! 📖'));
   return list;
 }
 function maybeShowIdleHint(now){
@@ -2437,7 +2971,7 @@ function makeChoiceFigure(ch,label,pos,onTap){
   const disc=new T.Mesh(new T.CylinderGeometry(1.15,1.3,0.3,20),matStd('#ffffff',.5));
   disc.position.y=0.15;g.add(disc);
   const fig=emojiSprite(ch,2.6);fig.position.y=1.8;g.add(fig);
-  const lab=bannerSprite(label,'#3a3a5a',0.5);lab.position.y=3.15;g.add(lab);
+  const lab=bannerSprite(ABELang.t(label),'#3a3a5a',0.5);lab.position.y=3.15;g.add(lab);
   // invisible fat hit cylinder so little fingers can't miss
   const hit=new T.Mesh(new T.CylinderGeometry(1.6,1.6,4.4,10),
     new T.MeshBasicMaterial({visible:false}));
@@ -2461,7 +2995,8 @@ let narrQ=[],narrBusy=false,narrResolve=null;
 function say(who,txt){return new Promise(res=>{narrQ.push({who,txt,res});pumpNarr();});}
 function pumpNarr(){
   if(narrBusy||!narrQ.length)return;narrBusy=true;
-  const {who,txt,res}=narrQ.shift();
+  const {who,txt:rawTxt,res}=narrQ.shift();
+  const txt=ABELang.t(rawTxt);
   $('narrWho').textContent=who;$('narrTxt').textContent=txt;
   $('narr').classList.add('show');$('funRow').classList.add('hidden');
   const done=()=>{if(narrResolve!==done)return;narrResolve=null;
@@ -2782,7 +3317,7 @@ function updateRoam(dt,time){
       S.secrets[sc.id]=1;addSparks(5);save();hud();refreshSecrets();
       burst(sc.node.position,24,'#b8a4ff');sfx.good();reactSun();
       celebToast('New in your Collection! 📖',2400);
-      say(sc.e,`You discovered a secret! ${sc.fact} ✨+5`);
+      say(sc.e,`${ABELang.t('You discovered a secret!')} ${ABELang.t(sc.fact)} ✨+5`);
     }}
   // nearest interactive
   let best=null,bd=4.2;
@@ -2804,15 +3339,15 @@ function updateRoam(dt,time){
 function updateActBtn(){
   const b=$('actBtn');
   if(mode!=='roam'||!nearThing){b.classList.remove('show');return;}
-  if(nearThing.kind==='dome'){b.textContent='Sticker Garden 📖';}
-  else if(nearThing.kind==='fixit'){b.textContent='Fix it up! 🔨';}
+  if(nearThing.kind==='dome'){b.textContent=ABELang.t('Sticker Garden 📖');}
+  else if(nearThing.kind==='fixit'){b.textContent=ABELang.t('Fix it up! 🔨');}
   else if(nearThing.kind==='station'){
     const st=STATIONS[nearThing.id];
     b.textContent=S.gear[nearThing.id]
-      ?{swim:'Splash in! 🏊',fly:'Take off! ✈️',drive:'Hop in! 🚗'}[nearThing.id]
-      :st.btn;}
+      ?ABELang.t({swim:'Splash in! 🏊',fly:'Take off! ✈️',drive:'Hop in! 🚗'}[nearThing.id])
+      :ABELang.t(st.btn);}
   else{const t=TUBBIES[nearThing.id];
-    b.textContent=(S.today.stars[nearThing.id]?'Play again with ':'Play with ')+t.name+'! 💜';}
+    b.textContent=(S.today.stars[nearThing.id]?ABELang.t('Play again with'):ABELang.t('Play with'))+' '+t.name+'! 💜';}
   b.classList.add('show');
 }
 $('actBtn').onclick=()=>{sfx.tap();
@@ -2848,7 +3383,7 @@ async function giveStar(id,tub){
     if(!REDUCE_MOTION)burst(player.group.position,16,'#8fd0ff');
     celebToast('⭐ New Star! +5 ✨');
   }else celebToast('✨ +2 sparkles!',1500);
-  await say('☀️',SUN_CHEER[Math.floor(Math.random()*SUN_CHEER.length)]+(first?' You earned a ⭐ and ✨5!':' ✨2 more sparkles!'));
+  await say('☀️',ABELang.t(SUN_CHEER[Math.floor(Math.random()*SUN_CHEER.length)])+(first?' '+ABELang.t('You earned a ⭐ and ✨5!'):' '+ABELang.t('✨2 more sparkles!')));
   maybeDropEgg();
   if(starCount()>=STAR_GOAL){showFinale();return true;}
   return false;
@@ -2864,7 +3399,7 @@ async function startVisit(id){
   sceneCam(tp.x,tp.z,14,8.5);
   doMove(tub,'jump',0.9);sfx.boing();
   await say(cfg.name[0]==='T'?'💜':cfg.name[0]==='M'?'💚':cfg.name[0]==='S'?'💛':'💗',
-    `${cfg.name} giggles! "${cfg.hello}"`);
+    `${cfg.name} ${ABELang.t('giggles!')} "${ABELang.t(cfg.hello)}"`);
   // choose: their game, or a story
   const stories=todayStories().filter(s=>s.tub===id&&!S.today.stories[s.id]);
   const opts=[];
@@ -2948,10 +3483,10 @@ async function gameFeelings(tub){
         if(o.w===f.w){sfx.good();clearChoices();wins++;
           S.learn.feelings[f.w]=(S.learn.feelings[f.w]||0)+1;save();
           burst(tub.group.position,14,'#6dd47e');
-          await say('💚',`Yes! ${f.e} means ${f.w}! ${f.hint}`);
+          await say('💚',`${ABELang.t('Yes!')} ${f.e} ${ABELang.t('means')} ${ABELang.t(f.w)}! ${ABELang.t(f.hint)}`);
           next();
         }else{sfx.soft();careSun();
-          await say('☀️',`Hmm, look again at the Tummy-TV! ${f.hint}`);}
+          await say('☀️',`${ABELang.t('Hmm, look again at the Tummy-TV!')} ${ABELang.t(f.hint)}`);}
       });
     });
   };
@@ -2974,7 +3509,7 @@ async function gameDance(tub){
   // show sequence
   for(const mv of seq){
     tub.anim.tv(mv.e);doMove(tub,mv.k,1);sfx.boing();
-    await say('💜',mv.e+' '+mv.w+'!');
+    await say('💜',mv.e+' '+ABELang.t(mv.w)+'!');
   }
   tub.anim.tv('❓');
   await say('💜','Your turn! Tap the moves in order!');
@@ -3004,7 +3539,7 @@ async function gameKitchen(tub){
   const tp=tub.group.position;
   sceneCam(tp.x,tp.z,12,7);
   const rec=RECIPES[(S.day-1)%RECIPES.length];
-  await say('💛',`Today we make ${rec.name}! Tap the steps in the RIGHT order!`);
+  await say('💛',`${ABELang.t('Today we make')} ${ABELang.t(rec.name)}! ${ABELang.t('Tap the steps in the RIGHT order!')}`);
   const base=new T.Vector3(tp.x,terrainH(tp.x,tp.z),tp.z);
   let idx=0;
   const shuffled=rec.steps.map((s,i)=>i).sort(()=>Math.random()-0.5);
@@ -3020,7 +3555,7 @@ async function gameKitchen(tub){
         burst(pos,8,'#ffd94d');
         scene.remove(fig);tappables=tappables.filter(t=>t.root!==fig);
         doMove(tub,'jump',0.7);
-        await say('💛',`${stp.e} ${stp.w}! ${idx<rec.steps.length?'What\'s next?':''}`);
+        await say('💛',`${stp.e} ${ABELang.t(stp.w)}! ${idx<rec.steps.length?ABELang.t('What\'s next?'):''}`);
         if(idx>=rec.steps.length){
           tub.anim.tv('🍲');
           S.learn.recipes[rec.name]=(S.learn.recipes[rec.name]||0)+1;save();
@@ -3028,7 +3563,7 @@ async function gameKitchen(tub){
           if(!over)exitScene();}
       }else{sfx.soft();careSun();fig.userData.wob=1;
         const need=rec.steps[idx];
-        say('☀️',`Not yet! First we need: ${need.e} ${need.w}.`);}
+        say('☀️',`${ABELang.t('Not yet! First we need:')} ${need.e} ${ABELang.t(need.w)}.`);}
     });
     figs.push(fig);
   });
@@ -3105,7 +3640,7 @@ async function startGearVisit(k){
         else save();
         reactSun();burst(player.group.position,22,'#ffd23f');
         doMove(player,'happy',1.4);
-        await say('☀️',st.win+(first?' ⭐ ✨+5':''));
+        await say('☀️',ABELang.t(st.win)+(first?' ⭐ ✨+5':''));
         exitScene();
         startTravel(k);
         if(starCount()>=STAR_GOAL)showFinale();
@@ -3135,8 +3670,8 @@ function openBook(tab){
   const grid=$('bookGrid');grid.innerHTML='';
   STICKERS.forEach(st=>{
     const d=document.createElement('div');d.className='stk'+(S.stickers[st.id]?'':S.sparks>=st.cost?'':' locked');
-    d.innerHTML=`<div class="ico">${st.e}</div>${st.name}<br>`;
-    if(S.stickers[st.id]){d.innerHTML+='<span class="own">Planted! ✓</span>';}
+    d.innerHTML=`<div class="ico">${st.e}</div>${ABELang.t(st.name)}<br>`;
+    if(S.stickers[st.id]){d.innerHTML+='<span class="own">'+ABELang.t('Planted! ✓')+'</span>';}
     else{const b=document.createElement('button');b.textContent='✨'+st.cost;
       b.title=`Plant ${st.name} for ${st.cost} sparkles`;
       b.onclick=()=>{if(S.sparks<st.cost){sfx.soft();say('☀️','Collect more ✨ sparkles first — they\'re hiding all over Trunkland!');$('book').classList.remove('show');return;}
@@ -3152,9 +3687,10 @@ function openBook(tab){
 function collTile(found,e,name,fact){
   const b=document.createElement('button');
   b.className='ctile'+(found?'':' mys');
-  if(found){b.title=`${name} — tap to hear a fun fact`;
-    b.innerHTML=`<span class="ico">${e}</span>${name}`;
-    b.onclick=()=>{sfx.tap();say(e,`${name}! ${fact}`);};
+  if(found){const dname=ABELang.t(name);
+    b.title=`${dname} — tap to hear a fun fact`;
+    b.innerHTML=`<span class="ico">${e}</span>${dname}`;
+    b.onclick=()=>{sfx.tap();say(e,`${dname}! ${ABELang.t(fact)}`);};
   }else{b.title='A mystery — keep exploring Trunkland to find it!';
     b.innerHTML=`<span class="ico">❔</span>???`;
     b.onclick=()=>{sfx.soft();say('❔','A mystery! Keep exploring Trunkland — you\'ll find it! ✨');};
@@ -3215,8 +3751,8 @@ function renderFixit(){
     d.onclick=()=>fxTap(i,d);grid.appendChild(d);});
   const left=FX_CHAINS.filter(c=>!S.fixit.done[c.id]);
   $('fxGoal').innerHTML=left.length
-    ?`Merge two matching pieces! Still to fix: ${left.map(c=>c.tiers[c.tiers.length-1]+' '+c.name).join(' · ')}`
-    :'Everything is fixed! You are Trunkland\'s hero! 🌟';
+    ?`${ABELang.t('Merge two matching pieces! Still to fix:')} ${left.map(c=>c.tiers[c.tiers.length-1]+' '+ABELang.t(c.name)).join(' · ')}`
+    :ABELang.t('Everything is fixed! You are Trunkland\'s hero! 🌟');
 }
 function fxTap(i,el){
   const cells=S.fixit.cells;
@@ -3235,7 +3771,7 @@ function fxTap(i,el){
     if(t.i+1===t.ch.tiers.length-1){             // chain complete!
       S.fixit.done[t.ch.id]=1;cells[i]=null;addSparks(8);save();hud();
       renderFixit();refreshFixit();reactSun();sfx.star();
-      $('fxGoal').innerHTML=`<b style="color:#2f9e44">${t.ch.tiers[t.ch.tiers.length-1]} ${t.ch.story} ✨+8</b>`;
+      $('fxGoal').innerHTML=`<b style="color:#2f9e44">${t.ch.tiers[t.ch.tiers.length-1]} ${ABELang.t(t.ch.story)} ✨+8</b>`;
       if(FX_CHAINS.every(c=>S.fixit.done[c.id])){addSparks(20);save();hud();
         setTimeout(()=>{$('fixit').classList.remove('show');say('☀️','You fixed the WHOLE garden! Trunkland is so happy! ✨+20 🌟');exitScene();},1400);}
     }
@@ -3249,7 +3785,7 @@ $('fxBasket').onclick=()=>{
   const empty=cells.map((c,i)=>c?null:i).filter(v=>v!==null);
   if(!empty.length){sfx.soft();$('fxBasket').classList.add('shake');
     setTimeout(()=>$('fxBasket').classList.remove('shake'),350);
-    $('fxGoal').textContent='The board is full! Merge two matching pieces to make room.';return;}
+    $('fxGoal').textContent=ABELang.t('The board is full! Merge two matching pieces to make room.');return;}
   const ch=left[Math.floor(Math.random()*left.length)];
   const slot=empty[Math.floor(Math.random()*empty.length)];
   cells[slot]=ch.tiers[0];save();renderFixit();
@@ -3295,7 +3831,7 @@ function newDayDisarm(){newDayArmed=false;clearTimeout(newDayTimer);newDayBtn.in
 newDayBtn.onclick=()=>{
   sfx.tap();
   if(!newDayArmed){
-    newDayArmed=true;newDayBtn.textContent='Ready? ☀️';
+    newDayArmed=true;newDayBtn.textContent=ABELang.t('Ready? ☀️');
     clearTimeout(newDayTimer);newDayTimer=setTimeout(newDayDisarm,3000);
     return;
   }
@@ -3473,12 +4009,12 @@ function updateSpeedBtn(){const b=$('speedBtn');if(!b)return;
 function cycleSpeed(){const order=['relaxed','normal','fast'];
   S.speed=order[(order.indexOf(S.speed)+1)%3];save();sfx.tap();
   renderSettings();updateSpeedBtn();
-  celebToast(`${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}!`,1800);}
+  celebToast(`${SPEED_META[S.speed].ico} ${ABELang.t(SPEED_META[S.speed].label)}!`,1800);}
 function renderSettings(){
-  $('setSpeed').innerHTML=`🎛️ Game speed: <b>${SPEED_META[S.speed].ico} ${SPEED_META[S.speed].label}</b>`;
-  $('setSound').textContent=S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on';
-  $('setVoice').textContent=S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on';
-  $('setCalm').textContent=S.calm?'😌 Calm mode: on — extra gentle':'😌 Calm mode: off — tap for extra gentle';}
+  $('setSpeed').innerHTML=`🎛️ ${ABELang.t('Game speed:')} <b>${SPEED_META[S.speed].ico} ${ABELang.t(SPEED_META[S.speed].label)}</b>`;
+  $('setSound').textContent=ABELang.t(S.muted?'🔇 Sound: off — tap to turn on':'🔊 Sound: on');
+  $('setVoice').textContent=ABELang.t(S.voice?'🗣️ Read aloud: on':'🤫 Read aloud: off — tap to turn on');
+  $('setCalm').textContent=ABELang.t(S.calm?'😌 Calm mode: on — extra gentle':'😌 Calm mode: off — tap for extra gentle');}
 /* 🔊 one-tap HUD mute — mirrors + stays in sync with the settings sound toggle */
 function updateSoundBtn(){const b=$('soundBtn');if(!b)return;
   b.textContent=S.muted?'🔇':'🔊';b.classList.toggle('off',!!S.muted);
@@ -3495,7 +4031,7 @@ $('setClose').onclick=()=>{sfx.tap();$('settings').classList.remove('show');};
 $('setSpeed').onclick=cycleSpeed;
 $('setSound').onclick=toggleMute;
 $('setVoice').onclick=()=>{S.voice=!S.voice;save();renderSettings();
-  if(S.voice)speak('Hello! I will read for you!');else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
+  if(S.voice)speak(ABELang.t('Hello! I will read for you!'));else if(voiceOK)speechSynthesis.cancel();sfx.tap();};
 $('setCalm').onclick=()=>{S.calm=!S.calm;save();renderSettings();sfx.tap();
   say('☀️',S.calm?'Calm mode on — everything is extra gentle now.':'Calm mode off — back to the usual fun!');};
 $('setFs').onclick=()=>{sfx.tap();
@@ -3577,16 +4113,16 @@ addEventListener('keydown',e=>{if(e.key==='Shift')duck=true;});
 addEventListener('keyup',e=>{if(e.key==='Shift')duck=false;});
 /* map + fly-to (recharges every 5 min — anticipation!) */
 const MAP_SPOTS=[
-  ['dome','🏠 Trunk Dome'],['tinko','💜 Bluebo'],['minty','❤️ Lulla'],
-  ['sunny','💚 Pebbo'],['rosy','💛 Skydah'],['tramp','🤸 Trampoline'],
-  ['fixit','🔨 Fix-It'],['cove','🌊 Splash Cove'],['skyhill','🪁 Sky Hill'],['garage','🚗 Garage']];
+  ['dome',ABELang.t('🏠 Trunk Dome')],['tinko','💜 Bluebo'],['minty','❤️ Lulla'],
+  ['sunny','💚 Pebbo'],['rosy','💛 Skydah'],['tramp',ABELang.t('🤸 Trampoline')],
+  ['fixit',ABELang.t('🔨 Fix-It')],['cove',ABELang.t('🌊 Splash Cove')],['skyhill',ABELang.t('🪁 Sky Hill')],['garage',ABELang.t('🚗 Garage')]];
 const FLY_CD=5*60*1000;
 function flyReady(){return !S.lastFly||Date.now()-S.lastFly>FLY_CD;}
 function renderWmap(){
   const g=$('wmapGrid');g.innerHTML='';
   const ready=flyReady();
-  $('wmapHint').textContent=ready?'Where shall we fly, little friend? ✈️'
-    :('Nilu\'s wings are resting… ready in '+Math.ceil((FLY_CD-(Date.now()-S.lastFly))/60000)+' min! Walk for now 🚶');
+  $('wmapHint').textContent=ready?ABELang.t('Where shall we fly, little friend? ✈️')
+    :ABELang.t(`Nilu's wings are resting… ready in ${Math.ceil((FLY_CD-(Date.now()-S.lastFly))/60000)} min! Walk for now 🚶`);
   MAP_SPOTS.forEach(([k,label])=>{
     const b=document.createElement('button');b.className='big';
     b.style.cssText='font-size:15px;padding:11px 8px;margin:0'+(ready?'':';opacity:.45');
@@ -3598,7 +4134,7 @@ function renderWmap(){
       setTrav('walk');player.group.position.set(x+2,terrainH(x+2,z+3),z+3);
       burst(player.group.position,24,'#8fd0ff');sfx.win();
       floatSprite('✈️',player.group.position,4,1.6,1.6);
-      say('☀️','Wheee! Nilu flew to '+label+'! ✈️');};
+      say('☀️',ABELang.t('Wheee! Nilu flew to')+' '+label+'! ✈️');};
     g.appendChild(b);});
 }
 $('mapBtn').onclick=()=>{sfx.tap();renderWmap();$('wmap').classList.add('show');};
@@ -3619,7 +4155,7 @@ $('surpriseBtn').onclick=()=>{ac();sfx.tap();
                       :MYSTERY[Math.floor(Math.random()*MYSTERY.length)];
   if(!S.found[m.k]){S.found[m.k]=1;save();
     burst(player.group.position,16,'#b8a4ff');sfx.star();
-    say('☀️',`Surprise! You discovered the ${m.name}! ${m.e}`);}
+    say('☀️',`${ABELang.t('Surprise! You discovered the')} ${ABELang.t(m.name)}! ${m.e}`);}
   recEvent('mystery',m.k);
   m.fn();};
 

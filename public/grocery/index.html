@@ -99,9 +99,9 @@
 <div id="kStage"></div>
 
 <!-- picture list card (the heart of the game) -->
-<div id="gList"><h3>📋 My List</h3><div id="gListItems"></div></div>
+<div id="gList"><h3>📋 <span id="gListTitle">My List</span></h3><div id="gListItems"></div></div>
 <div id="gLevel"></div>
-<button id="gHint" title="Get a hint for where to find your next food">💡<span class="gLbl">Hint</span></button>
+<button id="gHint" title="Get a hint for where to find your next food">💡<span class="gLbl" id="gHintLbl">Hint</span></button>
 
 <script src="lib/three.min.js"></script>
 <script src="../gamekit/kit.js"></script>
@@ -112,18 +112,18 @@
 
   /* ---------- the food on the shelves ---------- */
   const FOODS = [
-    { id: "apple",  emoji: "🍎", name: "an apple" },
-    { id: "banana", emoji: "🍌", name: "a banana" },
-    { id: "carrot", emoji: "🥕", name: "a carrot" },
-    { id: "tomato", emoji: "🍅", name: "a tomato" },
-    { id: "milk",   emoji: "🥛", name: "some milk" },
-    { id: "cheese", emoji: "🧀", name: "some cheese" },
-    { id: "eggs",   emoji: "🥚", name: "some eggs" },
-    { id: "juice",  emoji: "🧃", name: "a juice box" },
-    { id: "bread",  emoji: "🍞", name: "some bread" },
-    { id: "cookie", emoji: "🍪", name: "a cookie" },
-    { id: "orange", emoji: "🍊", name: "an orange" },
-    { id: "corn",   emoji: "🌽", name: "some corn" },
+    { id: "apple",  emoji: "🍎", name: "an apple", nameEs: "una manzana" },
+    { id: "banana", emoji: "🍌", name: "a banana", nameEs: "un plátano" },
+    { id: "carrot", emoji: "🥕", name: "a carrot", nameEs: "una zanahoria" },
+    { id: "tomato", emoji: "🍅", name: "a tomato", nameEs: "un tomate" },
+    { id: "milk",   emoji: "🥛", name: "some milk", nameEs: "la leche" },
+    { id: "cheese", emoji: "🧀", name: "some cheese", nameEs: "el queso" },
+    { id: "eggs",   emoji: "🥚", name: "some eggs", nameEs: "los huevos" },
+    { id: "juice",  emoji: "🧃", name: "a juice box", nameEs: "un juguito" },
+    { id: "bread",  emoji: "🍞", name: "some bread", nameEs: "el pan" },
+    { id: "cookie", emoji: "🍪", name: "a cookie", nameEs: "una galleta" },
+    { id: "orange", emoji: "🍊", name: "an orange", nameEs: "una naranja" },
+    { id: "corn",   emoji: "🌽", name: "some corn", nameEs: "el elote" },
   ];
   const MAX_LEVEL = 7;                 // one level per denomination taught (7 coins & bills)
   const MAX_LIST = 6;                  // the shopping list itself never grows past 6 of the 12 foods
@@ -133,13 +133,13 @@
 
   /* ---------- real US money, taught one denomination per level — names & values only, no math ---------- */
   const DENOMS = [
-    { id: "penny",   name: "Penny",           value: 1,    kind: "coin", sz: 50, c1: "#e8a06b", c2: "#a85a2c", desc: "the little copper one", fact: "A penny means 1 cent! It's the copper-colored one. 🟤" },
-    { id: "nickel",  name: "Nickel",          value: 5,    kind: "coin", sz: 58, c1: "#e7e9ee", c2: "#9aa0ab", desc: "the chunky silver one", fact: "A nickel means 5 cents! 🪙" },
-    { id: "dime",    name: "Dime",            value: 10,   kind: "coin", sz: 44, c1: "#eef0f3", c2: "#a7acb6", desc: "the tiniest one", fact: "A dime means 10 cents! It's our smallest coin. ⚪" },
-    { id: "quarter", name: "Quarter",         value: 25,   kind: "coin", sz: 66, c1: "#eef0f3", c2: "#9aa0ab", desc: "the biggest one", fact: "A quarter means 25 cents! It's our biggest coin. ⚪" },
-    { id: "dollar",  name: "Dollar bill",     value: 100,  kind: "bill", bc: "#3f9142", bd: "#2c6b31", desc: "the one with a 1", fact: "A dollar bill means 100 cents — that's $1! 💵" },
-    { id: "five",    name: "Five-dollar bill", value: 500,  kind: "bill", bc: "#2f7a6b", bd: "#20564b", desc: "the one with a 5", fact: "A five-dollar bill means $5! 💵" },
-    { id: "ten",     name: "Ten-dollar bill",  value: 1000, kind: "bill", bc: "#3a6ea8", bd: "#294d78", desc: "the one with a 10", fact: "A ten-dollar bill means $10! 💵" },
+    { id: "penny",   name: "Penny",           value: 1,    kind: "coin", sz: 50, c1: "#e8a06b", c2: "#a85a2c", desc: "the little copper one", fact: "A penny means 1 cent! It's the copper-colored one. 🟤", nameEs: "el penny", descEs: "la pequeñita de color cobre", factEs: "¡Un penny vale 1 centavo! Es la moneda de color cobre. 🟤" },
+    { id: "nickel",  name: "Nickel",          value: 5,    kind: "coin", sz: 58, c1: "#e7e9ee", c2: "#9aa0ab", desc: "the chunky silver one", fact: "A nickel means 5 cents! 🪙", nameEs: "el níquel", descEs: "la plateada gruesa", factEs: "¡Un níquel vale 5 centavos! 🪙" },
+    { id: "dime",    name: "Dime",            value: 10,   kind: "coin", sz: 44, c1: "#eef0f3", c2: "#a7acb6", desc: "the tiniest one", fact: "A dime means 10 cents! It's our smallest coin. ⚪", nameEs: "el dime", descEs: "la más chiquita", factEs: "¡Un dime vale 10 centavos! Es la moneda más pequeña. ⚪" },
+    { id: "quarter", name: "Quarter",         value: 25,   kind: "coin", sz: 66, c1: "#eef0f3", c2: "#9aa0ab", desc: "the biggest one", fact: "A quarter means 25 cents! It's our biggest coin. ⚪", nameEs: "el quarter", descEs: "la más grande", factEs: "¡Un quarter vale 25 centavos! Es la moneda más grande. ⚪" },
+    { id: "dollar",  name: "Dollar bill",     value: 100,  kind: "bill", bc: "#3f9142", bd: "#2c6b31", desc: "the one with a 1", fact: "A dollar bill means 100 cents — that's $1! 💵", nameEs: "el billete de un dólar", descEs: "el que tiene un 1", factEs: "¡Un billete de un dólar vale 100 centavos — es $1! 💵" },
+    { id: "five",    name: "Five-dollar bill", value: 500,  kind: "bill", bc: "#2f7a6b", bd: "#20564b", desc: "the one with a 5", fact: "A five-dollar bill means $5! 💵", nameEs: "el billete de cinco dólares", descEs: "el que tiene un 5", factEs: "¡Un billete de cinco vale $5! 💵" },
+    { id: "ten",     name: "Ten-dollar bill",  value: 1000, kind: "bill", bc: "#3a6ea8", bd: "#294d78", desc: "the one with a 10", fact: "A ten-dollar bill means $10! 💵", nameEs: "el billete de diez dólares", descEs: "el que tiene un 10", factEs: "¡Un billete de diez vale $10! 💵" },
   ];
   const fmtMoney = (cents) => cents < 100 ? `${cents}¢` : `$${cents / 100}`;
 
@@ -327,10 +327,10 @@
     G.phase = "reveal";
     G.revealT = 0; G.revealDur = REVEAL_BASE + REVEAL_PER_ITEM * size;
     renderList(); refreshPhase();
-    document.getElementById("gLevel").textContent = `Level ${G.level} · Remember ${size} ${size === 1 ? "thing" : "things"}!`;
+    document.getElementById("gLevel").textContent = K.tr(`Level ${G.level} · Remember ${size} ${size === 1 ? "thing" : "things"}!`, `Nivel ${G.level} · ¡Recuerda ${size} ${size === 1 ? "cosa" : "cosas"}!`);
     document.getElementById("gLevel").style.display = "block";
-    K.say("Look and remember! " + G.list.map((id) => foodById(id).name).join(", "));
-    K.toast(`⭐ Today's special: ${special.emoji}!`, 3000);
+    K.say(K.tr("Look and remember! ", "¡Mira y recuerda! ") + G.list.map((id) => foodName(foodById(id))).join(", "));
+    K.toast(K.tr(`⭐ Today's special: ${special.emoji}!`, `⭐ ¡El especial de hoy: ${special.emoji}!`), 3000);
   }
 
   function endReveal() {
@@ -338,14 +338,16 @@
     document.getElementById("gLevel").style.display = "none";
     renderList(); refreshPhase();
     if (K.calm()) {
-      K.say("Now find them! Your list is right there to help you.");
-      K.toast("Go find your list — it's right there 📋💙", 3200);
+      K.say(K.tr("Now find them! Your list is right there to help you.", "¡Ahora encuéntralos! Tu lista está ahí para ayudarte."));
+      K.toast(K.tr("Go find your list — it's right there 📋💙", "Busca lo de tu lista — ahí está 📋💙"), 3200);
     } else {
-      K.say("Now find them! You can do it from memory. 🧠");
-      K.toast("Go find your list from memory! 🧠", 3200);
+      K.say(K.tr("Now find them! You can do it from memory.", "¡Ahora encuéntralos! Tú puedes, de memoria."));
+      K.toast(K.tr("Go find your list from memory! 🧠", "¡Busca tu lista de memoria! 🧠"), 3200);
     }
   }
   const foodById = (id) => FOODS.find((f) => f.id === id);
+  const foodName = (f) => K.tr(f.name, f.nameEs);
+  const denName = (d) => K.tr(d.name, d.nameEs);
 
   function renderList() {
     const el = document.getElementById("gListItems");
@@ -363,18 +365,18 @@
   function refreshPhase() {
     const remaining = G.list.filter((id) => !G.got.includes(id));
     beacon.visible = G.phase === "shop" && remaining.length === 0;
-    if (G.phase === "reveal") K.chip("Look and remember! 👀🧠");
+    if (G.phase === "reveal") K.chip(K.tr("Look and remember! 👀🧠", "¡Mira y recuerda! 👀🧠"));
     else if (G.phase === "shop") {
       K.chip(remaining.length
         ? (K.calm()
-            ? "Find: " + remaining.map((id) => foodById(id).emoji).join(" ")
-            : `Find ${remaining.length} more from memory! 🧠`)
-        : "All done! Go to the checkout ➡️ 🧾");
-    } else if (G.phase === "line") K.chip("Waiting our turn 🌸");
-    else if (G.phase === "scan") K.chip("Beep! Scan each food 🧾");
-    else if (G.phase === "pay") K.chip("Time to pay 🪙");
-    else if (G.phase === "bag") K.chip("Pop the food in the bag 🛍️");
-    else if (G.phase === "done") K.chip("Great shopping trip! 🌟");
+            ? K.tr("Find: ", "Busca: ") + remaining.map((id) => foodById(id).emoji).join(" ")
+            : K.tr(`Find ${remaining.length} more from memory! 🧠`, `¡Busca ${remaining.length} más de memoria! 🧠`))
+        : K.tr("All done! Go to the checkout ➡️ 🧾", "¡Listo! Ve a la caja ➡️ 🧾"));
+    } else if (G.phase === "line") K.chip(K.tr("Waiting our turn 🌸", "Esperando nuestro turno 🌸"));
+    else if (G.phase === "scan") K.chip(K.tr("Beep! Scan each food 🧾", "¡Bip! Escanea cada comida 🧾"));
+    else if (G.phase === "pay") K.chip(K.tr("Time to pay 🪙", "Hora de pagar 🪙"));
+    else if (G.phase === "bag") K.chip(K.tr("Pop the food in the bag 🛍️", "Mete la comida en la bolsa 🛍️"));
+    else if (G.phase === "done") K.chip(K.tr("Great shopping trip! 🌟", "¡Qué buena compra! 🌟"));
   }
 
   /* ---------- hint ---------- */
@@ -396,8 +398,8 @@
       useHint._t = setTimeout(() => { hintBeacon.visible = false; }, 6000 * K.speed());
     }
     K.sfx.tap();
-    K.say(`Let's look for ${foodById(id).name}!`);
-    K.toast(`💡 It's ${foodById(id).emoji} this way!`, 3000);
+    K.say(K.tr(`Let's look for ${foodById(id).name}!`, `¡Busquemos ${foodName(foodById(id))}!`));
+    K.toast(K.tr(`💡 It's ${foodById(id).emoji} this way!`, `💡 ¡${foodById(id).emoji} está por aquí!`), 3000);
     renderList();
   }
 
@@ -415,27 +417,27 @@
     if (G.phase !== "shop" || K.replaying) return;
     // grab the stand the child TAPPED when there is one — never a surprise neighbor
     const st = target || nearestStand(2.4);
-    if (!st) { K.toast("Walk close to a food to grab it ✋"); return; }
-    if (Math.hypot(st.x - P.x, st.z - P.z) > 2.6) { K.toast("Walk a little closer ✋"); return; }
+    if (!st) { K.toast(K.tr("Walk close to a food to grab it ✋", "Acércate a una comida para agarrarla ✋")); return; }
+    if (Math.hypot(st.x - P.x, st.z - P.z) > 2.6) { K.toast(K.tr("Walk a little closer ✋", "Acércate un poquito más ✋")); return; }
     const f = st.food;
-    if (G.got.includes(f.id)) { K.toast(`We already have ${f.name} ✅`); K.sfx.pop(); return; }
+    if (G.got.includes(f.id)) { K.toast(K.tr(`We already have ${f.name} ✅`, `Ya tenemos ${foodName(f)} ✅`)); K.sfx.pop(); return; }
     if (!G.list.includes(f.id)) {
-      K.sfx.no(); K.toast(`${f.emoji} isn't on our list today 💛`);
-      K.say(`Not today! Let's check our list.`);
+      K.sfx.no(); K.toast(K.tr(`${f.emoji} isn't on our list today 💛`, `${f.emoji} no está en la lista hoy 💛`));
+      K.say(K.tr(`Not today! Let's check our list.`, `¡Hoy no! Miremos nuestra lista.`));
       return;
     }
     G.got.push(f.id);
     const rider = emojiSprite(f.emoji, 0.55);
     rider.position.set((cartItems.length % 2) * 0.3 - 0.15, 1.15, Math.floor(cartItems.length / 2) * 0.35 - 0.3);
     cart.add(rider); cartItems.push(rider);
-    K.sfx.yes(); K.toast(`${f.emoji} In the cart!`); K.say(`We found ${f.name}!`);
+    K.sfx.yes(); K.toast(K.tr(`${f.emoji} In the cart!`, `${f.emoji} ¡Al carrito!`)); K.say(K.tr(`We found ${f.name}!`, `¡Encontramos ${foodName(f)}!`));
     K.recordEvent("grab", FOODS.indexOf(f));
     st.sprite.material.opacity = 0.35;
     G.hintTimer = 0; hintBeacon.visible = false; // found one from memory — give the next item a fresh, quiet stretch
     renderList(); refreshPhase();
     if (G.got.length === G.list.length) {
       K.sfx.star();
-      setTimeout(() => K.say("We have everything! Let's go pay."), 600);
+      setTimeout(() => K.say(K.tr("We have everything! Let's go pay.", "¡Ya tenemos todo! Vamos a pagar.")), 600);
     }
   }
 
@@ -444,9 +446,9 @@
     // progress, never identities; tap Hint if you need to see what's left
     const remaining = G.list.filter((id) => !G.got.includes(id)).length;
     K.say(remaining
-      ? `You remember ${remaining} more ${remaining === 1 ? "thing" : "things"}! You can do it!`
-      : "We have everything! Time to pay.");
-    K.toast(remaining ? `🧠 ${remaining} more from memory!` : "All done! ➡️ 🧾");
+      ? K.tr(`You remember ${remaining} more ${remaining === 1 ? "thing" : "things"}! You can do it!`, `¡Te ${remaining === 1 ? "falta 1 cosa" : `faltan ${remaining} cosas`}! ¡Tú puedes!`)
+      : K.tr("We have everything! Time to pay.", "¡Ya tenemos todo! Hora de pagar."));
+    K.toast(remaining ? K.tr(`🧠 ${remaining} more from memory!`, `🧠 ¡${remaining} más de memoria!`) : K.tr("All done! ➡️ 🧾", "¡Listo! ➡️ 🧾"));
   }
 
   /* ---------- checkout panels (reuse kit panel styles) ---------- */
@@ -466,9 +468,9 @@
     const calm = K.calm();
     npc.visible = !calm;
     G.breaths = calm ? 1 : 3;
-    K.say(calm ? "One flower breath while the cashier gets ready." : "Someone is ahead of us. Let's take flower breaths while we wait.");
-    const p = panel(`<h2>Waiting our turn 💙</h2>
-      <p id="gBreathTxt">Smell the flower 🌸… blow the candle 🕯️</p>
+    K.say(calm ? K.tr("One flower breath while the cashier gets ready.", "Una respiración de flor mientras la cajera se prepara.") : K.tr("Someone is ahead of us. Let's take flower breaths while we wait.", "Hay alguien antes que nosotros. Respiremos como flores mientras esperamos."));
+    const p = panel(`${K.tr("<h2>Waiting our turn 💙</h2>", "<h2>Esperando nuestro turno 💙</h2>")}
+      <p id="gBreathTxt">${K.tr("Smell the flower 🌸… blow the candle 🕯️", "Huele la flor 🌸… sopla la velita 🕯️")}</p>
       <div id="gBreath"></div>
       <p id="gBreathN" style="font-weight:900"></p>`);
     p.querySelector("#gBreathN").textContent = "🌸".repeat(G.breaths);
@@ -478,8 +480,8 @@
   function startScan() {
     npc.visible = false;
     G.phase = "scan"; refreshPhase();
-    K.say("Beep beep! Tap each food to scan it.");
-    const p = panel(`<h2>🧾 Beep! Scan the food</h2>
+    K.say(K.tr("Beep beep! Tap each food to scan it.", "¡Bip bip! Toca cada comida para escanearla."));
+    const p = panel(`<h2>${K.tr("🧾 Beep! Scan the food", "🧾 ¡Bip! Escanea la comida")}</h2>
       <div id="gScanRow">${G.got.map((id, i) =>
         `<button class="gScanItem" data-i="${i}" title="Scan ${foodById(id).name}">${foodById(id).emoji}</button>`).join("")}</div>`);
     let left = G.got.length;
@@ -510,11 +512,11 @@
       ? DENOMS[Math.floor(Math.random() * DENOMS.length)]
       : DENOMS[Math.min(G.level, DENOMS.length) - 1];
     const purse = DENOMS.filter((d) => d.kind === target.kind);
-    const p = panel(`<h2>👛 Time to pay!</h2>
-      <p>The cashier asks: <b>“One ${target.name}, please!”</b></p>
+    const p = panel(`<h2>${K.tr("👛 Time to pay!", "👛 ¡Hora de pagar!")}</h2>
+      <p>${K.tr("The cashier asks:", "La cajera pide:")} <b>${K.tr(`“One ${target.name}, please!”`, `“¡${denName(target).charAt(0).toUpperCase() + denName(target).slice(1)}, por favor!”`)}</b></p>
       <div id="gPurse">${purse.map((d) => moneyBtnHTML(d, DENOMS.indexOf(d))).join("")}</div>
-      <div id="gPayBubble">Which one is the <b>${target.name}</b> — ${target.desc}?</div>`);
-    K.say(`One ${target.name}, please! Can you find it? It's ${target.desc}.`);
+      <div id="gPayBubble">${K.tr(`Which one is the <b>${target.name}</b> — ${target.desc}?`, `¿Cuál es <b>${denName(target)}</b> — ${K.tr(target.desc, target.descEs)}?`)}</div>`);
+    K.say(K.tr(`One ${target.name}, please! Can you find it? It's ${target.desc}.`, `¡${denName(target)}, por favor! ¿Puedes encontrarlo? Es ${target.descEs}.`));
     p.querySelectorAll(".gPurseItem").forEach((b) => {
       b.addEventListener("pointerdown", () => {
         if (b.disabled) return;
@@ -522,15 +524,15 @@
         if (d === target) {
           b.style.outline = "4px solid #34d399";
           p.querySelectorAll(".gPurseItem").forEach((x) => { x.disabled = true; if (x !== b) x.style.opacity = .3; });
-          p.querySelector("#gPayBubble").innerHTML = `✅ ${target.fact}`;
-          K.sfx.star(); K.say(`Yes! That's the ${target.name}! ${target.fact}`);
+          p.querySelector("#gPayBubble").innerHTML = `✅ ${K.tr(target.fact, target.factEs)}`;
+          K.sfx.star(); K.say(K.tr(`Yes! That's the ${target.name}! ${target.fact}`, `¡Sí! ¡Ese es ${denName(target)}! ${target.factEs}`));
           K.recordEvent("pay", DENOMS.indexOf(target));
           setTimeout(startBag, 2600 * K.speed());
         } else {
           // a wrong tap is just another money word learned
           K.sfx.pop();
-          p.querySelector("#gPayBubble").innerHTML = `That's the <b>${d.name}</b> (${fmtMoney(d.value)})! The ${target.name} is ${target.desc} 💛`;
-          K.say(`That's the ${d.name}! The ${target.name} is ${target.desc}.`);
+          p.querySelector("#gPayBubble").innerHTML = K.tr(`That's the <b>${d.name}</b> (${fmtMoney(d.value)})! The ${target.name} is ${target.desc} 💛`, `¡Ese es <b>${denName(d)}</b> (${fmtMoney(d.value)})! ${denName(target).charAt(0).toUpperCase() + denName(target).slice(1)} es ${target.descEs} 💛`);
+          K.say(K.tr(`That's the ${d.name}! The ${target.name} is ${target.desc}.`, `¡Ese es ${denName(d)}! ${denName(target)} es ${target.descEs}.`));
         }
       });
     });
@@ -538,8 +540,8 @@
 
   function startBag() {
     G.phase = "bag"; refreshPhase();
-    K.say("Now pop each food into the bag!");
-    const p = panel(`<h2>🛍️ Bag time</h2>
+    K.say(K.tr("Now pop each food into the bag!", "¡Ahora mete cada comida en la bolsa!"));
+    const p = panel(`<h2>${K.tr("🛍️ Bag time", "🛍️ A embolsar")}</h2>
       <div>${G.got.map((id, i) =>
         `<button class="gScanItem" data-i="${i}" title="Bag ${foodById(id).name}">${foodById(id).emoji}</button>`).join("")}</div>
       <p id="gBag" style="font-size:40px;min-height:52px">🛍️</p>`);
@@ -562,14 +564,14 @@
     cartItems.forEach((s) => cart.remove(s)); cartItems.length = 0;
     stands.forEach((st) => { st.sprite.material.opacity = 1; });
     K.sfx.star(); K.recordEvent("trip", G.trips);
-    K.say("Thank you for shopping! You remembered the whole list!");
+    K.say(K.tr("Thank you for shopping! You remembered the whole list!", "¡Gracias por tu compra! ¡Recordaste toda la lista!"));
     const stamps = Math.min(G.trips, 10);
     const streak = K.streakBump();
-    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">🔥 ${streak.n} days of shopping in a row!</div>` : ""}<h2>🌟 What a memory!</h2>
-      <p>You remembered your list, waited your turn, paid and bagged — a whole shopping trip!</p>
+    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">${K.tr(`🔥 ${streak.n} days of shopping in a row!`, `🔥 ¡${streak.n} días seguidos de compras!`)}</div>` : ""}<h2>${K.tr("🌟 What a memory!", "🌟 ¡Qué memoria!")}</h2>
+      <p>${K.tr("You remembered your list, waited your turn, paid and bagged — a whole shopping trip!", "Recordaste tu lista, esperaste tu turno, pagaste y embolsaste — ¡una compra completa!")}</p>
       <div class="gStamps">${"⭐".repeat(stamps)}${"☆".repeat(Math.max(0, 5 - stamps))}</div>
-      <p style="font-size:14px">Shopping trips: <b>${G.trips}</b>${leveledUp ? ` · Next time: <b>${levelSize(G.level)}</b> things to remember and a <b>${DENOMS[Math.min(G.level, DENOMS.length) - 1].name}</b>! 🧠💵` : " · You know every coin and bill — now we practice them all! 🏆"}</p>
-      <button class="kBig" id="gAgain" title="Shop with a new list">🛒 New list!</button>`);
+      <p style="font-size:14px">${K.tr("Shopping trips:", "Compras:")} <b>${G.trips}</b>${leveledUp ? K.tr(` · Next time: <b>${levelSize(G.level)}</b> things to remember and a <b>${DENOMS[Math.min(G.level, DENOMS.length) - 1].name}</b>! 🧠💵`, ` · La próxima: ¡<b>${levelSize(G.level)}</b> cosas para recordar y <b>${K.tr(DENOMS[Math.min(G.level, DENOMS.length) - 1].name, DENOMS[Math.min(G.level, DENOMS.length) - 1].nameEs)}</b>! 🧠💵`) : K.tr(" · You know every coin and bill — now we practice them all! 🏆", " · ¡Ya conoces todas las monedas y billetes — ahora a practicarlos! 🏆")}</p>
+      <button class="kBig" id="gAgain" title="Shop with a new list">${K.tr("🛒 New list!", "🛒 ¡Lista nueva!")}</button>`);
     document.getElementById("gAgain").addEventListener("pointerdown", () => { closePanel(); newList(); });
   }
 
@@ -732,6 +734,7 @@
     emoji: "🛒",
     accent: "#f59e0b",
     tagline: "bring your list, find the food, wait your turn, pay & bag!",
+    taglineEs: "trae tu lista, encuentra la comida, espera tu turno, ¡paga y embolsa!",
     emojis: ["🛒", "🍎", "🥕", "🧾", "🪙"],
     howTo: [
       ["🧠", "Look at the list, then it hides — remember!"],
@@ -742,10 +745,19 @@
       ["👛", "Find the right coin in your purse to pay!"],
       ["🧾", "Got everything? Go to the checkout!"],
     ],
+    howToEs: [
+      ["🧠", "Mira la lista, luego se esconde — ¡recuérdala!"],
+      ["🕹️", "Camina con la palanca o las flechas"],
+      ["👆", "Toca el piso o una comida para ir ahí"],
+      ["✋", "Acércate y toca Agarrar"],
+      ["💡", "¿Atorado? Aparece un botón de Pista"],
+      ["👛", "¡Encuentra la moneda correcta para pagar!"],
+      ["🧾", "¿Ya tienes todo? ¡Ve a la caja!"],
+    ],
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM",
     actions: [
-      { emoji: "✋", label: "Grab", title: "Pick up the food you are next to", onTap: tryGrab },
-      { emoji: "📋", label: "List", title: "Hear how many things are left to remember", onTap: readList },
+      { emoji: "✋", label: "Grab", labelEs: "Agarrar", title: "Pick up the food you are next to", titleEs: "Agarra la comida que tienes cerca", onTap: tryGrab },
+      { emoji: "📋", label: "List", labelEs: "Lista", title: "Hear how many things are left to remember", titleEs: "Escucha cuántas cosas faltan", onTap: readList },
     ],
     playerPos: () => ({ x: P.x, z: P.z, ry: P.ry }),
     replayableState: { get: snapshot, set: restore },
@@ -753,6 +765,8 @@
       G.trips = K.load("trips", 0);
       G.level = K.load("level", 1);
       document.getElementById("gList").style.display = "block";
+      document.getElementById("gListTitle").textContent = K.tr("My List", "Mi lista");
+      document.getElementById("gHintLbl").textContent = K.tr("Hint", "Pista");
       document.getElementById("gHint").addEventListener("pointerdown", useHint);
       newList();
       wireTap();
@@ -760,9 +774,9 @@
     onPause(p) { /* frame loop already halts via kit; nothing extra to freeze */ },
     onFrame: frame,
     onReplayEvent(ev) {
-      if (ev.kind === "grab") { const f = FOODS[ev.extra]; if (f) { K.toast(f.emoji + " In the cart!"); K.sfx.yes(); } }
-      else if (ev.kind === "pay") { const d = DENOMS[ev.extra]; K.toast(d ? `💵 Paid with a ${d.name}!` : "💵 Paid!"); K.sfx.yes(); }
-      else if (ev.kind === "trip") { K.toast("🌟 Shopping trip done!"); K.sfx.star(); }
+      if (ev.kind === "grab") { const f = FOODS[ev.extra]; if (f) { K.toast(K.tr(f.emoji + " In the cart!", f.emoji + " ¡Al carrito!")); K.sfx.yes(); } }
+      else if (ev.kind === "pay") { const d = DENOMS[ev.extra]; K.toast(d ? K.tr(`💵 Paid with a ${d.name}!`, `💵 ¡Pagado con ${denName(d)}!`) : K.tr("💵 Paid!", "💵 ¡Pagado!")); K.sfx.yes(); }
+      else if (ev.kind === "trip") { K.toast(K.tr("🌟 Shopping trip done!", "🌟 ¡Compra terminada!")); K.sfx.star(); }
     },
   });
 })();

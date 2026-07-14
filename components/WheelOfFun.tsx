@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, RotateCw } from 'lucide-react';
+import { tr, toggleLang, langLabel } from '../lib/lang';
 
 const SEGMENTS = [
-    { color: '#00AEEF', name: 'Blue' },   // The Big Winner
-    { color: '#FFE066', name: 'Yellow' },
-    { color: '#FFB6C1', name: 'Pink' },
-    { color: '#A8E6CF', name: 'Green' }
+    { color: '#00AEEF', name: 'Blue', nameEs: 'Azul' },   // The Big Winner
+    { color: '#FFE066', name: 'Yellow', nameEs: 'Amarillo' },
+    { color: '#FFB6C1', name: 'Pink', nameEs: 'Rosa' },
+    { color: '#A8E6CF', name: 'Green', nameEs: 'Verde' }
 ];
 
 const WheelOfFun: React.FC = () => {
@@ -116,12 +117,19 @@ const WheelOfFun: React.FC = () => {
             <div className="text-center mb-6 relative">
                 <h2 className="text-4xl font-black text-slate-800 dark:text-white flex items-center justify-center gap-4 tracking-tighter uppercase italic">
                     <RotateCw className={`h-10 w-10 text-brand-cyan ${isSpinning ? 'animate-spin brightness-125' : ''}`} />
-                    Aaria's Wheel of Fun
+                    {tr("Aaria's Wheel of Fun", 'La Rueda de la Diversión de Aaria')}
                 </h2>
                 <div className="h-1 w-24 bg-brand-cyan mx-auto mt-2 rounded-full opacity-50" />
                 <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    Total Spins: <span className="text-brand-cyan">{spinCount}</span>
+                    {tr('Total Spins', 'Giros Totales')}: <span className="text-brand-cyan">{spinCount}</span>
                 </p>
+                <button
+                    data-abe="lang"
+                    onClick={toggleLang}
+                    className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-brand-cyan transition-colors"
+                >
+                    {langLabel()}
+                </button>
             </div>
 
             <div className="relative w-80 h-80 sm:w-96 sm:h-96 perspective-1000" ref={wheelRef}>
@@ -205,7 +213,7 @@ const WheelOfFun: React.FC = () => {
                         }
                   `}
                 >
-                    {isSpinning ? 'Spinning...' : <>Take a Spin <Play className="fill-current h-8 w-8" /></>}
+                    {isSpinning ? tr('Spinning...', 'Girando...') : <>{tr('Take a Spin', 'Dale la Vuelta')} <Play className="fill-current h-8 w-8" /></>}
                     {!isSpinning && <div className="absolute inset-0 bg-white/10 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700" />}
                 </button>
 
@@ -213,12 +221,12 @@ const WheelOfFun: React.FC = () => {
                     {winner !== null && !isSpinning ? (
                         <div className="animate-in zoom-in-50 duration-500">
                             <p className="text-2xl font-black text-white px-8 py-3 rounded-2xl shadow-xl transition-colors" style={{ backgroundColor: SEGMENTS[winner].color }}>
-                                LANDED ON {SEGMENTS[winner].name}! 🐘
+                                {tr(`LANDED ON ${SEGMENTS[winner].name}!`, `¡CAYÓ EN ${SEGMENTS[winner].nameEs.toUpperCase()}!`)} 🐘
                             </p>
                         </div>
                     ) : (
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-sm animate-pulse">
-                            Click to signify fun and impact
+                            {tr('Click to signify fun and impact', 'Haz clic para divertirte')}
                         </p>
                     )}
                 </div>

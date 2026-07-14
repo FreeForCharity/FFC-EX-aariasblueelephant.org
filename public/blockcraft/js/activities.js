@@ -16,7 +16,7 @@ ABC.activities = (function () {
     ensureBlueprints();
     const cards = Object.values(blueprints).map(bp => ({
       ico: bp.emoji + (ABC.state.completed.has(bp.id) ? '✅' : ''),
-      label: bp.title.replace(/^[^ ]+ /,''),
+      label: ABC.tpl(bp.title).replace(/^[^ ]+ /,''),
       bp,
     }));
     ui().pickCard('Build Projects 🏗️', 'What shall we build together? Pick a project!', cards, (c) => {
@@ -45,7 +45,7 @@ ABC.activities = (function () {
       if (!ghostMat) ghostMat = new THREE.MeshLambertMaterial({
         color: 0xffe066, transparent: true, opacity: 0.35, depthWrite: false });
       $('projectPanel').style.display = 'block';
-      $('projTitle').textContent = bp.title;
+      $('projTitle').textContent = ABC.tpl(bp.title);
       nextStage();
       ui().bellaSays(`Right here! Tap the golden glowing spots to build! ✨ Or press Finish for magic help.`, 5000);
     }, { stars: 1 });
@@ -56,7 +56,7 @@ ABC.activities = (function () {
     a.stageIdx++;
     if (a.stageIdx >= a.bp.stages.length) { completeProject(); return; }
     const st = a.bp.stages[a.stageIdx];
-    $('projStage').textContent = `Stage ${a.stageIdx+1}/${a.bp.stages.length}: ${st.name}`;
+    $('projStage').textContent = `${ABC.tpl('Stage')} ${a.stageIdx+1}/${a.bp.stages.length}: ${ABC.tpl(st.name)}`;
     a.placed = 0; a.total = 0;
     const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95);
     // dedupe cells (later entries win, e.g. headlights over chassis)
@@ -226,7 +226,7 @@ ABC.activities = (function () {
   /* =====================================================
      ANIMAL EMOTION ENCOUNTERS
      ===================================================== */
-  function fillTpl(s, a) { return s.replaceAll('{name}', a.name).replaceAll('{label}', a.def.label); }
+  function fillTpl(s, a) { return ABC.tpl(s).replaceAll('{name}', a.name).replaceAll('{label}', a.def.label); }
 
   /* 🏪 the village market — ask politely, pay with stars, say thank you */
   function shop(a) {
@@ -376,7 +376,7 @@ ABC.activities = (function () {
   ];
   function bellaChat(a) {
     ui().message('Nilu the Blue Elephant 🐘💙',
-      ui().pick(BELLA_TIPS) + `<br><br><span style="font-size:14px;color:#557;">${ABC.BRAND.org} — ${ABC.BRAND.tagline} 🌈∞</span>`,
+      ABC.tpl(ui().pick(BELLA_TIPS)) + `<br><br><span style="font-size:14px;color:#557;">${ABC.BRAND.org} — ${ABC.BRAND.tagline} 🌈∞</span>`,
       'Thanks, Nilu! 💙', null, '🐘');
     ABC.animals.celebrate(a, performance.now() / 1000);
   }
@@ -552,7 +552,7 @@ ABC.activities = (function () {
       refreshChip();
       ABC.saveSoon && ABC.saveSoon();
       const def = ABC.QUEST_DEFS.find(d => d.key === key);
-      ui().toast(`📋 Adventure done: ${def.ico} ${def.label}!`, 3600, true);
+      ui().toast(`📋 ${ABC.tpl('Adventure done:')} ${def.ico} ${ABC.tpl(def.label)}!`, 3600, true);
       if (allDone() && !q.celebrated) {
         q.celebrated = true;
         ABC.saveSoon && ABC.saveSoon();
@@ -567,15 +567,15 @@ ABC.activities = (function () {
     }
     function showBoard() {
       const q = state();
-      let html = `<div class="bigEmoji">📋</div><h2>Today's Adventures</h2>
-        <div class="scene">Three special things to do today!</div>`;
+      let html = `<div class="bigEmoji">📋</div><h2>${ABC.tpl("Today's Adventures")}</h2>
+        <div class="scene">${ABC.tpl('Three special things to do today!')}</div>`;
       todayDefs().forEach(d => {
         const done = !!q.done[d.key];
         html += `<div class="sentenceCard" style="display:flex; align-items:center; gap:12px; ${done ? 'opacity:.65; border-style:solid; border-color:#51cf66;' : ''}">
           <span style="font-size:30px;">${done ? '✅' : d.ico}</span>
-          <span style="flex:1; text-align:left;">${d.label}</span></div>`;
+          <span style="flex:1; text-align:left;">${ABC.tpl(d.label)}</span></div>`;
       });
-      html += `<div class="dlgRow"><button class="bigBtn green" id="qbOk">${allDone() ? 'All done! 🎆' : 'Let’s go! 🚀'}</button></div>`;
+      html += `<div class="dlgRow"><button class="bigBtn green" id="qbOk">${ABC.tpl(allDone() ? 'All done! 🎆' : 'Let’s go! 🚀')}</button></div>`;
       ABC.ui.openDialog(html);
       ABC.audio.say(allDone() ? 'All adventures done! Amazing!' : 'Here are today’s three adventures!');
       document.getElementById('qbOk').onclick = () => ABC.ui.closeDialog();

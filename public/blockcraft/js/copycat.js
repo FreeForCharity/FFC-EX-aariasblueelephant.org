@@ -68,7 +68,7 @@ ABC.copycat = (function () {
       active.ghosts.set(ABC.world.key(wx, wy, wz), m);
     }
     showPanel(pat, 0, pat.blocks.length);
-    ui().bellaSays(`Copy the ${pat.name} ${pat.emoji}! Build it just like the glowing shape — any direction is fine! ✨`, 5200);
+    ui().bellaSays(`${ABC.tpl('Copy the')} ${ABC.tpl(pat.name)} ${pat.emoji}! ${ABC.tpl('Build it just like the glowing shape — any direction is fine! ✨')}`, 5200);
     checkPlacement();   // in case some of it already exists
   }
 
@@ -76,8 +76,8 @@ ABC.copycat = (function () {
     if (!$('projectPanel')) return;
     $('projectPanel').style.display = 'block';
     if ($('magicBtn')) $('magicBtn').style.display = 'none';   // no auto-finish in Copy Cat — the child builds it
-    $('projTitle').textContent = pat.emoji + ' ' + pat.name;
-    $('projStage').textContent = 'Copy Cat — build it your way!';
+    $('projTitle').textContent = pat.emoji + ' ' + ABC.tpl(pat.name);
+    $('projStage').textContent = ABC.tpl('Copy Cat — build it your way!');
     const pct = total ? Math.round(placed / total * 100) : 100;
     $('projBarInner').style.width = pct + '%';
     $('projCount').textContent = placed + '/' + total;
@@ -132,8 +132,8 @@ ABC.copycat = (function () {
     ui().confetti(50);
     ABC.stickers && ABC.stickers.award && ABC.stickers.award('copycat');
     ABC.saveSoon && ABC.saveSoon();
-    ui().toast(`🐱 Copy Cat complete: ${pat.emoji} <b>${pat.name}</b>! Purrfect copying! 🎉`, 5200, true);
-    ui().bellaSays(`You copied the ${pat.name} perfectly! ${pat.emoji} Great job looking closely! 💛`, 5200);
+    ui().toast(`🐱 ${ABC.tpl('Copy Cat complete:')} ${pat.emoji} <b>${ABC.tpl(pat.name)}</b>! ${ABC.tpl('Purrfect copying! 🎉')}`, 5200, true);
+    ui().bellaSays(`${ABC.tpl('You copied the')} ${ABC.tpl(pat.name)} ${ABC.tpl('perfectly!')} ${pat.emoji} ${ABC.tpl('Great job looking closely! 💛')}`, 5200);
   }
 
   /* =====================================================

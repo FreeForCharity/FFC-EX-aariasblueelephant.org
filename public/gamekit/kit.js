@@ -24,6 +24,54 @@
   const $ = (id) => document.getElementById(id);
   let cfg = null;
 
+  // ---------- language (ONE setting across every ABE game: abe.lang) ----------
+  let LANG = 'en';
+  try { LANG = localStorage.getItem('abe.lang') === 'es' ? 'es' : 'en'; } catch (e) {}
+  K.es = () => LANG === 'es';
+  K.lang = () => LANG;
+  K.setLang = (l) => { try { localStorage.setItem('abe.lang', l); } catch (e) {} location.reload(); };
+  // per-string helper for games: K.tr('English', 'Español')
+  K.tr = (en, es) => (LANG === 'es' && es ? es : en);
+  // kit chrome dictionary ({#} matches any number)
+  const KIT_ES = {
+    'Sound': 'Sonido', 'Pause': 'Pausa', 'My Movie': 'Mi peli', 'Share': 'Compartir',
+    'Settings': 'Ajustes', 'Exit': 'Salir',
+    'Taking a break 💙': 'Un descansito 💙', 'Keep playing ▶️': '¡Seguir jugando! ▶️',
+    '▶️ Play': '▶️ ¡Jugar!', 'Who is playing?': '¿Quién juega?',
+    '▶️ My Movie': '▶️ Mi peli', "📥 Friend's adventure": '📥 Aventura de un amigo',
+    '🛂 Passport': '🛂 Pasaporte', '⛶ Full Screen': '⛶ Pantalla completa',
+    'General Disclosure': 'Aviso general', 'A game from': 'Un juego de',
+    'Built for': 'Hecho para', 'and Her Friends': 'y sus amigos',
+    '😌 Calm mode': '😌 Modo tranquilo', 'Game speed': 'Velocidad', '🗣️ Read aloud': '🗣️ Leer en voz alta',
+    '🎵 Music': '🎵 Música', '🛂 My Game Passport': '🛂 Mi pasaporte de juegos',
+    "📥 Watch a friend's adventure": '📥 Ver la aventura de un amigo',
+    '🏠 More games (back to the site)': '🏠 Más juegos', '✔️ Done': '✔️ Listo',
+    'ON': 'SÍ', 'off': 'no',
+    '🔇 Sound is off': '🔇 Sonido apagado', '🔊 Sound is on!': '🔊 ¡Sonido encendido!',
+    '▶️ My Movie!': '▶️ ¡Mi peli!', "▶️ A friend's adventure!": '▶️ ¡La aventura de un amigo!',
+    'What an adventure! 🌟': '¡Qué gran aventura! 🌟',
+    'Play a little first, then share your adventure! 📤': '¡Juega un poquito primero y luego comparte tu aventura! 📤',
+    'Play a little first, then watch your movie! ▶️': '¡Juega un poquito primero y luego mira tu peli! ▶️',
+    'Adventure saved! Send it to a friend! 📤': '¡Aventura guardada! ¡Mándasela a un amigo! 📤',
+    'Adventure shared! 📤': '¡Aventura compartida! 📤',
+    "Hmm, that file isn't an adventure 💛": 'Mmm, ese archivo no es una aventura 💛',
+    '🛂 Passport stamped! ⭐': '🛂 ¡Sello en tu pasaporte! ⭐',
+    '{#} of {#} games explored': '{#} de {#} juegos explorados',
+    ' — collect them all!': ' — ¡colecciónalos todos!', ' — you found them ALL! 🏆': ' — ¡los encontraste TODOS! 🏆',
+    'you are here': 'estás aquí', '⏹ Done': '⏹ Listo', '📤 Share': '📤 Compartir',
+  };
+  const KT = (s) => {
+    if (LANG !== 'es') return s;
+    if (KIT_ES[s]) return KIT_ES[s];
+    const tpl = String(s).replace(/\d+/g, '{#}');
+    const es = KIT_ES[tpl];
+    if (!es) return s;
+    const nums = String(s).match(/\d+/g) || [];
+    let i = 0;
+    return es.replace(/\{#\}/g, () => nums[i++]);
+  };
+  K.kt = KT;
+
   // ---------- profiles (siblings share a tablet without clobbering each other) ----------
   // Profile p1 maps to the ORIGINAL unprefixed keys so nobody's saves are lost.
   const AVATARS = [
@@ -68,10 +116,10 @@
   const CATALOG = [
     { slug: 'nilus-world', name: "Aaria's Floating Islands", emoji: '🐘', url: '/nelus-world' },
     { slug: 'elly-tubbies', name: "Aaria's Elly-Tubbies", emoji: '☀️', url: '/1' },
-    { slug: 'blockcraft', name: 'Block Craft 3D', emoji: '🧱', url: '/2' },
+    { slug: 'blockcraft', name: "Aaria's Block Craft 3D", emoji: '🧱', url: '/2' },
     { slug: 'roadsafety', name: "Aaria's Road Safety Heroes", emoji: '🚦', url: '/4' },
     { slug: 'doughlab', name: "Aaria's Dough Lab 3D", emoji: '🫓', url: '/5' },
-    { slug: 'magnetblocks', name: 'Magnet Blocks', emoji: '🧲', url: '/6' },
+    { slug: 'magnetblocks', name: "Aaria's Magnet Blocks", emoji: '🧲', url: '/6' },
     { slug: 'helpinghands', name: "Aaria's Helping Hands", emoji: '🖐️', url: '/7' },
     { slug: 'grocery', name: "Aaria's Grocery Store", emoji: '🛒', url: '/8' },
     { slug: 'dayplanner', name: "Aaria's Day Planner", emoji: '📅', url: '/9' },
@@ -166,6 +214,7 @@
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}]/gu, ''));
+      u.lang = LANG === 'es' ? 'es-US' : 'en-US';
       u.rate = 0.95 / K.speed() > 1.3 ? 1.05 : 0.95; u.pitch = 1.1; speechSynthesis.speak(u);
     } catch (e) {}
   };
@@ -252,7 +301,7 @@
     if (cfg.replayableState && rp.snap != null) cfg.replayableState.set(rp.snap);
     $('kReplayBar').style.display = 'none'; $('kHud').style.display = 'flex';
     $('kStick').style.display = 'block'; $('kActs').style.display = 'flex';
-    K.toast('What an adventure! 🌟'); K.sfx.star();
+    K.toast(KT('What an adventure! 🌟')); K.sfx.star();
     rp = null;
   }
   // games call this each frame while K.replaying to get the position to show
@@ -288,13 +337,13 @@
     } catch (e) { return e && e.message === 'Share canceled'; }
   };
   async function shareAdventure() {
-    if (recSpan() < REC_MIN) { K.toast('Play a little first, then share your adventure! 📤'); return; }
+    if (recSpan() < REC_MIN) { K.toast(KT('Play a little first, then share your adventure! 📤')); return; }
     const blob = new Blob([JSON.stringify({ app: cfg.slug, v: 1, kind: 'adventure', samples: REC.samples, events: REC.events })], { type: 'application/json' });
-    if (await K.shareFile(`my-adventure.${cfg.slug}.json`, blob)) { K.toast('Adventure shared! 📤'); K.sfx.yes(); return; }
+    if (await K.shareFile(`my-adventure.${cfg.slug}.json`, blob)) { K.toast(KT('Adventure shared! 📤')); K.sfx.yes(); return; }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `my-adventure.${cfg.slug}.json`; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    K.toast('Adventure saved! Send it to a friend! 📤'); K.sfx.yes();
+    K.toast(KT('Adventure saved! Send it to a friend! 📤')); K.sfx.yes();
   }
   function importAdventure(file) {
     const r = new FileReader();
@@ -305,7 +354,7 @@
         d.samples = d.samples.slice(0, REC_MAX).filter((s) => Array.isArray(s) && s.length >= 3 && s.every(Number.isFinite));
         d.events = (Array.isArray(d.events) ? d.events : []).slice(0, 400);
         startReplay(d, false);
-      } catch (e) { K.toast("Hmm, that file isn't an adventure 💛"); }
+      } catch (e) { K.toast(KT("Hmm, that file isn't an adventure 💛")); }
     };
     r.readAsText(file);
   }
@@ -364,57 +413,57 @@
     document.documentElement.style.setProperty('--k-accent', cfg.accent);
     const el = document.createElement('div');
     el.innerHTML = `
-  <button id="kExit" data-abe="exit" style="display:none" title="Leave the game — back to all games">🏠<span class="kLbl">Exit</span></button>
+  <button id="kExit" data-abe="exit" style="display:none" title="Leave the game — back to all games">🏠<span class="kLbl">${KT('Exit')}</span></button>
   <div id="kHud" data-abe="hud" style="display:none">
-    <button class="kBtn" id="kMute" data-abe="sound" title="Sound on or off">🔊<span class="kLbl">Sound</span></button>
-    <button class="kBtn" id="kPauseBtn" title="Take a break">⏸️<span class="kLbl">Pause</span></button>
-    <button class="kBtn" id="kMovie" title="Watch your adventure like a movie!">▶️<span class="kLbl">My Movie</span></button>
-    <button class="kBtn" id="kShare" title="Save your adventure as a file to share">📤<span class="kLbl">Share</span></button>
-    <button class="kBtn" id="kSettings" data-abe="settings" title="Settings">⚙️<span class="kLbl">Settings</span></button>
+    <button class="kBtn" id="kMute" data-abe="sound" title="Sound on or off">🔊<span class="kLbl">${KT('Sound')}</span></button>
+    <button class="kBtn" id="kPauseBtn" title="Take a break">⏸️<span class="kLbl">${KT('Pause')}</span></button>
+    <button class="kBtn" id="kMovie" title="Watch your adventure like a movie!">▶️<span class="kLbl">${KT('My Movie')}</span></button>
+    <button class="kBtn" id="kShare" title="Save your adventure as a file to share">📤<span class="kLbl">${KT('Share')}</span></button>
+    <button class="kBtn" id="kSettings" data-abe="settings" title="Settings">⚙️<span class="kLbl">${KT('Settings')}</span></button>
   </div>
   <div id="kChip" style="display:none"></div>
   <div id="kStick" style="display:none"><span class="abeJoyArrow" style="top:6px;left:50%;transform:translateX(-50%)">▲</span><span class="abeJoyArrow" style="bottom:6px;left:50%;transform:translateX(-50%)">▼</span><span class="abeJoyArrow" style="left:8px;top:50%;transform:translateY(-50%)">◀</span><span class="abeJoyArrow" style="right:8px;top:50%;transform:translateY(-50%)">▶</span><div id="kKnob"><img src="logo.png" alt=""></div></div>
   <div id="kActs" style="display:none"></div>
   <div id="kToast"></div>
   <div id="kReplayBar" style="display:none">
-    <span>▶️ My Movie</span>
+    <span>${KT('▶️ My Movie')}</span>
     <button id="kRSpeed" title="Play faster or slower">1x</button>
-    <button id="kRShare" title="Save this adventure as a file">📤 Share</button>
-    <button id="kRDone" title="Back to playing">⏹ Done</button>
+    <button id="kRShare" title="Save this adventure as a file">${KT('📤 Share')}</button>
+    <button id="kRDone" title="Back to playing">${KT('⏹ Done')}</button>
   </div>
   <div id="kPause" style="display:none">
-    <div class="kTitleCard"><h1>Taking a break 💙</h1>
-      <button class="kBig" id="kResume" title="Keep playing">Keep playing ▶️</button></div>
+    <div class="kTitleCard"><h1>${KT('Taking a break 💙')}</h1>
+      <button class="kBig" id="kResume" title="Keep playing">${KT('Keep playing ▶️')}</button></div>
   </div>
   <div id="kTitle">
     <div class="kTitleCard">
       <img class="kLogo" src="logo.png" alt="Aaria's Blue Elephant — Building a New Inclusive World">
       <h1>${cfg.name}</h1>
-      <p>Built for <b>Aaria and Her Friends</b> 💖 — ${cfg.tagline}</p>
-      <a id="kDisclosure" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
+      <p>${KT('Built for')} <b>Aaria ${KT('and Her Friends')}</b> 💖 — ${K.tr(cfg.tagline, cfg.taglineEs)}</p>
+      <a id="kDisclosure" href="/legal/disclosure.html" target="_blank" rel="noopener">${KT('General Disclosure')}</a>
       <div class="kTitleEmojis">${(cfg.emojis || []).join('')}</div>
-      <div class="kAvatars"><span class="kAvLbl">Who is playing?</span>${AVATARS.map((a) =>
+      <div class="kAvatars"><span class="kAvLbl">${KT('Who is playing?')}</span>${AVATARS.map((a) =>
         `<button class="kAvatar" data-p="${a.id}" title="Play as ${a.emoji}">${a.emoji}</button>`).join('')}</div>
-      <button class="kBig" id="kPlay" title="Start playing">▶️ Play</button>
+      <button class="kBig" id="kPlay" title="Start playing">${KT('▶️ Play')}</button>
       <div id="kTitleExtras" style="display:none;margin-top:6px">
-        <button class="kBig kAlt" id="kTitleMovie" title="Watch your last adventure">▶️ My Movie</button>
-        <button class="kBig kAlt" id="kTitleImport" title="Watch a friend's adventure file">📥 Friend's adventure</button>
-        <button class="kBig kAlt" id="kTitlePass" title="See your stamps from every game">🛂 Passport</button>
+        <button class="kBig kAlt" id="kTitleMovie" title="Watch your last adventure">${KT('▶️ My Movie')}</button>
+        <button class="kBig kAlt" id="kTitleImport" title="Watch a friend's adventure file">${KT("📥 Friend's adventure")}</button>
+        <button class="kBig kAlt" id="kTitlePass" title="See your stamps from every game">${KT('🛂 Passport')}</button>
       </div>
       <div id="kHow" style="text-align:left;margin-top:10px;display:inline-block"></div>
-      <div><button class="kSmall" id="kFs" title="Play in full screen">⛶ Full Screen</button></div>
-      <div class="kOrgFooter">A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org</div>
+      <div><button class="kSmall" id="kFs" title="Play in full screen">${KT('⛶ Full Screen')}</button><button class="kSmall" id="kLang" data-abe="lang" title="Español / English">${LANG === 'es' ? '🌐 English' : '🌐 Español'}</button></div>
+      <div class="kOrgFooter">${KT('A game from')} <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org</div>
     </div>
   </div>
   <input type="file" id="kImportFile" accept=".json,application/json" style="display:none">`;
     document.body.appendChild(el);
     // how-to rows
-    $('kHow').innerHTML = (cfg.howTo || []).map(([e, t]) => `<div style="margin:4px 0;font-size:14px"><b>${e}</b> ${t}</div>`).join('');
+    $('kHow').innerHTML = ((LANG === 'es' && cfg.howToEs) || cfg.howTo || []).map(([e, t]) => `<div style="margin:4px 0;font-size:14px"><b>${e}</b> ${t}</div>`).join('');
     // action buttons (game-specific, still standard style)
     for (const a of cfg.actions || []) {
       const b = document.createElement('button');
-      b.className = 'kAct'; b.title = a.title || a.label;
-      b.innerHTML = `${a.emoji}<span class="kLbl">${a.label}</span>`;
+      b.className = 'kAct'; b.title = K.tr(a.title || a.label, a.titleEs || a.labelEs);
+      b.innerHTML = `${a.emoji}<span class="kLbl">${K.tr(a.label, a.labelEs)}</span>`;
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); ac(); a.onTap && a.onTap(); });
       $('kActs').appendChild(b);
     }
@@ -444,19 +493,19 @@
     const seen = CATALOG.filter((g) => stamps[g.slug] && stamps[g.slug].days > 0).length;
     const av = AVATARS.find((a) => a.id === prof) || AVATARS[0];
     p.innerHTML = `<div class="kPanelCard"><h2>🛂 ${av.emoji} My Game Passport</h2>
-      <p class="kPassSub">${seen} of ${CATALOG.length} games explored${seen >= CATALOG.length ? ' — you found them ALL! 🏆' : ' — collect them all!'}</p>
+      <p class="kPassSub">${KT(`${seen} of ${CATALOG.length} games explored`)}${seen >= CATALOG.length ? KT(' — you found them ALL! 🏆') : KT(' — collect them all!')}</p>
       ${CATALOG.map((g) => {
         const st = stamps[g.slug], here = g.slug === cfg.slug;
         const days = st ? st.days : 0;
         const stars = days ? '⭐'.repeat(Math.min(days, 5)) + (days > 5 ? ` ×${days}` : '') : '';
         return `<div class="kPassRow ${days ? 'got' : ''}">
           <span class="kPassEmoji">${g.emoji}</span>
-          <span class="kPassName">${g.name}${here ? ' <small>· you are here</small>' : ''}</span>
+          <span class="kPassName">${g.name}${here ? ` <small>· ${KT('you are here')}</small>` : ''}</span>
           <span class="kPassStars">${days ? stars : '· · ·'}</span>
           ${here ? '' : `<a class="kPassGo" href="${g.url}" title="Go play ${g.name}">▶️</a>`}
         </div>`;
       }).join('')}
-      <button class="kRow" id="kPassClose" title="Close the passport">✔️ Done</button></div>`;
+      <button class="kRow" id="kPassClose" title="Close the passport">${KT('✔️ Done')}</button></div>`;
     document.body.appendChild(p);
     $('kPassClose').onclick = () => p.remove();
   }
@@ -465,19 +514,21 @@
     const p = document.createElement('div'); p.className = 'kPanel'; p.id = 'kSet';
     const row = (id, txt) => `<button class="kRow" id="${id}" title="${txt.replace(/<[^>]*>/g, '')}">${txt}</button>`;
     p.innerHTML = `<div class="kPanelCard"><h2>⚙️ Settings</h2>
-      ${row('ksCalm', `😌 Calm mode: <b>${S.calm ? 'ON' : 'off'}</b>`)}
-      ${row('ksSpeed', `${SPEED[S.speed].ico} Game speed`)}
-      ${row('ksVoice', `🗣️ Read aloud: <b>${S.voice ? 'ON' : 'off'}</b>`)}
-      ${row('ksMusic', `🎵 Music: <b>${S.music ? 'ON' : 'off'}</b>`)}
-      ${row('ksPass', `🛂 My Game Passport`)}
-      ${row('ksImport', `📥 Watch a friend's adventure`)}
-      ${row('ksHome', `🏠 More games (back to the site)`)}
-      ${row('ksClose', `✔️ Done`)}</div>`;
+      ${row('ksCalm', `${KT('😌 Calm mode')}: <b>${S.calm ? KT('ON') : KT('off')}</b>`)}
+      ${row('ksSpeed', `${SPEED[S.speed].ico} ${KT('Game speed')}`)}
+      ${row('ksVoice', `${KT('🗣️ Read aloud')}: <b>${S.voice ? KT('ON') : KT('off')}</b>`)}
+      ${row('ksMusic', `${KT('🎵 Music')}: <b>${S.music ? KT('ON') : KT('off')}</b>`)}
+      ${row('ksPass', KT('🛂 My Game Passport'))}
+      ${row('ksLang', `${LANG === 'es' ? '🌐 Idioma: <b>Español</b>' : '🌐 Language: <b>English</b>'}`)}
+      ${row('ksImport', KT("📥 Watch a friend's adventure"))}
+      ${row('ksHome', KT('🏠 More games (back to the site)'))}
+      ${row('ksClose', KT('✔️ Done'))}</div>`;
     document.body.appendChild(p);
     const saveS = () => K.save('settings', S);
     $('ksCalm').onclick = () => { S.calm = !S.calm; saveS(); refreshMusic(); p.remove(); openSettings(); };
     $('ksMusic').onclick = () => { S.music = !S.music; saveS(); refreshMusic(); p.remove(); openSettings(); };
     $('ksPass').onclick = () => { p.remove(); openPassport(); };
+    $('ksLang').onclick = () => K.setLang(LANG === 'es' ? 'en' : 'es');
     $('ksSpeed').onclick = () => {
       const o = ['relaxed', 'normal', 'fast']; S.speed = o[(o.indexOf(S.speed) + 1) % 3]; saveS();
       K.toast(`${SPEED[S.speed].ico} Speed: ${S.speed}`); p.remove(); openSettings();
@@ -512,11 +563,12 @@
       $('kExit').style.display = 'flex';
       ac(); ping(); startMusic();
       TIME.on = true; TIME.last = performance.now();
-      if (stampToday()) setTimeout(() => { K.toast('🛂 Passport stamped! ⭐'); K.sfx.pop(); }, 1500);
+      if (stampToday()) setTimeout(() => { K.toast(KT('🛂 Passport stamped! ⭐')); K.sfx.pop(); }, 1500);
       cfg.onStart && cfg.onStart(); then && then();
     };
     $('kPlay').onclick = () => { K.sfx.yes(); begin(); };
     $('kTitlePass').onclick = openPassport;
+    $('kLang').onclick = () => K.setLang(LANG === 'es' ? 'en' : 'es');
     $('kFs').onclick = () => {
       try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {}
     };
@@ -531,7 +583,7 @@
     $('kExit').onclick = () => { location.href = '/games'; };
     $('kPauseBtn').onclick = () => { setPaused(true); stopMusic(); };
     $('kResume').onclick = () => { setPaused(false); refreshMusic(); };
-    $('kMovie').onclick = () => { recSpan() >= REC_MIN ? startReplay({ samples: REC.samples, events: REC.events }, true) : K.toast('Play a little first, then watch your movie! ▶️'); };
+    $('kMovie').onclick = () => { recSpan() >= REC_MIN ? startReplay({ samples: REC.samples, events: REC.events }, true) : K.toast(KT('Play a little first, then watch your movie! ▶️')); };
     $('kShare').onclick = shareAdventure;
     $('kRShare').onclick = shareAdventure;
     $('kRDone').onclick = endReplay;

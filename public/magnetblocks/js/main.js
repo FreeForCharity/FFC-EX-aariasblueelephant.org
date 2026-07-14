@@ -48,10 +48,11 @@ window.MB = window.MB || {};
     show: id => { $(id).style.display = 'flex'; },
     hide: id => { $(id).style.display = 'none'; },
     toast(msg, ms){
+      msg = ABELang.t(msg);
       const t = $('toast'); t.innerHTML = msg; t.style.display = 'block';
       clearTimeout(ui._tt); ui._tt = setTimeout(() => t.style.display = 'none', ms || 2200);
     },
-    hint(msg){ const h = $('hintChip'); h.textContent = msg; h.style.display = msg ? 'block' : 'none'; },
+    hint(msg){ msg = ABELang.t(msg); const h = $('hintChip'); h.textContent = msg; h.style.display = msg ? 'block' : 'none'; },
     confetti(){
       if (ui.calm) return; // calm mode: skip the confetti burst
       const ems = ['🎉','⭐','💛','🧡','💚','💙','💜','✨'];
@@ -66,9 +67,10 @@ window.MB = window.MB || {};
       }
     },
     confirm(title, text, yes, no, yesLabel, noLabel){
+      title = ABELang.t(title); text = ABELang.t(text);
       $('confirmTitle').textContent = title; $('confirmText').textContent = text;
-      $('confirmYes').textContent = yesLabel || 'Yes!';
-      $('confirmNo').textContent = noLabel || 'No';
+      $('confirmYes').textContent = ABELang.t(yesLabel || 'Yes!');
+      $('confirmNo').textContent = ABELang.t(noLabel || 'No');
       ui.show('confirmModal');
       $('confirmYes').onclick = () => { ui.hide('confirmModal'); yes(); };
       $('confirmNo').onclick = () => { ui.hide('confirmModal'); if (no) no(); };
@@ -290,11 +292,11 @@ window.MB = window.MB || {};
     const doLoad = () => {
       const made = MB.Bag.rebuild(item, scene);
       MB.Audio.sparkle(); MB.Audio.fanfare();
-      ui.toast('🎒→🧱 ' + item.name + ' is back on the table! Keep building on it!', 2800);
+      ui.toast(ABELang.t('🎒→🧱 ') + item.name + ABELang.t(' is back on the table! Keep building on it!'), 2800);
       updateSelBar();
     };
     if (tableBusy){
-      ui.confirm('Swap builds? 🔁', 'The table is busy! Put those blocks back on the shelves and take out "' + item.name + '"? (Snap 📸 first if you want to keep the current one!)', () => {
+      ui.confirm('Swap builds? 🔁', ABELang.t('The table is busy! Put those blocks back on the shelves and take out "') + item.name + ABELang.t('"? (Snap 📸 first if you want to keep the current one!)'), () => {
         for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
         setTimeout(doLoad, 800);
       });
@@ -305,7 +307,7 @@ window.MB = window.MB || {};
     MB.Bag.renderGrid(
       item => { ui.hide('bagModal'); loadBagItem(item); },
       item => { ui.hide('bagModal'); MB.Replay.playCreation(item, scene); },
-      item => { MB.Bag.exportItem(item).then(() => { MB.Audio.sparkle(); ui.toast('📤 Saved "' + item.name + '" — share the file with a friend!', 2600); }); }
+      item => { MB.Bag.exportItem(item).then(() => { MB.Audio.sparkle(); ui.toast(ABELang.t('📤 Saved "') + item.name + ABELang.t('" — share the file with a friend!'), 2600); }); }
     );
     MB.Bag.updateCount();
     ui.show('bagModal');
@@ -359,6 +361,17 @@ window.MB = window.MB || {};
     MB.Audio.setCalm(calm);
     $('bestChip').textContent = '🏆 ' + bestBuild;
     $('calmBtn').classList.toggle('on', calm);
+
+    if (ABELang.es){
+      $('replayBtn').textContent = '▶️ ' + ABELang.t('My Movie');
+      $('shareBtn').textContent = '📤 ' + ABELang.t('Share');
+      $('tidyNowBtn').textContent = '🧹 ' + ABELang.t('Tidy');
+      $('clearBtn').textContent = '🆕 ' + ABELang.t('New');
+      $('titleMovieBtn').textContent = '▶️ ' + ABELang.t('My Movie — watch your last build!');
+      $('titleImportBtn').textContent = '📥 ' + ABELang.t("Bring a friend's build");
+      $('importBtn').textContent = '📥 ' + ABELang.t("Bring a friend's build");
+      document.querySelectorAll('#selBar button span').forEach(s => { s.textContent = ABELang.t(s.textContent); });
+    }
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
@@ -472,7 +485,7 @@ window.MB = window.MB || {};
         MB.Bag.updateCount();
         MB.Audio.sparkle();
         ui.hide('bagModal');
-        ui.confirm('Build it now? 🧲🎁', '"' + item.name + '" is safe in your school bag! Put it on the table right now?',
+        ui.confirm('Build it now? 🧲🎁', '"' + item.name + '"' + ABELang.t(' is safe in your school bag! Put it on the table right now?'),
           () => loadBagItem(item), () => {}, 'Yes! 🧲', 'Later');
       });
     });
@@ -529,7 +542,7 @@ window.MB = window.MB || {};
     const applyTable = () => {
       const c = TABLE_COLORS[tableIdx];
       if (MB.Playroom.setTableColor) MB.Playroom.setTableColor(c.hex);
-      $('tableBtn').textContent = c.chip + ' Table';
+      $('tableBtn').textContent = c.chip + ' ' + ABELang.t('Table');
       localStorage.setItem('mb_table_color', c.hex);
     };
     applyTable();
@@ -537,7 +550,7 @@ window.MB = window.MB || {};
       tableIdx = (tableIdx + 1) % TABLE_COLORS.length;
       applyTable();
       MB.Audio.sparkle();
-      ui.toast('🛠️ Table color: ' + TABLE_COLORS[tableIdx].name + '!', 1500);
+      ui.toast(ABELang.t('🛠️ Table color: ') + ABELang.t(TABLE_COLORS[tableIdx].name) + '!', 1500);
     });
     $('paintBtn').addEventListener('click', () => { const p = $('palettePop'); p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; });
     $('hingeBtn').addEventListener('click', () => { MB.Builder.toggleHinge(); setTimeout(updateSelBar, 50); });

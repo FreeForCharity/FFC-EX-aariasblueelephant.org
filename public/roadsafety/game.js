@@ -226,6 +226,310 @@ const QUIZ = {
   ],
 };
 
+/* ---------- Spanish dictionary (kid-level, Latin-American, tú form) ---------- */
+ABELang.register({
+  /* vehicles */
+  "Bicycle":"Bicicleta", "E-Bike":"Bici eléctrica", "E-Scooter":"Monopatín eléctrico",
+  "EV Car":"Auto eléctrico", "Car":"Auto", "Monster Truck":"Camión monstruo",
+
+  /* level titles */
+  "Wicklund Neighborhood Ride":"Paseo por el Vecindario Wicklund",
+  "Ride to the Kite Festival":"Rumbo al Festival de Cometas",
+  "Library Run to Hansen Park":"Ida a la Biblioteca por el Parque Hansen",
+  "Town Hall to the High School":"Del Ayuntamiento a la Secundaria",
+  "Grand Mountain House Drive":"El Gran Recorrido de Mountain House",
+  "Creekside Stunt Run":"Acrobacias junto al Arroyo",
+
+  /* safety tips (teaching popups) */
+  "Stop means STOP!":"¡Alto significa DETENTE!",
+  "At a stop sign, come to a COMPLETE stop. Look LEFT, then RIGHT, then LEFT again. Only go when it's clear.":
+    "En una señal de alto, haz una parada COMPLETA. Mira a la IZQUIERDA, luego a la DERECHA y otra vez a la IZQUIERDA. Avanza solo cuando esté despejado.",
+  "Red light means stop!":"¡Luz roja significa alto!",
+  "When the light is red, stop behind the white line and wait. Green means you may go — but still look both ways first!":
+    "Cuando el semáforo está en rojo, detente detrás de la línea blanca y espera. El verde significa que puedes avanzar — ¡pero mira a ambos lados primero!",
+  "People walking go first!":"¡Las personas a pie pasan primero!",
+  "When someone is in a crosswalk, stop and wait until they are all the way across. People always have the right of way.":
+    "Cuando alguien está en el cruce peatonal, detente y espera hasta que termine de cruzar. Las personas siempre tienen el derecho de paso.",
+  "Always stop for people!":"¡Siempre detente por las personas!",
+  "That was a close one! Slow down whenever you see a crosswalk, and STOP if anyone is crossing. Let's try that crossing again, slowly.":
+    "¡Eso estuvo cerca! Ve más despacio cada vez que veas un cruce peatonal, y DETENTE si alguien está cruzando. Intentemos ese cruce otra vez, con calma.",
+  "Siren? Pull RIGHT and stop!":"¿Sirena? ¡Ve a la DERECHA y detente!",
+  "When you hear a siren or see flashing lights, move to the RIGHT side of the road and stop until the emergency vehicle has passed.":
+    "Cuando escuches una sirena o veas luces destellando, muévete al lado DERECHO del camino y detente hasta que pase el vehículo de emergencia.",
+  "Careful in work zones!":"¡Cuidado en zonas de trabajo!",
+  "Construction zones have workers and machines. Slow down, stay out of the closed lane, and never hit the cones!":
+    "Las zonas de construcción tienen trabajadores y máquinas. Ve más despacio, no entres al carril cerrado y nunca choques los conos.",
+  "Slow down — school zone!":"¡Más despacio — zona escolar!",
+  "The speed limit near a school is 15 mph when children are present. Kids can step out suddenly — go slow and keep watching.":
+    "El límite de velocidad cerca de una escuela es 15 mph cuando hay niños presentes. Los niños pueden salir de repente — ve despacio y sigue mirando.",
+  "Big event — go slow!":"¡Evento grande — ve despacio!",
+  "Lots of people walk near festivals and markets. Crawl along slowly and be ready to stop at any moment.":
+    "Mucha gente camina cerca de festivales y mercados. Avanza muy despacio y prepárate para detenerte en cualquier momento.",
+  "Slow down for workers!":"¡Más despacio por los trabajadores!",
+  "Always obey the lower speed limit in a construction zone. Workers are counting on you to keep them safe.":
+    "Siempre respeta el límite de velocidad más bajo en una zona de construcción. Los trabajadores cuentan contigo para mantenerse seguros.",
+  "−{#} Safety Points (Score: {#})":"−{#} Puntos de Seguridad (Puntaje: {#})",
+
+  /* quiz — bike */
+  "Before riding your bike, what should you ALWAYS put on?":"Antes de andar en tu bici, ¿qué debes ponerte SIEMPRE?",
+  "My helmet 🪖":"Mi casco 🪖", "Sunglasses 😎":"Lentes de sol 😎", "Headphones 🎧":"Audífonos 🎧",
+  "A helmet protects your brain if you fall. Every ride, every time!":
+    "Un casco protege tu cerebro si te caes. ¡En cada paseo, todas las veces!",
+  "Where should you ride your bike on the road?":"¿Dónde debes andar en bici en el camino?",
+  "The left side":"El lado izquierdo", "The right side, same direction as cars":"El lado derecho, en la misma dirección que los autos",
+  "The middle of the road":"En medio del camino",
+  "Ride on the RIGHT, going the same way as traffic, so drivers can see and expect you.":
+    "Anda por la DERECHA, en la misma dirección que el tráfico, para que los conductores puedan verte y anticiparte.",
+  "What do you do at a STOP sign?":"¿Qué haces en una señal de ALTO?",
+  "Slow down a little":"Ve un poco más despacio", "Ring my bell and keep going":"Toco mi timbre y sigo andando",
+  "Stop fully, look left-right-left":"Me detengo por completo, miro izquierda-derecha-izquierda",
+  "A full stop plus looking both ways keeps you safe at every corner.":
+    "Una parada completa y mirar a ambos lados te mantiene seguro en cada esquina.",
+
+  /* quiz — e-bike */
+  "E-bikes go faster than regular bikes. What does that mean?":"Las bicis eléctricas van más rápido que las bicis normales. ¿Qué significa eso?",
+  "I need MORE room to stop — brake earlier":"Necesito MÁS espacio para detenerme — freno antes",
+  "I can ignore stop signs":"Puedo ignorar las señales de alto",
+  "I should ride faster everywhere":"Debo andar más rápido en todos lados",
+  "More speed = longer stopping distance. Slow down sooner than you think you need to.":
+    "Más velocidad = más distancia para frenar. Ve más despacio antes de lo que crees que necesitas.",
+  "Do you still need a helmet on an e-bike?":"¿Todavía necesitas casco en una bici eléctrica?",
+  "Only on long rides":"Solo en paseos largos", "YES — always!":"¡SÍ — siempre!", "Only if it's raining":"Solo si está lloviendo",
+  "Helmets are required for young e-bike riders in California — and they're always a smart idea.":
+    "El casco es obligatorio para los jóvenes que andan en bici eléctrica en California — y siempre es una buena idea.",
+  "When passing people walking, you should…":"Cuando pasas a personas caminando, debes…",
+  "Zoom past quickly":"Pasar rápido y de golpe", "Slow down, say 'passing on your left', give space":"Ir más despacio, avisar 'paso por tu izquierda' y dar espacio",
+  "Honk loudly":"Tocar la bocina fuerte",
+  "Slow, announce, and give plenty of space. Paths are shared with everyone.":
+    "Ve despacio, avisa y da bastante espacio. Los senderos se comparten con todos.",
+
+  /* quiz — scooter */
+  "What's the safest way to cross a street with your scooter?":"¿Cuál es la forma más segura de cruzar la calle con tu monopatín?",
+  "At the crosswalk — and walk it across":"En el cruce peatonal — y lo cruzo caminando",
+  "Anywhere, fast as I can":"En cualquier lugar, lo más rápido que pueda", "Between parked cars":"Entre autos estacionados",
+  "Cross at crosswalks and walk your scooter — drivers can see you much better there.":
+    "Cruza por los cruces peatonales y camina con tu monopatín — los conductores te ven mucho mejor ahí.",
+  "In the evening, what helps drivers see you?":"Por la noche, ¿qué ayuda a que los conductores te vean?",
+  "Dark clothes":"Ropa oscura", "Lights and bright clothing":"Luces y ropa de colores brillantes", "Riding faster":"Andar más rápido",
+  "Lights and bright colors make you visible. Be seen = be safe!":
+    "Las luces y los colores brillantes te hacen visible. ¡Que te vean = estar seguro!",
+  "How many people fit safely on one scooter?":"¿Cuántas personas caben de forma segura en un monopatín?",
+  "One — just me!":"Uno — ¡solo yo!", "Two if we hold on tight":"Dos si nos sujetamos fuerte", "Three small friends":"Tres amigos pequeños",
+  "Scooters are built for ONE rider. A passenger makes it wobbly and dangerous.":
+    "Los monopatines están hechos para UN pasajero. Llevar a alguien más lo hace inestable y peligroso.",
+
+  /* quiz — ev */
+  "Electric cars are very quiet. Why be extra careful near walkers?":"Los autos eléctricos son muy silenciosos. ¿Por qué debes tener más cuidado cerca de peatones?",
+  "They might not HEAR you coming":"Podrían no ESCUCHARTE llegar", "Quiet cars are slower":"Los autos silenciosos son más lentos", "No reason":"No hay razón",
+  "People often listen for cars. A quiet EV can surprise them — so you must watch extra carefully.":
+    "La gente suele escuchar a los autos venir. Un auto eléctrico silencioso puede sorprenderlos — así que debes mirar con mucho cuidado.",
+  "In a school zone the limit is 15 mph when children are present. You should…":"En una zona escolar el límite es 15 mph cuando hay niños presentes. Debes…",
+  "Drive normal speed if no kids in sight":"Manejar a velocidad normal si no veo niños",
+  "Slow down and scan for kids the whole time":"Ir más despacio y buscar niños todo el tiempo",
+  "Honk to warn kids":"Tocar la bocina para avisar a los niños",
+  "Kids can appear from anywhere — between cars, behind buses. Slow down and keep scanning.":
+    "Los niños pueden aparecer de cualquier lado — entre autos, detrás de camiones. Ve más despacio y sigue mirando.",
+  "The light turns yellow as you get close. What does yellow mean?":"El semáforo se pone amarillo cuando te acercas. ¿Qué significa el amarillo?",
+  "Speed up to make it!":"¡Acelerar para pasar!", "Get ready to stop if you safely can":"Prepararme para detenerme si puedo hacerlo con seguridad", "Yellow means go":"Amarillo significa avanzar",
+  "Yellow warns that red is coming. If you can stop safely, stop.":
+    "El amarillo avisa que viene el rojo. Si puedes detenerte con seguridad, detente.",
+
+  /* quiz — car */
+  "You hear a siren behind you. What do you do?":"Escuchas una sirena detrás de ti. ¿Qué haces?",
+  "Speed up to get out of the way":"Acelerar para quitarme del camino", "Pull to the RIGHT and stop":"Ir hacia la DERECHA y detenerme",
+  "Stop right where I am, middle of road":"Detenerme justo ahí, en medio del camino",
+  "Pull to the right edge and stop. Emergency crews need a clear path to help someone.":
+    "Ve hacia el borde derecho y detente. Los equipos de emergencia necesitan un camino libre para ayudar a alguien.",
+  "Why keep space between you and the car ahead?":"¿Por qué mantener espacio entre tú y el auto de adelante?",
+  "So you have time to stop if they brake":"Para tener tiempo de detenerme si ellos frenan", "To see their bumper stickers":"Para ver sus calcomanías",
+  "Space = time. If they stop suddenly, you'll have room to stop too.":
+    "Espacio = tiempo. Si ellos se detienen de repente, tú también tendrás espacio para detenerte.",
+  "In a construction zone you should…":"En una zona de construcción debes…",
+  "Drive the normal limit":"Manejar al límite normal", "Slow down, follow the cones and signs":"Ir más despacio y seguir los conos y señales",
+  "Change lanes quickly":"Cambiar de carril rápido",
+  "Slow down and follow the orange signs — fines double and workers' lives depend on it.":
+    "Ve más despacio y sigue las señales anaranjadas — las multas se duplican y de eso depende la vida de los trabajadores.",
+
+  /* quiz — monster truck */
+  "Monster trucks are big and heavy. What does that mean?":"Los camiones monstruo son grandes y pesados. ¿Qué significa eso?",
+  "They can ignore the rules":"Pueden ignorar las reglas", "They need even MORE time and space to stop":"Necesitan AÚN MÁS tiempo y espacio para detenerse",
+  "They always go first":"Siempre pasan primero",
+  "The bigger and heavier the vehicle, the longer it takes to stop. Big drivers slow down EARLY.":
+    "Mientras más grande y pesado el vehículo, más tarda en detenerse. Los conductores grandes frenan TEMPRANO.",
+  "Where is it OK to do jumps and stunts?":"¿Dónde está bien hacer saltos y acrobacias?",
+  "On neighborhood streets":"En las calles del vecindario", "Only at a closed course or special event":"Solo en una pista cerrada o evento especial",
+  "In parking lots":"En estacionamientos",
+  "Stunts belong at closed events with safety crews — never on streets where people walk and ride.":
+    "Las acrobacias son solo para eventos cerrados con equipos de seguridad — nunca en calles donde la gente camina y anda en bici.",
+  "Even in a monster truck, when kids are crossing you…":"Incluso en un camión monstruo, cuando hay niños cruzando tú…",
+  "Honk and roll through slowly":"Toco la bocina y avanzo despacio", "STOP completely and wait for them":"Me DETENGO por completo y los espero",
+  "Drive around them":"Los rodeo",
+  "No matter how big your wheels are, people in the crosswalk always go first.":
+    "Sin importar qué tan grandes sean tus ruedas, las personas en el cruce peatonal siempre pasan primero.",
+  "✅ Correct! +4 — {#}":"✅ ¡Correcto! +4 — {#}",
+  "💡 {#}":"💡 {#}",
+  "Next →":"Siguiente →",
+  "See my results! 🎉":"¡Ver mis resultados! 🎉",
+
+  /* practice messaging */
+  "stopping fully at stop signs 🛑":"detenerte por completo en las señales de alto 🛑",
+  "stopping for red lights 🚦":"detenerte en las luces rojas 🚦",
+  "stopping for crosswalks 🚸":"detenerte en los cruces peatonales 🚸",
+  "pulling over for sirens 🚑":"hacerte a un lado por las sirenas 🚑",
+  "steering clear of cones 🚧":"esquivar los conos 🚧",
+  "slowing down in school zones 🏫":"ir más despacio en zonas escolares 🏫",
+  "watching your speed limit 🐢":"cuidar tu límite de velocidad 🐢",
+  "stop signs 🛑":"las señales de alto 🛑", "red lights 🚦":"las luces rojas 🚦", "crosswalks 🚸":"los cruces peatonales 🚸",
+  "pulling over for sirens 🚑 ":"hacerte a un lado por las sirenas 🚑",
+  "construction cones 🚧":"los conos de construcción 🚧",
+  "Perfect safety — nothing to practice! 🌟":"¡Seguridad perfecta — nada que practicar! 🌟",
+  "Let's practice: {#}":"Vamos a practicar: {#}",
+  "You nailed your {#} practice! 🌟":"¡Dominaste tu práctica de {#}! 🌟",
+
+  /* toasts & banners */
+  "Slow down! −1":"¡Más despacio! −1",
+  "Hit a cone! −4":"¡Chocaste un cono! −4",
+  "Too slow for air — that's ok!":"Muy lento para el salto — ¡está bien!",
+  "AIR TIME! 🛻":"¡AL AIRE! 🛻",
+  "Still too fast! −2":"¡Sigues muy rápido! −2",
+  "Didn't pull over! −{#}":"¡No te hiciste a un lado! −{#}",
+  "🚑 SIREN! Pull to the RIGHT lane and STOP!":"🚑 ¡SIRENA! ¡Ve al carril de la DERECHA y DETENTE!",
+  "ride safely!":"¡anda con cuidado!",
+
+  /* reward popups */
+  "⚡ GREEN WAVE!":"⚡ ¡OLA VERDE!",
+  "PERFECT STOP +{#}!":"¡PARADA PERFECTA +{#}!",
+  "WAITED FOR GREEN +{#}!":"¡ESPERASTE EL VERDE +{#}!",
+  "SMOOTH YIELD +{#}!":"¡CEDISTE CON CALMA +{#}!",
+  "HERO PULL-OVER +{#}!":"¡TE HICISTE A UN LADO COMO HÉROE +{#}!",
+  "BIG AIR +{#}!":"¡GRAN SALTO +{#}!",
+  "SAFE THROUGH THE SCHOOL ZONE +{#}!":"¡ZONA ESCOLAR SEGURA +{#}!",
+  "WORK ZONE DONE — NICE DRIVING +{#}!":"¡ZONA DE OBRAS SEGURA — BUEN MANEJO +{#}!",
+  "YOU KEPT EVERYONE AT THE EVENT SAFE +{#}!":"¡MANTUVISTE A TODOS SEGUROS EN EL EVENTO +{#}!",
+
+  /* buckle / countdown */
+  "Helmet on!":"¡Casco puesto!", "Buckle up!":"¡Abróchate!",
+  "⛑️ Helmet's on!":"⛑️ ¡Ya tengo el casco!", "🔒 Buckled up!":"🔒 ¡Ya me abroché!",
+  "Helmet on! Safety first!":"¡Casco puesto! ¡Seguridad primero!",
+  "Buckled up! Safety first!":"¡Ya me abroché! ¡Seguridad primero!",
+  "GO!":"¡YA!",
+
+  /* intro briefing */
+  "real Mountain House streets":"calles reales de Mountain House",
+  "⚡ Speed limit: {#} mph (lower in special zones)":"⚡ Límite de velocidad: {#} mph (más bajo en zonas especiales)",
+  "🚦 Stop at red lights":"🚦 Detente en las luces rojas",
+  "🛑 FULL stop at stop signs":"🛑 Parada COMPLETA en las señales de alto",
+  "🚸 Stop for people in crosswalks":"🚸 Detente por las personas en los cruces peatonales",
+  "🏫 15 mph in school zones":"🏫 15 mph en zonas escolares",
+  "🚧 Slow down, don't hit cones":"🚧 Ve más despacio, no choques los conos",
+  "🚑 Siren? Pull RIGHT & stop":"🚑 ¿Sirena? Ve a la DERECHA y detente",
+  "🎪 Event crowd — crawl & yield":"🎪 Multitud en el evento — ve despacio y cede el paso",
+  "🛻 Hit ramps FAST for Big Air points (closed course — marshals on duty!)":
+    "🛻 Pasa las rampas RÁPIDO para puntos de Gran Salto (pista cerrada — ¡hay encargados de seguridad!)",
+  "⚠️ Jumps are ONLY ok at closed events like this — never on open streets!":
+    "⚠️ Los saltos SOLO están bien en eventos cerrados como este — ¡nunca en calles abiertas!",
+  "💙 Today we'll practice {#} a little extra!":"💙 ¡Hoy vamos a practicar un poco más {#}!",
+  "🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!":
+    "🎯 <b>Meta:</b> ¡Un Puntaje de Seguridad de 70+ en la meta te gana tu certificado!",
+
+  /* garage */
+  "⭐ {#} stars earned":"⭐ {#} estrellas ganadas",
+  "Ride safely to earn ⭐!":"¡Anda con cuidado para ganar ⭐!",
+  "A secret machine sleeps here…":"Una máquina secreta duerme aquí…",
+  "🔒 Earn all 5 certificates to wake it up!":"🔒 ¡Gana los 5 certificados para despertarla!",
+  "🔒 One great ride away! Score {#}+ on Level {#} ({#} {#}) to unlock":
+    "🔒 ¡Un gran paseo más! Consigue {#}+ en el Nivel {#} ({#} {#}) para desbloquear",
+
+  /* results screen */
+  "RUN COMPLETE":"RECORRIDO COMPLETO",
+  "({#} safe moves)":"({#} movimientos seguros)",
+  " stop":" parada", " stops":" paradas",
+  " mi":" mi",
+  "🥉 Bronze":"🥉 Bronce", "🥈 Silver":"🥈 Plata", "🥇 Gold":"🥇 Oro",
+  "🎉 NEW RECORD!":"🎉 ¡NUEVO RÉCORD!",
+  "🔥 NEW STREAK RECORD!":"🔥 ¡NUEVA RACHA RÉCORD!",
+  "👑 You beat your Safety Star!":"👑 ¡Superaste a tu Estrella de Seguridad!",
+  "🎓 My Certificate":"🎓 Mi certificado",
+  "🔄 Retry":"🔄 Reintentar",
+  "🏁 Garage":"🏁 Garaje",
+  "🔓 {#} {#} UNLOCKED — find it in the Garage!":"🔓 ¡{#} {#} DESBLOQUEADO — búscalo en el Garaje!",
+  "You finished with a Safety Score of {#} — you need 70 to graduate.":
+    "Terminaste con un Puntaje de Seguridad de {#} — necesitas 70 para graduarte.",
+  "One more great ride and the {#} {#} is yours!":"¡Una vuelta más y ganas: {#} {#}!",
+  "You've got this! Remember: stop fully, slow down in zones, and watch for people.":
+    "¡Tú puedes! Recuerda: detente por completo, ve más despacio en las zonas y cuida a las personas.",
+  "Too many oopsies this time — and that's OK! Every safety hero practices. Let's ride it again, nice and careful.":
+    "Tuviste muchos tropiezos esta vez — ¡y está bien! Todo héroe de la seguridad practica. Vamos a intentarlo otra vez, con calma.",
+
+  /* certificate */
+  "🛻 STUNT STAR! What a run!":"🛻 ¡ESTRELLA DE ACROBACIAS! ¡Qué recorrido!",
+  "🏆 ROAD SAFETY CHAMPION! All 5 levels done — secret unlocked on the menu… 🏆":
+    "🏆 ¡CAMPEÓN DE SEGURIDAD VIAL! Completaste los 5 niveles — se desbloqueó un secreto en el menú… 🏆",
+  "🎉 Level complete — you graduated!":"🎉 ¡Nivel completo — te graduaste!",
+  "Certificate of Stunt Stardom":"Certificado de Estrella de Acrobacias",
+  "Certificate of Road Safety":"Certificado de Seguridad Vial",
+  "This certifies that":"Esto certifica que",
+  "A Road Safety Hero":"Un héroe de la seguridad vial",
+  "has safely completed the {#} Level — \"{#}\"":"completó con seguridad el Nivel de {#} — \"{#}\"",
+  "Safety Score: {#} / 100":"Puntaje de Seguridad: {#} / 100",
+  "Safety Score: {#} / 100  •  Air Points: {#} 🛻":"Puntaje de Seguridad: {#} / 100  •  Puntos de Salto: {#} 🛻",
+  "🏆 MOUNTAIN HOUSE ROAD SAFETY CHAMPION 🏆":"🏆 CAMPEÓN DE SEGURIDAD VIAL DE MOUNTAIN HOUSE 🏆",
+  "Date: {#}":"Fecha: {#}",
+  "Building a New Inclusive World 🌈 ♾️ • aariasblueelephant.org":"Construyendo un Mundo Nuevo e Inclusivo 🌈 ♾️ • aariasblueelephant.org",
+
+  /* HUD canvas text */
+  "STOP":"ALTO",
+  "SCHOOL ZONE {#}":"ZONA ESCOLAR {#}",
+  "END SCHOOL ZONE":"FIN ZONA ESCOLAR",
+  "◣ RAMP ◢":"◣ RAMPA ◢",
+  "🏁 FINISH 🏁":"🏁 META 🏁",
+  "RAMP":"RAMPA",
+  "SAFETY SCORE":"PUNTAJE DE SEGURIDAD",
+  "🛰 Loading aerial photo":"🛰 Cargando foto aérea",
+  "Hold ▲ (or GO) to start riding!":"¡Mantén ▲ (o GO) para empezar a andar!",
+  "MPH":"MPH",
+  "LIMIT":"LÍMITE",
+
+  /* settings */
+  "🎛️ Game speed: {#} {#}":"🎛️ Velocidad del juego: {#} {#}",
+  "More time":"Más tiempo", "Just right":"Justo bien", "Faster":"Más rápido",
+  "🔇 Sound: off — tap to turn on":"🔇 Sonido: apagado — toca para encender",
+  "🔊 Sound: on":"🔊 Sonido: encendido",
+  "🗣️ Voice coach: on":"🗣️ Voz guía: encendida",
+  "🤫 Voice coach: off — tap to turn on":"🤫 Voz guía: apagada — toca para encender",
+  "😌 Calm mode: on — less shake, flash & confetti":"😌 Modo calma: encendido — menos temblor, destellos y confeti",
+  "😌 Calm mode: off — tap to turn on":"😌 Modo calma: apagado — toca para encender",
+  "Hi! I am your safety coach!":"¡Hola! ¡Soy tu entrenador de seguridad!",
+  "Perfect run! You are a true safety hero!":"¡Recorrido perfecto! ¡Eres un verdadero héroe de la seguridad!",
+  "Great riding! And a brand new streak record!":"¡Muy buen manejo! ¡Y un nuevo récord de racha!",
+  "Great riding! Level complete!":"¡Muy buen manejo! ¡Nivel completo!",
+
+  /* static UI (buttons, screens) */
+  "🚦 RIDE!":"🚦 ¡A RODAR!",
+  "🚦 Start!":"🚦 ¡Empezar!",
+  "← Menu":"← Menú",
+  "Got it — be safe!":"Entendido — ¡a ser cuidadoso!",
+  "⬇️ Download Certificate":"⬇️ Descargar certificado",
+  "Next Level →":"Siguiente nivel →",
+  "Menu":"Menú",
+  "🔄 Try Again":"🔄 Intentar de nuevo",
+  "▶️ Resume":"▶️ Continuar",
+  "⛶ Full screen":"⛶ Pantalla completa",
+  "Done ▶":"Listo ▶",
+  "TOP SPEED":"VELOCIDAD MÁX", "ACCEL":"ACELER.", "BRAKES":"FRENOS",
+  "SAFE MOVES":"MOVIMIENTOS SEGUROS",
+  "🏁 THE GARAGE":"🏁 EL GARAJE",
+  "Paused":"En pausa",
+  "tap ▶️ to keep going":"toca ▶️ para seguir",
+  "⚙️ Settings":"⚙️ Ajustes",
+  "🧠 Safety Quiz!":"🧠 ¡Cuestionario de Seguridad!",
+  "Almost!":"¡Casi!",
+  "Getting the roads ready… 🚗":"Preparando los caminos… 🚗",
+  "▲/W go • ▼/S brake • ◀ ▶/A D steer • <b>V</b> first-person view • M map":
+    "▲/W avanzar • ▼/S frenar • ◀ ▶/A D girar • <b>V</b> vista en primera persona • M mapa",
+  "GREEN<br>WAVE":"OLA<br>VERDE",
+});
+
 /* ---------- concept tracking + practice messaging ---------- */
 const CONCEPT_MAP = {
   stopsign:"stopSign", redlight:"redLight", yield:"crosswalk", hitPed:"crosswalk",
@@ -243,8 +547,8 @@ const PRACTICE_MSG = {
 function practiceLine(counts){
   let top = null, topN = 0;
   for (const k in counts) if (counts[k] > topN){ topN = counts[k]; top = k; }
-  if (!top || topN === 0) return "Perfect safety — nothing to practice! 🌟";
-  return "Let's practice: " + (PRACTICE_MSG[top] || top);
+  if (!top || topN === 0) return ABELang.t("Perfect safety — nothing to practice! 🌟");
+  return ABELang.t("Let's practice: {#}").replace("{#}", ABELang.t(PRACTICE_MSG[top] || top));
 }
 /* which safety concepts each event type exercises (for adaptive practice + mastery decay) */
 const EVENT_CONCEPTS = {
@@ -355,11 +659,13 @@ if (window.speechSynthesis){ pickCoach(); speechSynthesis.onvoiceschanged = pick
 function speak(txt){
   if (!save.voice || muted || !window.speechSynthesis || !COACH_VOICE) return;
   try {
+    txt = ABELang.t(txt);
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(
       txt.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, "").replace(/\s+/g, " ").trim());
     u.voice = COACH_VOICE; u.pitch = 1.08;
     u.rate = save.gspeed === "relaxed" ? 0.85 : save.gspeed === "fast" ? 1.05 : 0.95;
+    ABELang.voice(u);
     speechSynthesis.speak(u);
   } catch(e){}
 }
@@ -456,8 +762,8 @@ bindTouch("btnGo","go"); bindTouch("btnStop","stop");
 }
 
 /* ---------- helpers ---------- */
-function toast(text, color){ S.toasts.push({ text, color: color||"#2d6a4f", t:1.8 }); }
-function setBanner(text){ S.banner = { text, until: S.time + 4 }; }
+function toast(text, color){ S.toasts.push({ text: ABELang.t(text), color: color||"#2d6a4f", t:1.8 }); }
+function setBanner(text){ S.banner = { text: ABELang.t(text), until: S.time + 4 }; }
 const LIGHT_CYCLE = 11, LIGHT_GREEN_END = 4.5, LIGHT_YEL_END = 6;
 /* predictable-lights support: how long until this light's phase changes, so we
    can show a "3…2…1" warning / shrinking bar and the change is never a surprise */
@@ -720,10 +1026,11 @@ function initEvent(e, cfg){
   if (ev.type === "emergency"){ ev.spawned = false; ev.bad = 0; }
   return ev;
 }
+function lvlLabel(){ return ABELang.es ? "Nivel" : "Level"; }
 function openIntro(i){
   S.li = i; S.veh = VEHICLES[i]; S.cfg = CFG[i]; S.rt = ROUTES[i];
-  document.getElementById("introTitle").textContent = `Level ${i+1}: ${S.cfg.title}`;
-  document.getElementById("introRoute").textContent = `📍 ${S.rt.name} • real Mountain House streets`;
+  document.getElementById("introTitle").textContent = `${lvlLabel()} ${i+1}: ${ABELang.t(S.cfg.title)}`;
+  document.getElementById("introRoute").textContent = `📍 ${S.rt.name} • ${ABELang.t("real Mountain House streets")}`;
   const gevs = genEvents(i);
   const types = [...new Set(gevs.map(e => e.type))];
   const practicing = gevs._practice || [];
@@ -735,11 +1042,12 @@ function openIntro(i){
     bump:"🛻 Hit ramps FAST for Big Air points (closed course — marshals on duty!)",
   };
   document.getElementById("introRules").innerHTML =
-    `<div class="rule">⚡ Speed limit: ${S.cfg.base} mph (lower in special zones)</div>` +
-    types.map(t => `<div class="rule">${RL[t]}</div>`).join("") +
-    (S.cfg.bumps ? `<div class="rule">⚠️ Jumps are ONLY ok at closed events like this — never on open streets!</div>` : "") +
-    (practicing.length ? `<div class="rule">💙 Today we'll practice ${practicing.map(c => PRACTICE_NAME[c] || c).join(" and ")} a little extra!</div>` : "") +
-    `<div class="rule">🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!</div>` +
+    `<div class="rule">${ABELang.t(`⚡ Speed limit: ${S.cfg.base} mph (lower in special zones)`)}</div>` +
+    types.map(t => `<div class="rule">${ABELang.t(RL[t])}</div>`).join("") +
+    (S.cfg.bumps ? `<div class="rule">${ABELang.t("⚠️ Jumps are ONLY ok at closed events like this — never on open streets!")}</div>` : "") +
+    (practicing.length ? `<div class="rule">${ABELang.t("💙 Today we'll practice {#} a little extra!")
+      .replace("{#}", practicing.map(c => ABELang.t(PRACTICE_NAME[c] || c)).join(ABELang.es ? " y " : " and "))}</div>` : "") +
+    `<div class="rule">${ABELang.t(`🎯 <b>Goal:</b> Safety Score 70+ at the finish earns your certificate!`)}</div>` +
     `<div class="rule" style="font-size:11px;opacity:.7;margin-top:6px">🛰 Real aerial imagery: USDA NAIP (public domain) • streets © OpenStreetMap</div>`;
   drawIntroMap(i);
   buildIntroPhotos(i);
@@ -799,8 +1107,8 @@ function beginRun(){
 function showBuckle(){
   const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
   document.getElementById("buckleEmoji").textContent = isBike ? "⛑️" : "🔒";
-  document.getElementById("buckleTitle").textContent = isBike ? "Helmet on!" : "Buckle up!";
-  document.getElementById("buckleBtn").textContent = isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!";
+  document.getElementById("buckleTitle").textContent = ABELang.t(isBike ? "Helmet on!" : "Buckle up!");
+  document.getElementById("buckleBtn").textContent = ABELang.t(isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!");
   S.screen = "buckle";
   show("buckle");
 }
@@ -816,7 +1124,7 @@ function startCountdown(){
   S.screen = "count";
   const el = document.getElementById("count");
   el.classList.remove("hidden");
-  document.getElementById("lvlSlam").textContent = `LEVEL ${S.li + 1} — ${S.cfg.title.toUpperCase()}`;
+  document.getElementById("lvlSlam").textContent = `${lvlLabel().toUpperCase()} ${S.li + 1} — ${ABELang.t(S.cfg.title).toUpperCase()}`;
   const n = document.getElementById("countN");
   const tls = ["tl1", "tl2", "tl3"].map(id => document.getElementById(id));
   const tg = document.getElementById("tlG");
@@ -826,12 +1134,12 @@ function startCountdown(){
     tls[i].classList.add("on"); n.textContent = 3 - i; tone(330, .18, "square", .1);
   }, 700 + i * 750));
   setTimeout(() => {
-    tg.classList.add("on"); n.textContent = "GO!"; n.classList.add("go");
+    tg.classList.add("on"); n.textContent = ABELang.t("GO!"); n.classList.add("go");
     tone(660, .4, "square", .12);
     setTimeout(() => {
       el.classList.add("hidden");
       S.screen = "playing";
-      setBanner(`${S.veh.emoji} ${S.rt.streets[0][1]} — ride safely!`);
+      setBanner(`${S.veh.emoji} ${S.rt.streets[0][1]} — ${ABELang.t("ride safely!")}`);
     }, 550);
   }, 700 + 3 * 750);
 }
@@ -845,12 +1153,12 @@ function violation(key){
   S.score = Math.max(0, S.score - v.pts);
   buzz(); S.shake = save.calm ? 0 : 10;
   document.getElementById("tipIcon").textContent = v.icon;
-  document.getElementById("tipTitle").textContent = v.title;
-  document.getElementById("tipText").textContent = v.text;
-  document.getElementById("tipPts").textContent = `−${v.pts} Safety Points (Score: ${S.score})`;
+  document.getElementById("tipTitle").textContent = ABELang.t(v.title);
+  document.getElementById("tipText").textContent = ABELang.t(v.text);
+  document.getElementById("tipPts").textContent = ABELang.t(`−${v.pts} Safety Points (Score: ${S.score})`);
   S.screen = "tip";
   show("tip");
-  speak(v.title + ". " + v.text);
+  speak(ABELang.t(v.title) + ". " + ABELang.t(v.text));
 }
 document.getElementById("tipBtn").addEventListener("click", () => {
   if (S.score <= 0){ showRetry("Too many oopsies this time — and that's OK! Every safety hero practices. Let's ride it again, nice and careful."); return; }
@@ -865,7 +1173,7 @@ const POPNAME = {
 function rewardPopup(text, sub){
   const el = document.createElement("div");
   el.className = "rpop";
-  el.textContent = text + (sub ? "  " + sub : "");
+  el.textContent = ABELang.t(text) + (sub ? "  " + sub : "");
   el.style.top = (26 + Math.random() * 14) + "%";
   document.getElementById("popupLayer").appendChild(el);
   setTimeout(() => el.remove(), 1600);
@@ -1323,7 +1631,7 @@ function drawEventTop(ev){
         ctx.closePath(); ctx.fill();
         ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
         ctx.fillStyle = "#fff"; ctx.font = "bold 8px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("STOP", 0, 3);
+        ctx.fillText(ABELang.t("STOP"), 0, 3);
       });
       break;
     }
@@ -1361,8 +1669,8 @@ function drawEventTop(ev){
     }
     case "school": {
       if (vis(ev.from - 350)) warnT(ev.from - 350, "🏫");
-      if (vis(ev.from + 60))  roadTextT(ev.from + 60, "SCHOOL ZONE " + ev.limit);
-      if (vis(ev.to))         roadTextT(ev.to, "END SCHOOL ZONE");
+      if (vis(ev.from + 60))  roadTextT(ev.from + 60, ABELang.t("SCHOOL ZONE {#}").replace("{#}", ev.limit));
+      if (vis(ev.to))         roadTextT(ev.to, ABELang.t("END SCHOOL ZONE"));
       break;
     }
     case "festival": {
@@ -1404,7 +1712,7 @@ function drawEventTop(ev){
         ctx.fillStyle = "#7a5230"; rounded(-LANE_W * .52, -12, LANE_W * 1.04, 24, 10); ctx.fill();
         ctx.fillStyle = "#9b6b3f"; rounded(-LANE_W * .52, -12, LANE_W * 1.04, 10, 8); ctx.fill();
         ctx.fillStyle = "#ffd23f"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("◣ RAMP ◢", 0, 4);
+        ctx.fillText(ABELang.t("◣ RAMP ◢"), 0, 4);
       });
       break;
     }
@@ -1482,7 +1790,7 @@ function drawFinishTop(){
     ctx.fillRect(-HW - 14, -26, 10, 26); ctx.fillRect(HW + 4, -26, 10, 26);
     rounded(-HW - 14, -46, HW * 2 + 28, 24, 8); ctx.fill();
     ctx.fillStyle = "#ffd23f"; ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("🏁 FINISH 🏁", 0, -29);
+    ctx.fillText(ABELang.t("🏁 FINISH 🏁"), 0, -29);
   });
 }
 function drawAmbTop(){
@@ -1701,7 +2009,7 @@ function drawFP(){
     }
     if (ev.type === "school"){
       add(ev.from - 350, HW + 36, p => fpWarn(p, "🏫"));
-      add(ev.from + 60, 0, p => fpRoadText(p, "SCHOOL ZONE " + ev.limit));
+      add(ev.from + 60, 0, p => fpRoadText(p, ABELang.t("SCHOOL ZONE {#}").replace("{#}", ev.limit)));
     }
     if (ev.type === "construction"){
       add(ev.from - 350, HW + 36, p => fpWarn(p, "🚧"));
@@ -1821,7 +2129,7 @@ function fpStopSign(p){
   ctx.closePath(); ctx.fill();
   ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
   ctx.fillStyle = "#fff"; ctx.font = "bold 7px sans-serif"; ctx.textAlign = "center";
-  ctx.fillText("STOP", 0, -38);
+  ctx.fillText(ABELang.t("STOP"), 0, -38);
   ctx.restore();
 }
 function fpLight(p, tm){
@@ -1889,7 +2197,7 @@ function fpBump(p){
   ctx.fillStyle = "#7a5230";
   ctx.beginPath(); ctx.ellipse(0, 0, w, 7 * s, 0, Math.PI, 0); ctx.fill();
   ctx.fillStyle = "#ffd23f"; ctx.font = `bold ${Math.max(7, 10 * s)}px sans-serif`; ctx.textAlign = "center";
-  ctx.fillText("RAMP", 0, -8 * s);
+  ctx.fillText(ABELang.t("RAMP"), 0, -8 * s);
   ctx.restore();
 }
 function fpArch(p, lbl){
@@ -1952,7 +2260,7 @@ function fpFinish(p){
   ctx.fillRect(-w, -84 * p.sc, 8 * p.sc, 84 * p.sc); ctx.fillRect(w - 8 * p.sc, -84 * p.sc, 8 * p.sc, 84 * p.sc);
   ctx.fillRect(-w, -100 * p.sc, 2 * w, 22 * p.sc);
   ctx.fillStyle = "#ffd23f"; ctx.font = `bold ${Math.max(8, 14 * p.sc)}px sans-serif`; ctx.textAlign = "center";
-  ctx.fillText("🏁 FINISH 🏁", 0, -85 * p.sc);
+  ctx.fillText(ABELang.t("🏁 FINISH 🏁"), 0, -85 * p.sc);
   ctx.restore();
 }
 function fpAmb(p){
@@ -2164,7 +2472,7 @@ function drawHUD(){
   ctx.fillStyle = sc >= 70 ? "#7ae582" : sc >= 40 ? "#ffd23f" : "#ff6b6b";
   ctx.fillText(`🛡 ${sc}`, BARX + 12, 30);
   ctx.font = "9px sans-serif"; ctx.fillStyle = "#9fb3c8";
-  ctx.fillText("SAFETY SCORE", BARX + 12, 46);
+  ctx.fillText(ABELang.t("SAFETY SCORE"), BARX + 12, 46);
 
   // progress
   const bx = BARX + 124, bw = W - 124 - bx;
@@ -2189,7 +2497,7 @@ function drawHUD(){
     ctx.fillStyle = "#fff";
   }
   ctx.font = "9px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#9fb3c8";
-  ctx.fillText(`LEVEL ${S.li + 1} • ${S.cfg.title.toUpperCase()}`, bx + bw / 2, 46);
+  ctx.fillText(`${lvlLabel().toUpperCase()} ${S.li + 1} • ${ABELang.t(S.cfg.title).toUpperCase()}`, bx + bw / 2, 46);
 
   // Hero Streak multiplier — right beside the score, never under the buttons
   if (S.mult > 1){
@@ -2212,7 +2520,7 @@ function drawHUD(){
 
   // real aerial photo still loading? a tiny, calm status pill instead of a blank ground
   if (HAS_AERIAL && AERIAL[S.li] && (!aerialImg[S.li] || (aerialImg[S.li] && !aerialImg[S.li].complete))){
-    const msg = "🛰 Loading aerial photo" + ".".repeat(1 + Math.floor(S.time * 2) % 3);
+    const msg = ABELang.t("🛰 Loading aerial photo") + ".".repeat(1 + Math.floor(S.time * 2) % 3);
     ctx.font = "bold 11px sans-serif"; ctx.textAlign = "left";
     const lw = ctx.measureText(msg).width + 16;
     ctx.fillStyle = "rgba(13,27,42,.7)"; rounded(8, 92, lw, 19, 9); ctx.fill();
@@ -2233,7 +2541,7 @@ function drawHUD(){
   if (S.t < 90 && S.speed < 1){
     ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#1d3461";
     ctx.fillStyle = "rgba(255,255,255,.9)";
-    const hint = "Hold ▲ (or GO) to start riding!";
+    const hint = ABELang.t("Hold ▲ (or GO) to start riding!");
     const hw2 = ctx.measureText(hint).width + 24;
     rounded(W/2 - hw2/2, PLAYER_Y + 76, hw2, 28, 14); ctx.fill();
     ctx.fillStyle = "#1d3461"; ctx.fillText(hint, W/2, PLAYER_Y + 95);
@@ -2293,7 +2601,7 @@ function drawSpeedo(lim){
   ctx.fillStyle = S.speed > lim + 3 ? "#ff6b6b" : "#fff";
   ctx.fillText(Math.round(S.speed), cx, cy + 26);
   ctx.font = "8px sans-serif"; ctx.fillStyle = "#9fb3c8";
-  ctx.fillText("MPH", cx, cy + 36);
+  ctx.fillText(ABELang.t("MPH"), cx, cy + 36);
   if (boosting){
     ctx.font = "13px sans-serif"; ctx.fillStyle = "#69f0ae";
     ctx.fillText("⚡", cx, cy - 14);
@@ -2303,7 +2611,7 @@ function drawSpeedo(lim){
   // limit chip
   ctx.fillStyle = "#fff"; rounded(cx - 17, cy - r - 24, 34, 24, 4); ctx.fill();
   ctx.strokeStyle = "#1d3461"; ctx.lineWidth = 2; rounded(cx - 17, cy - r - 24, 34, 24, 4); ctx.stroke();
-  ctx.fillStyle = "#1d3461"; ctx.font = "bold 7px sans-serif"; ctx.fillText("LIMIT", cx, cy - r - 15);
+  ctx.fillStyle = "#1d3461"; ctx.font = "bold 7px sans-serif"; ctx.fillText(ABELang.t("LIMIT"), cx, cy - r - 15);
   ctx.font = "bold 12px sans-serif"; ctx.fillText(String(lim), cx, cy - r - 4);
   ctx.restore();
 }
@@ -2470,7 +2778,7 @@ function garageMedal(cert){
   const sc = clamp(Math.round(Number(cert.score) || 0), 0, 100);
   const g = sc >= 95 ? "S" : sc >= 85 ? "A" : "B";
   const medal = sc >= 95 ? "🥇" : sc >= 85 ? "🥈" : "🥉";
-  return `${medal} Best: ${sc}/100 · Grade ${g} ${"⭐".repeat(clamp(Math.round(Number(cert.stars)||0),0,3))}`;
+  return ABELang.t(`${medal} Best: ${sc}/100 · Grade ${g} ${"⭐".repeat(clamp(Math.round(Number(cert.stars)||0),0,3))}`);
 }
 function buildMenu(){          // the GARAGE
   const v = VEHICLES[garIdx], locked = garIdx >= save.unlocked;
@@ -2478,12 +2786,12 @@ function buildMenu(){          // the GARAGE
   const cert = save.certs[v.id];
   const totStars = Object.values(save.certs)
     .reduce((a, c) => a + clamp(Math.round(Number(c.stars) || 0), 0, 3), 0);
-  document.getElementById("totStars").textContent = totStars ? `⭐ ${totStars} stars earned` : "Ride safely to earn ⭐!";
+  document.getElementById("totStars").textContent = totStars ? ABELang.t(`⭐ ${totStars} stars earned`) : ABELang.t("Ride safely to earn ⭐!");
   document.getElementById("garVeh").textContent = secretLocked ? "❓" : locked ? "🔒" : v.emoji;
   document.getElementById("garVeh").style.filter = locked ? "grayscale(1) drop-shadow(0 14px 16px rgba(0,0,0,.55))" : "";
-  document.getElementById("garPlate").textContent = secretLocked ? "? ? ?" : v.name.toUpperCase();
+  document.getElementById("garPlate").textContent = secretLocked ? "? ? ?" : ABELang.t(v.name).toUpperCase();
   document.getElementById("garLevel").textContent =
-    secretLocked ? "A secret machine sleeps here…" : `LEVEL ${garIdx + 1} — ${CFG[garIdx].title}`;
+    secretLocked ? ABELang.t("A secret machine sleeps here…") : `${lvlLabel().toUpperCase()} ${garIdx + 1} — ${ABELang.t(CFG[garIdx].title)}`;
   document.getElementById("garMedal").textContent = garageMedal(cert);
   const mx = Math.max(...VEHICLES.map(x => x.max));
   const ax = Math.max(...VEHICLES.map(x => x.accel));
@@ -2496,8 +2804,11 @@ function buildMenu(){          // the GARAGE
   const lock = document.getElementById("garLock");
   document.getElementById("garGo").classList.toggle("hidden", locked);
   lock.classList.toggle("hidden", !locked);
-  lock.textContent = secretLocked ? "🔒 Earn all 5 certificates to wake it up!"
-    : locked ? `🔒 One great ride away! Score 70+ on Level ${garIdx} (${VEHICLES[garIdx - 1].emoji} ${VEHICLES[garIdx - 1].name}) to unlock` : "";
+  lock.textContent = secretLocked ? ABELang.t("🔒 Earn all 5 certificates to wake it up!")
+    : locked ? ABELang.t("🔒 One great ride away! Score {#}+ on Level {#} ({#} {#}) to unlock")
+        .replace("{#}", "70").replace("{#}", String(garIdx))
+        .replace("{#}", VEHICLES[garIdx - 1].emoji).replace("{#}", ABELang.t(VEHICLES[garIdx - 1].name))
+    : "";
 }
 document.getElementById("garPrev").addEventListener("click", () => {
   ensureAudio(); tone(400, .06); garIdx = (garIdx + VEHICLES.length - 1) % VEHICLES.length; buildMenu(); });
@@ -2515,19 +2826,37 @@ document.getElementById("titleFs").addEventListener("click", () => {
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(() => {});
 });
+/* language flag — one static button on the title screen, one built via
+   ABELang.makeButton() and dropped into the settings screen (kit convention:
+   the settings copy is created in JS so index.html keeps a single literal
+   data-abe="lang" element). */
+{
+  const titleLangBtn = document.getElementById("titleLang");
+  if (titleLangBtn){
+    titleLangBtn.textContent = ABELang.label();
+    titleLangBtn.addEventListener("click", () => ABELang.toggle());
+  }
+  const slot = document.getElementById("setLangSlot");
+  if (slot){
+    const settLangBtn = ABELang.makeButton();
+    settLangBtn.className = "smallbtn2";
+    slot.appendChild(settLangBtn);
+  }
+}
 
 /* settings + game speed (uniform across ABE games) */
 const GS_META = { relaxed:{ico:"🐢",label:"More time"}, normal:{ico:"🐇",label:"Just right"}, fast:{ico:"🚀",label:"Faster"} };
 function renderSettings(){
-  document.getElementById("setSpeed").textContent = `🎛️ Game speed: ${GS_META[save.gspeed].ico} ${GS_META[save.gspeed].label}`;
-  document.getElementById("setSound").textContent = muted ? "🔇 Sound: off — tap to turn on" : "🔊 Sound: on";
-  document.getElementById("setVoice").textContent = save.voice ? "🗣️ Voice coach: on" : "🤫 Voice coach: off — tap to turn on";
-  document.getElementById("setCalm").textContent = save.calm ? "😌 Calm mode: on — less shake, flash & confetti" : "😌 Calm mode: off — tap to turn on";
+  document.getElementById("setSpeed").textContent = ABELang.t("🎛️ Game speed: {#} {#}")
+    .replace("{#}", GS_META[save.gspeed].ico).replace("{#}", ABELang.t(GS_META[save.gspeed].label));
+  document.getElementById("setSound").textContent = ABELang.t(muted ? "🔇 Sound: off — tap to turn on" : "🔊 Sound: on");
+  document.getElementById("setVoice").textContent = ABELang.t(save.voice ? "🗣️ Voice coach: on" : "🤫 Voice coach: off — tap to turn on");
+  document.getElementById("setCalm").textContent = ABELang.t(save.calm ? "😌 Calm mode: on — less shake, flash & confetti" : "😌 Calm mode: off — tap to turn on");
 }
 function cycleSpeed(){
   const order = ["relaxed", "normal", "fast"];
   save.gspeed = order[(order.indexOf(save.gspeed) + 1) % 3]; persist();
-  ding(); toast(`${GS_META[save.gspeed].ico} ${GS_META[save.gspeed].label}`);
+  ding(); toast(`${GS_META[save.gspeed].ico} ${ABELang.t(GS_META[save.gspeed].label)}`);
   renderSettings();
 }
 let settingsFrom = "menu";
@@ -2593,29 +2922,29 @@ function shuffleQuestion(q){
 }
 function showQuizQ(){
   const q = quizQs[quizIdx];
-  document.getElementById("quizQ").textContent = `${quizIdx + 1}/${quizQs.length}: ${q.q}`;
+  document.getElementById("quizQ").textContent = `${quizIdx + 1}/${quizQs.length}: ${ABELang.t(q.q)}`;
   document.getElementById("quizWhy").classList.add("hidden");
   document.getElementById("quizNext").classList.add("hidden");
   const box = document.getElementById("quizOpts");
   box.innerHTML = "";
   q.opts.forEach((opt, i) => {
     const b = document.createElement("button");
-    b.className = "qopt"; b.textContent = opt;
+    b.className = "qopt"; b.textContent = ABELang.t(opt);
     b.addEventListener("click", () => {
       if (box.dataset.done) return;
       box.dataset.done = "1";
       [...box.children].forEach((c, j) => { if (j === q.a) c.classList.add("right"); });
       const why = document.getElementById("quizWhy");
-      if (i === q.a){ S.quizBonus += 4; ding(); why.textContent = "✅ Correct! +4 — " + q.why; }
+      if (i === q.a){ S.quizBonus += 4; ding(); why.textContent = ABELang.t("✅ Correct! +4 — {#}").replace("{#}", ABELang.t(q.why)); }
       else {
-        b.classList.add("wrong"); buzz(); why.textContent = "💡 " + q.why;
+        b.classList.add("wrong"); buzz(); why.textContent = ABELang.t("💡 {#}").replace("{#}", ABELang.t(q.why));
         // missed it — give it one more try, re-shuffled, at the end of the quiz
         if (!q._requeued){ q._requeued = true; const again = shuffleQuestion(q); again._requeued = true; quizQs.push(again); }
       }
       speak(q.why);
       why.classList.remove("hidden");
       const next = document.getElementById("quizNext");
-      next.textContent = quizIdx < quizQs.length - 1 ? "Next →" : "See my results! 🎉";
+      next.textContent = ABELang.t(quizIdx < quizQs.length - 1 ? "Next →" : "See my results! 🎉");
       next.classList.remove("hidden");
     });
     box.appendChild(b);
@@ -2636,7 +2965,7 @@ function finishLevel(){
   // if the extra-practice concept came out clean, celebrate that instead of a generic nudge
   const nailed = (S.practiceFocus || []).filter(c => !S.violCounts[c]);
   if (nailed.length){
-    const cheer = `You nailed your ${(PRACTICE_NAME[nailed[0]] || nailed[0])} practice! 🌟`;
+    const cheer = ABELang.t("You nailed your {#} practice! 🌟").replace("{#}", ABELang.t(PRACTICE_NAME[nailed[0]] || nailed[0]));
     const hadOops = Object.keys(S.violCounts).some(k => S.violCounts[k] > 0);
     S.practiceLine = hadOops ? cheer + " " + S.practiceLine : cheer;
   }
@@ -2655,7 +2984,8 @@ function finishLevel(){
     save.unlocked = Math.max(save.unlocked, S.li + 2);
     // tell the child EXACTLY what this great ride just earned them
     S.unlockLine = save.unlocked > prevUnlocked && VEHICLES[S.li + 1]
-      ? `🔓 ${VEHICLES[S.li + 1].emoji} ${VEHICLES[S.li + 1].name} UNLOCKED — find it in the Garage!`
+      ? ABELang.t("🔓 {#} {#} UNLOCKED — find it in the Garage!")
+          .replace("{#}", VEHICLES[S.li + 1].emoji).replace("{#}", ABELang.t(VEHICLES[S.li + 1].name))
       : "";
     const old = save.certs[S.veh.id];
     if (!old || S.finalScore > old.score)
@@ -2674,9 +3004,11 @@ function finishLevel(){
   } else {
     persist();
     const nextV = VEHICLES[S.li + 1];
-    showRetry(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate.`
-      + (nextV && S.li + 1 >= save.unlocked ? ` One more great ride and the ${nextV.emoji} ${nextV.name} is yours!` : "")
-      + ` You've got this! Remember: stop fully, slow down in zones, and watch for people.`);
+    showRetry(ABELang.t(`You finished with a Safety Score of ${S.finalScore} — you need 70 to graduate.`)
+      + (nextV && S.li + 1 >= save.unlocked
+          ? " " + ABELang.t("One more great ride and the {#} {#} is yours!").replace("{#}", nextV.emoji).replace("{#}", ABELang.t(nextV.name))
+          : "")
+      + " " + ABELang.t("You've got this! Remember: stop fully, slow down in zones, and watch for people."));
   }
 }
 function showResults(stars, newRecord, beatGhost, newStreakRecord){
@@ -2689,12 +3021,13 @@ function showResults(stars, newRecord, beatGhost, newStreakRecord){
   stamp.classList.toggle("gS", g === "S");
   stamp.style.animation = "none"; void stamp.offsetWidth; stamp.style.animation = "";
   document.getElementById("resScore").textContent = S.finalScore + " / 100";
-  document.getElementById("resStreak").textContent = "×" + Math.min(4, 1 + (S.bestStreak >> 1)) + `  (${S.bestStreak} safe moves)`;
-  document.getElementById("resStops").textContent = S.safeStops + (S.safeStops === 1 ? " stop" : " stops");
-  document.getElementById("resDistance").textContent = (S.t / PXM / 1609.34).toFixed(1) + " mi";
+  document.getElementById("resStreak").textContent = "×" + Math.min(4, 1 + (S.bestStreak >> 1)) +
+    "  " + ABELang.t(`(${S.bestStreak} safe moves)`);
+  document.getElementById("resStops").textContent = S.safeStops + ABELang.t(S.safeStops === 1 ? " stop" : " stops");
+  document.getElementById("resDistance").textContent = (S.t / PXM / 1609.34).toFixed(1) + ABELang.t(" mi");
   const m = Math.floor(S.time / 60), sec = Math.round(S.time % 60);
   document.getElementById("resTime").textContent = m + ":" + String(sec).padStart(2, "0");
-  document.getElementById("resMedal").textContent = ["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars];
+  document.getElementById("resMedal").textContent = ABELang.t(["", "🥉 Bronze", "🥈 Silver", "🥇 Gold"][stars]);
   document.getElementById("resPractice").textContent = S.practiceLine;
   const ru = document.getElementById("resUnlock");
   ru.textContent = S.unlockLine || "";
@@ -2733,7 +3066,7 @@ document.getElementById("resGarage").addEventListener("click", () => {
 function showRetry(text){
   sirenStop();
   S.screen = "retry";
-  document.getElementById("retryText").textContent = text;
+  document.getElementById("retryText").textContent = ABELang.t(text);
   show("retry");
 }
 document.getElementById("retryBtn").addEventListener("click", () => openIntro(S.li));
@@ -2745,10 +3078,10 @@ function showCert(stars){
   S.screen = "cert";
   const champ = S.li === 4;                 // finished the Car level
   const stunt = S.veh.id === "monster";
-  document.getElementById("certHead").textContent =
+  document.getElementById("certHead").textContent = ABELang.t(
     stunt ? "🛻 STUNT STAR! What a run!" :
     champ ? "🏆 ROAD SAFETY CHAMPION! All 5 levels done — secret unlocked on the menu… 🏆"
-          : "🎉 Level complete — you graduated!";
+          : "🎉 Level complete — you graduated!");
   drawCert(stars, champ, stunt);
   document.getElementById("certNext").classList.toggle("hidden", S.li >= VEHICLES.length - 1 || S.li + 1 >= save.unlocked);
   show("cert");
@@ -2768,26 +3101,28 @@ function drawCert(stars, champ, stunt){
   }
   x.fillStyle = "#1d3461";
   x.font = "bold 38px Georgia, serif";
-  x.fillText(stunt ? "Certificate of Stunt Stardom" : "Certificate of Road Safety", CW/2, 232);
+  x.fillText(ABELang.t(stunt ? "Certificate of Stunt Stardom" : "Certificate of Road Safety"), CW/2, 232);
   x.font = "italic 17px Georgia, serif"; x.fillStyle = "#5a7d9a";
   x.fillText("Mountain House Road Safety Heroes", CW/2, 260);
   x.font = "16px Georgia, serif"; x.fillStyle = "#333";
-  x.fillText("This certifies that", CW/2, 304);
+  x.fillText(ABELang.t("This certifies that"), CW/2, 304);
   x.font = "bold 44px 'Comic Sans MS', cursive";
   x.fillStyle = "#2a6fb0";
-  x.fillText(save.name || "A Road Safety Hero", CW/2, 356);
+  x.fillText(save.name || ABELang.t("A Road Safety Hero"), CW/2, 356);
   x.strokeStyle = "#9cc3e0"; x.lineWidth = 2;
   x.beginPath(); x.moveTo(CW/2 - 240, 368); x.lineTo(CW/2 + 240, 368); x.stroke();
   x.font = "17px Georgia, serif"; x.fillStyle = "#333";
-  x.fillText(`has safely completed the ${S.veh.name} Level — "${S.cfg.title}"`, CW/2, 402);
+  x.fillText(ABELang.t("has safely completed the {#} Level — \"{#}\"")
+    .replace("{#}", ABELang.t(S.veh.name)).replace("{#}", ABELang.t(S.cfg.title)), CW/2, 402);
   x.fillText(`${S.rt.name} • Mountain House, California`, CW/2, 428);
   x.font = "34px sans-serif";
   x.fillText("⭐".repeat(stars) + "☆".repeat(3 - stars), CW/2, 474);
   x.font = "bold 19px Georgia, serif"; x.fillStyle = "#2d6a4f";
-  x.fillText(`Safety Score: ${S.finalScore} / 100${stunt ? `  •  Air Points: ${S.airPts} 🛻` : ""}`, CW/2, 506);
+  x.fillText(ABELang.t(`Safety Score: {#} / 100${stunt ? `  •  Air Points: {#} 🛻` : ""}`)
+    .replace("{#}", String(S.finalScore)).replace("{#}", String(S.airPts)), CW/2, 506);
   if (champ){
     x.font = "bold 21px Georgia, serif"; x.fillStyle = "#b07d12";
-    x.fillText("🏆 MOUNTAIN HOUSE ROAD SAFETY CHAMPION 🏆", CW/2, 538);
+    x.fillText(ABELang.t("🏆 MOUNTAIN HOUSE ROAD SAFETY CHAMPION 🏆"), CW/2, 538);
   }
   x.font = "italic 13px Georgia, serif"; x.fillStyle = "#5a7d9a"; x.textAlign = "center";
   x.fillText(S.practiceLine || "", CW/2, champ ? 558 : 538);
@@ -2795,13 +3130,13 @@ function drawCert(stars, champ, stunt){
   x.fillText(S.veh.emoji, 70, 380);
   x.textAlign = "center";
   x.font = "15px Georgia, serif"; x.fillStyle = "#333";
-  x.fillText(`Date: ${new Date().toLocaleDateString()}`, 200, 580);
+  x.fillText(ABELang.t("Date: {#}").replace("{#}", new Date().toLocaleDateString()), 200, 580);
   x.strokeStyle = "#9cc3e0";
   x.beginPath(); x.moveTo(560, 566); x.lineTo(820, 566); x.stroke();
   x.font = "bold 15px Georgia, serif";
   x.fillText("Aaria's Blue Elephant", 690, 586);
   x.font = "12px Georgia, serif"; x.fillStyle = "#5a7d9a";
-  x.fillText("Building a New Inclusive World 🌈 ♾️ • aariasblueelephant.org", CW/2, 612);
+  x.fillText(ABELang.t("Building a New Inclusive World 🌈 ♾️ • aariasblueelephant.org"), CW/2, 612);
 }
 document.getElementById("certDownload").addEventListener("click", async () => {
   try {
@@ -2856,6 +3191,35 @@ function frame(ts){
   else engineStop();
   requestAnimationFrame(frame);
 }
+/* static HUD/menu text that only needs to be swapped once (not re-rendered
+   every frame) — everything else translates itself at its own render point. */
+function translateStaticUI(){
+  const one = (id, keep) => { const el = document.getElementById(id); if (el && !keep) el.textContent = ABELang.t(el.textContent); };
+  ["resTitle","resRecord","resStreakRecord","resGhost","resCert","resRetry","resGarage",
+   "garGo","startBtn","introBack","tipBtn","certDownload","certNext","certMenu",
+   "retryBtn","retryMenu","resumeBtn","setFs","setClose"]
+    .forEach(id => one(id));
+  document.querySelectorAll("#resRows .resRow span, #specs .spec span, #boostCharge span")
+    .forEach(el => { el.textContent = ABELang.t(el.textContent); });
+  const garageTitle = document.querySelector(".garageTitle");
+  if (garageTitle) garageTitle.textContent = ABELang.t(garageTitle.textContent);
+  const pauseH2 = document.querySelector("#pauseOverlay h2"), pauseP = document.querySelector("#pauseOverlay p");
+  if (pauseH2) pauseH2.textContent = ABELang.t(pauseH2.textContent);
+  if (pauseP) pauseP.textContent = ABELang.t(pauseP.textContent);
+  const settingsH2 = document.querySelector("#settings h2");
+  if (settingsH2) settingsH2.textContent = ABELang.t(settingsH2.textContent);
+  const quizH2 = document.querySelector("#quiz h2");
+  if (quizH2) quizH2.textContent = ABELang.t(quizH2.textContent);
+  const retryH2 = document.querySelector("#retry h2");
+  if (retryH2) retryH2.textContent = ABELang.t(retryH2.textContent);
+  const loadP = document.querySelector("#loadingOverlay p");
+  if (loadP) loadP.textContent = ABELang.t(loadP.textContent);
+  const hint = document.querySelector("#intro .controls-hint");
+  if (hint) hint.innerHTML = ABELang.t(hint.innerHTML.trim());
+  const boostSmall = document.querySelector("#boostBtn small");
+  if (boostSmall) boostSmall.innerHTML = ABELang.t(boostSmall.innerHTML);
+}
+if (ABELang.es) translateStaticUI();
 S.screen = "title";
 show("title");
 requestAnimationFrame(frame);

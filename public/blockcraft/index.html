@@ -474,6 +474,7 @@ try{
     <button class="bigBtn" id="fsTitleBtn" style="font-size:20px; padding:12px 30px;">⛶ Full Screen</button>
     <button class="bigBtn" id="titleMovieBtn" style="font-size:20px; padding:12px 30px; display:none;">▶️ My Movie — watch your world grow!</button>
     <button class="bigBtn" id="titleVisitBtn" style="font-size:20px; padding:12px 30px;">📥 Visit a friend's world</button>
+    <button class="bigBtn" id="titleLangBtn" data-abe="lang" style="font-size:18px; padding:10px 24px;">🌐 Español</button>
     <script>
       document.querySelectorAll('.skin-selector').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -561,6 +562,47 @@ try{
 <div id="dialogOverlay"><div id="dialogBox"></div></div>
 <div id="flash"></div>
 
+<script src="/gamekit/lang.js"></script>
+<script src="js/lang-es.js"></script>
+<script>
+/* ---------------- title screen language swap ----------------
+   Runs once, right here at the bottom of body (title screen HTML above is
+   already parsed) — mirrors the pattern used in doughlab/index.html. */
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.ABELang && ABELang.es) {
+    var subtitle = document.querySelector('#titleScreen .subtitle');
+    if (subtitle) subtitle.innerHTML = subtitle.innerHTML.replace(
+      'Built for <b>Aaria and Her Friends</b> 💖 — building, animal friends, slime &amp; cookies!',
+      'Hecho para <b>Aaria y sus amigos</b> 💖 — ¡construir, amigos animales, slime y galletas!');
+    var whoLabel = document.querySelector('label[for="playerNameInput"]');
+    if (whoLabel) whoLabel.textContent = ABELang.t(whoLabel.textContent);
+    var playBtn = document.getElementById('playBtn');
+    if (playBtn) playBtn.textContent = ABELang.t(playBtn.textContent);
+    var howBtn = document.getElementById('howBtn');
+    if (howBtn) howBtn.textContent = ABELang.t(howBtn.textContent);
+    var fsTitleBtn = document.getElementById('fsTitleBtn');
+    if (fsTitleBtn) fsTitleBtn.textContent = ABELang.t(fsTitleBtn.textContent);
+    document.querySelectorAll('.skin-selector').forEach(function (b) { b.textContent = ABELang.t(b.textContent); });
+    var titleVisitBtn = document.getElementById('titleVisitBtn');
+    if (titleVisitBtn) titleVisitBtn.textContent = ABELang.t(titleVisitBtn.textContent);
+    var skinHint = document.getElementById('skinHint');
+    if (skinHint) skinHint.innerHTML = skinHint.innerHTML.replace(
+      '✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).',
+      '✨ <b>Moderno</b> es nuestro estilo más nuevo — luz más nítida y más detalle (¡todavía en mejora!).');
+    var orgFooter = document.getElementById('orgFooter');
+    if (orgFooter) orgFooter.innerHTML = orgFooter.innerHTML.replace(
+      "A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House &amp; Tracy, CA",
+      "Un juego de <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org · Mountain House y Tracy, CA");
+    var discLink = document.getElementById('disclosureLink');
+    if (discLink) discLink.textContent = ABELang.t(discLink.textContent);
+  }
+  var titleLangBtn = document.getElementById('titleLangBtn');
+  if (titleLangBtn && window.ABELang) {
+    titleLangBtn.textContent = ABELang.label();
+    titleLangBtn.onclick = ABELang.toggle;
+  }
+});
+</script>
 <script>
 /* ---------------- dual-library skin boot ----------------
    'modern'  -> three.js r170 ESM (js/modernlib.js via the import map above)

@@ -209,7 +209,7 @@
 <body>
 <script>
 (function(){
-try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/doughlab/index.html',name:'Aaria's Dough Lab',emoji:'🌈',at:Date.now()}))}catch(e){}
+try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/doughlab/index.html',name:"Aaria's Dough Lab",emoji:'🌈',at:Date.now()}))}catch(e){}
 /* anonymous play tally — one count per game per session, NO identifiers (COPPA-safe) */
 try{if(!window.Capacitor&&!sessionStorage.getItem('abe_played_doughlab')){sessionStorage.setItem('abe_played_doughlab','1');fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Content-Type':'application/json'},body:JSON.stringify({g:'doughlab'}),keepalive:true}).catch(function(){});}}catch(e){}
 
@@ -254,6 +254,7 @@ try{
   <button id="startBtn">Let's Squish! 🫓</button>
   <div id="orgFooter">Aaria's Blue Elephant 🐘💙 — play, learn &amp; grow</div>
   <a id="disclosureLink" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
+  <button id="langBtn" data-abe="lang" title="Español / English" style="font:inherit;font-size:13px;font-weight:700;color:#7048e8;background:rgba(255,255,255,.6);border:0;padding:8px 18px;border-radius:16px;cursor:pointer;">🌐 Español</button>
 </div>
 
 <header>
@@ -337,6 +338,88 @@ try{
   <div id="credit">Built for Aaria and Her Friends 💖</div>
 </footer>
 
+<script src="/gamekit/lang.js"></script>
+<script>
+ABELang.register({
+  "👐 Grab the dough — squish, stretch, pluck a piece off!": "👐 ¡Agarra la masa — apriétala, estírala, arráncale un pedazo!",
+  "👇 Press and rub to smoosh dents into it": "👇 Presiona y frota para hacerle hoyitos",
+  "🥖 Drag across the dough to roll it into a snake!": "🥖 ¡Arrastra sobre la masa para enrollarla como una culebrita!",
+  "🔪 Drag across the table to slice right through": "🔪 Arrastra sobre la mesa para cortarla de un tajo",
+  "⭕ Tap the dough to punch out a circle": "⭕ Toca la masa para sacar un círculo",
+  "⭐ Tap the dough to punch out a star": "⭐ Toca la masa para sacar una estrella",
+  "💛 Tap the dough to punch out a heart": "💛 Toca la masa para sacar un corazón",
+  "🌸 Tap the dough to punch out a flower": "🌸 Toca la masa para sacar una flor",
+  "👀 Tap the dough to add a googly eye — tap the 🎨 button again to switch!": "👀 Toca la masa para ponerle un ojo saltón — ¡toca 🎨 otra vez para cambiar!",
+  "🔴 Tap the dough to add a button nose — tap the 🎨 button again to switch!": "🔴 Toca la masa para ponerle una naricita — ¡toca 🎨 otra vez para cambiar!",
+  "⭐ Tap the dough to add a sprinkle star — tap the 🎨 button again to switch!": "⭐ Toca la masa para ponerle una estrellita — ¡toca 🎨 otra vez para cambiar!",
+  "🌈 Tap the dough to add a rainbow sprinkle — tap the 🎨 button again to switch!": "🌈 Toca la masa para ponerle una chispita de colores — ¡toca 🎨 otra vez para cambiar!",
+  "🔪 Try the knife — drag across the dough to slice it!": "🔪 Prueba el cuchillo — ¡arrastra sobre la masa para cortarla!",
+  "⭐ Try a cookie cutter — tap the dough to punch a shape!": "⭐ Prueba un molde — ¡toca la masa para sacar una figura!",
+  "🌈 Squish two colours together to mix a new one!": "🌈 ¡Junta dos colores para mezclar uno nuevo!",
+  "🫧 Try Slime mode up top — it wobbles and drips!": "🫧 Prueba el modo Slime arriba — ¡se bambolea y gotea!",
+  "👐 Pull a piece off and watch it stretch and snap!": "👐 ¡Arranca un pedazo y mira cómo se estira y se rompe!",
+  "🥖 Try the roller — drag across the dough to roll a snake!": "🥖 Prueba el rodillo — ¡arrastra sobre la masa para enrollar una culebrita!",
+  "👀 Tap Decorate to give your dough googly eyes!": "👀 ¡Toca Decorar para ponerle ojos saltones a tu masa!",
+  "🫧 Slime: wobbly and drippy — it slowly puddles!": "🫧 Slime: bamboleante y gotoso — ¡poco a poco forma un charquito!",
+  "🫓 Playdough: it keeps whatever shape you sculpt!": "🫓 Plastilina: ¡mantiene la forma que le des!",
+  "🙈 The table is full! Slice some off or start over.": "🙈 ¡La mesa está llena! Corta un poco o empieza de nuevo.",
+  "🎉 First tear! Real dough stretches and snaps!": "🎉 ¡Tu primer desgarre! ¡La masa de verdad se estira y se rompe!",
+  "🔪 First slice! You cut right through the dough!": "🔪 ¡Tu primer corte! ¡Atravesaste la masa!",
+  "✨ First shape stamped!": "✨ ¡Tu primera figura hecha!",
+  "🌟 Shape collector! Circle, star, heart & flower — all tried!": "🌟 ¡Coleccionista de figuras! ¡Círculo, estrella, corazón y flor — probaste todas!",
+  "🎨 Colour mixer! You blended two colours together!": "🎨 ¡Mezclador de colores! ¡Combinaste dos colores!",
+  "🫧 Mode explorer! You tried playdough and slime!": "🫧 ¡Explorador de modos! ¡Probaste la plastilina y el slime!",
+  "🏆 Shape master! 10 shapes stamped!": "🏆 ¡Maestro de figuras! ¡10 figuras hechas!",
+  "🥖 Roll the dough into a snake! 🐍 Swipe back and forth!": "🥖 ¡Enrolla la masa como una culebrita! 🐍 ¡Desliza de un lado a otro!",
+  "🎨 Decorating! Tap the dough for eyes and sprinkles — tap 🎨 again to switch!": "🎨 ¡Decorando! Toca la masa para ponerle ojos y chispitas — ¡toca 🎨 otra vez para cambiar!",
+  "So sparkly! Tap a decoration to take one off ✨": "¡Qué brillante! Toca una decoración para quitarla ✨",
+  "📸 Saved your dough photo!": "📸 ¡Se guardó la foto de tu masa!",
+  "😕 Couldn't save the photo": "😕 No se pudo guardar la foto",
+  "📤 Saved! Share this file with a friend": "📤 ¡Guardado! Comparte este archivo con un amigo",
+  "😕 Couldn't save that": "😕 No se pudo guardar",
+  "📥 Loaded your friend's dough!": "📥 ¡Se cargó la masa de tu amigo!",
+  "😕 Couldn't load that dough": "😕 No se pudo cargar esa masa",
+  "Hmm, that file isn't dough 💛": "Hmm, ese archivo no es masa 💛",
+  "Tap 📥 again to replace your dough": "Toca 📥 otra vez para reemplazar tu masa",
+  "Red": "Rojo", "Orange": "Naranja", "Yellow": "Amarillo", "Green": "Verde",
+  "Blue": "Azul", "Purple": "Morado", "Pink": "Rosa",
+  "squish it · slice it · sculpt it — in real 3D 🌈": "apriétala · córtala · esculpe — ¡en 3D de verdad! 🌈",
+  "Built for Aaria and Her Friends 💖 — squish, slice & sculpt real 3D dough!": "Hecho para Aaria y sus Amigos 💖 — ¡aprieta, corta y esculpe masa 3D de verdad!",
+  "A real 3D ball of playdough on your table! Squish it, stretch it, pluck pieces off, slice it, punch out cookie shapes — or switch to wobbly slime. Mix colours by squishing lumps together!":
+    "¡Una bola de plastilina 3D de verdad en tu mesa! Apriétala, estírala, arráncale pedazos, córtala, saca figuras con moldes — o cambia al slime bamboleante. ¡Mezcla colores juntando pedazos!",
+  "Let's Squish! 🫓": "¡A Apretar! 🫓",
+  "Aaria's Blue Elephant 🐘💙 — play, learn & grow": "Aaria's Blue Elephant 🐘💙 — jugar, aprender y crecer",
+  "General Disclosure": "Aviso General",
+  "🫓 Playdough": "🫓 Plastilina",
+  "🫧 Slime": "🫧 Slime",
+  "Grab": "Agarrar", "Poke": "Presionar", "Roll": "Rodillo", "Cut": "Cortar",
+  "Circle": "Círculo", "Star": "Estrella", "Heart": "Corazón", "Flower": "Flor", "Decorate": "Decorar",
+});
+if (ABELang.es) {
+  var h1small = document.querySelector("h1 small");
+  if (h1small) h1small.textContent = ABELang.t(h1small.textContent);
+  var byline = document.querySelector("#titleScreen .byline");
+  if (byline) byline.innerHTML = byline.innerHTML.replace(
+    "Built for <b>Aaria and Her Friends</b> 💖 — squish, slice &amp; sculpt real 3D dough!",
+    "Hecho para <b>Aaria y sus Amigos</b> 💖 — ¡aprieta, corta y esculpe masa 3D de verdad!");
+  var subtitle = document.querySelector("#titleScreen .subtitle");
+  if (subtitle) subtitle.textContent = ABELang.t(subtitle.textContent);
+  var startBtn = document.getElementById("startBtn");
+  if (startBtn) startBtn.textContent = ABELang.t(startBtn.textContent);
+  var orgFooter = document.getElementById("orgFooter");
+  if (orgFooter) orgFooter.textContent = ABELang.t(orgFooter.textContent);
+  var discLink = document.getElementById("disclosureLink");
+  if (discLink) discLink.textContent = ABELang.t(discLink.textContent);
+  document.querySelectorAll("#modeSeg button").forEach(function (b) { b.textContent = ABELang.t(b.textContent); });
+  document.querySelectorAll(".tool .toolLabel").forEach(function (s) { s.textContent = ABELang.t(s.textContent); });
+}
+(function () {
+  var langBtn = document.getElementById("langBtn");
+  if (!langBtn) return;
+  langBtn.textContent = ABELang.label();
+  langBtn.onclick = ABELang.toggle;
+})();
+</script>
 <script src="lib/three.min.js"></script>
 <script src="lib/MarchingCubes.js"></script>
 <script>
@@ -1193,7 +1276,7 @@ function showColorMixToast(color1Hex, color2Hex) {
   const mixedHex = rgbToHex(mixed.r, mixed.g, mixed.b);
   const idxMixed = nearestPaletteIndex(mixedHex);
   const nameMixed = PALETTE_NAMES[idxMixed];
-  toastQueue.push(`${name1} + ${name2} = ${nameMixed}! 🎨`);
+  toastQueue.push(`${ABELang.t(name1)} + ${ABELang.t(name2)} = ${ABELang.t(nameMixed)}! 🎨`);
   pumpToast();
 }
 
@@ -1230,7 +1313,7 @@ let toastQueue = [], toastShowing = false;
 function pumpToast() {
   if (toastShowing || !toastQueue.length) return;
   toastShowing = true;
-  toastEl.textContent = toastQueue.shift();
+  toastEl.textContent = ABELang.t(toastQueue.shift());
   requestAnimationFrame(() => toastEl.classList.add("show"));
   setTimeout(() => {
     toastEl.classList.remove("show");
@@ -1272,15 +1355,15 @@ function markInteract() {
   if (attractOn) {
     attractOn = false;
     clearInterval(attractTimer); attractTimer = null;
-    hint.textContent = HINTS[tool];
+    hint.textContent = ABELang.t(HINTS[tool]);
   }
 }
 function startAttract() {
   attractOn = true; attractIdx = 0;
-  hint.textContent = ATTRACT[attractIdx];
+  hint.textContent = ABELang.t(ATTRACT[attractIdx]);
   attractTimer = setInterval(() => {
     attractIdx = (attractIdx + 1) % ATTRACT.length;
-    hint.textContent = ATTRACT[attractIdx];
+    hint.textContent = ABELang.t(ATTRACT[attractIdx]);
   }, 4500);
 }
 setInterval(() => {
@@ -1580,13 +1663,13 @@ document.getElementById("tools").addEventListener("click", e => {
   if (btn.dataset.tool === "decor" && tool === "decor") { // second tap cycles the sub-palette
     decoKind = DECO_KINDS[(DECO_KINDS.indexOf(decoKind) + 1) % DECO_KINDS.length];
     syncDecoUI();
-    hint.textContent = HINTS.decor;
+    hint.textContent = ABELang.t(HINTS.decor);
     SND.init(); SND.pop();
     return;
   }
   tool = btn.dataset.tool;
   document.querySelectorAll(".tool").forEach(b => b.classList.toggle("on", b === btn));
-  hint.textContent = HINTS[tool];
+  hint.textContent = ABELang.t(HINTS[tool]);
 });
 
 document.getElementById("modeSeg").addEventListener("click", e => {
@@ -1598,9 +1681,9 @@ document.getElementById("modeSeg").addEventListener("click", e => {
   SND.init(); SND.plop();
   if (mode === "slime") unlock("mode_explorer");
   document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b === btn));
-  hint.textContent = mode === "slime"
+  hint.textContent = ABELang.t(mode === "slime"
     ? "🫧 Slime: wobbly and drippy — it slowly puddles!"
-    : "🫓 Playdough: it keeps whatever shape you sculpt!";
+    : "🫓 Playdough: it keeps whatever shape you sculpt!");
 });
 
 const swatches = document.getElementById("swatches");
@@ -1620,7 +1703,7 @@ document.getElementById("addBtn").addEventListener("click", () => {
   SND.init();
   markInteract();
   if (particles.length > MAX_PARTICLES - 80) {
-    hint.textContent = "🙈 The table is full! Slice some off or start over.";
+    hint.textContent = ABELang.t("🙈 The table is full! Slice some off or start over.");
     return;
   }
   const x = (Math.random() - 0.5) * 3.4, z = (Math.random() - 0.5) * 3.4;

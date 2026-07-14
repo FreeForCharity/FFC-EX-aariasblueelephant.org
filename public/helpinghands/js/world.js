@@ -9,6 +9,9 @@
 (function () {
   'use strict';
   window.HH = window.HH || {};
+  // KID-FACING content only (building names, helper/actor names shown in the
+  // 3D world) — flips to Spanish when ABELang.es. See js/content-es.js.
+  var C = window.HH_C || window.HH;
 
   // =========================================================================
   // small canvas-texture / sprite helpers
@@ -400,7 +403,7 @@
     var startAngle = Math.PI / 2 + arcSpan / 2;
     var schoolPos = null;
     order.forEach(function (placeId, idx) {
-      var place = HH.PLACES[placeId];
+      var place = C.PLACES[placeId];
       if (!place) return;
       var t = order.length > 1 ? idx / (order.length - 1) : 0.5;
       var angle = startAngle - t * arcSpan;
@@ -2488,16 +2491,16 @@
       objectsRegistry[room.id + ':' + idx] = spr;
     });
 
-    var helperSpots = HH.HELPER_SPOTS || {};
+    var helperSpots = C.HELPER_SPOTS || {};
     var helperId = helperSpots[placeId] && helperSpots[placeId][room.id];
-    if (helperId && HH.HELPERS && HH.HELPERS[helperId]) {
+    if (helperId && C.HELPERS && C.HELPERS[helperId]) {
       var helperPos = new THREE.Vector3(room.w / 4.4, 0, room.d / 2 - 3.6);
-      addCharacter(g, helperId, HH.HELPERS[helperId].emoji, HH.HELPERS[helperId].name, helperPos, 'helper');
+      addCharacter(g, helperId, C.HELPERS[helperId].emoji, C.HELPERS[helperId].name, helperPos, 'helper');
     }
   }
 
   function buildInteriorRoot(placeId) {
-    var place = HH.PLACES[placeId];
+    var place = C.PLACES[placeId];
     var sides = BUILDING_SIDES[placeId] || [];
     var layout = makeLayout(sides);
     var root = new THREE.Group(); root.name = 'interior:' + placeId;
@@ -3107,7 +3110,7 @@
     },
 
     enterBuilding: function (placeId) {
-      if (!HH.PLACES[placeId]) return;
+      if (!C.PLACES[placeId]) return;
       clearAnim();
       clearTappables();
       fadeWalls = [];
@@ -3210,8 +3213,8 @@
     },
 
     spawnActor: function (actorId, roomId) {
-      if (!currentRoot || !HH.SCENARIO_ACTORS || !HH.SCENARIO_ACTORS[actorId]) return;
-      var actorDef = HH.SCENARIO_ACTORS[actorId];
+      if (!currentRoot || !C.SCENARIO_ACTORS || !C.SCENARIO_ACTORS[actorId]) return;
+      var actorDef = C.SCENARIO_ACTORS[actorId];
       var r = findLayoutRoom(roomId);
       var pos;
       if (r) pos = new THREE.Vector3(r.cx + 1.6, 0, Math.min(r.cz + 1.0, r.boundsZMax - 1));

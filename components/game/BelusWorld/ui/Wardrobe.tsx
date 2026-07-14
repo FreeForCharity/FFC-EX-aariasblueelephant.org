@@ -10,11 +10,12 @@ import {
   type CosmeticSlot,
   type GameProgress,
 } from '../belu/progress';
+import { tr } from '../../../../lib/lang';
 
 const SLOTS: { slot: CosmeticSlot; label: string }[] = [
-  { slot: 'head', label: 'Hats' },
-  { slot: 'face', label: 'Glasses' },
-  { slot: 'back', label: 'Capes & Wings' },
+  { slot: 'head', label: tr('Hats', 'Sombreros') },
+  { slot: 'face', label: tr('Glasses', 'Lentes') },
+  { slot: 'back', label: tr('Capes & Wings', 'Capas y Alas') },
 ];
 
 export default function Wardrobe({
@@ -43,13 +44,13 @@ export default function Wardrobe({
         className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl"
       >
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-2xl font-black text-slate-800">Nilu's Wardrobe 🎩</h2>
+          <h2 className="text-2xl font-black text-slate-800">{tr("Nilu's Wardrobe 🎩", 'El Armario de Nilu 🎩')}</h2>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
             ✕
           </button>
         </div>
         <p className="mb-4 text-sm font-semibold text-violet-500">
-          {unlockedCount} of {COSMETICS.length} unlocked · finish levels to earn more!
+          {tr(`${unlockedCount} of ${COSMETICS.length} unlocked · finish levels to earn more!`, `${unlockedCount} de ${COSMETICS.length} desbloqueados · ¡termina niveles para ganar más!`)}
         </p>
 
         {SLOTS.map(({ slot, label }) => {
@@ -67,7 +68,7 @@ export default function Wardrobe({
                   }`}
                 >
                   🚫
-                  <span className="text-[9px] font-bold text-slate-400">None</span>
+                  <span className="text-[9px] font-bold text-slate-400">{tr('None', 'Nada')}</span>
                 </button>
                 {items.map((c) => {
                   const unlocked = progress.unlocked.includes(c.id);
@@ -77,7 +78,7 @@ export default function Wardrobe({
                       key={c.id}
                       disabled={!unlocked}
                       onClick={() => onEquip(slot, c.id)}
-                      title={unlocked ? c.name : 'Finish a level to unlock'}
+                      title={unlocked ? c.name : tr('Finish a level to unlock', 'Termina un nivel para desbloquear')}
                       className={`relative flex h-16 w-16 flex-col items-center justify-center rounded-2xl border-2 text-2xl transition ${
                         equipped
                           ? 'border-violet-500 bg-violet-100'
@@ -100,7 +101,7 @@ export default function Wardrobe({
           onClick={onClose}
           className="mt-2 w-full rounded-full bg-violet-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
         >
-          Looking good! →
+          {tr('Looking good! →', '¡Te ves genial! →')}
         </button>
       </motion.div>
     </motion.div>

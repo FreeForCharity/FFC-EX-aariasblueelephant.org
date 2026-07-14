@@ -118,7 +118,7 @@ window.MB = window.MB || {};
       for (const sp of C.sparkles) MB.Builder.scene.remove(sp);
       C.sparkles.length = 0;
     } else {
-      MB.ui.toast(left + (left === 1 ? ' block' : ' blocks') + ' to go! 🧹', 1400);
+      MB.ui.toast(left + ABELang.t(left === 1 ? ' block to go! 🧹' : ' blocks to go! 🧹'), 1400);
     }
   };
 

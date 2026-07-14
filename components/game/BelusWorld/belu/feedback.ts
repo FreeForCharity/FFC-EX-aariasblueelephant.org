@@ -77,12 +77,26 @@ export function playSound(kind: Sound, enabled: boolean) {
 // ---- text-to-speech ----
 
 let voice: SpeechSynthesisVoice | null = null;
+let voiceEs: SpeechSynthesisVoice | null = null;
 
-function pickVoice(): SpeechSynthesisVoice | null {
+function pickVoice(es: boolean): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !window.speechSynthesis) return null;
-  if (voice) return voice;
+  if (es && voiceEs) return voiceEs;
+  if (!es && voice) return voice;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
+  if (es) {
+    // prefer a warm Latin-American Spanish voice when available
+    const esVoices = voices.filter((v) => /es/i.test(v.lang));
+    const ranks = [/online.*natural/i, /natural/i, /neural/i, /premium/i, /enhanced/i,
+      /(female|paulina|monica|mónica)/i];
+    for (const r of ranks) {
+      const match = esVoices.find((v) => r.test(v.name));
+      if (match) { voiceEs = match; return voiceEs; }
+    }
+    voiceEs = esVoices[0] || null;
+    return voiceEs;
+  }
   // prefer the most natural voice on this device (same ranking as Block Craft):
   // Edge "Online Natural" > neural > premium > enhanced > known-warm > Samantha
   const en = voices.filter((v) => /en/i.test(v.lang));
@@ -105,7 +119,10 @@ export function speakAloud(text: string, enabled: boolean, opts?: { rate?: numbe
     if (window.speechSynthesis.speaking && !(opts && opts.force)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    const v = pickVoice();
+    let es = false;
+    try { es = localStorage.getItem('abe.lang') === 'es'; } catch { /* ignore */ }
+    if (es) u.lang = 'es-US';
+    const v = pickVoice(es);
     if (v) u.voice = v;
     u.rate = (opts && opts.rate) || 0.95; // a touch slower — clearer for kids (game-speed aware)
     u.pitch = 1.15; // friendly

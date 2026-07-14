@@ -10,7 +10,7 @@
 <body>
 <script>
 (function(){
-try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/roadsafety/index.html',name:'Aaria's Road Safety Heroes',emoji:'🚴',at:Date.now()}))}catch(e){}
+try{localStorage.setItem('abe_last_game',JSON.stringify({url:'/roadsafety/index.html',name:"Aaria's Road Safety Heroes",emoji:'🚴',at:Date.now()}))}catch(e){}
 /* anonymous play tally — one count per game per session, NO identifiers (COPPA-safe) */
 try{if(!window.Capacitor&&!sessionStorage.getItem('abe_played_roadsafety')){sessionStorage.setItem('abe_played_roadsafety','1');fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play',{method:'POST',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM','Content-Type':'application/json'},body:JSON.stringify({g:'roadsafety'}),keepalive:true}).catch(function(){});}}catch(e){}
 
@@ -118,6 +118,7 @@ try{
     <button class="bigbtn green" id="titlePlay">▶ Start Your Engines!</button>
     <div class="btnrow">
       <button class="smallbtn2" id="titleFs">⛶ Full Screen</button>
+      <button class="smallbtn2" id="titleLang" data-abe="lang" title="Switch to English / Cambiar a español"></button>
     </div>
     <p class="footer">A game from Aaria's Blue Elephant 🐘💙 • aariasblueelephant.org • map © OpenStreetMap</p>
     <a class="footer disclosureLink" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
@@ -181,6 +182,7 @@ try{
       <button class="bigbtn" id="setVoice"></button>
       <button class="bigbtn" id="setCalm"></button>
       <button class="bigbtn" id="setFs">⛶ Full screen</button>
+      <div id="setLangSlot"></div>
       <button class="smallbtn" id="setClose">Done ▶</button>
     </div>
   </div>
@@ -256,6 +258,26 @@ try{
     </div>
   </div>
 </div>
+<script src="/gamekit/lang.js"></script>
+<script>
+/* Title-screen text that never goes through a JS render pass (kit convention:
+   swapped once here on DOMContentLoaded, everything else is done in game.js). */
+document.addEventListener("DOMContentLoaded", function(){
+  if (!window.ABELang || !ABELang.es) return;
+  var tagline = document.querySelector("#title .tagline");
+  if (tagline) tagline.innerHTML =
+    'Built for <b>Aaria and Her Friends</b> \u{1F496} — recorre y maneja las <b>CALLES REALES</b> de Mountain House, CA \u{1F3C1}';
+  var play = document.getElementById("titlePlay");
+  if (play) play.textContent = "▶ ¡Enciendan motores!";
+  var fs = document.getElementById("titleFs");
+  if (fs) fs.textContent = "⛶ Pantalla completa";
+  var name = document.getElementById("playerName");
+  if (name) name.placeholder = "¿Quién está manejando?";
+  var footer = document.querySelector("#title .footer:not(.disclosureLink)");
+  if (footer) footer.textContent =
+    "Un juego de Aaria's Blue Elephant \u{1F418}\u{1F499} • aariasblueelephant.org • mapa © OpenStreetMap";
+});
+</script>
 <script src="lib/three.min.js"></script>
 <script src="road3d.js"></script>
 <script src="assets/logo-data.js"></script>

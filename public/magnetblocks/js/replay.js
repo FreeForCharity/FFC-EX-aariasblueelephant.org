@@ -84,7 +84,7 @@ window.MB = window.MB || {};
     const go = () => begin(item.pieces, scene);
     if (tableBusy){
       MB.ui.confirm('Swap builds? 🔁',
-        'The table is busy! Put those blocks back on the shelves and watch "' + item.name + '" instead? (Snap 📸 first if you want to keep the current one!)',
+        ABELang.t('The table is busy! Put those blocks back on the shelves and watch "') + item.name + ABELang.t('" instead? (Snap 📸 first if you want to keep the current one!)'),
         () => {
           for (const b of [...MB.Magnet.blocks]) if (b.onTable && !b.parent) MB.Builder.flyToShelf(b);
           setTimeout(go, 800);
