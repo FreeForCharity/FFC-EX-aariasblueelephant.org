@@ -814,6 +814,54 @@ ABC.COPYCAT_PATTERNS = [
       {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},
       {dx:0,dy:2,dz:0,type:'leaf'},{dx:1,dy:2,dz:0,type:'leaf'},{dx:-1,dy:2,dz:0,type:'leaf'},
       {dx:0,dy:2,dz:1,type:'leaf'},{dx:0,dy:2,dz:-1,type:'leaf'},{dx:0,dy:3,dz:0,type:'leaf'} ] },
+  { id:'boat', name:'Little Boat', emoji:'⛵', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:1,dy:0,dz:0,type:'wood'},{dx:2,dy:0,dz:0,type:'wood'},{dx:3,dy:0,dz:0,type:'wood'},
+      {dx:1,dy:1,dz:0,type:'wood'},{dx:1,dy:2,dz:0,type:'wood'},
+      {dx:2,dy:1,dz:0,type:'red'},{dx:2,dy:2,dz:0,type:'red'} ] },
+  { id:'rocket', name:'Rocket Ship', emoji:'🚀', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},{dx:0,dy:2,dz:0,type:'wood'},{dx:0,dy:3,dz:0,type:'red'},
+      {dx:-1,dy:0,dz:0,type:'plank'},{dx:1,dy:0,dz:0,type:'plank'},
+      {dx:-1,dy:1,dz:0,type:'black'},{dx:1,dy:1,dz:0,type:'black'} ] },
+  { id:'heart', name:'Big Heart', emoji:'❤️', blocks:[
+      {dx:1,dy:0,dz:0,type:'red'},{dx:3,dy:0,dz:0,type:'red'},
+      {dx:0,dy:0,dz:1,type:'red'},{dx:1,dy:0,dz:1,type:'red'},{dx:2,dy:0,dz:1,type:'red'},{dx:3,dy:0,dz:1,type:'red'},{dx:4,dy:0,dz:1,type:'red'},
+      {dx:1,dy:0,dz:2,type:'red'},{dx:2,dy:0,dz:2,type:'red'},{dx:3,dy:0,dz:2,type:'red'},
+      {dx:2,dy:0,dz:3,type:'red'} ] },
+  { id:'butterfly', name:'Butterfly', emoji:'🦋', blocks:[
+      {dx:2,dy:0,dz:0,type:'wood'},{dx:2,dy:0,dz:1,type:'wood'},{dx:2,dy:0,dz:2,type:'wood'},
+      {dx:0,dy:0,dz:0,type:'flower'},{dx:1,dy:0,dz:0,type:'flower'},{dx:0,dy:0,dz:1,type:'flower'},
+      {dx:4,dy:0,dz:0,type:'flower'},{dx:3,dy:0,dz:0,type:'flower'},{dx:4,dy:0,dz:1,type:'flower'} ] },
+  { id:'castlegate', name:'Castle Gate', emoji:'🏰', blocks:[
+      {dx:0,dy:0,dz:0,type:'brick'},{dx:0,dy:1,dz:0,type:'brick'},{dx:0,dy:2,dz:0,type:'brick'},
+      {dx:2,dy:0,dz:0,type:'brick'},{dx:2,dy:1,dz:0,type:'brick'},{dx:2,dy:2,dz:0,type:'brick'},
+      {dx:1,dy:2,dz:0,type:'brick'},
+      {dx:0,dy:3,dz:0,type:'black'},{dx:2,dy:3,dz:0,type:'black'} ] },
+  { id:'bridge', name:'Little Bridge', emoji:'🌉', blocks:[
+      {dx:0,dy:0,dz:0,type:'plank'},{dx:0,dy:1,dz:0,type:'plank'},
+      {dx:3,dy:0,dz:0,type:'plank'},{dx:3,dy:1,dz:0,type:'plank'},
+      {dx:0,dy:2,dz:0,type:'plank'},{dx:1,dy:2,dz:0,type:'plank'},{dx:2,dy:2,dz:0,type:'plank'},{dx:3,dy:2,dz:0,type:'plank'} ] },
+  { id:'ladder', name:'Ladder', emoji:'🪜', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},{dx:0,dy:2,dz:0,type:'wood'},{dx:0,dy:3,dz:0,type:'wood'},
+      {dx:2,dy:0,dz:0,type:'wood'},{dx:2,dy:1,dz:0,type:'wood'},{dx:2,dy:2,dz:0,type:'wood'},{dx:2,dy:3,dz:0,type:'wood'},
+      {dx:1,dy:0,dz:0,type:'black'},{dx:1,dy:2,dz:0,type:'black'} ] },
+  { id:'rainbowgate', name:'Rainbow Gate', emoji:'🌈', blocks:[
+      {dx:0,dy:0,dz:0,type:'rainbow'},{dx:0,dy:1,dz:0,type:'rainbow'},{dx:0,dy:2,dz:0,type:'rainbow'},
+      {dx:3,dy:0,dz:0,type:'rainbow'},{dx:3,dy:1,dz:0,type:'rainbow'},{dx:3,dy:2,dz:0,type:'rainbow'},
+      {dx:1,dy:3,dz:0,type:'rainbow'},{dx:2,dy:3,dz:0,type:'rainbow'} ] },
+  { id:'campfire', name:'Campfire', emoji:'🔥', blocks:[
+      {dx:1,dy:0,dz:0,type:'black'},{dx:1,dy:0,dz:2,type:'black'},{dx:0,dy:0,dz:1,type:'black'},{dx:2,dy:0,dz:1,type:'black'},
+      {dx:1,dy:0,dz:1,type:'red'},{dx:1,dy:1,dz:1,type:'red'} ] },
+  { id:'duck', name:'Ducky', emoji:'🦆', blocks:[
+      {dx:0,dy:0,dz:0,type:'snow'},{dx:1,dy:0,dz:0,type:'snow'},{dx:2,dy:0,dz:0,type:'snow'},
+      {dx:2,dy:1,dz:0,type:'snow'},{dx:0,dy:1,dz:0,type:'snow'},
+      {dx:3,dy:0,dz:0,type:'yellow'} ] },
+  { id:'mushroom', name:'Mushroom', emoji:'🍄', blocks:[
+      {dx:0,dy:0,dz:0,type:'wood'},{dx:0,dy:1,dz:0,type:'wood'},
+      {dx:-1,dy:2,dz:0,type:'red'},{dx:0,dy:2,dz:0,type:'red'},{dx:1,dy:2,dz:0,type:'red'},
+      {dx:0,dy:3,dz:0,type:'snow'} ] },
+  { id:'letterT', name:'Letter T', emoji:'🔤', blocks:[
+      {dx:0,dy:3,dz:0,type:'black'},{dx:1,dy:3,dz:0,type:'black'},{dx:2,dy:3,dz:0,type:'black'},
+      {dx:1,dy:0,dz:0,type:'black'},{dx:1,dy:1,dz:0,type:'black'},{dx:1,dy:2,dz:0,type:'black'} ] },
 ];
 
 /* Build-count milestones 🧱 — celebrate blocks placed, separate from the one-time stickers */

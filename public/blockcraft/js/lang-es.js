@@ -275,6 +275,8 @@
     'You copied the': 'Copiaste el',
     'perfectly!': '¡perfectamente!',
     'Great job looking closely! 💛': '¡Buen trabajo mirando de cerca! 💛',
+    '⭐ Today: ': '⭐ Hoy: ',
+    'Daily pattern done!': '¡Patrón del día listo!',
 
     'Little Tower': 'Torrecita',
     'Traffic Light': 'Semáforo',
@@ -284,6 +286,18 @@
     'Little Steps': 'Escaloncitos',
     'Rainbow Arch': 'Arco Arcoíris',
     'Little Tree': 'Arbolito',
+    'Little Boat': 'Barquito',
+    'Rocket Ship': 'Cohete',
+    'Big Heart': 'Corazón Grande',
+    'Butterfly': 'Mariposa',
+    'Castle Gate': 'Puerta del Castillo',
+    'Little Bridge': 'Puentecito',
+    'Ladder': 'Escalera',
+    'Rainbow Gate': 'Puerta Arcoíris',
+    'Campfire': 'Fogata',
+    'Ducky': 'Patito',
+    'Mushroom': 'Hongo',
+    'Letter T': 'Letra T',
 
     /* ---------------- Today's Adventures (quests) ---------------- */
     "Today's Adventures": 'Las Aventuras de Hoy',

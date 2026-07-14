@@ -518,14 +518,57 @@
     refreshAvatars(); K.sfx.tap();
   }
 
+  // ---------- passport milestone rewards (stamps EARN things — collect to unlock) ----------
+  // Milestones by games-explored count; the reward is a knob badge: the
+  // joystick's elephant knob gains a growing ring of color as the shelf fills.
+  const MILESTONES = [
+    { at: 3, emoji: '🥉', en: 'Explorer', es: 'Explorador', ring: '#d9a066' },
+    { at: 5, emoji: '🥈', en: 'Adventurer', es: 'Aventurero', ring: '#c0c8d8' },
+    { at: 7, emoji: '🥇', en: 'Hero', es: 'Héroe', ring: '#ffd43b' },
+    { at: 9, emoji: '🏆', en: 'Champion of all games', es: 'Campeón de todos los juegos', ring: '#b197fc' },
+  ];
+  const seenCount = () => {
+    const stamps = passGet();
+    return CATALOG.filter((g) => stamps[g.slug] && stamps[g.slug].days > 0).length;
+  };
+  const currentMilestone = () => {
+    const n = seenCount();
+    let m = null;
+    for (const x of MILESTONES) if (n >= x.at) m = x;
+    return m;
+  };
+  function applyKnobBadge() {
+    const m = currentMilestone();
+    const knob = $('kKnob');
+    if (m && knob) { knob.style.boxShadow = `0 4px 10px rgba(40,40,90,.25), 0 0 0 4px ${m.ring}`; knob.title = `${m.emoji} ${K.tr(m.en, m.es)}`; }
+  }
+  function maybeCelebrateMilestone() {
+    const m = currentMilestone();
+    if (!m) return;
+    const done = K.load('milestone.celebrated', 0);
+    if (m.at <= done) return;
+    K.save('milestone.celebrated', m.at);
+    setTimeout(() => {
+      K.toast(K.tr(`${m.emoji} ${m.at} games explored — you're a ${m.en}! Your joystick earned a new ring!`,
+                   `${m.emoji} ${m.at} juegos explorados — ¡eres ${m.es}! ¡Tu palanca ganó un anillo nuevo!`), 5200);
+      K.sfx.star();
+      applyKnobBadge();
+    }, 3200);
+  }
+
   // ---------- passport shelf (the cross-game collection that ties all games together) ----------
   function openPassport() {
     const p = document.createElement('div'); p.className = 'kPanel'; p.id = 'kPass';
     const stamps = passGet();
     const seen = CATALOG.filter((g) => stamps[g.slug] && stamps[g.slug].days > 0).length;
     const av = AVATARS.find((a) => a.id === prof) || AVATARS[0];
-    p.innerHTML = `<div class="kPanelCard"><h2>🛂 ${av.emoji} My Game Passport</h2>
+    const mlRow = MILESTONES.map((m) => {
+      const got = seen >= m.at;
+      return `<span class="kPassMile ${got ? 'got' : ''}" title="${m.at} ${K.tr('games', 'juegos')} — ${K.tr(m.en, m.es)}">${m.emoji}<small>${m.at}</small></span>`;
+    }).join('');
+    p.innerHTML = `<div class="kPanelCard"><h2>🛂 ${av.emoji} ${K.tr('My Game Passport', 'Mi pasaporte de juegos')}</h2>
       <p class="kPassSub">${KT(`${seen} of ${CATALOG.length} games explored`)}${seen >= CATALOG.length ? KT(' — you found them ALL! 🏆') : KT(' — collect them all!')}</p>
+      <div class="kPassMiles">${mlRow}</div>
       ${CATALOG.map((g) => {
         const st = stamps[g.slug], here = g.slug === cfg.slug;
         const days = st ? st.days : 0;
@@ -596,6 +639,7 @@
       ac(); ping(); startMusic();
       TIME.on = true; TIME.last = performance.now();
       if (stampToday()) setTimeout(() => { K.toast(KT('🛂 Passport stamped! ⭐')); K.sfx.pop(); }, 1500);
+      maybeCelebrateMilestone(); applyKnobBadge();
       cfg.onStart && cfg.onStart(); then && then();
     };
     $('kPlay').onclick = () => { K.sfx.yes(); begin(); };

@@ -16,13 +16,23 @@ ABC.copycat = (function () {
   /* =====================================================
      MENU
      ===================================================== */
+  function dailyPattern() {
+    ensurePatterns();
+    return patterns[Math.floor(Date.now() / 864e5) % patterns.length];
+  }
+
   function showMenu() {
     ensurePatterns();
-    const cards = patterns.map(p => ({
-      ico: (done.has(p.id) ? '⭐' : '') + p.emoji,
-      label: p.name,
-      p,
-    }));
+    const daily = patterns[Math.floor(Date.now() / 864e5) % patterns.length];
+    const cards = patterns.map(p => {
+      const isDaily = p.id === daily.id;
+      return {
+        ico: (done.has(p.id) ? '⭐' : '') + p.emoji,
+        label: isDaily ? (ABC.tpl('⭐ Today: ') + ABC.tpl(p.name)) : p.name,
+        p,
+      };
+    });
+    cards.sort((a, b) => (a.p.id === daily.id ? -1 : b.p.id === daily.id ? 1 : 0));
     ui().pickCard('Copy Cat 🐱', 'Copy the glowing pattern with your own blocks! Pick one to try!', cards, (c) => {
       ui().closeDialog();
       start(c.p);
@@ -126,6 +136,7 @@ ABC.copycat = (function () {
 
   function complete() {
     const pat = active.pat;
+    const isDaily = pat.id === dailyPattern().id;
     done.add(pat.id);
     quit(true);
     ABC.audio.sfx.fanfare();
@@ -134,6 +145,7 @@ ABC.copycat = (function () {
     ABC.saveSoon && ABC.saveSoon();
     ui().toast(`🐱 ${ABC.tpl('Copy Cat complete:')} ${pat.emoji} <b>${ABC.tpl(pat.name)}</b>! ${ABC.tpl('Purrfect copying! 🎉')}`, 5200, true);
     ui().bellaSays(`${ABC.tpl('You copied the')} ${ABC.tpl(pat.name)} ${ABC.tpl('perfectly!')} ${pat.emoji} ${ABC.tpl('Great job looking closely! 💛')}`, 5200);
+    if (isDaily) ui().toast(`🌟 ${ABC.tpl('Daily pattern done!')}`, 4200, true);
   }
 
   /* =====================================================

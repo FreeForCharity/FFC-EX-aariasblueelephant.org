@@ -371,6 +371,13 @@ window.MB = window.MB || {};
       $('titleImportBtn').textContent = '📥 ' + ABELang.t("Bring a friend's build");
       $('importBtn').textContent = '📥 ' + ABELang.t("Bring a friend's build");
       document.querySelectorAll('#selBar button span').forEach(s => { s.textContent = ABELang.t(s.textContent); });
+      $('ideasBtn').textContent = '💡 ' + ABELang.t('Ideas');
+      $('ideasBtn').title = ABELang.t($('ideasBtn').title);
+      document.querySelector('#ideasModal h2').textContent = ABELang.t('💡 Challenge ideas');
+      document.querySelectorAll('#ideasModal .cardBtn').forEach(b => {
+        b.textContent = ABELang.t(b.textContent);
+        if (b.title) b.title = ABELang.t(b.title);
+      });
     }
 
     window.addEventListener('resize', () => {
@@ -492,6 +499,39 @@ window.MB = window.MB || {};
     $('playBtn').addEventListener('click', () => ui.setPlay(!MB.Animate.on));
     $('helpBtn').addEventListener('click', () => MB.Help.openPicker());
     $('helpClose').addEventListener('click', () => ui.hide('helpModal'));
+
+    // ---------- challenge ideas ("Can you make…?") — no fail state, just cycle ----------
+    const IDEA_CHALLENGES = [
+      'Can you make a tower taller than the shelf? 🗼',
+      'Can you make a bridge two cars fit under? 🌉',
+      'Can you make a robot? 🤖',
+      'Can you make a house with a door? 🏠',
+      'Can you make a butterfly? 🦋',
+      'Can you make a train? 🚂',
+      'Can you make a flower garden? 🌷',
+      'Can you make a boat? ⛵',
+      'Can you make a giraffe? 🦒',
+      'Can you make a castle? 🏰',
+    ];
+    const IDEA_KEY = 'mb_idea_idx_v1';
+    let ideaIdx = 0;
+    try {
+      const n = parseInt(localStorage.getItem(IDEA_KEY), 10);
+      if (Number.isInteger(n) && n >= 0 && n < IDEA_CHALLENGES.length) ideaIdx = n;
+    } catch(e){}
+    function saveIdeaIdx(){ try { localStorage.setItem(IDEA_KEY, String(ideaIdx)); } catch(e){} }
+    function showIdea(){ $('ideasText').textContent = ABELang.t(IDEA_CHALLENGES[ideaIdx]); }
+    $('ideasBtn').addEventListener('click', () => { showIdea(); ui.show('ideasModal'); });
+    $('ideaNextBtn').addEventListener('click', () => {
+      ideaIdx = (ideaIdx + 1) % IDEA_CHALLENGES.length; saveIdeaIdx(); showIdea();
+    });
+    $('ideaMadeBtn').addEventListener('click', () => {
+      MB.Audio.sparkle();
+      ui.confetti();
+      ui.toast('✨ You built it! Great job! ✨', 2600);
+      ideaIdx = (ideaIdx + 1) % IDEA_CHALLENGES.length; saveIdeaIdx(); showIdea();
+    });
+    $('ideaCloseBtn').addEventListener('click', () => ui.hide('ideasModal'));
     $('parentBtn').addEventListener('click', () => {
       const answer = prompt('For grown-ups: what is 6 + 7?');
       if (answer !== null){
