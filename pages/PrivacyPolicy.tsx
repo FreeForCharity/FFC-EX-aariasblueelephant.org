@@ -143,7 +143,7 @@ const PrivacyPolicy: React.FC = () => {
 
                         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mt-6">Our Free Games for Children</h3>
                         <p>
-                            Our website hosts free browser games designed for children (including Aaria's Floating Islands, Block Craft 3D, Aaria's Elly-Tubbies, Aaria's Dough Lab, Magnet Blocks, Aaria's Road Safety Heroes, Aaria's Grocery Store, Aaria's Day Planner, Aaria's Feelings Faces, Aaria's Rhythm & Calm, and Aaria's Helping Hands). These games were deliberately built to <strong>collect no personal information from children</strong>:
+                            Our website hosts free browser games designed for children (including Aaria's Floating Islands, Block Craft 3D, Aaria's Elly-Tubbies, Aaria's Dough Lab, Magnet Blocks, Aaria's Road Safety Heroes, Aaria's Grocery Store, Aaria's Day Planner, Aaria's Feelings Faces, Aaria's Rhythm & Calm, Aaria's Flying Elephant, and Aaria's Helping Hands). These games were deliberately built to <strong>collect no personal information from children</strong>:
                         </p>
                         <ul>
                             <li><strong>No accounts, no sign-in.</strong> The games never ask a child to register, and playing them requires no personal information.</li>

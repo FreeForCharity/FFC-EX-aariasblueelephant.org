@@ -71,6 +71,7 @@ const RANDOM_GAMES: PlayGame[] = [
     { url: '/dayplanner/index.html', name: "Aaria's Day Planner", emoji: '📅' },
     { url: '/feelings/index.html', name: "Aaria's Feelings Faces", emoji: '🎭' },
     { url: '/rhythm/index.html', name: "Aaria's Rhythm & Calm", emoji: '🎵' },
+    { url: '/flying/index.html', name: "Aaria's Flying Elephant", emoji: '🐘' },
 ];
 
 type LastGame = { url: string; name: string; emoji: string; at: number };
