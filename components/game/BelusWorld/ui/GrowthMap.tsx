@@ -23,6 +23,7 @@ import {
 } from '../belu/progress';
 import type { BeluMemory } from '../belu/memory';
 import { ACHIEVEMENTS } from '../belu/achievements';
+import { tr, isEs } from '../../../../lib/lang';
 
 const SKILLS: Record<ActivityZone, string> = {
   meadow: 'Reading Emotions',
@@ -38,6 +39,22 @@ const SKILLS: Record<ActivityZone, string> = {
   lagoon: 'Advanced Calm',
   bay: 'Advanced Sharing',
 };
+
+const SKILLS_ES: Record<ActivityZone, string> = {
+  meadow: 'Leer Emociones',
+  mountain: 'Habilidades de Vida',
+  cove: 'Calma y Sentidos',
+  forest: 'Lenguaje Expresivo',
+  shore: 'Compartir y Turnos',
+  school: 'Habilidades Escolares',
+  afternoon: 'Rutinas del Hogar',
+  night: 'Rutina de Dormir',
+  garden: 'Sentimientos Avanzados',
+  deepforest: 'Amistad Avanzada',
+  lagoon: 'Calma Avanzada',
+  bay: 'Compartir Avanzado',
+};
+const skillLabel = (z: ActivityZone) => (isEs() ? SKILLS_ES[z] : SKILLS[z]);
 
 const GROWTH_EMOJI = ['🐣', '🐘', '🐘', '🐘']; // baby vs grown handled by scale below
 const GROWTH_SCALE = [44, 60, 78, 96];
@@ -65,19 +82,22 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
         <button
           onClick={onClose}
           className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500"
-          aria-label="Close"
+          aria-label={tr('Close', 'Cerrar')}
         >
           ✕
         </button>
 
-        <h2 className="mb-1 text-center text-2xl font-black text-slate-800">My Growth Map</h2>
-        <p className="mb-1 text-center text-sm font-semibold text-amber-500">⭐ {stars} stars collected</p>
+        <h2 className="mb-1 text-center text-2xl font-black text-slate-800">{tr('My Growth Map', 'Mi Mapa de Crecimiento')}</h2>
+        <p className="mb-1 text-center text-sm font-semibold text-amber-500">⭐ {tr(`${stars} stars collected`, `${stars} estrellas ganadas`)}</p>
         {/* Visit-days chip — a warm, additive tally of days played, never a
             "streak" that can break or shame a gap in play (see belu/memory.ts) */}
         <div className="mb-4 flex justify-center">
           {!!memory?.visitDays && (
             <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600">
-              🌈 {memory.visitDays} {memory.visitDays === 1 ? 'day' : 'days'} in Aaria's Floating Islands!
+              🌈 {tr(
+                `${memory.visitDays} ${memory.visitDays === 1 ? 'day' : 'days'} in Aaria's Floating Islands!`,
+                `¡${memory.visitDays} ${memory.visitDays === 1 ? 'día' : 'días'} en las Islas Flotantes de Aaria!`
+              )}
             </span>
           )}
         </div>
@@ -104,16 +124,16 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
           </div>
           <p className="mt-2 text-xs font-semibold text-slate-500">
             {growth.nextAt === null
-              ? 'Nilu is all grown up — amazing! 🎉'
-              : `${growth.nextAt - stars} more ⭐ to help Nilu grow bigger!`}
+              ? tr('Nilu is all grown up — amazing! 🎉', '¡Nilu ya está grande — increíble! 🎉')
+              : tr(`${growth.nextAt - stars} more ⭐ to help Nilu grow bigger!`, `¡${growth.nextAt - stars} ⭐ más para ayudar a Nilu a crecer!`)}
           </p>
         </div>
 
         {/* Islands bloom */}
-        <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-400">Island Gardens</h3>
+        <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-400">{tr('Island Gardens', 'Jardines de las Islas')}</h3>
         <div className="flex flex-col gap-2.5">
           {ZONES.map((z) => {
-            const meta = { emoji: ISLANDS[z].emoji, accent: ISLANDS[z].accent, skill: SKILLS[z] };
+            const meta = { emoji: ISLANDS[z].emoji, accent: ISLANDS[z].accent, skill: skillLabel(z) };
             const done = completedLevels(progress, z);
             const s = islandStars(progress, z);
             const bloomPct = (done / MAX_LEVEL) * 100;
@@ -136,7 +156,7 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
                     <div className="h-full rounded-full" style={{ width: `${bloomPct}%`, background: meta.accent }} />
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
-                    {done >= MAX_LEVEL ? '🌷 Fully bloomed!' : `${done}/${MAX_LEVEL} levels grown`}
+                    {done >= MAX_LEVEL ? tr('🌷 Fully bloomed!', '🌷 ¡Totalmente florecida!') : tr(`${done}/${MAX_LEVEL} levels grown`, `${done}/${MAX_LEVEL} niveles crecidos`)}
                   </div>
                 </div>
               </div>
@@ -146,7 +166,7 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
 
         {/* My Badges — one-time achievements, all additive, nothing to lose */}
         <h3 className="mb-2 mt-5 text-sm font-bold uppercase tracking-wide text-slate-400">
-          My Badges ({progress.achievementsEarned.length}/{ACHIEVEMENTS.length})
+          {tr('My Badges', 'Mis Insignias')} ({progress.achievementsEarned.length}/{ACHIEVEMENTS.length})
         </h3>
         <div className="grid grid-cols-4 gap-2">
           {ACHIEVEMENTS.map((a) => {
@@ -171,14 +191,14 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
 
         {/* My Day Book — one sticker per level, earned on first completion */}
         <h3 className="mb-2 mt-5 text-sm font-bold uppercase tracking-wide text-slate-400">
-          My Day Book 📖 ({progress.dayBook?.length ?? 0}/{ZONES.length * MAX_LEVEL})
+          {tr('My Day Book', 'Mi Libro del Día')} 📖 ({progress.dayBook?.length ?? 0}/{ZONES.length * MAX_LEVEL})
         </h3>
         <div className="flex flex-col gap-3">
           {ZONES.map((z) => (
             <div key={z}>
               <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
                 <span>{ISLANDS[z].emoji}</span>
-                <span>{SKILLS[z]}</span>
+                <span>{skillLabel(z)}</span>
               </div>
               <div className="grid grid-cols-5 gap-2">
                 {Array.from({ length: MAX_LEVEL }).map((_, i) => {
@@ -188,7 +208,7 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
                   return (
                     <div
                       key={id}
-                      title={earned ? sticker?.label : 'Not earned yet'}
+                      title={earned ? sticker?.label : tr('Not earned yet', 'Aún no ganado')}
                       className="flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-center"
                       style={{
                         borderColor: earned ? '#ffd43b' : '#eef1f6',
@@ -212,7 +232,7 @@ export default function GrowthMap({ progress, memory, onClose }: { progress: Gam
           onClick={onClose}
           className="mt-5 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
         >
-          Back to exploring →
+          {tr('Back to exploring →', 'Volver a explorar →')}
         </button>
       </motion.div>
     </motion.div>

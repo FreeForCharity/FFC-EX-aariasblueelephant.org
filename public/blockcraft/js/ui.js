@@ -9,8 +9,11 @@ ABC.state = {
   tutorialDone: false,
   visiting: false,            // true while looking at a friend's shared world — never persisted, blocks auto-save
 };
-/* {player} templating — used across all game text */
-ABC.tpl = (s) => String(s).replaceAll('{player}', ABC.state.playerName || 'Aaria');
+/* {player} templating — used across all game text.
+   Also the main Spanish choke point: every string that flows through here
+   (toasts, dialogs, expressive prompts…) gets translated before the name
+   is substituted in, so ABELang's {#}-digit templating still lines up. */
+ABC.tpl = (s) => String(window.ABELang ? ABELang.t(s) : s).replaceAll('{player}', ABC.state.playerName || 'Aaria');
 
 ABC.ui = (function () {
   const $ = (id) => document.getElementById(id);
@@ -334,7 +337,7 @@ ABC.ui = (function () {
   function choiceRound(prompt, onSuccess, opts, attempt) {
     const options = shuffle(prompt.options);
     let html = `<div class="bigEmoji">${prompt.emoji || '💬'}</div>
-      <h2>Use Your Words! 💬</h2>
+      <h2>${ABC.tpl('Use Your Words! 💬')}</h2>
       <div class="scene">${prompt.scene}</div>`;
     options.forEach((o, i) => {
       html += `<button class="choiceBtn" data-i="${i}">🗨️ ${esc(o.t)}
@@ -355,7 +358,7 @@ ABC.ui = (function () {
         if (o.q === 'best') {
           btn.classList.add('correct');
           ABC.audio.sfx.ding();
-          const praise = pick(ABC.PRAISE);
+          const praise = ABC.tpl(pick(ABC.PRAISE));
           setTimeout(() => {
             closeDialog();
             confetti(18);
@@ -368,13 +371,13 @@ ABC.ui = (function () {
         } else if (o.q === 'name') {
           btn.classList.add('again');
           ABC.audio.sfx.gentle();
-          const coach = pick(ABC.COACH_NAMING);
+          const coach = ABC.tpl(pick(ABC.COACH_NAMING));
           toast('🐘💙 ' + coach, 4200, true);
           setTimeout(()=>btn.classList.remove('again'), 900);
         } else {
           btn.classList.add('again');
           ABC.audio.sfx.sad();
-          const coach = pick(ABC.COACH_WRONG);
+          const coach = ABC.tpl(pick(ABC.COACH_WRONG));
           toast('🐘💙 ' + coach, 3800, true);
           setTimeout(()=>btn.classList.remove('again'), 900);
         }
@@ -387,12 +390,12 @@ ABC.ui = (function () {
     attempt = attempt || 0;
     const best = prompt.options.find(o => o.q === 'best');
     let html = `<div class="bigEmoji">${prompt.emoji || '🎤'}</div>
-      <h2>Say It Out Loud! 🎤</h2>
+      <h2>${ABC.tpl('Say It Out Loud! 🎤')}</h2>
       <div class="scene">${prompt.scene}</div>
       <div class="sentenceCard">“${esc(best.t)}” <span class="speakIco" id="vSayIt">🔊</span></div>
       <button id="micCircle">🎤</button>
-      <div id="vStatus" class="scene" style="min-height:28px; font-size:17px; color:#666;">Press the microphone, then say the sentence!</div>
-      <div class="dlgRow"><button class="bigBtn" id="vChoices" style="font-size:16px; padding:10px 18px; background:linear-gradient(180deg,#d0ebff,#a5d8ff); color:#1864ab; box-shadow:0 4px 0 #4dabf7;">📋 Show choices instead</button></div>`;
+      <div id="vStatus" class="scene" style="min-height:28px; font-size:17px; color:#666;">${ABC.tpl('Press the microphone, then say the sentence!')}</div>
+      <div class="dlgRow"><button class="bigBtn" id="vChoices" style="font-size:16px; padding:10px 18px; background:linear-gradient(180deg,#d0ebff,#a5d8ff); color:#1864ab; box-shadow:0 4px 0 #4dabf7;">${ABC.tpl('📋 Show choices instead')}</button></div>`;
     openDialog(html);
     ABC.audio.say(prompt.scene + ' ... Press the microphone and say: ' + best.t, { force: true });
 
@@ -407,7 +410,7 @@ ABC.ui = (function () {
         addStars((opts.stars != null ? opts.stars : 1) + 1);  // bonus star for using voice!
         ABC.state.metrics.wordsPracticed++;    // 👨‍👩‍👧 parent dashboard: expressive success
         ABC.portal && ABC.portal.charge(1);    // word power 🌀
-        toast('🌟 ' + pick(ABC.PRAISE) + ' (+1 voice bonus ⭐)', 3800, true);
+        toast('🌟 ' + ABC.tpl(pick(ABC.PRAISE)) + ' (+1 voice bonus ⭐)', 3800, true);
         onSuccess && onSuccess(best);
       }, 800);
     };
@@ -524,11 +527,12 @@ ABC.ui = (function () {
 
   /* ---------------- pick-a-card helper (for slime/oreo/kind acts) ---------------- */
   function pickCard(title, sceneText, cards, onPick, emoji, speakOpts) {
+    title = ABC.tpl(title);
     sceneText = ABC.tpl(sceneText);
     let html = `<div class="bigEmoji">${emoji || '✨'}</div><h2>${title}</h2>
       <div class="scene">${sceneText}</div><div class="pickGrid">`;
     cards.forEach((c, i) => {
-      html += `<button class="pickCard" data-i="${i}"><span class="ico">${c.ico}</span>${esc(c.label)}</button>`;
+      html += `<button class="pickCard" data-i="${i}"><span class="ico">${c.ico}</span>${esc(ABC.tpl(c.label))}</button>`;
     });
     html += '</div>';
     openDialog(html);
@@ -721,7 +725,7 @@ ABC.ui = (function () {
     ];
     let html = `<div class="pickGrid" style="margin-top:4px;">`;
     items.forEach((it, i) => {
-      html += `<button class="pickCard" data-i="${i}"><span class="ico">${it.ico}</span>${it.label}</button>`;
+      html += `<button class="pickCard" data-i="${i}"><span class="ico">${it.ico}</span>${ABC.tpl(it.label)}</button>`;
     });
     html += '</div>';
     openDialog(html);
@@ -739,6 +743,7 @@ ABC.ui = (function () {
       <button class="choiceBtn" id="setName">✏️ Player name: <b>${esc(ABC.state.playerName)}</b> — tap to change</button>
       <button class="choiceBtn" id="setSpeed">🎛️ Game speed: <b>${sp.ico} ${sp.label}</b> — tap to change (🐢 more time · 🚀 faster)</button>
       <button class="choiceBtn" id="setSkin">🎨 Block look: <b>${skinNow}</b> — tap to switch (Modern ✨ · Smooth 🌤️ · Classic 🧱)</button>
+      <button class="choiceBtn" id="setLang" data-abe="lang">${window.ABELang ? ABELang.label() : '🌐 Español'} — tap to switch</button>
       <button class="choiceBtn" id="setVoice">${chk(s.voiceMode)} 🎤 Voice Mode — say sentences out loud ${ABC.audio.hasSR ? '' : '(needs Chrome/Edge)'}</button>
       <button class="choiceBtn" id="setRead">${chk(s.readAloud)} 🔊 Read everything aloud</button>
       <button class="choiceBtn" id="setVoiceName">🗣️ Voice: <b>${esc(ABC.audio.voiceName())}</b> — tap to try another</button>
@@ -756,6 +761,7 @@ ABC.ui = (function () {
       <div class="scene" style="font-size:15px; color:#557;">Made with 💙 by <b>${ABC.BRAND.org}</b> — ${ABC.BRAND.tagline}<br>${ABC.BRAND.url.replace('https://','')}</div>
       <div class="dlgRow"><button class="bigBtn green" id="setDone">Done ✔</button></div>`);
     const wire = (id, fn) => $(id).onclick = fn;
+    wire('setLang', () => { if (window.ABELang) ABELang.toggle(); });
     wire('setName', () => {
       openDialog(`<div class="bigEmoji">✏️</div><h2>Who is playing?</h2>
         <input id="nameInput" value="${esc(ABC.state.playerName)}" maxlength="20"

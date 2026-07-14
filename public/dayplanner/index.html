@@ -111,24 +111,24 @@
   /* ---------- the picture cards (steps) and where each happens ---------- */
   // station: which piece of furniture enacts this step
   const STEPS = {
-    wake:    { emoji: "🛏️", label: "Wake up",       station: "bed",    line: "Good morning! Up and at 'em!" },
-    potty:   { emoji: "🚽", label: "Potty",          station: "toilet", line: "Potty time. Flush and done!" },
-    teeth:   { emoji: "🪥", label: "Brush teeth",    station: "sink",   line: "Brush brush brush! Sparkly clean teeth!" },
-    face:    { emoji: "🧼", label: "Wash face",      station: "sink",   line: "Splash splash! Fresh clean face!" },
-    dress:   { emoji: "👕", label: "Get dressed",    station: "closet", line: "Clothes on! Looking great!" },
-    brekkie: { emoji: "🥣", label: "Breakfast",      station: "table",  line: "Yum yum breakfast! Growing strong!" },
-    bag:     { emoji: "🎒", label: "Pack my bag",    station: "door",   line: "Bag packed! Ready to go!" },
-    shoes:   { emoji: "👟", label: "Shoes on",       station: "door",   line: "Shoes on! Out the door we go!" },
-    dinner:  { emoji: "🍽️", label: "Dinner",         station: "table",  line: "Mmm, dinner together!" },
-    bath:    { emoji: "🛁", label: "Bath time",      station: "tub",    line: "Splish splash! Bubbly clean!" },
-    pjs:     { emoji: "🩱", label: "Pajamas",        station: "closet", line: "Cozy pajamas on!" },
-    story:   { emoji: "📖", label: "Story time",     station: "rug",    line: "Once upon a time… what a good story!" },
-    hug:     { emoji: "🤗", label: "Goodnight hug",  station: "rug",    line: "Big warm hug. I love you!" },
-    lights:  { emoji: "🌙", label: "Lights out",     station: "bed",    line: "Lights out. Sweet dreams, Nilu." },
+    wake:    { emoji: "🛏️", label: "Wake up",       labelEs: "Despertar",      station: "bed",    line: "Good morning! Up and at 'em!", lineEs: "¡Buenos días! ¡Arriba, arriba!" },
+    potty:   { emoji: "🚽", label: "Potty",          labelEs: "Al baño",        station: "toilet", line: "Potty time. Flush and done!", lineEs: "Hora del baño. ¡Jala la cadena y listo!" },
+    teeth:   { emoji: "🪥", label: "Brush teeth",    labelEs: "Cepillarse",     station: "sink",   line: "Brush brush brush! Sparkly clean teeth!", lineEs: "¡Cepilla, cepilla! ¡Dientes brillantes!" },
+    face:    { emoji: "🧼", label: "Wash face",      labelEs: "Lavarse la cara", station: "sink",   line: "Splash splash! Fresh clean face!", lineEs: "¡Splash splash! ¡Carita limpia y fresca!" },
+    dress:   { emoji: "👕", label: "Get dressed",    labelEs: "Vestirse",       station: "closet", line: "Clothes on! Looking great!", lineEs: "¡Ropa puesta! ¡Te ves genial!" },
+    brekkie: { emoji: "🥣", label: "Breakfast",      labelEs: "Desayuno",       station: "table",  line: "Yum yum breakfast! Growing strong!", lineEs: "¡Ñam ñam, desayuno! ¡Creciendo fuerte!" },
+    bag:     { emoji: "🎒", label: "Pack my bag",    labelEs: "Empacar mochila", station: "door",   line: "Bag packed! Ready to go!", lineEs: "¡Mochila lista! ¡A salir!" },
+    shoes:   { emoji: "👟", label: "Shoes on",       labelEs: "Zapatos",        station: "door",   line: "Shoes on! Out the door we go!", lineEs: "¡Zapatos puestos! ¡Vámonos!" },
+    dinner:  { emoji: "🍽️", label: "Dinner",         labelEs: "Cena",           station: "table",  line: "Mmm, dinner together!", lineEs: "¡Mmm, a cenar juntos!" },
+    bath:    { emoji: "🛁", label: "Bath time",      labelEs: "Bañarse",        station: "tub",    line: "Splish splash! Bubbly clean!", lineEs: "¡Splish splash! ¡Limpiecito con burbujas!" },
+    pjs:     { emoji: "🩱", label: "Pajamas",        labelEs: "Pijama",         station: "closet", line: "Cozy pajamas on!", lineEs: "¡Pijama calientita puesta!" },
+    story:   { emoji: "📖", label: "Story time",     labelEs: "Cuento",         station: "rug",    line: "Once upon a time… what a good story!", lineEs: "Había una vez… ¡qué bonito cuento!" },
+    hug:     { emoji: "🤗", label: "Goodnight hug",  labelEs: "Abrazo",         station: "rug",    line: "Big warm hug. I love you!", lineEs: "Un abrazo grandote. ¡Te quiero!" },
+    lights:  { emoji: "🌙", label: "Lights out",     labelEs: "A dormir",       station: "bed",    line: "Lights out. Sweet dreams, Nilu.", lineEs: "Luces apagadas. Dulces sueños, Nilu." },
   };
   const ROUTINES = {
-    morning: { emoji: "🌅", name: "Morning", cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes"] },
-    evening: { emoji: "🌙", name: "Evening", cards: ["dinner", "bath", "pjs", "teeth", "potty", "story", "hug", "lights"] },
+    morning: { emoji: "🌅", name: "Morning", nameEs: "Mañana", cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes"] },
+    evening: { emoji: "🌙", name: "Evening", nameEs: "Noche", cards: ["dinner", "bath", "pjs", "teeth", "potty", "story", "hug", "lights"] },
   };
   const MIN_STEPS = 3, MAX_STEPS = 6;
 
@@ -264,6 +264,9 @@
 
   const $ = (id) => document.getElementById(id);
   const stepOf = (id) => STEPS[id];
+  const stepLabel = (st) => K.tr(st.label, st.labelEs);
+  const stepLine = (st) => K.tr(st.line, st.lineEs);
+  const routName = (r) => K.tr(r.name, r.nameEs);
 
   function snapshot() {
     return JSON.parse(JSON.stringify({ mode: G.mode, routine: G.routine, plan: G.plan, idx: G.idx, x: P.x, z: P.z }));
@@ -284,8 +287,10 @@
     $("dpPlanner").style.display = "flex";
     $("dpStrip").style.display = "none";
     beaconArrow.visible = beaconRing.visible = false;
-    $("dpTitle").textContent = `${r.emoji} My ${r.name} Plan`;
-    $("dpSwap").textContent = G.routine === "morning" ? "🌙 Make an evening plan" : "🌅 Make a morning plan";
+    $("dpTitle").textContent = K.tr(`${r.emoji} My ${r.name} Plan`, `${r.emoji} Mi plan de la ${routName(r).toLowerCase()}`);
+    document.querySelector("#dpPlanner .dpSub").textContent = K.tr("Tap the picture cards in your order — you're the planner!", "Toca las tarjetas en tu orden — ¡tú eres quien planea!");
+    $("dpClear").textContent = K.tr("🧹 Start over", "🧹 Empezar de nuevo");
+    $("dpSwap").textContent = G.routine === "morning" ? K.tr("🌙 Make an evening plan", "🌙 Hacer un plan de noche") : K.tr("🌅 Make a morning plan", "🌅 Hacer un plan de mañana");
     K.chip("");
     renderPlanner();
   }
@@ -298,9 +303,9 @@
       const id = G.plan[i];
       const b = document.createElement("button");
       b.className = "dpSlot" + (id ? " filled" : "") + (!id && i === G.plan.length ? " next" : "");
-      b.title = id ? `Take ${stepOf(id).label} back out` : `Step ${i + 1} of your plan`;
+      b.title = id ? K.tr(`Take ${stepOf(id).label} back out`, `Quitar ${stepLabel(stepOf(id))}`) : K.tr(`Step ${i + 1} of your plan`, `Paso ${i + 1} de tu plan`);
       b.innerHTML = `<span class="n">${i + 1}</span>` +
-        (id ? `<span class="em">${stepOf(id).emoji}</span><span class="lb">${stepOf(id).label}</span>` : `<span class="em" style="opacity:.25">✨</span>`);
+        (id ? `<span class="em">${stepOf(id).emoji}</span><span class="lb">${stepLabel(stepOf(id))}</span>` : `<span class="em" style="opacity:.25">✨</span>`);
       if (id) b.addEventListener("pointerdown", () => {
         G.plan.splice(i, 1); K.sfx.pop(); renderPlanner();
       });
@@ -313,15 +318,15 @@
       const s = stepOf(id);
       const b = document.createElement("button");
       b.className = "dpCardBtn" + (used ? " used" : "");
-      b.title = used ? `${s.label} is already in your plan` : `Add ${s.label} to your plan`;
-      b.innerHTML = `<span class="em">${s.emoji}</span><span class="lb">${s.label}</span>`;
+      b.title = used ? K.tr(`${s.label} is already in your plan`, `${stepLabel(s)} ya está en tu plan`) : K.tr(`Add ${s.label} to your plan`, `Agregar ${stepLabel(s)}`);
+      b.innerHTML = `<span class="em">${s.emoji}</span><span class="lb">${stepLabel(s)}</span>`;
       b.addEventListener("pointerdown", () => {
         if (G.plan.includes(id) || G.plan.length >= MAX_STEPS) {
-          if (G.plan.length >= MAX_STEPS && !G.plan.includes(id)) K.toast("Your plan is full — 6 steps is a big day! 💛");
+          if (G.plan.length >= MAX_STEPS && !G.plan.includes(id)) K.toast(K.tr("Your plan is full — 6 steps is a big day! 💛", "Tu plan está lleno — ¡6 pasos es un gran día! 💛"));
           return;
         }
         G.plan.push(id);
-        K.sfx.tap(); K.say(s.label);
+        K.sfx.tap(); K.say(stepLabel(s));
         renderPlanner();
       });
       tray.appendChild(b);
@@ -329,8 +334,8 @@
     const play = $("dpPlay");
     play.disabled = G.plan.length < MIN_STEPS;
     play.textContent = G.plan.length < MIN_STEPS
-      ? `▶️ Pick ${MIN_STEPS - G.plan.length} more…`
-      : "▶️ Live my plan!";
+      ? K.tr(`▶️ Pick ${MIN_STEPS - G.plan.length} more…`, `▶️ Elige ${MIN_STEPS - G.plan.length} más…`)
+      : K.tr("▶️ Live my plan!", "▶️ ¡Vivir mi plan!");
   }
 
   function startDay() {
@@ -340,12 +345,12 @@
     G.mode = "live"; G.idx = 0; G.panelOpen = false;
     $("dpPlanner").style.display = "none";
     $("dpStrip").style.display = "block";
-    $("dpStripTitle").textContent = `${ROUTINES[G.routine].emoji} My plan`;
+    $("dpStripTitle").textContent = K.tr(`${ROUTINES[G.routine].emoji} My plan`, `${ROUTINES[G.routine].emoji} Mi plan`);
     P.x = 0; P.z = 2.5; P.ry = Math.PI; // start on the rug, in clear view
     renderStrip(); refreshChip(); placeBeacon();
     K.sfx.yes();
-    const names = G.plan.map((id) => stepOf(id).label);
-    K.say(`Here is your plan! First ${names[0]}` + names.slice(1).map((n) => `, then ${n}`).join("") + ". Let's go!");
+    const names = G.plan.map((id) => stepLabel(stepOf(id)));
+    K.say(K.es() ? `¡Aquí está tu plan! Primero ${names[0]}` + names.slice(1).map((n) => `, luego ${n}`).join("") + ". ¡Vamos!" : `Here is your plan! First ${names[0]}` + names.slice(1).map((n) => `, then ${n}`).join("") + ". Let's go!");
     K.recordEvent("planstart", G.plan.length);
   }
 
@@ -362,8 +367,8 @@
     const cur = G.plan[G.idx], nxt = G.plan[G.idx + 1];
     if (!cur) return;
     K.chip(nxt
-      ? `First ${stepOf(cur).emoji} ${stepOf(cur).label} · then ${stepOf(nxt).emoji}`
-      : `Last one: ${stepOf(cur).emoji} ${stepOf(cur).label}!`);
+      ? K.tr(`First ${stepOf(cur).emoji} ${stepOf(cur).label} · then ${stepOf(nxt).emoji}`, `Primero ${stepOf(cur).emoji} ${stepLabel(stepOf(cur))} · luego ${stepOf(nxt).emoji}`)
+      : K.tr(`Last one: ${stepOf(cur).emoji} ${stepOf(cur).label}!`, `¡El último: ${stepOf(cur).emoji} ${stepLabel(stepOf(cur))}!`));
   }
 
   function placeBeacon() {
@@ -388,8 +393,8 @@
       // is the child at a DIFFERENT station? gently point back to the plan
       const other = Object.keys(stations).find((s) => nearStation(s, 1.9));
       K.sfx.no();
-      if (other) { K.toast(`Our plan says ${cur.emoji} ${cur.label} next — this way! 💛`); K.say(`Our plan says ${cur.label} next!`); }
-      else K.toast(`Walk to the glowing spot ✨ ${cur.emoji}`);
+      if (other) { K.toast(K.tr(`Our plan says ${cur.emoji} ${cur.label} next — this way! 💛`, `El plan dice ${cur.emoji} ${stepLabel(cur)} — ¡por aquí! 💛`)); K.say(K.tr(`Our plan says ${cur.label} next!`, `¡El plan dice que sigue ${stepLabel(cur)}!`)); }
+      else K.toast(K.tr(`Walk to the glowing spot ✨ ${cur.emoji}`, `Camina al lugar que brilla ✨ ${cur.emoji}`));
       return;
     }
     // enact the step
@@ -397,8 +402,8 @@
     st.sprite.scale.set(2.1, 2.1, 1);
     setTimeout(() => st.sprite.scale.set(1.5, 1.5, 1), 700 * K.speed());
     sparkleBurst(st.sprite.position.x, st.baseY + 0.4, st.sprite.position.z);
-    K.sfx.yes(); K.say(cur.line);
-    K.toast(`${cur.emoji} ${cur.label} — done! ✅`);
+    K.sfx.yes(); K.say(stepLine(cur));
+    K.toast(K.tr(`${cur.emoji} ${cur.label} — done! ✅`, `${cur.emoji} ${stepLabel(cur)} — ¡listo! ✅`));
     K.recordEvent("step", G.idx);
     G.idx++;
     renderStrip();
@@ -406,7 +411,7 @@
     else {
       refreshChip(); placeBeacon();
       const nxt = stepOf(G.plan[G.idx]);
-      setTimeout(() => K.say(`Now, ${nxt.label}!`), 1400 * K.speed());
+      setTimeout(() => K.say(K.tr(`Now, ${nxt.label}!`, `¡Ahora, ${stepLabel(nxt)}!`)), 1400 * K.speed());
     }
   }
 
@@ -415,7 +420,7 @@
     const cur = G.plan[G.idx];
     if (!cur) return;
     const left = G.plan.length - G.idx;
-    K.say(`Now it's ${stepOf(cur).label}. ${left - 1 > 0 ? `${left - 1} more after this!` : "It's the last one!"}`);
+    K.say(K.tr(`Now it's ${stepOf(cur).label}. ${left - 1 > 0 ? `${left - 1} more after this!` : "It's the last one!"}`, `Ahora toca ${stepLabel(stepOf(cur))}. ${left - 1 > 0 ? `¡Faltan ${left - 1} más!` : "¡Es el último!"}`));
     refreshChip();
   }
 
@@ -437,15 +442,15 @@
     G.days++; K.save("days", G.days);
     K.sfx.star(); K.recordEvent("day", G.days);
     const r = ROUTINES[G.routine];
-    K.say(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`);
+    K.say(K.tr(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`, `¡Hiciste todo tu plan de la ${routName(r).toLowerCase()}, paso a paso! ¡Qué gran planificador!`));
     const other = G.routine === "morning" ? "evening" : "morning";
     const streak = K.streakBump();
-    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">🔥 ${streak.n} days planned in a row!</div>` : ""}<h2>🌟 Plan complete!</h2>
-      <p>You made the plan AND lived it — every step, in your order!</p>
+    panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">${K.tr(`🔥 ${streak.n} days planned in a row!`, `🔥 ¡${streak.n} días planeados seguidos!`)}</div>` : ""}<h2>${K.tr("🌟 Plan complete!", "🌟 ¡Plan completado!")}</h2>
+      <p>${K.tr("You made the plan AND lived it — every step, in your order!", "Hiciste el plan Y lo viviste — ¡cada paso, en tu orden!")}</p>
       <div style="font-size:28px;margin:6px 0">${G.plan.map((id) => stepOf(id).emoji).join(" → ")}</div>
-      <p style="font-size:14px">Days planned: <b>${G.days}</b></p>
-      <button class="kBig" id="dpAgain" title="Plan this routine again">${r.emoji} Plan again</button>
-      <button class="kBig kAlt" id="dpOther" title="Make the other plan">${ROUTINES[other].emoji} ${ROUTINES[other].name} plan</button>`);
+      <p style="font-size:14px">${K.tr("Days planned:", "Días planeados:")} <b>${G.days}</b></p>
+      <button class="kBig" id="dpAgain" title="Plan this routine again">${r.emoji} ${K.tr("Plan again", "Planear otra vez")}</button>
+      <button class="kBig kAlt" id="dpOther" title="Make the other plan">${ROUTINES[other].emoji} ${K.tr(`${ROUTINES[other].name} plan`, `Plan de ${routName(ROUTINES[other]).toLowerCase()}`)}</button>`);
     $("dpAgain").addEventListener("pointerdown", () => { closePanel(); openPlanner(); });
     $("dpOther").addEventListener("pointerdown", () => {
       G.routine = other;
@@ -580,6 +585,7 @@
     emoji: "📅",
     accent: "#8b5cf6",
     tagline: "make your plan with picture cards, then live it with Nilu!",
+    taglineEs: "haz tu plan con tarjetas y luego ¡vívelo con Nilu!",
     emojis: ["📅", "🛏️", "🪥", "🥣", "👟"],
     howTo: [
       ["📅", "Tap picture cards into YOUR order"],
@@ -588,10 +594,17 @@
       ["✅", "At each glowing spot, tap Do it"],
       ["🌅🌙", "Make a morning AND an evening plan"],
     ],
+    howToEs: [
+      ["📅", "Pon las tarjetas en TU orden"],
+      ["▶️", "¡Luego vive tu plan con Nilu!"],
+      ["🕹️", "Camina con la palanca, flechas o un toque"],
+      ["✅", "En cada lugar que brilla, toca Hacerlo"],
+      ["🌅🌙", "Haz un plan de mañana Y uno de noche"],
+    ],
     anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM",
     actions: [
-      { emoji: "✅", label: "Do it", title: "Do the plan step you are next to", onTap: tryDo },
-      { emoji: "📅", label: "My Plan", title: "Hear which step is next", onTap: readPlan },
+      { emoji: "✅", label: "Do it", labelEs: "Hacerlo", title: "Do the plan step you are next to", titleEs: "Haz el paso del plan que tienes cerca", onTap: tryDo },
+      { emoji: "📅", label: "My Plan", labelEs: "Mi plan", title: "Hear which step is next", titleEs: "Escucha qué paso sigue", onTap: readPlan },
     ],
     playerPos: () => ({ x: P.x, z: P.z, ry: P.ry }),
     replayableState: { get: snapshot, set: restore },
@@ -613,9 +626,9 @@
     onPause(p) {},
     onFrame: frame,
     onReplayEvent(ev) {
-      if (ev.kind === "step") { K.toast("✅ Another step done!"); K.sfx.yes(); }
-      else if (ev.kind === "day") { K.toast("🌟 A whole day, planned and done!"); K.sfx.star(); }
-      else if (ev.kind === "planstart") { K.toast("📅 The plan begins!"); K.sfx.tap(); }
+      if (ev.kind === "step") { K.toast(K.tr("✅ Another step done!", "✅ ¡Otro paso listo!")); K.sfx.yes(); }
+      else if (ev.kind === "day") { K.toast(K.tr("🌟 A whole day, planned and done!", "🌟 ¡Un día entero, planeado y hecho!")); K.sfx.star(); }
+      else if (ev.kind === "planstart") { K.toast(K.tr("📅 The plan begins!", "📅 ¡Empieza el plan!")); K.sfx.tap(); }
     },
   });
 })();

@@ -35,25 +35,25 @@ ABC.stickers = (function () {
     earned.add(id);
     ABC.ui.confetti(60);
     ABC.audio.sfx.fanfare();
-    ABC.ui.toast(`🏅 New sticker: ${def.emoji} <b>${def.label}</b>!`, 5200, true);
+    ABC.ui.toast(`🏅 ${ABC.tpl('New sticker:')} ${def.emoji} <b>${ABC.tpl(def.label)}</b>!`, 5200, true);
     ABC.saveSoon && ABC.saveSoon();
   }
 
   /* ---------------- the treasure book 📖 ---------------- */
   function openBook() {
     const n = earned.size;
-    let html = `<div class="bigEmoji">🏅</div><h2>{player}'s Treasures</h2>
-      <div class="scene">You have <b>${n}/${DEFS.length}</b> stickers! Tap one to hear about it!</div>
+    let html = `<div class="bigEmoji">🏅</div><h2>${ABC.tpl("{player}'s Treasures")}</h2>
+      <div class="scene">${ABC.tpl('You have <b>' + n + '/' + DEFS.length + '</b> stickers! Tap one to hear about it!')}</div>
       <div class="pickGrid">`;
     DEFS.forEach((d, i) => {
       const got = earned.has(d.id);
       html += got
         ? `<button class="pickCard stkCard" data-i="${i}" style="border-color:#ffd43b; background:#fff9db;">
-            <span class="ico">${d.emoji}</span>${ABC.ui.esc(d.label)}</button>`
+            <span class="ico">${d.emoji}</span>${ABC.ui.esc(ABC.tpl(d.label))}</button>`
         : `<button class="pickCard stkCard" data-i="${i}" style="opacity:.5; background:#f1f3f5;">
-            <span class="ico">❓</span><span style="font-size:12px; color:#666;">${ABC.ui.esc(d.hint)}</span></button>`;
+            <span class="ico">❓</span><span style="font-size:12px; color:#666;">${ABC.ui.esc(ABC.tpl(d.hint))}</span></button>`;
     });
-    html += `</div><div class="dlgRow"><button class="bigBtn green" id="stkOk">Back to playing! 🎮</button></div>`;
+    html += `</div><div class="dlgRow"><button class="bigBtn green" id="stkOk">${ABC.tpl('Back to playing! 🎮')}</button></div>`;
     ABC.ui.openDialog(ABC.tpl(html));
     ABC.audio.say(n === DEFS.length
       ? 'WOW! Your treasure book is FULL! All ' + DEFS.length + ' stickers!'
@@ -62,7 +62,7 @@ ABC.stickers = (function () {
       b.addEventListener('click', () => {
         const d = DEFS[+b.dataset.i];
         ABC.audio.sfx.pop();
-        ABC.audio.say(earned.has(d.id) ? d.label + '! You earned it!' : 'A mystery sticker! ' + d.hint, { force: true });
+        ABC.audio.say(earned.has(d.id) ? ABC.tpl(d.label) + ABC.tpl('! You earned it!') : ABC.tpl('A mystery sticker! ') + ABC.tpl(d.hint), { force: true });
       });
     });
     $('stkOk').onclick = () => ABC.ui.closeDialog();

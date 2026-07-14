@@ -9,6 +9,10 @@
 
 const $ = id => document.getElementById(id);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
+// KID-FACING content only — flips to Spanish when ABELang.es (see content-es.js).
+// Grown-Ups Corner review sheets / progress report always read HH directly
+// (window.HH) so the clinical reviewer sees the canonical English.
+const C = window.HH_C || window.HH;
 
 /* ---------------------------------------------------------------
    SAVE DATA
@@ -342,7 +346,7 @@ function daysSinceDate(isoDate) {
 /* one gentle re-practice nudge per browser session (see renderScenarioPicker) */
 function findReviewCandidate() {
   if (!save.trials) return null;
-  return HH.SCENARIOS.find(sc => {
+  return C.SCENARIOS.find(sc => {
     const t = save.trials[sc.id];
     return t && t.lastPlayed && !isScenarioMastered(sc.id) && daysSinceDate(t.lastPlayed) >= 3;
   }) || null;
@@ -441,9 +445,9 @@ function enterStickers() {
 function renderStickerBook() {
   const body = $("stickerBody"); body.innerHTML = "";
   const wrap = document.createElement("div"); wrap.className = "sticker-book";
-  const title = document.createElement("h2"); title.className = "practice-title"; title.textContent = "🌟 " + HH.STICKER_BOOK.title;
+  const title = document.createElement("h2"); title.className = "practice-title"; title.textContent = "🌟 " + C.STICKER_BOOK.title;
   wrap.appendChild(title);
-  const countText = HH.STICKER_BOOK.countText(save.stickers);
+  const countText = C.STICKER_BOOK.countText(save.stickers);
   const countEl = document.createElement("p"); countEl.className = "sticker-count-text"; countEl.textContent = countText;
   wrap.appendChild(countEl);
   if (save.stickers > 0) {
@@ -456,7 +460,7 @@ function renderStickerBook() {
     }
     wrap.appendChild(grid);
   } else {
-    const emptyEl = document.createElement("p"); emptyEl.className = "sticker-empty"; emptyEl.textContent = HH.STICKER_BOOK.empty;
+    const emptyEl = document.createElement("p"); emptyEl.className = "sticker-empty"; emptyEl.textContent = C.STICKER_BOOK.empty;
     wrap.appendChild(emptyEl);
   }
   body.appendChild(wrap);
@@ -478,9 +482,9 @@ let findState = { active: false, placeId: null, tasks: [], idx: 0, lastWrongAt: 
 let scenarioState = null; // set while an in-world "Practice Being Brave" scenario is running
 
 function findRoomInfo(roomId) {
-  const placeIds = Object.keys(HH.PLACES);
+  const placeIds = Object.keys(C.PLACES);
   for (let i = 0; i < placeIds.length; i++) {
-    const place = HH.PLACES[placeIds[i]];
+    const place = C.PLACES[placeIds[i]];
     if (!place.rooms) continue;
     const room = place.rooms.find(r => r.id === roomId);
     if (room) return { placeId: placeIds[i], room };
@@ -540,9 +544,9 @@ function goHub() {
    dismissed the moment the child actually touches the joystick ---- */
 function maybeShowMoveTutorial() {
   if (save.seenTutorial) return;
-  $("moveTutorialText").textContent = HH.TUTORIAL_TEXT;
+  $("moveTutorialText").textContent = C.TUTORIAL_TEXT;
   $("moveTutorialOverlay").hidden = false;
-  speak(HH.TUTORIAL_TEXT);
+  speak(C.TUTORIAL_TEXT);
 }
 function hideMoveTutorial() {
   $("moveTutorialOverlay").hidden = true;
@@ -555,7 +559,7 @@ function handleJoystickFirstUse() {
 }
 function handleBuilding(placeId) {
   if (scenarioState) return;
-  const place = HH.PLACES[placeId];
+  const place = C.PLACES[placeId];
   if (!place) return;
   if (!place.unlocked) {
     showToast(place.comingSoon || "Coming soon!");
@@ -566,7 +570,7 @@ function handleBuilding(placeId) {
   // BEFORE entering, instead of the kid having to find the in-game button
   if (window.HH && HH.World && HH.World.popBuilding) HH.World.popBuilding(placeId);
   SND.pop();
-  const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
+  const hasTasks = !!(C.FIND_TASKS && C.FIND_TASKS[placeId] && C.FIND_TASKS[placeId].length);
   setTimeout(() => {
     if (hasTasks) showEnterChoice(placeId, place);
     else walkThenEnter(placeId, null);
@@ -593,7 +597,7 @@ function enterPlace(placeId) {
   exState.place = placeId; exState.roomId = null;
   if (window.HH && HH.World) HH.World.enterBuilding(placeId);
   $("mapBtn").hidden = false;
-  const hasTasks = !!(HH.FIND_TASKS && HH.FIND_TASKS[placeId] && HH.FIND_TASKS[placeId].length);
+  const hasTasks = !!(C.FIND_TASKS && C.FIND_TASKS[placeId] && C.FIND_TASKS[placeId].length);
   $("findGameBtn").hidden = !hasTasks || findState.active;
   $("roomHeader").hidden = true;
   maybeShowMoveTutorial();
@@ -677,7 +681,7 @@ function handleHelper(helperId) {
 }
 function handleActor(actorId) {
   if (scenarioState && scenarioState.scenario.id === actorId) {
-    const actor = HH.SCENARIO_ACTORS[actorId];
+    const actor = C.SCENARIO_ACTORS[actorId];
     if (actor && window.HH && HH.World) HH.World.say(actorId, actor.bubble, 2500);
   }
 }
@@ -732,7 +736,7 @@ function bannerActionButton(label, cls, onClick) {
 /* ---- Nilu's Game: find & do (replaces the old room quiz cards) ---- */
 function startFindGame() {
   const placeId = exState.place;
-  const tasks = HH.FIND_TASKS && HH.FIND_TASKS[placeId];
+  const tasks = C.FIND_TASKS && C.FIND_TASKS[placeId];
   if (!placeId || !tasks || !tasks.length) return;
   findState = { active: true, placeId, tasks, idx: 0, lastWrongAt: 0 };
   $("findGameBtn").hidden = true;
@@ -770,7 +774,7 @@ function finishFindGame() {
   findState.active = false;
   hideWorldBanner();
   if (window.HH && HH.World) HH.World.setTarget(null);
-  const place = HH.PLACES[placeId];
+  const place = C.PLACES[placeId];
   if (placeId && !save.quizzed.includes(placeId)) save.quizzed.push(placeId);
   saveSave();
   confettiBig(); SND.chime();
@@ -781,7 +785,7 @@ function quitFindGame() {
   findState.active = false;
   hideWorldBanner();
   if (window.HH && HH.World) HH.World.setTarget(null);
-  if (exState.place && HH.FIND_TASKS && HH.FIND_TASKS[exState.place]) $("findGameBtn").hidden = false;
+  if (exState.place && C.FIND_TASKS && C.FIND_TASKS[exState.place]) $("findGameBtn").hidden = false;
   setNilu("Let's keep exploring! 🌍");
 }
 
@@ -794,7 +798,7 @@ function wireExplore() {
 
 /* friend card modal (used by Explore) */
 function openFriendCard(id) {
-  const h = HH.HELPERS[id];
+  const h = C.HELPERS[id];
   if (!h) return;
   $("friendEmoji").textContent = h.emoji;
   $("friendName").textContent = h.name;
@@ -832,7 +836,7 @@ function enterHand() {
   // show the hand UI immediately — Nilu's intro plays alongside it, so the
   // screen is never a blank page with a lone bubble in the corner
   renderHandFill();
-  playIntroSequence(HH.HAND_INTRO, () => setNilu(HH.HAND_INTRO[3]));
+  playIntroSequence(C.HAND_INTRO, () => setNilu(C.HAND_INTRO[3]));
 }
 
 function handSVG() {
@@ -890,9 +894,9 @@ function renderHandFill() {
     slot.style.left = HAND_TIPS[idx].x + "%";
     slot.style.top = HAND_TIPS[idx].y + "%";
     if (helperId) {
-      slot.innerHTML = '<span class="em">' + HH.HELPERS[helperId].emoji + '</span>' +
-        '<span class="nm">' + HH.HELPERS[helperId].name + '</span>';
-      slot.title = "Tap to remove " + HH.HELPERS[helperId].name;
+      slot.innerHTML = '<span class="em">' + C.HELPERS[helperId].emoji + '</span>' +
+        '<span class="nm">' + C.HELPERS[helperId].name + '</span>';
+      slot.title = "Tap to remove " + C.HELPERS[helperId].name;
     } else {
       slot.textContent = String(idx + 1);
       slot.title = "Empty finger " + (idx + 1);
@@ -906,7 +910,7 @@ function renderHandFill() {
 
   // progress row
   const filled = handState.slots.filter(Boolean);
-  const wheres = new Set(filled.map(id => HH.HELPERS[id].where === "home" ? "home" : HH.HELPERS[id].where === "school" ? "school" : "town"));
+  const wheres = new Set(filled.map(id => C.HELPERS[id].where === "home" ? "home" : C.HELPERS[id].where === "school" ? "school" : "town"));
   const prog = document.createElement("div"); prog.className = "hand-progress";
   prog.innerHTML =
     '<span class="prog-pill">' + filled.length + ' of 5 helpers</span>' +
@@ -920,13 +924,13 @@ function renderHandFill() {
   picker.innerHTML = '<div class="panel-head"><h2>Pick your helpers</h2>' +
     '<p>Tap a helper to put them on a finger.</p></div>';
   WHERE_GROUPS.forEach(gr => {
-    const ids = Object.keys(HH.HELPERS).filter(id => gr.match(HH.HELPERS[id].where));
+    const ids = Object.keys(C.HELPERS).filter(id => gr.match(C.HELPERS[id].where));
     if (!ids.length) return;
     const gt = document.createElement("div"); gt.className = "group-title"; gt.textContent = gr.title;
     picker.appendChild(gt);
     const grid = document.createElement("div"); grid.className = "helper-grid";
     ids.forEach(id => {
-      const h = HH.HELPERS[id];
+      const h = C.HELPERS[id];
       const inHand = handState.slots.includes(id);
       const chip = document.createElement("button");
       chip.className = "helper-card" + (inHand ? " used" : "") + (save.friends.includes(id) ? " friend" : "");
@@ -965,7 +969,7 @@ function renderHandFill() {
 function checkHandComplete() {
   const filled = handState.slots.filter(Boolean);
   if (filled.length < 5) return;
-  const wheres = new Set(filled.map(id => HH.HELPERS[id].where));
+  const wheres = new Set(filled.map(id => C.HELPERS[id].where));
   if (wheres.size >= 2) {
     save.hand = handState.slots.slice(); saveSave();
     setNilu("My hand is ready! 🖐️💙");
@@ -973,7 +977,7 @@ function checkHandComplete() {
     awardSticker(1);
     setTimeout(showHandContinue, 1100);
   } else {
-    setNilu(HH.HAND_INTRO[2]);
+    setNilu(C.HAND_INTRO[2]);
     SND.tryTone();
     setTimeout(() => {
       handState.slots = [null, null, null, null, null];
@@ -1031,7 +1035,7 @@ function startFeelingsLesson() {
   }
   lessonStage({
     icon: "💓", kicker: "Lesson 1 of 2", title: "The Uh-Oh Feeling", step: 0, steps: 3,
-    niluText: HH.FEELINGS.intro,
+    niluText: C.FEELINGS.intro,
     content(el) {
       el.innerHTML = '<div class="ls-hero">🧒<span class="ls-hero-ping">💓</span></div>';
     },
@@ -1041,10 +1045,10 @@ function startFeelingsLesson() {
 function renderFeelingsSigns() {
   lessonStage({
     icon: "💓", kicker: "Lesson 1 of 2", title: "The Uh-Oh Feeling", step: 1, steps: 3,
-    niluText: HH.FEELINGS.lesson,
+    niluText: C.FEELINGS.lesson,
     content(el) {
       const grid = document.createElement("div"); grid.className = "ls-signs";
-      HH.FEELINGS.signs.forEach((s, i) => {
+      C.FEELINGS.signs.forEach((s, i) => {
         const chip = document.createElement("button"); chip.className = "ls-sign";
         chip.style.animationDelay = (i * 0.12) + "s";
         chip.innerHTML = '<span class="em">' + s.emoji + '</span><span class="tx">' + escHtml(s.text) + "</span>";
@@ -1061,13 +1065,13 @@ function renderFeelingsSigns() {
 }
 function renderFeelingsQuiz() {
   const stage = lessonStage({
-    icon: "💓", kicker: "Lesson 1 of 2 · Quick check", title: HH.FEELINGS.quiz.q, step: 2, steps: 3,
-    niluText: HH.FEELINGS.quiz.q,
+    icon: "💓", kicker: "Lesson 1 of 2 · Quick check", title: C.FEELINGS.quiz.q, step: 2, steps: 3,
+    niluText: C.FEELINGS.quiz.q,
     content(el) {
       const answers = document.createElement("div"); answers.className = "quiz-answers ls-answers";
       const feedback = document.createElement("div"); feedback.className = "quiz-feedback";
       el.appendChild(answers); el.appendChild(feedback);
-      buildChoices(answers, HH.FEELINGS.quiz.a, feedback, () => {
+      buildChoices(answers, C.FEELINGS.quiz.a, feedback, () => {
         awardSticker(1);
         setTimeout(startSecretsLesson, 900);
       });
@@ -1081,8 +1085,8 @@ function startSecretsLesson() {
     return;
   }
   lessonStage({
-    icon: "🤫", kicker: "Lesson 2 of 2", title: "Surprises & Secrets", step: 0, steps: 2 + HH.SECRETS.items.length,
-    niluText: HH.SECRETS.intro,
+    icon: "🤫", kicker: "Lesson 2 of 2", title: "Surprises & Secrets", step: 0, steps: 2 + C.SECRETS.items.length,
+    niluText: C.SECRETS.intro,
     content(el) {
       el.innerHTML =
         '<div class="ls-compare">' +
@@ -1096,8 +1100,8 @@ function startSecretsLesson() {
 }
 function renderSecretRule() {
   lessonStage({
-    icon: "🤫", kicker: "Lesson 2 of 2", title: "The Rule", step: 1, steps: 2 + HH.SECRETS.items.length,
-    niluText: HH.SECRETS.rule,
+    icon: "🤫", kicker: "Lesson 2 of 2", title: "The Rule", step: 1, steps: 2 + C.SECRETS.items.length,
+    niluText: C.SECRETS.rule,
     content(el) {
       el.innerHTML = '<div class="ls-rule">Bad secrets are for <b>TELLING</b> a helper. 🗣️</div>';
     },
@@ -1107,11 +1111,11 @@ function renderSecretRule() {
 }
 function renderSecretItem() {
   const idx = handState.secretsIdx;
-  const item = HH.SECRETS.items[idx];
+  const item = C.SECRETS.items[idx];
   if (!item) { finishHandMode(); return; }
   lessonStage({
-    icon: "🤫", kicker: "Sort it! " + (idx + 1) + " of " + HH.SECRETS.items.length, title: "Happy surprise — or tell a helper?",
-    step: 2 + idx, steps: 2 + HH.SECRETS.items.length,
+    icon: "🤫", kicker: "Sort it! " + (idx + 1) + " of " + C.SECRETS.items.length, title: "Happy surprise — or tell a helper?",
+    step: 2 + idx, steps: 2 + C.SECRETS.items.length,
     niluText: idx === 0 ? "Listen to this one. Is it a happy surprise, or a secret to tell?" : "Here is the next one. What do you think?",
     content(el) {
       const card = document.createElement("div"); card.className = "ls-secret-card";
@@ -1181,7 +1185,7 @@ function enterPractice() {
   renderPractice();
 }
 function tellCandidates(sc) {
-  const placeHelpers = (HH.PLACES[sc.place] && HH.PLACES[sc.place].helpers) || [];
+  const placeHelpers = (C.PLACES[sc.place] && C.PLACES[sc.place].helpers) || [];
   const set = [];
   placeHelpers.concat(sc.tellTo).forEach(id => { if (set.indexOf(id) === -1) set.push(id); });
   return set;
@@ -1199,10 +1203,10 @@ function renderPractice() {
 function visibleScenarios() {
   // per-item adult sign-off (see section 7) now guards every scenario,
   // so all scenarios are listed here — locked ones just show a 🔒 badge.
-  return HH.SCENARIOS.slice();
+  return C.SCENARIOS.slice();
 }
 function scenarioIsWalkable(sc) {
-  const place = HH.PLACES[sc.place];
+  const place = C.PLACES[sc.place];
   return !!(place && place.rooms && place.rooms.some(r => r.id === sc.room) && window.HH && HH.World && worldReady);
 }
 function renderScenarioPicker(body) {
@@ -1235,13 +1239,13 @@ function renderScenarioPicker(body) {
       sessionStorage.setItem("hh_review_suggested", "1");
       const banner = document.createElement("div"); banner.className = "review-suggest-banner";
       const txt = document.createElement("p"); txt.className = "review-suggest-text";
-      txt.textContent = HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title);
+      txt.textContent = C.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title);
       const btn = document.createElement("button"); btn.className = "btn-primary review-suggest-btn";
-      btn.textContent = HH.REVIEW_PROMPT.button;
+      btn.textContent = C.REVIEW_PROMPT.button;
       btn.addEventListener("click", () => attemptStartScenario(cand));
       banner.appendChild(txt); banner.appendChild(btn);
       body.appendChild(banner);
-      setNilu(HH.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title));
+      setNilu(C.REVIEW_PROMPT.banner(cand.emoji + " " + cand.title));
     }
   }
   const grid = document.createElement("div"); grid.className = "scenario-grid";
@@ -1270,17 +1274,17 @@ function renderScenarioPicker(body) {
 /* ---- Getting Ready: appointment-prep picker section (below the
    safety scenarios, clearly grouped — no wrong answers inside) ---- */
 function renderPrepSection(body) {
-  if (!HH.PREP || !HH.PREP.length) return;
+  if (!C.PREP || !C.PREP.length) return;
   const title = document.createElement("h2");
   title.className = "practice-title prep-title";
-  title.textContent = HH.PREP_TITLE;
+  title.textContent = C.PREP_TITLE;
   body.appendChild(title);
   const sub = document.createElement("p");
   sub.className = "practice-sub";
-  sub.textContent = HH.PREP_SUB;
+  sub.textContent = C.PREP_SUB;
   body.appendChild(sub);
   const grid = document.createElement("div"); grid.className = "scenario-grid";
-  HH.PREP.forEach(p => {
+  C.PREP.forEach(p => {
     const doneKey = "prep:" + p.id;
     const card = document.createElement("button");
     card.className = "scenario-card"; card.dataset.prepId = p.id;
@@ -1391,14 +1395,14 @@ function renderTellStep(body) {
   const promptText = phase === "ask2" ? "Who else can you tell?" : sc.tellPrompt;
   speakRow(card, promptText);
   const map = document.createElement("div"); map.className = "tell-map";
-  const placeInfo = HH.PLACES[sc.place];
+  const placeInfo = C.PLACES[sc.place];
   const pe = document.createElement("div"); pe.className = "tell-place-emoji"; pe.textContent = placeInfo ? placeInfo.emoji : "🏠";
   map.appendChild(pe);
   const helpersRow = document.createElement("div"); helpersRow.className = "tell-helpers";
   const feedback = document.createElement("div"); feedback.className = "quiz-feedback";
 
   tellCandidates(sc).forEach(id => {
-    const h = HH.HELPERS[id]; if (!h) return;
+    const h = C.HELPERS[id]; if (!h) return;
     const used = practiceState.usedTell.includes(id);
     const chip = document.createElement("button");
     chip.className = "helper-chip" + (used ? " used" : "");
@@ -1440,7 +1444,7 @@ function renderResolveStep(body) {
   }
   const card = stepCardShell("You Did It!");
   speakRow(card, sc.resolve);
-  const aff = HH.AFFIRMATIONS[Math.floor(Math.random() * HH.AFFIRMATIONS.length)];
+  const aff = C.AFFIRMATIONS[Math.floor(Math.random() * C.AFFIRMATIONS.length)];
   const affEl = document.createElement("div"); affEl.className = "affirmation-big"; affEl.textContent = aff;
   card.appendChild(affEl);
   const actions = document.createElement("div"); actions.className = "resolve-actions";
@@ -1480,7 +1484,7 @@ function startScenarioInWorld(sc) {
 }
 function runScenarioSee() {
   const sc = scenarioState.scenario;
-  const actor = HH.SCENARIO_ACTORS[sc.id];
+  const actor = C.SCENARIO_ACTORS[sc.id];
   if (actor && window.HH && HH.World) HH.World.say(sc.id, actor.bubble, 4500);
   showWorldBanner(sc.setup, { onClose: quitScenario });
   bannerActionButton("Next ➡️", "btn-primary", () => { scenarioState.step = "feel"; runScenarioFeel(); });
@@ -1588,7 +1592,7 @@ function runScenarioResolve() {
   trialRecordCompletion(sc.id, scenarioState.hadWrongTap);
   awardSticker(1);
   confettiBig(); SND.chime();
-  const aff = HH.AFFIRMATIONS[Math.floor(Math.random() * HH.AFFIRMATIONS.length)];
+  const aff = C.AFFIRMATIONS[Math.floor(Math.random() * C.AFFIRMATIONS.length)];
   showWorldBanner(sc.resolve + "  " + aff, {});
   bannerActionButton("Play again 🔁", "btn-secondary", () => { startScenarioInWorld(sc); });
   bannerActionButton("More stories ➡️", "btn-primary", () => {
@@ -1749,7 +1753,7 @@ function renderPrepDone(body) {
   const card = stepCardShell("You Did It!");
   const hero = document.createElement("div"); hero.className = "prep-hero"; hero.textContent = p.emoji + "🌟";
   card.appendChild(hero);
-  speakRow(card, HH.PREP_DONE_LINE);
+  speakRow(card, C.PREP_DONE_LINE);
   const actions = document.createElement("div"); actions.className = "resolve-actions";
   const again = document.createElement("button"); again.className = "btn-secondary"; again.textContent = "Practice again 🔁";
   again.title = "Practice this walkthrough again";
@@ -1764,7 +1768,7 @@ function renderPrepDone(body) {
   actions.appendChild(again); actions.appendChild(more);
   card.appendChild(actions);
   body.appendChild(card);
-  setNilu(HH.PREP_DONE_LINE);
+  setNilu(C.PREP_DONE_LINE);
 }
 
 /* ---------------------------------------------------------------
@@ -2081,12 +2085,22 @@ function renderProgressSection() {
     "<th>First-Try Correct</th><th>Practice Dates</th><th>Mastered</th><th>Last Played</th></tr></thead><tbody>" +
     rows + "</tbody></table>";
 }
+function renderLanguageSection() {
+  if (!window.ABELang) return "";
+  const isEs = ABELang.es;
+  return "<h3>Language / Idioma</h3>" +
+    '<p class="gu-why">The child-facing screens (stories, lessons, world) can play in English or Spanish. ' +
+    "This does not change the sections above — the sign-off and progress report always stay in English for review.</p>" +
+    '<p><button class="btn-plain" id="guLangToggleBtn" data-abe="lang">' + escHtml(ABELang.label()) + "</button> " +
+    '<span class="gu-note" style="display:inline;">Currently: ' + (isEs ? "Español" : "English") + "</span></p>";
+}
 function renderGrownupsBody() {
   const body = $("guBody");
   body.hidden = false;
   const G = HH.GROWNUPS;
   const esc = s => String(s);
   body.innerHTML =
+    renderLanguageSection() +
     renderSignoffSection() +
     renderProgressSection() +
     "<h3>What This Teaches</h3><ul>" + G.what.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>" +
@@ -2107,6 +2121,10 @@ function wireGrownups() {
   $("grownupsLinkTitle").addEventListener("click", () => enterGrownups("titleScreen"));
   $("grownupsLinkMenu").addEventListener("click", () => enterGrownups("menuScreen"));
   $("guBody").addEventListener("click", e => {
+    if (e.target.id === "guLangToggleBtn" || e.target.closest("#guLangToggleBtn")) {
+      if (window.ABELang) ABELang.toggle(); // persists + reloads
+      return;
+    }
     if (e.target.id === "signoffMasterBtn" || e.target.closest("#signoffMasterBtn")) {
       startMasterReview({ onApproved: renderGrownupsBody }); return;
     }

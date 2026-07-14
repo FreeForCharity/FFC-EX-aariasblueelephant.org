@@ -110,6 +110,13 @@ for (const [game, cfg] of Object.entries(GAMES)) {
     const exits = src.match(/data-abe="exit"/g) || [];
     if (exits.length !== 1) fail(game, 'R6', `expected exactly one data-abe="exit" in ${file}, found ${exits.length}`);
     if (!/data-abe="sound"/.test(src)) fail(game, 'R6', `missing data-abe="sound" on the mute button in ${file}`);
+    // R7 — Spanish mode: every game carries the language flag toggle
+    // (Nilu's World's flag lives on its title screen in index.tsx, not the HUD)
+    let langSrc = src;
+    if (game === 'nilus-world') {
+      try { langSrc += readFileSync('components/game/BelusWorld/index.tsx', 'utf8'); } catch (e) {}
+    }
+    if (!/data-abe="lang"/.test(langSrc)) fail(game, 'R7', `missing data-abe="lang" language toggle for ${game}`);
   }
 }
 

@@ -49,7 +49,7 @@ window.MB = window.MB || {};
     if (!H.isReady()){
       MB.Audio.no();
       const left = Math.ceil((H.readyAt - performance.now()/1000));
-      MB.ui.toast('🪄 The magic wand is resting! Ready in ' + (left > 60 ? Math.ceil(left/60) + ' minutes' : left + ' seconds') + ' — keep building! 💪', 2400);
+      MB.ui.toast(ABELang.t('🪄 The magic wand is resting! Ready in ') + (left > 60 ? Math.ceil(left/60) + ABELang.t(' minutes') : left + ABELang.t(' seconds')) + ABELang.t(' — keep building! 💪'), 2400);
       return;
     }
     const grid = document.getElementById('helpGrid');
@@ -71,7 +71,7 @@ window.MB = window.MB || {};
     MB.Builder.locked = true;
     MB.Builder.select(null);
     MB.Audio.sparkle();
-    MB.ui.toast('🪄 Watch the magic! Building a ' + model.name + '! ' + model.emoji, 2400);
+    MB.ui.toast(ABELang.t('🪄 Watch the magic! Building a ') + model.name + '! ' + model.emoji, 2400);
 
     const t = MB.Builder.table;
     // find a clear spot on the table: try center then offsets
@@ -116,7 +116,7 @@ window.MB = window.MB || {};
       H.readyAt = performance.now()/1000 + COOLDOWN;
       MB.Audio.fanfare();
       MB.ui.confetti();
-      MB.ui.toast('🎉 Ta-daa! One ' + model.name + '! ' + model.emoji + ' Now make it your own — or press ▶️ to play with it!', 3600);
+      MB.ui.toast(ABELang.t('🎉 Ta-daa! One ') + model.name + '! ' + model.emoji + ABELang.t(' Now make it your own — or press ▶️ to play with it!'), 3600);
       MB.Builder.onChange && MB.Builder.onChange();
     };
     placeNext();

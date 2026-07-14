@@ -17,6 +17,7 @@ import type { BeluEmotion } from './BeluCharacter';
 import { ISLANDS, worldRuntime, type ZoneId } from './three/worldConfig';
 import { attachKeyboard, queueGoHome } from './three/input';
 import { supabase } from '../../../lib/supabase';
+import { tr, isEs, toggleLang, langLabel } from '../../../lib/lang';
 import HUD from './ui/HUD';
 import TouchControls from './ui/TouchControls';
 import GrowthMap from './ui/GrowthMap';
@@ -864,7 +865,7 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
         animate={reduceMotion ? {} : { y: [0, -10, 0] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
       >
-        Aaria's Floating Islands
+        {tr("Aaria's Floating Islands", 'Las Islas Flotantes de Aaria')}
       </motion.h1>
 
       <motion.p
@@ -874,7 +875,7 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
         className="max-w-xl text-base font-extrabold sm:text-lg"
         style={{ color: '#246' }}
       >
-        Built for <span className="text-pink-500">Aaria and Her Friends</span> 💖 — explore islands, meet friends &amp; help Nilu grow!
+        {tr('Built for ', 'Hecho para ')}<span className="text-pink-500">{tr('Aaria and Her Friends', 'Aaria y Sus Amigos')}</span>{tr(' 💖 — explore islands, meet friends & help Nilu grow!', ' 💖 — explora las islas, conoce amigos y ayuda a Nilu a crecer!')}
       </motion.p>
 
       <motion.a
@@ -900,13 +901,13 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
 
       {returning && (
         <p className="max-w-md text-sm font-semibold text-sky-900/70">
-          Welcome back! {growthLabel} is waiting on the sky islands. 🌈
+          {tr(`Welcome back! ${growthLabel} is waiting on the sky islands. 🌈`, `¡Bienvenido de nuevo! ${growthLabel} te espera en las islas del cielo. 🌈`)}
         </p>
       )}
 
       {/* who is playing? — personalizes Nilu's greetings */}
       <div className="mt-1 flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-2.5">
-        <label htmlFor="beluName" className="text-base font-bold text-sky-900">Who is playing?</label>
+        <label htmlFor="beluName" className="text-base font-bold text-sky-900">{tr('Who is playing?', '¿Quién está jugando?')}</label>
         <input
           id="beluName"
           value={name}
@@ -927,7 +928,7 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
         onClick={play}
         className="mt-2 rounded-full bg-gradient-to-b from-green-300 to-green-500 px-14 py-4 text-2xl font-black text-green-950 shadow-[0_6px_0_#2f9e44,0_10px_18px_rgba(0,0,0,0.18)] active:translate-y-1"
       >
-        {returning ? 'Continue ✨' : '▶ Play!'}
+        {returning ? tr('Continue ✨', 'Continuar ✨') : tr('▶ Play!', '▶ ¡Jugar!')}
       </motion.button>
 
       {/* secondary buttons */}
@@ -936,18 +937,25 @@ function IntroScreen({ memory, growthLabel, reduceMotion, onStart, onToggleFulls
           onClick={() => setShowHow(true)}
           className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-7 py-2.5 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-1"
         >
-          ❓ How to Play
+          {tr('❓ How to Play', '❓ Cómo Jugar')}
         </button>
         <button
           onClick={onToggleFullscreen}
           className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-7 py-2.5 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-1"
         >
-          ⛶ Full Screen
+          {tr('⛶ Full Screen', '⛶ Pantalla Completa')}
+        </button>
+        <button
+          data-abe="lang"
+          onClick={toggleLang}
+          className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 px-7 py-2.5 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] active:translate-y-1"
+        >
+          {langLabel()}
         </button>
       </div>
 
       <p className="mt-2 rounded-full bg-white/55 px-5 py-2 text-xs font-semibold text-sky-900/70">
-        A game from <b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org
+        {tr("A game from ", "Un juego de ")}<b>Aaria's Blue Elephant</b> 🐘💙 · aariasblueelephant.org
       </p>
 
       <AnimatePresence>{showHow && <HowToPlay onClose={() => setShowHow(false)} />}</AnimatePresence>
@@ -974,20 +982,20 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-5xl">🐘💙</div>
-        <h2 className="mt-2 text-2xl font-black text-sky-700">How to Play</h2>
+        <h2 className="mt-2 text-2xl font-black text-sky-700">{tr('How to Play', 'Cómo Jugar')}</h2>
         <div className="mt-4 space-y-2 text-left text-base font-semibold text-slate-700">
-          <p>🕹️ <b>Arrows or the joystick</b> — walk Nilu around</p>
-          <p>⬆️ <b>Jump button</b> — hop over things</p>
-          <p>✋ <b>Drag</b> the world to look around</p>
-          <p>🫧 <b>Walk into glowing orbs</b> (or tap them) to help your friends</p>
-          <p>⭐ Earn stars to help <b>Nilu grow up</b> and bloom the islands</p>
-          <p>💙 There is <b>no way to lose</b> — just explore and have fun!</p>
+          <p>🕹️ <b>{tr('Arrows or the joystick', 'Flechas o el joystick')}</b> — {tr('walk Nilu around', 'camina con Nilu')}</p>
+          <p>⬆️ <b>{tr('Jump button', 'Botón de saltar')}</b> — {tr('hop over things', 'salta sobre las cosas')}</p>
+          <p>✋ <b>{tr('Drag', 'Arrastra')}</b> {tr('the world to look around', 'el mundo para mirar alrededor')}</p>
+          <p>🫧 <b>{tr('Walk into glowing orbs', 'Camina hacia las esferas brillantes')}</b> {tr('(or tap them) to help your friends', '(o tócalas) para ayudar a tus amigos')}</p>
+          <p>⭐ {tr('Earn stars to help', 'Gana estrellas para ayudar a')} <b>{tr('Nilu grow up', 'Nilu a crecer')}</b> {tr('and bloom the islands', 'y florecer las islas')}</p>
+          <p>💙 {tr('There is', 'No hay')} <b>{tr('no way to lose', 'forma de perder')}</b> — {tr('just explore and have fun!', '¡solo explora y diviértete!')}</p>
         </div>
         <button
           onClick={onClose}
           className="mt-6 rounded-full bg-green-500 px-9 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
         >
-          Let's play! 🎮
+          {tr("Let's play! 🎮", '¡A jugar! 🎮')}
         </button>
       </motion.div>
     </motion.div>
@@ -1152,22 +1160,22 @@ function FreshDayModal({ onChoose }: { onChoose: (choice: 'fresh' | 'continue') 
         className="w-full max-w-sm rounded-[26px] bg-gradient-to-b from-white to-sky-50 p-7 text-center shadow-2xl"
       >
         <div className="text-5xl">🌅🐘</div>
-        <h2 className="mt-2 text-2xl font-black text-sky-700">Nilu's world grew! ✨</h2>
+        <h2 className="mt-2 text-2xl font-black text-sky-700">{tr("Nilu's world grew! ✨", '¡El mundo de Nilu creció! ✨')}</h2>
         <p className="mt-2 text-base font-semibold text-slate-600">
-          A whole day of adventures is here — morning ☀️, school 🏫, play time 🏡 and bedtime 🌙.
+          {tr('A whole day of adventures is here — morning ☀️, school 🏫, play time 🏡 and bedtime 🌙.', 'Un día entero de aventuras te espera — mañana ☀️, escuela 🏫, hora de jugar 🏡 y hora de dormir 🌙.')}
         </p>
         <div className="mt-5 flex flex-col gap-2.5">
           <button
             onClick={() => onChoose('fresh')}
             className="rounded-full bg-gradient-to-b from-amber-300 to-orange-400 py-3 text-base font-bold text-amber-950 shadow-[0_5px_0_#e8920c,0_8px_14px_rgba(0,0,0,0.15)] transition active:translate-y-1"
           >
-            ☀️ Start a fresh day
+            {tr('☀️ Start a fresh day', '☀️ Empezar un día nuevo')}
           </button>
           <button
             onClick={() => onChoose('continue')}
             className="rounded-full bg-gradient-to-b from-green-300 to-green-500 py-3 text-base font-bold text-green-950 shadow-[0_5px_0_#2f9e44,0_8px_14px_rgba(0,0,0,0.15)] transition active:translate-y-1"
           >
-            ▶️ Keep going where I was
+            {tr('▶️ Keep going where I was', '▶️ Seguir donde me quedé')}
           </button>
         </div>
       </motion.div>
@@ -1396,19 +1404,19 @@ function ExitConfirm({ onStay, onLeave }: { onStay: () => void; onLeave: () => v
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-4xl">🌈🐘</div>
-        <h2 className="mt-2 text-lg font-extrabold text-slate-800">Leave Aaria's Floating Islands? 🌈</h2>
+        <h2 className="mt-2 text-lg font-extrabold text-slate-800">{tr("Leave Aaria's Floating Islands? 🌈", '¿Salir de las Islas Flotantes de Aaria? 🌈')}</h2>
         <div className="mt-4 flex flex-col gap-2">
           <button
             onClick={onStay}
             className="rounded-full bg-green-500 py-3 text-base font-bold text-white shadow-lg transition active:scale-95"
           >
-            Stay and play
+            {tr('Stay and play', 'Quedarme a jugar')}
           </button>
           <button
             onClick={onLeave}
             className="rounded-full bg-slate-100 py-3 text-base font-bold text-slate-500 transition active:scale-95"
           >
-            Leave
+            {tr('Leave', 'Salir')}
           </button>
         </div>
       </motion.div>
@@ -1428,13 +1436,13 @@ function PauseOverlay({ onResume }: { onResume: () => void }) {
       style={{ background: 'rgba(30,60,110,0.75)', backdropFilter: 'blur(10px)' }}
     >
       <div className="text-6xl">💙</div>
-      <h2 className="text-2xl font-black text-white">Taking a break 💙</h2>
-      <p className="max-w-xs text-sm font-semibold text-white/80">Nilu is waiting patiently. Come back whenever you're ready.</p>
+      <h2 className="text-2xl font-black text-white">{tr('Taking a break 💙', 'Tomando un descanso 💙')}</h2>
+      <p className="max-w-xs text-sm font-semibold text-white/80">{tr("Nilu is waiting patiently. Come back whenever you're ready.", 'Nilu espera pacientemente. Vuelve cuando estés listo.')}</p>
       <button
         onClick={onResume}
         className="mt-1 rounded-full bg-green-400 px-10 py-4 text-xl font-black text-green-950 shadow-[0_6px_0_#2f9e44,0_10px_18px_rgba(0,0,0,0.25)] transition active:translate-y-1"
       >
-        Keep playing ▶️
+        {tr('Keep playing ▶️', 'Seguir jugando ▶️')}
       </button>
     </motion.div>
   );
@@ -1466,16 +1474,16 @@ function SettingsPanel({
         className="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-extrabold text-slate-800">Comfort Settings</h2>
+          <h2 className="text-xl font-extrabold text-slate-800">{tr('Comfort Settings', 'Ajustes de Comodidad')}</h2>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
             ✕
           </button>
         </div>
-        <p className="mb-4 text-sm text-slate-500">Make Aaria's Floating Islands feel just right for you. 💙</p>
+        <p className="mb-4 text-sm text-slate-500">{tr("Make Aaria's Floating Islands feel just right for you. 💙", 'Ajusta las Islas Flotantes de Aaria a tu gusto. 💙')}</p>
 
         {/* Game speed — more time to read/listen 🐢 or snappier 🚀 */}
         <div className="mb-3 rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-          <div className="mb-2 flex items-center gap-2 font-bold text-slate-700">🎛️ Game speed</div>
+          <div className="mb-2 flex items-center gap-2 font-bold text-slate-700">🎛️ {tr('Game speed', 'Velocidad del juego')}</div>
           <div className="flex gap-2">
             {SPEED_ORDER.map((k) => (
               <button
@@ -1487,26 +1495,34 @@ function SettingsPanel({
               </button>
             ))}
           </div>
-          <div className="mt-1.5 text-xs text-slate-400">🐢 more time to read &amp; listen · 🚀 faster</div>
+          <div className="mt-1.5 text-xs text-slate-400">{tr('🐢 more time to read & listen · 🚀 faster', '🐢 más tiempo para leer y escuchar · 🚀 más rápido')}</div>
         </div>
 
-        <Toggle label="Calm mode" hint="Softer glow, gentler colors" on={settings.calmMode} onClick={() => onChange({ ...settings, calmMode: !settings.calmMode })} />
-        <Toggle label="Reduce motion" hint="Slow down drifting clouds & effects" on={settings.reduceMotion} onClick={() => onChange({ ...settings, reduceMotion: !settings.reduceMotion })} />
-        <Toggle label="Sounds" hint="Gentle chimes for stars & success" on={settings.sound} onClick={() => onChange({ ...settings, sound: !settings.sound })} />
-        <Toggle label="Read aloud" hint="Nilu speaks her words out loud" on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
+        <Toggle label={tr('Calm mode', 'Modo tranquilo')} hint={tr('Softer glow, gentler colors', 'Brillo suave, colores más tranquilos')} on={settings.calmMode} onClick={() => onChange({ ...settings, calmMode: !settings.calmMode })} />
+        <Toggle label={tr('Reduce motion', 'Reducir movimiento')} hint={tr('Slow down drifting clouds & effects', 'Reduce las nubes y los efectos en movimiento')} on={settings.reduceMotion} onClick={() => onChange({ ...settings, reduceMotion: !settings.reduceMotion })} />
+        <Toggle label={tr('Sounds', 'Sonidos')} hint={tr('Gentle chimes for stars & success', 'Sonidos suaves para estrellas y logros')} on={settings.sound} onClick={() => onChange({ ...settings, sound: !settings.sound })} />
+        <Toggle label={tr('Read aloud', 'Leer en voz alta')} hint={tr('Nilu speaks her words out loud', 'Nilu dice sus palabras en voz alta')} on={settings.narration} onClick={() => onChange({ ...settings, narration: !settings.narration })} />
+
+        <button
+          onClick={toggleLang}
+          data-abe="lang"
+          className="mt-2 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm font-bold text-slate-600 transition hover:bg-slate-100"
+        >
+          {isEs() ? '🌐 Idioma: Español' : '🌐 Language: English'}
+        </button>
 
         <button
           onClick={onOpenGrownUps}
           className="mt-2 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm font-bold text-slate-600 transition hover:bg-slate-100"
         >
-          👤 For grown-ups — view progress notes
+          {tr('👤 For grown-ups — view progress notes', '👤 Para adultos — ver notas de progreso')}
         </button>
 
         <button
           onClick={onClose}
           className="mt-3 w-full rounded-full bg-sky-500 py-3 text-lg font-bold text-white shadow-lg transition active:scale-95"
         >
-          Done
+          {tr('Done', 'Listo')}
         </button>
       </motion.div>
     </motion.div>

@@ -9,6 +9,26 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ISLANDS, type ZoneId } from '../three/worldConfig';
 import { nudgeZoom, CAM_ZOOM_STEP } from '../three/playerState';
+import { tr, isEs } from '../../../../lib/lang';
+
+// Spanish island names for the arrival banner — kept local to the HUD so the
+// shared worldConfig data (used by 3D signage/geometry) stays untouched.
+const ISLAND_LABEL_ES: Partial<Record<ZoneId, string>> = {
+  home: 'La Casa de Nilu',
+  meadow: 'Prado de las Emociones',
+  mountain: 'Montaña de la Mañana',
+  cove: 'Cala Tranquila',
+  forest: 'Bosque de la Amistad',
+  shore: 'Orilla para Compartir',
+  rainbow: 'Patio del Arcoíris',
+  school: 'Isla Escolar',
+  afternoon: 'Rincón Divertido',
+  night: 'Isla del Sueño',
+  garden: 'Jardín de las Emociones',
+  deepforest: 'Bosque Profundo',
+  lagoon: 'Laguna Silenciosa',
+  bay: 'Bahía del Tesoro',
+};
 
 interface Props {
   beluLine: string | null;
@@ -41,12 +61,12 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
   // map, change speed, go fullscreen, open settings, or exit by accident — a
   // child should only ever see mute / pause / home / more as instant taps.
   const moreRows: Array<{ label: string; onClick: () => void; ariaLabel: string }> = [
-    { label: '🎩 Dress up', onClick: onOpenWardrobe, ariaLabel: 'Dress up Nilu' },
-    { label: '🗺️ Growth map', onClick: onOpenMap, ariaLabel: 'Growth map' },
-    { label: `🎛️ Speed: ${speedLabel}`, onClick: onCycleSpeed, ariaLabel: `Game speed: ${speedLabel} — tap for more time or faster` },
-    { label: '⛶ Full screen', onClick: onToggleFullscreen, ariaLabel: 'Full screen' },
-    { label: '⚙️ For grown-ups & settings', onClick: onOpenSettings, ariaLabel: 'Settings' },
-    { label: '🚪 Leave game', onClick: onExit, ariaLabel: 'Exit game' },
+    { label: tr('🎩 Dress up', '🎩 Vestir a Nilu'), onClick: onOpenWardrobe, ariaLabel: tr('Dress up Nilu', 'Vestir a Nilu') },
+    { label: tr('🗺️ Growth map', '🗺️ Mapa de crecimiento'), onClick: onOpenMap, ariaLabel: tr('Growth map', 'Mapa de crecimiento') },
+    { label: tr(`🎛️ Speed: ${speedLabel}`, `🎛️ Velocidad: ${speedLabel}`), onClick: onCycleSpeed, ariaLabel: tr(`Game speed: ${speedLabel} — tap for more time or faster`, `Velocidad del juego: ${speedLabel} — toca para más tiempo o más rápido`) },
+    { label: tr('⛶ Full screen', '⛶ Pantalla completa'), onClick: onToggleFullscreen, ariaLabel: tr('Full screen', 'Pantalla completa') },
+    { label: tr('⚙️ For grown-ups & settings', '⚙️ Para adultos y ajustes'), onClick: onOpenSettings, ariaLabel: tr('Settings', 'Ajustes') },
+    { label: tr('🚪 Leave game', '🚪 Salir del juego'), onClick: onExit, ariaLabel: tr('Exit game', 'Salir del juego') },
   ];
 
   const runMoreAction = (fn: () => void) => {
@@ -61,11 +81,11 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         data-abe="exit"
         onClick={() => { window.location.href = '/games'; }}
         className="pointer-events-auto absolute left-4 top-4 flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-white/90 shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
-        aria-label="Leave the game — back to all games"
-        title="Leave the game — back to all games"
+        aria-label={tr('Leave the game — back to all games', 'Salir del juego — volver a todos los juegos')}
+        title={tr('Leave the game — back to all games', 'Salir del juego — volver a todos los juegos')}
       >
         <span className="text-xl leading-none">🏠</span>
-        <span className="text-[10px] font-extrabold text-slate-600">Exit</span>
+        <span className="text-[10px] font-extrabold text-slate-600">{tr('Exit', 'Salir')}</span>
       </button>
 
       {/* Nilu speech — right of the Exit button */}
@@ -114,16 +134,16 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
           onClick={onToggleMute}
           data-abe="sound"
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
-          aria-label={muted ? 'Unmute sound' : 'Mute sound'}
-          title={muted ? 'Unmute sound' : 'Mute sound'}
+          aria-label={muted ? tr('Unmute sound', 'Activar sonido') : tr('Mute sound', 'Silenciar sonido')}
+          title={muted ? tr('Unmute sound', 'Activar sonido') : tr('Mute sound', 'Silenciar sonido')}
         >
           {muted ? '🔇' : '🔊'}
         </button>
         <button
           onClick={onPause}
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
-          aria-label="Take a break"
-          title="Take a break"
+          aria-label={tr('Take a break', 'Tomar un descanso')}
+          title={tr('Take a break', 'Tomar un descanso')}
         >
           ⏸️
         </button>
@@ -132,19 +152,19 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         <button
           onClick={onGoHome}
           className="pointer-events-auto flex h-12 items-center gap-1.5 rounded-full bg-emerald-500/95 px-4 text-xl shadow-lg backdrop-blur transition hover:bg-emerald-400 active:scale-95"
-          aria-label="Go back to home base"
-          title="Go back to home base"
+          aria-label={tr('Go back to home base', 'Volver a la casa')}
+          title={tr('Go back to home base', 'Volver a la casa')}
         >
-          🏡<span className="text-base font-bold text-white">Home</span>
+          🏡<span className="text-base font-bold text-white">{tr('Home', 'Casa')}</span>
         </button>
         <button
           onClick={() => setShowMore(v => !v)}
           className="pointer-events-auto flex h-12 items-center gap-1 rounded-full bg-white/90 px-4 text-xl shadow-lg backdrop-blur transition hover:bg-white active:scale-95"
-          aria-label="More options"
-          title="More options"
+          aria-label={tr('More options', 'Más opciones')}
+          title={tr('More options', 'Más opciones')}
           aria-expanded={showMore}
         >
-          ⋯<span className="text-base font-bold text-slate-700">More</span>
+          ⋯<span className="text-base font-bold text-slate-700">{tr('More', 'Más')}</span>
         </button>
       </div>
 
@@ -172,10 +192,10 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
             <button
               onClick={() => setShowMore(false)}
               className="flex h-14 items-center border-t border-slate-200 px-5 text-left text-base font-bold text-rose-500 transition hover:bg-rose-50 active:bg-rose-100"
-              aria-label="Close menu"
-              title="Close menu"
+              aria-label={tr('Close menu', 'Cerrar menú')}
+              title={tr('Close menu', 'Cerrar menú')}
             >
-              ✕ Close
+              ✕ {tr('Close', 'Cerrar')}
             </button>
           </motion.div>
         )}
@@ -186,8 +206,8 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         <button
           onClick={() => nudgeZoom(-CAM_ZOOM_STEP)}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white active:scale-90"
-          aria-label="Zoom in"
-          title="Zoom in"
+          aria-label={tr('Zoom in', 'Acercar')}
+          title={tr('Zoom in', 'Acercar')}
           data-zoom="in"
         >
           🔍＋
@@ -195,8 +215,8 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
         <button
           onClick={() => nudgeZoom(CAM_ZOOM_STEP)}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white active:scale-90"
-          aria-label="Zoom out"
-          title="Zoom out"
+          aria-label={tr('Zoom out', 'Alejar')}
+          title={tr('Zoom out', 'Alejar')}
           data-zoom="out"
         >
           🔍−
@@ -215,15 +235,15 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
             style={{ background: `linear-gradient(140deg, #ffffff, ${zoneMeta.accent}33)`, border: `2px solid ${zoneMeta.accent}` }}
           >
             <div className="text-2xl">{zoneMeta.emoji}</div>
-            <div className="text-base font-extrabold text-slate-800">{zoneMeta.label}</div>
-            <div className="mt-0.5 text-xs font-semibold text-slate-500">Walk up to your friend to begin ✨</div>
+            <div className="text-base font-extrabold text-slate-800">{isEs() && nearZone ? (ISLAND_LABEL_ES[nearZone] ?? zoneMeta.label) : zoneMeta.label}</div>
+            <div className="mt-0.5 text-xs font-semibold text-slate-500">{tr('Walk up to your friend to begin ✨', 'Camina hacia tu amigo para comenzar ✨')}</div>
             {hasStarQuest && (
               <motion.div
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 1.6, repeat: Infinity }}
                 className="mt-1.5 rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700"
               >
-                ⭐ Today's Star Quest here!
+                {tr("⭐ Today's Star Quest here!", '⭐ ¡Aquí está el reto de hoy!')}
               </motion.div>
             )}
           </motion.div>
@@ -233,8 +253,8 @@ export default function HUD({ beluLine, nearZone, starQuestZone, stickers, total
       {/* Controls hint — desktop only, bottom center */}
       {!isTouch && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/35 px-4 py-2 text-xs font-medium text-white backdrop-blur">
-          <span className="font-bold">WASD</span> / arrows to move · <span className="font-bold">Space</span> to jump ·{' '}
-          walk into a glowing orb to answer
+          <span className="font-bold">WASD</span> {tr('/ arrows to move', '/ flechas para moverte')} · <span className="font-bold">{tr('Space', 'Espacio')}</span> {tr('to jump', 'para saltar')} ·{' '}
+          {tr('walk into a glowing orb to answer', 'camina hacia una esfera brillante para responder')}
         </div>
       )}
     </div>

@@ -195,6 +195,7 @@ ABC.audio = (function () {
         const p = part.trim();
         if (!p) continue;
         const u = new SpeechSynthesisUtterance(p);
+        if (window.ABELang) ABELang.voice(u);   // es-US / en-US, per the language toggle
         u.rate = baseRate; u.pitch = basePitch;   // calm, human pace — no chipmunk
         // tiny lift on questions and excitement, like real speech
         if (/\?$/.test(p)) u.pitch = basePitch + 0.08;

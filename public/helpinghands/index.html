@@ -682,9 +682,32 @@ try{
   <div class="title-footer-row">
     <button id="grownupsLinkTitle" class="link-btn">Grown-Ups Corner</button>
     <a class="link-btn" href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure</a>
+    <button id="langToggleBtn" class="link-btn" data-abe="lang">🌐 Español</button>
   </div>
   <div id="orgFooter">Aaria's Blue Elephant 🐘💙 — play, learn &amp; grow</div>
 </div>
+<script>
+(function () {
+  // title screen: swap tagline/Play/labels to Spanish when ABELang.es.
+  // Kid-facing chrome only — Grown-Ups Corner link stays English (adult area).
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!window.ABELang) return;
+    var langBtn = document.getElementById("langToggleBtn");
+    if (langBtn) {
+      langBtn.title = ABELang.es ? "Switch to English" : "Cambiar a español";
+      langBtn.textContent = ABELang.label();
+      langBtn.addEventListener("click", function () { ABELang.toggle(); });
+    }
+    if (!ABELang.es) return;
+    var byline = document.querySelector("#titleScreen .byline");
+    if (byline) byline.innerHTML = "Hecho para <b>Aaria y Sus Amigos</b> 💖 — ¡aprende tu mundo y cómo pedir ayuda!";
+    var startBtn = document.getElementById("startBtn");
+    if (startBtn) startBtn.textContent = "¡Jugar! 🐘";
+    var orgFooter = document.getElementById("orgFooter");
+    if (orgFooter) orgFooter.textContent = "Aaria's Blue Elephant 🐘💙 — juega, aprende y crece";
+  });
+})();
+</script>
 
 <!-- 3. HOME MENU -->
 <div id="menuScreen" class="screen" hidden>
@@ -878,8 +901,10 @@ try{
 
 <canvas id="confettiCanvas"></canvas>
 
+<script src="/gamekit/lang.js"></script>
 <script src="lib/three.min.js"></script>
 <script src="js/content.js"></script>
+<script src="js/content-es.js"></script>
 <script src="js/world.js"></script>
 <script src="js/main.js"></script>
 <script src="/gamekit/passport.js" data-game="helpinghands" defer></script>
