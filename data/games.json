@@ -8,5 +8,6 @@
     { "id": "roadsafety", "title": "Aaria's Road Safety Heroes", "emoji": "🚦", "oneLiner": "Ride & drive the REAL streets of Mountain House!", "img": "/images/games/roadsafety.jpg", "view": "roadsafety" },
     { "id": "grocery", "title": "Aaria's Grocery Store", "emoji": "🛒", "oneLiner": "Bring your list, find the food, wait your turn, pay & bag!", "img": "/images/games/grocery.jpg", "path": "/8" },
     { "id": "dayplanner", "title": "Aaria's Day Planner", "emoji": "📅", "oneLiner": "Plan your day with picture cards, then live it with Nilu!", "img": "/images/games/dayplanner.jpg", "path": "/9" },
+    { "id": "feelings", "title": "Aaria's Feelings Faces", "emoji": "🎭", "oneLiner": "Build a face to match the feeling — watch it come alive!", "img": "/images/games/feelings.jpg", "path": "/10" },
     { "id": "wheel", "title": "Aaria's Wheel of Fun", "emoji": "🎡", "oneLiner": "Spin the rainbow wheel for surprises & giggles!", "img": "/images/games/wheel.jpg", "view": "wheel" }
 ]

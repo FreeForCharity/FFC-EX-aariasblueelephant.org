@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aaria's Feelings Faces | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     Feelings Faces — emotion-recognition through CONSTRUCTION: the child
+     builds a face (brows + eyes + mouth) to match a feeling, and the face
+     comes alive. No wrong answers: building a different feeling just names
+     that feeling warmly. Bilingual EN/ES from birth. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
+<link rel="stylesheet" href="../gamekit/kit.css">
+<style>
+  /* tap-only game: the kit joystick is not used */
+  #kStick { display: none !important; }
+  #kActs { display: none !important; }
+  #fStage {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; padding-top: calc(max(10px, env(safe-area-inset-top)) + 64px);
+    background: linear-gradient(180deg, #ffe9f2 0%, #e6f4ff 60%, #e9ffe9 100%);
+  }
+  #fTarget {
+    background: var(--k-card); border: 3px solid var(--k-accent); border-radius: 999px;
+    padding: 10px 26px; font-size: clamp(18px, 4.5vw, 26px); font-weight: 900; color: #3a3a5a;
+    box-shadow: 0 6px 16px rgba(40,40,90,.15); margin-bottom: 2vh; text-align: center;
+  }
+  #fFaceWrap { position: relative; width: min(46vh, 72vw); }
+  #fFaceWrap svg { width: 100%; height: auto; display: block; }
+  #fFaceWrap.alive { animation: fAlive .55s ease-in-out 3; }
+  @keyframes fAlive { 0%,100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.06) rotate(-2.5deg); } 70% { transform: scale(1.06) rotate(2.5deg); } }
+  #fTrays {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 8px; z-index: 40; max-width: 96vw;
+  }
+  .fTrayRow { display: flex; align-items: center; gap: 7px; justify-content: center; }
+  .fTrayLbl {
+    font-size: 12px; font-weight: 900; color: #3a3a5a; width: 64px; text-align: right;
+    background: rgba(255,255,255,.7); border-radius: 10px; padding: 4px 8px;
+  }
+  .fPart {
+    width: clamp(52px, 9vh, 72px); height: clamp(44px, 7.4vh, 60px); border-radius: 16px; border: 3px solid transparent;
+    background: var(--k-card); cursor: pointer; padding: 2px;
+    box-shadow: 0 4px 10px rgba(40,40,90,.16); display: flex; align-items: center; justify-content: center;
+  }
+  .fPart svg { width: 90%; height: 90%; }
+  .fPart:active { transform: scale(.9); }
+  .fPart.on { border-color: var(--k-accent); background: #fff; }
+  .fPart.hintPulse { animation: fHint 1s ease-in-out infinite; border-color: #ffd43b; }
+  @keyframes fHint { 0%,100% { transform: scale(1); } 50% { transform: scale(1.13); } }
+  @media (prefers-reduced-motion: reduce) { #fFaceWrap.alive, .fPart.hintPulse { animation: none; } }
+  #fHint {
+    position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 200px);
+    z-index: 41; width: 74px; height: 74px; border-radius: 50%; border: 0; cursor: pointer;
+    background: linear-gradient(180deg,#ffe066,#ffb703); font: inherit; font-size: 26px; font-weight: 900;
+    box-shadow: 0 5px 12px rgba(40,40,90,.22); display: none; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #fHint .lbl { font-size: 10px; font-weight: 800; }
+  /* keep kit toasts clear of the part trays at the bottom */
+  #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
+  #fCount {
+    position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
+    z-index: 40; background: var(--k-card); border-radius: 16px; padding: 8px 14px;
+    font-weight: 900; font-size: 15px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
+  }
+</style>
+</head>
+<body>
+<div id="kStage"></div>
+<div id="fStage">
+  <div id="fTarget"></div>
+  <div id="fFaceWrap">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="100" cy="100" r="88" fill="#ffd9a0" stroke="#e0a860" stroke-width="4"/>
+      <ellipse cx="64" cy="128" rx="12" ry="7" fill="#ffb6a0" opacity=".55"/>
+      <ellipse cx="136" cy="128" rx="12" ry="7" fill="#ffb6a0" opacity=".55"/>
+      <g id="fBrows"></g>
+      <g id="fEyes"></g>
+      <g id="fMouth"></g>
+    </svg>
+  </div>
+</div>
+<div id="fCount">🎭 0</div>
+<button id="fHint" title="A little help finding the right pieces">💡<span class="lbl">Hint</span></button>
+<div id="fTrays"></div>
+
+<script src="../gamekit/kit.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = window.ABEKit;
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- face parts (SVG path factories, drawn on the 200x200 face) ---------- */
+  const BROWS = {
+    up:   { tray: 'M4 16 Q14 6 24 12 M32 12 Q42 6 52 16',            face: 'M56 66 Q70 52 84 60 M116 60 Q130 52 144 66' },
+    flat: { tray: 'M4 12 L24 12 M32 12 L52 12',                       face: 'M56 62 L84 62 M116 62 L144 62' },
+    down: { tray: 'M4 8 Q14 14 24 18 M32 18 Q42 14 52 8',             face: 'M56 56 Q70 62 84 68 M116 68 Q130 62 144 56' },
+    sad:  { tray: 'M4 16 Q14 10 24 8 M32 8 Q42 10 52 16',             face: 'M56 66 Q70 58 84 54 M116 54 Q130 58 144 66' },
+  };
+  const EYES = {
+    open:   (g) => { g.innerHTML = '<circle cx="70" cy="88" r="9" fill="#2a2a3a"/><circle cx="130" cy="88" r="9" fill="#2a2a3a"/><circle cx="73" cy="85" r="3" fill="#fff"/><circle cx="133" cy="85" r="3" fill="#fff"/>'; },
+    wide:   (g) => { g.innerHTML = '<circle cx="70" cy="88" r="15" fill="#fff" stroke="#2a2a3a" stroke-width="3"/><circle cx="130" cy="88" r="15" fill="#fff" stroke="#2a2a3a" stroke-width="3"/><circle cx="70" cy="88" r="7" fill="#2a2a3a"/><circle cx="130" cy="88" r="7" fill="#2a2a3a"/>'; },
+    squint: (g) => { g.innerHTML = '<path d="M58 88 L82 88" stroke="#2a2a3a" stroke-width="5" stroke-linecap="round"/><path d="M118 88 L142 88" stroke="#2a2a3a" stroke-width="5" stroke-linecap="round"/><circle cx="70" cy="90" r="4.5" fill="#2a2a3a"/><circle cx="130" cy="90" r="4.5" fill="#2a2a3a"/>'; },
+    closed: (g) => { g.innerHTML = '<path d="M58 88 Q70 96 82 88" stroke="#2a2a3a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M118 88 Q130 96 142 88" stroke="#2a2a3a" stroke-width="4" fill="none" stroke-linecap="round"/>'; },
+  };
+  const EYES_TRAY = {
+    open:   '<circle cx="16" cy="14" r="6" fill="#2a2a3a"/><circle cx="40" cy="14" r="6" fill="#2a2a3a"/>',
+    wide:   '<circle cx="16" cy="14" r="10" fill="#fff" stroke="#2a2a3a" stroke-width="2.4"/><circle cx="40" cy="14" r="10" fill="#fff" stroke="#2a2a3a" stroke-width="2.4"/><circle cx="16" cy="14" r="4.6" fill="#2a2a3a"/><circle cx="40" cy="14" r="4.6" fill="#2a2a3a"/>',
+    squint: '<path d="M8 14 L24 14 M32 14 L48 14" stroke="#2a2a3a" stroke-width="3.6" stroke-linecap="round"/>',
+    closed: '<path d="M8 13 Q16 19 24 13 M32 13 Q40 19 48 13" stroke="#2a2a3a" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  };
+  const MOUTHS = {
+    smile:  { tray: 'M8 8 Q28 26 48 8',  face: 'M64 128 Q100 162 136 128', fill: 'none' },
+    frown:  { tray: 'M8 20 Q28 4 48 20', face: 'M66 146 Q100 118 134 146', fill: 'none' },
+    O:      { tray: 'O',                  face: 'O' },
+    flat:   { tray: 'M10 14 L46 14',      face: 'M72 138 L128 138', fill: 'none' },
+    tongue: { tray: 'T',                  face: 'T' },
+  };
+
+  function drawBrow(el, d, isTray) {
+    el.innerHTML = `<path d="${d}" stroke="#8a5a2a" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
+  }
+  function drawMouth(g, key, isTray) {
+    const m = MOUTHS[key];
+    if (key === 'O') {
+      g.innerHTML = isTray
+        ? '<ellipse cx="28" cy="14" rx="9" ry="11" fill="#7a3a3a"/>'
+        : '<ellipse cx="100" cy="140" rx="14" ry="18" fill="#7a3a3a"/><ellipse cx="100" cy="146" rx="8" ry="8" fill="#c96a6a"/>';
+    } else if (key === 'tongue') {
+      g.innerHTML = isTray
+        ? '<path d="M8 10 Q28 24 48 10" stroke="#7a3a3a" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="18" rx="7" ry="6" fill="#ff7f9f"/>'
+        : '<path d="M64 128 Q100 156 136 128" stroke="#7a3a3a" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="100" cy="146" rx="13" ry="12" fill="#ff7f9f"/><path d="M100 138 L100 152" stroke="#e05a7a" stroke-width="2.5"/>';
+    } else {
+      g.innerHTML = `<path d="${isTray ? m.tray : m.face}" stroke="#7a3a3a" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
+    }
+  }
+
+  /* ---------- feelings (each = exact brow+eye+mouth recipe) ---------- */
+  const FEELINGS = [
+    { id: 'happy',     emoji: '😊', en: 'HAPPY',     es: 'FELIZ',       brow: 'up',   eye: 'open',   mouth: 'smile',
+      lineEn: 'A big warm smile — that is a happy face!', lineEs: '¡Una gran sonrisa — esa es una cara feliz!' },
+    { id: 'sad',       emoji: '😢', en: 'SAD',       es: 'TRISTE',      brow: 'sad',  eye: 'open',   mouth: 'frown',
+      lineEn: 'Brows up in the middle and a frown — that face feels sad.', lineEs: 'Cejitas hacia arriba en el medio y boquita triste — esa cara está triste.' },
+    { id: 'surprised', emoji: '😮', en: 'SURPRISED', es: 'SORPRENDIDA', brow: 'up',   eye: 'wide',   mouth: 'O',
+      lineEn: 'Big wide eyes and a round mouth — surprise!', lineEs: '¡Ojos muy abiertos y boca redonda — sorpresa!' },
+    { id: 'angry',     emoji: '😠', en: 'ANGRY',     es: 'ENOJADA',     brow: 'down', eye: 'squint', mouth: 'flat',
+      lineEn: 'Brows down and a straight mouth — that face feels angry. Breathing helps!', lineEs: 'Cejas hacia abajo y boca recta — esa cara está enojada. ¡Respirar ayuda!' },
+    { id: 'sleepy',    emoji: '😴', en: 'SLEEPY',    es: 'CON SUEÑO',   brow: 'flat', eye: 'closed', mouth: 'flat',
+      lineEn: 'Eyes closed and everything soft — so sleepy.', lineEs: 'Ojitos cerrados y todo suavecito — cuánto sueño.' },
+    { id: 'silly',     emoji: '😝', en: 'SILLY',     es: 'JUGUETONA',    brow: 'up',   eye: 'wide',   mouth: 'tongue',
+      lineEn: 'Tongue out and big eyes — what a silly face!', lineEs: '¡Lengua afuera y ojos grandes — qué cara tan juguetona!' },
+  ];
+
+  /* ---------- state ---------- */
+  const G = { target: null, sel: { brow: null, eye: null, mouth: null }, made: 0, hintT: 0, hintOn: false, solved: false };
+
+  function fname(f) { return K.tr(f.en, f.es); }
+
+  function renderFace() {
+    drawBrow($('fBrows'), G.sel.brow ? BROWS[G.sel.brow].face : '', false);
+    if (G.sel.eye) EYES[G.sel.eye]($('fEyes')); else $('fEyes').innerHTML = '';
+    if (G.sel.mouth) drawMouth($('fMouth'), G.sel.mouth, false); else $('fMouth').innerHTML = '';
+  }
+
+  function buildTrays() {
+    const rows = [
+      ['brow', K.tr('Brows', 'Cejas'), Object.keys(BROWS)],
+      ['eye', K.tr('Eyes', 'Ojos'), Object.keys(EYES)],
+      ['mouth', K.tr('Mouth', 'Boca'), Object.keys(MOUTHS)],
+    ];
+    $('fTrays').innerHTML = '';
+    for (const [kind, label, keys] of rows) {
+      const row = document.createElement('div');
+      row.className = 'fTrayRow';
+      row.innerHTML = `<span class="fTrayLbl">${label}</span>`;
+      for (const key of keys) {
+        const b = document.createElement('button');
+        b.className = 'fPart';
+        b.dataset.kind = kind; b.dataset.key = key;
+        b.title = label + ' — ' + key;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', kind === 'brow' ? '0 0 56 24' : '0 0 56 28');
+        b.appendChild(svg);
+        if (kind === 'brow') drawBrow(svg, BROWS[key].tray, true);
+        else if (kind === 'eye') svg.innerHTML = EYES_TRAY[key];
+        else drawMouth(svg, key, true);
+        b.addEventListener('pointerdown', (e) => { e.preventDefault(); pick(kind, key, b); });
+        row.appendChild(b);
+      }
+      $('fTrays').appendChild(row);
+    }
+  }
+
+  function pick(kind, key, btn) {
+    if (G.solved || K.paused) return;
+    G.sel[kind] = key;
+    document.querySelectorAll(`.fPart[data-kind="${kind}"]`).forEach((b) => b.classList.toggle('on', b === btn));
+    K.sfx.tap();
+    renderFace();
+    checkFace();
+  }
+
+  function matchFeeling() {
+    return FEELINGS.find((f) => f.brow === G.sel.brow && f.eye === G.sel.eye && f.mouth === G.sel.mouth) || null;
+  }
+
+  function checkFace() {
+    if (!G.sel.brow || !G.sel.eye || !G.sel.mouth) return;
+    const m = matchFeeling();
+    if (m && m.id === G.target.id) {
+      // the face comes alive!
+      G.solved = true;
+      G.made++; K.save('made', G.made);
+      $('fCount').textContent = '🎭 ' + G.made;
+      $('fFaceWrap').classList.add('alive');
+      K.sfx.star();
+      K.say(K.tr(G.target.lineEn, G.target.lineEs));
+      K.toast(K.es() ? `${G.target.emoji} ¡Hiciste una cara ${fname(G.target)}! ¡Y cobró vida!` : `${G.target.emoji} You made a ${fname(G.target)} face! It came alive!`, 3600);
+      K.recordEvent('face', FEELINGS.indexOf(G.target));
+      if (G.made === 6) K.streakBump();
+      setTimeout(nextRound, 2600 * K.speed());
+    } else if (m) {
+      // a REAL feeling, just not the target — name it warmly (teaching moment)
+      K.sfx.pop();
+      K.toast(K.es() ? `${m.emoji} ¡Esa cara se ve ${fname(m)}! ¿Puedes hacer ${G.target.emoji} ${fname(G.target)}?` : `${m.emoji} That face looks ${fname(m)}! Can you find ${G.target.emoji} ${fname(G.target)}?`, 3400);
+      K.say(K.tr(`That looks ${m.en.toLowerCase()}! Can you make ${G.target.en.toLowerCase()}?`, `¡Esa se ve ${m.es.toLowerCase()}! ¿Puedes hacer una cara ${G.target.es.toLowerCase()}?`));
+    }
+  }
+
+  function nextRound() {
+    $('fFaceWrap').classList.remove('alive');
+    G.solved = false; G.hintT = 0; G.hintOn = false;
+    $('fHint').style.display = 'none';
+    document.querySelectorAll('.fPart').forEach((b) => b.classList.remove('on', 'hintPulse'));
+    let next;
+    do { next = FEELINGS[Math.floor(Math.random() * FEELINGS.length)]; } while (G.target && next.id === G.target.id);
+    G.target = next;
+    G.sel = { brow: null, eye: null, mouth: null };
+    renderFace();
+    $('fTarget').textContent = K.es()
+      ? `¿Puedes hacer una cara ${fname(G.target)}? ${G.target.emoji}`
+      : `Can you make a ${fname(G.target)} face? ${G.target.emoji}`;
+    K.chip(`${G.target.emoji} ${fname(G.target)}`);
+    K.say(K.tr(`Can you make a ${G.target.en.toLowerCase()} face?`, `¿Puedes hacer una cara ${G.target.es.toLowerCase()}?`));
+  }
+
+  function useHint() {
+    // pulse the next correct piece the child hasn't placed yet
+    const order = [['brow', G.target.brow], ['eye', G.target.eye], ['mouth', G.target.mouth]];
+    document.querySelectorAll('.fPart.hintPulse').forEach((b) => b.classList.remove('hintPulse'));
+    for (const [kind, key] of order) {
+      if (G.sel[kind] !== key) {
+        const btn = document.querySelector(`.fPart[data-kind="${kind}"][data-key="${key}"]`);
+        if (btn) btn.classList.add('hintPulse');
+        K.sfx.tap();
+        K.say(K.tr('Try this one!', '¡Prueba esta!'));
+        return;
+      }
+    }
+  }
+
+  K.init({
+    slug: 'feelings',
+    name: "Aaria's Feelings Faces",
+    emoji: '🎭',
+    accent: '#e05a7a',
+    tagline: 'build a face to match the feeling — then watch it come alive!',
+    taglineEs: 'arma una cara según el sentimiento — ¡y mírala cobrar vida!',
+    emojis: ['🎭', '😊', '😮', '😢', '😝'],
+    howTo: [
+      ['🎯', 'Hear the feeling — like HAPPY or SURPRISED'],
+      ['👆', 'Tap brows, eyes and a mouth to build the face'],
+      ['✨', 'Match the feeling and the face comes alive!'],
+      ['💛', 'Other feelings are named too — no wrong answers'],
+      ['💡', 'Stuck? A Hint button appears to help'],
+    ],
+    howToEs: [
+      ['🎯', 'Escucha el sentimiento — como FELIZ o SORPRENDIDO'],
+      ['👆', 'Toca cejas, ojos y boca para armar la cara'],
+      ['✨', '¡Si coincide, la cara cobra vida!'],
+      ['💛', 'Otros sentimientos también se nombran — no hay errores'],
+      ['💡', '¿Atorado? Aparece un botón de Pista'],
+    ],
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
+    actions: [],
+    onStart() {
+      G.made = K.load('made', 0);
+      $('fCount').textContent = '🎭 ' + G.made;
+      buildTrays();
+      $('fHint').addEventListener('pointerdown', useHint);
+      nextRound();
+    },
+    onPause() {},
+    onFrame(dt) {
+      if (!G.solved && G.target && !K.replaying) {
+        G.hintT += dt;
+        if (G.hintT > 12 && !G.hintOn) { G.hintOn = true; $('fHint').style.display = 'flex'; }
+      }
+    },
+    onReplayEvent(ev) {
+      if (ev.kind === 'face') { const f = FEELINGS[ev.extra]; if (f) { K.toast(`${f.emoji} ${fname(f)}!`); K.sfx.star(); } }
+    },
+  });
+})();
+</script>
+</body>
+</html>

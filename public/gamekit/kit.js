@@ -155,6 +155,7 @@
     { slug: 'helpinghands', name: "Aaria's Helping Hands", emoji: '🖐️', url: '/7' },
     { slug: 'grocery', name: "Aaria's Grocery Store", emoji: '🛒', url: '/8' },
     { slug: 'dayplanner', name: "Aaria's Day Planner", emoji: '📅', url: '/9' },
+    { slug: 'feelings', name: "Aaria's Feelings Faces", emoji: '🎭', url: '/10' },
   ];
   const passKey = () => prof === 'p1' ? 'abe.passport.v1' : `abe.passport.${prof}.v1`;
   function passGet() { try { return JSON.parse(localStorage.getItem(passKey())) || {}; } catch (e) { return {}; } }

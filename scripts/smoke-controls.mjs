@@ -39,6 +39,7 @@ const GAMES = [
       }
     } },
   { slug: 'helpinghands', url: '/helpinghands/index.html', start: async () => { /* gated: exit is asserted on its entry screen */ } },
+  { slug: 'feelings', url: '/feelings/index.html', start: async (p) => { await p.click('#kPlay'); } },
 ];
 
 const srv = http.createServer(async (req, res) => {

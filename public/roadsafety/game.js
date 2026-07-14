@@ -42,6 +42,7 @@ const VEHICLES = [
   { id:"scooter", name:"E-Scooter",    emoji:"🛴", max:16, accel:9,  brake:32, w:20, h:42 },
   { id:"ev",      name:"EV Car",       emoji:"🔋", max:35, accel:14, brake:45, w:42, h:72 },
   { id:"car",     name:"Car",          emoji:"🚙", max:45, accel:13, brake:45, w:42, h:74 },
+  { id:"walker",  name:"Walking Hero", emoji:"🚶", max:4,  accel:6,  brake:40, w:20, h:40 },
   { id:"monster", name:"Monster Truck",emoji:"🛻", max:38, accel:16, brake:42, w:52, h:82, secret:true },
 ];
 
@@ -52,6 +53,7 @@ const CFG = [
   { title:"Library Run to Hansen Park", lanes:2, base:25, lights:2, stops:1, constr:1, emerg:1, festival:false },
   { title:"Town Hall to the High School",lanes:3, base:30, lights:3, stops:0, constr:1, emerg:1, festival:false },
   { title:"Grand Mountain House Drive", lanes:3, base:35, lights:3, stops:1, constr:1, emerg:2, festival:true,  festName:"MH Farmers Market 🥕" },
+  { title:"Walk to School",             lanes:2, base:8,  lights:2, stops:0, constr:0, emerg:0, festival:false, walking:true },
   { title:"Creekside Stunt Run",        lanes:2, base:30, lights:1, stops:1, constr:0, emerg:0, festival:false, bumps:true },
 ];
 const THEMES = [   // sky/grass per level — mornings to golden hour
@@ -60,6 +62,7 @@ const THEMES = [   // sky/grass per level — mornings to golden hour
   { skyT:"#7ec8ff", skyB:"#e8f6ff", g1:"#9ed98f", g2:"#90cc81", sun:"#fff3b0" },
   { skyT:"#ffb86b", skyB:"#ffe3b3", g1:"#b8d489", g2:"#aac97c", sun:"#ffd166" },
   { skyT:"#ff8e6e", skyB:"#ffd9a8", g1:"#b5c97e", g2:"#a8bd72", sun:"#ff9e4f" },
+  { skyT:"#7ec8ff", skyB:"#cfeaff", g1:"#9ed98f", g2:"#92cf83", sun:"#fff3b0" },
   { skyT:"#69d2ff", skyB:"#e0f7ff", g1:"#a8d999", g2:"#9bce8c", sun:"#fff3b0" },
 ];
 
@@ -78,10 +81,11 @@ const POIS  = MH.pois.map(p => ({ k:p.k, n:p.n, x:p.x*PXM, y:p.y*PXM }));
 const HAS_AERIAL = typeof AERIAL !== "undefined";
 const aerialImg = {};                 // li -> Image (or false if it failed to load)
 function loadAerial(li){
-  if (!HAS_AERIAL || !AERIAL[li] || aerialImg[li] !== undefined) return;
+  const ri = ridx(li);
+  if (!HAS_AERIAL || !AERIAL[ri] || aerialImg[li] !== undefined) return;
   const im = new Image();
   im.onerror = () => { aerialImg[li] = false; };
-  im.src = AERIAL[li].file;
+  im.src = AERIAL[ri].file;
   aerialImg[li] = im;
 }
 
@@ -125,6 +129,13 @@ function buildRoute(r){
   };
 }
 const ROUTES = MH.routes.map(buildRoute);
+/* level index (li, aligned with VEHICLES/CFG/THEMES) -> physical route/aerial data index.
+   The real OSM route+aerial dataset only has 6 entries (one per original ride). The
+   walker level ("Walk to School", li=5) has no dedicated OSM ride, so it reuses route 0
+   (a real neighborhood street) for its road geometry; the secret monster truck (li=6)
+   keeps the road data that was originally authored for it (physical index 5). */
+const ROUTE_IDX = [0, 1, 2, 3, 4, 0, 5];
+function ridx(li){ return ROUTE_IDX[li] !== undefined ? ROUTE_IDX[li] : li; }
 
 function sample(rt, d){
   const f = clamp(d, 0, rt.len - .5) / DS;
@@ -230,7 +241,7 @@ const QUIZ = {
 ABELang.register({
   /* vehicles */
   "Bicycle":"Bicicleta", "E-Bike":"Bici eléctrica", "E-Scooter":"Monopatín eléctrico",
-  "EV Car":"Auto eléctrico", "Car":"Auto", "Monster Truck":"Camión monstruo",
+  "EV Car":"Auto eléctrico", "Car":"Auto", "Walking Hero":"Héroe Caminante", "Monster Truck":"Camión monstruo",
 
   /* level titles */
   "Wicklund Neighborhood Ride":"Paseo por el Vecindario Wicklund",
@@ -238,6 +249,7 @@ ABELang.register({
   "Library Run to Hansen Park":"Ida a la Biblioteca por el Parque Hansen",
   "Town Hall to the High School":"Del Ayuntamiento a la Secundaria",
   "Grand Mountain House Drive":"El Gran Recorrido de Mountain House",
+  "Walk to School":"Caminar a la escuela",
   "Creekside Stunt Run":"Acrobacias junto al Arroyo",
 
   /* safety tips (teaching popups) */
@@ -408,10 +420,12 @@ ABELang.register({
   "YOU KEPT EVERYONE AT THE EVENT SAFE +{#}!":"¡MANTUVISTE A TODOS SEGUROS EN EL EVENTO +{#}!",
 
   /* buckle / countdown */
-  "Helmet on!":"¡Casco puesto!", "Buckle up!":"¡Abróchate!",
-  "⛑️ Helmet's on!":"⛑️ ¡Ya tengo el casco!", "🔒 Buckled up!":"🔒 ¡Ya me abroché!",
+  "Helmet on!":"¡Casco puesto!", "Buckle up!":"¡Abróchate!", "Hat on! Eyes up!":"¡Gorra puesta! ¡Ojos arriba!",
+  "⛑️ Helmet's on!":"⛑️ ¡Ya tengo el casco!", "🔒 Buckled up!":"🔒 ¡Ya me abroché!", "🧢 Hat's on!":"🧢 ¡Ya tengo la gorra!",
   "Helmet on! Safety first!":"¡Casco puesto! ¡Seguridad primero!",
   "Buckled up! Safety first!":"¡Ya me abroché! ¡Seguridad primero!",
+  "Hat on! Eyes up! Safety first!":"¡Gorra puesta! ¡Ojos arriba! ¡Seguridad primero!",
+  "Walkers wait for the WALK signal! 🚶":"¡Los peatones esperan la señal de CAMINAR! 🚶",
   "GO!":"¡YA!",
 
   /* intro briefing */
@@ -436,7 +450,7 @@ ABELang.register({
   "⭐ {#} stars earned":"⭐ {#} estrellas ganadas",
   "Ride safely to earn ⭐!":"¡Anda con cuidado para ganar ⭐!",
   "A secret machine sleeps here…":"Una máquina secreta duerme aquí…",
-  "🔒 Earn all 5 certificates to wake it up!":"🔒 ¡Gana los 5 certificados para despertarla!",
+  "🔒 Earn all 6 certificates to wake it up!":"🔒 ¡Gana los 6 certificados para despertarla!",
   "🔒 One great ride away! Score {#}+ on Level {#} ({#} {#}) to unlock":
     "🔒 ¡Un gran paseo más! Consigue {#}+ en el Nivel {#} ({#} {#}) para desbloquear",
 
@@ -463,8 +477,8 @@ ABELang.register({
 
   /* certificate */
   "🛻 STUNT STAR! What a run!":"🛻 ¡ESTRELLA DE ACROBACIAS! ¡Qué recorrido!",
-  "🏆 ROAD SAFETY CHAMPION! All 5 levels done — secret unlocked on the menu… 🏆":
-    "🏆 ¡CAMPEÓN DE SEGURIDAD VIAL! Completaste los 5 niveles — se desbloqueó un secreto en el menú… 🏆",
+  "🏆 ROAD SAFETY CHAMPION! All 6 levels done — secret unlocked on the menu… 🏆":
+    "🏆 ¡CAMPEÓN DE SEGURIDAD VIAL! Completaste los 6 niveles — se desbloqueó un secreto en el menú… 🏆",
   "🎉 Level complete — you graduated!":"🎉 ¡Nivel completo — te graduaste!",
   "Certificate of Stunt Stardom":"Certificado de Estrella de Acrobacias",
   "Certificate of Road Safety":"Certificado de Seguridad Vial",
@@ -818,7 +832,7 @@ function show(id){
    EVENT GENERATION from the real route landmarks
    ============================================================ */
 function genEvents(li){
-  const cfg = CFG[li], rt = ROUTES[li], len = rt.len;
+  const cfg = CFG[li], rt = ROUTES[ridx(li)], len = rt.len;
   const evs = [], busy = [[0,560],[len-160,len+400]];
   const overlaps = (a,b) => busy.some(([x,y]) => a < y && b > x);
   const take = (a,b) => busy.push([a,b]);
@@ -969,7 +983,7 @@ function laneCFor(cfg, i){ return -(cfg.lanes * LANE_W / 2) + LANE_W * (i + .5);
 
 /* dense roadside scenery for the chase view — the stuff that rushes past = speed */
 function genProps(li){
-  const rt = ROUTES[li], HW = ROUTES[li] && CFG[li].lanes * LANE_W / 2;
+  const rt = ROUTES[ridx(li)], HW = rt && CFG[li].lanes * LANE_W / 2;
   const out = [];
   const near = d => rt.marks.some(m => Math.abs(m.d - d) < 110);   // leave room for landmark billboards
   let lampSide = 1;
@@ -994,7 +1008,7 @@ function genProps(li){
 }
 
 function genHouses(li){
-  const rt = ROUTES[li], cfg = CFG[li], HW = cfg.lanes * LANE_W / 2;
+  const rt = ROUTES[ridx(li)], cfg = CFG[li], HW = cfg.lanes * LANE_W / 2;
   const out = [];
   for (let d = 620; d < rt.len - 420; d += 215){
     for (const side of [-1, 1]){
@@ -1028,7 +1042,7 @@ function initEvent(e, cfg){
 }
 function lvlLabel(){ return ABELang.es ? "Nivel" : "Level"; }
 function openIntro(i){
-  S.li = i; S.veh = VEHICLES[i]; S.cfg = CFG[i]; S.rt = ROUTES[i];
+  S.li = i; S.veh = VEHICLES[i]; S.cfg = CFG[i]; S.rt = ROUTES[ridx(i)];
   document.getElementById("introTitle").textContent = `${lvlLabel()} ${i+1}: ${ABELang.t(S.cfg.title)}`;
   document.getElementById("introRoute").textContent = `📍 ${S.rt.name} • ${ABELang.t("real Mountain House streets")}`;
   const gevs = genEvents(i);
@@ -1059,8 +1073,9 @@ function openIntro(i){
 function buildIntroPhotos(i){
   const ph = document.getElementById("introPhotos");
   ph.innerHTML = "";
-  if (typeof PHOTOS === "undefined" || !PHOTOS[i]) return;
-  const data = PHOTOS[i];
+  const ri = ridx(i);
+  if (typeof PHOTOS === "undefined" || !PHOTOS[ri]) return;
+  const data = PHOTOS[ri];
   const cap = document.createElement("div");
   cap.className = "photocap";
   cap.textContent = `📷 Real photos of this route — ${data.area}, Mountain House`;
@@ -1106,16 +1121,18 @@ function beginRun(){
 /* one-tap "buckle up" / "helmet on" beat before the countdown — predictable, never skipped mid-run */
 function showBuckle(){
   const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
-  document.getElementById("buckleEmoji").textContent = isBike ? "⛑️" : "🔒";
-  document.getElementById("buckleTitle").textContent = ABELang.t(isBike ? "Helmet on!" : "Buckle up!");
-  document.getElementById("buckleBtn").textContent = ABELang.t(isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!");
+  const isWalk = !!S.cfg.walking;
+  document.getElementById("buckleEmoji").textContent = isWalk ? "🧢" : isBike ? "⛑️" : "🔒";
+  document.getElementById("buckleTitle").textContent = ABELang.t(isWalk ? "Hat on! Eyes up!" : isBike ? "Helmet on!" : "Buckle up!");
+  document.getElementById("buckleBtn").textContent = ABELang.t(isWalk ? "🧢 Hat's on!" : isBike ? "⛑️ Helmet's on!" : "🔒 Buckled up!");
   S.screen = "buckle";
   show("buckle");
 }
 document.getElementById("buckleBtn").addEventListener("click", () => {
   ensureAudio(); ding();
   const isBike = S.veh.id === "bike" || S.veh.id === "ebike";
-  speak(isBike ? "Helmet on! Safety first!" : "Buckled up! Safety first!");
+  const isWalk = !!S.cfg.walking;
+  speak(isWalk ? "Hat on! Eyes up! Safety first!" : isBike ? "Helmet on! Safety first!" : "Buckled up! Safety first!");
   show(null);
   startCountdown();
 });
@@ -1168,7 +1185,7 @@ document.getElementById("tipBtn").addEventListener("click", () => {
 const POPNAME = {
   "Perfect stop!":"PERFECT STOP", "Waited for green!":"WAITED FOR GREEN",
   "You waited — kind & safe!":"SMOOTH YIELD", "You pulled over — hero move!":"HERO PULL-OVER",
-  "Big Air! Clean landing!":"BIG AIR",
+  "Big Air! Clean landing!":"BIG AIR", "Walkers wait for the WALK signal! 🚶":"WALK SIGNAL",
 };
 function rewardPopup(text, sub){
   const el = document.createElement("div");
@@ -1273,7 +1290,7 @@ function updateEvent(ev, dt){
       if (t >= ev.at - 6){
         ev.resolved = true;
         if (ph === "red") violation("redlight");
-        else if (ev.waited){ bonus(5, "Waited for green!"); S.safeStops++; }
+        else if (ev.waited){ bonus(5, S.cfg.walking ? "Walkers wait for the WALK signal! 🚶" : "Waited for green!"); S.safeStops++; }
       }
       break;
     }
@@ -1420,7 +1437,7 @@ const worldRot = () => Math.atan2(-cam.fx, cam.rx);
    drawImage places it perfectly, rotating & panning with the camera. */
 function drawAerialGround(){
   if (!HAS_AERIAL) return false;
-  const rec = AERIAL[S.li], img = aerialImg[S.li];
+  const rec = AERIAL[ridx(S.li)], img = aerialImg[S.li];
   if (!rec || !img || img === false || !img.complete || !img.naturalWidth) return false;
   const sxx = rec.w / img.naturalWidth, syy = rec.h / img.naturalHeight;
   const a = sxx * cam.rx, b = -sxx * cam.fx, c = syy * cam.ry, d = -syy * cam.fy;
@@ -2519,7 +2536,7 @@ function drawHUD(){
   ctx.fillStyle = "#fff"; ctx.fillText("📍 " + street, 17, 79.5);
 
   // real aerial photo still loading? a tiny, calm status pill instead of a blank ground
-  if (HAS_AERIAL && AERIAL[S.li] && (!aerialImg[S.li] || (aerialImg[S.li] && !aerialImg[S.li].complete))){
+  if (HAS_AERIAL && AERIAL[ridx(S.li)] && (!aerialImg[S.li] || (aerialImg[S.li] && !aerialImg[S.li].complete))){
     const msg = ABELang.t("🛰 Loading aerial photo") + ".".repeat(1 + Math.floor(S.time * 2) % 3);
     ctx.font = "bold 11px sans-serif"; ctx.textAlign = "left";
     const lw = ctx.measureText(msg).width + 16;
@@ -2679,7 +2696,7 @@ function routeBBoxM(rt, margin){
   return [cx - half, cy - half, cx + half, cy + half];
 }
 function buildMinimap(li){
-  const rt = ROUTES[li];
+  const rt = ROUTES[ridx(li)];
   const region = routeBBoxM(rt, 900);
   const cnv = document.createElement("canvas");
   cnv.width = 300; cnv.height = 300;
@@ -2725,7 +2742,7 @@ function drawMinimap(){
 }
 function drawIntroMap(li){
   const c = document.getElementById("introMap"), c2 = c.getContext("2d");
-  const rt = ROUTES[li];
+  const rt = ROUTES[ridx(li)];
   c2.clearRect(0, 0, c.width, c.height);
   const region = routeBBoxM(rt, 700);
   const tf = renderBaseMap(c2, region, c.width, c.height);
@@ -2804,7 +2821,7 @@ function buildMenu(){          // the GARAGE
   const lock = document.getElementById("garLock");
   document.getElementById("garGo").classList.toggle("hidden", locked);
   lock.classList.toggle("hidden", !locked);
-  lock.textContent = secretLocked ? ABELang.t("🔒 Earn all 5 certificates to wake it up!")
+  lock.textContent = secretLocked ? ABELang.t("🔒 Earn all 6 certificates to wake it up!")
     : locked ? ABELang.t("🔒 One great ride away! Score {#}+ on Level {#} ({#} {#}) to unlock")
         .replace("{#}", "70").replace("{#}", String(garIdx))
         .replace("{#}", VEHICLES[garIdx - 1].emoji).replace("{#}", ABELang.t(VEHICLES[garIdx - 1].name))
@@ -3076,11 +3093,11 @@ document.getElementById("retryMenu").addEventListener("click", () => { S.screen 
 const logoIm = new Image(); logoIm.src = LOGO_DATA_URI;
 function showCert(stars){
   S.screen = "cert";
-  const champ = S.li === 4;                 // finished the Car level
+  const champ = S.li === VEHICLES.length - 2;   // finished the last non-secret level (Walking Hero)
   const stunt = S.veh.id === "monster";
   document.getElementById("certHead").textContent = ABELang.t(
     stunt ? "🛻 STUNT STAR! What a run!" :
-    champ ? "🏆 ROAD SAFETY CHAMPION! All 5 levels done — secret unlocked on the menu… 🏆"
+    champ ? "🏆 ROAD SAFETY CHAMPION! All 6 levels done — secret unlocked on the menu… 🏆"
           : "🎉 Level complete — you graduated!");
   drawCert(stars, champ, stunt);
   document.getElementById("certNext").classList.toggle("hidden", S.li >= VEHICLES.length - 1 || S.li + 1 >= save.unlocked);
