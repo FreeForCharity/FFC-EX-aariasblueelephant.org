@@ -321,22 +321,28 @@
   }
 
   // ---------- adventure recorder (RAM ring, persisted; NO identifiers) ----------
-  const REC = { t0: 0, samples: [], events: [], resumeAt: 0 };
+  // REC.on: recording starts at Play, NOT at page load — otherwise the title
+  // screen silently records static frames and the ring buffer evicts the
+  // child's previous adventure ("My Movie" losing the old game).
+  // REC.pt: a GAMEPLAY clock (sum of played dt), not wall clock — so time on
+  // the title screen, in pause, or watching a replay never becomes a long
+  // frozen gap inside the movie.
+  const REC = { on: false, pt: 0, samples: [], events: [], resumeAt: 0 };
   const REC_MS = 250, REC_MAX = 1200, REC_MIN = 20000;
   let recAcc = 0;
+  const recT = () => Math.round(REC.resumeAt + REC.pt);
   K.recordEvent = (kind, extra) => {
-    if (K.paused || K.replaying) return;
-    const t = performance.now() - REC.t0 + REC.resumeAt;
-    REC.events.push([Math.round(t), kind, extra || 0]);
+    if (!REC.on || K.paused || K.replaying) return;
+    REC.events.push([recT(), kind, extra || 0]);
     if (REC.events.length > 400) REC.events.shift();
   };
   function recTick(dt, pos) {
-    if (K.paused || K.replaying || !pos) return;
+    if (!REC.on || K.paused || K.replaying || !pos) return;
+    REC.pt += dt * 1000;
     recAcc += dt * 1000;
     if (recAcc < REC_MS) return;
     recAcc = 0;
-    const t = performance.now() - REC.t0 + REC.resumeAt;
-    REC.samples.push([Math.round(t), +pos.x.toFixed(2), +pos.z.toFixed(2), +(pos.ry || 0).toFixed(2)]);
+    REC.samples.push([recT(), +pos.x.toFixed(2), +pos.z.toFixed(2), +(pos.ry || 0).toFixed(2)]);
     while (REC.samples.length > REC_MAX) {
       REC.samples.shift();
       while (REC.events.length && REC.events[0][0] < REC.samples[0][0]) REC.events.shift();
@@ -547,6 +553,7 @@
     const saved = K.load('replay.v1', null);
     REC.samples = (saved && saved.samples) || []; REC.events = (saved && saved.events) || [];
     REC.resumeAt = (REC.samples.length ? REC.samples[REC.samples.length - 1][0] : 0) + 1000;
+    REC.pt = 0;
     $('kTitleMovie').style.display = recSpan() >= REC_MIN ? '' : 'none';
     refreshAvatars(); K.sfx.tap();
   }
@@ -643,7 +650,7 @@
     };
     $('ksVoice').onclick = () => { S.voice = !S.voice; saveS(); p.remove(); openSettings(); };
     $('ksImport').onclick = () => { p.remove(); $('kImportFile').click(); };
-    $('ksHome').onclick = () => { location.href = '/games'; };
+    $('ksHome').onclick = () => { persistRec(); location.href = '/games'; };
     $('ksClose').onclick = () => p.remove();
   }
 
@@ -661,15 +668,16 @@
       REC.samples = saved.samples; REC.events = saved.events || [];
       REC.resumeAt = (REC.samples.length ? REC.samples[REC.samples.length - 1][0] : 0) + 1000;
     }
+    REC.pt = 0;
     if (recSpan() >= REC_MIN) { $('kTitleExtras').style.display = 'block'; }
     else { $('kTitleExtras').style.display = 'block'; $('kTitleMovie').style.display = 'none'; }
-    REC.t0 = performance.now();
 
     const begin = (then) => {
       $('kTitle').style.display = 'none';
       $('kHud').style.display = 'flex'; $('kStick').style.display = 'block'; $('kActs').style.display = 'flex';
       $('kExit').style.display = 'flex';
       ac(); ping(); startMusic();
+      REC.on = true;
       TIME.on = true; TIME.last = performance.now();
       if (stampToday()) setTimeout(() => { K.toast(KT('🛂 Passport stamped! ⭐')); K.sfx.pop(); }, 1500);
       maybeCelebrateMilestone(); applyKnobBadge();
@@ -689,7 +697,7 @@
     $('kTitleImport').onclick = () => { begin(); $('kImportFile').click(); };
     $('kImportFile').addEventListener('change', (e) => { if (e.target.files[0]) importAdventure(e.target.files[0]); e.target.value = ''; });
     $('kMute').onclick = () => { muted = !muted; if (muted && window.speechSynthesis) speechSynthesis.cancel(); refreshMute(); refreshMusic(); K.toast(muted ? '🔇 Sound is off' : '🔊 Sound is on!'); };
-    $('kExit').onclick = () => { location.href = '/games'; };
+    $('kExit').onclick = () => { persistRec(); location.href = '/games'; };
     $('kPauseBtn').onclick = () => { setPaused(true); stopMusic(); };
     $('kResume').onclick = () => { setPaused(false); refreshMusic(); };
     $('kMovie').onclick = () => { recSpan() >= REC_MIN ? startReplay({ samples: REC.samples, events: REC.events }, true) : K.toast(KT('Play a little first, then watch your movie! ▶️')); };
@@ -702,12 +710,15 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden && !K.paused && $('kTitle').style.display === 'none') setPaused(true); });
 
     // main loop wrapper: the game renders; the kit records
-    let last = performance.now();
+    let last = performance.now(), perT = 0;
     function loop(now) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (!K.paused) {
         cfg.onFrame && cfg.onFrame(dt);
         if (cfg.playerPos && !K.replaying) recTick(dt, cfg.playerPos());
+        // safety-net persist: pagehide alone can be missed (app kill, crash)
+        perT += dt;
+        if (perT > 12) { perT = 0; if (REC.on && !K.replaying) persistRec(); }
       }
       requestAnimationFrame(loop);
     }
