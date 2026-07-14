@@ -12,6 +12,8 @@
 //   L4 safety (walk to the SAFE marker of two)  • L5 independent self-check (any order)
 // ---------------------------------------------------------------------------
 
+import { isEs } from '../../../../../lib/lang';
+
 /** How a station behaves once Nilu reaches it. */
 export type StationKind =
   | 'ordered' // must be visited in sequence order (L1-L3, the routine)
@@ -57,13 +59,23 @@ const STARS: [number, number][][] = [
 
 // Cheery lines Nimbus the cloud-buddy says as the morning gets going. Picked by
 // step index so they stay deterministic (no random at render).
-export const NIMBUS_LINES = [
+const NIMBUS_LINES_EN = [
   'Yawwwn… oh! Good morning, Nilu! Let us get ready together!',
   'Way to go! The sun is peeking out!',
   'Look — it is getting brighter! Keep going!',
   'You are SO good at this. Almost there!',
   'Wow, what a morning! The sun is way up high!',
 ];
+
+const NIMBUS_LINES_ES = [
+  '¡Bostezo… oh! ¡Buenos días, Nilu! ¡Vamos a alistarnos juntos!',
+  '¡Muy bien! ¡El sol ya está asomando!',
+  '¡Mira — está aclarando! ¡Sigue así!',
+  'Eres MUY bueno en esto. ¡Ya casi!',
+  '¡Vaya, qué mañana! ¡El sol ya está bien arriba!',
+];
+
+export const NIMBUS_LINES = isEs() ? NIMBUS_LINES_ES : NIMBUS_LINES_EN;
 
 function st(
   emoji: string,
@@ -95,7 +107,7 @@ export const RING: [number, number][] = [
 export const SAFE_SPOTS: [number, number][] = [[-2.6, -4], [2.6, -4], [-2.6, 4], [2.6, 4]];
 export const TWIN_DX = 2.4;
 
-export const MOUNTAIN_ROUTINE: MountainLevel[] = [
+const MOUNTAIN_ROUTINE_EN: MountainLevel[] = [
   {
     goal: 'Do each self-care job, in order',
     intro: "Let's get ready for the day! Walk to the bed 🛏️ first, to wake up. Then visit each job in order.",
@@ -174,3 +186,82 @@ export const MOUNTAIN_ROUTINE: MountainLevel[] = [
     stars: STARS[4],
   },
 ];
+
+const MOUNTAIN_ROUTINE_ES: MountainLevel[] = [
+  {
+    goal: 'Haz cada tarea de cuidado personal, en orden',
+    intro: '¡Vamos a alistarnos para el día! Camina hasta la cama 🛏️ primero, para despertar. Luego visita cada tarea en orden.',
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó tareas de vida en la montaña',
+    stations: [
+      st('🛏️', 'Despertar', 'ordered', RING[0][0], RING[0][1], { done: '¡Buenos días! A levantarse.' }),
+      st('🧼', 'Lavarse las manos', 'ordered', RING[1][0], RING[1][1], { done: '¡Manos bien limpias!' }),
+      st('🪥', 'Cepillarse los dientes', 'ordered', RING[2][0], RING[2][1], { done: '¡Dientes bien limpios!' }),
+      st('👟', 'Ponerse los zapatos', 'ordered', RING[3][0], RING[3][1], { done: '¡Zapatos puestos — listos para salir!' }),
+    ],
+    stars: STARS[0],
+  },
+  {
+    goal: 'Haz los pasos en orden',
+    intro: 'Algunas tareas tienen pasos en orden. Camina hasta la cama 🛏️ primero, para despertar. Luego visita cada siguiente paso en orden.',
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó tareas de vida en la montaña',
+    stations: [
+      st('😴', 'Despertar', 'ordered', RING[0][0], RING[0][1], { done: '¡Arriba y a moverse!' }),
+      st('🪥', 'Cepillarse los dientes', 'ordered', RING[1][0], RING[1][1], { done: '¡Así se cepilla!' }),
+      st('👕', 'Vestirse', 'ordered', RING[3][0], RING[3][1], { done: '¡Ya vestido!' }),
+      st('🥣', 'Desayunar', 'ordered', RING[4][0], RING[4][1], { done: '¡Rico — buena energía!' }),
+    ],
+    stars: STARS[1],
+  },
+  {
+    goal: 'Toda la mañana',
+    intro: '¡Vamos a hacer TODA la mañana, paso a paso! Camina hasta la cama 🛏️ primero, para despertar. Luego visita cada siguiente paso en orden.',
+    outro: '¡Una mañana perfecta, de principio a fin!',
+    moment: 'practicó tareas de vida en la montaña',
+    stations: [
+      st('😴', 'Despertar', 'ordered', RING[0][0], RING[0][1], { done: '¡Buenos días!' }),
+      st('🪥', 'Cepillarse los dientes', 'ordered', RING[1][0], RING[1][1], { done: '¡Dientes bien limpios!' }),
+      st('👕', 'Vestirse', 'ordered', RING[2][0], RING[2][1], { done: '¡Qué elegante!' }),
+      st('🥣', 'Desayunar', 'ordered', RING[3][0], RING[3][1], { done: '¡Desayuno delicioso!' }),
+      st('🎒', 'Empacar la mochila', 'ordered', RING[4][0], RING[4][1], { done: '¡Mochila lista!' }),
+      st('🚪', 'Despedirse', 'ordered', RING[5][0], RING[5][1], { done: '¡Adiós — que tengas un gran día!' }),
+    ],
+    stars: STARS[2],
+  },
+  {
+    goal: 'Mantente seguro',
+    intro: '¡Estar seguro es una habilidad de niño grande! Cada lugar tiene dos opciones. Camina hasta la SEGURA — como Mirar a los dos lados 👀 — para estar seguros.',
+    outro: '¡Hiciste cada elección segura — muy bien!',
+    moment: 'practicó estar seguro en la montaña',
+    stations: [
+      st('👀', 'Mirar a los dos lados', 'safe', SAFE_SPOTS[0][0], SAFE_SPOTS[0][1], { pair: 0, done: '¡Sí — esa es la opción segura!' }),
+      st('🏃', 'Cruzar corriendo rápido', 'unsafe', SAFE_SPOTS[0][0] + TWIN_DX, SAFE_SPOTS[0][1], { pair: 0 }),
+      st('🙅', 'Mantenerse lejos de la estufa caliente', 'safe', SAFE_SPOTS[1][0], SAFE_SPOTS[1][1], { pair: 1, done: 'Mantenerse lejos nos mantiene seguros.' }),
+      st('✋', 'Tocar la estufa caliente', 'unsafe', SAFE_SPOTS[1][0] + TWIN_DX, SAFE_SPOTS[1][1], { pair: 1 }),
+      st('🙋', 'Buscar a un adulto de confianza', 'safe', SAFE_SPOTS[2][0], SAFE_SPOTS[2][1], { pair: 2, done: 'Siempre busca a un adulto de confianza.' }),
+      st('🚶', 'Irse con un desconocido', 'unsafe', SAFE_SPOTS[2][0] + TWIN_DX, SAFE_SPOTS[2][1], { pair: 2 }),
+      st('🔒', 'Abrocharse el cinturón', 'safe', SAFE_SPOTS[3][0], SAFE_SPOTS[3][1], { pair: 3, done: '¡Clic! Seguro y listo.' }),
+      st('🎮', 'Ponerse de pie en el carro', 'unsafe', SAFE_SPOTS[3][0] + TWIN_DX, SAFE_SPOTS[3][1], { pair: 3 }),
+    ],
+    stars: STARS[3],
+  },
+  {
+    goal: 'Todo yo solo',
+    intro: '¿Puedes alistarte tú solo? Camina hasta cada tarea que veas — la cama 🛏️, el cepillo de dientes 🪥, y las demás — ¡en el orden que quieras!',
+    outro: '¡Todo listo — te alistaste tú solo! 🌟',
+    moment: 'se alistó todo solo',
+    stations: [
+      st('🛏️', 'Hacer la cama', 'any', RING[0][0], RING[0][1], { done: '¡Cama hecha!' }),
+      st('🪥', 'Cepillarse los dientes', 'any', RING[1][0], RING[1][1], { done: '¡Dientes bien limpios!' }),
+      st('👕', 'Vestirse', 'any', RING[2][0], RING[2][1], { done: '¡Ya vestido!' }),
+      st('🥣', 'Desayunar', 'any', RING[4][0], RING[4][1], { done: '¡Desayuno delicioso!' }),
+      st('🎒', 'Empacar mi mochila', 'any', RING[5][0], RING[5][1], { done: '¡Mochila lista!' }),
+    ],
+    stars: STARS[4],
+  },
+];
+
+export const MOUNTAIN_ROUTINE: MountainLevel[] = isEs()
+  ? MOUNTAIN_ROUTINE_EN.map((lvl, i) => MOUNTAIN_ROUTINE_ES[i] ?? lvl)
+  : MOUNTAIN_ROUTINE_EN;

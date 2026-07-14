@@ -12,6 +12,7 @@
 // ---------------------------------------------------------------------------
 
 import type { AnimalSpecies } from './Animal3D';
+import { isEs } from '../../../../../lib/lang';
 
 export interface SpellWord {
   /** the word painted on the bubble (also what the child "says") */
@@ -58,7 +59,7 @@ function w(word: string, emoji: string): SpellWord {
 // FRIENDSHIP FOREST — Expressive Language (5 levels, 2..5 friends each)
 // ===========================================================================
 
-export const FOREST_STORY: ForestLevel[] = [
+const FOREST_STORY_EN: ForestLevel[] = [
   // L1 — single mands: "apple" / "ball" / "book". One word = the whole spell.
   {
     goal: 'Say the magic word',
@@ -230,6 +231,182 @@ export const FOREST_STORY: ForestLevel[] = [
   },
 ];
 
+const FOREST_STORY_ES: ForestLevel[] = [
+  // L1 — single mands
+  {
+    goal: 'Di la palabra mágica',
+    intro:
+      '¡Mis amigos del bosque están deseando cosas! Acércate, mira qué quieren, y luego camina hacia la PALABRA mágica para hacerla aparecer.',
+    outro: '¡Dijiste cada palabra mágica tan bien! Tus palabras hacen que las cosas sucedan. 🌳',
+    moment: 'dije mis primeras palabras mágicas en el bosque',
+    twinkles: [
+      { emoji: '✨', pos: [-5.5, -4] },
+      { emoji: '⭐', pos: [5.5, -4.5] },
+      { emoji: '🐝', pos: [0, 5.5] },
+    ],
+    friends: [
+      {
+        species: 'fox', thought: '🍎',
+        spell: [w('manzana', '🍎')], decoys: [w('pelota', '⚽')],
+        reward: '🍎', cheer: '¡Manzana! ¡La dijiste — aquí viene! 🍎',
+        pos: [-3, 0],
+      },
+      {
+        species: 'bunny', thought: '⚽',
+        spell: [w('pelota', '⚽')], decoys: [w('libro', '📖')],
+        reward: '⚽', cheer: '¡Pelota! ¡Tu palabra la hizo aparecer! ⚽',
+        pos: [3, 1],
+      },
+      {
+        species: 'bear', thought: '📖',
+        spell: [w('libro', '📖')], decoys: [w('manzana', '🍎')],
+        reward: '📖', cheer: '¡Libro! ¡Las palabras mágicas sí funcionan! 📖',
+        pos: [0, -3],
+      },
+    ],
+  },
+
+  // L2 — action verbs
+  {
+    goal: 'Di la palabra de acción',
+    intro:
+      '¡Mira lo que están haciendo mis amigos! Acércate, y luego camina hacia la palabra de ACCIÓN para animarlos.',
+    outro: '¡Nombraste cada acción! Las palabras de acción son poderosas. 🏃',
+    moment: 'usé palabras de acción en el bosque',
+    friends: [
+      {
+        species: 'fox', thought: '💨',
+        spell: [w('corriendo', '🏃')], decoys: [w('durmiendo', '😴'), w('comiendo', '🍽️')],
+        reward: '🏃', cheer: '¡Corriendo! ¡Mira cómo va Zorro! 🏃',
+        pos: [-4, -1],
+      },
+      {
+        species: 'bird', thought: '☁️',
+        spell: [w('volando', '🕊️')], decoys: [w('saltando', '🦘'), w('comiendo', '🍽️')],
+        reward: '🕊️', cheer: '¡Volando! ¡Arriba va Pájaro! 🕊️',
+        pos: [4, -1],
+      },
+      {
+        species: 'bear', thought: '🍯',
+        spell: [w('comiendo', '🍽️')], decoys: [w('corriendo', '🏃'), w('volando', '🕊️')],
+        reward: '🍯', cheer: '¡Comiendo! ¡Rica miel! 🍯',
+        pos: [-2, 3],
+      },
+      {
+        species: 'bunny', thought: '⬆️',
+        spell: [w('saltando', '🦘')], decoys: [w('durmiendo', '😴'), w('volando', '🕊️')],
+        reward: '🦘', cheer: '¡Saltando! ¡Salta, salta, salta! 🦘',
+        pos: [3, 3],
+      },
+    ],
+  },
+
+  // L3 — two-word combos
+  {
+    goal: 'Lanza un hechizo de dos palabras',
+    intro:
+      '¡Ahora vamos a juntar DOS palabras! Camina hacia las palabras en orden para lanzar todo el hechizo.',
+    outro: '¡Juntaste las palabras tan bien! Dos palabras, gran magia. ✨',
+    moment: 'hice hechizos de dos palabras en el bosque',
+    friends: [
+      {
+        species: 'bunny', thought: '⚽',
+        spell: [w('quiero', '🙋'), w('pelota', '⚽')], decoys: [w('libro', '📖')],
+        reward: '⚽', cheer: '"quiero pelota" — ¡perfecto! ¡Aquí está! ⚽',
+        pos: [-3, 1],
+      },
+      {
+        species: 'fox', thought: '🍎',
+        spell: [w('quiero', '🙋'), w('manzana', '🍎')], decoys: [w('bebida', '🥤')],
+        reward: '🍎', cheer: '"quiero manzana" — ¡sí! 🍎',
+        pos: [3, 1],
+      },
+      {
+        species: 'bear', thought: '🤗',
+        spell: [w('gran', '🫅'), w('abrazo', '🤗')], decoys: [w('pelota', '⚽')],
+        reward: '🤗', cheer: '"gran abrazo" — aww, ¡el mejor tipo! 🤗',
+        pos: [0, -3],
+      },
+    ],
+  },
+
+  // L4 — "yo veo X"
+  {
+    goal: 'Di "Veo un/a…"',
+    intro:
+      '¡Cuando notamos algo podemos contárselo a un amigo! Camina hacia "yo" luego "veo" y luego lo que VES.',
+    outro: '¡Me contaste todo lo que viste! Compartir lo que notamos es maravilloso. 👀',
+    moment: 'les conté a mis amigos lo que vi en el bosque',
+    friends: [
+      {
+        species: 'fox', thought: '🐶',
+        spell: [w('yo', '🙋'), w('veo', '👀'), w('perro', '🐶')],
+        decoys: [w('gato', '🐱')],
+        reward: '🐶', cheer: '"¡Yo veo un perro!" ¡Muy buena observación! 🐶',
+        pos: [-4, 0],
+      },
+      {
+        species: 'bird', thought: '🌳',
+        spell: [w('yo', '🙋'), w('veo', '👀'), w('árbol', '🌳')],
+        decoys: [w('roca', '🪨')],
+        reward: '🌳', cheer: '"¡Yo veo un árbol!" 🌳',
+        pos: [4, 0],
+      },
+      {
+        species: 'bunny', thought: '⭐',
+        spell: [w('yo', '🙋'), w('veo', '👀'), w('estrella', '⭐')],
+        decoys: [w('luna', '🌙')],
+        reward: '⭐', cheer: '"¡Yo veo una estrella!" ¡Muy alto en el cielo! ⭐',
+        pos: [0, 3],
+      },
+      {
+        species: 'bear', thought: '🦋',
+        spell: [w('yo', '🙋'), w('veo', '👀'), w('mariposa', '🦋')],
+        decoys: [w('abeja', '🐝')],
+        reward: '🦋', cheer: '"¡Yo veo una mariposa!" ¡Qué bonita! 🦋',
+        pos: [0, -3],
+      },
+    ],
+  },
+
+  // L5 — whole sentences + turn-taking
+  {
+    goal: 'Oraciones completas y turnos',
+    intro:
+      '¡Vamos a formar oraciones COMPLETAS, y luego a conversar como buenos amigos — turnándonos para hablar!',
+    outro: 'Nos turnamos para hablar tan bien. Eso es lo que hacen los amigos. 💜',
+    moment: 'hice oraciones y me turné para hablar en el bosque',
+    friends: [
+      {
+        species: 'fox', thought: '🍎',
+        spell: [w('me', '🙋'), w('gustan', '💗'), w('las manzanas', '🍎')],
+        decoys: [w('correr', '🏃')],
+        reward: '🍎', cheer: '"Me gustan las manzanas." ¡Qué buena oración! 🍎',
+        pos: [-4, 1],
+      },
+      {
+        species: 'bunny', thought: '🫵',
+        spell: [w('yo', '🙋'), w('veo', '👀'), w('a ti', '🫵')],
+        decoys: [w('grande', '🫅')],
+        reward: '💜', cheer: '"Yo veo a ti." ¡Yo también te veo, amigo! 💜',
+        pos: [4, 1],
+      },
+      // a friendly turn-take: say it back and forth like a real little chat
+      {
+        species: 'bear', thought: '💬',
+        spell: [w('mi turno', '💬'), w('tu turno', '🗨️'), w('mi turno', '💬'), w('tu turno', '🗨️')],
+        decoys: [],
+        reward: '💜', cheer: '¡Nos turnamos tan bien! Eso es lo que hacen los amigos. 💜',
+        pos: [0, -3],
+      },
+    ],
+  },
+];
+
+export const FOREST_STORY: ForestLevel[] = isEs()
+  ? FOREST_STORY_EN.map((lvl, i) => FOREST_STORY_ES[i] ?? lvl)
+  : FOREST_STORY_EN;
+
 // Default scatter of hidden twinkles for any level that doesn't specify its own.
 // Kept deterministic (fixed positions) — kids can hunt these down between
 // friends for a little sparkle + chime, with no pressure to find them all.
@@ -242,16 +419,37 @@ export const FOREST_TWINKLES: { emoji: string; pos: [number, number] }[] = [
 
 // Warm one-liners Nilu says when a hidden twinkle is found — the firefly guide
 // celebrating discovery. Rotated by a seed so it doesn't feel repetitive.
-export const TWINKLE_FINDS: string[] = [
+const TWINKLE_FINDS_EN: string[] = [
   'Ooh, a hidden sparkle! You found it! ✨',
   'A little firefly was hiding there — well spotted! 🐝',
   'You have sharp eyes! Another shiny one! ⭐',
   'The forest left a sparkle just for you! 🍄',
 ];
 
+const TWINKLE_FINDS_ES: string[] = [
+  '¡Ooh, un brillo escondido! ¡Lo encontraste! ✨',
+  'Una lucecita se escondía ahí — ¡bien visto! 🐝',
+  '¡Tienes ojos muy agudos! ¡Otro brillito! ⭐',
+  '¡El bosque dejó un brillo solo para ti! 🍄',
+];
+
+export const TWINKLE_FINDS: string[] = isEs()
+  ? TWINKLE_FINDS_EN.map((line, i) => TWINKLE_FINDS_ES[i] ?? line)
+  : TWINKLE_FINDS_EN;
+
 // Nilu's gentle nudges while exploring the forest (idle personality).
-export const FOREST_NUDGES: string[] = [
+const FOREST_NUDGES_EN: string[] = [
   'The forest feels happier the more friends we help. 🌳',
   'Listen — the fireflies are dancing! 🐝',
   'Your words are magic here. Try walking into one! 💜',
 ];
+
+const FOREST_NUDGES_ES: string[] = [
+  'El bosque se siente más feliz mientras más amigos ayudamos. 🌳',
+  '¡Escucha — las luciérnagas están bailando! 🐝',
+  'Tus palabras son mágicas aquí. ¡Intenta caminar hacia una! 💜',
+];
+
+export const FOREST_NUDGES: string[] = isEs()
+  ? FOREST_NUDGES_EN.map((line, i) => FOREST_NUDGES_ES[i] ?? line)
+  : FOREST_NUDGES_EN;

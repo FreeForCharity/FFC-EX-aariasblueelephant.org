@@ -10,6 +10,7 @@
 import type { ActivityZone } from '../../belu/progress';
 import type { Mood } from './QuestNPC';
 import { ADVANCED_QUESTS } from './advancedQuests';
+import { isEs } from '../../../../../lib/lang';
 
 export interface Orb {
   emoji: string;
@@ -79,7 +80,7 @@ const MOOD = (m: Mood): Mood => m;
 // FEELINGS MEADOW — Reading Emotions
 // ===========================================================================
 
-const MEADOW: Quest[] = [
+const MEADOW_EN: Quest[] = [
   {
     zone: 'meadow', level: 1, goal: 'Match feeling faces',
     intro: "Hi! My meadow friends are showing their feelings. Can you read each one?",
@@ -200,6 +201,129 @@ const MEADOW: Quest[] = [
   },
 ];
 
+const MEADOW_ES: Quest[] = [
+  {
+    zone: 'meadow', level: 1, goal: 'Reconoce caras con sentimientos',
+    intro: "¡Hola! Mis amigos del prado están mostrando sus sentimientos. ¿Puedes reconocer cada uno?",
+    outro: "Reconociste cada sentimiento tan bien. ¡Gracias por enseñarme!",
+    moment: 'reconoció sentimientos en el prado',
+    rounds: [
+      { kind: 'choice', say: 'Pip está poniendo una cara. ¿Qué sentimiento es este?',
+        npc: { face: '😊', mood: MOOD('happy') },
+        options: [feel('happy', true), feel('sad')] },
+      { kind: 'choice', say: '¿Y Milo? ¿Qué sentimiento es este?',
+        npc: { face: '😢', mood: MOOD('sad') },
+        options: [feel('sad', true), feel('happy'), feel('angry')] },
+      { kind: 'choice', say: 'Mira a Bea. ¿Qué sentimiento es este?',
+        npc: { face: '😡', mood: MOOD('angry') },
+        options: [feel('angry', true), feel('calm'), feel('happy')] },
+      { kind: 'choice', say: 'Y Otto — ¿qué sentimiento es este?',
+        npc: { face: '😨', mood: MOOD('scared') },
+        options: [feel('scared', true), feel('excited'), feel('sad')] },
+    ],
+  },
+  {
+    zone: 'meadow', level: 2, goal: 'Lee las señales del cuerpo',
+    intro: "Ahora mira cómo mis amigos mueven su cuerpo. ¡Su cuerpo también muestra sentimientos!",
+    outro: "Reconociste cada sentimiento tan bien. ¡Gracias por enseñarme!",
+    moment: 'reconoció sentimientos en el prado',
+    rounds: [
+      { kind: 'choice', say: 'Milo tiene los hombros caídos y mira hacia abajo. ¿Cómo se siente Milo?',
+        npc: { face: '😔', mood: MOOD('sad') },
+        options: [feel('sad', true), feel('excited'), feel('angry')] },
+      { kind: 'choice', say: 'Lulu está saltando y aplaudiendo rápido. ¿Cómo se siente Lulu?',
+        npc: { face: '🤩', mood: MOOD('excited') },
+        options: [feel('excited', true), feel('scared'), feel('sad')] },
+      { kind: 'choice', say: 'Otto se esconde detrás de un árbol, temblando un poco. ¿Cómo se siente Otto?',
+        npc: { face: '😨', mood: MOOD('scared') },
+        options: [feel('scared', true), feel('happy'), feel('proud')] },
+      { kind: 'choice', say: 'Bea tiene los brazos cruzados fuerte y golpea el piso con el pie. ¿Cómo se siente Bea?',
+        npc: { face: '😤', mood: MOOD('angry') },
+        options: [feel('angry', true), feel('calm'), feel('surprised')] },
+    ],
+  },
+  {
+    zone: 'meadow', level: 3, goal: 'Sentimientos según lo que pasa',
+    intro: "A veces sabemos un sentimiento por lo que acaba de pasar. ¡Vamos a intentarlo!",
+    outro: "Reconociste cada sentimiento tan bien. ¡Gracias por enseñarme!",
+    moment: 'reconoció sentimientos en el prado',
+    rounds: [
+      { kind: 'choice', say: '¡Pip recibió un regalo sorpresa de cumpleaños! ¿Cómo se siente Pip?',
+        npc: { face: '🙂', mood: MOOD('happy'), thought: { emoji: '🎁' } },
+        options: [feel('happy', true), feel('sad'), feel('angry'), feel('scared')] },
+      { kind: 'choice', say: 'El helado de Sol se cayó al suelo. ¿Cómo se siente Sol?',
+        npc: { face: '🙂', mood: MOOD('sad'), thought: { emoji: '🍦' } },
+        options: [feel('sad', true), feel('excited'), feel('proud')] },
+      { kind: 'choice', say: 'Empieza una tormenta con truenos muy fuertes. ¿Cómo se siente Otto?',
+        npc: { face: '🙂', mood: MOOD('scared'), thought: { emoji: '⛈️' } },
+        options: [feel('scared', true), feel('happy'), feel('calm')] },
+      { kind: 'choice', say: 'Lulu terminó un rompecabezas difícil ella sola. ¿Cómo se siente Lulu?',
+        npc: { face: '🙂', mood: MOOD('proud'), thought: { emoji: '🏆' } },
+        options: [feel('proud', true), feel('angry'), feel('sad')] },
+    ],
+  },
+  {
+    zone: 'meadow', level: 4, goal: 'Lo que ellos querían',
+    intro: "Los sentimientos dependen de lo que esperábamos. Piensa en lo que quería cada amigo.",
+    outro: "Reconociste cada sentimiento tan bien. ¡Gracias por enseñarme!",
+    moment: 'reconoció sentimientos en el prado',
+    rounds: [
+      { kind: 'choice', say: 'Mona quería la pelota roja, pero le dieron la azul. ¿Cómo se siente Mona?',
+        npc: { face: '😞', mood: MOOD('disappointed'), thought: { emoji: '🔵' } },
+        options: [feel('disappointed', true), feel('happy'), feel('surprised')] },
+      { kind: 'choice', say: '¡Pip esperaba panqueques — y los panqueques ya están listos! ¿Cómo se siente Pip?',
+        npc: { face: '😄', mood: MOOD('happy'), thought: { emoji: '🥞' } },
+        options: [feel('happy', true), feel('sad'), feel('scared')] },
+      { kind: 'choice', say: '¡Bea esperaba un amigo, pero llegaron DIEZ amigos! ¿Cómo se siente Bea?',
+        npc: { face: '😲', mood: MOOD('surprised'), thought: { emoji: '🎉' } },
+        options: [feel('surprised', true), feel('angry'), feel('bored')] },
+      { kind: 'choice', say: 'Sol quería jugar afuera, pero está lloviendo. ¿Cómo se siente Sol?',
+        npc: { face: '😟', mood: MOOD('disappointed'), thought: { emoji: '🌧️' } },
+        options: [feel('disappointed', true), feel('excited'), feel('proud')] },
+    ],
+  },
+  {
+    zone: 'meadow', level: 5, goal: 'Ayuda a un amigo',
+    intro: "Lo más bondadoso es ayudar. Encuentra el sentimiento y luego elige una forma amable de ayudar.",
+    outro: "Reconociste cada sentimiento tan bien. ¡Gracias por enseñarme!",
+    moment: 'ayudó a sus amigos en el prado',
+    rounds: [
+      { kind: 'choice', say: 'Sam no sabe que su torre de bloques se cayó. Cuando la vea, ¿cómo se sentirá?',
+        npc: { face: '🙂', mood: MOOD('neutral'), thought: { emoji: '🧱' } },
+        options: [feel('sad', true), feel('happy'), feel('proud')] },
+      { kind: 'choice', say: 'Ahora — ¿cuál es una forma amable de ayudar a Sam?',
+        npc: { face: '😢', mood: MOOD('sad') },
+        options: [
+          { emoji: '🤗', caption: 'Abrazar y ayudar a reconstruir', correct: true },
+          { emoji: '😆', caption: 'Reírse de él' },
+          { emoji: '🚶', caption: 'Irse caminando' },
+        ], doneLine: 'Eso es muy amable. Eres un buen amigo.' },
+      { kind: 'choice', say: 'Lulu está atascada en un rompecabezas y se está frustrando. ¿Cómo se siente Lulu?',
+        npc: { face: '😤', mood: MOOD('frustrated'), thought: { emoji: '🧩' } },
+        options: [feel('frustrated', true), feel('excited'), feel('calm')] },
+      { kind: 'choice', say: '¿Cómo puedes ayudar a Lulu?',
+        npc: { face: '😤', mood: MOOD('frustrated') },
+        options: [
+          { emoji: '🙋', caption: 'Preguntarle si quiere ayuda', correct: true },
+          { emoji: '🙅', caption: 'Quitarle el rompecabezas' },
+          { emoji: '🚶', caption: 'Ignorarla' },
+        ], doneLine: 'Preguntar primero es muy amable.' },
+      { kind: 'choice', say: 'A Otto se le cayó su merienda y parece que va a llorar. ¿Cómo se siente Otto?',
+        npc: { face: '😢', mood: MOOD('sad'), thought: { emoji: '🍪' } },
+        options: [feel('sad', true), feel('angry'), feel('surprised')] },
+      { kind: 'choice', say: '¿Qué le puedes decir a Otto?',
+        npc: { face: '😢', mood: MOOD('sad') },
+        options: [
+          { emoji: '💗', caption: '¿Quieres compartir la mía?', correct: true },
+          { emoji: '😝', caption: '¡Qué mal por ti!' },
+          { emoji: '🤐', caption: 'No decir nada' },
+        ], doneLine: 'Compartir hace sentir mejor a los amigos.' },
+    ],
+  },
+];
+
+const MEADOW = isEs() ? MEADOW_EN.map((item, i) => MEADOW_ES[i] ?? item) : MEADOW_EN;
+
 // ===========================================================================
 // MORNING MOUNTAIN — Life Skills
 // ===========================================================================
@@ -208,7 +332,7 @@ function step(emoji: string, caption: string, correct = false): Orb {
   return { emoji, caption, correct };
 }
 
-const MOUNTAIN: Quest[] = [
+const MOUNTAIN_EN: Quest[] = [
   {
     zone: 'mountain', level: 1, goal: 'Match each action',
     intro: "Let's get ready for the day! For each question, walk to the one picture that matches.",
@@ -309,11 +433,114 @@ const MOUNTAIN: Quest[] = [
   },
 ];
 
+const MOUNTAIN_ES: Quest[] = [
+  {
+    zone: 'mountain', level: 1, goal: 'Reconoce cada acción',
+    intro: "¡Vamos a alistarnos para el día! En cada pregunta, camina hasta la única imagen que corresponde.",
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó tareas de vida en la montaña',
+    rounds: [
+      { kind: 'choice', say: '¿Cuál usamos para cepillarnos los dientes?',
+        npc: { face: '🦷', mood: MOOD('happy') },
+        options: [step('🪥', 'cepillo', true), step('🍕', 'pizza'), step('⚽', 'pelota')] },
+      { kind: 'choice', say: '¿Cuál nos lava las manos?',
+        npc: { face: '🤲', mood: MOOD('happy') },
+        options: [step('📺', 'televisión'), step('🧼', 'jabón', true), step('🎈', 'globo')] },
+      { kind: 'choice', say: '¿Cuál nos seca el pelo?',
+        npc: { face: '💇', mood: MOOD('happy') },
+        options: [step('🚗', 'carro'), step('🍞', 'pan'), step('🧴', 'secador', true)] },
+      { kind: 'choice', say: '¿Cuál nos ponemos en los pies?',
+        npc: { face: '🦶', mood: MOOD('happy') },
+        options: [step('👟', 'zapatos', true), step('🪀', 'yoyo'), step('🍩', 'dona')] },
+    ],
+  },
+  {
+    zone: 'mountain', level: 2, goal: 'Arma los pasos',
+    intro: "Algunas tareas tienen pasos en orden. ¡Camina hacia cada imagen, de primero a último, para armar los pasos!",
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó tareas de vida en la montaña',
+    rounds: [
+      { kind: 'sequence', say: '¿Cómo nos cepillamos los dientes? Haz los pasos en orden.',
+        npc: { face: '🪥', mood: MOOD('happy') },
+        pool: [step('😁', '¡Cepíllate!'), step('🪥', 'Sacar el cepillo'), step('🧴', 'Pasta de dientes')],
+        order: ['Sacar el cepillo', 'Pasta de dientes', '¡Cepíllate!'],
+        doneLine: '¡Así nos cepillamos los dientes!' },
+      { kind: 'sequence', say: 'Ahora lavarnos las manos. ¿En qué orden?',
+        npc: { face: '🧼', mood: MOOD('happy') },
+        pool: [step('🧻', 'Secar las manos'), step('💧', 'Abrir el agua'), step('🧼', 'Usar jabón')],
+        order: ['Abrir el agua', 'Usar jabón', 'Secar las manos'],
+        doneLine: '¡Manos bien limpias!' },
+      { kind: 'sequence', say: 'Vestirse — de primero a último.',
+        npc: { face: '👕', mood: MOOD('happy') },
+        pool: [step('👖', 'Pantalones'), step('🩲', 'Ropa interior'), step('👕', 'Camisa')],
+        order: ['Ropa interior', 'Camisa', 'Pantalones'],
+        doneLine: '¡Ya vestido!' },
+    ],
+  },
+  {
+    zone: 'mountain', level: 3, goal: 'Toda la mañana',
+    intro: "¡Vamos a hacer TODA la mañana, paso a paso! ¡Camínalos en orden!",
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó tareas de vida en la montaña',
+    rounds: [
+      { kind: 'sequence', say: '¿Qué hacemos primero en la mañana? ¡Ve en orden!',
+        npc: { face: '🌅', mood: MOOD('happy') },
+        pool: [
+          step('🎒', 'Empacar la mochila'), step('😴', 'Despertar'), step('🥣', 'Desayunar'),
+          step('🪥', 'Cepillarse los dientes'), step('👋', 'Despedirse'), step('👕', 'Vestirse'),
+        ],
+        order: ['Despertar', 'Cepillarse los dientes', 'Vestirse', 'Desayunar', 'Empacar la mochila', 'Despedirse'],
+        doneLine: '¡Una mañana perfecta, de principio a fin!' },
+    ],
+  },
+  {
+    zone: 'mountain', level: 4, goal: 'Mantente seguro',
+    intro: "Estar seguro es una habilidad de niño grande. Camina hacia la opción que nos mantiene seguros.",
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'practicó estar seguro en la montaña',
+    rounds: [
+      { kind: 'choice', say: 'Antes de cruzar la calle, ¿qué hacemos primero?',
+        npc: { face: '🚦', mood: MOOD('neutral') },
+        options: [step('👀', 'Mirar a los dos lados', true), step('🏃', 'Cruzar corriendo rápido')],
+        doneLine: '¡Sí — esa es la opción segura!' },
+      { kind: 'choice', say: 'La estufa está caliente y roja. ¿Qué hacemos?',
+        npc: { face: '🔥', mood: MOOD('neutral') },
+        options: [step('🙅', 'Mantenernos lejos', true), step('✋', 'Tocarla')],
+        doneLine: 'Mantenernos lejos nos mantiene seguros.' },
+      { kind: 'choice', say: 'Un desconocido te pide que vayas con él. ¿Qué hacemos?',
+        npc: { face: '❓', mood: MOOD('neutral') },
+        options: [step('🙋', 'Buscar a un adulto de confianza', true), step('🚶', 'Irse con él')],
+        doneLine: 'Siempre busca a un adulto de confianza.' },
+      { kind: 'choice', say: 'Vamos a viajar en carro. ¿Qué hacemos?',
+        npc: { face: '🚗', mood: MOOD('neutral') },
+        options: [step('🔒', 'Abrocharte el cinturón', true), step('🎮', 'Ponerte de pie y jugar')],
+        doneLine: '¡Clic! Seguro y listo.' },
+    ],
+  },
+  {
+    zone: 'mountain', level: 5, goal: 'Todo yo solo',
+    intro: "¿Puedes alistarte tú solo? ¡Camina hasta cada tarea que puedas hacer!",
+    outro: '¡Lo hiciste todo tú solo — estás muy listo!',
+    moment: 'se alistó todo solo',
+    rounds: [
+      { kind: 'multiPick', say: 'Haz cada tarea de la mañana — ¡camina hasta las cinco!', picks: 5,
+        npc: { face: '🌟', mood: MOOD('proud') },
+        options: [
+          step('🛏️', 'Hacer la cama'), step('🪥', 'Cepillarse los dientes'), step('👕', 'Vestirse'),
+          step('🥣', 'Desayunar'), step('🎒', 'Empacar mi mochila'),
+        ],
+        doneLine: '¡Todo listo — te alistaste tú solo! 🌟' },
+    ],
+  },
+];
+
+const MOUNTAIN = isEs() ? MOUNTAIN_EN.map((item, i) => MOUNTAIN_ES[i] ?? item) : MOUNTAIN_EN;
+
 // ===========================================================================
 // CALM COVE — Self-Regulation & Senses
 // ===========================================================================
 
-const CALM_STRATEGIES: Orb[] = [
+const CALM_STRATEGIES_EN: Orb[] = [
   { emoji: '🌬️', caption: 'Deep breaths', correct: true },
   { emoji: '🤫', caption: 'Quiet spot', correct: true },
   { emoji: '✊', caption: 'Squeeze hands', correct: true },
@@ -322,7 +549,18 @@ const CALM_STRATEGIES: Orb[] = [
   { emoji: '🤗', caption: 'Get a big hug', correct: true },
 ];
 
-const COVE: Quest[] = [
+const CALM_STRATEGIES_ES: Orb[] = [
+  { emoji: '🌬️', caption: 'Respirar hondo', correct: true },
+  { emoji: '🤫', caption: 'Lugar tranquilo', correct: true },
+  { emoji: '✊', caption: 'Apretar las manos', correct: true },
+  { emoji: '✋', caption: 'Pedir un descanso', correct: true },
+  { emoji: '🖐️', caption: 'Contar hasta cinco', correct: true },
+  { emoji: '🤗', caption: 'Un abrazo grande', correct: true },
+];
+
+const CALM_STRATEGIES = isEs() ? CALM_STRATEGIES_ES : CALM_STRATEGIES_EN;
+
+const COVE_EN: Quest[] = [
   {
     zone: 'cove', level: 1, goal: 'Breathe with Nilu',
     intro: "Welcome to the cove. Let's feel calm together. Follow the bubble with me.",
@@ -391,11 +629,82 @@ const COVE: Quest[] = [
   },
 ];
 
+const COVE_ES: Quest[] = [
+  {
+    zone: 'cove', level: 1, goal: 'Respira con Nilu',
+    intro: "Bienvenido a la caleta. Vamos a sentirnos tranquilos juntos. Sigue la burbuja conmigo.",
+    outro: 'Ahora me siento tranquilo y a gusto. Gracias por estar conmigo.',
+    moment: 'practicó estar tranquilo en la caleta',
+    rounds: [
+      { kind: 'breathe', say: 'Inhala mientras la burbuja crece, exhala mientras se encoge.',
+        npc: { face: '😌', mood: MOOD('calm') }, cycles: 2 },
+    ],
+  },
+  {
+    zone: 'cove', level: 2, goal: 'Una calma más larga',
+    intro: "Vamos a tomarnos una calma más larga juntos. Sigue la burbuja.",
+    outro: 'Ahora me siento tranquilo y a gusto. Gracias por estar conmigo.',
+    moment: 'practicó estar tranquilo en la caleta',
+    rounds: [
+      { kind: 'breathe', say: 'Inhala mientras la burbuja crece, exhala mientras se encoge.',
+        npc: { face: '😌', mood: MOOD('calm') }, cycles: 3 },
+    ],
+  },
+  {
+    zone: 'cove', level: 3, goal: 'Revisión del cuerpo',
+    intro: "Vamos a notar nuestro cuerpo. Elige un lugar para enviar calma, y luego respiraremos.",
+    outro: 'Ahora me siento tranquilo y a gusto. Gracias por estar conmigo.',
+    moment: 'hizo una revisión de calma en la caleta',
+    rounds: [
+      { kind: 'choice', say: '¿A dónde vas a enviar tu calma? Camina hacia un lugar.',
+        npc: { face: '😌', mood: MOOD('calm') },
+        options: [
+          { emoji: '🫄', caption: 'Barriga', correct: true },
+          { emoji: '🫁', caption: 'Pecho', correct: true },
+          { emoji: '💪', caption: 'Hombros', correct: true },
+          { emoji: '🤲', caption: 'Manos', correct: true },
+        ], doneLine: 'Qué lindo. Enviando calma ahí ahora.' },
+      { kind: 'breathe', say: "Ahora respira conmigo, enviando calma a ese lugar.",
+        npc: { face: '😌', mood: MOOD('calm') }, cycles: 2 },
+    ],
+  },
+  {
+    zone: 'cove', level: 4, goal: 'Elige una estrategia',
+    intro: "A veces las cosas se sienten demasiado grandes. Aquí hay mucho ruido y movimiento. ¿Qué te ayuda?",
+    outro: 'Ahora me siento tranquilo y a gusto. Gracias por estar conmigo.',
+    moment: 'eligió una estrategia de calma en la caleta',
+    rounds: [
+      { kind: 'choice', say: 'Hay mucho ruido y movimiento. Camina hacia algo que te ayude a sentirte tranquilo.',
+        npc: { face: '🫨', mood: MOOD('frustrated') },
+        options: CALM_STRATEGIES.slice(0, 4),
+        doneLine: 'Buena idea — eso sí ayuda. Una respiración tranquila ahora.' },
+      { kind: 'breathe', say: 'Una respiración tranquila juntos.',
+        npc: { face: '😌', mood: MOOD('calm') }, cycles: 1 },
+    ],
+  },
+  {
+    zone: 'cove', level: 5, goal: 'Mi plan de calma',
+    intro: "Vamos a construir TU plan de calma. Elige tres cosas que más te ayudan.",
+    outro: 'Ese es un plan de calma maravilloso. Ahora me siento tranquilo y a gusto.',
+    moment: 'construyó su propio plan de calma',
+    rounds: [
+      { kind: 'multiPick', say: 'Camina hacia TRES cosas para tu propio plan de calma.', picks: 3,
+        npc: { face: '🌟', mood: MOOD('calm') },
+        options: CALM_STRATEGIES,
+        doneLine: 'Un plan de calma maravilloso. Una respiración para terminar.' },
+      { kind: 'breathe', say: "Vamos a terminar con una respiración tranquila.",
+        npc: { face: '😌', mood: MOOD('calm') }, cycles: 1 },
+    ],
+  },
+];
+
+const COVE = isEs() ? COVE_EN.map((item, i) => COVE_ES[i] ?? item) : COVE_EN;
+
 // ===========================================================================
 // FRIENDSHIP FOREST — Expressive Language
 // ===========================================================================
 
-const FOREST: Quest[] = [
+const FOREST_EN: Quest[] = [
   {
     zone: 'forest', level: 1, goal: 'Ask for it',
     intro: "My forest friends want things. Help them ask! Walk to what they want.",
@@ -550,11 +859,168 @@ const FOREST: Quest[] = [
   },
 ];
 
+const FOREST_ES: Quest[] = [
+  {
+    zone: 'forest', level: 1, goal: 'Pídelo',
+    intro: "Mis amigos del bosque quieren cosas. ¡Ayúdalos a pedir! Camina hacia lo que quieren.",
+    outro: '¡Usaste tus palabras tan bien! Me encantó hablar contigo.',
+    moment: 'usó sus palabras en el bosque',
+    rounds: [
+      { kind: 'choice', say: 'El zorro quiere algo. Mira la burbuja — ¿qué quiere Zorro?',
+        npc: { face: '🦊', mood: MOOD('happy'), thought: { emoji: '🍎' } },
+        options: [
+          { emoji: '🍎', caption: 'Quiero manzana', correct: true },
+          { emoji: '⚽', caption: 'Quiero pelota' },
+          { emoji: '📖', caption: 'Quiero libro' },
+        ], doneLine: '¡Sí! "¡Quiero manzana!" ¡Aquí tienes! 🎉' },
+      { kind: 'choice', say: '¿Qué quiere Conejo?',
+        npc: { face: '🐰', mood: MOOD('happy'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '⚽', caption: 'Quiero pelota', correct: true },
+          { emoji: '🥤', caption: 'Quiero bebida' },
+          { emoji: '🍎', caption: 'Quiero manzana' },
+        ], doneLine: '¡Sí! "¡Quiero pelota!" 🎉' },
+      { kind: 'choice', say: '¿Y qué quiere Oso?',
+        npc: { face: '🐻', mood: MOOD('happy'), thought: { emoji: '📖' } },
+        options: [
+          { emoji: '📖', caption: 'Quiero libro', correct: true },
+          { emoji: '⚽', caption: 'Quiero pelota' },
+          { emoji: '🥤', caption: 'Quiero bebida' },
+        ], doneLine: '¡Sí! "¡Quiero libro!" 🎉' },
+    ],
+  },
+  {
+    zone: 'forest', level: 2, goal: 'Palabras de acción',
+    intro: "Mira lo que hacen mis amigos. ¡Camina hacia la palabra de acción!",
+    outro: '¡Usaste tus palabras tan bien! Me encantó hablar contigo.',
+    moment: 'usó sus palabras en el bosque',
+    rounds: [
+      { kind: 'choice', say: '¡El zorro se mueve rápido! ¿Qué está haciendo el zorro?',
+        npc: { face: '🦊', mood: MOOD('excited'), thought: { emoji: '💨' } },
+        options: [
+          { emoji: '🏃', caption: 'corriendo', correct: true },
+          { emoji: '😴', caption: 'durmiendo' },
+          { emoji: '🍽️', caption: 'comiendo' },
+        ], doneLine: '¡Sí! ¡El zorro está corriendo!' },
+      { kind: 'choice', say: '¡Allá en el cielo! ¿Qué está haciendo el pájaro?',
+        npc: { face: '🐦', mood: MOOD('excited'), thought: { emoji: '☁️' } },
+        options: [
+          { emoji: '🕊️', caption: 'volando', correct: true },
+          { emoji: '🦘', caption: 'saltando' },
+          { emoji: '🍽️', caption: 'comiendo' },
+        ], doneLine: '¡Sí! ¡El pájaro está volando!' },
+      { kind: 'choice', say: '¡Qué rico! ¿Qué está haciendo el oso?',
+        npc: { face: '🐻', mood: MOOD('happy'), thought: { emoji: '🍯' } },
+        options: [
+          { emoji: '🍽️', caption: 'comiendo', correct: true },
+          { emoji: '🏃', caption: 'corriendo' },
+          { emoji: '🕊️', caption: 'volando' },
+        ], doneLine: '¡Sí! ¡El oso está comiendo!' },
+      { kind: 'choice', say: '¡Salta, salta! ¿Qué está haciendo el conejo?',
+        npc: { face: '🐰', mood: MOOD('excited'), thought: { emoji: '⬆️' } },
+        options: [
+          { emoji: '🦘', caption: 'saltando', correct: true },
+          { emoji: '😴', caption: 'durmiendo' },
+          { emoji: '🕊️', caption: 'volando' },
+        ], doneLine: '¡Sí! ¡El conejo está saltando!' },
+    ],
+  },
+  {
+    zone: 'forest', level: 3, goal: 'Dos palabras',
+    intro: "Vamos a juntar dos palabras. ¡Camina hacia las palabras en orden!",
+    outro: '¡Usaste tus palabras tan bien! Me encantó hablar contigo.',
+    moment: 'usó sus palabras en el bosque',
+    rounds: [
+      { kind: 'sequence', say: 'Dilo conmigo: "quiero pelota". Camina hacia las palabras en orden.',
+        npc: { face: '🐰', mood: MOOD('happy') },
+        pool: [{ emoji: '📖', caption: 'libro' }, { emoji: '🙋', caption: 'quiero' }, { emoji: '⚽', caption: 'pelota' }],
+        order: ['quiero', 'pelota'], doneLine: '"quiero pelota" — ¡perfecto! 🌟' },
+      { kind: 'sequence', say: 'Ahora: "quiero manzana".',
+        npc: { face: '🦊', mood: MOOD('happy') },
+        pool: [{ emoji: '🥤', caption: 'bebida' }, { emoji: '🙋', caption: 'quiero' }, { emoji: '🍎', caption: 'manzana' }],
+        order: ['quiero', 'manzana'], doneLine: '"quiero manzana" — ¡perfecto! 🌟' },
+      { kind: 'sequence', say: 'Y: "abrazo grande".',
+        npc: { face: '🐻', mood: MOOD('happy') },
+        pool: [{ emoji: '⚽', caption: 'pelota' }, { emoji: '🫅', caption: 'grande' }, { emoji: '🤗', caption: 'abrazo' }],
+        order: ['abrazo', 'grande'], doneLine: '"abrazo grande" — ¡perfecto! 🌟' },
+    ],
+  },
+  {
+    zone: 'forest', level: 4, goal: 'Veo…',
+    intro: "Cuando notamos cosas, podemos decir 'Veo…'. ¡Camina hacia lo que ves!",
+    outro: '¡Usaste tus palabras tan bien! Me encantó hablar contigo.',
+    moment: 'usó sus palabras en el bosque',
+    rounds: [
+      { kind: 'choice', say: '¡Notaste algo! Di "Veo un…" — camina hacia eso.',
+        npc: { face: '👀', mood: MOOD('happy'), thought: { emoji: '🐶' } },
+        options: [
+          { emoji: '🐶', caption: 'perro', correct: true },
+          { emoji: '🐱', caption: 'gato' },
+          { emoji: '🐟', caption: 'pez' },
+        ], doneLine: '¡Veo un perro! ¡Qué buena observación! 👀' },
+      { kind: 'choice', say: '¡Qué buena mirada! ¿Qué ves?',
+        npc: { face: '👀', mood: MOOD('happy'), thought: { emoji: '🌳' } },
+        options: [
+          { emoji: '🌳', caption: 'árbol', correct: true },
+          { emoji: '🪨', caption: 'roca' },
+          { emoji: '☁️', caption: 'nube' },
+        ], doneLine: '¡Veo un árbol! 👀' },
+      { kind: 'choice', say: '¡Muy arriba! ¿Qué ves?',
+        npc: { face: '👀', mood: MOOD('happy'), thought: { emoji: '⭐' } },
+        options: [
+          { emoji: '⭐', caption: 'estrella', correct: true },
+          { emoji: '🌙', caption: 'luna' },
+          { emoji: '☀️', caption: 'sol' },
+        ], doneLine: '¡Veo una estrella! 👀' },
+      { kind: 'choice', say: '¡Qué bonito! ¿Qué ves?',
+        npc: { face: '👀', mood: MOOD('happy'), thought: { emoji: '🦋' } },
+        options: [
+          { emoji: '🦋', caption: 'mariposa', correct: true },
+          { emoji: '🐝', caption: 'abeja' },
+          { emoji: '🐦', caption: 'pájaro' },
+        ], doneLine: '¡Veo una mariposa! 👀' },
+    ],
+  },
+  {
+    zone: 'forest', level: 5, goal: 'Frases y plática',
+    intro: "Vamos a hacer frases completas, ¡y luego turnarnos para platicar como buenos amigos!",
+    outro: '¡Nos turnamos para hablar tan bien! Eso es lo que hacen los amigos. 💜',
+    moment: 'hizo frases y se turnó para hablar',
+    rounds: [
+      { kind: 'sequence', say: 'Di: "Me gustan las manzanas." Camina hacia las palabras en orden.',
+        npc: { face: '😊', mood: MOOD('happy') },
+        pool: [
+          { emoji: '🏃', caption: 'correr' }, { emoji: '🙋', caption: 'me' },
+          { emoji: '🍎', caption: 'manzanas' }, { emoji: '💗', caption: 'gustan' },
+        ],
+        order: ['me', 'gustan', 'manzanas'], doneLine: '"Me gustan las manzanas." ¡Maravilloso!' },
+      { kind: 'sequence', say: 'Ahora: "Te veo."',
+        npc: { face: '😊', mood: MOOD('happy') },
+        pool: [
+          { emoji: '🫅', caption: 'grande' }, { emoji: '🙋', caption: 'yo' },
+          { emoji: '🫵', caption: 'te' }, { emoji: '👀', caption: 'veo' },
+        ],
+        order: ['te', 'veo'], doneLine: '"Te veo." ¡Ahora vamos a platicar — turnen!' },
+      { kind: 'multiPick', say: "¡Vamos a turnarnos! Camina hacia cada burbuja para compartir un turno.", picks: 4,
+        npc: { face: '🐘', mood: MOOD('happy') },
+        options: [
+          { emoji: '💬', caption: 'Mi turno' },
+          { emoji: '🗨️', caption: 'Tu turno' },
+          { emoji: '💬', caption: 'Mi turno' },
+          { emoji: '🗨️', caption: 'Tu turno' },
+        ],
+        doneLine: '¡Nos turnamos tan bien! 💜' },
+    ],
+  },
+];
+
+const FOREST = isEs() ? FOREST_EN.map((item, i) => FOREST_ES[i] ?? item) : FOREST_EN;
+
 // ===========================================================================
 // SHARING SHORE — Sharing & Taking Turns
 // ===========================================================================
 
-const SHORE: Quest[] = [
+const SHORE_EN: Quest[] = [
   {
     zone: 'shore', level: 1, goal: 'Whose turn is it?',
     intro: "My beach friends are playing catch! Help me see whose turn it is.",
@@ -685,6 +1151,139 @@ const SHORE: Quest[] = [
   },
 ];
 
+const SHORE_ES: Quest[] = [
+  {
+    zone: 'shore', level: 1, goal: '¿De quién es el turno?',
+    intro: "¡Mis amigos de la playa están jugando a la pelota! Ayúdame a ver de quién es el turno.",
+    outro: 'Ya sabes todo sobre los turnos. ¡Turnarse hace que los juegos sean divertidos para todos!',
+    moment: 'aprendió sobre los turnos en la orilla',
+    rounds: [
+      { kind: 'choice', say: 'Cangrejo le acaba de lanzar la pelota a Foca. ¿De quién es el turno ahora?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '🦭', caption: 'Turno de Foca', correct: true },
+          { emoji: '🦀', caption: 'Turno de Cangrejo' },
+        ], doneLine: '¡Sí! Foca tiene la pelota, así que es el turno de Foca!' },
+      { kind: 'choice', say: '¡Foca la devolvió! ¿De quién es el turno ahora?',
+        npc: { face: '🦭', mood: MOOD('excited'), thought: { emoji: '⚽' } },
+        options: [
+          { emoji: '🦀', caption: 'Turno de Cangrejo', correct: true },
+          { emoji: '🦭', caption: 'Turno de Foca' },
+        ], doneLine: '¡Sí! De ida y vuelta — eso es turnarse!' },
+      { kind: 'choice', say: '¡Cangrejo dice que TÚ también puedes jugar! Va Cangrejo, va Foca... ¿quién sigue?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '🫵' } },
+        options: [
+          { emoji: '🙋', caption: 'Mi turno', correct: true },
+          { emoji: '🦀', caption: 'Turno de Cangrejo' },
+        ], doneLine: '¡Tu turno! Todos tienen su turno cuando compartimos el juego. 🎉' },
+    ],
+  },
+  {
+    zone: 'shore', level: 2, goal: 'Comparte las conchas',
+    intro: "¡Encontré MUCHAS conchas! Compartir significa que todos reciben algunas. Vamos a darles algunas a mis amigos.",
+    outro: 'Compartiste con cada amigo. ¡Mira qué felices están!',
+    moment: 'compartió sus conchas en la orilla',
+    rounds: [
+      { kind: 'multiPick', say: 'Camina hacia una concha para regalarla — ¡una para cada amigo!', picks: 3,
+        npc: { face: '🐢', mood: MOOD('happy') },
+        options: [
+          { emoji: '🐚', caption: 'para Tortuga' },
+          { emoji: '🐚', caption: 'para Cangrejo' },
+          { emoji: '🐚', caption: 'para Foca' },
+        ],
+        doneLine: '¡Una concha para todos! Compartir se siente bien. 💖' },
+      { kind: 'choice', say: 'Tortuga solo tiene un balde, y tú también quieres construir. ¿Cuál es la forma de compartir?',
+        npc: { face: '🐢', mood: MOOD('happy'), thought: { emoji: '🪣' } },
+        options: [
+          { emoji: '🤝', caption: 'usarlo juntos', correct: true },
+          { emoji: '🏃', caption: 'agarrarlo y correr' },
+        ], doneLine: '¡Sí! ¡Podemos usarlo juntos — eso es compartir!' },
+      { kind: 'choice', say: 'Foca quiere ver tu concha brillante. ¡Puedes compartir una MIRADA! ¿Qué dices?',
+        npc: { face: '🦭', mood: MOOD('happy'), thought: { emoji: '✨' } },
+        options: [
+          { emoji: '🫴', caption: '¡ten, mira!', correct: true },
+          { emoji: '🙈', caption: '¡no, es mía!' },
+        ], doneLine: '"¡Ten, mira!" Compartiste y sigue siendo tuya. 🌟' },
+    ],
+  },
+  {
+    zone: 'shore', level: 3, goal: 'Esperar está bien',
+    intro: "A veces esperamos nuestro turno. ¡Esperar también es difícil para mí! Vamos a practicar juntos.",
+    outro: 'Esperaste TAN bien. ¡Esperar significa que tu turno viene pronto!',
+    moment: 'practicó esperar en la orilla',
+    rounds: [
+      { kind: 'choice', say: 'Cangrejo está en el tobogán. ¡Tú quieres un turno! ¿Qué hacemos primero?',
+        npc: { face: '🦀', mood: MOOD('happy'), thought: { emoji: '🛝' } },
+        options: [
+          { emoji: '⏳', caption: 'esperar mi turno', correct: true },
+          { emoji: '😤', caption: 'empujar y pasar' },
+        ], doneLine: '¡Sí — esperamos, y nuestro turno llega!' },
+      { kind: 'breathe', say: '¡Hora de esperar! Respira despacio conmigo mientras Cangrejo termina.',
+        npc: { face: '🐘', mood: MOOD('calm') }, cycles: 2,
+        doneLine: 'Mira — Cangrejo terminó. ¡Ahora es TU turno! 🛝' },
+      { kind: 'choice', say: 'Tortuga todavía está usando el balde. ¿Qué puedes hacer mientras esperas?',
+        npc: { face: '🐢', mood: MOOD('calm'), thought: { emoji: '🪣' } },
+        options: [
+          { emoji: '🏖️', caption: 'jugar cerca', correct: true },
+          { emoji: '😡', caption: 'gritarle a Tortuga' },
+        ], doneLine: '¡Jugar cerca hace que esperar sea fácil — y tu turno igual llega!' },
+    ],
+  },
+  {
+    zone: 'shore', level: 4, goal: 'Pide un turno',
+    intro: "Cuando queremos un turno, podemos PEDIRLO con palabras amables. ¡Vamos a armar las palabras para pedir!",
+    outro: '¡Pediste tan amablemente! Las palabras amables abren el camino a los turnos.',
+    moment: 'pidió un turno en la orilla',
+    rounds: [
+      { kind: 'sequence', say: 'Dilo conmigo: "mi turno por favor". Camina hacia las palabras en orden.',
+        npc: { face: '🦭', mood: MOOD('happy') },
+        pool: [{ emoji: '🏃', caption: 'correr' }, { emoji: '🙋', caption: 'mi turno' }, { emoji: '🙏', caption: 'por favor' }],
+        order: ['mi turno', 'por favor'], doneLine: '"¡Mi turno por favor!" Foca sonríe y te lo entrega. 🌟' },
+      { kind: 'sequence', say: '¡Cangrejo te pidió un turno a TI! Di: "tu turno ahora".',
+        npc: { face: '🦀', mood: MOOD('happy') },
+        pool: [{ emoji: '🐚', caption: 'concha' }, { emoji: '🫵', caption: 'tu turno' }, { emoji: '⏰', caption: 'ahora' }],
+        order: ['tu turno', 'ahora'], doneLine: '"¡Tu turno ahora!" Dar un turno es un regalo. 💖' },
+      { kind: 'choice', say: 'Pediste, pero Tortuga dice "todavía no — un minuto más." ¿Qué hacemos?',
+        npc: { face: '🐢', mood: MOOD('calm'), thought: { emoji: '⏳' } },
+        options: [
+          { emoji: '👍', caption: 'está bien, puedo esperar', correct: true },
+          { emoji: '😭', caption: 'agarrarlo de todas formas' },
+        ], doneLine: '¡Esperaste con calma — y Tortuga recordó tu turno!' },
+    ],
+  },
+  {
+    zone: 'shore', level: 5, goal: 'Construir juntos',
+    intro: "Conejo quiere construir un castillo de arena... ¡y yo también! Vamos a construir UN castillo — ¡juntos!",
+    outro: 'Lo construimos JUNTOS. Compartir lo hizo dos veces mejor. 🏰',
+    moment: 'construyó un castillo de arena con un amigo',
+    rounds: [
+      { kind: 'choice', say: 'Un montón de arena, dos constructores. ¿Cómo empezamos?',
+        npc: { face: '🐰', mood: MOOD('excited'), thought: { emoji: '🏰' } },
+        options: [
+          { emoji: '🤝', caption: 'construir juntos', correct: true },
+          { emoji: '🧱', caption: 'construir un muro entre nosotros' },
+        ], doneLine: '¡Juntos! Dos constructores hacen un castillo INCREÍBLE.' },
+      { kind: 'multiPick', say: '¡Túrnense para agregar partes! Camina hacia cada turno para construir.', picks: 4,
+        npc: { face: '🐰', mood: MOOD('happy') },
+        options: [
+          { emoji: '🏰', caption: 'mi torre' },
+          { emoji: '🐰', caption: 'el muro de Conejo' },
+          { emoji: '🚩', caption: 'mi bandera' },
+          { emoji: '🐚', caption: 'las conchas de Conejo' },
+        ],
+        doneLine: '¡Turno a turno, el castillo creció! 🏰' },
+      { kind: 'choice', say: '¡El castillo está listo! Conejo se ve muy orgulloso. ¿Qué decimos?',
+        npc: { face: '🐰', mood: MOOD('proud'), thought: { emoji: '🏰' } },
+        options: [
+          { emoji: '🎉', caption: '¡lo logramos!', correct: true },
+          { emoji: '😤', caption: 'el mío es mejor' },
+        ], doneLine: '"¡LO logramos!" Esa es la mejor parte de compartir. 💜' },
+    ],
+  },
+];
+
+const SHORE = isEs() ? SHORE_EN.map((item, i) => SHORE_ES[i] ?? item) : SHORE_EN;
+
 // ===========================================================================
 // NILU'S DAY ARC — School, Fun Corner, and Sleepy Island. Same shape as every
 // other island: 5 levels, short warm rounds, errorless, no timers, no losing.
@@ -692,7 +1291,7 @@ const SHORE: Quest[] = [
 
 // ---- SCHOOL ISLAND — School Skills ----------------------------------------
 
-const SCHOOL: Quest[] = [
+const SCHOOL_EN: Quest[] = [
   {
     zone: 'school', level: 1, goal: 'Getting ready to learn',
     intro: "Good morning! It's school time. Owl teacher is here. Let's get ready to learn together.",
@@ -803,9 +1402,122 @@ const SCHOOL: Quest[] = [
   },
 ];
 
+const SCHOOL_ES: Quest[] = [
+  {
+    zone: 'school', level: 1, goal: 'Prepararse para aprender',
+    intro: "¡Buenos días! Es hora de la escuela. La maestra Búho está aquí. Vamos a prepararnos para aprender juntos.",
+    outro: '¡Ya sabes exactamente cómo prepararte para aprender. Muy bien hecho!',
+    moment: 'se preparó para aprender en la Isla Escuela',
+    rounds: [
+      { kind: 'carry', say: "¡Vamos a empacar la mochila! ¡Recoge el libro y llévalo al lugar 1!",
+        npc: { face: '🎒', mood: MOOD('happy') },
+        items: [
+          { emoji: '📚', caption: 'libro' },
+          { emoji: '🥪', caption: 'lonchera' },
+          { emoji: '💧', caption: 'botella de agua' },
+        ],
+        doneLine: '¡Empacado y listo — libro, lonchera, botella de agua!' },
+      { kind: 'choice', say: 'La maestra le está hablando a la clase. ¿Qué hago?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          step('👂', 'Escuchar', true), step('📢', 'Gritar'), step('🚶', 'Irse caminando'),
+        ], doneLine: 'Escuchar bien te ayuda a aprender.' },
+    ],
+  },
+  {
+    zone: 'school', level: 2, goal: 'Levantar la mano',
+    intro: "En la escuela, usamos la mano para hablar. ¡Vamos a practicar levantarla!",
+    outro: 'Levantaste la mano tan bien. La maestra siempre te ve.',
+    moment: 'practicó levantar la mano en la Isla Escuela',
+    rounds: [
+      { kind: 'choice', say: 'Tengo una pregunta para mi maestra. ¿Qué hago?',
+        npc: { face: '🦉', mood: MOOD('happy'), thought: { emoji: '❓' } },
+        options: [
+          step('✋', 'Levantar la mano y esperar', true), step('📢', 'Gritar'), step('🤚', 'Agarrar a la maestra'),
+        ], doneLine: 'Levanta la mano y espera — la maestra te va a ver.' },
+      { kind: 'choice', say: 'La maestra está ayudando a Conejo ahora mismo. ¿Qué hago?',
+        npc: { face: '🐰', mood: MOOD('happy'), thought: { emoji: '⏳' } },
+        options: [
+          step('⏳', 'Esperar mi turno', true), step('🗣️', 'Interrumpir'),
+        ], doneLine: 'Esperar es difícil, pero tu turno viene pronto.' },
+    ],
+  },
+  {
+    zone: 'school', level: 3, goal: 'Quedarse en mi silla y pedir un descanso',
+    intro: "Sentarse un rato puede sentirse difícil. ¡Siempre está bien pedir un descanso!",
+    outro: 'Pedir un descanso siempre está bien — lo hiciste muy bien.',
+    moment: 'practicó pedir un descanso en la Isla Escuela',
+    rounds: [
+      { kind: 'choice', say: 'Es hora de trabajar en mi mesa. ¿Qué hago?',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          step('🪑', 'Quedarme en mi silla', true), step('🚶', 'Andar de un lado a otro'),
+        ], doneLine: 'Quedarte en tu silla te ayuda a terminar tu trabajo.' },
+      { kind: 'choice', say: 'Mi cuerpo se siente inquieto y quiero moverme. ¿Qué puedo hacer?',
+        npc: { face: '🦉', mood: MOOD('neutral'), thought: { emoji: '🌀' } },
+        options: [
+          step('🙋', 'Pedir un descanso', true), step('🏃', 'Salir corriendo por la puerta'), step('🙈', 'Esconderme bajo el escritorio'),
+        ], doneLine: '¡Pedir un descanso siempre está bien!' },
+      { kind: 'breathe', say: '¡La maestra dice que sí! Toma tu descanso — respira despacio conmigo.',
+        npc: { face: '🦉', mood: MOOD('calm') }, cycles: 2,
+        doneLine: 'Un descanso tranquilo te ayuda a sentirte listo otra vez.' },
+    ],
+  },
+  {
+    zone: 'school', level: 4, goal: 'Modales a la hora del almuerzo',
+    intro: "¡Es hora del almuerzo! Vamos a usar modales amables con nuestros amigos.",
+    outro: 'Qué modales tan amables — compartiste la mesa muy bien.',
+    moment: 'practicó modales de almuerzo en la Isla Escuela',
+    rounds: [
+      { kind: 'choice', say: 'Oso tiene una galleta muy rica en el almuerzo. ¡Se ve tan buena! ¿Qué hago?',
+        npc: { face: '🐻', mood: MOOD('happy'), thought: { emoji: '🍪' } },
+        options: [
+          step('🙏', 'Preguntar primero', true), step('🤚', 'Tomarla sin preguntar'), step('😋', 'Agarrar un poco'),
+        ], doneLine: 'Preguntar primero es amable. Luego es decisión de Oso compartir.' },
+      { kind: 'sort', say: "¡Vamos a ordenar las cosas del almuerzo! Lleva cada una a quien pertenece.",
+        npc: { face: '🦉', mood: MOOD('happy') },
+        tables: [
+          { emoji: '🎒', caption: 'Mis cosas' },
+          { emoji: '🐻', caption: 'Las cosas de Oso' },
+        ],
+        items: [
+          { emoji: '🍱', caption: 'Mi lonchera', table: 0 },
+          { emoji: '💧', caption: 'Mi botella de agua', table: 0 },
+          { emoji: '🍪', caption: 'La galleta de Oso', table: 1 },
+        ],
+        doneLine: '¡Lo tuyo se queda contigo, lo de Oso se queda con Oso!' },
+    ],
+  },
+  {
+    zone: 'school', level: 5, goal: 'Ser un buen amigo en el salón',
+    intro: "La mejor parte de la escuela es ser un buen amigo. ¡Vamos a practicar la amabilidad en el salón!",
+    outro: '¡Terminaste todo un día de escuela siendo tan buen amigo — estoy TAN orgulloso de ti!',
+    moment: 'fue un buen amigo en la Isla Escuela',
+    rounds: [
+      { kind: 'choice', say: '¡A Conejo se le cayeron sus libros al piso! ¿Qué es algo amable que puedes hacer?',
+        npc: { face: '🐰', mood: MOOD('sad'), thought: { emoji: '📚' } },
+        options: [
+          step('🤝', 'Ayudar a recogerlos', true), step('😆', 'Reírse'), step('🚶', 'Irse caminando'),
+        ], doneLine: 'Ayudar a un amigo es lo más amable que puedes hacer.' },
+      { kind: 'choice', say: 'Estamos construyendo con los bloques del salón juntos. Mis manos deben ser...',
+        npc: { face: '🦉', mood: MOOD('happy') },
+        options: [
+          step('🤲', 'Suaves', true), step('✊', 'Bruscas'),
+        ], doneLine: 'Las manos suaves mantienen los bloques — y a tus amigos — seguros.' },
+      { kind: 'choice', say: 'Oso quiere un turno con el juguete del salón. ¿Qué hago?',
+        npc: { face: '🐻', mood: MOOD('happy'), thought: { emoji: '🧸' } },
+        options: [
+          step('🔄', 'Darle un turno a Oso', true), step('🙅', 'Quedármelo para mí'),
+        ], doneLine: 'Turnarse hace que el juguete sea divertido para todos.' },
+    ],
+  },
+];
+
+const SCHOOL = isEs() ? SCHOOL_EN.map((item, i) => SCHOOL_ES[i] ?? item) : SCHOOL_EN;
+
 // ---- FUN CORNER — Home Routines --------------------------------------------
 
-const AFTERNOON: Quest[] = [
+const AFTERNOON_EN: Quest[] = [
   {
     zone: 'afternoon', level: 1, goal: 'Coming home',
     intro: "We're home from school! Buddy Dog is SO happy to see you. Let's do our coming-home steps.",
@@ -917,9 +1629,123 @@ const AFTERNOON: Quest[] = [
   },
 ];
 
+const AFTERNOON_ES: Quest[] = [
+  {
+    zone: 'afternoon', level: 1, goal: 'Llegando a casa',
+    intro: "¡Ya llegamos de la escuela! Perro Amigo está TAN feliz de verte. Vamos a hacer nuestros pasos de llegada a casa.",
+    outro: '¡Llegar a casa a lo acogedor — sabes exactamente qué hacer!',
+    moment: 'practicó llegar a casa en el Rincón Divertido',
+    rounds: [
+      { kind: 'sequence', say: "¡Ya llegamos! Camina hacia los pasos en orden.",
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '👟' } },
+        pool: [
+          step('👟', 'Quitarme los zapatos'), step('🧼', 'Lavarme las manos'),
+          step('🤗', 'Abrazar a mi familia'), step('📺', 'Encender la tele'),
+        ],
+        order: ['Quitarme los zapatos', 'Lavarme las manos', 'Abrazar a mi familia'],
+        doneLine: 'En casa, seguro y limpio — ¡ahora los abrazos!' },
+      { kind: 'choice', say: 'Perro Amigo corre a recibirte en la puerta. ¿Qué le dices?',
+        npc: { face: '🐕', mood: MOOD('excited') },
+        options: [
+          step('👋', '¡Hola, Perro Amigo!', true), step('🙈', 'Ignorarlo'),
+        ], doneLine: '¡A Perro Amigo le encanta que lo saluden!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 2, goal: 'Hora de la merienda',
+    intro: "¡Hora de la merienda en la mesita! Vamos a elegir algo saludable y a pedirlo amablemente.",
+    outro: 'Esa fue la merienda más linda de todas.',
+    moment: 'compartió la merienda en el Rincón Divertido',
+    rounds: [
+      { kind: 'sort', say: "¡Vamos a ordenar las meriendas! Lleva cada una al plato correcto.",
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🍎' } },
+        tables: [
+          { emoji: '🍎', caption: 'Todos los días' },
+          { emoji: '🎉', caption: 'A veces' },
+        ],
+        items: [
+          { emoji: '🍎', caption: 'manzana', table: 0 },
+          { emoji: '🥕', caption: 'zanahoria', table: 0 },
+          { emoji: '🍬', caption: 'dulce', table: 1 },
+          { emoji: '🍟', caption: 'papitas', table: 1 },
+        ],
+        doneLine: 'Comidas de todos los días y gustitos de a veces — ¡ambos están bien, solo que no en la misma cantidad!' },
+      { kind: 'choice', say: 'Quieres una merienda de la cocina. ¿Qué haces?',
+        npc: { face: '🐕', mood: MOOD('happy') },
+        options: [
+          step('🙋', 'Preguntarle a un adulto', true), step('🤚', 'Agarrarla yo mismo'),
+        ], doneLine: 'Preguntar primero es la forma segura y amable.' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 3, goal: 'Primero la tarea, luego jugar',
+    intro: "¡Es hora de Primero-Luego! Primero la tarea, luego algo divertido.",
+    outro: '¡Primero la tarea, LUEGO jugar — te lo ganaste!',
+    moment: 'hizo la tarea primero y luego jugó en el Rincón Divertido',
+    rounds: [
+      { kind: 'choice', say: 'Primero la tarea, luego...',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '📝' } },
+        options: [
+          step('🧸', 'Jugar', true), step('📚', 'Más tarea'),
+        ], doneLine: '¡Primero la tarea, luego jugar — ese es el plan!' },
+      { kind: 'steps', say: "¡Vamos a caminar el plan: Primero, Luego, Después!",
+        npc: { face: '🐕', mood: MOOD('happy') },
+        count: 3,
+        labels: ['Primero: tarea 📖', 'Luego: rompecabezas 🧩', 'Después: jugar ⚽'],
+        doneLine: '¡Primero la tarea, luego el rompecabezas, después a jugar — seguiste todo el plan!' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 4, goal: 'Opciones de la hora de jugar',
+    intro: "¡Ahora la MEJOR parte — hora de jugar! Vamos a jugar afuera de forma amigable.",
+    outro: 'Jugar contigo es la mejor parte de mi día.',
+    moment: 'jugó afuera de forma amigable en el Rincón Divertido',
+    rounds: [
+      { kind: 'choice', say: 'Quieres ir a jugar afuera. ¿Qué hacemos primero?',
+        npc: { face: '🐕', mood: MOOD('excited'), thought: { emoji: '🚪' } },
+        options: [
+          step('🙋', 'Preguntarle a un adulto', true), step('🚪', 'Simplemente salir'),
+        ], doneLine: 'Preguntar primero te mantiene seguro.' },
+      { kind: 'choice', say: 'Perro Amigo también quiere un turno en el columpio. ¿Qué hacemos?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🛝' } },
+        options: [
+          step('🔄', 'Turnarse', true), step('🙅', 'Seguir columpiándome'),
+        ], doneLine: 'Turnarse significa que todos tienen su turno.' },
+      { kind: 'choice', say: 'Tienes una pelota para compartir afuera. ¿Cuál es la forma de compartir?',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '⚽' } },
+        options: [
+          step('🤝', 'Jugar juntos', true), step('🙅', 'Quedarme con la pelota'),
+        ], doneLine: 'Compartir hace que jugar afuera sea más divertido.' },
+    ],
+  },
+  {
+    zone: 'afternoon', level: 5, goal: 'Hora de ordenar',
+    intro: "La hora de jugar está terminando. ¡Vamos a ordenar — todo tiene su propio lugar!",
+    outro: '¡Todo de vuelta en su lugar — el Rincón Divertido brilla!',
+    moment: 'ordenó el Rincón Divertido',
+    rounds: [
+      { kind: 'carry', say: '¡Hora de ordenar! Recoge los juguetes y llévalos al lugar 1!',
+        npc: { face: '🐕', mood: MOOD('happy'), thought: { emoji: '🧸' } },
+        items: [
+          { emoji: '🧸', caption: 'juguetes' },
+          { emoji: '📚', caption: 'libros' },
+          { emoji: '👕', caption: 'ropa' },
+        ],
+        doneLine: '¡Juguetes en el cesto, libros en el estante, ropa en la canasta — todo ordenado!' },
+      { kind: 'choice', say: 'Hay un calcetín perdido en el piso. ¿A dónde va?',
+        npc: { face: '🐕', mood: MOOD('happy') },
+        options: [
+          step('🧺', 'La canasta de ropa sucia', true), step('🛏️', 'Debajo de la cama'),
+        ], doneLine: 'Cada cosita tiene su lugar.' },
+    ],
+  },
+];
+
+const AFTERNOON = isEs() ? AFTERNOON_EN.map((item, i) => AFTERNOON_ES[i] ?? item) : AFTERNOON_EN;
+
 // ---- SLEEPY ISLAND — Bedtime Routines ---------------------------------------
 
-const NIGHT: Quest[] = [
+const NIGHT_EN: Quest[] = [
   {
     zone: 'night', level: 1, goal: 'Dinner together',
     intro: "The moon is up and it's dinner time. Sheep is here to eat together, nice and slow.",
@@ -1016,6 +1842,106 @@ const NIGHT: Quest[] = [
     ],
   },
 ];
+
+const NIGHT_ES: Quest[] = [
+  {
+    zone: 'night', level: 1, goal: 'Cenar juntos',
+    intro: "La luna ya salió y es hora de cenar. Oveja está aquí para comer juntos, tranquilos y despacio.",
+    outro: 'Cenar juntos se siente tan acogedor contigo.',
+    moment: 'cenó junto a otros en la Isla del Sueño',
+    rounds: [
+      { kind: 'choice', say: 'Nos sentamos a cenar. ¿Qué hacemos antes de comer?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🍽️' } },
+        options: [
+          step('🍽️', 'Esperar a todos', true), step('🍴', 'Empezar a comer solo'),
+        ], doneLine: 'Esperar a todos hace que la cena sea agradable juntos.' },
+      { kind: 'choice', say: 'Hay una comida nueva en tu plato. ¿Qué podemos probar?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🥦' } },
+        options: [
+          step('😋', 'Un bocadito', true), step('🙅', 'Negarse a probarla'),
+        ], doneLine: '¡Un bocadito es valiente — gracias por intentarlo!' },
+      { kind: 'choice', say: 'La cena terminó. ¿Qué decimos?',
+        npc: { face: '🐑', mood: MOOD('calm') },
+        options: [
+          step('🙏', '¡Gracias!', true), step('🚶', 'Irse sin decir nada'),
+        ], doneLine: '"¡Gracias!" hace sentir bien a quien cocinó.' },
+    ],
+  },
+  {
+    zone: 'night', level: 2, goal: 'Hora del baño',
+    intro: "¡Hora del baño! Vamos a hacer los pasos del baño en orden, tranquilos y fáciles.",
+    outro: '¡Limpio y acogedor, listo para la pijama!',
+    moment: 'se bañó en la Isla del Sueño',
+    rounds: [
+      { kind: 'sequence', say: '¡Hora del baño! Camina hacia los pasos en orden.',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🛁' } },
+        pool: [
+          step('🛁', 'Meterse al agua'), step('🧼', 'Lavarse'),
+          step('🧻', 'Secarse'), step('🛌', 'Ponerse la pijama'),
+        ],
+        order: ['Meterse al agua', 'Lavarse', 'Secarse', 'Ponerse la pijama'],
+        doneLine: '¡Bien limpio y cómodo — qué buen baño!' },
+    ],
+  },
+  {
+    zone: 'night', level: 3, goal: 'Cepillarse los dientes',
+    intro: "Los dientes brillantes nos ayudan a dormir dulce. Vamos a cepillarnos, paso a paso.",
+    outro: '¡Dientes brillantes y limpios, listo para dormir!',
+    moment: 'se cepilló los dientes en la Isla del Sueño',
+    rounds: [
+      { kind: 'sequence', say: "Vamos a cepillarnos los dientes. Camina hacia los pasos en orden.",
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🪥' } },
+        pool: [step('🪥', 'Sacar mi cepillo'), step('🧴', 'Ponerle pasta'), step('😁', '¡Cepíllate!')],
+        order: ['Sacar mi cepillo', 'Ponerle pasta', '¡Cepíllate!'],
+        doneLine: '¡Cepilla, cepilla, cepilla — brillante!' },
+      { kind: 'steps', say: '¡Hora de cepillarse! Cuenta conmigo mientras caminas cada número.',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🪥' } },
+        count: 4,
+        doneLine: '¡Uno, dos, tres, cuatro — cada diente está bien limpio!' },
+    ],
+  },
+  {
+    zone: 'night', level: 4, goal: 'Preparar mi cama',
+    intro: "Vamos a preparar tu cama para una noche acogedora. ¡Camina hacia todo lo que necesitas!",
+    outro: '¡Tu cama está lista para una noche acogedora!',
+    moment: 'preparó su cama en la Isla del Sueño',
+    rounds: [
+      { kind: 'carry', say: '¡Recoge la almohada y llévala al lugar 1 en la cama!',
+        npc: { face: '🐑', mood: MOOD('calm') },
+        items: [
+          { emoji: '🛏️', caption: 'almohada' },
+          { emoji: '🧸', caption: 'osito' },
+          { emoji: '💧', caption: 'vaso de agua' },
+        ],
+        doneLine: '¡Almohada, osito, vaso de agua — tu cama está lista!' },
+    ],
+  },
+  {
+    zone: 'night', level: 5, goal: 'Buenas noches',
+    intro: "El día completo terminó — mañana, escuela, juego, y ahora dormir. Vamos a terminar con un cuento y buenas noches.",
+    outro: '¡Tuviste todo un día maravilloso! Mañana el patio arcoíris nos espera de nuevo. Buenas noches, mi amigo. 🌙',
+    moment: 'dijo buenas noches en la Isla del Sueño',
+    rounds: [
+      { kind: 'choice', say: '¡Es hora del cuento! ¿Cuál historia suena linda esta noche?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '📖' } },
+        options: [
+          step('🦕', 'El libro de dinosaurios', true), step('🐰', 'El libro del conejito', true),
+        ], doneLine: '¡Qué cuento tan lindo! A acurrucarse.' },
+      { kind: 'choice', say: 'El cuento terminó. ¿Qué le decimos a nuestra familia?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '💤' } },
+        options: [
+          step('😴', '¡Buenas noches!', true), step('🏃', 'Una vuelta más corriendo'),
+        ], doneLine: '"¡Buenas noches!" Dulce y suave.' },
+      { kind: 'choice', say: 'Las luces se están apagando poco a poco. ¿Qué pasa ahora?',
+        npc: { face: '🐑', mood: MOOD('calm'), thought: { emoji: '🌙' } },
+        options: [
+          step('💤', 'Hora de dormir', true), step('🎮', 'Más tiempo de jugar'),
+        ], doneLine: 'Las luces bajitas significan que es hora de descansar. Dulces sueños. 🌙✨' },
+    ],
+  },
+];
+
+const NIGHT = isEs() ? NIGHT_EN.map((item, i) => NIGHT_ES[i] ?? item) : NIGHT_EN;
 
 // ===========================================================================
 
