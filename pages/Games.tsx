@@ -99,6 +99,8 @@ const Games: React.FC = () => {
       Grown-ups: our games collect no personal information — see our{' '}
       <a href="/privacy-policy" className="underline">privacy policy</a> and{' '}
       <a href="/legal/disclosure.html" className="underline">general disclosure</a>.
+      {' '}Running a games table at an event?{' '}
+      <a href="/playtest" className="underline">Playtest Corner</a>.
     </p>
   </div>
   );
