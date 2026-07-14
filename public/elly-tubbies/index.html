@@ -2578,16 +2578,21 @@ function floatSprite(ch,pos,rise=3,dur=1.4,scale=1.3){
    quests/friendship/state. Samples: [tMs,x,z,rotY]. Events: [tMs,type,extra].
    ========================================================================== */
 const REC_SAMPLE_MS=250, REC_MAX_SAMPLES=1200, REC_MAX_EVENTS=500, REC_MIN_MS=20000;
-let REC={t0:0,acc:0,samples:[],events:[]};
+/* REC.pt is a GAMEPLAY clock (sum of played dt) — wall clock would turn pause
+   time / replay-watching time into long frozen gaps inside the movie. */
+let REC={pt:0,acc:0,per:0,samples:[],events:[]};
 let replaying=false,replayData=null,replayIdx=0,replayElapsed=0,replaySpeed=1,replaySaved=null,replayIsOwn=false;
+const recT=()=>Math.round((REC.resumeAt||0)+REC.pt);
 function recTick(dt,now){
   if(paused||replaying||mode==='intro'||mode==='finale')return;
+  REC.pt+=dt*1000;
+  REC.per+=dt;
+  if(REC.per>12){REC.per=0;persistRec();}  /* safety net: pagehide can be missed */
   REC.acc+=dt*1000;
   if(REC.acc<REC_SAMPLE_MS)return;
   REC.acc=0;
-  if(!REC.t0)REC.t0=now-(REC.resumeAt||0);
   const p=player.group.position;
-  REC.samples.push([Math.round(now-REC.t0),Math.round(p.x*100)/100,Math.round(p.z*100)/100,
+  REC.samples.push([recT(),Math.round(p.x*100)/100,Math.round(p.z*100)/100,
     Math.round(player.group.rotation.y*1000)/1000]);
   if(REC.samples.length>REC_MAX_SAMPLES){
     REC.samples.shift();
@@ -2598,8 +2603,7 @@ function recTick(dt,now){
 /* call from wherever a fun, recordable moment happens — cheap, no-op while paused/replaying */
 function recEvent(type,extra){
   if(paused||replaying||mode==='intro'||mode==='finale')return;
-  if(!REC.t0)REC.t0=performance.now()-(REC.resumeAt||0);
-  REC.events.push([Math.round(performance.now()-REC.t0),type,extra===undefined?0:extra]);
+  REC.events.push([recT(),type,extra===undefined?0:extra]);
   if(REC.events.length>REC_MAX_EVENTS)REC.events.shift();
 }
 function recordedSpanMs(){const s=REC.samples;return s.length<2?0:s[s.length-1][0]-s[0][0];}

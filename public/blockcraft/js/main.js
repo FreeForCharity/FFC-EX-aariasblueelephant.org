@@ -1275,8 +1275,9 @@
      A rolling, RAM-only recorder: while playing normally we sample position+yaw
      every 250ms into a flat ring buffer (max 5 minutes ≈ 1200 samples), plus a
      tiny list of fun moments (place/dig/jump/friend/star/heart/treasure).
-     Nothing is persisted; replay only MOVES the camera & avatar and fires
-     sound/particle cues — it never touches the world, scores, or quests. */
+     Persisted across visits (blockcraft.replay.v1); replay only MOVES the
+     camera & avatar and fires sound/particle cues — it never touches the
+     world, scores, or quests. */
   const REC_MS = 250, REC_MAX = 1200;                 // 1200 × 250ms = 5 minutes
   const recPos = new Float32Array(REC_MAX * 4);       // x, y, z, yaw per sample
   let recHead = 0;                                    // total samples ever taken
@@ -1294,6 +1295,8 @@
 
   function recordSample(dt) {
     if (!started || replaying || ABC.ui.isOpen()) return;
+    recPer += dt;
+    if (recPer > 12) { recPer = 0; persistRec(); }   // safety net: pagehide can be missed
     recTimer += dt;
     if (recTimer < REC_MS / 1000) return;
     recTimer = 0;
@@ -1303,6 +1306,40 @@
     recCount = Math.min(recCount + 1, REC_MAX);
     while (recEvents.length && recEvents[0].i < recHead - REC_MAX) recEvents.shift();
   }
+
+  /* keep the adventure across visits, matching the game-kit standard — a
+     RAM-only ring meant "My Movie" always forgot the previous game */
+  const REC_KEY = 'blockcraft.replay.v1';
+  let recPer = 0;
+  function persistRec() {
+    try {
+      if (recCount < 8) return;
+      const base = recHead - recCount, s = [];
+      for (let i = 0; i < recCount; i++) {
+        const o = ((base + i) % REC_MAX) * 4;
+        s.push([+recPos[o].toFixed(2), +recPos[o + 1].toFixed(2), +recPos[o + 2].toFixed(2), +recPos[o + 3].toFixed(3)]);
+      }
+      const e = recEvents.map((ev) => ({ i: ev.i - base, k: ev.k })).filter((ev) => ev.i >= 0).slice(-400);
+      localStorage.setItem(REC_KEY, JSON.stringify({ v: 1, s, e }));
+    } catch (err) {}
+  }
+  (function restoreRec() {
+    try {
+      const d = JSON.parse(localStorage.getItem(REC_KEY) || 'null');
+      if (!d || d.v !== 1 || !Array.isArray(d.s)) return;
+      const src = d.s.filter((x) => Array.isArray(x) && x.length === 4 && x.every(Number.isFinite)).slice(-REC_MAX);
+      for (let i = 0; i < src.length; i++) {
+        const o = i * 4;
+        recPos[o] = src[i][0]; recPos[o + 1] = src[i][1]; recPos[o + 2] = src[i][2]; recPos[o + 3] = src[i][3];
+      }
+      recHead = src.length; recCount = src.length;
+      if (Array.isArray(d.e)) for (const ev of d.e) {
+        if (ev && Number.isFinite(+ev.i) && ev.i >= 0 && ev.i <= src.length && typeof ev.k === 'string') recEvents.push({ i: ev.i, k: ev.k });
+      }
+    } catch (err) {}
+  })();
+  addEventListener('pagehide', persistRec);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persistRec(); });
 
   /* angle-aware lerp so the avatar turns the short way round */
   function lerpAngle(a, b, t) {
