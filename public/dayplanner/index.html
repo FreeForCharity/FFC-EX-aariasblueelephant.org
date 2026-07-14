@@ -58,6 +58,7 @@
     background: rgba(255,255,255,.85); border-radius: 12px; padding: 9px 14px; min-height: 44px;
     box-shadow: 0 2px 6px rgba(40,40,90,.12); color: var(--k-ink);
   }
+  .dpChip.active { background: var(--k-accent); color: #fff; box-shadow: 0 2px 10px rgba(139,92,246,.45); }
 
   /* ---------- in-day progress strip (mini visual schedule, always visible) ---------- */
   #dpStrip {
@@ -91,8 +92,8 @@
     <div class="dpRow">
       <button class="kBig" id="dpPlay" title="Start living your plan with Nilu">▶️ Live my plan!</button>
     </div>
+    <div class="dpRow" id="dpChips"></div>
     <div class="dpRow">
-      <button class="dpMini" id="dpSwap" title="Switch between morning and evening plans">🌙 Make an evening plan</button>
       <button class="dpMini" id="dpClear" title="Take all the cards back out">🧹 Start over</button>
     </div>
   </div>
@@ -125,10 +126,29 @@
     story:   { emoji: "📖", label: "Story time",     labelEs: "Cuento",         station: "rug",    line: "Once upon a time… what a good story!", lineEs: "Había una vez… ¡qué bonito cuento!" },
     hug:     { emoji: "🤗", label: "Goodnight hug",  labelEs: "Abrazo",         station: "rug",    line: "Big warm hug. I love you!", lineEs: "Un abrazo grandote. ¡Te quiero!" },
     lights:  { emoji: "🌙", label: "Lights out",     labelEs: "A dormir",       station: "bed",    line: "Lights out. Sweet dreams, Nilu.", lineEs: "Luces apagadas. Dulces sueños, Nilu." },
+    homework:  { emoji: "📚", label: "Homework",      labelEs: "Tarea",           station: "table",  line: "Homework done! Good thinking!", lineEs: "¡Tarea lista! ¡Buen pensar!" },
+    playdate:  { emoji: "🧸", label: "Playdate",      labelEs: "Cita de juego",   station: "rug",    line: "Playdate time! So much fun!", lineEs: "¡Hora de jugar con amigos! ¡Qué divertido!" },
+    hair:      { emoji: "💇", label: "Brush hair",    labelEs: "Cepillar el pelo", station: "sink",  line: "Hair brushed! Looking sharp!", lineEs: "¡Pelo cepillado! ¡Te ves genial!" },
+    medicine:  { emoji: "💊", label: "Medicine",      labelEs: "Medicina",        station: "sink",  line: "Medicine time, with a grown-up. All done!", lineEs: "Hora de la medicina, con un adulto. ¡Listo!" },
+    tidy:      { emoji: "🧹", label: "Tidy up",       labelEs: "Ordenar",         station: "closet", line: "Tidy tidy! Everything in its place!", lineEs: "¡A ordenar! ¡Todo en su lugar!" },
+    snack:     { emoji: "🍎", label: "Snack",         labelEs: "Merienda",        station: "table",  line: "Yummy snack! Nice and full!", lineEs: "¡Rica merienda! ¡Qué satisfecho!" },
+    quiet:     { emoji: "🤫", label: "Quiet time",    labelEs: "Tiempo tranquilo", station: "rug",   line: "Shh, quiet time. So calm and cozy.", lineEs: "Shh, tiempo tranquilo. Qué calma y qué cómodo." },
+    pet:       { emoji: "🐟", label: "Pet time",      labelEs: "Hora de la mascota", station: "rug", line: "Feed the fish! Good job caring!", lineEs: "¡Alimenta al pez! ¡Buen cuidado!" },
+    washhands: { emoji: "🧼", label: "Wash hands",    labelEs: "Lavarse las manos", station: "sink", line: "Wash wash! Clean hands!", lineEs: "¡Lava, lava! ¡Manos limpias!" },
+    waterplant:{ emoji: "🪴", label: "Water the plant", labelEs: "Regar la planta", station: "door", line: "Water the plant! Growing strong!", lineEs: "¡Riega la planta! ¡Creciendo fuerte!" },
   };
   const ROUTINES = {
-    morning: { emoji: "🌅", name: "Morning", nameEs: "Mañana", cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes"] },
-    evening: { emoji: "🌙", name: "Evening", nameEs: "Noche", cards: ["dinner", "bath", "pjs", "teeth", "potty", "story", "hug", "lights"] },
+    morning:   { emoji: "🌅", name: "Morning",    nameEs: "Mañana",        prepEs: "de la", cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes"] },
+    evening:   { emoji: "🌙", name: "Evening",    nameEs: "Noche",         prepEs: "de la", cards: ["dinner", "bath", "pjs", "teeth", "potty", "story", "hug", "lights"] },
+    schoolday: { emoji: "🏫", name: "School Day", nameEs: "Día escolar",   prepEs: "del",   cards: ["wake", "potty", "teeth", "face", "dress", "brekkie", "bag", "shoes", "homework", "snack"] },
+    weekend:   { emoji: "🌈", name: "Weekend",    nameEs: "Fin de semana", prepEs: "del",   cards: ["wake", "brekkie", "playdate", "tidy", "quiet", "snack", "pet", "waterplant", "hair", "bath"] },
+  };
+  const ROUTINE_ORDER = ["morning", "evening", "schoolday", "weekend"];
+  const CHIP_LABELS = {
+    morning:   { en: "Morning",    es: "Mañana" },
+    evening:   { en: "Evening",    es: "Noche" },
+    schoolday: { en: "School day", es: "Escuela" },
+    weekend:   { en: "Weekend",    es: "Fin de semana" },
   };
   const MIN_STEPS = 3, MAX_STEPS = 6;
 
@@ -240,14 +260,17 @@
     beaconRing.visible = false; scene.add(beaconRing);
   }
 
-  // dawn ↔ dusk mood for morning vs evening plans
+  // dawn ↔ dusk ↔ bright-midday mood, one per routine (schoolday rides the
+  // morning dawn look; weekend gets a slightly warmer, sunnier sky)
   function setMood(routine) {
-    const morning = routine === "morning";
-    const bg = new THREE.Color(morning ? 0x8fd0ff : 0x5f5a9e);
+    const dawn = routine === "morning" || routine === "schoolday";
+    const weekend = routine === "weekend";
+    const bgHex = dawn ? 0x8fd0ff : weekend ? 0xffdca0 : 0x5f5a9e;
+    const bg = new THREE.Color(bgHex);
     scene.background = bg; scene.fog = new THREE.Fog(bg.getHex(), 30, 60);
-    ambient.intensity = morning ? 0.75 : 0.5;
-    sun.intensity = morning ? 0.55 : 0.28;
-    sun.color.set(morning ? 0xfff4e0 : 0xb9a7f0);
+    ambient.intensity = dawn ? 0.75 : weekend ? 0.8 : 0.5;
+    sun.intensity = dawn ? 0.55 : weekend ? 0.6 : 0.28;
+    sun.color.set(dawn ? 0xfff4e0 : weekend ? 0xffe9b8 : 0xb9a7f0);
   }
 
   /* ---------- game state ---------- */
@@ -287,12 +310,24 @@
     $("dpPlanner").style.display = "flex";
     $("dpStrip").style.display = "none";
     beaconArrow.visible = beaconRing.visible = false;
-    $("dpTitle").textContent = K.tr(`${r.emoji} My ${r.name} Plan`, `${r.emoji} Mi plan de la ${routName(r).toLowerCase()}`);
+    $("dpTitle").textContent = K.tr(`${r.emoji} My ${r.name} Plan`, `${r.emoji} Mi plan ${r.prepEs} ${r.nameEs.toLowerCase()}`);
     document.querySelector("#dpPlanner .dpSub").textContent = K.tr("Tap the picture cards in your order — you're the planner!", "Toca las tarjetas en tu orden — ¡tú eres quien planea!");
     $("dpClear").textContent = K.tr("🧹 Start over", "🧹 Empezar de nuevo");
-    $("dpSwap").textContent = G.routine === "morning" ? K.tr("🌙 Make an evening plan", "🌙 Hacer un plan de noche") : K.tr("🌅 Make a morning plan", "🌅 Hacer un plan de mañana");
     K.chip("");
+    renderChips();
     renderPlanner();
+  }
+
+  // 4 routine chips (morning/evening/schoolday/weekend) — tap one to switch
+  // and load that routine's own saved plan
+  function renderChips() {
+    const wrap = $("dpChips");
+    wrap.innerHTML = ROUTINE_ORDER.map((key) => {
+      const r = ROUTINES[key], lbl = CHIP_LABELS[key];
+      const active = G.routine === key;
+      const title = K.tr(`Make a ${r.name.toLowerCase()} plan`, `Hacer un plan ${r.prepEs} ${r.nameEs.toLowerCase()}`);
+      return `<button class="dpMini dpChip${active ? " active" : ""}" data-routine="${key}" title="${title}">${r.emoji} ${K.tr(lbl.en, lbl.es)}</button>`;
+    }).join("");
   }
 
   function renderPlanner() {
@@ -442,15 +477,16 @@
     G.days++; K.save("days", G.days);
     K.sfx.star(); K.recordEvent("day", G.days);
     const r = ROUTINES[G.routine];
-    K.say(K.tr(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`, `¡Hiciste todo tu plan de la ${routName(r).toLowerCase()}, paso a paso! ¡Qué gran planificador!`));
-    const other = G.routine === "morning" ? "evening" : "morning";
+    K.say(K.tr(`You did your whole ${r.name.toLowerCase()} plan, step by step! What a planner!`, `¡Hiciste todo tu plan ${r.prepEs} ${routName(r).toLowerCase()}, paso a paso! ¡Qué gran planificador!`));
+    const other = ROUTINE_ORDER[(ROUTINE_ORDER.indexOf(G.routine) + 1) % ROUTINE_ORDER.length];
+    const ro = ROUTINES[other];
     const streak = K.streakBump();
     panel(`${streak.n > 1 ? `<div style="font-size:20px;font-weight:900">${K.tr(`🔥 ${streak.n} days planned in a row!`, `🔥 ¡${streak.n} días planeados seguidos!`)}</div>` : ""}<h2>${K.tr("🌟 Plan complete!", "🌟 ¡Plan completado!")}</h2>
       <p>${K.tr("You made the plan AND lived it — every step, in your order!", "Hiciste el plan Y lo viviste — ¡cada paso, en tu orden!")}</p>
       <div style="font-size:28px;margin:6px 0">${G.plan.map((id) => stepOf(id).emoji).join(" → ")}</div>
       <p style="font-size:14px">${K.tr("Days planned:", "Días planeados:")} <b>${G.days}</b></p>
       <button class="kBig" id="dpAgain" title="Plan this routine again">${r.emoji} ${K.tr("Plan again", "Planear otra vez")}</button>
-      <button class="kBig kAlt" id="dpOther" title="Make the other plan">${ROUTINES[other].emoji} ${K.tr(`${ROUTINES[other].name} plan`, `Plan de ${routName(ROUTINES[other]).toLowerCase()}`)}</button>`);
+      <button class="kBig kAlt" id="dpOther" title="Make the next plan">${ro.emoji} ${K.tr(`${ro.name} plan`, `Plan ${ro.prepEs} ${routName(ro).toLowerCase()}`)}</button>`);
     $("dpAgain").addEventListener("pointerdown", () => { closePanel(); openPlanner(); });
     $("dpOther").addEventListener("pointerdown", () => {
       G.routine = other;
@@ -615,8 +651,10 @@
       G.plan = K.load(`plan.${G.routine}`, []).filter((id) => ROUTINES[G.routine].cards.includes(id));
       $("dpPlay").addEventListener("pointerdown", startDay);
       $("dpClear").addEventListener("pointerdown", () => { G.plan = []; K.sfx.pop(); renderPlanner(); });
-      $("dpSwap").addEventListener("pointerdown", () => {
-        G.routine = G.routine === "morning" ? "evening" : "morning";
+      $("dpChips").addEventListener("pointerdown", (e) => {
+        const b = e.target.closest(".dpChip");
+        if (!b || b.dataset.routine === G.routine) return;
+        G.routine = b.dataset.routine;
         G.plan = K.load(`plan.${G.routine}`, []).filter((id) => ROUTINES[G.routine].cards.includes(id));
         openPlanner(); K.sfx.tap();
       });

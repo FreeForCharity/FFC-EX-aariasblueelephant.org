@@ -323,6 +323,26 @@ try{
     " blocks to go! 🧹": " bloques más! 🧹",
     "🎬 Ta-daa! That’s how you built it!": "🎬 ¡Ta-rán! ¡Así lo construiste!",
     "🎬 Watch your build come to life!": "🎬 ¡Mira tu construcción cobrar vida!",
+    "Ideas": "Ideas",
+    "Challenge ideas — can you make…?": "Ideas de retos — ¿puedes hacer…?",
+    "💡 Challenge ideas": "💡 Ideas de retos",
+    "Can you make a tower taller than the shelf? 🗼": "¿Puedes hacer una torre más alta que el estante? 🗼",
+    "Can you make a bridge two cars fit under? 🌉": "¿Puedes hacer un puente por donde pasen dos carros? 🌉",
+    "Can you make a robot? 🤖": "¿Puedes hacer un robot? 🤖",
+    "Can you make a house with a door? 🏠": "¿Puedes hacer una casa con puerta? 🏠",
+    "Can you make a butterfly? 🦋": "¿Puedes hacer una mariposa? 🦋",
+    "Can you make a train? 🚂": "¿Puedes hacer un tren? 🚂",
+    "Can you make a flower garden? 🌷": "¿Puedes hacer un jardín de flores? 🌷",
+    "Can you make a boat? ⛵": "¿Puedes hacer un barco? ⛵",
+    "Can you make a giraffe? 🦒": "¿Puedes hacer una jirafa? 🦒",
+    "Can you make a castle? 🏰": "¿Puedes hacer un castillo? 🏰",
+    "✨ I made it!": "✨ ¡Lo hice!",
+    "I made it! — celebrate and see a new challenge": "¡Lo hice! — celebra y mira un nuevo reto",
+    "👉 Another one": "👉 Otra",
+    "Show another challenge": "Muestra otro reto",
+    "✕ Close": "✕ Cerrar",
+    "Close challenge ideas": "Cerrar ideas de retos",
+    "✨ You built it! Great job! ✨": "✨ ¡Lo construiste! ¡Buen trabajo! ✨",
   });
   if (ABELang.es) {
     var byline = document.querySelector('#titleScreen .byline');
@@ -365,6 +385,7 @@ try{
       <button class="menuBtn" id="tableBtn" title="Change the table color">🟩 Table</button>
       <button class="menuBtn" id="tidyNowBtn" title="Tidy up — put stray pieces back">🧹 Tidy</button>
       <button class="menuBtn" id="clearBtn" title="Start a brand-new build">🆕 New</button>
+      <button class="menuBtn" id="ideasBtn" title="Challenge ideas — can you make…?">💡 Ideas</button>
       <button class="menuBtn" id="parentBtn" title="Parent panel">👨‍👩‍👧</button>
     </div>
 
@@ -423,6 +444,16 @@ try{
     <p>Pick something and watch the blocks fly together!</p>
     <div id="helpGrid"></div>
     <div class="cardBtnRow"><button class="cardBtn gray" id="helpClose">Not now</button></div>
+  </div></div>
+
+  <div class="overlay" id="ideasModal"><div class="card">
+    <h2>💡 Challenge ideas</h2>
+    <p id="ideasText">Can you make a tower taller than the shelf? 🗼</p>
+    <div class="cardBtnRow">
+      <button class="cardBtn" id="ideaMadeBtn" title="I made it! — celebrate and see a new challenge">✨ I made it!</button>
+      <button class="cardBtn" id="ideaNextBtn" title="Show another challenge" style="background:linear-gradient(180deg,#a5d8ff,#74c0fc); color:#0b4a8f; box-shadow:0 5px 0 #1c7ed6;">👉 Another one</button>
+      <button class="cardBtn gray" id="ideaCloseBtn" title="Close challenge ideas">✕ Close</button>
+    </div>
   </div></div>
 
   <div class="overlay" id="parentModal"><div class="card">

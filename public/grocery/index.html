@@ -124,6 +124,27 @@
     { id: "cookie", emoji: "🍪", name: "a cookie", nameEs: "una galleta" },
     { id: "orange", emoji: "🍊", name: "an orange", nameEs: "una naranja" },
     { id: "corn",   emoji: "🌽", name: "some corn", nameEs: "el elote" },
+    // seasonal foods — one extra shelf slot shows whichever of these is "in season" (K.season()).
+    // They only join the random shopping-list pool while in season; the rest of the year they
+    // stay off the list entirely (still present here so newList()/foodById() can find them).
+    { id: "cocoa",      emoji: "☕", name: "hot cocoa",  nameEs: "chocolatito caliente" },
+    { id: "strawberry", emoji: "🍓", name: "a strawberry", nameEs: "una fresa" },
+    { id: "icecream",   emoji: "🍦", name: "ice cream",  nameEs: "el helado" },
+    { id: "pumpkin",    emoji: "🎃", name: "a pumpkin",  nameEs: "una calabaza" },
+  ];
+  const SEASON_FOOD = { winter: "cocoa", spring: "strawberry", summer: "icecream", fall: "pumpkin" };
+  const SEASONAL_IDS = Object.values(SEASON_FOOD);
+
+  /* ---------- themed shopping trips — every 3rd trip is "shopping for someone" ---------- */
+  const THEMES = [
+    { id: "breakfast", emoji: "🥣", name: "Breakfast", nameEs: "el desayuno", items: ["milk", "eggs", "bread", "juice"],
+      say: "Let's buy breakfast things!", sayEs: "¡Compremos cosas para el desayuno!" },
+    { id: "birthday", emoji: "🎂", name: "Birthday", nameEs: "el cumpleaños", items: ["cookie", "juice", "apple", "banana"],
+      say: "Let's buy things for a birthday party!", sayEs: "¡Compremos cosas para una fiesta de cumpleaños!" },
+    { id: "sick", emoji: "🍲", name: "Sick Day", nameEs: "el día de sopa", items: ["juice", "orange", "bread", "milk"],
+      say: "Grandma needs soup-day things.", sayEs: "La abuela necesita cositas para su día de sopa." },
+    { id: "picnic", emoji: "🧺", name: "Picnic", nameEs: "el picnic", items: ["banana", "cheese", "bread", "apple"],
+      say: "Let's buy picnic things!", sayEs: "¡Compremos cosas para un picnic!" },
   ];
   const MAX_LEVEL = 7;                 // one level per denomination taught (7 coins & bills)
   const MAX_LIST = 6;                  // the shopping list itself never grows past 6 of the 12 foods
@@ -254,6 +275,20 @@
       });
     });
 
+    // 13th seasonal stand — same row-3 spacing (gap of 4.5, matching the other four
+    // segments on this row), shows ONLY the current season's food. Sits at x=10, z=2,
+    // well clear of the checkout collider (x1=10.7..12.3, z1=4.8..9.2 — different z range).
+    {
+      const sx = 10, sz = 2;
+      box(SEG_W, 1.4, SEG_D, shelfColors[2], sx, 0.7, sz);
+      box(SEG_W + 0.2, 0.18, SEG_D + 0.2, 0xffffff, sx, 1.45, sz);
+      colliders.push({ x1: sx - SEG_W / 2, z1: sz - SEG_D / 2, x2: sx + SEG_W / 2, z2: sz + SEG_D / 2 });
+      const seasonFood = FOODS.find((f) => f.id === SEASON_FOOD[K.season().id]);
+      const ss = emojiSprite(seasonFood.emoji, 1.4);
+      ss.position.set(sx, 2.15, sz + 0.15); scene.add(ss);
+      stands.push({ food: seasonFood, sprite: ss, x: sx, z: sz + 1.0, baseY: 2.15 });
+    }
+
     // checkout: counter + cashier on the east side near the door
     box(1.4, 1.1, 4.2, 0x5fa8f0, 11.5, 0.55, 7);
     colliders.push({ x1: 10.7, z1: 4.8, x2: 12.3, z2: 9.2 });
@@ -282,6 +317,7 @@
   const G = {
     phase: "shop",           // reveal → shop → line → scan → pay → bag → done
     list: [], got: [],       // food ids
+    theme: null,             // active themed-trip def (breakfast/birthday/sick/picnic), or null for a random list
     peeked: [],              // ids revealed early via Hint (memory game: list hides once shopping starts)
     level: 1,
     trips: 0,
@@ -306,16 +342,30 @@
   }
 
   function newList() {
-    const pool = FOODS.slice();
     const size = levelSize(G.level);
-    G.list = [];
-    while (G.list.length < size) {
-      const i = Math.floor(Math.random() * pool.length);
-      G.list.push(pool.splice(i, 1)[0].id);
+    // shopping-for-someone: every 3rd trip uses a themed list instead of a random one
+    const theme = (G.trips % 3 === 2) ? THEMES[Math.floor(Math.random() * THEMES.length)] : null;
+    G.theme = theme;
+    let special = null;
+    if (theme) {
+      const tsize = Math.max(1, Math.min(theme.items.length, size));
+      G.list = theme.items.slice(0, tsize);
+    } else {
+      // seasonal food only joins the pool while it's actually in season
+      const seasonFoodId = SEASON_FOOD[K.season().id];
+      const pool = FOODS.filter((f) => !SEASONAL_IDS.includes(f.id) || f.id === seasonFoodId);
+      G.list = [];
+      while (G.list.length < size) {
+        const i = Math.floor(Math.random() * pool.length);
+        G.list.push(pool.splice(i, 1)[0].id);
+      }
+      // food of the day — a different daily special is on every list (come back tomorrow!)
+      // (only from foods actually available today, so an off-season seasonal item never
+      // gets picked as the special with no matching shelf to find it on)
+      const available = FOODS.filter((f) => !SEASONAL_IDS.includes(f.id) || f.id === seasonFoodId);
+      special = available[Math.floor(Date.now() / 864e5) % available.length];
+      if (!G.list.includes(special.id)) G.list[0] = special.id;
     }
-    // food of the day — a different daily special is on every list (come back tomorrow!)
-    const special = FOODS[Math.floor(Date.now() / 864e5) % FOODS.length];
-    if (!G.list.includes(special.id)) G.list[0] = special.id;
     G.got = []; G.peeked = [];
     G.hintTimer = 0; G.hintShown = false;
     document.getElementById("gHint").style.display = "none";
@@ -325,12 +375,18 @@
 
     // memory game: show the list once, read it aloud, then hide it while shopping
     G.phase = "reveal";
-    G.revealT = 0; G.revealDur = REVEAL_BASE + REVEAL_PER_ITEM * size;
+    G.revealT = 0; G.revealDur = REVEAL_BASE + REVEAL_PER_ITEM * G.list.length;
     renderList(); refreshPhase();
-    document.getElementById("gLevel").textContent = K.tr(`Level ${G.level} · Remember ${size} ${size === 1 ? "thing" : "things"}!`, `Nivel ${G.level} · ¡Recuerda ${size} ${size === 1 ? "cosa" : "cosas"}!`);
+    if (theme) {
+      document.getElementById("gLevel").textContent = K.tr(`Level ${G.level} · ${theme.emoji} ${theme.name}!`, `Nivel ${G.level} · ${theme.emoji} ¡${theme.nameEs}!`);
+    } else {
+      document.getElementById("gLevel").textContent = K.tr(`Level ${G.level} · Remember ${size} ${size === 1 ? "thing" : "things"}!`, `Nivel ${G.level} · ¡Recuerda ${size} ${size === 1 ? "cosa" : "cosas"}!`);
+    }
     document.getElementById("gLevel").style.display = "block";
-    K.say(K.tr("Look and remember! ", "¡Mira y recuerda! ") + G.list.map((id) => foodName(foodById(id))).join(", "));
-    K.toast(K.tr(`⭐ Today's special: ${special.emoji}!`, `⭐ ¡El especial de hoy: ${special.emoji}!`), 3000);
+    const listRead = G.list.map((id) => foodName(foodById(id))).join(", ");
+    if (theme) K.say(K.tr(theme.say, theme.sayEs) + " " + K.tr("Look and remember! ", "¡Mira y recuerda! ") + listRead);
+    else K.say(K.tr("Look and remember! ", "¡Mira y recuerda! ") + listRead);
+    if (special) K.toast(K.tr(`⭐ Today's special: ${special.emoji}!`, `⭐ ¡El especial de hoy: ${special.emoji}!`), 3000);
   }
 
   function endReveal() {
@@ -365,7 +421,11 @@
   function refreshPhase() {
     const remaining = G.list.filter((id) => !G.got.includes(id));
     beacon.visible = G.phase === "shop" && remaining.length === 0;
-    if (G.phase === "reveal") K.chip(K.tr("Look and remember! 👀🧠", "¡Mira y recuerda! 👀🧠"));
+    if (G.phase === "reveal") {
+      K.chip(G.theme
+        ? K.tr(`${G.theme.emoji} Shopping for ${G.theme.name.toLowerCase()}! 👀🧠`, `${G.theme.emoji} ¡Compras para ${G.theme.nameEs}! 👀🧠`)
+        : K.tr("Look and remember! 👀🧠", "¡Mira y recuerda! 👀🧠"));
+    }
     else if (G.phase === "shop") {
       K.chip(remaining.length
         ? (K.calm()

@@ -204,6 +204,35 @@
     box-shadow: 0 4px 0 #2f9e44; transition: transform .1s;
   }
   .parentClose:active { transform: translateY(2px); box-shadow: 0 2px 0 #2f9e44; }
+
+  #ideasPanel {
+    position: fixed; inset: 0; z-index: 50; display: none;
+    background: linear-gradient(180deg,#ffd6e0 0%,#fff3bf 45%,#c5f6fa 100%);
+    align-items: center; justify-content: center;
+  }
+  #ideasPanel.show { display: flex; }
+  .ideasContent {
+    background: #fff; border-radius: 24px; padding: 28px; max-width: 380px; width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,.2); text-align: center;
+  }
+  .ideasContent h3 { font-size: 15px; font-weight: 800; color: #7048e8; margin-bottom: 14px; }
+  #ideasText {
+    font-size: 21px; font-weight: 800; color: #5c4a32; margin-bottom: 22px; line-height: 1.3;
+  }
+  .ideaBtnRow { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .ideaBtn {
+    border: 0; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+    min-height: 46px; min-width: 44px; padding: 10px 18px; border-radius: 18px; transition: transform .1s;
+  }
+  .ideaBtn:active { transform: translateY(2px); }
+  #ideaMadeBtn { background: linear-gradient(180deg,#8ce99a,#51cf66); color: #0b4419; box-shadow: 0 4px 0 #2f9e44; }
+  #ideaMadeBtn:active { box-shadow: 0 2px 0 #2f9e44; }
+  #ideaNextBtn { background: linear-gradient(180deg,#a5d8ff,#74c0fc); color: #0b4a8f; box-shadow: 0 4px 0 #1c7ed6; }
+  #ideaNextBtn:active { box-shadow: 0 2px 0 #1c7ed6; }
+  #ideaCloseBtn {
+    border: 0; background: transparent; color: #7048e8; font: inherit; font-weight: 700; font-size: 14px;
+    cursor: pointer; min-height: 44px; min-width: 44px; padding: 8px 16px; border-radius: 16px;
+  }
 </style>
 </head>
 <body>
@@ -278,6 +307,7 @@ try{
     <button id="exportBtn" class="hudBtn" title="Share your dough — save a file">📤<span class="hudLbl">Share</span></button>
     <button id="importBtn" class="hudBtn" title="Load a friend's dough file">📥<span class="hudLbl">Friend's</span></button>
     <button id="parentBtn" class="hudBtn" title="Parent stats">👨‍👩‍👧<span class="hudLbl">Grown-ups</span></button>
+    <button id="ideasBtn" class="hudBtn" title="Challenge ideas — can you make…?">💡<span class="hudLbl">Ideas</span></button>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
   <div id="toast"></div>
@@ -287,6 +317,17 @@ try{
       <h3>Parent Stats</h3>
       <div class="parentStats" id="parentStatsContent"></div>
       <button class="parentClose" onclick="document.getElementById('parentPanel').classList.remove('show')">Close</button>
+    </div>
+  </div>
+  <div id="ideasPanel">
+    <div class="ideasContent">
+      <h3>💡 Challenge ideas</h3>
+      <div id="ideasText">Can you make a snowman? ⛄</div>
+      <div class="ideaBtnRow">
+        <button id="ideaMadeBtn" class="ideaBtn" title="I made it! — celebrate and see a new challenge">✨ I made it!</button>
+        <button id="ideaNextBtn" class="ideaBtn" title="Show another challenge">👉 Another one</button>
+      </div>
+      <button id="ideaCloseBtn" class="ideaBtn" title="Close challenge ideas">✕ Close</button>
     </div>
   </div>
 </div>
@@ -394,6 +435,26 @@ ABELang.register({
   "🫧 Slime": "🫧 Slime",
   "Grab": "Agarrar", "Poke": "Presionar", "Roll": "Rodillo", "Cut": "Cortar",
   "Circle": "Círculo", "Star": "Estrella", "Heart": "Corazón", "Flower": "Flor", "Decorate": "Decorar",
+  "Can you make a snowman? ⛄": "¿Puedes hacer un muñeco de nieve? ⛄",
+  "Can you make a snake? 🐍": "¿Puedes hacer una culebrita? 🐍",
+  "Can you make a pizza? 🍕": "¿Puedes hacer una pizza? 🍕",
+  "Can you make a birthday cake? 🎂": "¿Puedes hacer un pastel de cumpleaños? 🎂",
+  "Can you make a googly-eyed monster? 👾": "¿Puedes hacer un monstruo de ojos saltones? 👾",
+  "Can you make a rainbow? 🌈": "¿Puedes hacer un arcoíris? 🌈",
+  "Can you make a donut? 🍩": "¿Puedes hacer una dona? 🍩",
+  "Can you make a snail? 🐌": "¿Puedes hacer un caracol? 🐌",
+  "Can you make a flower? 🌸": "¿Puedes hacer una flor? 🌸",
+  "Can you make a smiley face? 🙂": "¿Puedes hacer una carita feliz? 🙂",
+  "Challenge ideas — can you make…?": "Ideas de retos — ¿puedes hacer…?",
+  "💡 Challenge ideas": "💡 Ideas de retos",
+  "Ideas": "Ideas",
+  "✨ I made it!": "✨ ¡Lo hice!",
+  "I made it! — celebrate and see a new challenge": "¡Lo hice! — celebra y mira un nuevo reto",
+  "👉 Another one": "👉 Otra",
+  "Show another challenge": "Muestra otro reto",
+  "✕ Close": "✕ Cerrar",
+  "Close challenge ideas": "Cerrar ideas de retos",
+  "✨ You did it! Great job! ✨": "✨ ¡Lo lograste! ¡Buen trabajo! ✨",
 });
 if (ABELang.es) {
   var h1small = document.querySelector("h1 small");
@@ -412,6 +473,18 @@ if (ABELang.es) {
   if (discLink) discLink.textContent = ABELang.t(discLink.textContent);
   document.querySelectorAll("#modeSeg button").forEach(function (b) { b.textContent = ABELang.t(b.textContent); });
   document.querySelectorAll(".tool .toolLabel").forEach(function (s) { s.textContent = ABELang.t(s.textContent); });
+  var ideasBtn = document.getElementById("ideasBtn");
+  if (ideasBtn) {
+    ideasBtn.title = ABELang.t(ideasBtn.title);
+    var ideasLbl = ideasBtn.querySelector(".hudLbl");
+    if (ideasLbl) ideasLbl.textContent = ABELang.t(ideasLbl.textContent);
+  }
+  var ideasH3 = document.querySelector("#ideasPanel h3");
+  if (ideasH3) ideasH3.textContent = ABELang.t(ideasH3.textContent);
+  document.querySelectorAll("#ideasPanel .ideaBtn").forEach(function (b) {
+    b.textContent = ABELang.t(b.textContent);
+    if (b.title) b.title = ABELang.t(b.title);
+  });
 }
 (function () {
   var langBtn = document.getElementById("langBtn");
@@ -1915,6 +1988,48 @@ document.getElementById("parentBtn").addEventListener("click", () => {
       document.getElementById("parentPanel").classList.add("show");
     }
   } catch (e) {}
+});
+
+/* ---------- challenge ideas ("Can you make…?") — no fail state, just cycle ---------- */
+const CHALLENGES = [
+  "Can you make a snowman? ⛄",
+  "Can you make a snake? 🐍",
+  "Can you make a pizza? 🍕",
+  "Can you make a birthday cake? 🎂",
+  "Can you make a googly-eyed monster? 👾",
+  "Can you make a rainbow? 🌈",
+  "Can you make a donut? 🍩",
+  "Can you make a snail? 🐌",
+  "Can you make a flower? 🌸",
+  "Can you make a smiley face? 🙂",
+];
+const IDEA_KEY = "doughlab_idea_idx_v1";
+let ideaIdx = 0;
+try {
+  const n = parseInt(localStorage.getItem(IDEA_KEY), 10);
+  if (Number.isInteger(n) && n >= 0 && n < CHALLENGES.length) ideaIdx = n;
+} catch (e) {}
+function saveIdeaIdx() { try { localStorage.setItem(IDEA_KEY, String(ideaIdx)); } catch (e) {} }
+function showIdea() { document.getElementById("ideasText").textContent = ABELang.t(CHALLENGES[ideaIdx]); }
+document.getElementById("ideasBtn").addEventListener("click", () => {
+  markInteract();
+  showIdea();
+  document.getElementById("ideasPanel").classList.add("show");
+});
+document.getElementById("ideaNextBtn").addEventListener("click", () => {
+  ideaIdx = (ideaIdx + 1) % CHALLENGES.length;
+  saveIdeaIdx();
+  showIdea();
+});
+document.getElementById("ideaMadeBtn").addEventListener("click", () => {
+  toastQueue.push("✨ You did it! Great job! ✨");
+  pumpToast();
+  ideaIdx = (ideaIdx + 1) % CHALLENGES.length;
+  saveIdeaIdx();
+  showIdea();
+});
+document.getElementById("ideaCloseBtn").addEventListener("click", () => {
+  document.getElementById("ideasPanel").classList.remove("show");
 });
 
 /* test hooks */
