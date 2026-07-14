@@ -169,6 +169,7 @@ const App: React.FC = () => {
                 <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message="Loading Aaria's Helping Hands… 🖐️💙" />} />
                 <Route path="/8" element={<ExternalRedirect url="/grocery/index.html" message="Loading Aaria's Grocery Store… 🛒🍎" />} />
                 <Route path="/9" element={<ExternalRedirect url="/dayplanner/index.html" message="Loading Aaria's Day Planner… 📅🌅" />} />
+                <Route path="/10" element={<ExternalRedirect url="/feelings/index.html" message="Loading Aaria's Feelings Faces… 🎭" />} />
 
                 {/* External Redirects */}
                 <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />

@@ -259,6 +259,9 @@
     padding:8px 4px;font-weight:800;font-size:11px;text-align:center;color:inherit;}
   .ctile .ico{font-size:28px;display:block;}
   .ctile.mys{opacity:.35;filter:grayscale(1);}
+  .buddyBtn{display:block;width:100%;margin-top:6px;cursor:pointer;border:none;border-radius:12px;
+    padding:5px 4px;font-family:inherit;font-weight:900;font-size:11px;background:#ffe1a8;color:#7a4a12;}
+  .buddyBtn.on{background:var(--nilu,#4a7fc9);color:#fff;}
   .cfriend{display:flex;align-items:center;gap:10px;background:#f2f5ff;border-radius:18px;
     padding:8px 12px;margin:6px 0;font-weight:800;font-size:14px;text-align:left;}
   .cfriend .dot{width:38px;height:38px;border-radius:50%;flex:none;
@@ -567,6 +570,12 @@ ABELang.register({
 "Spend your ✨ sparkles to grow Trunkland! Everything you plant stays forever.":"¡Usa tus ✨ destellos para hacer crecer Trunkland! Todo lo que plantas se queda para siempre.",
 "Everything you've found in Trunkland lives here. Tap a friend to hear about it!":"Todo lo que has encontrado en Trunkland vive aquí. ¡Toca a un amigo para escuchar sobre él!",
 "🥚 Critters hatched":"🥚 Criaturas nacidas",
+"🐾 Buddy":"🐾 Amigo",
+"🐾 Resting":"🐾 Descansa",
+"Tap to bring this friend along!":"¡Toca para llevarte a este amigo!",
+"Tap to let this friend rest at home":"Toca para dejar que este amigo descanse en casa",
+"is coming along! 🐾":"¡viene contigo! 🐾",
+"rests at home now. 🐾":"se queda descansando en casa. 🐾",
 "✨ Secrets found":"✨ Secretos encontrados",
 "💗 Friend hearts":"💗 Corazones de amigos",
 "Back to play ▶":"Volver a jugar ▶",
@@ -1172,6 +1181,7 @@ let S={day:1,sparks:0,speed:'normal',muted:false,voice:true,calm:false,secrets:{
        lastGiftDay:'',milestonesShown:{},lifeSparks:0,               // daily gift + streak milestones + parent summary
        learn:{feelings:{},recipes:{},stories:{}},                    // practice counters, for the grown-up panel
        stickers:{},                         // id -> true
+       buddy:null,                          // index into S.hatched of the chosen follower critter, or null
        today:{stars:{},seeds:{},stories:{}} // reset each day
       };
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
@@ -2043,6 +2053,7 @@ const CRITTER_INFO=[   // hatchable nest friends — name + a warm fact for the 
   {e:'🐘',name:'Little Belu',        fact:'Little Belu the elephant never forgets a friend — especially you! 💙'},
 ];
 const CRITTERS=CRITTER_INFO.map(c=>c.e);
+if(S.buddy!=null&&!(S.hatched||[]).some(ci=>ci%CRITTER_INFO.length===S.buddy))S.buddy=null;   // fresh profile / lost critter: silently clear
 const NEST_AT=[3,-12];
 let eggNode=null;
 function spawnEggNode(){
@@ -2060,6 +2071,34 @@ function renderNest(){
     const c=emojiSprite(CRITTERS[ci%CRITTERS.length],1.5);
     c.position.set(NEST_AT[0]+Math.cos(a)*(2+i*0.3),terrainH(NEST_AT[0],NEST_AT[1])+1,NEST_AT[1]+Math.sin(a)*(2+i*0.3));
     scene.add(c);spinners.push({mesh:c,bob:true});});
+}
+
+/* ---- buddy: one hatched critter chosen to follow Nilu around Trunkland (purely decorative) ---- */
+let buddyNode=null,buddyPos=null;
+function setBuddy(ci){                          // ci: CRITTER_INFO index, or null to unselect
+  S.buddy=ci;save();
+  if(buddyNode){scene.remove(buddyNode);buddyNode.material.map.dispose();buddyNode.material.dispose();buddyNode=null;}
+  buddyPos=null;
+  if(ci!=null){
+    buddyNode=emojiSprite(CRITTERS[ci%CRITTERS.length],1.3);
+    const p=player.group.position;
+    buddyPos=new T.Vector3(p.x,p.y+1,p.z-1.5);
+    buddyNode.position.copy(buddyPos);
+    scene.add(buddyNode);
+  }
+}
+function updateBuddy(dt,time){
+  if(!buddyNode)return;
+  const p=player.group.position;
+  const yaw=player.group.rotation.y;
+  // target sits ~1.5 units behind the player, relative to their facing
+  const tx=p.x-Math.sin(yaw)*1.5, tz=p.z-Math.cos(yaw)*1.5;
+  buddyPos.x+=(tx-buddyPos.x)*0.06;
+  buddyPos.z+=(tz-buddyPos.z)*0.06;
+  const ty=terrainH(buddyPos.x,buddyPos.z)+1+Math.sin(time*2.4)*0.16;   // gentle bob
+  buddyPos.y+=(ty-buddyPos.y)*0.06;
+  buddyNode.position.copy(buddyPos);
+  buddyNode.visible=player.group.visible;
 }
 function maybeDropEgg(){                       // called from giveStar
   if(S.egg||starCount()!==1)return;
@@ -3684,13 +3723,29 @@ function openBook(tab){
   $('book').classList.add('show');
 }
 /* a tile: found → emoji + name, tap to hear a fun fact; not yet → dimmed ❔ mystery */
-function collTile(found,e,name,fact){
+function collTile(found,e,name,fact,critterIdx){
   const b=document.createElement('button');
   b.className='ctile'+(found?'':' mys');
   if(found){const dname=ABELang.t(name);
     b.title=`${dname} — tap to hear a fun fact`;
     b.innerHTML=`<span class="ico">${e}</span>${dname}`;
     b.onclick=()=>{sfx.tap();say(e,`${dname}! ${ABELang.t(fact)}`);};
+    if(critterIdx!=null){                       // 🐾 hatched critters can become your walking buddy
+      const isBuddy=S.buddy===critterIdx;
+      const bb=document.createElement('button');bb.type='button';
+      bb.className='buddyBtn'+(isBuddy?' on':'');
+      bb.textContent=ABELang.t(isBuddy?'🐾 Resting':'🐾 Buddy');
+      bb.title=isBuddy?ABELang.t('Tap to let this friend rest at home'):ABELang.t('Tap to bring this friend along!');
+      bb.onclick=(ev)=>{ev.stopPropagation();
+        if(isBuddy){setBuddy(null);sfx.soft();
+          celebToast(`${dname} ${ABELang.t('rests at home now. 🐾')}`);
+          renderCollection();}
+        else{setBuddy(critterIdx);sfx.star();
+          $('book').classList.remove('show');
+          celebToast(`${dname} ${ABELang.t('is coming along! 🐾')}`);}
+      };
+      b.appendChild(bb);
+    }
   }else{b.title='A mystery — keep exploring Trunkland to find it!';
     b.innerHTML=`<span class="ico">❔</span>???`;
     b.onclick=()=>{sfx.soft();say('❔','A mystery! Keep exploring Trunkland — you\'ll find it! ✨');};
@@ -3707,7 +3762,7 @@ function renderCollection(){
   // critters hatched from overnight eggs
   const cg=$('collCritters');cg.innerHTML='';
   const have=new Set((S.hatched||[]).map(ci=>ci%CRITTER_INFO.length));
-  CRITTER_INFO.forEach((c,i)=>cg.appendChild(collTile(have.has(i),c.e,c.name,c.fact)));
+  CRITTER_INFO.forEach((c,i)=>cg.appendChild(collTile(have.has(i),c.e,c.name,c.fact,i)));
   $('collCritN').textContent=`(${have.size}/${CRITTER_INFO.length})`;
   // secrets discovered out in the world
   const sg=$('collSecrets');sg.innerHTML='';
@@ -3896,6 +3951,7 @@ function frame(now){
       if(!att)spinners.splice(i,1);}}
   spinners.forEach(s=>{if(s.speed)s.mesh.rotation.z-=s.speed*dt;
     if(s.bob)s.mesh.position.y=(s.mesh.userData.by||(s.mesh.userData.by=s.mesh.position.y))+Math.sin(time*2+(s.mesh.id%7))*0.25;});
+  updateBuddy(dt,time);   // 🐾 the chosen buddy critter drifts along behind Nilu — decorative only
   // seeds float+spin
   seeds.forEach(s=>{s.g.rotation.y+=dt*2;s.g.position.y=terrainH(s.x,s.z)+1+Math.sin(time*2.4+s.i)*0.25;});
   // choice figures pop in + wobble
@@ -4177,6 +4233,7 @@ window.__ET={get tappables(){return tappables},tap(i){const t=tappables[i];if(t)
 /* ================================= BOOT ================================== */
 hud();spawnSeeds();refreshMarks();registerTickles();refreshStickers();refreshSecrets();
 renderSched();setupWants();spawnEggNode();renderNest();newQuest();
+if(S.buddy!=null)setBuddy(S.buddy);
 // #loading hides only once girl.png has loaded AND the first frame has rendered (see tryHideLoading)
 requestAnimationFrame(frame);
 </script>
