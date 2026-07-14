@@ -72,6 +72,15 @@
   };
   K.kt = KT;
 
+  // playtest-corner journal (no-op unless a grown-up enabled it at /playtest)
+  try {
+    if (localStorage.getItem('abe.playtest') === '1' && !window.__abePlaytest) {
+      const pt = document.createElement('script');
+      pt.src = '/gamekit/playtest.js';
+      document.head.appendChild(pt);
+    }
+  } catch (e) {}
+
   // AI-translation disclaimer (kit games): in Spanish mode, a small dismissible
   // note — translation is entirely AI-made, creators aren't Spanish speakers,
   // please report mistakes. Shown once per session, auto-hides.

@@ -4,6 +4,16 @@
  * the game kit uses, so kit games and legacy games share one passport shelf.
  * Everything stays on-device; no identifiers, nothing transmitted. */
 (function () {
+  // playtest-corner journal (no-op unless a grown-up enabled it at /playtest)
+  try {
+    if (localStorage.getItem("abe.playtest") === "1" && !window.__abePlaytest) {
+      var pt = document.createElement("script");
+      pt.src = "/gamekit/playtest.js";
+      var cur = document.currentScript && document.currentScript.dataset.game;
+      if (cur) pt.dataset.game = cur;
+      document.head.appendChild(pt);
+    }
+  } catch (e) {}
   try {
     var slug = (document.currentScript && document.currentScript.dataset.game) || "";
     if (!slug || sessionStorage.getItem("abe_stamp_" + slug)) return;
