@@ -70,6 +70,7 @@ const RANDOM_GAMES: PlayGame[] = [
     { url: '/grocery/index.html', name: "Aaria's Grocery Store", emoji: '🛒' },
     { url: '/dayplanner/index.html', name: "Aaria's Day Planner", emoji: '📅' },
     { url: '/feelings/index.html', name: "Aaria's Feelings Faces", emoji: '🎭' },
+    { url: '/rhythm/index.html', name: "Aaria's Rhythm & Calm", emoji: '🎵' },
 ];
 
 type LastGame = { url: string; name: string; emoji: string; at: number };

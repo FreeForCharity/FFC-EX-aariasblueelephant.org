@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aaria's Rhythm &amp; Calm | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     Rhythm & Calm — a musical regulation tool disguised as a game. Four
+     animal pads tuned to a pentatonic scale (every tap sounds good), an
+     Echo game where Nilu taps a pattern to copy (free tapping is music,
+     never a mistake), and a breathing ring that pulses at the child's own
+     tempo. Bilingual EN/ES from birth. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+<link rel="stylesheet" href="../gamekit/kit.css">
+<style>
+  #kStick { display: none !important; }
+  #kActs { display: none !important; }
+  #rStage {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3vh;
+    background: linear-gradient(180deg, #dff3ff 0%, #efe6ff 55%, #ffe9f2 100%);
+    transition: background 2s;
+  }
+  /* the breathing ring — expands and contracts at the child's tempo */
+  #rBreath {
+    position: relative; width: min(34vh, 52vw); height: min(34vh, 52vw);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #rRing {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 42% 36%, rgba(255,255,255,.85), rgba(177,151,252,.35));
+    box-shadow: 0 10px 34px rgba(120,100,220,.25), inset 0 0 0 4px rgba(255,255,255,.65);
+    transform: scale(.8);
+  }
+  #rNilu { position: relative; font-size: min(13vh, 20vw); line-height: 1; transition: transform .3s; }
+  #rNilu.beat { transform: scale(1.12); }
+  #rWord {
+    position: absolute; bottom: -8%; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,.9); border-radius: 999px; padding: 5px 18px;
+    font-weight: 900; font-size: clamp(13px, 3.4vw, 17px); color: #5f3dc4; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(40,40,90,.15);
+  }
+  #rPads { display: flex; gap: clamp(10px, 2.5vw, 22px); z-index: 5; }
+  .rPad {
+    width: clamp(64px, 16vw, 108px); height: clamp(64px, 16vw, 108px); border-radius: 28px;
+    border: 0; cursor: pointer; font-size: clamp(30px, 8vw, 52px);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 10px 22px rgba(40,40,90,.18);
+    transition: transform .08s;
+  }
+  .rPad:active, .rPad.lit { transform: scale(.9) translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.14); }
+  .rPad.glow { outline: 5px solid #fff; outline-offset: 3px; }
+  #p0 { background: linear-gradient(180deg, #ffd6e0, #ff9fb8); }
+  #p1 { background: linear-gradient(180deg, #d5f0c1, #93d97e); }
+  #p2 { background: linear-gradient(180deg, #cfe4ff, #8fbdf5); }
+  #p3 { background: linear-gradient(180deg, #ffefc1, #ffd166); }
+  #rTempo { display: flex; gap: 10px; align-items: center; z-index: 5; }
+  .rChip {
+    border: 3px solid transparent; cursor: pointer; font: inherit; font-weight: 900; font-size: 15px;
+    background: rgba(255,255,255,.85); border-radius: 999px; padding: 9px 18px; min-height: 46px;
+    box-shadow: 0 3px 8px rgba(40,40,90,.14); color: #3a3a5a;
+  }
+  .rChip.on { border-color: #8b5cf6; background: #fff; }
+  #rEcho {
+    border: 0; cursor: pointer; font: inherit; font-weight: 900; font-size: clamp(15px, 4vw, 19px);
+    background: linear-gradient(180deg, #b197fc, #8b5cf6); color: #fff;
+    border-radius: 999px; padding: 12px 30px; min-height: 52px; z-index: 5;
+    box-shadow: 0 5px 0 #6d3fd8, 0 8px 20px rgba(120,90,220,.3);
+  }
+  #rEcho:active { transform: translateY(3px); box-shadow: 0 2px 0 #6d3fd8; }
+  #rCount {
+    position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
+    z-index: 40; background: var(--k-card); border-radius: 16px; padding: 8px 14px;
+    font-weight: 900; font-size: 15px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
+  }
+  @media (prefers-reduced-motion: reduce) { #rRing { transition: none !important; } #rNilu.beat { transform: none; } }
+</style>
+</head>
+<body>
+<div id="kStage"></div>
+<div id="rStage">
+  <div id="rBreath">
+    <div id="rRing"></div>
+    <div id="rNilu">🐘</div>
+    <div id="rWord"></div>
+  </div>
+  <div id="rPads">
+    <button class="rPad" id="p0" data-i="0" title="Bird pad">🐦</button>
+    <button class="rPad" id="p1" data-i="1" title="Frog pad">🐸</button>
+    <button class="rPad" id="p2" data-i="2" title="Whale pad">🐋</button>
+    <button class="rPad" id="p3" data-i="3" title="Lion pad">🦁</button>
+  </div>
+  <div id="rTempo">
+    <button class="rChip" data-t="slow" title="Slow and calm">🐢</button>
+    <button class="rChip on" data-t="mid" title="Just right">🐇</button>
+    <button class="rChip" data-t="quick" title="A little quicker">🐿️</button>
+    <button id="rEcho" title="Nilu taps a little song — can you tap it back?">🎶 <span id="rEchoLbl">Copy my song!</span></button>
+  </div>
+</div>
+<div id="rCount">🎵 0</div>
+
+<script src="../gamekit/kit.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = window.ABEKit;
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- gentle pentatonic synth (C-D-E-G on soft triangle + sine body) ---------- */
+  const NOTES = [523.25, 587.33, 659.25, 783.99]; // C5 D5 E5 G5 — any order sounds nice
+  let actx = null;
+  const ac = () => {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  };
+  function pluck(i, vol) {
+    try {
+      const c = ac(), t = c.currentTime;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime((vol || 0.22) * (K.calm() ? 0.55 : 1), t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      g.connect(c.destination);
+      const o1 = c.createOscillator(); o1.type = 'triangle'; o1.frequency.value = NOTES[i];
+      const o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = NOTES[i] / 2;
+      const g2 = c.createGain(); g2.gain.value = 0.5;
+      o1.connect(g); o2.connect(g2).connect(g);
+      o1.start(t); o2.start(t); o1.stop(t + 1.2); o2.stop(t + 1.2);
+    } catch (e) {}
+  }
+
+  /* ---------- state ---------- */
+  const TEMPOS = { slow: 1900, mid: 1300, quick: 950 };   // breath ring period base
+  const G = {
+    tempo: 'mid',
+    songs: 0,                 // echoes completed (persisted)
+    echo: null,               // { seq: [i...], step, phase: 'listen'|'your-turn' }
+    breathT: 0, breathIn: true,
+  };
+
+  const WORDS = {
+    breatheIn: () => K.tr('breathe in…', 'inhala…'),
+    breatheOut: () => K.tr('breathe out…', 'exhala…'),
+    listen: () => K.tr('listen… 👂', 'escucha… 👂'),
+    yourTurn: () => K.tr('your turn! 🎶', '¡tu turno! 🎶'),
+    lovely: () => K.tr('lovely music! 🌟', '¡qué linda música! 🌟'),
+  };
+
+  /* ---------- breathing ring (the calm half) ---------- */
+  function breathPeriod() { return TEMPOS[G.tempo] * (K.calm() ? 1.35 : 1); }
+  function breathTick(dt) {
+    G.breathT += dt * 1000;
+    const p = breathPeriod();
+    if (G.breathT >= p) {
+      G.breathT = 0;
+      G.breathIn = !G.breathIn;
+      $('rRing').style.transition = `transform ${p / 1000}s ease-in-out`;
+      $('rRing').style.transform = G.breathIn ? 'scale(1)' : 'scale(.62)';
+      if (!G.echo) $('rWord').textContent = G.breathIn ? WORDS.breatheIn() : WORDS.breatheOut();
+    }
+  }
+
+  /* ---------- pads ---------- */
+  function flash(i) {
+    const b = $('p' + i);
+    b.classList.add('lit');
+    setTimeout(() => b.classList.remove('lit'), 240);
+  }
+  function padTap(i) {
+    if (K.paused) return;
+    pluck(i);
+    flash(i);
+    $('rNilu').classList.add('beat');
+    setTimeout(() => $('rNilu').classList.remove('beat'), 220);
+    if (G.echo && G.echo.phase === 'your-turn') {
+      if (i === G.echo.seq[G.echo.step]) {
+        G.echo.step++;
+        if (G.echo.step >= G.echo.seq.length) echoDone();
+      }
+      // a different pad is never wrong — it's just music; the song stays open
+    }
+  }
+
+  /* ---------- echo game (the rhythm half — no fail, ever) ---------- */
+  function startEcho() {
+    if (G.echo) return;
+    const len = Math.min(2 + Math.floor(G.songs / 3), 5);   // grows gently: 2 → 5
+    const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 4));
+    G.echo = { seq, step: 0, phase: 'listen' };
+    $('rWord').textContent = WORDS.listen();
+    $('rEcho').style.opacity = .4;
+    K.say(K.tr('Listen to my little song!', '¡Escucha mi cancioncita!'));
+    const gap = TEMPOS[G.tempo] * 0.42;
+    seq.forEach((n, idx) => {
+      setTimeout(() => {
+        pluck(n, 0.18); flash(n);
+        $('p' + n).classList.add('glow');
+        setTimeout(() => $('p' + n).classList.remove('glow'), gap * 0.7);
+        if (idx === seq.length - 1) setTimeout(yourTurn, gap);
+      }, 600 + idx * gap);
+    });
+  }
+  function yourTurn() {
+    if (!G.echo) return;
+    G.echo.phase = 'your-turn';
+    $('rWord').textContent = WORDS.yourTurn();
+    K.say(K.tr('Your turn!', '¡Tu turno!'));
+  }
+  function echoDone() {
+    G.echo = null;
+    G.songs++; K.save('songs', G.songs);
+    $('rCount').textContent = '🎵 ' + G.songs;
+    $('rWord').textContent = WORDS.lovely();
+    $('rEcho').style.opacity = 1;
+    K.sfx.star();
+    K.recordEvent('song', G.songs);
+    K.say(K.tr('You copied my song! Beautiful!', '¡Copiaste mi canción! ¡Qué bonito!'));
+    if (G.songs % 5 === 0) {
+      K.streakBump();
+      K.toast(K.tr(`🎶 ${G.songs} songs together!`, `🎶 ¡${G.songs} canciones juntos!`), 3000);
+    }
+  }
+
+  K.init({
+    slug: 'rhythm',
+    name: "Aaria's Rhythm & Calm",
+    emoji: '🎵',
+    accent: '#8b5cf6',
+    tagline: 'tap animal sounds, copy little songs, and breathe with the ring!',
+    taglineEs: 'toca sonidos de animales, copia cancioncitas ¡y respira con el anillo!',
+    emojis: ['🎵', '🐦', '🐸', '🐋', '🦁'],
+    howTo: [
+      ['👆', 'Tap the animal pads — every tap sounds good!'],
+      ['🎶', 'Copy my song: Nilu taps, then you tap it back'],
+      ['💛', 'Tapping something else is music too — never wrong'],
+      ['🐢🐇🐿️', 'Pick your speed — slow is lovely'],
+      ['🫧', 'Breathe with the ring: in as it grows, out as it shrinks'],
+    ],
+    howToEs: [
+      ['👆', 'Toca los animales — ¡todo suena bonito!'],
+      ['🎶', 'Copia mi canción: Nilu toca y tú la repites'],
+      ['💛', 'Tocar otra cosa también es música — nunca está mal'],
+      ['🐢🐇🐿️', 'Elige tu velocidad — despacito es hermoso'],
+      ['🫧', 'Respira con el anillo: inhala cuando crece, exhala cuando se encoge'],
+    ],
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
+    actions: [],
+    onStart() {
+      G.songs = K.load('songs', 0);
+      $('rCount').textContent = '🎵 ' + G.songs;
+      $('rEchoLbl').textContent = K.tr('Copy my song!', '¡Copia mi canción!');
+      document.querySelectorAll('.rPad').forEach((b) =>
+        b.addEventListener('pointerdown', (e) => { e.preventDefault(); padTap(+b.dataset.i); }));
+      document.querySelectorAll('.rChip').forEach((b) =>
+        b.addEventListener('pointerdown', () => {
+          G.tempo = b.dataset.t;
+          document.querySelectorAll('.rChip').forEach((x) => x.classList.toggle('on', x === b));
+          K.sfx.tap();
+        }));
+      $('rEcho').addEventListener('pointerdown', startEcho);
+      $('rWord').textContent = WORDS.breatheIn();
+      K.say(K.tr('Welcome! Tap the animals to make music.', '¡Bienvenido! Toca los animales para hacer música.'));
+    },
+    onPause() {},
+    onFrame(dt) { if (!K.replaying) breathTick(dt); },
+    onReplayEvent(ev) {
+      if (ev.kind === 'song') { K.toast(K.tr('🎶 A little song!', '🎶 ¡Una cancioncita!')); K.sfx.star(); }
+    },
+  });
+})();
+</script>
+</body>
+</html>

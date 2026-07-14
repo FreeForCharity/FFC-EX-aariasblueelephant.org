@@ -8,7 +8,7 @@
  * (scripts/check-game-controls.mjs fails if a game folder is missing here.)
  */
 const CACHE = "abe-games-v2";
-const GAME_RX = /^\/(gamekit|grocery|dayplanner|blockcraft|elly-tubbies|roadsafety|doughlab|magnetblocks|helpinghands|feelings|craft3d|images\/games|legal|sounds)(\/|$)/;
+const GAME_RX = /^\/(gamekit|grocery|dayplanner|blockcraft|elly-tubbies|roadsafety|doughlab|magnetblocks|helpinghands|feelings|rhythm|craft3d|images\/games|legal|sounds)(\/|$)/;
 
 self.addEventListener("install", () => self.skipWaiting());
 

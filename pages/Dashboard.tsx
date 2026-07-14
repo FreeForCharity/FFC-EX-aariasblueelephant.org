@@ -98,6 +98,7 @@ const GAME_PLAY_LABELS: Record<string, string> = {
     'grocery': "Aaria's Grocery Store 🛒",
     'dayplanner': "Aaria's Day Planner 📅",
     'feelings': "Aaria's Feelings Faces 🎭",
+    'rhythm': "Aaria's Rhythm & Calm 🎵",
 };
 
 interface GamePlayRow {
