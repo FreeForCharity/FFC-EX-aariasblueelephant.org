@@ -72,6 +72,38 @@
   };
   K.kt = KT;
 
+  // AI-translation disclaimer (kit games): in Spanish mode, a small dismissible
+  // note — translation is entirely AI-made, creators aren't Spanish speakers,
+  // please report mistakes. Shown once per session, auto-hides.
+  if (LANG === 'es') {
+    const showEsNote = () => {
+      try {
+        if (sessionStorage.getItem('abe_es_note')) return;
+        sessionStorage.setItem('abe_es_note', '1');
+      } catch (e) {}
+      const n = document.createElement('div');
+      n.id = 'abeEsNote';
+      n.style.cssText = 'position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:99990;' +
+        'max-width:min(92vw,560px);background:rgba(255,255,255,.96);color:#3a3a5a;border:2px solid #ffd43b;' +
+        "border-radius:14px;padding:10px 38px 10px 14px;font:600 12.5px/1.45 'Comic Sans MS','Chalkboard SE',sans-serif;" +
+        'box-shadow:0 6px 18px rgba(40,40,90,.25);';
+      n.innerHTML = '🌐 La traducción al español fue hecha <b>completamente con IA</b> y puede tener errores — ' +
+        'los creadores no hablan español. Si encuentras un error, por favor avísanos en ' +
+        '<b>aariasblueelephant.org</b>. ¡Gracias! 💙' +
+        "<div style='font-weight:500;font-size:10.5px;opacity:.75;margin-top:3px'>Spanish translation is AI-made and may contain mistakes — please report any at aariasblueelephant.org.</div>";
+      const x = document.createElement('button');
+      x.textContent = '✕';
+      x.setAttribute('aria-label', 'Cerrar');
+      x.style.cssText = 'position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;font-weight:900;color:#3a3a5a;cursor:pointer;padding:4px;';
+      x.addEventListener('click', () => n.remove());
+      n.appendChild(x);
+      document.body.appendChild(n);
+      setTimeout(() => { if (n.parentNode) n.remove(); }, 20000);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showEsNote);
+    else showEsNote();
+  }
+
   // ---------- profiles (siblings share a tablet without clobbering each other) ----------
   // Profile p1 maps to the ORIGINAL unprefixed keys so nobody's saves are lost.
   const AVATARS = [

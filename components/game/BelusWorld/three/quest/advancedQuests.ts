@@ -17,6 +17,7 @@
 import type { Quest, Orb } from './quests';
 import type { Mood } from './QuestNPC';
 import type { ActivityZone } from '../../belu/progress';
+import { isEs } from '../../../../../lib/lang';
 
 /** The four advanced zone ids — a subset of ActivityZone. */
 export type AdvancedZone = Extract<ActivityZone, 'garden' | 'deepforest' | 'lagoon' | 'bay'>;
@@ -34,7 +35,7 @@ function opt(emoji: string, caption: string, correct = false): Orb {
 // FEELINGS GARDEN 🌷 — Advanced Feelings (sister island of meadow)
 // ===========================================================================
 
-const GARDEN: AdvancedQuest[] = [
+const GARDEN_EN: AdvancedQuest[] = [
   {
     zone: 'garden', level: 1, goal: 'Two feelings at once',
     intro: "Welcome to my garden! Sometimes we feel TWO feelings at the same time. Both are okay.",
@@ -175,11 +176,154 @@ const GARDEN: AdvancedQuest[] = [
   },
 ];
 
+const GARDEN_ES: AdvancedQuest[] = [
+  {
+    zone: 'garden', level: 1, goal: 'Dos sentimientos a la vez',
+    intro: '¡Bienvenido a mi jardín! A veces sentimos DOS sentimientos al mismo tiempo. Los dos están bien.',
+    outro: 'Ya sabes que dos sentimientos pueden pasar juntos. ¡Eso lo sabe un niño grande!',
+    moment: 'leyó sentimientos mezclados en el jardín',
+    rounds: [
+      { kind: 'choice', say: 'Es el primer día de Bea en una clase nueva. Se siente feliz Y nerviosa. ¿Pueden ser verdad las dos cosas?',
+        npc: { face: '🐛', mood: MOOD('neutral'), thought: { emoji: '🏫' } },
+        options: [
+          opt('✅', 'Sí, las dos a la vez', true),
+          opt('❌', 'No, solo un sentimiento'),
+        ], doneLine: '¡Sí! Feliz y nerviosa pueden estar las dos. Las dos están bien.' },
+      { kind: 'multiPick', say: 'Camina hacia LOS DOS sentimientos que Bea podría tener en su primer día.', picks: 2,
+        npc: { face: '🐛', mood: MOOD('neutral'), thought: { emoji: '🏫' } },
+        options: [
+          opt('🤩', 'emocionada', true),
+          opt('😟', 'un poco nerviosa', true),
+          opt('😡', 'enojada'),
+          opt('😴', 'aburrida'),
+        ], doneLine: 'Emocionada Y un poco nerviosa — las dos a la vez. Eso le pasa a todos.' },
+      { kind: 'choice', say: 'Sol va de viaje divertido, pero va a extrañar a su perro. ¿Qué dos sentimientos van mejor?',
+        npc: { face: '🦋', mood: MOOD('neutral'), thought: { emoji: '🧳' } },
+        options: [
+          opt('🥹', 'emocionado y un poco triste', true),
+          opt('😡', 'solo enojado'),
+          opt('😐', 'solo aburrido'),
+        ], doneLine: 'Emocionado por el viaje, y un poco triste por extrañar a su perro — las dos son verdad.' },
+    ],
+  },
+  {
+    zone: 'garden', level: 2, goal: 'La cara no siempre dice el sentimiento',
+    intro: 'Una cara no siempre muestra el sentimiento verdadero de adentro. Vamos a mirar más de cerca.',
+    outro: '¡Miraste más allá de la cara y encontraste el sentimiento verdadero. Eso es notar muy bien!',
+    moment: 'miró más allá de las caras en el jardín',
+    rounds: [
+      { kind: 'choice', say: 'Milo está sonriendo, pero bosteza y sus ojos se ven pesados. ¿Cómo podría sentirse Milo en verdad?',
+        npc: { face: '🦋', mood: MOOD('happy'), thought: { emoji: '😪' } },
+        options: [
+          opt('😴', 'cansado, aunque sonría', true),
+          opt('😡', 'enojado'),
+          opt('😨', 'asustado'),
+        ], doneLine: 'Una sonrisa puede esconder un sentimiento de cansancio adentro. Buena observación.' },
+      { kind: 'choice', say: 'Pip dice "estoy bien" pero su voz es bajita y mira al piso. ¿Qué podría ser verdad?',
+        npc: { face: '🐛', mood: MOOD('neutral'), thought: { emoji: '🤔' } },
+        options: [
+          opt('😞', 'Podría sentirse triste por dentro', true),
+          opt('🤩', 'Está muy emocionada'),
+          opt('😤', 'Está muy enojada'),
+        ], doneLine: 'A veces "estoy bien" esconde un sentimiento. Es amable preguntarle cómo está.' },
+      { kind: 'choice', say: '¿Qué es amable decir si crees que la cara de un amigo no coincide con cómo se siente?',
+        npc: { face: '🦋', mood: MOOD('calm') },
+        options: [
+          opt('💬', '¿De verdad estás bien?', true),
+          opt('🙉', 'Nada, solo adivina'),
+          opt('😏', 'Te ves bien'),
+        ], doneLine: '"¿De verdad estás bien?" le da a un amigo la oportunidad de contarte.' },
+    ],
+  },
+  {
+    zone: 'garden', level: 3, goal: 'Notar los sentimientos de un amigo por lo que pasó',
+    intro: 'Podemos adivinar el sentimiento de un amigo recordando lo que le acaba de pasar.',
+    outro: '¡Notaste los sentimientos por lo que pasó — eso es empatía de verdad!',
+    moment: 'notó los sentimientos de un amigo en el jardín',
+    rounds: [
+      { kind: 'choice', say: 'La torre de bloques de Sam se acaba de caer con un golpe fuerte. ¿Cómo se siente Sam ahora mismo?',
+        npc: { face: '🐛', mood: MOOD('sad'), thought: { emoji: '🧱' } },
+        options: [
+          opt('😞', 'triste o frustrado', true),
+          opt('🤩', 'emocionado'),
+          opt('😴', 'aburrido'),
+        ], doneLine: 'A la mayoría de nosotros una torre que se cae también nos haría sentir tristes o frustrados.' },
+      { kind: 'choice', say: 'El globo de Lulu se acaba de volar hacia el cielo. ¿Cómo se siente Lulu?',
+        npc: { face: '🦋', mood: MOOD('disappointed'), thought: { emoji: '🎈' } },
+        options: [
+          opt('😞', 'decepcionada', true),
+          opt('😌', 'tranquila'),
+          opt('🏆', 'orgullosa'),
+        ], doneLine: 'Perder un globo da decepción — eso tiene sentido.' },
+      { kind: 'choice', say: 'El amigo de Otto se tuvo que mudar a un pueblo nuevo. ¿Cómo podría sentirse Otto?',
+        npc: { face: '🐛', mood: MOOD('sad'), thought: { emoji: '📦' } },
+        options: [
+          opt('😢', 'triste, extrañando a su amigo', true),
+          opt('😄', 'feliz'),
+          opt('😲', 'sorprendido'),
+        ], doneLine: 'Extrañar a un amigo que se mudó es un sentimiento real y triste.' },
+    ],
+  },
+  {
+    zone: 'garden', level: 4, goal: 'Ayudar a un amigo triste',
+    intro: 'Cuando un amigo se siente triste, hay maneras suaves de ayudar. Vamos a practicar.',
+    outro: 'Sabes justo cómo ayudar a un amigo triste. Eso es bondad de verdad.',
+    moment: 'ayudó a un amigo triste en el jardín',
+    rounds: [
+      { kind: 'choice', say: 'La torre de Sam se cayó y se ve triste. ¿Cuál es un buen primer paso amable?',
+        npc: { face: '🐛', mood: MOOD('sad'), thought: { emoji: '🧱' } },
+        options: [
+          opt('🧎', 'Sentarte con él', true),
+          opt('😆', 'Reírte'),
+          opt('🚶', 'Irte caminando'),
+        ], doneLine: 'Sentarte con un amigo triste le muestra que no está solo.' },
+      { kind: 'choice', say: 'Sam sigue triste por la torre. ¿Qué le puedes ofrecer después?',
+        npc: { face: '🐛', mood: MOOD('sad'), thought: { emoji: '🧱' } },
+        options: [
+          opt('🤝', 'Ofrecerte a ayudar a reconstruirla', true),
+          opt('🙅', 'Decirle que deje de estar triste'),
+          opt('🏃', 'Irte a jugar a otro lado'),
+        ], doneLine: 'Ofrecerte a ayudar es una manera hermosa de mostrar que te importa.' },
+      { kind: 'choice', say: 'Sam TODAVÍA está muy triste, aunque te sentaste y ayudaste. ¿Cuál es un buen siguiente paso?',
+        npc: { face: '🐛', mood: MOOD('sad'), thought: { emoji: '💭' } },
+        options: [
+          opt('🙋', 'Buscar a una persona adulta', true),
+          opt('🤐', 'No decir nada'),
+          opt('😤', 'Alterarte también'),
+        ], doneLine: 'Cuando un sentimiento es grande, buscar a una persona adulta es una gran idea.' },
+    ],
+  },
+  {
+    zone: 'garden', level: 5, goal: 'Mis sentimientos cambian como las nubes',
+    intro: 'Los sentimientos se mueven y cambian, como las nubes que pasan. Un sentimiento grande ahora no dura para siempre.',
+    outro: 'Aprendiste que los sentimientos pasan, como las nubes en el cielo. Siempre volverás a sentirte tranquilo.',
+    moment: 'aprendió que los sentimientos pasan en el jardín',
+    rounds: [
+      { kind: 'choice', say: 'Bea se sintió muy enojada cuando pausaron su juego. Un rato después, ¿cómo podría sentirse?',
+        npc: { face: '🦋', mood: MOOD('angry'), thought: { emoji: '⏸️' } },
+        options: [
+          opt('😌', 'tranquila otra vez, después de un rato', true),
+          opt('😡', 'enojada para siempre'),
+        ], doneLine: 'Sí — hasta los sentimientos de mucho enojo pasan, como una nube que sigue su camino.' },
+      { kind: 'breathe', say: 'Vamos a ayudar a que un sentimiento grande pase, como una nube. Respira conmigo.',
+        npc: { face: '🦋', mood: MOOD('calm') }, cycles: 3,
+        doneLine: 'El sentimiento grande flotó y se fue, como una nube. Ahora te sientes más tranquilo.' },
+      { kind: 'steps', say: 'Camina el sendero de las nubes — mira cómo cada sentimiento pasa flotando, un paso a la vez.',
+        npc: { face: '🐛', mood: MOOD('calm') },
+        count: 4,
+        labels: ['Enojado ☁️', 'Un poco más tranquilo ⛅', 'Más tranquilo aún 🌤️', 'Tranquilo otra vez ☀️'],
+        doneLine: 'De enojado, a tranquilo — los sentimientos de verdad cambian, como las nubes que pasan.' },
+    ],
+  },
+];
+
+const GARDEN = isEs() ? GARDEN_EN.map((item, i) => GARDEN_ES[i] ?? item) : GARDEN_EN;
+
 // ===========================================================================
 // DEEP FOREST 🌲 — Advanced Friendship & Words (sister island of forest)
 // ===========================================================================
 
-const DEEPFOREST: AdvancedQuest[] = [
+const DEEPFOREST_EN: AdvancedQuest[] = [
   {
     zone: 'deepforest', level: 1, goal: 'Joining kids already playing',
     intro: "Some friends are already playing deep in the forest. Let's learn how to join in.",
@@ -319,11 +463,153 @@ const DEEPFOREST: AdvancedQuest[] = [
   },
 ];
 
+const DEEPFOREST_ES: AdvancedQuest[] = [
+  {
+    zone: 'deepforest', level: 1, goal: 'Unirse a niños que ya están jugando',
+    intro: 'Algunos amigos ya están jugando en lo profundo del bosque. Vamos a aprender cómo unirnos.',
+    outro: '¡Aprendiste cómo pedir unirte a un juego. Eso toma mucho valor!',
+    moment: 'aprendió a unirse a un juego en el bosque profundo',
+    rounds: [
+      { kind: 'choice', say: 'Zorro y Conejita están jugando a las atrapadas sin ti. ¿Qué puedes decir?',
+        npc: { face: '🦌', mood: MOOD('happy'), thought: { emoji: '🏃' } },
+        options: [
+          opt('🙋', '¿Puedo jugar también?', true),
+          opt('🤐', 'No decir nada y solo mirar'),
+          opt('😤', 'Agarrar la pelota y correr'),
+        ], doneLine: '"¿Puedo jugar también?" es una gran manera de preguntar.' },
+      { kind: 'choice', say: 'Preguntaste "¿Puedo jugar también?" — ¿ahora qué haces?',
+        npc: { face: '🦊', mood: MOOD('happy'), thought: { emoji: '❓' } },
+        options: [
+          opt('⏳', 'Esperar su respuesta', true),
+          opt('🏃', 'Empezar a jugar de una vez sin esperar'),
+        ], doneLine: 'Esperar la respuesta es amable y educado.' },
+      { kind: 'choice', say: 'Zorro dice "¡Sí, ven a jugar!" ¿Qué haces?',
+        npc: { face: '🦊', mood: MOOD('happy'), thought: { emoji: '✅' } },
+        options: [
+          opt('🎉', 'Unirte feliz', true),
+          opt('🙅', 'Decir que no gracias'),
+        ], doneLine: '¡Te uniste al juego. Muy bien preguntado!' },
+    ],
+  },
+  {
+    zone: 'deepforest', level: 2, goal: 'Cuando un amigo dice que no',
+    intro: 'A veces un amigo dice que no, y eso también está bien. Vamos a aprender qué hacer.',
+    outro: "Aprendiste que 'no' está bien, y siempre hay otro juego. Muy bien hecho.",
+    moment: 'aprendió qué hacer cuando un amigo dice que no en el bosque profundo',
+    rounds: [
+      { kind: 'choice', say: 'Preguntas "¿Puedo jugar también?" y Oso dice "Ahora no." ¿Cómo te sientes primero?',
+        npc: { face: '🐻', mood: MOOD('neutral'), thought: { emoji: '🙅' } },
+        options: [
+          opt('😞', 'Un poco decepcionado — y eso está bien', true),
+          opt('😡', 'Tengo que gritar'),
+        ], doneLine: 'Está bien sentirse un poco decepcionado. Ese sentimiento pasa.' },
+      { kind: 'choice', say: 'Oso dijo ahora no. ¿Qué puedes hacer después?',
+        npc: { face: '🐻', mood: MOOD('neutral') },
+        options: [
+          opt('🔍', 'Buscar otro juego para jugar', true),
+          opt('😤', 'Meterte de todos modos'),
+          opt('😭', 'Llorar fuerte frente a Oso'),
+        ], doneLine: 'Buscar otro juego mantiene tu día divertido.' },
+      { kind: 'choice', say: 'Tal vez más tarde todavía quieras jugar con Oso. ¿Qué puedes intentar?',
+        npc: { face: '🐻', mood: MOOD('happy') },
+        options: [
+          opt('🙋', 'Preguntar de nuevo más tarde', true),
+          opt('🙅', 'Nunca más preguntarle a Oso'),
+        ], doneLine: 'Preguntar de nuevo más tarde es una gran idea. "Ahora no" no es "nunca."' },
+    ],
+  },
+  {
+    zone: 'deepforest', level: 3, goal: 'Perder un juego con buena actitud',
+    intro: 'A veces no ganamos. Hay una manera amigable de perder un juego.',
+    outro: '¡Perdiste un juego con corazón amigable. Eso te hace divertido para jugar!',
+    moment: 'perdió un juego con buena actitud en el bosque profundo',
+    rounds: [
+      { kind: 'choice', say: 'Venado ganó la carrera y tú llegaste segundo. ¿Qué le dices a Venado?',
+        npc: { face: '🦌', mood: MOOD('proud'), thought: { emoji: '🏁' } },
+        options: [
+          opt('👏', '¡Buen juego!', true),
+          opt('😤', 'Eso no fue justo'),
+          opt('🙄', 'Ni siquiera intenté'),
+        ], doneLine: '"¡Buen juego!" muestra que puedes ser un amigo generoso.' },
+      { kind: 'choice', say: 'Te sientes un poco decepcionado por no haber ganado. ¿Qué puedes hacer con ese sentimiento?',
+        npc: { face: '🦌', mood: MOOD('neutral') },
+        options: [
+          opt('🌬️', 'Respirar hondo, está bien', true),
+          opt('😡', 'Patear el suelo'),
+        ], doneLine: 'Una respiración ayuda a que pase el sentimiento de decepción.' },
+      { kind: 'choice', say: '¿Cuál es un buen siguiente paso después de perder un juego?',
+        npc: { face: '🦌', mood: MOOD('happy') },
+        options: [
+          opt('🔁', 'Intentarlo de nuevo', true),
+          opt('🚪', 'Nunca jugar otra vez'),
+        ], doneLine: 'Intentarlo de nuevo es cómo mejoramos y nos divertimos más.' },
+    ],
+  },
+  {
+    zone: 'deepforest', level: 4, goal: 'No estar de acuerdo con amabilidad',
+    intro: 'Los amigos no siempre quieren lo mismo. Vamos a aprender a no estar de acuerdo con amabilidad.',
+    outro: '¡No estuviste de acuerdo con amabilidad y encontraste una respuesta justa. Eso es una gran habilidad de amistad!',
+    moment: 'no estuvo de acuerdo con amabilidad en el bosque profundo',
+    rounds: [
+      { kind: 'choice', say: 'Tú y Conejita quieren el bloque rojo. ¿Qué puedes decir?',
+        npc: { face: '🐰', mood: MOOD('neutral'), thought: { emoji: '🟥' } },
+        options: [
+          opt('💬', 'Yo quiero el rojo', true),
+          opt('😤', 'Agarrarlo y correr'),
+          opt('🤐', 'No decir nada y sentirte mal'),
+        ], doneLine: 'Decir lo que quieres con claridad es un buen primer paso.' },
+      { kind: 'choice', say: 'Conejita también quiere el bloque rojo. ¿Qué pueden intentar los dos?',
+        npc: { face: '🐰', mood: MOOD('neutral') },
+        options: [
+          opt('🔄', '¿Podemos turnarnos?', true),
+          opt('😡', 'Es mío, no hay turnos'),
+        ], doneLine: '"¿Podemos turnarnos?" es una manera justa y amable de resolverlo.' },
+      { kind: 'choice', say: 'Los dos aceptan turnarse. ¿Quién va primero se puede decidir con...?',
+        npc: { face: '🐰', mood: MOOD('happy') },
+        options: [
+          opt('🪙', 'Una elección justa, como una moneda al aire', true),
+          opt('😤', 'Quien lo agarre primero'),
+        ], doneLine: 'Una elección justa mantiene todo amigable para todos.' },
+    ],
+  },
+  {
+    zone: 'deepforest', level: 5, goal: 'Dar y recibir cumplidos',
+    intro: 'Las palabras amables sobre el trabajo de un amigo se llaman cumplidos. Vamos a practicar darlos y recibirlos.',
+    outro: '¡Diste y recibiste cumplidos con tanta amabilidad. Así crecen las amistades!',
+    moment: 'compartió cumplidos en el bosque profundo',
+    rounds: [
+      { kind: 'choice', say: 'Búho construyó una torre muy alta. ¿Qué cosa amable puedes decir?',
+        npc: { face: '🦉', mood: MOOD('proud'), thought: { emoji: '🗼' } },
+        options: [
+          opt('👏', '¡Wow, qué torre tan buena!', true),
+          opt('😐', 'Eso es aburrido'),
+          opt('🤐', 'No decir nada'),
+        ], doneLine: 'Un cumplido amable puede alegrarle todo el día a un amigo.' },
+      { kind: 'choice', say: 'Venado dice "¡Me encanta tu dibujo!" ¿Qué le dices de vuelta?',
+        npc: { face: '🦌', mood: MOOD('happy'), thought: { emoji: '🎨' } },
+        options: [
+          opt('😊', '¡Gracias!', true),
+          opt('🙅', 'No está bueno'),
+        ], doneLine: '"¡Gracias!" es la manera perfecta de recibir un cumplido.' },
+      { kind: 'multiPick', say: 'Camina hacia dos cosas amables que podrías decir sobre el trabajo de un amigo.', picks: 2,
+        npc: { face: '🦌', mood: MOOD('happy') },
+        options: [
+          opt('🌈', '¡Me encantan los colores!', true),
+          opt('💪', '¡Trabajaste tan duro!', true),
+          opt('😒', 'Podría estar mejor'),
+          opt('🥱', 'Eso es aburrido'),
+        ], doneLine: 'Esos son cumplidos maravillosos — a los amigos les encanta escucharlos.' },
+    ],
+  },
+];
+
+const DEEPFOREST = isEs() ? DEEPFOREST_EN.map((item, i) => DEEPFOREST_ES[i] ?? item) : DEEPFOREST_EN;
+
 // ===========================================================================
 // QUIET LAGOON 🪷 — Advanced Calm (sister island of cove)
 // ===========================================================================
 
-const LAGOON: AdvancedQuest[] = [
+const LAGOON_EN: AdvancedQuest[] = [
   {
     zone: 'lagoon', level: 1, goal: 'Noticing early body signals',
     intro: "Our body sends little signals before a big feeling grows. Let's learn to notice them early.",
@@ -445,11 +731,135 @@ const LAGOON: AdvancedQuest[] = [
   },
 ];
 
+const LAGOON_ES: AdvancedQuest[] = [
+  {
+    zone: 'lagoon', level: 1, goal: 'Notar señales tempranas del cuerpo',
+    intro: 'Nuestro cuerpo manda pequeñas señales antes de que crezca un sentimiento grande. Vamos a aprender a notarlas temprano.',
+    outro: '¡Notaste las señales tempranas en tu cuerpo. Eso es un superpoder para mantenerte tranquilo!',
+    moment: 'notó señales tempranas del cuerpo en la laguna',
+    rounds: [
+      { kind: 'choice', say: 'Antes de que crezca un sentimiento grande, tus manos podrían sentirse...',
+        npc: { face: '🐬', mood: MOOD('neutral'), thought: { emoji: '✊' } },
+        options: [
+          opt('✊', 'apretadas o tensas', true),
+          opt('🖐️', 'sueltas y flojas'),
+        ], doneLine: '¡Las manos apretadas pueden ser una señal temprana — buena observación!' },
+      { kind: 'choice', say: 'Tu corazón podría empezar a sentirse...',
+        npc: { face: '🐬', mood: MOOD('neutral'), thought: { emoji: '💓' } },
+        options: [
+          opt('💓', 'rápido, latiendo deprisa', true),
+          opt('💤', 'somnoliento y lento'),
+        ], doneLine: 'Un corazón rápido también puede ser una señal temprana.' },
+      { kind: 'choice', say: 'Cuando notas una señal como manos apretadas o corazón rápido, ¿cuál es un buen primer paso?',
+        npc: { face: '🐬', mood: MOOD('calm') },
+        options: [
+          opt('🌬️', 'Respirar con calma', true),
+          opt('🙈', 'Ignorarlo y seguir'),
+        ], doneLine: 'Notar temprano y respirar ayuda a que los sentimientos se mantengan pequeños y manejables.' },
+    ],
+  },
+  {
+    zone: 'lagoon', level: 2, goal: 'Una escalera de respiración más larga',
+    intro: 'Vamos a subir las piedras de calma — cinco respiraciones, una piedra a la vez.',
+    outro: '¡Subiste las cinco piedras de calma. Qué escalera de respiraciones tan tranquila!',
+    moment: 'subió la escalera de respiración en la laguna',
+    rounds: [
+      { kind: 'steps', say: 'Sube las piedras de calma conmigo — una respiración lenta en cada piedra.',
+        npc: { face: '🐬', mood: MOOD('calm') },
+        count: 5,
+        labels: ['Respira 1 🌊', 'Respira 2 🌊', 'Respira 3 🌊', 'Respira 4 🌊', 'Respira 5 🌊'],
+        doneLine: 'Cinco respiraciones lentas, cinco piedras de calma — ahora te sientes en paz.' },
+      { kind: 'breathe', say: 'Una respiración más juntos, solo porque se siente bien.',
+        npc: { face: '🐬', mood: MOOD('calm') }, cycles: 2,
+        doneLine: 'Tan tranquilo y en calma, como la laguna misma.' },
+    ],
+  },
+  {
+    zone: 'lagoon', level: 3, goal: 'Hacer un plan para lugares ruidosos',
+    intro: 'Los lugares ruidosos pueden sentirse abrumadores. Vamos a separar las ideas que ayudan de las que no.',
+    outro: '¡Armaste un plan inteligente para lugares ruidosos. Ya estás listo para cualquier lugar!',
+    moment: 'hizo un plan para lugares ruidosos en la laguna',
+    rounds: [
+      { kind: 'sort', say: '¡Vamos a separar ideas para lugares ruidosos! Lleva cada una a útil o no útil.',
+        npc: { face: '🐬', mood: MOOD('neutral'), thought: { emoji: '🔊' } },
+        tables: [
+          opt('✅', 'Útil'),
+          opt('❌', 'No útil'),
+        ],
+        items: [
+          { emoji: '🙉', caption: 'Taparte los oídos', table: 0 },
+          { emoji: '🙋', caption: 'Pedir un rincón tranquilo', table: 0 },
+          { emoji: '🌬️', caption: 'Respirar hondo', table: 0 },
+          { emoji: '😡', caption: 'Gritar más fuerte', table: 1 },
+          { emoji: '🏃', caption: 'Correr solo', table: 1 },
+        ],
+        doneLine: '¡Taparte los oídos, pedir tranquilidad, y respirar — eso sí ayuda!' },
+      { kind: 'choice', say: 'Un cuarto ruidoso se siente abrumador ahora mismo. ¿Qué intentas primero?',
+        npc: { face: '🐬', mood: MOOD('neutral'), thought: { emoji: '🔊' } },
+        options: [
+          opt('🙉', 'Taparme los oídos', true),
+          opt('😡', 'Gritar más fuerte'),
+        ], doneLine: 'Taparte los oídos es un gran primer plan.' },
+    ],
+  },
+  {
+    zone: 'lagoon', level: 4, goal: 'Esperar con calma',
+    intro: 'Esperar puede sentirse largo. Vamos a practicar formas divertidas de esperar con calma.',
+    outro: '¡Esperaste con tanta calma con tus propios juegos de espera. Qué paciencia tan maravillosa!',
+    moment: 'practicó esperar con calma en la laguna',
+    rounds: [
+      { kind: 'multiPick', say: 'Camina hacia DOS juegos de espera que ayudan a que el tiempo pase con calma.', picks: 2,
+        npc: { face: '🐬', mood: MOOD('calm'), thought: { emoji: '⏳' } },
+        options: [
+          opt('🔢', 'Contar despacio', true),
+          opt('✊', 'Apretar mis manos', true),
+          opt('😡', 'Gritar "¡apúrate!"'),
+          opt('🏃', 'Correr por todos lados haciendo ruido'),
+        ], doneLine: 'Contar y apretar las manos son grandes maneras de esperar con calma.' },
+      { kind: 'steps', say: 'Vamos a contar despacio juntos mientras esperamos, un número a la vez.',
+        npc: { face: '🐬', mood: MOOD('calm') },
+        count: 5,
+        doneLine: 'Uno, dos, tres, cuatro, cinco — se acabó la espera, ¡y te mantuviste tan tranquilo!' },
+      { kind: 'choice', say: 'Mientras esperas, pensar en tu cosa favorita puede ayudar. ¿Cuál es una buena favorita para pensar?',
+        npc: { face: '🐬', mood: MOOD('calm'), thought: { emoji: '💭' } },
+        options: [
+          opt('🌟', 'Mi cosa favorita', true),
+          opt('😤', 'Qué lento va esto'),
+        ], doneLine: 'Pensar en una cosa favorita hace que la espera se sienta más corta.' },
+    ],
+  },
+  {
+    zone: 'lagoon', level: 5, goal: 'Cuando los planes cambian',
+    intro: 'A veces los planes cambian sin avisar. Vamos a practicar pensar en una idea nueva.',
+    outro: '¡Encontraste un plan nuevo cuando el viejo cambió. Eso es pensamiento flexible — qué fuerte!',
+    moment: 'manejó un plan que cambió en la laguna',
+    rounds: [
+      { kind: 'choice', say: 'El parque está cerrado hoy, y ese era el plan. ¿Cómo podrías sentirte primero?',
+        npc: { face: '🐬', mood: MOOD('disappointed'), thought: { emoji: '🚫' } },
+        options: [
+          opt('😞', 'Un poco decepcionado — y eso está bien', true),
+          opt('😡', 'Tengo que gritar por eso'),
+        ], doneLine: 'Sentirte decepcionado cuando un plan cambia está bien.' },
+      { kind: 'breathe', say: 'Vamos a respirar juntos para pasar la sorpresa.',
+        npc: { face: '🐬', mood: MOOD('calm') }, cycles: 2,
+        doneLine: 'Una respiración con calma abre espacio para una idea nueva.' },
+      { kind: 'choice', say: 'El parque está cerrado. ¿Qué podemos hacer en su lugar?',
+        npc: { face: '🐬', mood: MOOD('calm'), thought: { emoji: '❓' } },
+        options: [
+          opt('🏠', 'Pensar en algo divertido para hacer en casa', true),
+          opt('😤', 'Quedarte molesto todo el día'),
+        ], doneLine: 'Encontrar un plan nuevo convierte un momento difícil en uno bueno.' },
+    ],
+  },
+];
+
+const LAGOON = isEs() ? LAGOON_EN.map((item, i) => LAGOON_ES[i] ?? item) : LAGOON_EN;
+
 // ===========================================================================
 // TREASURE BAY ⛵ — Advanced Sharing & Cooperation (sister island of shore)
 // ===========================================================================
 
-const BAY: AdvancedQuest[] = [
+const BAY_EN: AdvancedQuest[] = [
   {
     zone: 'bay', level: 1, goal: 'Borrowing and returning',
     intro: "Sometimes we borrow a friend's thing. Let's practice asking, and giving it back.",
@@ -584,6 +994,143 @@ const BAY: AdvancedQuest[] = [
   },
 ];
 
+const BAY_ES: AdvancedQuest[] = [
+  {
+    zone: 'bay', level: 1, goal: 'Pedir prestado y devolver',
+    intro: 'A veces le pedimos algo prestado a un amigo. Vamos a practicar pedirlo, y devolverlo.',
+    outro: '¡Pediste prestado y devolviste con tanta amabilidad. Eso construye confianza entre amigos!',
+    moment: 'practicó pedir prestado y devolver en la bahía',
+    rounds: [
+      { kind: 'choice', say: 'Perico tiene una pala que quieres usar. ¿Qué le dices?',
+        npc: { face: '🦜', mood: MOOD('happy'), thought: { emoji: '🪏' } },
+        options: [
+          opt('🙋', '¿Me la prestas?', true),
+          opt('🤚', 'Tomarla sin preguntar'),
+        ], doneLine: '"¿Me la prestas?" es la manera amable de preguntar.' },
+      { kind: 'choice', say: 'Ya terminaste de usar la pala. ¿Qué haces ahora?',
+        npc: { face: '🦜', mood: MOOD('happy') },
+        options: [
+          opt('🔙', 'Devolverla y decir gracias', true),
+          opt('🙅', 'Quedártela'),
+        ], doneLine: '"Aquí la tienes de vuelta — ¡gracias!" Así funciona pedir prestado.' },
+      { kind: 'choice', say: 'Perico dice "¡Gracias por traerla de vuelta!" ¿Cómo te sientes?',
+        npc: { face: '🦜', mood: MOOD('happy') },
+        options: [
+          opt('😊', 'Feliz — fui un buen amigo', true),
+          opt('😐', 'No importa'),
+        ], doneLine: 'Que confíen en ti con cosas prestadas se siente muy bien.' },
+    ],
+  },
+  {
+    zone: 'bay', level: 2, goal: 'Intercambiar y llegar a un acuerdo',
+    intro: 'A veces dos amigos quieren cosas diferentes. Un intercambio puede hacer felices a los dos.',
+    outro: '¡Hiciste un intercambio justo. Llegar a un acuerdo hace que todos ganen!',
+    moment: 'hizo un intercambio justo en la bahía',
+    rounds: [
+      { kind: 'choice', say: 'Tú tienes una concha azul, Tortuga tiene una rosada. A los dos les gusta la del otro. ¿Qué pueden intentar?',
+        npc: { face: '🐢', mood: MOOD('neutral'), thought: { emoji: '🐚' } },
+        options: [
+          opt('🔄', 'Intercambiar las conchas', true),
+          opt('🙅', 'Quedarte con la tuya y tomar la de ella también'),
+        ], doneLine: '¡Un intercambio significa que los dos se quedan con algo que les gusta!' },
+      { kind: 'choice', say: 'Los dos quieren elegir el juego primero. ¿Cuál es una manera justa de decidir?',
+        npc: { face: '🦜', mood: MOOD('neutral') },
+        options: [
+          opt('🥇', 'Tú eliges primero esta vez, yo elijo la próxima', true),
+          opt('😤', 'Yo siempre elijo primero'),
+        ], doneLine: 'Turnarse para elegir es un acuerdo justo.' },
+      { kind: 'choice', say: 'Salió justo para los dos. ¿Cómo se sienten ambos?',
+        npc: { face: '🐢', mood: MOOD('happy') },
+        options: [
+          opt('😊', 'Felices, se sintió justo', true),
+          opt('😤', 'Todavía molestos'),
+        ], doneLine: 'Un intercambio justo deja a todos sintiéndose bien.' },
+    ],
+  },
+  {
+    zone: 'bay', level: 3, goal: 'Construir juntos',
+    intro: 'Vamos a construir un castillo de arena juntos, una pieza a la vez — turnándonos para agregar.',
+    outro: '¡Construyeron todo el castillo juntos, turno por turno. Se ve aún mejor hecho en equipo!',
+    moment: 'construyó un castillo de arena junto a otro en la bahía',
+    rounds: [
+      { kind: 'choice', say: 'Un montón de arena, dos constructores. ¿Cómo deberían empezar?',
+        npc: { face: '🦜', mood: MOOD('excited'), thought: { emoji: '🏰' } },
+        options: [
+          opt('🤝', 'Turnarse para agregar piezas', true),
+          opt('🙅', 'Construir por separado sin turnos'),
+        ], doneLine: 'Turnarse significa que el castillo se construye de verdad en equipo.' },
+      { kind: 'carry', say: '¡Vamos a construirlo! Lleva cada pieza al castillo, un turno a la vez — tu pieza, mi pieza, tu pieza.',
+        npc: { face: '🦜', mood: MOOD('happy') },
+        items: [
+          { emoji: '🧱', caption: 'mi pieza' },
+          { emoji: '🐚', caption: 'la pieza de Perico' },
+          { emoji: '🚩', caption: 'mi pieza' },
+        ],
+        doneLine: '¡Pieza por pieza, turno por turno — el castillo creció alto!' },
+      { kind: 'choice', say: '¡El castillo está terminado! ¿Cómo te sientes por haberlo construido juntos?',
+        npc: { face: '🦜', mood: MOOD('proud'), thought: { emoji: '🏰' } },
+        options: [
+          opt('🎉', '¡Orgulloso — lo construimos juntos!', true),
+          opt('😤', 'Deseo haberlo construido solo'),
+        ], doneLine: '"¡Lo construimos juntos!" — el mejor tipo de orgullo.' },
+    ],
+  },
+  {
+    zone: 'bay', level: 4, goal: 'Cuando solo hay uno',
+    intro: 'Solo un bote, y dos amigos que quieren pasear. Vamos a encontrar maneras justas de compartirlo.',
+    outro: '¡Encontraste maneras justas de compartir una sola cosa. Eso toma verdadero trabajo en equipo!',
+    moment: 'compartió algo con justicia en la bahía',
+    rounds: [
+      { kind: 'choice', say: 'Solo hay un bote, y tanto tú como Tortuga quieren pasear. ¿Cuál es una idea justa?',
+        npc: { face: '🐢', mood: MOOD('neutral'), thought: { emoji: '⛵' } },
+        options: [
+          opt('⏱️', 'Turnarse con un cronómetro', true),
+          opt('😤', 'Quien llegue primero se lo queda'),
+        ], doneLine: 'Un cronómetro hace que los turnos sean justos para todos.' },
+      { kind: 'choice', say: 'El bote es suficientemente grande para dos. ¿Qué más podrían intentar?',
+        npc: { face: '🐢', mood: MOOD('happy') },
+        options: [
+          opt('🤝', 'Pasear juntos', true),
+          opt('🙅', 'Empujar a Tortuga fuera'),
+        ], doneLine: '¡Pasear juntos significa que nadie tiene que esperar nada!' },
+      { kind: 'choice', say: 'Si no pueden pasear juntos ni usar un cronómetro, ¿cuál es otra idea justa?',
+        npc: { face: '🦜', mood: MOOD('neutral') },
+        options: [
+          opt('🎲', 'Elegir juntos, con algo justo', true),
+          opt('😡', 'Discutir hasta que alguien se rinda'),
+        ], doneLine: 'Elegir juntos, con justicia, mantiene a todos como amigos.' },
+    ],
+  },
+  {
+    zone: 'bay', level: 5, goal: 'Celebrar la victoria de un amigo',
+    intro: 'Cuando un amigo gana o hace algo genial, podemos celebrar CON él.',
+    outro: '¡Celebraste la victoria de un amigo con todo tu corazón. Eso es amistad de verdad!',
+    moment: 'celebró la victoria de un amigo en la bahía',
+    rounds: [
+      { kind: 'choice', say: '¡Tortuga acaba de ganar la carrera de natación! ¿Qué puedes hacer?',
+        npc: { face: '🐢', mood: MOOD('proud'), thought: { emoji: '🏆' } },
+        options: [
+          opt('👏', 'Aplaudir para Tortuga', true),
+          opt('😤', 'Mirar hacia otro lado, molesto'),
+        ], doneLine: 'Aplaudir por un amigo muestra que estás feliz por él.' },
+      { kind: 'choice', say: '¿Qué palabras amables le puedes decir a Tortuga?',
+        npc: { face: '🐢', mood: MOOD('proud') },
+        options: [
+          opt('🎉', '¡Felicidades, gran trabajo!', true),
+          opt('😒', 'Solo tuviste suerte'),
+        ], doneLine: '"¡Felicidades, gran trabajo!" hace que quien gana se sienta visto de verdad.' },
+      { kind: 'choice', say: 'No ganaste esta vez, pero animaste a Tortuga. ¿Cómo se puede sentir eso?',
+        npc: { face: '🦜', mood: MOOD('happy') },
+        options: [
+          opt('💖', 'Bien — estar feliz por otros también se siente bonito', true),
+          opt('😡', 'Solo mal'),
+        ], doneLine: 'Estar feliz por un amigo es su propio tipo de victoria.' },
+    ],
+  },
+];
+
+const BAY = isEs() ? BAY_EN.map((item, i) => BAY_ES[i] ?? item) : BAY_EN;
+
 // ===========================================================================
 
 export const ADVANCED_QUESTS: Record<AdvancedZone, AdvancedQuest[]> = {
@@ -601,7 +1148,7 @@ export function getAdvancedQuest(zone: AdvancedZone, level: number): AdvancedQue
 }
 
 /** Suggested Day Book sticker entries for each advanced level, 'garden-1'..'bay-5'. */
-export const ADVANCED_STICKERS: Record<string, { emoji: string; label: string }> = {
+const ADVANCED_STICKERS_EN: Record<string, { emoji: string; label: string }> = {
   'garden-1': { emoji: '🌦️', label: 'Mixed feelings are okay! 🌦️' },
   'garden-2': { emoji: '🎭', label: 'A face doesn\'t always tell it all! 🎭' },
   'garden-3': { emoji: '🧠', label: 'I can guess how a friend feels! 🧠' },
@@ -623,3 +1170,30 @@ export const ADVANCED_STICKERS: Record<string, { emoji: string; label: string }>
   'bay-4': { emoji: '⛵', label: 'When there is only one, we share it fairly! ⛵' },
   'bay-5': { emoji: '🎉', label: 'I celebrate my friend\'s win! 🎉' },
 };
+
+const ADVANCED_STICKERS_ES: Record<string, { emoji: string; label: string }> = {
+  'garden-1': { emoji: '🌦️', label: '¡Los sentimientos mezclados están bien! 🌦️' },
+  'garden-2': { emoji: '🎭', label: '¡Una cara no siempre lo dice todo! 🎭' },
+  'garden-3': { emoji: '🧠', label: '¡Puedo adivinar cómo se siente un amigo! 🧠' },
+  'garden-4': { emoji: '🤗', label: '¡Sé cómo ayudar a un amigo triste! 🤗' },
+  'garden-5': { emoji: '☁️', label: '¡Los sentimientos pasan, como las nubes! ☁️' },
+  'deepforest-1': { emoji: '🙋', label: '¿Puedo jugar también? ¡Sé cómo preguntar! 🙋' },
+  'deepforest-2': { emoji: '🔍', label: '¡Cuando un amigo dice que no, busco otro juego! 🔍' },
+  'deepforest-3': { emoji: '👏', label: '¡Buen juego! ¡Puedo perder con una sonrisa! 👏' },
+  'deepforest-4': { emoji: '🔄', label: '¿Podemos turnarnos? ¡No estoy de acuerdo con amabilidad! 🔄' },
+  'deepforest-5': { emoji: '💛', label: '¡Doy y recibo cumplidos! 💛' },
+  'lagoon-1': { emoji: '✊', label: '¡Noto temprano las manos apretadas y el corazón rápido! ✊' },
+  'lagoon-2': { emoji: '🪨', label: '¡Cinco respiraciones de calma, cinco piedras de calma! 🪨' },
+  'lagoon-3': { emoji: '🔊', label: '¡Tengo un plan para lugares ruidosos! 🔊' },
+  'lagoon-4': { emoji: '⏳', label: '¡Puedo esperar con calma con mis propios juegos! ⏳' },
+  'lagoon-5': { emoji: '🔀', label: '¡Cuando los planes cambian, pienso en algo nuevo! 🔀' },
+  'bay-1': { emoji: '🔙', label: '¡Pido prestado con amabilidad y lo devuelvo! 🔙' },
+  'bay-2': { emoji: '🔄', label: '¡Puedo intercambiar y llegar a un acuerdo! 🔄' },
+  'bay-3': { emoji: '🏰', label: '¡Lo construimos juntos, turno por turno! 🏰' },
+  'bay-4': { emoji: '⛵', label: '¡Cuando solo hay uno, lo compartimos con justicia! ⛵' },
+  'bay-5': { emoji: '🎉', label: '¡Celebro la victoria de mi amigo! 🎉' },
+};
+
+export const ADVANCED_STICKERS = isEs()
+  ? Object.fromEntries(Object.entries(ADVANCED_STICKERS_EN).map(([k, v]) => [k, ADVANCED_STICKERS_ES[k] ?? v]))
+  : ADVANCED_STICKERS_EN;
