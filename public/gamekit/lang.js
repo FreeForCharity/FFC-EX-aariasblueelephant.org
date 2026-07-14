@@ -13,6 +13,24 @@
   var lang = "en";
   try { lang = localStorage.getItem("abe.lang") === "es" ? "es" : "en"; } catch (e) {}
   var dict = {};
+  var voiceCache = {};
+  function pickVoice(l) {
+    if (voiceCache[l] !== undefined) return voiceCache[l];
+    try {
+      var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+      if (!vs.length) return null;                 // not loaded yet — don't cache
+      var pool = vs.filter(function (v) { return v.lang && v.lang.toLowerCase().indexOf(l) === 0; });
+      var ranks = [/natural/i, /neural/i, /premium/i, /enhanced/i, /paulina|m[oó]nica|samantha|ava|jenny/i];
+      var pick = null;
+      for (var i = 0; i < ranks.length && !pick; i++) {
+        for (var j = 0; j < pool.length; j++) if (ranks[i].test(pool[j].name)) { pick = pool[j]; break; }
+      }
+      if (!pick) for (var k = 0; k < pool.length; k++) if (/US|MX|ES/i.test(pool[k].lang)) { pick = pool[k]; break; }
+      voiceCache[l] = pick || pool[0] || null;
+      return voiceCache[l];
+    } catch (e) { return null; }
+  }
+  try { speechSynthesis.addEventListener("voiceschanged", function () { voiceCache = {}; }); } catch (e) {}
   function t(s) {
     if (lang !== "es" || s == null) return s;
     s = String(s);
@@ -33,7 +51,19 @@
       try { localStorage.setItem("abe.lang", lang === "es" ? "en" : "es"); } catch (e) {}
       location.reload();
     },
-    voice: function (u) { u.lang = lang === "es" ? "es-US" : "en-US"; return u; },
+    voice: function (u) {
+      u.lang = lang === "es" ? "es-US" : "en-US";
+      // u.lang alone is unreliable (WebKit keeps the old/default voice):
+      // pick an explicit voice for the language — but respect a voice the game
+      // already chose IF it matches the language (e.g. character voices).
+      try {
+        if (!u.voice || !String(u.voice.lang).toLowerCase().startsWith(lang)) {
+          var v = pickVoice(lang);
+          if (v) u.voice = v;
+        }
+      } catch (e) {}
+      return u;
+    },
     label: function () { return lang === "es" ? "🌐 English" : "🌐 Español"; },
     makeButton: function () {
       var b = document.createElement("button");
@@ -59,7 +89,7 @@
       n.style.cssText = "position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:99990;" +
         "max-width:min(92vw,560px);background:rgba(255,255,255,.96);color:#3a3a5a;border:2px solid #ffd43b;" +
         "border-radius:14px;padding:10px 38px 10px 14px;font:600 12.5px/1.45 'Comic Sans MS','Chalkboard SE',sans-serif;" +
-        "box-shadow:0 6px 18px rgba(40,40,90,.25);";
+        "box-shadow:0 6px 18px rgba(40,40,90,.25);pointer-events:none;";
       n.innerHTML = "🌐 La traducción al español fue hecha <b>completamente con IA</b> y puede tener errores — " +
         "los creadores no hablan español. Si encuentras un error, por favor avísanos en " +
         "<b>aariasblueelephant.org</b>. ¡Gracias! 💙" +
@@ -68,7 +98,7 @@
       x.textContent = "✕";
       x.setAttribute("aria-label", "Cerrar");
       x.style.cssText = "position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;" +
-        "font-weight:900;color:#3a3a5a;cursor:pointer;padding:4px;";
+        "font-weight:900;color:#3a3a5a;cursor:pointer;padding:4px;pointer-events:auto;";
       x.addEventListener("click", function () { n.remove(); });
       n.appendChild(x);
       document.body.appendChild(n);

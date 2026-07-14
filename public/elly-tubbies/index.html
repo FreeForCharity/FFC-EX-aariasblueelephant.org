@@ -1240,10 +1240,12 @@ let voiceOK='speechSynthesis' in window;
 let VOICES={narrator:null,kid:null};
 function pickVoices(){
   const vs=speechSynthesis.getVoices();if(!vs.length)return;
-  const en=vs.filter(v=>v.lang&&v.lang.toLowerCase().startsWith('en'));
-  const byName=n=>en.find(v=>v.name===n);
-  VOICES.narrator=en.find(v=>/premium/i.test(v.name))||en.find(v=>/enhanced/i.test(v.name))
-    ||byName('Samantha')||en[0]||null;
+  // language-aware: in Spanish mode pick Spanish voices (u.voice overrides u.lang!)
+  const want=(window.ABELang&&ABELang.es)?'es':'en';
+  const pool=vs.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(want));
+  const byName=n=>pool.find(v=>v.name===n);
+  VOICES.narrator=pool.find(v=>/premium/i.test(v.name))||pool.find(v=>/enhanced/i.test(v.name))
+    ||byName('Samantha')||byName('Paulina')||pool[0]||null;
   VOICES.kid=byName('Junior')||VOICES.narrator;
 }
 if(voiceOK){pickVoices();speechSynthesis.onvoiceschanged=pickVoices;}

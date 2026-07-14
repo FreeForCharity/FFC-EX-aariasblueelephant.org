@@ -86,7 +86,7 @@
       n.style.cssText = 'position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:99990;' +
         'max-width:min(92vw,560px);background:rgba(255,255,255,.96);color:#3a3a5a;border:2px solid #ffd43b;' +
         "border-radius:14px;padding:10px 38px 10px 14px;font:600 12.5px/1.45 'Comic Sans MS','Chalkboard SE',sans-serif;" +
-        'box-shadow:0 6px 18px rgba(40,40,90,.25);';
+        'box-shadow:0 6px 18px rgba(40,40,90,.25);pointer-events:none;';
       n.innerHTML = '🌐 La traducción al español fue hecha <b>completamente con IA</b> y puede tener errores — ' +
         'los creadores no hablan español. Si encuentras un error, por favor avísanos en ' +
         '<b>aariasblueelephant.org</b>. ¡Gracias! 💙' +
@@ -94,7 +94,7 @@
       const x = document.createElement('button');
       x.textContent = '✕';
       x.setAttribute('aria-label', 'Cerrar');
-      x.style.cssText = 'position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;font-weight:900;color:#3a3a5a;cursor:pointer;padding:4px;';
+      x.style.cssText = 'position:absolute;top:4px;right:6px;border:0;background:none;font-size:16px;font-weight:900;color:#3a3a5a;cursor:pointer;padding:4px;pointer-events:auto;';
       x.addEventListener('click', () => n.remove());
       n.appendChild(x);
       document.body.appendChild(n);
@@ -242,12 +242,33 @@
   }
   function refreshMusic() { stopMusic(); if ($('kTitle').style.display === 'none' && !K.paused) startMusic(); }
 
+  // language-aware voice picker (cached; refreshed when voices load late)
+  let voiceCache = {};
+  function pickVoiceFor(lang) {
+    if (voiceCache[lang] !== undefined) return voiceCache[lang];
+    try {
+      const vs = speechSynthesis.getVoices();
+      if (!vs.length) return null;                 // not loaded yet — don't cache
+      const pool = vs.filter((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
+      const ranks = [/natural/i, /neural/i, /premium/i, /enhanced/i, /paulina|m[oó]nica|samantha|ava|jenny/i];
+      let pick = null;
+      for (const r of ranks) { pick = pool.find((v) => r.test(v.name)); if (pick) break; }
+      voiceCache[lang] = pick || pool.find((v) => /US|MX|ES/i.test(v.lang)) || pool[0] || null;
+      return voiceCache[lang];
+    } catch (e) { return null; }
+  }
+  try { speechSynthesis.addEventListener('voiceschanged', () => { voiceCache = {}; }); } catch (e) {}
+
   K.say = (text) => {
     if (muted || !S.voice || !window.speechSynthesis) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}]/gu, ''));
       u.lang = LANG === 'es' ? 'es-US' : 'en-US';
+      // setting u.lang alone is NOT enough on WebKit/iPad (and sometimes Chrome):
+      // the engine keeps using the previous/default voice. Pick a voice explicitly.
+      const v = pickVoiceFor(LANG);
+      if (v) u.voice = v;
       u.rate = 0.95 / K.speed() > 1.3 ? 1.05 : 0.95; u.pitch = 1.1; speechSynthesis.speak(u);
     } catch (e) {}
   };
