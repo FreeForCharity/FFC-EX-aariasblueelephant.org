@@ -5,27 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Aaria's Feelings Faces | Aaria's Blue Elephant</title>
 <!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
-     Feelings Faces — emotion-recognition through CONSTRUCTION: the child
-     builds a face (brows + eyes + mouth) to match a feeling, and the face
-     comes alive. No wrong answers: building a different feeling just names
-     that feeling warmly. Bilingual EN/ES from birth. -->
+     Feelings Faces — now it's NILU'S face. A little scene gives the feeling
+     a REASON ("Nilu got a balloon!"), the child builds her face (brows +
+     eyes + mouth), and when it matches, her big ears and trunk join in and
+     the whole face comes alive. Then: how big is the feeling (a little /
+     SO much), what helps (for sad/angry/sleepy), a "show me YOUR face!"
+     moment, and every face joins a sticker album. No wrong answers ever:
+     building a different feeling just names that feeling warmly.
+     Bilingual EN/ES from birth. -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>">
 <link rel="stylesheet" href="../gamekit/kit.css">
 <style>
   /* tap-only game: the kit joystick is not used */
   #kStick { display: none !important; }
-  #kActs { display: none !important; }
   #fStage {
     position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
-    justify-content: flex-start; padding-top: calc(max(10px, env(safe-area-inset-top)) + 64px);
+    justify-content: flex-start; padding-top: calc(max(10px, env(safe-area-inset-top)) + 60px);
     background: linear-gradient(180deg, #ffe9f2 0%, #e6f4ff 60%, #e9ffe9 100%);
   }
+  #fScene {
+    background: var(--k-card); border: 3px solid #ffd43b; border-radius: 22px;
+    padding: 8px 20px; font-size: clamp(14px, 3.6vw, 19px); font-weight: 900; color: #3a3a5a;
+    box-shadow: 0 6px 16px rgba(40,40,90,.15); margin-bottom: 4px; text-align: center; max-width: 92vw;
+  }
+  #fScene .big { font-size: clamp(26px, 7vw, 40px); display: block; line-height: 1.2; }
+  #fScene .big span { display: inline-block; animation: fBob 1.6s ease-in-out infinite; }
+  @keyframes fBob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-7px) rotate(4deg); } }
   #fTarget {
     background: var(--k-card); border: 3px solid var(--k-accent); border-radius: 999px;
-    padding: 10px 26px; font-size: clamp(18px, 4.5vw, 26px); font-weight: 900; color: #3a3a5a;
-    box-shadow: 0 6px 16px rgba(40,40,90,.15); margin-bottom: 2vh; text-align: center;
+    padding: 7px 22px; font-size: clamp(15px, 4vw, 22px); font-weight: 900; color: #3a3a5a;
+    box-shadow: 0 6px 16px rgba(40,40,90,.15); margin-bottom: 1vh; text-align: center;
   }
-  #fFaceWrap { position: relative; width: min(46vh, 72vw); }
+  #fFaceWrap { position: relative; width: min(52vh, 86vw); }
   #fFaceWrap svg { width: 100%; height: auto; display: block; }
   #fFaceWrap.alive { animation: fAlive .55s ease-in-out 3; }
   @keyframes fAlive { 0%,100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.06) rotate(-2.5deg); } 70% { transform: scale(1.06) rotate(2.5deg); } }
@@ -49,7 +60,7 @@
   .fPart.on { border-color: var(--k-accent); background: #fff; }
   .fPart.hintPulse { animation: fHint 1s ease-in-out infinite; border-color: #ffd43b; }
   @keyframes fHint { 0%,100% { transform: scale(1); } 50% { transform: scale(1.13); } }
-  @media (prefers-reduced-motion: reduce) { #fFaceWrap.alive, .fPart.hintPulse { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #fFaceWrap.alive, .fPart.hintPulse, #fScene .big span { animation: none; } }
   #fHint {
     position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 200px);
     z-index: 41; width: 74px; height: 74px; border-radius: 50%; border: 0; cursor: pointer;
@@ -57,6 +68,42 @@
     box-shadow: 0 5px 12px rgba(40,40,90,.22); display: none; flex-direction: column; align-items: center; justify-content: center;
   }
   #fHint .lbl { font-size: 10px; font-weight: 800; }
+  /* the moment card: intensity ask · what-helps · your-turn */
+  #fCard {
+    position: fixed; left: 50%; top: 44%; transform: translate(-50%,-50%);
+    z-index: 60; background: #fff; border-radius: 26px; padding: 18px 22px;
+    box-shadow: 0 14px 40px rgba(40,40,90,.35); text-align: center; display: none;
+    max-width: min(92vw, 440px); border: 4px solid var(--k-accent);
+  }
+  #fCard .em { font-size: clamp(34px, 9vw, 54px); line-height: 1.1; }
+  #fCard .tx { font-weight: 900; font-size: clamp(15px, 4.2vw, 20px); color: #3a3a5a; margin: 6px 0 10px; }
+  #fCard .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  #fCard button {
+    border: 0; cursor: pointer; font: inherit; font-weight: 900; font-size: clamp(14px, 3.8vw, 18px);
+    background: linear-gradient(180deg, #b197fc, #8b5cf6); color: #fff;
+    border-radius: 999px; padding: 12px 20px; min-height: 50px;
+    box-shadow: 0 4px 0 #6d3fd8;
+  }
+  #fCard button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6d3fd8; }
+  /* sticker album */
+  #fAlbum {
+    position: fixed; inset: 0; z-index: 70; background: rgba(30,30,60,.45); display: none;
+    align-items: center; justify-content: center; padding: 18px;
+  }
+  #fAlbum .card {
+    background: #fff; border-radius: 24px; padding: 18px; max-width: 560px; width: 100%;
+    max-height: 84vh; overflow: auto; box-shadow: 0 16px 44px rgba(20,20,50,.4);
+  }
+  #fAlbum h2 { font-size: 20px; font-weight: 900; color: #3a3a5a; margin: 0 0 10px; text-align: center; }
+  #fAlbumGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+  .fSticker { text-align: center; background: #f6f3ff; border-radius: 16px; padding: 6px; }
+  .fSticker svg { width: 100%; height: auto; }
+  .fSticker .nm { font-size: 11px; font-weight: 900; color: #5f3dc4; }
+  #fAlbumClose {
+    display: block; margin: 12px auto 0; border: 0; cursor: pointer; font: inherit; font-weight: 900;
+    background: linear-gradient(180deg, #b197fc, #8b5cf6); color: #fff; border-radius: 999px;
+    padding: 12px 28px; min-height: 48px; box-shadow: 0 4px 0 #6d3fd8;
+  }
   /* keep kit toasts clear of the part trays at the bottom */
   #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
   #fCount {
@@ -69,21 +116,45 @@
 <body>
 <div id="kStage"></div>
 <div id="fStage">
+  <div id="fScene"></div>
   <div id="fTarget"></div>
   <div id="fFaceWrap">
-    <svg viewBox="0 0 200 200" aria-hidden="true">
-      <circle cx="100" cy="100" r="88" fill="#ffd9a0" stroke="#e0a860" stroke-width="4"/>
-      <ellipse cx="64" cy="128" rx="12" ry="7" fill="#ffb6a0" opacity=".55"/>
-      <ellipse cx="136" cy="128" rx="12" ry="7" fill="#ffb6a0" opacity=".55"/>
-      <g id="fBrows"></g>
-      <g id="fEyes"></g>
-      <g id="fMouth"></g>
+    <svg viewBox="-66 -16 332 236" aria-hidden="true">
+      <!-- Nilu's big ears: they join the feeling when the face comes alive -->
+      <g id="fEarL" transform="rotate(-6 -12 92)">
+        <ellipse cx="-12" cy="92" rx="36" ry="48" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/>
+        <ellipse cx="-12" cy="92" rx="23" ry="32" fill="#f7c8dc"/>
+      </g>
+      <g id="fEarR" transform="rotate(6 212 92)">
+        <ellipse cx="212" cy="92" rx="36" ry="48" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/>
+        <ellipse cx="212" cy="92" rx="23" ry="32" fill="#f7c8dc"/>
+      </g>
+      <!-- her round blue head -->
+      <circle cx="100" cy="100" r="80" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/>
+      <ellipse cx="62" cy="122" rx="12" ry="7" fill="#f7a8c4" opacity=".7"/>
+      <ellipse cx="138" cy="122" rx="12" ry="7" fill="#f7a8c4" opacity=".7"/>
+      <!-- little red cap -->
+      <path d="M78 32 Q100 2 122 32 Z" fill="#e05a5a" stroke="#b94343" stroke-width="3"/>
+      <circle cx="100" cy="8" r="7" fill="#ffd43b"/>
+      <!-- the build: brows + eyes + mouth (scaled by feeling size) -->
+      <g id="fFeatures">
+        <g id="fBrows"></g>
+        <g id="fEyes"></g>
+        <g id="fMouth"></g>
+      </g>
+      <!-- her trunk hangs below the chin and curls with the feeling -->
+      <path id="fTrunk" d="M100 176 C100 196 92 206 82 208" stroke="#6db9f2" stroke-width="15"
+            fill="none" stroke-linecap="round"/>
+      <path id="fTrunkLine" d="M100 176 C100 196 92 206 82 208" stroke="#4a90c9" stroke-width="2"
+            fill="none" stroke-linecap="round" stroke-dasharray="2 7"/>
     </svg>
   </div>
 </div>
 <div id="fCount">🎭 0</div>
 <button id="fHint" title="A little help finding the right pieces">💡<span class="lbl">Hint</span></button>
 <div id="fTrays"></div>
+<div id="fCard"><div class="em"></div><div class="tx"></div><div class="row"></div></div>
+<div id="fAlbum"><div class="card"><h2></h2><div id="fAlbumGrid"></div><button id="fAlbumClose"></button></div></div>
 
 <script src="../gamekit/kit.js"></script>
 <script>
@@ -92,7 +163,7 @@
   const K = window.ABEKit;
   const $ = (id) => document.getElementById(id);
 
-  /* ---------- face parts (SVG path factories, drawn on the 200x200 face) ---------- */
+  /* ---------- face parts (SVG path factories, drawn on Nilu's face) ---------- */
   const BROWS = {
     up:   { tray: 'M4 16 Q14 6 24 12 M32 12 Q42 6 52 16',            face: 'M56 66 Q70 52 84 60 M116 60 Q130 52 144 66' },
     flat: { tray: 'M4 12 L24 12 M32 12 L52 12',                       face: 'M56 62 L84 62 M116 62 L144 62' },
@@ -112,49 +183,103 @@
     closed: '<path d="M8 13 Q16 19 24 13 M32 13 Q40 19 48 13" stroke="#2a2a3a" stroke-width="3" fill="none" stroke-linecap="round"/>',
   };
   const MOUTHS = {
-    smile:  { tray: 'M8 8 Q28 26 48 8',  face: 'M64 128 Q100 162 136 128', fill: 'none' },
-    frown:  { tray: 'M8 20 Q28 4 48 20', face: 'M66 146 Q100 118 134 146', fill: 'none' },
+    smile:  { tray: 'M8 8 Q28 26 48 8',  face: 'M64 128 Q100 162 136 128' },
+    frown:  { tray: 'M8 20 Q28 4 48 20', face: 'M66 146 Q100 118 134 146' },
     O:      { tray: 'O',                  face: 'O' },
-    flat:   { tray: 'M10 14 L46 14',      face: 'M72 138 L128 138', fill: 'none' },
+    flat:   { tray: 'M10 14 L46 14',      face: 'M72 138 L128 138' },
     tongue: { tray: 'T',                  face: 'T' },
   };
+  const BROW_COLOR = '#2f5c86', MOUTH_COLOR = '#3d5a78';
 
   function drawBrow(el, d, isTray) {
-    el.innerHTML = `<path d="${d}" stroke="#8a5a2a" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
+    el.innerHTML = `<path d="${d}" stroke="${BROW_COLOR}" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
   }
   function drawMouth(g, key, isTray) {
     const m = MOUTHS[key];
     if (key === 'O') {
       g.innerHTML = isTray
-        ? '<ellipse cx="28" cy="14" rx="9" ry="11" fill="#7a3a3a"/>'
-        : '<ellipse cx="100" cy="140" rx="14" ry="18" fill="#7a3a3a"/><ellipse cx="100" cy="146" rx="8" ry="8" fill="#c96a6a"/>';
+        ? '<ellipse cx="28" cy="14" rx="9" ry="11" fill="#39516b"/>'
+        : '<ellipse cx="100" cy="140" rx="14" ry="18" fill="#39516b"/><ellipse cx="100" cy="146" rx="8" ry="8" fill="#c96a6a"/>';
     } else if (key === 'tongue') {
       g.innerHTML = isTray
-        ? '<path d="M8 10 Q28 24 48 10" stroke="#7a3a3a" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="18" rx="7" ry="6" fill="#ff7f9f"/>'
-        : '<path d="M64 128 Q100 156 136 128" stroke="#7a3a3a" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="100" cy="146" rx="13" ry="12" fill="#ff7f9f"/><path d="M100 138 L100 152" stroke="#e05a7a" stroke-width="2.5"/>';
+        ? `<path d="M8 10 Q28 24 48 10" stroke="${MOUTH_COLOR}" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="18" rx="7" ry="6" fill="#ff7f9f"/>`
+        : `<path d="M64 128 Q100 156 136 128" stroke="${MOUTH_COLOR}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="100" cy="146" rx="13" ry="12" fill="#ff7f9f"/><path d="M100 138 L100 152" stroke="#e05a7a" stroke-width="2.5"/>`;
     } else {
-      g.innerHTML = `<path d="${isTray ? m.tray : m.face}" stroke="#7a3a3a" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
+      g.innerHTML = `<path d="${isTray ? m.tray : m.face}" stroke="${MOUTH_COLOR}" stroke-width="${isTray ? 4 : 6}" fill="none" stroke-linecap="round"/>`;
     }
+  }
+
+  /* ---------- ears + trunk join each feeling (Nilu's whole face acts) ---------- */
+  const POSE = {
+    neutral:   { earL: -6,  earR: 6,   trunk: 'M100 176 C100 196 92 206 82 208' },
+    happy:     { earL: -18, earR: 18,  trunk: 'M100 176 C102 196 120 204 132 192' },
+    sad:       { earL: 26,  earR: -26, trunk: 'M100 176 C100 198 98 212 96 218' },
+    surprised: { earL: -30, earR: 30,  trunk: 'M100 176 C106 190 124 190 136 180' },
+    angry:     { earL: -2,  earR: 2,   trunk: 'M100 176 C96 192 84 198 74 194' },
+    sleepy:    { earL: 32,  earR: -32, trunk: 'M100 176 C100 200 88 214 78 216' },
+    silly:     { earL: -28, earR: 14,  trunk: 'M100 176 C114 192 128 180 118 168' },
+  };
+  function setPose(id) {
+    const p = POSE[id] || POSE.neutral;
+    $('fEarL').setAttribute('transform', `rotate(${p.earL} -12 92)`);
+    $('fEarR').setAttribute('transform', `rotate(${p.earR} 212 92)`);
+    $('fTrunk').setAttribute('d', p.trunk);
+    $('fTrunkLine').setAttribute('d', p.trunk);
   }
 
   /* ---------- feelings (each = exact brow+eye+mouth recipe) ---------- */
   const FEELINGS = [
     { id: 'happy',     emoji: '😊', en: 'HAPPY',     es: 'FELIZ',       brow: 'up',   eye: 'open',   mouth: 'smile',
-      lineEn: 'A big warm smile — that is a happy face!', lineEs: '¡Una gran sonrisa — esa es una cara feliz!' },
+      lineEn: 'A big warm smile, ears up high — Nilu is happy!', lineEs: '¡Una gran sonrisa y orejas arriba — Nilu está feliz!' },
     { id: 'sad',       emoji: '😢', en: 'SAD',       es: 'TRISTE',      brow: 'sad',  eye: 'open',   mouth: 'frown',
-      lineEn: 'Brows up in the middle and a frown — that face feels sad.', lineEs: 'Cejitas hacia arriba en el medio y boquita triste — esa cara está triste.' },
+      lineEn: 'Droopy ears and a little frown — Nilu feels sad.', lineEs: 'Orejitas caídas y boquita triste — Nilu está triste.' },
     { id: 'surprised', emoji: '😮', en: 'SURPRISED', es: 'SORPRENDIDA', brow: 'up',   eye: 'wide',   mouth: 'O',
-      lineEn: 'Big wide eyes and a round mouth — surprise!', lineEs: '¡Ojos muy abiertos y boca redonda — sorpresa!' },
+      lineEn: 'Big wide eyes and ears way up — surprise!', lineEs: '¡Ojos muy abiertos y orejas arriba — sorpresa!' },
     { id: 'angry',     emoji: '😠', en: 'ANGRY',     es: 'ENOJADA',     brow: 'down', eye: 'squint', mouth: 'flat',
-      lineEn: 'Brows down and a straight mouth — that face feels angry. Breathing helps!', lineEs: 'Cejas hacia abajo y boca recta — esa cara está enojada. ¡Respirar ayuda!' },
+      lineEn: 'Brows down, ears stiff — Nilu feels angry. Breathing helps!', lineEs: 'Cejas abajo y orejas tiesas — Nilu está enojada. ¡Respirar ayuda!' },
     { id: 'sleepy',    emoji: '😴', en: 'SLEEPY',    es: 'CON SUEÑO',   brow: 'flat', eye: 'closed', mouth: 'flat',
-      lineEn: 'Eyes closed and everything soft — so sleepy.', lineEs: 'Ojitos cerrados y todo suavecito — cuánto sueño.' },
+      lineEn: 'Eyes closed, ears soft and low — so sleepy.', lineEs: 'Ojitos cerrados y orejas suavecitas — cuánto sueño.' },
     { id: 'silly',     emoji: '😝', en: 'SILLY',     es: 'JUGUETONA',    brow: 'up',   eye: 'wide',   mouth: 'tongue',
-      lineEn: 'Tongue out and big eyes — what a silly face!', lineEs: '¡Lengua afuera y ojos grandes — qué cara tan juguetona!' },
+      lineEn: 'Tongue out and one ear up, one ear down — what a silly face!', lineEs: '¡Lengua afuera y una oreja arriba y otra abajo — qué cara tan juguetona!' },
   ];
 
+  /* every feeling has a WHY — a tiny scene that causes it */
+  const SCENES = {
+    happy: [
+      { em: '🎈', en: 'Nilu got a red balloon!', es: '¡Nilu recibió un globo rojo!' },
+      { em: '🧁', en: 'It is cupcake day!', es: '¡Hoy hay pastelitos!' },
+    ],
+    sad: [
+      { em: '🍦', en: 'Oh no… her ice cream fell down.', es: 'Ay no… se le cayó el helado.' },
+      { em: '🧸', en: 'Her teddy bear is lost…', es: 'Su osito se perdió…' },
+    ],
+    surprised: [
+      { em: '🎁', en: 'A present appeared — for HER!', es: '¡Apareció un regalo — para ELLA!' },
+      { em: '🦋', en: 'A butterfly landed right on her trunk!', es: '¡Una mariposa se posó en su trompa!' },
+    ],
+    angry: [
+      { em: '🧱', en: 'Her block tower got knocked over!', es: '¡Le tiraron su torre de bloques!' },
+      { em: '🍪', en: 'The cookies are all gone — she wanted one!', es: 'Se acabaron las galletas — ¡ella quería una!' },
+    ],
+    sleepy: [
+      { em: '🌙', en: 'It is almost bedtime…', es: 'Ya casi es hora de dormir…' },
+      { em: '🥱', en: 'What a long day of playing…', es: 'Qué día tan largo de jugar…' },
+    ],
+    silly: [
+      { em: '🫧', en: 'Bubble party in the garden!', es: '¡Fiesta de burbujas en el jardín!' },
+      { em: '🙃', en: 'It is upside-down day!', es: '¡Hoy es el día al revés!' },
+    ],
+  };
+  /* what helps, for the regulation feelings — statements, never quizzes */
+  const HELPS = {
+    sad:    { em: '🤗', en: 'When we feel sad, a big hug helps.', es: 'Cuando estamos tristes, un gran abrazo ayuda.' },
+    angry:  { em: '😮‍💨', en: 'When we feel angry, big slow breaths help.', es: 'Cuando estamos enojados, respirar despacio ayuda.' },
+    sleepy: { em: '🌙', en: 'When we feel sleepy, rest helps. Good night!', es: 'Cuando tenemos sueño, descansar ayuda. ¡Buenas noches!' },
+  };
+
   /* ---------- state ---------- */
-  const G = { target: null, sel: { brow: null, eye: null, mouth: null }, made: 0, hintT: 0, hintOn: false, solved: false };
+  const G = { target: null, scene: null, sel: { brow: null, eye: null, mouth: null },
+              made: 0, album: [], hintT: 0, hintOn: false, solved: false, cardCb: null };
 
   function fname(f) { return K.tr(f.en, f.es); }
 
@@ -162,6 +287,31 @@
     drawBrow($('fBrows'), G.sel.brow ? BROWS[G.sel.brow].face : '', false);
     if (G.sel.eye) EYES[G.sel.eye]($('fEyes')); else $('fEyes').innerHTML = '';
     if (G.sel.mouth) drawMouth($('fMouth'), G.sel.mouth, false); else $('fMouth').innerHTML = '';
+  }
+  function setSize(s) {
+    $('fFeatures').setAttribute('transform', `translate(100 100) scale(${s}) translate(-100 -100)`);
+  }
+
+  /* a complete mini Nilu face for the sticker album */
+  function faceSVG(f, size) {
+    const p = POSE[f.id];
+    const brow = `<path d="${BROWS[f.brow].face}" stroke="${BROW_COLOR}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+    const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    EYES[f.eye](tmp);
+    const eyes = tmp.innerHTML;
+    drawMouth(tmp, f.mouth, false);
+    const mouth = tmp.innerHTML;
+    const s = size || 1;
+    return `<svg viewBox="-66 -16 332 236">
+      <g transform="rotate(${p.earL} -12 92)"><ellipse cx="-12" cy="92" rx="36" ry="48" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/><ellipse cx="-12" cy="92" rx="23" ry="32" fill="#f7c8dc"/></g>
+      <g transform="rotate(${p.earR} 212 92)"><ellipse cx="212" cy="92" rx="36" ry="48" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/><ellipse cx="212" cy="92" rx="23" ry="32" fill="#f7c8dc"/></g>
+      <circle cx="100" cy="100" r="80" fill="#6db9f2" stroke="#4a90c9" stroke-width="4"/>
+      <ellipse cx="62" cy="122" rx="12" ry="7" fill="#f7a8c4" opacity=".7"/>
+      <ellipse cx="138" cy="122" rx="12" ry="7" fill="#f7a8c4" opacity=".7"/>
+      <path d="M78 32 Q100 2 122 32 Z" fill="#e05a5a"/><circle cx="100" cy="8" r="7" fill="#ffd43b"/>
+      <g transform="translate(100 100) scale(${s}) translate(-100 -100)">${brow}${eyes}${mouth}</g>
+      <path d="${p.trunk}" stroke="#6db9f2" stroke-width="15" fill="none" stroke-linecap="round"/>
+    </svg>`;
   }
 
   function buildTrays() {
@@ -206,27 +356,111 @@
     return FEELINGS.find((f) => f.brow === G.sel.brow && f.eye === G.sel.eye && f.mouth === G.sel.mouth) || null;
   }
 
+  /* the moment card — one small beat at a time, always skippable, never blocking */
+  let cardTimer = null;
+  function showCard(em, tx, buttons, autoMs, cb) {
+    clearTimeout(cardTimer);
+    G.cardCb = cb;
+    $('fCard').querySelector('.em').textContent = em;
+    $('fCard').querySelector('.tx').textContent = tx;
+    const row = $('fCard').querySelector('.row');
+    row.innerHTML = '';
+    for (const [label, val] of buttons) {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); closeCard(val); });
+      row.appendChild(b);
+    }
+    $('fCard').style.display = 'block';
+    if (autoMs) cardTimer = setTimeout(() => closeCard(null), autoMs);
+  }
+  function closeCard(val) {
+    clearTimeout(cardTimer);
+    $('fCard').style.display = 'none';
+    const cb = G.cardCb; G.cardCb = null;
+    cb && cb(val);
+  }
+
   function checkFace() {
     if (!G.sel.brow || !G.sel.eye || !G.sel.mouth) return;
     const m = matchFeeling();
     if (m && m.id === G.target.id) {
-      // the face comes alive!
+      // the WHOLE face comes alive — ears and trunk join in!
       G.solved = true;
-      G.made++; K.save('made', G.made);
-      $('fCount').textContent = '🎭 ' + G.made;
+      setPose(m.id);
       $('fFaceWrap').classList.add('alive');
       K.sfx.star();
       K.say(K.tr(G.target.lineEn, G.target.lineEs));
-      K.toast(K.es() ? `${G.target.emoji} ¡Hiciste una cara ${fname(G.target)}! ¡Y cobró vida!` : `${G.target.emoji} You made a ${fname(G.target)} face! It came alive!`, 3600);
       K.recordEvent('face', FEELINGS.indexOf(G.target));
-      if (G.made === 6) K.streakBump();
-      setTimeout(nextRound, 2600 * K.speed());
+      setTimeout(askSize, 2000 * K.speed());
     } else if (m) {
       // a REAL feeling, just not the target — name it warmly (teaching moment)
+      setPose(m.id);
+      setTimeout(() => { if (!G.solved) setPose('neutral'); }, 1800);
       K.sfx.pop();
       K.toast(K.es() ? `${m.emoji} ¡Esa cara se ve ${fname(m)}! ¿Puedes hacer ${G.target.emoji} ${fname(G.target)}?` : `${m.emoji} That face looks ${fname(m)}! Can you find ${G.target.emoji} ${fname(G.target)}?`, 3400);
       K.say(K.tr(`That looks ${m.en.toLowerCase()}! Can you make ${G.target.en.toLowerCase()}?`, `¡Esa se ve ${m.es.toLowerCase()}! ¿Puedes hacer una cara ${G.target.es.toLowerCase()}?`));
     }
+  }
+
+  /* how BIG is the feeling? (a little / SO much — both answers are right) */
+  function askSize() {
+    const f = G.target;
+    K.say(K.tr(`Is she a little ${f.en.toLowerCase()}, or SO ${f.en.toLowerCase()}?`,
+               `¿Está un poco ${f.es.toLowerCase()}, o MUY ${f.es.toLowerCase()}?`));
+    showCard(f.emoji,
+      K.tr(`How ${f.en.toLowerCase()} is Nilu?`, `¿Qué tan ${f.es.toLowerCase()} está Nilu?`),
+      [[K.tr('a little 🙂', 'un poco 🙂'), 'little'], [K.tr('SO much! 🤩', '¡MUY! 🤩'), 'big']],
+      9000,
+      (v) => {
+        const big = v !== 'little';
+        setSize(big ? 1.18 : 0.88);
+        K.sfx.yes();
+        K.say(big ? K.tr(`SO ${f.en.toLowerCase()}!`, `¡MUY ${f.es.toLowerCase()}!`)
+                  : K.tr(`A little ${f.en.toLowerCase()}.`, `Un poco ${f.es.toLowerCase()}.`));
+        finishRound(big);
+      });
+  }
+
+  function finishRound(big) {
+    const f = G.target;
+    G.made++; K.save('made', G.made);
+    $('fCount').textContent = '🎭 ' + G.made;
+    G.album.push({ id: f.id, big: !!big });
+    if (G.album.length > 30) G.album.shift();
+    K.save('album', G.album);
+    if (G.made === 6) K.streakBump();
+    const afterHelp = () => {
+      // your turn! (no camera, ever — just an acted moment together)
+      K.say(K.tr(`Now YOU! Show me your ${f.en.toLowerCase()} face!`, `¡Ahora TÚ! ¡Muéstrame tu cara ${f.es.toLowerCase()}!`));
+      showCard('🪞', K.tr(`Show me YOUR ${f.en.toLowerCase()} face!`, `¡Muéstrame TU cara ${f.es.toLowerCase()}!`),
+        [[K.tr('Ta-daa! 🎉', '¡Ta-rán! 🎉'), 1]], 6000,
+        () => { K.sfx.star(); K.toast(K.tr('🎉 Beautiful! Into the album it goes! 📖', '🎉 ¡Precioso! ¡Va al álbum! 📖'), 2600); setTimeout(nextRound, 1400 * K.speed()); });
+    };
+    if (HELPS[f.id]) {
+      const h = HELPS[f.id];
+      K.say(K.tr(h.en, h.es));
+      showCard(h.em, K.tr(h.en, h.es), [[K.tr('Okay! 💙', '¡Sí! 💙'), 1]], 6000, afterHelp);
+    } else afterHelp();
+  }
+
+  function openAlbum() {
+    $('fAlbum').querySelector('h2').textContent = K.tr('📖 My Feelings Album', '📖 Mi álbum de sentimientos');
+    $('fAlbumClose').textContent = K.tr('✔️ Done', '✔️ Listo');
+    const grid = $('fAlbumGrid');
+    grid.innerHTML = '';
+    if (!G.album.length) {
+      grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;font-weight:800;color:#7a7a95">${K.tr('Build faces and they will live here! 💙', '¡Arma caras y vivirán aquí! 💙')}</p>`;
+    }
+    for (const st of [...G.album].reverse()) {
+      const f = FEELINGS.find((x) => x.id === st.id);
+      if (!f) continue;
+      const d = document.createElement('div');
+      d.className = 'fSticker';
+      d.innerHTML = faceSVG(f, st.big ? 1.15 : 0.88) + `<div class="nm">${f.emoji} ${fname(f)}${st.big ? ' ×2' : ''}</div>`;
+      grid.appendChild(d);
+    }
+    $('fAlbum').style.display = 'flex';
   }
 
   function nextRound() {
@@ -237,13 +471,19 @@
     let next;
     do { next = FEELINGS[Math.floor(Math.random() * FEELINGS.length)]; } while (G.target && next.id === G.target.id);
     G.target = next;
+    G.scene = SCENES[next.id][Math.floor(Math.random() * SCENES[next.id].length)];
     G.sel = { brow: null, eye: null, mouth: null };
+    setPose('neutral');
+    setSize(1);
     renderFace();
+    // the WHY first, then the ask — cause and feeling, together
+    $('fScene').innerHTML = `<span class="big"><span>${G.scene.em}</span></span>${K.tr(G.scene.en, G.scene.es)}`;
     $('fTarget').textContent = K.es()
-      ? `¿Puedes hacer una cara ${fname(G.target)}? ${G.target.emoji}`
-      : `Can you make a ${fname(G.target)} face? ${G.target.emoji}`;
+      ? `Nilu se siente ${fname(G.target)} ${G.target.emoji} — ¡arma su cara!`
+      : `Nilu feels ${fname(G.target)} ${G.target.emoji} — build her face!`;
     K.chip(`${G.target.emoji} ${fname(G.target)}`);
-    K.say(K.tr(`Can you make a ${G.target.en.toLowerCase()} face?`, `¿Puedes hacer una cara ${G.target.es.toLowerCase()}?`));
+    K.say(K.tr(`${G.scene.en} Nilu feels ${G.target.en.toLowerCase()}! Can you build her ${G.target.en.toLowerCase()} face?`,
+               `${G.scene.es} ¡Nilu se siente ${G.target.es.toLowerCase()}! ¿Puedes armar su cara ${G.target.es.toLowerCase()}?`));
   }
 
   function useHint() {
@@ -261,35 +501,43 @@
     }
   }
 
+  window.FF = { G, FEELINGS, pick: (k, key) => pick(k, key, document.querySelector(`.fPart[data-kind="${k}"][data-key="${key}"]`)), nextRound, openAlbum, closeCard, setPose };  // debug/test
+
   K.init({
     slug: 'feelings',
     name: "Aaria's Feelings Faces",
     emoji: '🎭',
     accent: '#e05a7a',
-    tagline: 'build a face to match the feeling — then watch it come alive!',
-    taglineEs: 'arma una cara según el sentimiento — ¡y mírala cobrar vida!',
+    tagline: "build Nilu's face to match the feeling — ears, trunk and all!",
+    taglineEs: 'arma la cara de Nilu según el sentimiento — ¡con orejas y trompa!',
     emojis: ['🎭', '😊', '😮', '😢', '😝'],
     howTo: [
-      ['🎯', 'Hear the feeling — like HAPPY or SURPRISED'],
-      ['👆', 'Tap brows, eyes and a mouth to build the face'],
-      ['✨', 'Match the feeling and the face comes alive!'],
+      ['🎈', 'A little story tells you WHY Nilu feels this way'],
+      ['👆', 'Tap brows, eyes and a mouth to build her face'],
+      ['🐘', 'Match it and her EARS and TRUNK join in — alive!'],
+      ['🙂', 'Then say how big the feeling is — a little, or SO much'],
+      ['📖', 'Every face you build lives in your Feelings Album'],
       ['💛', 'Other feelings are named too — no wrong answers'],
-      ['💡', 'Stuck? A Hint button appears to help'],
     ],
     howToEs: [
-      ['🎯', 'Escucha el sentimiento — como FELIZ o SORPRENDIDO'],
-      ['👆', 'Toca cejas, ojos y boca para armar la cara'],
-      ['✨', '¡Si coincide, la cara cobra vida!'],
+      ['🎈', 'Un cuentito te dice POR QUÉ Nilu se siente así'],
+      ['👆', 'Toca cejas, ojos y boca para armar su cara'],
+      ['🐘', 'Si coincide, ¡sus OREJAS y TROMPA cobran vida!'],
+      ['🙂', 'Luego di qué tan grande es — un poco o MUY'],
+      ['📖', 'Cada cara que armas vive en tu álbum'],
       ['💛', 'Otros sentimientos también se nombran — no hay errores'],
-      ['💡', '¿Atorado? Aparece un botón de Pista'],
     ],
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
-    actions: [],
+    actions: [
+      { emoji: '📖', label: 'Album', labelEs: 'Álbum', title: 'All the faces you have built!', titleEs: '¡Todas las caras que armaste!', onTap: openAlbum },
+    ],
     onStart() {
       G.made = K.load('made', 0);
+      G.album = K.load('album', []);
       $('fCount').textContent = '🎭 ' + G.made;
       buildTrays();
       $('fHint').addEventListener('pointerdown', useHint);
+      $('fAlbumClose').addEventListener('pointerdown', () => { $('fAlbum').style.display = 'none'; K.sfx.tap(); });
       nextRound();
     },
     onPause() {},
