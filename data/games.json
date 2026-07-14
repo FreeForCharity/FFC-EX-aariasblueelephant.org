@@ -10,5 +10,6 @@
     { "id": "dayplanner", "title": "Aaria's Day Planner", "emoji": "📅", "oneLiner": "Plan your day with picture cards, then live it with Nilu!", "img": "/images/games/dayplanner.jpg", "path": "/9" },
     { "id": "feelings", "title": "Aaria's Feelings Faces", "emoji": "🎭", "oneLiner": "Build a face to match the feeling — watch it come alive!", "img": "/images/games/feelings.jpg", "path": "/10" },
     { "id": "rhythm", "title": "Aaria's Rhythm & Calm", "emoji": "🎵", "oneLiner": "Tap animal sounds, copy little songs, breathe with the ring!", "img": "/images/games/rhythm.jpg", "path": "/11" },
+    { "id": "flying", "title": "Aaria's Flying Elephant", "emoji": "🐘", "oneLiner": "Fly Nilu through star rings — big ears, soft landings!", "img": "/images/games/flying.jpg", "path": "/12" },
     { "id": "wheel", "title": "Aaria's Wheel of Fun", "emoji": "🎡", "oneLiner": "Spin the rainbow wheel for surprises & giggles!", "img": "/images/games/wheel.jpg", "view": "wheel" }
 ]

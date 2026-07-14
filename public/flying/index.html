@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aaria's Flying Elephant | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     Aaria's Flying Elephant — fly Nilu (big Dumbo ears and all!) through a
+     dreamy sky of floating islands. Glide through star rings, trumpet hello
+     to the birds, land softly on the rainbow island. Gentle by design:
+     nothing hurts, nothing fails, drifting through clouds is playing too. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐘</text></svg>">
+<link rel="stylesheet" href="../gamekit/kit.css">
+<style>
+  #fRings {
+    position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
+    z-index: 40; background: var(--k-card); border-radius: 16px; padding: 8px 14px;
+    font-weight: 900; font-size: 16px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
+  }
+  #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
+</style>
+</head>
+<body>
+<div id="kStage"></div>
+<div id="fRings">⭐ 0/5</div>
+
+<script src="lib/three.min.js"></script>
+<script src="../gamekit/kit.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = window.ABEKit;
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- scene ---------- */
+  let scene, camera, renderer, nilu, earL, earR, trunk, rings = [], clouds = [], birds = [], pad, hintArrow;
+  const SKY_TOP = 0x7ec8ff;
+
+  function emojiSprite(emoji, scale) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.font = '102px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(emoji, 64, 70);
+    const t = new THREE.CanvasTexture(c);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true }));
+    s.scale.set(scale, scale, 1); return s;
+  }
+
+  /* Nilu with BIG flappy ears (the whole point!) */
+  function buildNilu() {
+    const g = new THREE.Group();
+    const blue = new THREE.MeshLambertMaterial({ color: 0x6db9f2 });
+    const pink = new THREE.MeshLambertMaterial({ color: 0xf7c8dc });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.85, 20, 16), blue);
+    body.scale.set(1, 0.9, 1.25); g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.62, 20, 16), blue);
+    head.position.set(0, 0.42, 1.05); g.add(head);
+    // BIG Dumbo ears — separate pivots so they can flap
+    const earGeo = new THREE.CircleGeometry(1.05, 24);
+    const earBlue = new THREE.MeshLambertMaterial({ color: 0x6db9f2, side: THREE.DoubleSide });
+    earL = new THREE.Group(); earR = new THREE.Group();
+    const eL = new THREE.Mesh(earGeo, earBlue); eL.scale.set(0.85, 1.25, 1); eL.position.x = -1.02;
+    const eLi = new THREE.Mesh(new THREE.CircleGeometry(0.78, 24), pink); eLi.scale.set(0.8, 1.2, 1); eLi.position.set(-1.02, 0, 0.03);
+    earL.add(eL, eLi); earL.position.set(-0.35, 0.55, 1.0); earL.rotation.y = 0.35;
+    const eR = eL.clone(); eR.position.x = 1.02;
+    const eRi = eLi.clone(); eRi.position.x = 1.02;
+    earR.add(eR, eRi); earR.position.set(0.35, 0.55, 1.0); earR.rotation.y = -0.35;
+    g.add(earL, earR);
+    trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.9, 10), blue);
+    trunk.position.set(0, 0.05, 1.62); trunk.rotation.x = 1.15; g.add(trunk);
+    const eyeM = new THREE.MeshBasicMaterial({ color: 0x2a2a3a });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), eyeM);
+      eye.position.set(0.24 * s, 0.62, 1.55); g.add(eye);
+    }
+    // little red cap, a nod to the circus flyer
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.3, 12), new THREE.MeshLambertMaterial({ color: 0xe05a5a }));
+    cap.position.set(0, 1.02, 1.0); g.add(cap);
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.5, 6), blue);
+    tail.position.set(0, 0.1, -1.15); tail.rotation.x = -0.8; g.add(tail);
+    return g;
+  }
+
+  function island(x, y, z, r, colorTop) {
+    const g = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.82, r * 0.5, 18),
+      new THREE.MeshLambertMaterial({ color: colorTop }));
+    const rock = new THREE.Mesh(new THREE.ConeGeometry(r * 0.82, r * 1.6, 18),
+      new THREE.MeshLambertMaterial({ color: 0xb08a68 }));
+    rock.rotation.x = Math.PI; rock.position.y = -r * 1.05;
+    g.add(top, rock);
+    const tree = new THREE.Mesh(new THREE.ConeGeometry(r * 0.28, r * 0.8, 10),
+      new THREE.MeshLambertMaterial({ color: 0x5fbf72 }));
+    tree.position.set(r * 0.4, r * 0.62, 0); g.add(tree);
+    g.position.set(x, y, z);
+    scene.add(g);
+    return g;
+  }
+
+  function makeRing(x, y, z) {
+    const g = new THREE.Group();
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.22, 12, 36),
+      new THREE.MeshLambertMaterial({ color: 0xffd43b, emissive: 0x8a6d00 }));
+    g.add(torus);
+    const star = emojiSprite('⭐', 1.6); star.position.y = 3.1; g.add(star);
+    g.position.set(x, y, z);
+    g.userData = { got: false, torus, star };
+    scene.add(g);
+    return g;
+  }
+
+  const RING_SETS = [
+    [[0, 14, -30], [8, 17, -55], [-4, 20, -82], [-14, 16, -110], [0, 22, -140]],
+    [[10, 15, -30], [20, 20, -60], [8, 26, -90], [-8, 22, -118], [-20, 17, -148]],
+    [[-8, 16, -28], [-16, 22, -58], [0, 28, -88], [16, 24, -116], [24, 18, -146]],
+  ];
+
+  function buildWorld() {
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const sun = new THREE.DirectionalLight(0xfff4e0, 0.6); sun.position.set(20, 40, 10); scene.add(sun);
+    // sky islands scattered below the flight path
+    island(-18, 2, -40, 6, 0x8fd694); island(15, -2, -75, 8, 0x9ad0a5);
+    island(-25, 5, -110, 5, 0xd8b4e2); island(20, 0, -135, 7, 0x8fd694);
+    island(35, 8, -60, 4, 0xf3c88f); island(-40, 0, -80, 6, 0x9ad0a5);
+    // the rainbow landing island, past the last ring
+    pad = island(0, 12, -170, 9, 0xffb3c8);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(5, 0.5, 10, 30, Math.PI),
+      new THREE.MeshLambertMaterial({ color: 0xb197fc }));
+    bow.position.y = 2.5; pad.add(bow);
+    const flag = emojiSprite('🌈', 4); flag.position.y = 8; pad.add(flag);
+    // soft clouds
+    const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+    for (let i = 0; i < 26; i++) {
+      const cl = new THREE.Group();
+      for (let b = 0; b < 3; b++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(1.6 + Math.random() * 1.4, 10, 8), cloudMat);
+        puff.position.set(b * 1.8 - 1.8, Math.random() * 0.6, Math.random() * 0.8);
+        cl.add(puff);
+      }
+      cl.position.set((Math.random() - 0.5) * 120, 8 + Math.random() * 22, -Math.random() * 190);
+      scene.add(cl); clouds.push(cl);
+    }
+    // friendly birds to trumpet at
+    for (let i = 0; i < 7; i++) {
+      const b = emojiSprite('🕊️', 1.6);
+      b.position.set((Math.random() - 0.5) * 60, 12 + Math.random() * 14, -20 - Math.random() * 130);
+      b.userData = { t: Math.random() * 9 };
+      scene.add(b); birds.push(b);
+    }
+    hintArrow = emojiSprite('⭐', 1.2);
+    hintArrow.visible = false; scene.add(hintArrow);
+  }
+
+  function spawnRings() {
+    for (const r of rings) scene.remove(r);
+    rings = [];
+    const set = RING_SETS[G.course % RING_SETS.length];
+    for (const [x, y, z] of set) rings.push(makeRing(x, y, z));
+    G.got = 0;
+    $('fRings').textContent = '⭐ ' + G.got + '/' + rings.length;
+  }
+
+  /* ---------- flight model (gentle: auto-glide, joystick steers) ---------- */
+  const P = { x: 0, y: 14, z: 8, yaw: 0, pitch: 0, speed: 7 };
+  const G = { course: 0, stars: 0, got: 0, flying: true, landT: 0 };
+
+  function fly(dt) {
+    if (!G.flying) { // resting on the rainbow island
+      G.landT += dt;
+      if (K.joy.active && K.joy.z < -0.4) takeOff();
+      return;
+    }
+    // joystick: x = turn, push up = climb, pull down = descend — gently
+    P.yaw -= K.joy.x * dt * 1.1;
+    P.pitch = P.pitch * (1 - dt * 2) + (-K.joy.z) * 0.5 * dt * 2 * 6;
+    P.pitch = Math.max(-0.6, Math.min(0.6, P.pitch));
+    const sp = P.speed * K.speed() * (K.calm() ? 0.8 : 1);
+    P.x -= Math.sin(P.yaw) * sp * dt;
+    P.z -= Math.cos(P.yaw) * sp * dt;
+    P.y += P.pitch * sp * dt * 0.8;
+    P.y = Math.max(4, Math.min(42, P.y));
+    // soft world bounds — the sky gently turns you back
+    if (Math.abs(P.x) > 70) P.yaw += dt * 1.2 * Math.sign(P.x) * (Math.sin(P.yaw) > 0 === P.x > 0 ? -1 : 1);
+    if (P.z > 20) P.yaw += dt * 1.5;
+    if (P.z < -195) P.yaw += dt * 1.5;
+
+    // ring pickups
+    for (const r of rings) {
+      if (r.userData.got) continue;
+      if (Math.hypot(P.x - r.position.x, P.y - r.position.y, P.z - r.position.z) < 2.9) {
+        r.userData.got = true; G.got++; G.stars++;
+        K.save('stars', G.stars);
+        r.userData.torus.material = new THREE.MeshLambertMaterial({ color: 0x69db7c, emissive: 0x1a5d2a });
+        r.userData.star.material.opacity = 0.25;
+        $('fRings').textContent = '⭐ ' + G.got + '/' + rings.length;
+        K.sfx.yes(); K.recordEvent('ring', G.got);
+        if (G.got >= rings.length) {
+          K.sfx.star();
+          K.say(K.tr('All the stars! Fly to the rainbow island to rest, or keep soaring!',
+                     '¡Todas las estrellas! Vuela a la isla arcoíris a descansar, ¡o sigue volando!'));
+          K.toast(K.tr('🌈 All stars! The rainbow island is waiting…', '🌈 ¡Todas! La isla arcoíris te espera…'), 3600);
+        } else {
+          K.say(K.tr(`Star ${G.got}!`, `¡Estrella ${G.got}!`));
+        }
+      }
+    }
+    // soft landing on the rainbow island when all rings are done
+    if (G.got >= rings.length &&
+        Math.hypot(P.x - pad.position.x, P.z - pad.position.z) < 8 && P.y < pad.position.y + 6) {
+      land();
+    }
+  }
+
+  function land() {
+    G.flying = false; G.landT = 0;
+    G.course++;
+    K.save('course', G.course);
+    P.y = pad.position.y + 3;
+    K.sfx.star();
+    K.recordEvent('land', G.course);
+    const s = K.streakBump();
+    K.say(K.tr('What a wonderful flight! Rest your ears, then push up to fly again!',
+               '¡Qué vuelo tan maravilloso! Descansa tus orejas y empuja hacia arriba para volar otra vez.'));
+    K.toast(K.tr('🌈 Soft landing! Push ⬆️ to take off', '🌈 ¡Aterrizaje suave! Empuja ⬆️ para despegar'), 4200);
+  }
+
+  function takeOff() {
+    G.flying = true;
+    P.yaw = Math.PI; P.pitch = 0.3;
+    spawnRings();
+    K.sfx.yes();
+    K.say(K.tr('Up, up and away!', '¡Arriba, arriba y a volar!'));
+  }
+
+  function trumpet() {
+    K.sfx.star();
+    K.recordEvent('trumpet', 0);
+    K.say(K.tr('Toot toot!', '¡Tut tuut!'));
+    // nearby birds twirl with joy
+    for (const b of birds) {
+      if (Math.hypot(P.x - b.position.x, P.z - b.position.z) < 30) {
+        b.userData.joy = 1.2;
+      }
+    }
+  }
+
+  /* ---------- per-frame ---------- */
+  let t = 0;
+  function frame(dt) {
+    dt = dt || 0; t += dt;
+    if (K.replaying) {
+      const pose = K.replayPose(dt);
+      if (pose) { P.x = pose.x; P.z = pose.z; P.yaw = pose.ry; }
+    } else fly(dt);
+
+    // Nilu pose + BIG ear flapping (faster flaps while climbing!)
+    nilu.position.set(P.x, P.y, P.z);
+    nilu.rotation.y = P.yaw + Math.PI;
+    nilu.rotation.x = -P.pitch * 0.7;
+    nilu.rotation.z = K.joy.x * 0.45;
+    const flapSpeed = G.flying ? (6 + Math.max(0, P.pitch) * 8) : 1.2;
+    const flap = Math.sin(t * flapSpeed) * (G.flying ? 0.55 : 0.12);
+    earL.rotation.z = 0.25 + flap;
+    earR.rotation.z = -0.25 - flap;
+    trunk.rotation.x = 1.15 + Math.sin(t * 2.2) * 0.08;
+
+    // chase camera, slightly above and behind
+    const back = 7.5, up = 2.8;
+    camera.position.set(
+      P.x + Math.sin(P.yaw) * back,
+      P.y + up + P.pitch * -2,
+      P.z + Math.cos(P.yaw) * back
+    );
+    camera.lookAt(P.x, P.y + 0.6, P.z - 0);
+
+    // world life
+    for (const c of clouds) c.position.x += Math.sin(t * 0.1 + c.position.z) * dt * 0.4;
+    for (const b of birds) {
+      b.userData.t += dt;
+      b.position.y += Math.sin(b.userData.t * 2) * dt * 1.2;
+      if (b.userData.joy > 0) {
+        b.userData.joy -= dt;
+        b.position.y += dt * 3;
+        b.material.rotation += dt * 6;
+      } else b.material.rotation *= 0.9;
+    }
+    for (const r of rings) {
+      r.rotation.y += dt * (r.userData.got ? 0.2 : 1.2);
+      r.userData.star.position.y = 3.1 + Math.sin(t * 2 + r.position.x) * 0.25;
+    }
+    // gentle hint: a little star floats toward the nearest un-got ring
+    const next = rings.find((r) => !r.userData.got);
+    if (next && G.flying) {
+      hintArrow.visible = true;
+      const dx = next.position.x - P.x, dy = next.position.y - P.y, dz = next.position.z - P.z;
+      const d = Math.hypot(dx, dy, dz) || 1;
+      hintArrow.position.set(P.x + (dx / d) * 5, P.y + 1.5 + (dy / d) * 2, P.z + (dz / d) * 5);
+      hintArrow.material.opacity = 0.55 + Math.sin(t * 3) * 0.25;
+    } else hintArrow.visible = false;
+
+    renderer.render(scene, camera);
+  }
+
+  /* ---------- boot ---------- */
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(SKY_TOP);
+  scene.fog = new THREE.Fog(0xcfe9ff, 60, 220);
+  camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 400);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  $('kStage').appendChild(renderer.domElement);
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  buildWorld();
+  nilu = buildNilu(); scene.add(nilu);
+  window.FL = { P, G, rings: () => rings, land, takeOff, trumpet };   // debug/test handle
+  frame(0);
+
+  K.init({
+    slug: 'flying',
+    name: "Aaria's Flying Elephant",
+    emoji: '🐘',
+    accent: '#4dabf7',
+    tagline: 'fly Nilu through the sky — big ears, star rings, soft landings!',
+    taglineEs: 'vuela con Nilu por el cielo — ¡orejotas, anillos de estrellas y aterrizajes suaves!',
+    emojis: ['🐘', '☁️', '⭐', '🌈', '🕊️'],
+    howTo: [
+      ['🕹️', 'Steer with the stick — push up to climb, down to dip'],
+      ['⭐', 'Glide through the glowing star rings'],
+      ['🎺', 'Tap Trumpet to say hello to the birds'],
+      ['🌈', 'All stars? Land softly on the rainbow island'],
+      ['💛', 'No falling, no crashing — the sky is your friend'],
+    ],
+    howToEs: [
+      ['🕹️', 'Dirige con la palanca — arriba sube, abajo baja'],
+      ['⭐', 'Pasa por los anillos de estrellas que brillan'],
+      ['🎺', 'Toca Trompeta para saludar a las aves'],
+      ['🌈', '¿Todas las estrellas? Aterriza en la isla arcoíris'],
+      ['💛', 'No hay caídas ni choques — el cielo es tu amigo'],
+    ],
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
+    actions: [
+      { emoji: '🎺', label: 'Trumpet', labelEs: 'Trompeta', title: 'Say hello to the sky!', titleEs: '¡Saluda al cielo!', onTap: trumpet },
+    ],
+    playerPos: () => ({ x: P.x, z: P.z, ry: P.yaw }),
+    replayableState: {
+      get: () => JSON.parse(JSON.stringify({ P, got: G.got, course: G.course, flying: G.flying })),
+      set: (s) => { Object.assign(P, s.P); G.got = s.got; G.course = s.course; G.flying = s.flying; },
+    },
+    onStart() {
+      G.stars = K.load('stars', 0);
+      G.course = K.load('course', 0);
+      spawnRings();
+      K.say(K.tr('Flap those big ears, Nilu! Fly through the star rings!',
+                 '¡Aletea esas orejotas, Nilu! ¡Vuela por los anillos de estrellas!'));
+    },
+    onPause() {},
+    onFrame: frame,
+    onReplayEvent(ev) {
+      if (ev.kind === 'ring') { K.toast('⭐!'); K.sfx.yes(); }
+      else if (ev.kind === 'land') { K.toast(K.tr('🌈 Soft landing!', '🌈 ¡Aterrizaje suave!')); K.sfx.star(); }
+      else if (ev.kind === 'trumpet') { K.toast('🎺'); }
+    },
+  });
+})();
+</script>
+</body>
+</html>
