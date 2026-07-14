@@ -5,100 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Aaria's Rhythm &amp; Calm | Aaria's Blue Elephant</title>
 <!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
-     Rhythm & Calm — a musical regulation tool disguised as a game. Four
-     animal pads tuned to a pentatonic scale (every tap sounds good), an
-     Echo game where Nilu taps a pattern to copy (free tapping is music,
-     never a mistake), and a breathing ring that pulses at the child's own
-     tempo. Bilingual EN/ES from birth. -->
+     Rhythm & Calm — Nilu's Music Meadow. A twilight 3D meadow where four
+     animal musicians sit in a circle with Nilu: tap an animal and it PLAYS
+     (pentatonic — every tap sounds good), and every note plants a glowing
+     flower, so the meadow blooms with your music and remembers it forever.
+     Echo game: Nilu points her trunk at animals in a little song to copy
+     (free tapping is music, never a mistake). Breathe mode: the pond
+     ripples at the child's own tempo while the sky fills with stars.
+     Bilingual EN/ES from birth. -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 <link rel="stylesheet" href="../gamekit/kit.css">
 <style>
-  #kStick { display: none !important; }
-  #kActs { display: none !important; }
-  #rStage {
-    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 3vh;
-    background: linear-gradient(180deg, #dff3ff 0%, #efe6ff 55%, #ffe9f2 100%);
-    transition: background 2s;
-  }
-  /* the breathing ring — expands and contracts at the child's tempo */
-  #rBreath {
-    position: relative; width: min(34vh, 52vw); height: min(34vh, 52vw);
-    display: flex; align-items: center; justify-content: center;
-  }
-  #rRing {
-    position: absolute; inset: 0; border-radius: 50%;
-    background: radial-gradient(circle at 42% 36%, rgba(255,255,255,.85), rgba(177,151,252,.35));
-    box-shadow: 0 10px 34px rgba(120,100,220,.25), inset 0 0 0 4px rgba(255,255,255,.65);
-    transform: scale(.8);
-  }
-  #rNilu { position: relative; font-size: min(13vh, 20vw); line-height: 1; transition: transform .3s; }
-  #rNilu.beat { transform: scale(1.12); }
-  #rWord {
-    position: absolute; bottom: -8%; left: 50%; transform: translateX(-50%);
-    background: rgba(255,255,255,.9); border-radius: 999px; padding: 5px 18px;
-    font-weight: 900; font-size: clamp(13px, 3.4vw, 17px); color: #5f3dc4; white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(40,40,90,.15);
-  }
-  #rPads { display: flex; gap: clamp(10px, 2.5vw, 22px); z-index: 5; }
-  .rPad {
-    width: clamp(64px, 16vw, 108px); height: clamp(64px, 16vw, 108px); border-radius: 28px;
-    border: 0; cursor: pointer; font-size: clamp(30px, 8vw, 52px);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 10px 22px rgba(40,40,90,.18);
-    transition: transform .08s;
-  }
-  .rPad:active, .rPad.lit { transform: scale(.9) translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.14); }
-  .rPad.glow { outline: 5px solid #fff; outline-offset: 3px; }
-  #p0 { background: linear-gradient(180deg, #ffd6e0, #ff9fb8); }
-  #p1 { background: linear-gradient(180deg, #d5f0c1, #93d97e); }
-  #p2 { background: linear-gradient(180deg, #cfe4ff, #8fbdf5); }
-  #p3 { background: linear-gradient(180deg, #ffefc1, #ffd166); }
-  #rTempo { display: flex; gap: 10px; align-items: center; z-index: 5; }
-  .rChip {
-    border: 3px solid transparent; cursor: pointer; font: inherit; font-weight: 900; font-size: 15px;
-    background: rgba(255,255,255,.85); border-radius: 999px; padding: 9px 18px; min-height: 46px;
-    box-shadow: 0 3px 8px rgba(40,40,90,.14); color: #3a3a5a;
-  }
-  .rChip.on { border-color: #8b5cf6; background: #fff; }
-  #rEcho {
-    border: 0; cursor: pointer; font: inherit; font-weight: 900; font-size: clamp(15px, 4vw, 19px);
-    background: linear-gradient(180deg, #b197fc, #8b5cf6); color: #fff;
-    border-radius: 999px; padding: 12px 30px; min-height: 52px; z-index: 5;
-    box-shadow: 0 5px 0 #6d3fd8, 0 8px 20px rgba(120,90,220,.3);
-  }
-  #rEcho:active { transform: translateY(3px); box-shadow: 0 2px 0 #6d3fd8; }
+  #kStick { display: none !important; }   /* tap game — no joystick */
   #rCount {
     position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
     z-index: 40; background: var(--k-card); border-radius: 16px; padding: 8px 14px;
     font-weight: 900; font-size: 15px; box-shadow: 0 4px 12px rgba(40,40,90,.18);
   }
-  @media (prefers-reduced-motion: reduce) { #rRing { transition: none !important; } #rNilu.beat { transform: none; } }
+  #rWord {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 8px);
+    z-index: 40; background: rgba(255,255,255,.92); border-radius: 999px; padding: 8px 22px;
+    font-weight: 900; font-size: clamp(14px, 3.6vw, 18px); color: #5f3dc4; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(40,40,90,.2);
+  }
+  #rTempo {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 56px);
+    z-index: 40; display: none; gap: 10px;
+  }
+  #rTempo.show { display: flex; }
+  .rChip {
+    border: 3px solid transparent; cursor: pointer; font: inherit; font-weight: 900; font-size: 17px;
+    background: rgba(255,255,255,.88); border-radius: 999px; padding: 9px 18px; min-height: 46px;
+    box-shadow: 0 3px 8px rgba(40,40,90,.18); color: #3a3a5a;
+  }
+  .rChip.on { border-color: #8b5cf6; background: #fff; }
+  #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
 </style>
 </head>
 <body>
 <div id="kStage"></div>
-<div id="rStage">
-  <div id="rBreath">
-    <div id="rRing"></div>
-    <div id="rNilu">🐘</div>
-    <div id="rWord"></div>
-  </div>
-  <div id="rPads">
-    <button class="rPad" id="p0" data-i="0" title="Bird pad">🐦</button>
-    <button class="rPad" id="p1" data-i="1" title="Frog pad">🐸</button>
-    <button class="rPad" id="p2" data-i="2" title="Whale pad">🐋</button>
-    <button class="rPad" id="p3" data-i="3" title="Lion pad">🦁</button>
-  </div>
-  <div id="rTempo">
-    <button class="rChip" data-t="slow" title="Slow and calm">🐢</button>
-    <button class="rChip on" data-t="mid" title="Just right">🐇</button>
-    <button class="rChip" data-t="quick" title="A little quicker">🐿️</button>
-    <button id="rEcho" title="Nilu taps a little song — can you tap it back?">🎶 <span id="rEchoLbl">Copy my song!</span></button>
-  </div>
+<div id="rCount">🎵 0 · 🌸 0</div>
+<div id="rTempo">
+  <button class="rChip" data-t="slow" title="Slow and calm">🐢</button>
+  <button class="rChip on" data-t="mid" title="Just right">🐇</button>
+  <button class="rChip" data-t="quick" title="A little quicker">🐿️</button>
 </div>
-<div id="rCount">🎵 0</div>
+<div id="rWord"></div>
 
+<script src="lib/three.min.js"></script>
 <script src="../gamekit/kit.js"></script>
 <script>
 (function () {
@@ -106,115 +62,441 @@
   const K = window.ABEKit;
   const $ = (id) => document.getElementById(id);
 
-  /* ---------- gentle pentatonic synth (C-D-E-G on soft triangle + sine body) ---------- */
-  const NOTES = [523.25, 587.33, 659.25, 783.99]; // C5 D5 E5 G5 — any order sounds nice
+  /* ---------- gentle pentatonic band (C-D-E-G, ascending left to right) ---------- */
+  const NOTES = [523.25, 587.33, 659.25, 783.99]; // bear C5 · bunny D5 · frog E5 · bird G5
   let actx = null;
   const ac = () => {
     if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === 'suspended') actx.resume();
     return actx;
   };
-  function pluck(i, vol) {
+  let noiseBuf = null;
+  function noise(c) {
+    if (!noiseBuf) {
+      noiseBuf = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const s = c.createBufferSource(); s.buffer = noiseBuf; return s;
+  }
+  function env(c, t, peak, dur) {
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak * (K.calm() ? 0.55 : 1), t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(c.destination);
+    return g;
+  }
+  /* each animal has its own voice on top of its pentatonic note */
+  function play(i, vol) {
     try {
-      const c = ac(), t = c.currentTime;
-      const g = c.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime((vol || 0.22) * (K.calm() ? 0.55 : 1), t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
-      g.connect(c.destination);
+      const c = ac(), t = c.currentTime, v = vol || 0.2;
+      const g = env(c, t, v, 1.1);
       const o1 = c.createOscillator(); o1.type = 'triangle'; o1.frequency.value = NOTES[i];
       const o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = NOTES[i] / 2;
       const g2 = c.createGain(); g2.gain.value = 0.5;
       o1.connect(g); o2.connect(g2).connect(g);
       o1.start(t); o2.start(t); o1.stop(t + 1.2); o2.stop(t + 1.2);
+      if (i === 0) {              // bear: warm drum thump
+        const o = c.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.25);
+        o.connect(env(c, t, v * 0.9, 0.3)); o.start(t); o.stop(t + 0.35);
+      } else if (i === 1) {       // bunny: shaker tick
+        const n = noise(c), f = c.createBiquadFilter();
+        f.type = 'highpass'; f.frequency.value = 3000;
+        n.connect(f).connect(env(c, t, v * 0.5, 0.12)); n.start(t); n.stop(t + 0.15);
+      } else if (i === 2) {       // frog: woody blip
+        const o = c.createOscillator(); o.type = 'square'; o.frequency.value = NOTES[i] / 2;
+        o.connect(env(c, t, v * 0.28, 0.1)); o.start(t); o.stop(t + 0.12);
+      } else {                    // bird: shimmering chime
+        const o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = NOTES[i] * 2.01;
+        o.connect(env(c, t, v * 0.35, 1.6)); o.start(t); o.stop(t + 1.7);
+      }
     } catch (e) {}
   }
 
-  /* ---------- state ---------- */
-  const TEMPOS = { slow: 1900, mid: 1300, quick: 950 };   // breath ring period base
-  const G = {
-    tempo: 'mid',
-    songs: 0,                 // echoes completed (persisted)
-    echo: null,               // { seq: [i...], step, phase: 'listen'|'your-turn' }
-    breathT: 0, breathIn: true,
-  };
+  /* ---------- meadow scene ---------- */
+  let scene, camera, renderer, nilu, earL, earR, trunkG, pond, ripples = [], stars, dimmer;
+  let animals = [], flies = [], notes = [], flowers = [], camT = 0;
+  const FLOWER_COLORS = [0xffb35c, 0xffd6e0, 0x93d97e, 0x9fc8ff];
 
-  const WORDS = {
-    breatheIn: () => K.tr('breathe in…', 'inhala…'),
-    breatheOut: () => K.tr('breathe out…', 'exhala…'),
-    listen: () => K.tr('listen… 👂', 'escucha… 👂'),
-    yourTurn: () => K.tr('your turn! 🎶', '¡tu turno! 🎶'),
-    lovely: () => K.tr('lovely music! 🌟', '¡qué linda música! 🌟'),
-  };
+  function emojiSprite(emoji, scale) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.font = '102px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(emoji, 64, 70);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+    s.scale.set(scale, scale, 1); return s;
+  }
+  function glowSprite(inner, outer, scale) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+    gr.addColorStop(0, inner); gr.addColorStop(1, outer);
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    s.scale.set(scale, scale, 1); return s;
+  }
+  /* twilight scene: every Lambert needs an emissive lift (r128 gotcha) */
+  const lam = (color, emissive) => new THREE.MeshLambertMaterial({ color, emissive: emissive || 0x1a1a2a });
 
-  /* ---------- breathing ring (the calm half) ---------- */
-  function breathPeriod() { return TEMPOS[G.tempo] * (K.calm() ? 1.35 : 1); }
-  function breathTick(dt) {
-    G.breathT += dt * 1000;
-    const p = breathPeriod();
-    if (G.breathT >= p) {
-      G.breathT = 0;
-      G.breathIn = !G.breathIn;
-      $('rRing').style.transition = `transform ${p / 1000}s ease-in-out`;
-      $('rRing').style.transform = G.breathIn ? 'scale(1)' : 'scale(.62)';
-      if (!G.echo) $('rWord').textContent = G.breathIn ? WORDS.breatheIn() : WORDS.breatheOut();
+  function buildSky() {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 512;
+    const g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 512);
+    gr.addColorStop(0.00, '#2b2a6a'); gr.addColorStop(0.45, '#7a6ed6');
+    gr.addColorStop(0.75, '#e6a3c9'); gr.addColorStop(1.00, '#ffd9a8');
+    g.fillStyle = gr; g.fillRect(0, 0, 16, 512);
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(200, 24, 16),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), side: THREE.BackSide, fog: false })));
+    // stars, hidden until Breathe mode brings the night in
+    const n = 160, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, r = 60 + Math.random() * 110, y = 25 + Math.random() * 110;
+      pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = y; pos[i * 3 + 2] = Math.sin(a) * r;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xfff6d8, size: 0.9, transparent: true, opacity: 0, depthWrite: false }));
+    stars.material.fog = false;
+    scene.add(stars);
+    // night dimmer: a huge dark shell that fades in while breathing
+    dimmer = new THREE.Mesh(new THREE.SphereGeometry(190, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0x141233, side: THREE.BackSide, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+    scene.add(dimmer);
+    const moon = glowSprite('rgba(255,246,220,1)', 'rgba(255,236,180,0)', 26);
+    moon.material.fog = false; moon.position.set(-55, 62, -120); scene.add(moon);
+    // the setting sun, low and golden behind the band
+    const sunGlow = glowSprite('rgba(255,214,140,0.95)', 'rgba(255,170,90,0)', 70);
+    sunGlow.material.fog = false; sunGlow.position.set(40, 14, -150); scene.add(sunGlow);
+    // a few soft twilight clouds
+    const cloudM = new THREE.MeshLambertMaterial({ color: 0xf2d9ea, emissive: 0x6e5a72, transparent: true, opacity: 0.9 });
+    for (let i = 0; i < 6; i++) {
+      const cl = new THREE.Group();
+      for (let b = 0; b < 4; b++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(2.2 + Math.random() * 2, 10, 8), cloudM);
+        puff.scale.y = 0.55;
+        puff.position.set(b * 2.6 - 4, Math.random(), (Math.random() - 0.5) * 2);
+        cl.add(puff);
+      }
+      const a = (i / 6) * Math.PI * 2 + 0.5;
+      cl.position.set(Math.cos(a) * 70, 26 + (i % 3) * 8, Math.sin(a) * 70 - 40);
+      scene.add(cl);
     }
   }
 
-  /* ---------- pads ---------- */
-  function flash(i) {
-    const b = $('p' + i);
-    b.classList.add('lit');
-    setTimeout(() => b.classList.remove('lit'), 240);
+  function buildGround() {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#4e8f60'; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 500; i++) {
+      g.fillStyle = ['#5c9e6e', '#447f55', '#69ae7b'][i % 3];
+      g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(24, 24);
+    const gr = new THREE.Mesh(new THREE.CircleGeometry(120, 40),
+      new THREE.MeshLambertMaterial({ map: tex, emissive: 0x1c2c20 }));
+    gr.rotation.x = -Math.PI / 2; scene.add(gr);
+    // pond — the breathing centerpiece
+    pond = new THREE.Mesh(new THREE.CircleGeometry(3.4, 32),
+      new THREE.MeshLambertMaterial({ color: 0x7cc0ee, emissive: 0x27506e }));
+    pond.rotation.x = -Math.PI / 2; pond.position.set(0, 0.02, 3.2); scene.add(pond);
+    for (let i = 0; i < 3; i++) {
+      const r = new THREE.Mesh(new THREE.RingGeometry(0.96, 1, 40),
+        new THREE.MeshBasicMaterial({ color: 0xdff3ff, transparent: true, opacity: 0, depthWrite: false }));
+      r.rotation.x = -Math.PI / 2; r.position.set(0, 0.04, 3.2);
+      scene.add(r); ripples.push(r);
+    }
+    // ring of trees + grass tufts around the meadow
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + 0.2, r = 26 + (i % 3) * 6;
+      const tree = new THREE.Group();
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 3, 8), lam(0x7a5c40, 0x2a1f14));
+      stem.position.y = 1.5;
+      const c1 = new THREE.Mesh(new THREE.SphereGeometry(2.4 + (i % 3) * 0.5, 12, 10), lam(0x3f7d55, 0x14301e));
+      c1.position.y = 4.4; c1.scale.y = 1.15;
+      tree.add(stem, c1);
+      tree.position.set(Math.cos(a) * r, 0, Math.sin(a) * r - 6);
+      scene.add(tree);
+    }
+    for (let i = 0; i < 60; i++) {
+      const t = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5 + Math.random() * 0.4, 5), lam(0x6cae7c, 0x1d3a26));
+      const a = Math.random() * Math.PI * 2, r = 5 + Math.random() * 20;
+      t.position.set(Math.cos(a) * r, 0.25, Math.sin(a) * r - 4);
+      scene.add(t);
+    }
   }
-  function padTap(i) {
+
+  /* Nilu, sitting and conducting — same friendly face as her other games */
+  function buildNilu() {
+    const g = new THREE.Group();
+    const blue = lam(0x6db9f2, 0x2a4a66);
+    const blueLight = lam(0x8fcdf8, 0x33526e);
+    const pink = new THREE.MeshLambertMaterial({ color: 0xf7c8dc, emissive: 0x8a6274 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(1.05, 24, 18), blue);
+    body.scale.set(1, 1.05, 0.95); body.position.y = 1.0; g.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.78, 18, 14), blueLight);
+    belly.scale.set(0.9, 0.85, 0.8); belly.position.set(0, 0.85, 0.42); g.add(belly);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 24, 18), blue);
+    head.position.set(0, 2.15, 0.25); g.add(head);
+    const earGeo = new THREE.CircleGeometry(1.15, 28);
+    const earBlue = new THREE.MeshLambertMaterial({ color: 0x6db9f2, emissive: 0x2f5c86, side: THREE.DoubleSide });
+    earL = new THREE.Group(); earR = new THREE.Group();
+    const eL = new THREE.Mesh(earGeo, earBlue); eL.scale.set(0.8, 1.2, 1); eL.position.x = -1.05;
+    const eLi = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28), pink);
+    eLi.scale.set(0.75, 1.12, 1); eLi.position.set(-1.05, 0, 0.035);
+    earL.add(eL, eLi); earL.position.set(-0.45, 2.35, 0.15); earL.rotation.y = 0.35;
+    const eR = eL.clone(); eR.position.x = 1.05;
+    const eRi = eLi.clone(); eRi.position.x = 1.05;
+    earR.add(eR, eRi); earR.position.set(0.45, 2.35, 0.15); earR.rotation.y = -0.35;
+    g.add(earL, earR);
+    trunkG = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 1.15, 10), blue);
+    trunk.position.y = -0.55; trunkG.add(trunk);
+    trunkG.position.set(0, 2.1, 0.95); trunkG.rotation.x = 0.5; g.add(trunkG);
+    const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const dark = new THREE.MeshBasicMaterial({ color: 0x2a2a3a });
+    for (const s of [-1, 1]) {
+      const w = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), white);
+      w.position.set(0.3 * s, 2.35, 0.86); g.add(w);
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), dark);
+      p.position.set(0.3 * s, 2.36, 0.97); g.add(p);
+      const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), pink);
+      cheek.scale.set(1, 0.7, 0.5); cheek.position.set(0.5 * s, 2.1, 0.82); g.add(cheek);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.6, 10), blue);
+      leg.position.set(0.5 * s, 0.3, 0.55); leg.rotation.x = 0.5; g.add(leg);
+    }
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.36, 12), lam(0xe05a5a, 0x5a1f1f));
+    cap.position.set(0, 2.95, 0.25); g.add(cap);
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), lam(0xffd43b, 0x6e5a12));
+    pom.position.set(0, 3.15, 0.25); g.add(pom);
+    return g;
+  }
+
+  /* the four animal musicians (ascending pitch, left → right) */
+  function buildBear() {
+    const g = new THREE.Group();
+    const brown = lam(0xb08968, 0x4a3524), cream = lam(0xf2dfc9, 0x5e523f);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.72, 18, 14), brown);
+    body.position.y = 0.72; body.scale.y = 1.05; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 18, 14), brown);
+    head.position.y = 1.6; g.add(head);
+    const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), cream);
+    muzzle.scale.set(1, 0.75, 0.8); muzzle.position.set(0, 1.5, 0.42); g.add(muzzle);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), brown);
+      ear.position.set(0.34 * s, 2.0, 0); g.add(ear);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a2a3a }));
+      eye.position.set(0.18 * s, 1.68, 0.44); g.add(eye);
+    }
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.5, 16), lam(0xe05a5a, 0x5a1f1f));
+    drum.position.set(0, 0.5, 0.85); g.add(drum);
+    const skin = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.06, 16), cream);
+    skin.position.set(0, 0.78, 0.85); g.add(skin);
+    g.userData.instrument = drum;
+    return g;
+  }
+  function buildBunny() {
+    const g = new THREE.Group();
+    const white = lam(0xf7f4ef, 0x6e6a62), pinky = lam(0xf7c8dc, 0x6e5866);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 18, 14), white);
+    body.position.y = 0.55; body.scale.y = 1.1; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 14), white);
+    head.position.y = 1.3; g.add(head);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), white);
+      ear.scale.set(0.6, 2.6, 0.6); ear.position.set(0.18 * s, 1.95, -0.05);
+      const inner = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), pinky);
+      inner.scale.set(0.5, 2.2, 0.5); inner.position.set(0.18 * s, 1.95, 0.03);
+      g.add(ear, inner);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a2a3a }));
+      eye.position.set(0.15 * s, 1.36, 0.36); g.add(eye);
+    }
+    const shak = new THREE.Group();
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.4, 8), lam(0x7a5c40, 0x2a1f14));
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), lam(0xffd166, 0x6e5a12));
+    ball.position.y = 0.3;
+    shak.add(handle, ball); shak.position.set(0.55, 0.9, 0.35); shak.rotation.z = -0.5;
+    g.add(shak);
+    g.userData.instrument = shak;
+    return g;
+  }
+  function buildFrog() {
+    const g = new THREE.Group();
+    const green = lam(0x79c06e, 0x2c4d26), light = lam(0xb9e4a8, 0x47593d);
+    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.6, 12), lam(0x8a6a4a, 0x33271b));
+    log.rotation.z = Math.PI / 2; log.position.y = 0.4; g.add(log);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), green);
+    body.position.y = 1.1; body.scale.set(1.1, 0.9, 1); g.add(body);
+    const throat = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), light);
+    throat.position.set(0, 0.95, 0.35); g.add(throat);
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), light);
+      eye.position.set(0.28 * s, 1.5, 0.15); g.add(eye);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a2a3a }));
+      pupil.position.set(0.28 * s, 1.52, 0.28); g.add(pupil);
+    }
+    g.userData.instrument = throat;
+    return g;
+  }
+  function buildBird() {
+    const g = new THREE.Group();
+    const blue = lam(0x8fbdf5, 0x3a5372), yellow = lam(0xffd166, 0x6e5a12);
+    // chime frame with three silver bars
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.08, 0.08), lam(0x7a5c40, 0x2a1f14));
+    frame.position.y = 1.9; g.add(frame);
+    for (const s of [-1, 1]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 8), lam(0x7a5c40, 0x2a1f14));
+      post.position.set(0.62 * s, 0.95, 0); g.add(post);
+    }
+    for (const s of [-1, 0, 1]) {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.7 - Math.abs(s) * 0.15, 0.09),
+        new THREE.MeshLambertMaterial({ color: 0xdde5f2, emissive: 0x5a6274 }));
+      bar.position.set(0.3 * s, 1.45, 0); g.add(bar);
+      if (s === 0) g.userData.instrument = bar;
+    }
+    const bird = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 12), blue);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), blue);
+    head.position.set(0, 0.28, 0.1);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 8), yellow);
+    beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.28, 0.32);
+    const wing = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), lam(0x6da3e8, 0x2c4666));
+    wing.scale.set(0.6, 0.35, 1.1); wing.position.set(0.26, 0.05, 0);
+    bird.add(body, head, beak, wing);
+    bird.position.set(-0.45, 2.15, 0);
+    g.add(bird);
+    g.userData.bird = bird;
+    return g;
+  }
+
+  function buildAnimals() {
+    const defs = [
+      { key: 'bear', build: buildBear, x: -5.2, name: ['Bo the bear', 'Bo el oso'] },
+      { key: 'bunny', build: buildBunny, x: -1.9, name: ['Pip the bunny', 'Pip el conejito'] },
+      { key: 'frog', build: buildFrog, x: 1.9, name: ['Momo the frog', 'Momo la rana'] },
+      { key: 'bird', build: buildBird, x: 5.2, name: ['Twee the bird', 'Twee el pajarito'] },
+    ];
+    defs.forEach((d, i) => {
+      const g = d.build();
+      g.position.set(d.x, 0, -0.5 - Math.abs(d.x) * 0.22);
+      g.lookAt(0, 0, 14);
+      // colored stage pad under each musician (readable echo mapping)
+      const padM = new THREE.MeshLambertMaterial({ color: FLOWER_COLORS[i], emissive: 0x2a2a3a });
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 0.18, 24), padM);
+      pad.position.set(g.position.x, 0.09, g.position.z);
+      const glow = glowSprite('rgba(255,255,255,0.9)', 'rgba(255,255,255,0)', 3.4);
+      glow.position.set(g.position.x, 1.4, g.position.z);
+      glow.material.opacity = 0;
+      // big invisible tap target — little fingers welcome
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(1.7, 8, 6),
+        new THREE.MeshBasicMaterial({ visible: false }));
+      hit.position.set(g.position.x, 1.2, g.position.z);
+      hit.userData.animal = i;
+      scene.add(g, pad, glow, hit);
+      animals.push({ ...d, g, pad, padM, glow, hit, anim: 0 });
+    });
+  }
+
+  /* ---------- the music garden: every note plants a flower ---------- */
+  function plantFlower(i, instant) {
+    if (flowers.length >= 140) return;
+    const a = Math.random() * Math.PI * 2, r = 7 + Math.random() * 16;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r - 3;
+    if (Math.hypot(x, z - 3.2) < 4.5) return;   // not in the pond
+    const f = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.7, 6), lam(0x4d8f5e, 0x1d3a26));
+    stem.position.y = 0.35;
+    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), lam(FLOWER_COLORS[i % 4], 0x33313f));
+    bloom.scale.set(1, 0.7, 1); bloom.position.y = 0.75;
+    const heart = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), lam(0xfff2c9, 0x6e6552));
+    heart.position.y = 0.84;
+    f.add(stem, bloom, heart);
+    f.position.set(x, 0, z);
+    if (!instant) { f.scale.setScalar(0.01); f.userData.grow = 0; }
+    scene.add(f); flowers.push(f);
+  }
+  function noteFly(i) {
+    const an = animals[i];
+    const n = emojiSprite(['🎵', '🎶'][Math.floor(Math.random() * 2)], 1.1);
+    n.position.set(an.g.position.x, 1.8, an.g.position.z);
+    n.userData = { t: 0, vx: (Math.random() - 0.5) * 2.4, vy: 2.6 + Math.random() };
+    scene.add(n); notes.push(n);
+  }
+
+  /* ---------- state ---------- */
+  const TEMPOS = { slow: 1900, mid: 1300, quick: 950 };
+  const G = {
+    tempo: 'mid', songs: 0, garden: 0,
+    echo: null, point: null, breathing: false, breathT: 0, breathIn: true, breathCycles: 0, night: 0,
+  };
+  const chip = () => { $('rCount').textContent = '🎵 ' + G.songs + ' · 🌸 ' + G.garden; };
+  const word = (s) => { $('rWord').textContent = s; };
+
+  /* ---------- taps ---------- */
+  function animalTap(i, silent) {
     if (K.paused) return;
-    pluck(i);
-    flash(i);
-    $('rNilu').classList.add('beat');
-    setTimeout(() => $('rNilu').classList.remove('beat'), 220);
-    if (G.echo && G.echo.phase === 'your-turn') {
+    play(i);
+    const an = animals[i];
+    an.anim = 1;
+    an.glow.material.opacity = 0.85;
+    noteFly(i);
+    if (!silent) {
+      G.garden++; K.save('garden', G.garden); chip();
+      plantFlower(i);
+      if (G.garden === 25 || G.garden === 50 || G.garden === 100) {
+        K.sfx.star();
+        K.toast(K.tr(`🌸 ${G.garden} flowers! Your music is growing a meadow!`,
+                     `🌸 ¡${G.garden} flores! ¡Tu música está creando un prado!`), 3600);
+      }
+      K.recordEvent('tap', i);
+    }
+    if (G.echo && G.echo.phase === 'your-turn' && !silent) {
       if (i === G.echo.seq[G.echo.step]) {
         G.echo.step++;
         if (G.echo.step >= G.echo.seq.length) echoDone();
       }
-      // a different pad is never wrong — it's just music; the song stays open
+      // a different animal is never wrong — it's just music; the song stays open
     }
   }
 
-  /* ---------- echo game (the rhythm half — no fail, ever) ---------- */
+  /* ---------- echo game: Nilu conducts with her trunk ---------- */
   function startEcho() {
-    if (G.echo) return;
-    const len = Math.min(2 + Math.floor(G.songs / 3), 5);   // grows gently: 2 → 5
+    if (G.echo || K.replaying) return;
+    if (G.breathing) stopBreathing();
+    const len = Math.min(2 + Math.floor(G.songs / 3), 5);
     const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 4));
     G.echo = { seq, step: 0, phase: 'listen' };
-    $('rWord').textContent = WORDS.listen();
-    $('rEcho').style.opacity = .4;
+    word(K.tr('listen… 👂', 'escucha… 👂'));
     K.say(K.tr('Listen to my little song!', '¡Escucha mi cancioncita!'));
     const gap = TEMPOS[G.tempo] * 0.42;
     seq.forEach((n, idx) => {
       setTimeout(() => {
-        pluck(n, 0.18); flash(n);
-        $('p' + n).classList.add('glow');
-        setTimeout(() => $('p' + n).classList.remove('glow'), gap * 0.7);
+        if (!G.echo) return;
+        G.point = { at: n, t: 0.6 };            // trunk points at the animal
+        animalTap(n, true);
         if (idx === seq.length - 1) setTimeout(yourTurn, gap);
-      }, 600 + idx * gap);
+      }, 700 + idx * gap);
     });
   }
   function yourTurn() {
     if (!G.echo) return;
     G.echo.phase = 'your-turn';
-    $('rWord').textContent = WORDS.yourTurn();
+    word(K.tr('your turn! 🎶', '¡tu turno! 🎶'));
     K.say(K.tr('Your turn!', '¡Tu turno!'));
   }
   function echoDone() {
     G.echo = null;
     G.songs++; K.save('songs', G.songs);
-    $('rCount').textContent = '🎵 ' + G.songs;
-    $('rWord').textContent = WORDS.lovely();
-    $('rEcho').style.opacity = 1;
+    word(K.tr('lovely music! 🌟', '¡qué linda música! 🌟'));
     K.sfx.star();
     K.recordEvent('song', G.songs);
+    for (let i = 0; i < 5; i++) plantFlower(Math.floor(Math.random() * 4));   // bonus blooms
+    G.garden += 5; K.save('garden', G.garden); chip();
+    for (const f of flies) f.userData.joy = 2;                                 // firefly swirl
     K.say(K.tr('You copied my song! Beautiful!', '¡Copiaste mi canción! ¡Qué bonito!'));
     if (G.songs % 5 === 0) {
       K.streakBump();
@@ -222,50 +504,221 @@
     }
   }
 
+  /* ---------- breathe mode: the pond breathes with you, the stars come out ---------- */
+  function breathPeriod() { return TEMPOS[G.tempo] * (K.calm() ? 1.35 : 1); }
+  function startBreathing() {
+    if (G.breathing) return;
+    G.breathing = true; G.breathT = 0; G.breathIn = true; G.breathCycles = 0;
+    $('rTempo').classList.add('show');
+    word(K.tr('breathe in…', 'inhala…'));
+    K.say(K.tr('Breathe with the pond. In as the ripple grows…', 'Respira con el estanque. Inhala cuando el círculo crece…'));
+    K.recordEvent('breathe', 1);
+  }
+  function stopBreathing() {
+    if (!G.breathing) return;
+    G.breathing = false;
+    $('rTempo').classList.remove('show');
+    word(K.tr('tap the animals to make music! 🎶', '¡toca los animales para hacer música! 🎶'));
+  }
+  function toggleBreathing() { G.breathing ? stopBreathing() : startBreathing(); }
+  function breathTick(dt) {
+    if (!G.breathing) {
+      for (const r of ripples) r.material.opacity = Math.max(0, r.material.opacity - dt);
+      return;
+    }
+    G.breathT += dt * 1000;
+    const p = breathPeriod();
+    const ph = Math.min(1, G.breathT / p);
+    const s = G.breathIn ? 0.3 + ph * 3.4 : 3.7 - ph * 3.4;       // ripple radius
+    ripples.forEach((r, i) => {
+      r.scale.setScalar(Math.max(0.05, s - i * 0.8));
+      r.material.opacity = Math.max(0, 0.55 - i * 0.15);
+    });
+    if (G.breathT >= p) {
+      G.breathT = 0; G.breathIn = !G.breathIn;
+      if (G.breathIn) G.breathCycles++;
+      word(G.breathIn ? K.tr('breathe in…', 'inhala…') : K.tr('breathe out…', 'exhala…'));
+      if (G.breathCycles === 3) K.say(K.tr('Lovely, slow breathing…', 'Qué respiración tan tranquila…'));
+      if (G.breathCycles === 6) { K.recordEvent('calm', 6); K.streakBump(); K.toast('🌙💤', 2600); }
+    }
+  }
+
+  /* ---------- per-frame ---------- */
+  let t = 0;
+  function frame(dt) {
+    dt = dt || 0; t += dt; camT += dt;
+    // night comes while breathing, morning returns after
+    G.night += ((G.breathing ? 1 : 0) - G.night) * Math.min(1, dt * 0.25);
+    stars.material.opacity = G.night * 0.95;
+    dimmer.material.opacity = G.night * 0.5;
+    hemi.intensity = 0.85 - G.night * 0.5;            // the meadow itself dims…
+    sun.intensity = 0.95 - G.night * 0.65;            // …so the night is FELT
+    // gentle camera: settles low over the pond, keeping Nilu + sky in frame
+    const cN = G.night;
+    camera.position.set(
+      Math.sin(camT * 0.12) * 0.8 * (1 - cN),
+      6.1 * (1 - cN) + 3.6 * cN,
+      12.5 * (1 - cN) + 11 * cN);
+    camera.lookAt(0, 1.6 + cN * 0.8, -1 * (1 - cN) + 0.5 * cN);
+
+    // Nilu: sways with the music, ears breathe in breathe mode, trunk conducts
+    const breathe = G.breathing ? Math.sin((G.breathT / breathPeriod()) * Math.PI) * (G.breathIn ? 1 : -1) : 0;
+    nilu.rotation.z = Math.sin(t * 1.4) * 0.04;
+    earL.rotation.z = 0.22 + Math.sin(t * 1.6) * 0.08 + breathe * 0.22;
+    earR.rotation.z = -0.22 - Math.sin(t * 1.6) * 0.08 - breathe * 0.22;
+    if (G.point) {
+      G.point.t -= dt;
+      const target = animals[G.point.at].g.position;
+      const want = Math.atan2(target.x - nilu.position.x, target.z - nilu.position.z);
+      nilu.rotation.y += (want - nilu.rotation.y) * Math.min(1, dt * 8);
+      trunkG.rotation.x += (-0.5 - trunkG.rotation.x) * Math.min(1, dt * 8);
+      if (G.point.t <= 0) G.point = null;
+    } else {
+      nilu.rotation.y *= 1 - Math.min(1, dt * 3);
+      trunkG.rotation.x += (0.5 + Math.sin(t * 2) * 0.06 - trunkG.rotation.x) * Math.min(1, dt * 4);
+    }
+
+    // animals: idle bob + play animation
+    animals.forEach((an, i) => {
+      an.anim = Math.max(0, an.anim - dt * 2.2);
+      const k = an.anim;
+      an.g.position.y = Math.sin(t * 2 + i * 1.7) * 0.05 + k * 0.35;
+      an.glow.material.opacity = Math.max(0, an.glow.material.opacity - dt * 1.4);
+      an.padM.emissive.setHex(k > 0.4 ? 0x555555 : 0x2a2a3a);
+      if (an.key === 'bunny') an.g.userData.instrument.rotation.z = -0.5 + Math.sin(t * 14) * k * 0.5;
+      if (an.key === 'frog') an.g.userData.instrument.scale.setScalar(1 + k * 0.7);
+      if (an.key === 'bird') an.g.userData.bird.position.y = 2.15 + k * 0.3;
+      if (an.key === 'bear') an.g.userData.instrument.scale.y = 1 - k * 0.18;
+    });
+
+    // floating notes drift and fade; new flowers ease up out of the grass
+    for (let i = notes.length - 1; i >= 0; i--) {
+      const n = notes[i];
+      n.userData.t += dt;
+      n.position.x += n.userData.vx * dt;
+      n.position.y += (n.userData.vy - n.userData.t * 3.2) * dt;
+      n.material.opacity = Math.max(0, 1 - n.userData.t * 0.7);
+      n.material.rotation = Math.sin(n.userData.t * 4) * 0.4;
+      if (n.userData.t > 1.5) { scene.remove(n); notes.splice(i, 1); }
+    }
+    for (const f of flowers) {
+      if (f.userData.grow !== undefined && f.userData.grow < 1) {
+        f.userData.grow = Math.min(1, f.userData.grow + dt * 1.8);
+        const e = 1 - Math.pow(1 - f.userData.grow, 3);
+        f.scale.setScalar(Math.max(0.01, e));
+        if (f.userData.grow >= 1) delete f.userData.grow;
+      }
+    }
+    // fireflies wander; they swirl up when a song is copied
+    for (const fl of flies) {
+      const u = fl.userData;
+      u.a += dt * u.sp;
+      fl.position.x = u.cx + Math.cos(u.a) * u.r;
+      fl.position.z = u.cz + Math.sin(u.a * 1.3) * u.r;
+      fl.position.y = u.cy + Math.sin(u.a * 2.1) * 0.7 + (u.joy > 0 ? (2 - u.joy) * 2 : 0);
+      if (u.joy > 0) u.joy -= dt;
+      fl.material.opacity = 0.5 + Math.sin(t * 3 + u.a) * 0.3 + G.night * 0.2;
+    }
+    if (!K.replaying) breathTick(dt);
+    renderer.render(scene, camera);
+  }
+
+  /* ---------- boot ---------- */
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x9c8fe0, 55, 170);
+  camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 400);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  $('kStage').appendChild(renderer.domElement);
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+  const hemi = new THREE.HemisphereLight(0xd8c8ff, 0x3a5a40, 0.85);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffc98a, 0.95);
+  sun.position.set(-30, 40, 20); scene.add(sun);
+  buildSky(); buildGround(); buildAnimals();
+  nilu = buildNilu(); nilu.position.set(0, 0, -4.2); scene.add(nilu);
+  for (let i = 0; i < 12; i++) {
+    const fl = glowSprite('rgba(255,238,170,1)', 'rgba(255,200,80,0)', 0.45);
+    fl.userData = { cx: (Math.random() - 0.5) * 26, cy: 1.5 + Math.random() * 3, cz: -6 + Math.random() * 14,
+                    a: Math.random() * 9, r: 1.5 + Math.random() * 2.5, sp: 0.3 + Math.random() * 0.5, joy: 0 };
+    scene.add(fl); flies.push(fl);
+  }
+
+  // tap the animals (big invisible targets), or keys 1-4
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    ptr.x = (e.clientX / innerWidth) * 2 - 1;
+    ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+    ray.setFromCamera(ptr, camera);
+    const hits = ray.intersectObjects(animals.map((a) => a.hit));
+    if (hits.length) animalTap(hits[0].object.userData.animal);
+  });
+  addEventListener('keydown', (e) => {
+    const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
+    if (i >= 0) animalTap(i);
+  });
+
+  window.RM = { G, animalTap, startEcho, toggleBreathing, animals: () => animals, flowers: () => flowers };  // debug/test
+  frame(0);
+
   K.init({
     slug: 'rhythm',
     name: "Aaria's Rhythm & Calm",
     emoji: '🎵',
     accent: '#8b5cf6',
-    tagline: 'tap animal sounds, copy little songs, and breathe with the ring!',
-    taglineEs: 'toca sonidos de animales, copia cancioncitas ¡y respira con el anillo!',
-    emojis: ['🎵', '🐦', '🐸', '🐋', '🦁'],
+    tagline: "make music with Nilu's meadow band — every note grows a flower!",
+    taglineEs: 'haz música con la banda del prado de Nilu — ¡cada nota hace crecer una flor!',
+    emojis: ['🎵', '🐻', '🐰', '🐸', '🐦'],
     howTo: [
-      ['👆', 'Tap the animal pads — every tap sounds good!'],
-      ['🎶', 'Copy my song: Nilu taps, then you tap it back'],
+      ['👆', 'Tap the animal musicians — every tap sounds good!'],
+      ['🌸', 'Every note plants a flower — watch your meadow bloom'],
+      ['🎶', 'Echo: Nilu points her trunk at a little song — tap it back'],
       ['💛', 'Tapping something else is music too — never wrong'],
-      ['🐢🐇🐿️', 'Pick your speed — slow is lovely'],
-      ['🫧', 'Breathe with the ring: in as it grows, out as it shrinks'],
+      ['🫧', 'Breathe: the pond ripples with you and the stars come out'],
     ],
     howToEs: [
-      ['👆', 'Toca los animales — ¡todo suena bonito!'],
-      ['🎶', 'Copia mi canción: Nilu toca y tú la repites'],
+      ['👆', 'Toca los animales músicos — ¡todo suena bonito!'],
+      ['🌸', 'Cada nota planta una flor — mira florecer tu prado'],
+      ['🎶', 'Eco: Nilu señala una cancioncita con su trompa — repítela'],
       ['💛', 'Tocar otra cosa también es música — nunca está mal'],
-      ['🐢🐇🐿️', 'Elige tu velocidad — despacito es hermoso'],
-      ['🫧', 'Respira con el anillo: inhala cuando crece, exhala cuando se encoge'],
+      ['🫧', 'Respira: el estanque ondula contigo y salen las estrellas'],
     ],
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
-    actions: [],
+    actions: [
+      { emoji: '🎶', label: 'Echo', labelEs: 'Eco', title: 'Nilu taps a little song — tap it back!', titleEs: 'Nilu toca una cancioncita — ¡repítela!', onTap: startEcho },
+      { emoji: '🫧', label: 'Breathe', labelEs: 'Respira', title: 'Breathe with the pond', titleEs: 'Respira con el estanque', onTap: toggleBreathing },
+    ],
+    playerPos: () => ({ x: 0, z: 0, ry: 0 }),
+    replayableState: {
+      get: () => ({ songs: G.songs, garden: G.garden, breathing: G.breathing }),
+      set: (s) => { G.songs = s.songs; G.garden = s.garden; G.breathing = s.breathing; chip(); },
+    },
     onStart() {
       G.songs = K.load('songs', 0);
-      $('rCount').textContent = '🎵 ' + G.songs;
-      $('rEchoLbl').textContent = K.tr('Copy my song!', '¡Copia mi canción!');
-      document.querySelectorAll('.rPad').forEach((b) =>
-        b.addEventListener('pointerdown', (e) => { e.preventDefault(); padTap(+b.dataset.i); }));
+      G.garden = K.load('garden', 0);
+      chip();
+      for (let i = 0; i < Math.min(G.garden, 120); i++) plantFlower(i % 4, true);   // the meadow remembers
       document.querySelectorAll('.rChip').forEach((b) =>
         b.addEventListener('pointerdown', () => {
           G.tempo = b.dataset.t;
           document.querySelectorAll('.rChip').forEach((x) => x.classList.toggle('on', x === b));
           K.sfx.tap();
         }));
-      $('rEcho').addEventListener('pointerdown', startEcho);
-      $('rWord').textContent = WORDS.breatheIn();
-      K.say(K.tr('Welcome! Tap the animals to make music.', '¡Bienvenido! Toca los animales para hacer música.'));
+      word(K.tr('tap the animals to make music! 🎶', '¡toca los animales para hacer música! 🎶'));
+      K.say(K.tr('Welcome to the music meadow! Tap my friends to play — every note grows a flower!',
+                 '¡Bienvenido al prado musical! Toca a mis amigos — ¡cada nota hace crecer una flor!'));
     },
     onPause() {},
-    onFrame(dt) { if (!K.replaying) breathTick(dt); },
+    onFrame: frame,
     onReplayEvent(ev) {
-      if (ev.kind === 'song') { K.toast(K.tr('🎶 A little song!', '🎶 ¡Una cancioncita!')); K.sfx.star(); }
+      if (ev.kind === 'tap') animalTap(ev.extra, true);
+      else if (ev.kind === 'song') { K.toast(K.tr('🎶 A little song!', '🎶 ¡Una cancioncita!')); K.sfx.star(); }
+      else if (ev.kind === 'breathe') K.toast('🫧');
+      else if (ev.kind === 'calm') K.toast('🌙💤');
     },
   });
 })();
