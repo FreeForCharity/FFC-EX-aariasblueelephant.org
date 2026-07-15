@@ -708,6 +708,7 @@ ABC.ui = (function () {
           closeDialog();
           setHand({ kind: 'track', ico: '🛤️' }, ABC.tpl('🛤️ Tap the ground to lay train tracks! Lay a line and your train will come!'));
         } },
+      { ico: '🪞', label: 'Mirror',     go: () => { closeDialog(); ABC.startMirror && ABC.startMirror(); } },
       { ico: '🐱', label: 'Copy Cat',   go: press('copycatBtn') },
       { ico: '🏅', label: 'Stickers',   go: press('stickersBtn') },
       { ico: '📖', label: 'Friends',    go: press('friendsBtn') },

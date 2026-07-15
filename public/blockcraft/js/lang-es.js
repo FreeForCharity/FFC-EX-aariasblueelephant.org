@@ -23,6 +23,12 @@
     '🚂 All aboard! Off we go — toot toot!': '🚂 ¡Todos a bordo! Allá vamos — ¡tut tut!',
     '🚂 End of the line! Turning around…': '🚂 ¡Fin de la línea! Dando la vuelta…',
     'What a wonderful train ride! 🚂💙': '¡Qué paseo en tren tan maravilloso! 🚂💙',
+    /* ---------------- 🪞 mirror magic ---------------- */
+    'Mirror': 'Espejo',
+    'Mirror Magician': 'Mago del Espejo',
+    'Build with the magic mirror!': '¡Construye con el espejo mágico!',
+    '🪞 Mirror Magic ON! Build on one side — the mirror builds the other!': '🪞 ¡Espejo Mágico ACTIVADO! Construye de un lado — ¡el espejo construye el otro!',
+    '🪞 Mirror Magic off. Your buildings stay!': '🪞 Espejo Mágico apagado. ¡Tus construcciones se quedan!',
     /* ---------------- title screen ---------------- */
     'Who is playing?': '¿Quién está jugando?',
     '▶ Play!': '▶ ¡Jugar!',
