@@ -704,11 +704,8 @@ ABC.ui = (function () {
       { ico: '🌈', label: 'Slime',      go: press('slimeBtn') },
       { ico: '🍪', label: 'Oreo',       go: press('oreoBtn') },
       { ico: '💌', label: 'Kind Words', go: press('kindBtn') },
-      { ico: '🚂', label: 'Train',      go: () => {
-          closeDialog();
-          setHand({ kind: 'track', ico: '🛤️' }, ABC.tpl('🛤️ Tap the ground to lay train tracks! Lay a line and your train will come!'));
-        } },
-      { ico: '🪞', label: 'Mirror',     go: () => { closeDialog(); ABC.startMirror && ABC.startMirror(); } },
+      { ico: '🚂', label: 'Train',      go: press('trainBtn') },
+      { ico: '🪞', label: 'Mirror',     go: press('mirrorBtn') },
       { ico: '🐱', label: 'Copy Cat',   go: press('copycatBtn') },
       { ico: '🏅', label: 'Stickers',   go: press('stickersBtn') },
       { ico: '📖', label: 'Friends',    go: press('friendsBtn') },
