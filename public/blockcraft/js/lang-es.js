@@ -4,6 +4,25 @@
 (function () {
   if (!window.ABELang) return;
   ABELang.register({
+    /* ---------------- 🚂 the meadow railway ---------------- */
+    'Train': 'Tren',
+    'Train Rider': 'Maquinista',
+    'Lay tracks and ride your very own train!': '¡Pon vías y viaja en tu propio tren!',
+    '🛤️ Tap the ground to lay train tracks! Lay a line and your train will come!': '🛤️ ¡Toca el suelo para poner vías! ¡Haz una línea y tu tren vendrá!',
+    '🛤️ First track! Keep going — your train needs a line to run on!': '🛤️ ¡Primera vía! Sigue — ¡tu tren necesita una línea para correr!',
+    '🚂 Your train has arrived! Walk up and tap it to climb aboard!': '🚂 ¡Tu tren llegó! ¡Acércate y tócalo para subir!',
+    '🚂 The train went home — lay more track to call it back!': '🚂 El tren se fue a casa — ¡pon más vías para llamarlo!',
+    '🚂 Walk closer to climb aboard!': '🚂 ¡Acércate más para subir!',
+    '🛤️ Tap the ground NEXT to a track to keep the line going!': '🛤️ ¡Toca el suelo JUNTO a una vía para seguir la línea!',
+    '🛤️ Lay a few more tracks first — then your train can run!': '🛤️ Pon unas vías más primero — ¡y tu tren podrá correr!',
+    'All aboard!': '¡Todos a bordo!',
+    'Whistle': 'Silbato',
+    'Toot the whistle!': '¡Toca el silbato!',
+    'Hop off': 'Bajar',
+    'Hop off the train': 'Bajar del tren',
+    '🚂 All aboard! Off we go — toot toot!': '🚂 ¡Todos a bordo! Allá vamos — ¡tut tut!',
+    '🚂 End of the line! Turning around…': '🚂 ¡Fin de la línea! Dando la vuelta…',
+    'What a wonderful train ride! 🚂💙': '¡Qué paseo en tren tan maravilloso! 🚂💙',
     /* ---------------- title screen ---------------- */
     'Who is playing?': '¿Quién está jugando?',
     '▶ Play!': '▶ ¡Jugar!',

@@ -86,6 +86,9 @@ ABC.audio = (function () {
     ding()     { const v = S.calm ? .5 : 1; tone(880, .3, 'sine', .14*v); tone(1320, .4, 'sine', .08*v, .05); },
     star()     { const v = S.calm ? .5 : 1; [880,1108,1318,1760].forEach((f,i)=>tone(f,.25,'sine',.1*v,i*.09)); },
     fanfare()  { const v = S.calm ? .45 : 1; [523,659,784,1046,1318].forEach((f,i)=>tone(f,.35,'triangle',.12*v,i*.13)); },
+    /* 🚂 the meadow railway */
+    whistle()  { const v = S.calm ? .5 : 1; tone(660, .45, 'triangle', .12*v, 0, 880); tone(880, .55, 'sine', .09*v, .18); tone(1108, .4, 'sine', .05*v, .22); },
+    chuff()    { const v = S.calm ? .5 : 1; wet(0.14, 320, 90, 0.09*v); },
     squish()   { wet(0.22, 480, 110, 0.22); },                                  // press into dough
     squishBig(){ wet(0.4, 380, 70, 0.3); wet(0.18, 700, 200, 0.12); },          // deep two-stage splat
     stretchy() { wet(0.35, 140, 520, 0.16); },                                  // pulling taffy upward
