@@ -113,6 +113,7 @@
   ABC.world.generate();
   ABC.animals.spawnAll(scene);
   ABC.squishy.init(scene);
+  ABC.train.init(scene);
   ABC.portal.init(scene);
   ABC.music.init(scene);
   ABC.weather.init(scene);
@@ -223,7 +224,7 @@
   }
 
   document.addEventListener('keydown', (e) => {
-    if (ABC.ui.isOpen() || replaying) return;
+    if (ABC.ui.isOpen() || replaying || riding) return;
     if (e.code === 'Space' && !e.repeat) tapSpace();
     if ((e.code === 'KeyW' || e.code === 'ArrowUp') && !e.repeat) fwdTap();
     if (e.code === 'KeyV' && !e.repeat) toggleView();
@@ -277,7 +278,7 @@
     scene.traverse(o => { if (o.userData && o.userData.ghost) ghosts.push(o); });
     const hits = raycaster.intersectObjects(
       [...ghosts, ...ABC.animals.meshTargets(), ...ABC.squishy.meshTargets(),
-       ...ABC.music.meshTargets(),
+       ...ABC.music.meshTargets(), ...ABC.train.meshTargets(),
        ...ABC.portal.meshTargets()], false);
     return hits.length ? hits[0] : null;
   }
@@ -301,6 +302,7 @@
       if (o.userData.squishyRef) return { kind: 'squishy', squishy: o.userData.squishyRef, point: ent.point };
       if (o.userData.portalRef)  return { kind: 'portal', portal: o.userData.portalRef, point: ent.point };
       if (o.userData.noteRef)    return { kind: 'note', mesh: o, point: ent.point };
+      if (o.userData.trainRef)   return { kind: o.userData.trainRef.type, cell: o.userData.trainRef.cell, point: ent.point };
       if (o.userData.ghost)      return { kind: 'ghost', mesh: o, point: ent.point };
     }
     if (vox) return { kind: 'block', cell: vox.cell, place: vox.prev };
@@ -534,6 +536,21 @@
       return;
     }
     if (info.kind === 'ghost')   { ABC.activities.tryFillGhost(info.mesh); return; }
+    if (info.kind === 'train') {                       // 🚂 walk up and climb aboard!
+      if (riding) return;
+      const tp = ABC.train.trainPos();
+      if (tp && Math.hypot(tp.x - feet.x, tp.z - feet.z) < 3.4) startRide();
+      else ABC.ui.toast(ABC.tpl('🚂 Walk closer to climb aboard!'), 2600, true);
+      return;
+    }
+    if (info.kind === 'track') {                       // dig mode picks tracks back up
+      if (m === 'dig' || hand.kind === 'tool') { ABC.train.removeAt(info.cell); return; }
+      if (hand.kind === 'track') {                     // extend the line right on top
+        ABC.ui.toast(ABC.tpl('🛤️ Tap the ground NEXT to a track to keep the line going!'), 2600, true);
+        return;
+      }
+      return;
+    }
     if (info.kind === 'block') {
       // doors open and close with a click (any mode)
       if (ABC.world.get(info.cell.x, info.cell.y, info.cell.z) === 'door') { toggleDoor(info.cell); return; }
@@ -556,6 +573,13 @@
         return;
       }
       const p = info.place;
+      if (hand.kind === 'track') {                      // 🛤️ lay a rail on the grid
+        const rot = ((Math.round(yaw / (Math.PI / 2)) % 4) + 4) % 4;
+        if (ABC.train.place(p.x, p.y, p.z, rot % 2 ? 1 : 0)) {
+          ABC.replayEvent && ABC.replayEvent('place');
+        }
+        return;
+      }
       if (hand.kind === 'sapling') { growTree(p.x, p.y, p.z); return; }
       if (hand.kind === 'animal')  { placeAnimal(hand.type, p.x + 0.5, p.z + 0.5); return; }
       if (hand.kind === 'cutter')  { ABC.ui.toast(hand.ico + '🍪 Tap your squishy slime with the cutter!', 2600); return; }
@@ -612,7 +636,7 @@
   }
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (!started || ABC.ui.isOpen() || replaying) return;
+    if (!started || ABC.ui.isOpen() || replaying || riding) return;
     canvas.setPointerCapture(e.pointerId);
     pDown = true; pMoved = 0;
     pLast = { x: e.clientX, y: e.clientY };
@@ -642,7 +666,7 @@
       ABC.squishy.release(dragS);
       if (pMoved < 9) ABC.squishy.poke(dragS);   // quick tap = squish!
       dragS = null;
-    } else if (pDown && pMoved < 9 && !ABC.ui.isOpen() && !replaying) {
+    } else if (pDown && pMoved < 9 && !ABC.ui.isOpen() && !replaying && !riding) {
       const info = aim(e.clientX, e.clientY);
       // right-click does the opposite of the current mode (handy for grown-ups)
       const m = e.button === 2 ? (mode === 'dig' ? 'place' : 'dig') : mode;
@@ -724,7 +748,7 @@
   }
 
   function updatePlayer(dt) {
-    if (ABC.ui.isOpen() || replaying) return;   // 🎬 replay drives the avatar itself
+    if (ABC.ui.isOpen() || replaying || riding) return;   // 🎬 replay/train drive the avatar
     const speed = flying ? 9 : 5.2;
     const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
     const r = new THREE.Vector3(-f.z, 0, f.x);
@@ -883,6 +907,7 @@
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         world: ABC.world.serialize(),
         squishies: ABC.squishy.serialize(),
+        tracks: ABC.train.serialize(),
         pet: ABC.pet.serialize(),
         stickers: ABC.stickers.serialize(),
         copycat: ABC.copycat ? ABC.copycat.serialize() : null,
@@ -928,6 +953,7 @@
       const d = JSON.parse(raw);
       ABC.world.deserialize(d.world);
       ABC.squishy.deserialize(d.squishies);
+      ABC.train.deserialize(d.tracks);
       ABC.pet.deserialize(d.pet);
       ABC.parks.deserialize(d.parks);
       ABC.stickers.deserialize(d.stickers);
@@ -1444,6 +1470,77 @@
     if (fi >= recCount - 1) endReplay();              // reached "now" — welcome back!
   }
 
+  /* ---------------- 🚂 riding the meadow railway ----------------
+     Same idiom as the adventure replay: save the player's state, let the
+     train drive the avatar & camera, put everything back on hop-off. */
+  let riding = false, rideSaved = null, rideBar = null, rideCam = null;
+  function startRide() {
+    if (riding || replaying || !started || ABC.ui.isOpen()) return;
+    if (!ABC.train.canRide()) {
+      ABC.ui.toast(ABC.tpl('🛤️ Lay a few more tracks first — then your train can run!'), 3000, true);
+      return;
+    }
+    rideSaved = { x: feet.x, y: feet.y, z: feet.z, yaw, pitch, zoom, flying, vy, grounded };
+    for (const c of ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight'])
+      keys[c] = false;
+    riding = true; rideCam = null;
+    ABC.train.board();
+    ABC.replayEvent && ABC.replayEvent('train');
+    $('hud').style.pointerEvents = 'none';
+    avatar.visible = true;
+    rideBar = document.createElement('div');
+    rideBar.id = 'rideBar';
+    rideBar.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;' +
+      'display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:26px;' +
+      'background:rgba(20,40,80,.72);color:#fff;font-family:inherit;font-size:16px;font-weight:bold;' +
+      'box-shadow:0 4px 12px rgba(0,0,0,.3);';
+    const btnCss = 'min-width:44px;min-height:44px;border:none;border-radius:22px;font-family:inherit;' +
+      'font-size:16px;font-weight:bold;cursor:pointer;padding:8px 14px;';
+    rideBar.innerHTML = `<span>🚂 ${ABC.tpl('All aboard!')}</span>` +
+      `<button id="rdWhistle" title="${ABC.tpl('Toot the whistle!')}" aria-label="${ABC.tpl('Toot the whistle!')}" style="${btnCss}background:linear-gradient(180deg,#ffe066,#ffd43b);color:#664d03;">📯 ${ABC.tpl('Whistle')}</button>` +
+      `<button id="rdDone" title="${ABC.tpl('Hop off the train')}" aria-label="${ABC.tpl('Hop off the train')}" style="${btnCss}background:linear-gradient(180deg,#a5d8ff,#74c0fc);color:#1864ab;">⏹ ${ABC.tpl('Hop off')}</button>`;
+    document.body.appendChild(rideBar);
+    rideBar.querySelector('#rdWhistle').onclick = () => ABC.train.whistle();
+    rideBar.querySelector('#rdDone').onclick = () => endRide();
+    ABC.ui.toast(ABC.tpl('🚂 All aboard! Off we go — toot toot!'), 3200, true);
+  }
+  function endRide() {
+    if (!riding) return;
+    const spot = ABC.train.dismountSpot();
+    riding = false;
+    ABC.train.dismount();
+    if (rideBar) { rideBar.remove(); rideBar = null; }
+    $('hud').style.pointerEvents = '';
+    feet.set(spot.x, surfaceY(spot.x, spot.z, 9), spot.z);
+    yaw = rideSaved.yaw; pitch = rideSaved.pitch;
+    vy = 0; grounded = true; flying = rideSaved.flying;
+    zoom = rideSaved.zoom; applyZoom();
+    rideSaved = null;
+    ABC.ui.toast(ABC.tpl('What a wonderful train ride! 🚂💙'), 3000, true);
+  }
+  ABC.startTrainRide = startRide;
+  ABC.endTrainRide = endRide;
+  function updateRide(dt) {
+    if (!riding) return;
+    const seat = ABC.train.seatPose();
+    if (!seat) { endRide(); return; }
+    // the child rides in the coach; the world position tracks the train
+    feet.set(seat.x, seat.y - 0.7, seat.z);
+    avatar.visible = true;
+    avatar.position.set(seat.x, seat.y - 0.55, seat.z);
+    avatar.rotation.y = seat.heading + Math.PI;
+    // chase camera: behind and above, smoothed, looking down the line
+    const fx = Math.sin(seat.heading), fz = Math.cos(seat.heading);
+    const tx = seat.x2, tz = seat.z2, ty = seat.y;
+    if (!rideCam) rideCam = { x: tx - fx * 6.5, y: ty + 3.2, z: tz - fz * 6.5 };
+    const k = 1 - Math.exp(-dt * 3.2);
+    rideCam.x += (tx - fx * 6.5 - rideCam.x) * k;
+    rideCam.y += (ty + 3.2 - rideCam.y) * k;
+    rideCam.z += (tz - fz * 6.5 - rideCam.z) * k;
+    camera.position.set(rideCam.x, rideCam.y, rideCam.z);
+    camera.lookAt(tx + fx * 2.5, ty + 1.2, tz + fz * 2.5);
+  }
+
   /* ---------------- main loop ---------------- */
   let last = performance.now();
   let chunkTimer = 0;
@@ -1469,6 +1566,7 @@
       ABC.world.updateSky(camera.position, dt);                     // stars + Milky Way at night 🌌
       recordSample(dt);            // 🎬 rolling 5-minute adventure recorder (RAM only)
       updateReplay(dt);            // 🎬 replay drives the avatar & camera while active
+      updateRide(dt);              // 🚂 the train drives them while riding
       updatePlayer(dt);
       updateFly(dt);
       updateParticles(dt);
@@ -1480,10 +1578,11 @@
       ABC.dig.update && ABC.dig.update(dt, feet.x, feet.z);   // ⭐ treasure hints
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);
+      ABC.train.tick(dt);
       ABC.portal.update(dt);
-      if (!ABC.ui.isOpen() && !replaying) ABC.portal.checkWalkIn(feet, dt);
+      if (!ABC.ui.isOpen() && !replaying && !riding) ABC.portal.checkWalkIn(feet, dt);
       // hover highlight follows the mouse
-      if (!ABC.ui.isOpen() && !pDown && !replaying) {
+      if (!ABC.ui.isOpen() && !pDown && !replaying && !riding) {
         const info = aim(hover.x, hover.y);
         if (info && info.kind === 'block') {
           hl.position.set(info.cell.x + 0.5, info.cell.y + 0.5, info.cell.z + 0.5);
