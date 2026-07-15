@@ -6,6 +6,7 @@ ABC.stickers = (function () {
   const DEFS = [
     { id:'first-build',     emoji:'🧱', label:'First Builder',   hint:'Place your very first block!' },
     { id:'train-ride',      emoji:'🚂', label:'Train Rider',     hint:'Lay tracks and ride your very own train!' },
+    { id:'mirror-magic',    emoji:'🪞', label:'Mirror Magician', hint:'Build with the magic mirror!' },
     { id:'villa-done',      emoji:'🏡', label:'Villa Champion',  hint:'Finish the Two-Storey Villa!' },
     { id:'rocket-launched', emoji:'🚀', label:'Space Explorer',  hint:'Build the rocket and blast off!' },
     { id:'10-hearts',       emoji:'💖', label:'Kind Heart',      hint:'Collect 10 kindness hearts!' },

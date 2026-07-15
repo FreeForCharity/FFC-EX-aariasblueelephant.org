@@ -114,6 +114,7 @@
   ABC.animals.spawnAll(scene);
   ABC.squishy.init(scene);
   ABC.train.init(scene);
+  ABC.mirror.init(scene);
   ABC.portal.init(scene);
   ABC.music.init(scene);
   ABC.weather.init(scene);
@@ -558,6 +559,7 @@
       if (digging) {
         const t = ABC.world.get(info.cell.x, info.cell.y, info.cell.z);
         if (ABC.world.remove(info.cell.x, info.cell.y, info.cell.z)) {
+          ABC.mirror.echoDig(info.cell);                         // 🪞 dig both sides
           ABC.world.flush(); ABC.audio.sfx.remove(); saveSoon();
           ABC.state.metrics.digs++;                              // 👨‍👩‍👧 parent dashboard
           ABC.replayEvent && ABC.replayEvent('dig');             // 🎬 adventure recorder
@@ -595,6 +597,7 @@
       }
       const rot = def.rotates ? ((Math.round(yaw / (Math.PI / 2)) % 4) + 4) % 4 : 0;
       if (ABC.world.set(p.x, p.y, p.z, id, rot)) {
+        if (ABC.mirror.echoPlace(p, id, rot)) ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;   // 🪞
         ABC.world.flush(); ABC.audio.sfx.pop(); saveSoon();
         ABC.replayEvent && ABC.replayEvent('place');            // 🎬 adventure recorder
         ABC.state.placedCount = (ABC.state.placedCount || 0) + 1;
@@ -1520,6 +1523,11 @@
   }
   ABC.startTrainRide = startRide;
   ABC.endTrainRide = endRide;
+  /* 🪞 the mirror rises where the child is standing */
+  ABC.startMirror = () => {
+    if (!started || replaying || riding) return;
+    ABC.mirror.toggle(feet.x, feet.z);
+  };
   function updateRide(dt) {
     if (!riding) return;
     const seat = ABC.train.seatPose();
@@ -1579,6 +1587,7 @@
       ABC.pet.update(dt, feet);
       ABC.squishy.update(dt, camera);
       ABC.train.tick(dt);
+      ABC.mirror.update(dt);
       ABC.portal.update(dt);
       if (!ABC.ui.isOpen() && !replaying && !riding) ABC.portal.checkWalkIn(feet, dt);
       // hover highlight follows the mouse
