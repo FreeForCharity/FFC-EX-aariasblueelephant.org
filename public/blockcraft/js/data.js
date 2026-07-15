@@ -335,7 +335,71 @@ ABC.buildBlueprints = function () {
   cell(lhTop,0,7,0,'star'); cell(lhTop,0,8,0,'gold');
   [[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,z])=>cell(lhTop,x,7,z,'glass'));
 
+  /* ---- CASTLE 🏰 (a Mirror Magic favourite — perfectly symmetric) ---- */
+  const casWalls=[], casTowers=[], casTops=[];
+  for (let x=-3;x<=3;x++) for (let z=-3;z<=3;z++) {
+    if (Math.abs(x)!==3 && Math.abs(z)!==3) continue;          // wall ring only
+    if (z===-3 && (x===0||x===1) ) continue;                   // gate opening
+    cell(casWalls,x,0,z,'stone'); cell(casWalls,x,1,z,'stone');
+  }
+  cell(casWalls,0,2,-3,'gold'); cell(casWalls,1,2,-3,'gold');  // gate lintel
+  [[-3,-3],[3,-3],[-3,3],[3,3]].forEach(([x,z])=>{
+    for (let y=0;y<=3;y++) cell(casTowers,x,y,z,'granite');
+    cell(casTowers,x,4,z,'stone');
+  });
+  for (let x=-2;x<=2;x+=2) { cell(casTops,x,2,3,'stone'); if(x!==0){cell(casTops,x,2,-3,'stone');} }
+  for (let z=-2;z<=2;z+=2) { cell(casTops,3,2,z,'stone'); cell(casTops,-3,2,z,'stone'); }
+  [[-3,-3],[3,-3],[-3,3],[3,3]].forEach(([x,z])=>cell(casTops,x,5,z,'star'));
+
+  /* ---- RAINBOW BRIDGE 🌈 ---- */
+  const brPiers=[], brArch=[];
+  for (const ex of [-4,4]) { box(brPiers, ex,0,-1, ex,1,1, 'stone'); }
+  for (let x=-4;x<=4;x++) for (let z=-1;z<=1;z++) cell(brPiers,x,2,z,'plank');
+  for (let x=-3;x<=3;x++) {
+    const y = 3 + (2 - Math.min(2, Math.abs(x)));              // gentle arc: 3,4,5,4,3
+    cell(brArch,x,y,-1,'rainbow'); cell(brArch,x,y,1,'rainbow');
+  }
+  [[-4,-1],[-4,1],[4,-1],[4,1]].forEach(([x,z])=>cell(brArch,x,3,z,'gold'));
+
+  /* ---- TRAIN STATION 🚉 (for the meadow railway!) ---- */
+  const stPlat=[], stRoof=[];
+  for (let x=-3;x<=3;x++) for (let z=-1;z<=0;z++) cell(stPlat,x,0,z,'plank');   // platform
+  for (let x=-2;x<=0;x++) for (let z=1;z<=3;z++) {                              // ticket house walls
+    if (Math.abs(x+1)!==1 && z!==1 && z!==3) continue;
+    if (x===-1 && z===1) continue;                                              // doorway
+    cell(stPlat,x,1,z,'brick'); cell(stPlat,x,2,z, (x===-1&&z===3)?'glass':'brick');
+  }
+  for (let x=-3;x<=1;x++) for (let z=0;z<=4;z++) {
+    if (x>=-2 && x<=0 && z>=1 && z<=3) cell(stRoof,x,3,z,'red');                // house roof
+  }
+  for (const x of [2,3]) cell(stRoof,x,3,0,'red');                              // platform canopy strip
+  cell(stRoof,2,1,0,'pillar'); cell(stRoof,2,2,0,'pillar');
+  cell(stRoof,-1,4,2,'star');                                                   // the station clock
+  cell(stRoof,3,1,-1,'white'); cell(stRoof,3,2,-1,'gold');                      // the sign post
+
   return {
+    castle: {
+      id:'castle', title:'🏰 Little Castle', emoji:'🏰', site:{x:-24, z:16},
+      stages:[
+        { name:'Castle Walls & Gate', cells:casWalls },
+        { name:'Four Corner Towers', cells:casTowers },
+        { name:'Battlements & Flags', cells:casTops },
+      ],
+    },
+    bridge: {
+      id:'bridge', title:'🌈 Rainbow Bridge', emoji:'🌈', site:{x:26, z:-18},
+      stages:[
+        { name:'Stone Piers & Deck', cells:brPiers },
+        { name:'Rainbow Arches & Lamps', cells:brArch },
+      ],
+    },
+    station: {
+      id:'station', title:'🚉 Train Station', emoji:'🚉', site:{x:12, z:26},
+      stages:[
+        { name:'Platform & Ticket House', cells:stPlat },
+        { name:'Roof, Clock & Sign', cells:stRoof },
+      ],
+    },
     cabin: {
       id:'cabin', title:'🪵 Log Cabin', emoji:'🪵', site:{x:80, z:6},
       stages:[ { name:'Log Walls & Door', cells:cabWF }, { name:'Wooden Roof & Lamp', cells:cabR } ],
@@ -603,6 +667,38 @@ ABC.PROJECT_PROMPTS = {
           { t:'Our blue elephant curls its long trunk up happily!', q:'best' },
           { t:'Done.', q:'name' },
           { t:'Rain falls down.', q:'off' } ] },
+    ],
+  },
+  castle: {
+    intro: { emoji:'🏰', scene:'A castle fit for a hero! What are we building?',
+      options:[ { t:'A stone castle with towers and a golden gate!', q:'best' }, { t:'Castle.', q:'name' }, { t:'I hear music.', q:'off' } ] },
+    stages:[
+      { emoji:'🧱', scene:'The walls are up! Tell me:',
+        options:[ { t:'The strong stone walls have a golden gate to walk through!', q:'best' }, { t:'Walls.', q:'name' }, { t:'Socks are soft.', q:'off' } ] },
+      { emoji:'🗼', scene:'Four towers! What do you see?',
+        options:[ { t:'Tall towers stand guard on every corner!', q:'best' }, { t:'Towers.', q:'name' }, { t:'I like juice.', q:'off' } ] },
+      { emoji:'🏰', scene:'Your castle is finished! Describe it:',
+        options:[ { t:'My castle has star flags shining on top of every tower!', q:'best' }, { t:'Done.', q:'name' }, { t:'Birds fly.', q:'off' } ] },
+    ],
+  },
+  bridge: {
+    intro: { emoji:'🌈', scene:'Let us build a bridge! What kind?',
+      options:[ { t:'A rainbow bridge to walk across the sky!', q:'best' }, { t:'Bridge.', q:'name' }, { t:'My shoe is red.', q:'off' } ] },
+    stages:[
+      { emoji:'🪨', scene:'The deck is laid! Tell me:',
+        options:[ { t:'Strong stone piers hold up the long wooden deck!', q:'best' }, { t:'Deck.', q:'name' }, { t:'Cats sleep.', q:'off' } ] },
+      { emoji:'🌈', scene:'Your bridge is finished! How does it look?',
+        options:[ { t:'Rainbow arches glow over my bridge with golden lamps!', q:'best' }, { t:'Done.', q:'name' }, { t:'The sky is up.', q:'off' } ] },
+    ],
+  },
+  station: {
+    intro: { emoji:'🚉', scene:'Every train needs a station! What are we making?',
+      options:[ { t:'A train station with a platform for my train!', q:'best' }, { t:'Station.', q:'name' }, { t:'I count to three.', q:'off' } ] },
+    stages:[
+      { emoji:'🧱', scene:'Platform and ticket house done! Tell me:',
+        options:[ { t:'The wooden platform waits beside the little brick ticket house!', q:'best' }, { t:'Platform.', q:'name' }, { t:'Soup is warm.', q:'off' } ] },
+      { emoji:'🚉', scene:'Your station is finished! Describe it:',
+        options:[ { t:'My station has a red roof, a shiny clock and a sign post!', q:'best' }, { t:'Done.', q:'name' }, { t:'I have a hat.', q:'off' } ] },
     ],
   },
 };

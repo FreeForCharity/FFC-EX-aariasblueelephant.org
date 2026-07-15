@@ -150,9 +150,15 @@ ABC.train = (function () {
     refreshAround(x, y, z);
     ABC.audio.sfx.pop();
     ABC.saveSoon && ABC.saveSoon();
-    if (pieces.size === 1) ABC.ui.toast(ABC.tpl('🛤️ First track! Keep going — your train needs a line to run on!'), 3400, true);
-    ensureTrain();
-    if (train && !riding) parkTrain();      // re-park: the network changed
+    // counting practice on the way to 10 — every piece counts out loud
+    if (!train && pieces.size < MIN_TRACKS) {
+      const n = pieces.size, left = MIN_TRACKS - n;
+      ABC.ui.toast('🛤️ ' + (n === 1
+        ? ABC.tpl('1 track! Let us count to 10 — then your train will come!')
+        : ABC.tpl(`${n} tracks — ${left} more and your train will come!`)), 2400, true);
+    }
+    ensureTrain(data);
+    if (train && !riding) parkTrain(data);  // the train follows your newest track
     return true;
   }
   function removeAt(cell) {
@@ -171,7 +177,7 @@ ABC.train = (function () {
   /* ================================================================
      THE TRAIN — a proper little steam locomotive + open coach
      ================================================================ */
-  const MIN_TRACKS = 4;
+  const MIN_TRACKS = 10;   // count to ten and the train arrives (counting practice!)
   let train = null;      // { group, loco:{wheels,rods,lamp,glow,stack}, coach, seatAnchor }
   let smoke = [];        // puff sprites
   let riding = false;
@@ -310,21 +316,38 @@ ABC.train = (function () {
   }
 
   /* ---------- track graph helpers ---------- */
-  function trackEnds() {
+  /* every track connected to `start` — so the train parks on the line the
+     child is actually building, never stranded on an old stub elsewhere */
+  function component(start) {
+    const seen = new Set(), q = [key(start.x, start.y, start.z)];
+    while (q.length) {
+      const k = q.pop();
+      if (seen.has(k) || !pieces.has(k)) continue;
+      seen.add(k);
+      const d = pieces.get(k).data;
+      for (const [dx, dz] of DIRS) {
+        const nk = key(d.x + dx, d.y, d.z + dz);
+        if (pieces.has(nk) && !seen.has(nk)) q.push(nk);
+      }
+    }
+    return seen;
+  }
+  function trackEnds(comp) {
     const ends = [];
     for (const p of pieces.values()) {
+      if (comp && !comp.has(key(p.data.x, p.data.y, p.data.z))) continue;
       const nd = neighborDirs(p.data);
       if (nd.length <= 1) ends.push({ p, nd });
     }
     return ends;
   }
-  function ensureTrain() {
+  function ensureTrain(prefer) {
     if (train || pieces.size < MIN_TRACKS) return;
     train = buildTrain();
     scene.add(ABC.world.entityShadows ? ABC.world.entityShadows(train) : train);
-    parkTrain();
+    parkTrain(prefer);
     ABC.audio.sfx.whistle && ABC.audio.sfx.whistle();
-    ABC.ui.toast(ABC.tpl('🚂 Your train has arrived! Walk up and tap it to climb aboard!'), 4600, true);
+    ABC.ui.toast(ABC.tpl('🚂 TEN tracks — you counted all the way! Your train has arrived! Walk up and tap it to climb aboard!'), 5200, true);
     ABC.ui.floatHearts && ABC.ui.floatHearts(3);
   }
   function departTrain() {
@@ -333,9 +356,14 @@ ABC.train = (function () {
     train = null;
     ABC.ui.toast(ABC.tpl('🚂 The train went home — lay more track to call it back!'), 3600, true);
   }
-  function parkTrain() {
+  function parkTrain(prefer) {
     if (!train || !pieces.size) return;
-    const ends = trackEnds();
+    const comp = prefer && pieces.has(key(prefer.x, prefer.y, prefer.z)) ? component(prefer) : null;
+    let ends = trackEnds(comp);
+    if (!ends.length && comp) {                        // a loop: park anywhere on it
+      const p = pieces.get(comp.values().next().value);
+      ends = [{ p, nd: neighborDirs(p.data) }];
+    }
     const start = ends.length ? ends[0] : { p: pieces.values().next().value, nd: neighborDirs(pieces.values().next().value.data) };
     R.cell = start.p.data;
     const d = start.nd.length ? start.nd[0] : 1;
