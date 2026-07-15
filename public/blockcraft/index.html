@@ -79,7 +79,9 @@
   #portalChip.portalReady, #questChip.portalReady { background:linear-gradient(90deg,#d0bfff,#a5d8ff); animation:pulseChip 1.2s infinite; }
   @keyframes pulseChip { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
   #flash { position:fixed; inset:0; z-index:90; background:#fff; display:none; pointer-events:none; }
-  #menuBar { position:absolute; top:12px; right:12px; display:flex; gap:8px; pointer-events:auto; }
+  #menuBar { position:absolute; top:12px; right:12px; display:flex; gap:8px; pointer-events:auto;
+    flex-wrap:wrap; justify-content:flex-end; row-gap:6px; max-width:calc(100vw - 700px); }
+  @media (max-width:1100px) { #menuBar { max-width:none; } }   /* mobile bar is one ✨ anyway */
   .menuBtn { font-family:inherit; font-size:17px; padding:10px 14px; border:none; border-radius:18px;
     background:rgba(255,255,255,.92); cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.18); transition:transform .1s; }
   .menuBtn:hover { transform:scale(1.08); background:#fff; }
@@ -510,6 +512,8 @@ try{
     <button class="menuBtn deskOnly" id="oreoBtn" title="Oreo Kitchen — make cookie treats">🍪<span class="btnTxt"> Oreo Kitchen</span></button>
     <button class="menuBtn deskOnly" id="kindBtn" title="Kind Words — practice friendly sentences">💌<span class="btnTxt"> Kind Words</span></button>
     <button class="menuBtn deskOnly" id="copycatBtn" title="Copy Cat — build a copy of the glowing pattern">🐱<span class="btnTxt"> Copy Cat</span></button>
+    <button class="menuBtn deskOnly" id="trainBtn" title="Train — lay tracks, then ride your very own train!">🚂<span class="btnTxt"> Train</span></button>
+    <button class="menuBtn deskOnly" id="mirrorBtn" title="Mirror Magic — build one side, the mirror builds the other!">🪞<span class="btnTxt"> Mirror</span></button>
     <button class="menuBtn deskOnly" id="stickersBtn" title="My Treasures">🏅</button>
     <button class="menuBtn deskOnly" id="friendsBtn" title="Friend Book">📖</button>
     <button class="menuBtn" id="speedBtn" title="Game speed — tap for more time 🐢 or faster 🚀">🎛️</button>

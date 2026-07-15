@@ -1015,6 +1015,21 @@
   $('friendsBtn').onclick  = () => ABC.friends.openBook();
   $('flowerChip').onclick  = () => ABC.overnight.showFlower();
   $('moreBtn').onclick     = () => ABC.ui.openQuickMenu();
+  $('trainBtn').onclick    = () => ABC.ui.setHand({ kind: 'track', ico: '🛤️' },
+    ABC.tpl('🛤️ Tap the ground to lay train tracks! Lay a line and your train will come!'));
+  $('mirrorBtn').onclick   = () => ABC.startMirror();
+  /* the top bar can wrap to 2-3 rows on mid-size screens — keep the side
+     rail exactly below its real bottom edge so buttons never overlap */
+  function layoutSideRail() {
+    const bar = $('menuBar'), rail = $('sideBtns');
+    if (!bar || !rail) return;
+    if (getComputedStyle(rail).display === 'none') return;
+    rail.style.top = Math.max(64, Math.round(bar.getBoundingClientRect().bottom) + 10) + 'px';
+  }
+  addEventListener('resize', layoutSideRail);
+  setTimeout(layoutSideRail, 50);
+  setTimeout(layoutSideRail, 1200);
+  ABC.layoutSideRail = layoutSideRail;
   $('tFly').addEventListener('click', () => $('flyBtn').click());
   $('questChip').onclick   = () => ABC.quests.showBoard();
 
