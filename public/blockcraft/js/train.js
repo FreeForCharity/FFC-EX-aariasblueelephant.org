@@ -150,15 +150,17 @@ ABC.train = (function () {
     refreshAround(x, y, z);
     ABC.audio.sfx.pop();
     ABC.saveSoon && ABC.saveSoon();
-    // counting practice on the way to 10 — every piece counts out loud
-    if (!train && pieces.size < MIN_TRACKS) {
-      const n = pieces.size, left = MIN_TRACKS - n;
-      ABC.ui.toast('🛤️ ' + (n === 1
+    // counting practice on the way to 10 — the CONNECTED line is what counts
+    const lineN = component(data).size;
+    if (!train && lineN < MIN_TRACKS) {
+      const left = MIN_TRACKS - lineN;
+      ABC.ui.toast('🛤️ ' + (lineN === 1
         ? ABC.tpl('1 track! Let us count to 10 — then your train will come!')
-        : ABC.tpl(`${n} tracks — ${left} more and your train will come!`)), 2400, true);
+        : ABC.tpl(`${lineN} tracks — ${left} more and your train will come!`)), 2400, true);
     }
     ensureTrain(data);
     if (train && !riding) parkTrain(data);  // the train follows your newest track
+    updateMarker(data);
     return true;
   }
   function removeAt(cell) {
@@ -170,8 +172,12 @@ ABC.train = (function () {
     refreshAround(cell.x, cell.y, cell.z);
     ABC.audio.sfx.remove();
     ABC.saveSoon && ABC.saveSoon();
-    if (pieces.size < MIN_TRACKS && train && !riding) departTrain();
-    else if (train && !riding) parkTrain();
+    if (train && !riding) {
+      // the train departs if no connected line is long enough anymore
+      if (!readyComponent(null)) departTrain();
+      else parkTrain();
+    }
+    if (!train) updateMarker(pieces.size ? pieces.values().next().value.data : null);
   }
 
   /* ================================================================
@@ -341,14 +347,75 @@ ABC.train = (function () {
     }
     return ends;
   }
+  /* the train needs one CONNECTED line of MIN_TRACKS — scattered stubs
+     don't count (it must have somewhere to actually run!) */
+  function readyComponent(prefer) {
+    if (prefer && pieces.has(key(prefer.x, prefer.y, prefer.z))) {
+      const c = component(prefer);
+      return c.size >= MIN_TRACKS ? c : null;
+    }
+    const visited = new Set();
+    for (const p of pieces.values()) {
+      const k = key(p.data.x, p.data.y, p.data.z);
+      if (visited.has(k)) continue;
+      const c = component(p.data);
+      for (const kk of c) visited.add(kk);
+      if (c.size >= MIN_TRACKS) return c;
+    }
+    return null;
+  }
   function ensureTrain(prefer) {
-    if (train || pieces.size < MIN_TRACKS) return;
+    if (train) return;
+    const comp = readyComponent(prefer);
+    if (!comp) return;
+    removeMarker();
     train = buildTrain();
     scene.add(ABC.world.entityShadows ? ABC.world.entityShadows(train) : train);
-    parkTrain(prefer);
+    parkTrain(prefer && comp.has(key(prefer.x, prefer.y, prefer.z)) ? prefer : pieces.get(comp.values().next().value).data);
     ABC.audio.sfx.whistle && ABC.audio.sfx.whistle();
     ABC.ui.toast(ABC.tpl('🚂 TEN tracks — you counted all the way! Your train has arrived! Walk up and tap it to climb aboard!'), 5200, true);
     ABC.ui.floatHearts && ABC.ui.floatHearts(3);
+  }
+
+  /* while the line grows: a little buffer stop with a live count (4/10 🚂)
+     waits at the end of the line, and becomes the train at ten */
+  let marker = null;
+  function countSprite(n) {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    g.beginPath(); g.roundRect ? g.roundRect(4, 6, 120, 52, 14) : g.rect(4, 6, 120, 52); g.fill();
+    g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#2456a6';
+    g.fillText('🚂 ' + n + '/' + MIN_TRACKS, 64, 33);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+    s.scale.set(1.8, 0.9, 1);
+    return s;
+  }
+  function buildMarker(n) {
+    const m = mats();
+    const g = new THREE.Group();
+    for (const sx of [-0.3, 0.3]) {
+      const post = box(0.1, 0.7, 0.1, m.chassis); post.position.set(sx, 0.35, 0); g.add(post);
+    }
+    const beam = box(0.85, 0.16, 0.12, m.red); beam.position.y = 0.62; g.add(beam);
+    for (const sx of [-0.28, 0, 0.28]) {
+      const stripe = box(0.12, 0.17, 0.13, mats().railTop); stripe.position.set(sx, 0.62, 0); g.add(stripe);
+    }
+    const s = countSprite(n); s.position.y = 1.5; g.add(s);
+    return g;
+  }
+  function removeMarker() { if (marker) { scene.remove(marker); marker = null; } }
+  function updateMarker(prefer) {
+    removeMarker();
+    if (train || !pieces.size || !prefer) return;
+    const comp = component(prefer);
+    if (comp.size >= MIN_TRACKS) return;
+    const ends = trackEnds(comp);
+    const at = ends.length ? ends[0].p.data : prefer;
+    marker = buildMarker(comp.size);
+    marker.position.set(at.x + 0.5, at.y, at.z + 0.5);
+    scene.add(marker);
   }
   function departTrain() {
     if (!train) return;
@@ -552,6 +619,7 @@ ABC.train = (function () {
     (arr || []).forEach((d) => pieces.set(key(d.x, d.y, d.z), { data: d, group: null }));
     for (const p of pieces.values()) refreshPiece(p);
     ensureTrain();
+    if (!train && pieces.size) updateMarker(pieces.values().next().value.data);
   }
 
   function count() { return pieces.size; }
