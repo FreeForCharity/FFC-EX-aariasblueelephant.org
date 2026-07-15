@@ -115,6 +115,7 @@
   ABC.squishy.init(scene);
   ABC.train.init(scene);
   ABC.mirror.init(scene);
+  ABC.seasons.init(scene);
   ABC.portal.init(scene);
   ABC.music.init(scene);
   ABC.weather.init(scene);
@@ -1603,6 +1604,7 @@
       ABC.squishy.update(dt, camera);
       ABC.train.tick(dt);
       ABC.mirror.update(dt);
+      ABC.seasons.update(dt);
       ABC.portal.update(dt);
       if (!ABC.ui.isOpen() && !replaying && !riding) ABC.portal.checkWalkIn(feet, dt);
       // hover highlight follows the mouse
