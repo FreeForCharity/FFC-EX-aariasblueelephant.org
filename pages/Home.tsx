@@ -12,36 +12,37 @@ import CardStack from '../components/ui/card-stack';
 import TestimonialSection from '../components/TestimonialSection';
 import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
 import MediaLightbox from '../components/MediaLightbox';
+import { tr } from '../lib/lang';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
     {
         id: 4,
-        title: 'Advocacy efforts',
-        date: 'Ongoing Initiative',
+        title: tr('Advocacy efforts', 'Esfuerzos de incidencia'),
+        date: tr('Ongoing Initiative', 'Iniciativa continua'),
         image: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=60&w=400&h=300',
-        description: 'Advocacy efforts to partner with cities and organizations on large-scale inclusion.'
+        description: tr('Advocacy efforts to partner with cities and organizations on large-scale inclusion.', 'Esfuerzos de incidencia para asociarnos con ciudades y organizaciones en la inclusión a gran escala.')
     },
     {
         id: 1,
-        title: 'Weekly Play Group',
-        date: 'Weekly Initiative',
+        title: tr('Weekly Play Group', 'Grupo de juego semanal'),
+        date: tr('Weekly Initiative', 'Iniciativa semanal'),
         image: 'https://images.unsplash.com/photo-1540479859555-17af45c78602?auto=format&fit=crop&q=60&w=400&h=300',
-        description: 'A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.'
+        description: tr('A sensory-friendly environment where neurodivergent and neurotypical kids learn to play and communicate together.', 'Un ambiente sensorialmente amigable donde niños neurodivergentes y neurotípicos aprenden a jugar y comunicarse juntos.')
     },
     {
         id: 2,
-        title: 'Monthly Art and Craft Meetup',
-        date: 'Monthly Session',
+        title: tr('Monthly Art and Craft Meetup', 'Encuentro mensual de arte y manualidades'),
+        date: tr('Monthly Session', 'Sesión mensual'),
         image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=60&w=400&h=300',
-        description: 'Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.'
+        description: tr('Creative expression sessions designed to build fine motor skills and encourage imagination through collaborative art projects.', 'Sesiones de expresión creativa diseñadas para desarrollar la motricidad fina y fomentar la imaginación a través de proyectos de arte colaborativos.')
     },
     {
         id: 3,
-        title: 'Outreach Workshop',
-        date: 'Community Centers',
+        title: tr('Outreach Workshop', 'Taller de alcance comunitario'),
+        date: tr('Community Centers', 'Centros comunitarios'),
         image: '/outreach_workshop_photo.png',
-        description: 'Educational programs for parents and educators on early intervention strategies and building inclusive spaces.'
+        description: tr('Educational programs for parents and educators on early intervention strategies and building inclusive spaces.', 'Programas educativos para padres y educadores sobre estrategias de intervención temprana y la creación de espacios inclusivos.')
     }
 ];
 
@@ -134,10 +135,10 @@ const Home: React.FC = () => {
     const allEvents = (carouselMode === 'media' && albumImages.length > 0)
         ? albumImages.map((img, i) => ({
             id: `media-${i}`,
-            title: 'Media Outreach',
-            date: 'Community Highlight',
+            title: tr('Media Outreach', 'Alcance en medios'),
+            date: tr('Community Highlight', 'Destacado comunitario'),
             image: img,
-            description: 'Aaria\'s Blue Elephant Impact',
+            description: tr('Aaria\'s Blue Elephant Impact', 'El impacto de Aaria\'s Blue Elephant'),
             isRealEvent: false
         }))
         : [...upcomingEvents, ...pastEvents];
@@ -202,14 +203,14 @@ const Home: React.FC = () => {
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-6">
                                     <div className={`h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0 group transition-transform hover:rotate-3 ${a("anim-rubber-pop anim-delay-300")}`}>
-                                        <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt="Aaria's Blue Elephant Logo" />
+                                        <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt={tr("Aaria's Blue Elephant Logo", "Logo de Aaria's Blue Elephant")} />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
                                         <h1 className={`text-lg xs:text-xl sm:text-[30px] lg:text-[38px] xl:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm ${a("anim-bounce-right anim-delay-400")}`}>
                                             Aaria's Blue Elephant
                                         </h1>
                                         <h2 className={`text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight text-left ${a("anim-bounce-left anim-delay-500")}`}>
-                                            Building a New Inclusive World
+                                            {tr('Building a New Inclusive World', 'Construyendo un Nuevo Mundo Inclusivo')}
                                         </h2>
                                     </div>
                                 </div>
@@ -217,20 +218,19 @@ const Home: React.FC = () => {
 
                             {/* Subtitle */}
                             <p className={`text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium ${a("anim-wobble-in anim-delay-600")}`}>
-                                A safe haven where neurodivergent and neurotypical children grow together.
-                                We believe in early intervention, inclusive play, and building a compassionate community.
+                                {tr('A safe haven where neurodivergent and neurotypical children grow together. We believe in early intervention, inclusive play, and building a compassionate community.', 'Un refugio seguro donde niños neurodivergentes y neurotípicos crecen juntos. Creemos en la intervención temprana, el juego inclusivo y la construcción de una comunidad compasiva.')}
                             </p>
 
                             {/* CTA Buttons */}
                             <div className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-8 w-full ${a("anim-bounce-up anim-delay-700")}`}>
                                 <Link to="/events" className="w-full sm:flex-1">
                                     <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-transform flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:-translate-y-1 active:scale-95 text-base sm:text-lg whitespace-nowrap uppercase tracking-widest">
-                                        Join Now <Users className="h-5 w-5" />
+                                        {tr('Join Now', 'Únete Ahora')} <Users className="h-5 w-5" />
                                     </button>
                                 </Link>
                                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:flex-1">
                                     <button className="w-full bg-white dark:bg-slate-800 border-2 border-sky-600 dark:border-slate-700 text-sky-600 dark:text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-full transition-all flex items-center justify-center gap-2 shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 hover:-translate-y-1 active:scale-95 text-base sm:text-lg whitespace-nowrap uppercase tracking-widest">
-                                        Donate <HeartPulse className="h-5 w-5 text-sky-600" />
+                                        {tr('Donate', 'Donar')} <HeartPulse className="h-5 w-5 text-sky-600" />
                                     </button>
                                 </a>
                             </div>
@@ -238,9 +238,9 @@ const Home: React.FC = () => {
                             {/* Social Proof */}
                             <div className={`flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 ${a("anim-bounce-right anim-delay-800")}`}>
                                 <div className="flex -space-x-4">
-                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64" alt="Supporter" />
-                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64" alt="Supporter" />
-                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64" alt="Supporter" />
+                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64" alt={tr('Supporter', 'Colaborador')} />
+                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64" alt={tr('Supporter', 'Colaborador')} />
+                                    <img className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-sm" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64" alt={tr('Supporter', 'Colaborador')} />
                                     <div className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center text-xs font-bold text-sky-700 dark:text-sky-300 shadow-sm">
                                         +50
                                     </div>
@@ -253,13 +253,13 @@ const Home: React.FC = () => {
                                         <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                                         <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Built by and for our community.</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{tr('Built by and for our community.', 'Creado por y para nuestra comunidad.')}</p>
                                 </div>
                             </div>
 
                             <div className={`mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full lg:w-fit text-center lg:text-left ${a("anim-bounce-left anim-delay-900")}`}>
                                 <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
-                                    <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> events hosted <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> children embraced in 2025–2026
+                                    <span className="text-sky-600 dark:text-sky-400 font-black text-lg">12+</span> {tr('events hosted', 'eventos realizados')} <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> {tr('children embraced in 2025–2026', 'niños acompañados en 2025–2026')}
                                 </div>
                             </div>
                         </div>
@@ -274,7 +274,7 @@ const Home: React.FC = () => {
                             <div className="absolute -top-4 -right-2 sm:-top-5 sm:-right-4 bg-white dark:bg-slate-800 shadow-lg px-4 py-2 rounded-full border border-slate-100 dark:border-slate-700 z-20 transition-transform hover:-rotate-3">
                                 <div className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                                     <StickerIcon icon={Sparkles} size={14} color="#f59e0b" bgColor="bg-transparent shadow-none border-none p-0" />
-                                    Our Track Record
+                                    {tr('Our Track Record', 'Nuestra Trayectoria')}
                                 </div>
                             </div>
 
@@ -294,9 +294,9 @@ const Home: React.FC = () => {
                                         allEvents.map((evt) => ({
                                             id: evt.id,
                                             src: evt.image || DEFAULT_EVENT_IMAGE,
-                                            alt: evt.title || 'Event',
+                                            alt: evt.title || tr('Event', 'Evento'),
                                             title: evt.title,
-                                            description: `${(evt as any).isRealEvent ? 'Upcoming: ' : ''}${formatShortDateLocal(evt.date)}`,
+                                            description: `${(evt as any).isRealEvent ? tr('Upcoming: ', 'Próximo: ') : ''}${formatShortDateLocal(evt.date)}`,
                                             isRealEvent: (evt as any).isRealEvent,
                                             dbCoords: (evt as any).isRealEvent ? {
                                                 id: String(evt.id),
@@ -358,13 +358,13 @@ const Home: React.FC = () => {
                         </div>
                         <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 flex items-center justify-center gap-3 flex-wrap">
                             <StickerIcon icon={Music} size={20} color="#8b5cf6" bgColor="bg-purple-50" className="hidden sm:flex" />
-                            100% Free. Fully Inclusive. All Are Welcome.
+                            {tr('100% Free. Fully Inclusive. All Are Welcome.', '100% Gratis. Totalmente Inclusivo. Todos Son Bienvenidos.')}
                             <StickerIcon icon={Palette} size={20} color="#f43f5e" bgColor="bg-rose-50" className="hidden sm:flex" />
                         </div>
                         <div className="w-24 h-1.5 bg-sky-100 dark:bg-sky-900 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
                         <div className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl relative">
                             <span className="absolute -left-6 -top-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
-                            We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.
+                            {tr('We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.', 'Creemos que las limitaciones económicas nunca deben ser un obstáculo para la alegría, el crecimiento y la conexión. Aunque está pensado especialmente para niños con necesidades especiales, fomentamos un ambiente verdaderamente inclusivo donde hermanos, amigos y niños de todas las capacidades juegan y aprenden lado a lado. Desde hace más de dos años, nuestros eventos y materiales se ofrecen completamente gratis. Las donaciones apoyan nuestra misión, pero nunca son obligatorias.')}
                             <span className="absolute -right-6 -bottom-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
                         </div>
                     </div>
@@ -377,11 +377,10 @@ const Home: React.FC = () => {
             {/* Intro Text */}
             <section className="py-16 bg-white dark:bg-slate-900 transition-colors border-t border-slate-200 dark:border-slate-800">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-                    <h3 className={`text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 ${a("anim-drop-bounce anim-delay-100")}`}>Our Focus Areas</h3>
+                    <h3 className={`text-3xl font-bold text-slate-800 dark:text-white uppercase tracking-wide mb-4 ${a("anim-drop-bounce anim-delay-100")}`}>{tr('Our Focus Areas', 'Nuestras Áreas de Enfoque')}</h3>
                     <div className="h-1 w-16 bg-sky-600 mb-8"></div>
                     <div className="max-w-4xl text-slate-600 dark:text-slate-300 leading-relaxed text-lg">
-                        Our commitment to compassion, inclusivity, and community drives us to make a positive impact on the lives of those we serve.
-                        Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.
+                        {tr('Our commitment to compassion, inclusivity, and community drives us to make a positive impact on the lives of those we serve. Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.', 'Nuestro compromiso con la compasión, la inclusión y la comunidad nos impulsa a generar un impacto positivo en la vida de quienes servimos. Creamos espacios seguros y libres de juicio donde cada niño es celebrado exactamente por quien es.')}
                     </div>
                 </div>
             </section>
@@ -395,36 +394,36 @@ const Home: React.FC = () => {
                             <div className={`mb-6 ${a("anim-rubber-pop anim-delay-400")}`}>
                                 <Users className="h-8 w-8 text-sky-500" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Inclusive Community</h4>
+                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">{tr('Inclusive Community', 'Comunidad Inclusiva')}</h4>
                             <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Bridging the gap between neurodivergent and neurotypical peers through shared experiences and understanding.</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{tr('Bridging the gap between neurodivergent and neurotypical peers through shared experiences and understanding.', 'Cerrando la brecha entre pares neurodivergentes y neurotípicos a través de experiencias compartidas y comprensión mutua.')}</p>
                         </div>
 
                         <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-right anim-delay-400")}`}>
                             <div className={`mb-6 ${a("anim-rubber-pop anim-delay-600")}`}>
                                 <HeartPulse className="h-8 w-8 text-sky-500" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Early Intervention</h4>
+                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">{tr('Early Intervention', 'Intervención Temprana')}</h4>
                             <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Raising awareness about the critical importance of early therapy and developmental support for holistic growth.</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{tr('Raising awareness about the critical importance of early therapy and developmental support for holistic growth.', 'Creando conciencia sobre la importancia crítica de la terapia temprana y el apoyo al desarrollo para un crecimiento integral.')}</p>
                         </div>
 
                         <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-left anim-delay-600")}`}>
                             <div className={`mb-6 ${a("anim-rubber-pop anim-delay-800")}`}>
                                 <HeartHandshake className="h-8 w-8 text-sky-500" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Compassionate Care</h4>
+                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">{tr('Compassionate Care', 'Cuidado Compasivo')}</h4>
                             <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{tr('Creating safe, non-judgmental spaces where every child is celebrated for exactly who they are.', 'Creamos espacios seguros y libres de juicio donde cada niño es celebrado exactamente por quien es.')}</p>
                         </div>
 
                         <div className={`bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center group hover:-translate-y-2 ${a("anim-bounce-right anim-delay-800")}`}>
                             <div className={`mb-6 ${a("anim-rubber-pop anim-delay-1000")}`}>
                                 <Sparkles className="h-8 w-8 text-sky-500" />
                             </div>
-                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">Therapy Play</h4>
+                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4 uppercase">{tr('Therapy Play', 'Juego Terapéutico')}</h4>
                             <div className="w-12 h-1 bg-sky-100 dark:bg-sky-900 mb-4 rounded-full group-hover:bg-sky-500 transition-colors"></div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Utilizing structured, evidence-based play sessions to build critical life and social skills in an engaging environment.</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{tr('Utilizing structured, evidence-based play sessions to build critical life and social skills in an engaging environment.', 'Utilizamos sesiones de juego estructuradas y basadas en evidencia para desarrollar habilidades sociales y de vida esenciales en un ambiente atractivo.')}</p>
                         </div>
 
                     </div>
@@ -447,12 +446,12 @@ const Home: React.FC = () => {
                         </div>
                         <div className="flex-1">
                             <h3 className="text-2xl font-black text-sky-700">
-                                {lastGame ? `Keep playing ${lastGame.name}` : 'Play — surprise me!'}
+                                {lastGame ? `${tr('Keep playing', 'Sigue jugando')} ${lastGame.name}` : tr('Play — surprise me!', '¡Juega — sorpréndeme!')}
                             </h3>
                             <p className="mt-1 text-slate-600 dark:text-slate-500">
                                 {lastGame
-                                    ? `Jump back into ${lastGame.name} right where you left off.`
-                                    : 'Free, no-fail games built for Aaria and her friends — pick a game at random and see what you get. No login needed.'}
+                                    ? `${tr('Jump back into', 'Vuelve a')} ${lastGame.name} ${tr('right where you left off.', 'justo donde lo dejaste.')}`
+                                    : tr('Free, no-fail games built for Aaria and her friends — pick a game at random and see what you get. No login needed.', 'Juegos gratuitos y sin fallos hechos para Aaria y sus amigos — elige un juego al azar y descubre qué te toca. No necesitas iniciar sesión.')}
                             </p>
                         </div>
                         <div className="flex flex-none flex-col items-center gap-3 sm:items-end">
@@ -462,14 +461,14 @@ const Home: React.FC = () => {
                                         to="/nelus-world"
                                         className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
                                     >
-                                        ▶️ Keep playing {lastGame.name} {lastGame.emoji}
+                                        ▶️ {tr('Keep playing', 'Sigue jugando')} {lastGame.name} {lastGame.emoji}
                                     </Link>
                                 ) : (
                                     <a
                                         href={lastGame.url}
                                         className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
                                     >
-                                        ▶️ Keep playing {lastGame.name} {lastGame.emoji}
+                                        ▶️ {tr('Keep playing', 'Sigue jugando')} {lastGame.name} {lastGame.emoji}
                                     </a>
                                 )
                             ) : (
@@ -478,7 +477,7 @@ const Home: React.FC = () => {
                                     onClick={goToRandomGame}
                                     className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
                                 >
-                                    ▶️ Play — surprise me!
+                                    ▶️ {tr('Play — surprise me!', '¡Juega — sorpréndeme!')}
                                 </button>
                             )}
                             <button
@@ -486,7 +485,7 @@ const Home: React.FC = () => {
                                 onClick={goToRandomGame}
                                 className="rounded-full bg-white/80 dark:bg-slate-800/80 border border-sky-200 dark:border-sky-800 px-5 py-2 text-sm font-bold text-sky-600 dark:text-sky-300 shadow transition hover:bg-white"
                             >
-                                🎲 Surprise me!
+                                🎲 {tr('Surprise me!', '¡Sorpréndeme!')}
                             </button>
                         </div>
                     </div>
@@ -498,13 +497,13 @@ const Home: React.FC = () => {
                     >
                         <div className="text-6xl transition-transform group-hover:scale-110">🐘🌈</div>
                         <div className="flex-1">
-                            <h3 className="text-2xl font-black text-sky-700">Play Aaria's Floating Islands 🐘🌈</h3>
+                            <h3 className="text-2xl font-black text-sky-700">{tr("Play Aaria's Floating Islands 🐘🌈", "Juega Islas Flotantes de Aaria 🐘🌈")}</h3>
                             <p className="mt-1 text-slate-600 dark:text-slate-500">
-                                A free, no-fail 3D adventure built for Aaria and her friends — explore sky islands, meet gentle friends, and help Nilu grow. No login needed.
+                                {tr('A free, no-fail 3D adventure built for Aaria and her friends — explore sky islands, meet gentle friends, and help Nilu grow. No login needed.', 'Una aventura 3D gratuita y sin fallos hecha para Aaria y sus amigos — explora islas en el cielo, conoce amigos gentiles y ayuda a Nilu a crecer. No necesitas iniciar sesión.')}
                             </p>
                         </div>
                         <span className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400">
-                            Play now ▶
+                            {tr('Play now ▶', 'Jugar ahora ▶')}
                         </span>
                     </Link>
                 </div>
@@ -517,20 +516,20 @@ const Home: React.FC = () => {
 
                 <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 xl:pl-24">
                     <div className="bg-white/10 backdrop-blur-md p-10 rounded-xl border border-white/20 shadow-2xl max-w-4xl lg:ml-0 lg:text-left text-center">
-                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-wider">Ready to Join Our Herd?</h2>
+                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-wider">{tr('Ready to Join Our Herd?', '¿Listo para Unirte a Nuestra Manada?')}</h2>
                         <p className="text-sky-50 mb-10 text-lg max-w-2xl mx-auto lg:mx-0">
-                        Whether you're looking for support, want to volunteer, or can help us grow with a donation, there's a place for you at <strong>Aaria's Blue Elephant</strong>. To support your records, your donations are <strong>100% tax-deductible</strong>; we ensure financial transparency by issuing official tax receipts and progress statements on a quarterly basis.
+                        {tr("Whether you're looking for support, want to volunteer, or can help us grow with a donation, there's a place for you at", 'Ya sea que busques apoyo, quieras ser voluntario o puedas ayudarnos a crecer con una donación, hay un lugar para ti en')} <strong>Aaria's Blue Elephant</strong>. {tr('To support your records, your donations are', 'Para tus registros, tus donaciones son')} <strong>{tr('100% tax-deductible', '100% deducibles de impuestos')}</strong>; {tr('we ensure financial transparency by issuing official tax receipts and progress statements on a quarterly basis.', 'garantizamos transparencia financiera emitiendo recibos fiscales oficiales e informes de progreso de manera trimestral.')}
                     </p>
 
                         <div className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-6">
                             <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                                 <button id="donate-button" className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-4 px-10 rounded uppercase tracking-widest text-sm shadow-xl transition-transform hover:-translate-y-1 w-full flex items-center justify-center gap-2">
-                                    Donate <HeartPulse className="h-4 w-4" />
+                                    {tr('Donate', 'Donar')} <HeartPulse className="h-4 w-4" />
                                 </button>
                             </a>
                             <Link to="/signup" className="w-full sm:w-auto">
                                 <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-sky-900 font-bold py-4 px-10 rounded uppercase tracking-widest text-sm transition-colors w-full">
-                                    Get Started
+                                    {tr('Get Started', 'Comenzar')}
                                 </button>
                             </Link>
                         </div>
@@ -538,8 +537,8 @@ const Home: React.FC = () => {
                         {/* Trust Elements & QR */}
                         <div className="mt-12 flex flex-col md:flex-row items-center justify-center lg:justify-start gap-8 lg:gap-16">
                             {/* Candid Seal */}
-                            <a aria-label="Candid Profile" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 bg-white/10 backdrop-blur rounded-2xl p-4 shadow-lg border border-white/20">
-                                <img alt="Candid Platinum Seal" src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" className="h-20 sm:h-24 w-auto drop-shadow-lg" />
+                            <a aria-label={tr('Candid Profile', 'Perfil de Candid')} href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105 bg-white/10 backdrop-blur rounded-2xl p-4 shadow-lg border border-white/20">
+                                <img alt={tr('Candid Platinum Seal', 'Sello Platino de Candid')} src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/16447686/svg" className="h-20 sm:h-24 w-auto drop-shadow-lg" />
                             </a>
 
                             {/* Join Herd QR Code */}

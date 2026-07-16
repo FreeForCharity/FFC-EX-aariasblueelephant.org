@@ -1,4 +1,5 @@
 import React from 'react';
+import { tr } from '../lib/lang';
 
 export interface DonationQRProps {
     as?: 'a' | 'div';
@@ -20,7 +21,7 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
             {/* The Actual QR Code */}
             <img
                 src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.zeffy.com/en-US/donation-form/aariasblueelephant&margin=2"
-                alt="Zeffy Donation QR Code"
+                alt={tr('Zeffy Donation QR Code', 'Código QR de Donación Zeffy')}
                 className="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -44,7 +45,7 @@ const DonationQR: React.FC<DonationQRProps> = ({ as = 'a', onClick }) => {
                 {/* Horizontal Strip */}
                 <div className="w-full bg-white/90 dark:bg-slate-800/90 py-3 shadow-lg border-y border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-105 flex flex-col items-center justify-center">
                     <span className="font-sans font-black uppercase text-slate-900 dark:text-white tracking-[0.2em] text-sm leading-none">
-                        CLICK OR SCAN
+                        {tr('CLICK OR SCAN', 'HAZ CLIC O ESCANEA')}
                     </span>
                 </div>
             </div>

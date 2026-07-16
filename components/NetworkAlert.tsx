@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldAlert, X, Radio, ArrowRight, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tr } from '../lib/lang';
 
 interface NetworkAlertProps {
   onDismiss?: () => void;
@@ -43,10 +44,10 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
               <div className="flex-1 space-y-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                    Site Disruption Notice — High Volume Traffic
+                    {tr('Site Disruption Notice — High Volume Traffic', 'Aviso de Interrupción del Sitio — Tráfico de Alto Volumen')}
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-                    We are currently experiencing issues with our database due to exceptionally high volume. <span className="text-sky-500 font-semibold">Resilience Mode</span> has been automatically enabled so you can still browse our core mission and events. For any urgent questions, registrations, or assistance, please contact us directly at <a href="mailto:info@aariasblueelephant.org" className="text-sky-500 font-bold hover:underline">info@aariasblueelephant.org</a>.
+                    {tr('We are currently experiencing issues with our database due to exceptionally high volume.', 'Actualmente estamos teniendo problemas con nuestra base de datos debido a un volumen excepcionalmente alto.')} <span className="text-sky-500 font-semibold">{tr('Resilience Mode', 'Modo de Resiliencia')}</span> {tr('has been automatically enabled so you can still browse our core mission and events. For any urgent questions, registrations, or assistance, please contact us directly at', 'se ha activado automáticamente para que puedas seguir explorando nuestra misión principal y eventos. Para cualquier pregunta urgente, registro o asistencia, contáctanos directamente en')} <a href="mailto:info@aariasblueelephant.org" className="text-sky-500 font-bold hover:underline">info@aariasblueelephant.org</a>.
                   </p>
                 </div>
 
@@ -54,16 +55,16 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
                   <div className="flex items-start gap-3 p-4 bg-amber-500/5 rounded-xl border border-amber-500/10">
                     <Radio className="h-5 w-5 text-amber-500 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Resilient Browsing</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Our local fallback system ensures you can still access events and mission details despite backend outages.</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{tr('Resilient Browsing', 'Navegación Resiliente')}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{tr('Our local fallback system ensures you can still access events and mission details despite backend outages.', 'Nuestro sistema local de respaldo garantiza que puedas seguir accediendo a eventos y detalles de la misión a pesar de fallas del servidor.')}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3 p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
                     <Info className="h-5 w-5 text-indigo-500 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Offline Services</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">New signups and real-time likes are temporarily suspended to protect your data integrity.</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{tr('Offline Services', 'Servicios Sin Conexión')}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{tr('New signups and real-time likes are temporarily suspended to protect your data integrity.', 'Los nuevos registros y los likes en tiempo real están temporalmente suspendidos para proteger la integridad de tus datos.')}</p>
                     </div>
                   </div>
                 </div>
@@ -73,7 +74,7 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({ onDismiss }) => {
                     onClick={handleDismiss}
                     className="group inline-flex items-center gap-2 text-sm font-bold text-sky-500 hover:text-sky-600 transition-colors"
                   >
-                    I understand, keep browsing
+                    {tr('I understand, keep browsing', 'Entiendo, seguir navegando')}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>

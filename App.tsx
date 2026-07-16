@@ -11,6 +11,7 @@ import ParentalGate from './components/ParentalGate';
 import ScrollToTop from './components/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { tr } from './lib/lang';
 
 // Simple cache-buster to ensure mobile users get the latest scrolling fixes
 const VersionWatcher = () => {
@@ -69,14 +70,14 @@ const AuthRedirector = () => {
 };
 
 // Component to handle external redirects (e.g. Google Forms)
-const ExternalRedirect = ({ url, message = "Taking you to your destination..." }: { url: string, message?: string }) => {
+const ExternalRedirect = ({ url, message = tr("Taking you to your destination...", "Llevándote a tu destino...") }: { url: string, message?: string }) => {
   React.useEffect(() => {
     window.location.replace(url);
   }, [url]);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center bg-slate-50 dark:bg-brand-dark transition-colors duration-500">
       <div className="h-12 w-12 border-4 border-brand-cyan border-t-transparent rounded-full animate-spin mb-4"></div>
-      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Redirecting you...</h2>
+      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">{tr('Redirecting you...', 'Redirigiéndote...')}</h2>
       <p className="text-slate-500 dark:text-slate-400 mt-2">{message}</p>
     </div>
   );
@@ -112,8 +113,8 @@ const PageLoader = () => (
         <img src="/logo.webp" alt="ABE" className="h-10 w-10 opacity-70 animate-pulse" />
       </div>
     </div>
-    <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Creating an Inclusive World</h2>
-    <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto animate-pulse">Making sure everything is perfect for you...</p>
+    <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">{tr('Creating an Inclusive World', 'Creando un Mundo Inclusivo')}</h2>
+    <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto animate-pulse">{tr('Making sure everything is perfect for you...', 'Asegurándonos de que todo esté perfecto para ti...')}</p>
   </div>
 );
 
@@ -162,24 +163,24 @@ const App: React.FC = () => {
                 <Route path="/story" element={<Navigate to="/?share=story" replace />} />
 
                 {/* Short game links — aariasblueelephant.org/1, /2, … */}
-                <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message="Loading Aaria's Elly-Tubbies… 🐘☀️" />} />
-                <Route path="/2" element={<ExternalRedirect url="/blockcraft/index.html" message="Loading Aaria's Block Craft 3D… 🧱🌈" />} />
+                <Route path="/1" element={<ExternalRedirect url="/elly-tubbies/index.html" message={tr("Loading Aaria's Elly-Tubbies… 🐘☀️", "Cargando Aaria's Elly-Tubbies… 🐘☀️")} />} />
+                <Route path="/2" element={<ExternalRedirect url="/blockcraft/index.html" message={tr("Loading Aaria's Block Craft 3D… 🧱🌈", "Cargando Aaria's Block Craft 3D… 🧱🌈")} />} />
                 <Route path="/3" element={<Navigate to="/nelus-world" replace />} />
-                <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message="Loading Aaria's Road Safety Heroes… 🚲" />} />
-                <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message="Loading Aaria's Dough Lab… 🍪" />} />
-                <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message="Loading Aaria's Magnet Blocks… 🧲🧱" />} />
-                <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message="Loading Aaria's Helping Hands… 🖐️💙" />} />
-                <Route path="/8" element={<ExternalRedirect url="/grocery/index.html" message="Loading Aaria's Grocery Store… 🛒🍎" />} />
-                <Route path="/9" element={<ExternalRedirect url="/dayplanner/index.html" message="Loading Aaria's Day Planner… 📅🌅" />} />
-                <Route path="/10" element={<ExternalRedirect url="/feelings/index.html" message="Loading Aaria's Feelings Faces… 🎭" />} />
-                <Route path="/11" element={<ExternalRedirect url="/rhythm/index.html" message="Loading Aaria's Rhythm & Calm… 🎵" />} />
-                <Route path="/12" element={<ExternalRedirect url="/flying/index.html" message="Loading Aaria's Flying Elephant… 🐘☁️" />} />
+                <Route path="/4" element={<ExternalRedirect url="/roadsafety/index.html" message={tr("Loading Aaria's Road Safety Heroes… 🚲", "Cargando Aaria's Road Safety Heroes… 🚲")} />} />
+                <Route path="/5" element={<ExternalRedirect url="/doughlab/index.html" message={tr("Loading Aaria's Dough Lab… 🍪", "Cargando Aaria's Dough Lab… 🍪")} />} />
+                <Route path="/6" element={<ExternalRedirect url="/magnetblocks/index.html" message={tr("Loading Aaria's Magnet Blocks… 🧲🧱", "Cargando Aaria's Magnet Blocks… 🧲🧱")} />} />
+                <Route path="/7" element={<ExternalRedirect url="/helpinghands/index.html" message={tr("Loading Aaria's Helping Hands… 🖐️💙", "Cargando Aaria's Helping Hands… 🖐️💙")} />} />
+                <Route path="/8" element={<ExternalRedirect url="/grocery/index.html" message={tr("Loading Aaria's Grocery Store… 🛒🍎", "Cargando Aaria's Grocery Store… 🛒🍎")} />} />
+                <Route path="/9" element={<ExternalRedirect url="/dayplanner/index.html" message={tr("Loading Aaria's Day Planner… 📅🌅", "Cargando Aaria's Day Planner… 📅🌅")} />} />
+                <Route path="/10" element={<ExternalRedirect url="/feelings/index.html" message={tr("Loading Aaria's Feelings Faces… 🎭", "Cargando Aaria's Feelings Faces… 🎭")} />} />
+                <Route path="/11" element={<ExternalRedirect url="/rhythm/index.html" message={tr("Loading Aaria's Rhythm & Calm… 🎵", "Cargando Aaria's Rhythm & Calm… 🎵")} />} />
+                <Route path="/12" element={<ExternalRedirect url="/flying/index.html" message={tr("Loading Aaria's Flying Elephant… 🐘☁️", "Cargando Aaria's Flying Elephant… 🐘☁️")} />} />
 
                 {/* External Redirects */}
-                <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message="Taking you to our inclusion form." />} />
-                <Route path="/RSVP" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
-                <Route path="/rsvp" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message="Taking you to the RSVP form." />} />
-                <Route path="/softball" element={<ExternalRedirect url="https://forms.gle/Ec5Y5N3uE7URZeE79" message="Taking you to the Softball form." />} />
+                <Route path="/inclusion" element={<ExternalRedirect url="https://forms.gle/mCtYLoiJa3j1Ztqe9" message={tr("Taking you to our inclusion form.", "Llevándote a nuestro formulario de inclusión.")} />} />
+                <Route path="/RSVP" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message={tr("Taking you to the RSVP form.", "Llevándote al formulario de RSVP.")} />} />
+                <Route path="/rsvp" element={<ExternalRedirect url="https://docs.google.com/forms/d/e/1FAIpQLSeanyQe-RaswGQ_jIti8PLquRKMjcQokBHt6-rZZXbkSQR7eg/viewform?usp=sharing&ouid=102650340016089261237" message={tr("Taking you to the RSVP form.", "Llevándote al formulario de RSVP.")} />} />
+                <Route path="/softball" element={<ExternalRedirect url="https://forms.gle/Ec5Y5N3uE7URZeE79" message={tr("Taking you to the Softball form.", "Llevándote al formulario de Softball.")} />} />
               </Routes>
             </Suspense>
           </Layout>

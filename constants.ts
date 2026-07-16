@@ -1,5 +1,6 @@
 import { User, Event, Donation, Testimonial, EventRegistration } from './types';
 import { RESILIENCE_EVENTS, RESILIENCE_REGISTRATIONS, RESILIENCE_TESTIMONIALS } from './data/resilience_data';
+import { tr } from './lib/lang';
 
 export const MOCK_USERS: User[] = [
   { id: "1", email: "liji@blueelephant.org", role: "BoardMember.Owner", name: "Liji Chalatil" },
@@ -51,8 +52,8 @@ export const MOCK_TESTIMONIALS: Testimonial[] = RESILIENCE_TESTIMONIALS;
 export const STATIC_REGISTRATIONS: EventRegistration[] = RESILIENCE_REGISTRATIONS;
 
 export const BYLAWS_HIGHLIGHTS = [
-  "Organized exclusively for charitable purposes under Section 501(c)(3).",
-  "Specific purpose: Foster inclusive events for neurodivergent & neurotypical kids.",
-  "Board members serve without compensation (volunteer-based).",
-  "Non-discrimination policy on race, religion, disability, or gender."
+  tr("Organized exclusively for charitable purposes under Section 501(c)(3).", "Organizada exclusivamente con fines caritativos bajo la Sección 501(c)(3)."),
+  tr("Specific purpose: Foster inclusive events for neurodivergent & neurotypical kids.", "Propósito específico: fomentar eventos inclusivos para niños neurodivergentes y neurotípicos."),
+  tr("Board members serve without compensation (volunteer-based).", "Los miembros de la junta sirven sin compensación (son voluntarios)."),
+  tr("Non-discrimination policy on race, religion, disability, or gender.", "Política de no discriminación por raza, religión, discapacidad o género.")
 ];
