@@ -816,8 +816,12 @@ ABC.ui = (function () {
     wire('setDone',  () => closeDialog());
     wire('setReset', () => {
       message('Start over?', 'This erases the whole world. Are you sure?', 'Yes, new world! 🌍', () => {
+        // the beforeunload auto-save must NOT resurrect the world we just
+        // erased — flag the reset so every save path stands down
+        ABC._resetting = true;
         localStorage.removeItem('aariasBlockCraft3');
         localStorage.removeItem('aariasBlockCraft2');
+        localStorage.removeItem('blockcraft.replay.v1');   // fresh start = fresh movie too
         location.reload();
       }, '🧹');
     });

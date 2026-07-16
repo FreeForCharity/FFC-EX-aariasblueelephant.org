@@ -905,6 +905,7 @@
   const SAVE_KEY = 'aariasBlockCraft3';   // v3: infinite world (edits-only saves)
   let saveTimer = null;
   function saveNow() {
+    if (ABC._resetting) return;       // 🧹 Start-over: beforeunload auto-save must not resurrect the erased world
     if (ABC.state.visiting) return;   // visiting a friend's world — never touch the child's own save
     try {
       const s = ABC.audio.settings;
@@ -1361,6 +1362,7 @@
   let recPer = 0;
   function persistRec() {
     try {
+      if (ABC._resetting) return;     // 🧹 Start-over: don't resurrect the movie either
       if (recCount < 8) return;
       const base = recHead - recCount, s = [];
       for (let i = 0; i < recCount; i++) {
