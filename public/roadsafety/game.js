@@ -260,6 +260,17 @@ const QUIZ = {
 
 /* ---------- Spanish dictionary (kid-level, Latin-American, tú form) ---------- */
 ABELang.register({
+  /* 🚏 passengers */
+  "A friend needs a ride ahead — slow down at the stop! 🚏":"Un amigo necesita un aventón — ¡frena en la parada! 🚏",
+  "A friend needs a ride ahead — slow down at the stop!":"Un amigo necesita un aventón — ¡frena en la parada!",
+  "Hop in!":"¡Sube!",
+  "hops in! Next stop:":"¡sube! Próxima parada:",
+  "the park":"el parque", "school":"la escuela", "the market":"el mercado", "home":"casa",
+  "They will catch the next ride — no worries! 💙":"Tomará el próximo viaje — ¡no pasa nada! 💙",
+  "Next stop coming up — slow down!":"¡Ya viene la parada — baja la velocidad!",
+  "Delivered! Thank you! 💙":"¡Llegamos! ¡Gracias! 💙",
+  "Thank you for the ride!":"¡Gracias por el aventón!",
+  "hops off — thank you! 💙":"se baja — ¡gracias! 💙",
   /* weather rides */
   "☀️ Sunny":"☀️ Soleado", "🌧️ Rainy":"🌧️ Lluvia", "🌆 Dusk":"🌆 Atardecer",
   "🌧️ Rain: go slower, lights on!":"🌧️ Lluvia: ¡ve más despacio y enciende las luces!",
@@ -616,6 +627,7 @@ if (save.calm === undefined || save.calm === null){
 function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
 
 /* ---------- game state ---------- */
+window.RS = { get S() { return S; } };   // tiny debug/test seam
 const S = {
   screen:"menu", li:0, veh:VEHICLES[0], cfg:CFG[0], rt:ROUTES[0],
   t:0, o:0, speed:0, score:100, time:0,
@@ -1004,6 +1016,32 @@ function genEvents(li){
       if (got){ practiced.push(c); budget -= got; }
     }
   }
+  // 🚏 friendly passengers who need a ride (characters from the other games!)
+  // Slow down at their stop to pick them up, then drop them at their sign.
+  // No-fail: sail past the drop-off and they just hop off with a smaller cheer.
+  {
+    const PAX = [["🐸","Momo"],["🐰","Pip"],["🐻","Bo"],["🐦","Twee"],["🐘","Nilu"]];
+    const DEST = [["🌳","the park"],["🏫","school"],["🛒","the market"],["🏠","home"]];
+    // a stop only needs to keep clear of POINT events (signs, lights,
+    // crossings) — sitting inside a school zone is fine (realistic, even!)
+    const pts = evs.filter(e => e.at != null).map(e => e.at);
+    const claimed = [];
+    const clear = (d) => d > 620 && d < len - 480 &&
+      pts.every((x) => Math.abs(x - d) > 260) && claimed.every((x) => Math.abs(x - d) > 300);
+    let pi = Math.floor(hash(li * 7.3) * PAX.length), placed = 0;
+    for (const fr of [0.28, 0.4, 0.52, 0.62, 0.2, 0.72, 0.34, 0.46]){
+      if (placed >= 2) break;
+      const at = Math.round(len * fr);
+      const dest = Math.round(Math.min(len - 480, at + Math.max(600, len * 0.16)));
+      if (dest - at < 500 || !clear(at) || !clear(dest)) continue;
+      const who = PAX[pi++ % PAX.length];
+      const d2 = DEST[Math.floor(hash(at * 1.7) * DEST.length)];
+      evs.push({ type:"passenger", at, dest, emoji: who[0], name: who[1],
+                 destEmoji: d2[0], destName: d2[1], picked:false, delivered:false });
+      claimed.push(at, dest);
+      placed++;
+    }
+  }
   evs.sort((a, b) => (a.at ?? a.from) - (b.at ?? b.from));
   evs._practice = practiced;   // which concepts got extra events (for intro line + results cheer)
   return evs;
@@ -1306,6 +1344,40 @@ function update(dt){
 function updateEvent(ev, dt){
   const t = S.t, HW = HWf();
   switch (ev.type){
+
+    case "passenger": {
+      if (!ev.picked){
+        if (!ev.reminded && ev.at - t < 800 && ev.at > t){
+          ev.reminded = true;
+          setBanner(`${ev.emoji} ${ABELang.t("A friend needs a ride ahead — slow down at the stop! 🚏")}`);
+          speak(ABELang.t("A friend needs a ride ahead — slow down at the stop!"));
+        }
+        if (Math.abs(ev.at - t) < 64 && S.speed < .8){
+          ev.picked = true;
+          bonus(5, `${ev.emoji} ${ABELang.t("Hop in!")}`);
+          setBanner(`${ev.emoji} ${ev.name} ${ABELang.t("hops in! Next stop:")} ${ABELang.t(ev.destName)} ${ev.destEmoji}`);
+          speak(`${ev.name} ${ABELang.t("hops in! Next stop:")} ${ABELang.t(ev.destName)}`);
+        } else if (!ev.missed && t > ev.at + 100){
+          ev.missed = true; ev.delivered = true;   // gentle: the ride continues, no penalty
+          setBanner(`${ev.emoji} ${ABELang.t("They will catch the next ride — no worries! 💙")}`);
+        }
+      } else if (!ev.delivered){
+        if (!ev.destRem && ev.dest - t < 800 && ev.dest > t){
+          ev.destRem = true;
+          setBanner(`${ev.destEmoji} ${ABELang.t("Next stop coming up — slow down!")}`);
+          speak(ABELang.t("Next stop coming up — slow down!"));
+        }
+        if (Math.abs(ev.dest - t) < 64 && S.speed < .8){
+          ev.delivered = true; S.delivered = (S.delivered || 0) + 1;
+          bonus(10, `${ev.destEmoji} ${ABELang.t("Delivered! Thank you! 💙")}`);
+          speak(`${ABELang.t("Thank you for the ride!")} `);
+        } else if (t > ev.dest + 100){
+          ev.delivered = true; S.delivered = (S.delivered || 0) + 1;
+          bonus(5, `${ev.emoji} ${ABELang.t("hops off — thank you! 💙")}`);
+        }
+      }
+      break;
+    }
 
     case "stopsign": {
       if (ev.resolved) break;
@@ -2076,6 +2148,13 @@ function drawFP(){
       for (const c of ev.cones){ if (!c.hit) add(c.w, laneC(ev.lane) + c.jitter, p => fpCone(p)); }
     }
     if (ev.type === "bump") add(ev.at, ev.lat, p => fpBump(p));
+    if (ev.type === "passenger"){
+      if (!ev.picked && !ev.delivered){
+        add(ev.at, HW + 34, p => fpPassenger(p, ev));
+        add(ev.at - 380, HW + 36, p => fpWarn(p, "🚏"));
+      }
+      if (ev.picked && !ev.delivered) add(ev.dest, HW + 34, p => fpDestSign(p, ev));
+    }
   }
   // roadside scenery rushing past (the sense of speed)
   for (const pr of S.props){
@@ -2241,6 +2320,42 @@ function fpKid(p, k){
   ctx.fillStyle = ["#e63946","#457b9d","#2a9d8f","#f4a261","#9b5de5","#ff70a6"][Math.floor(hash(k.lat * 3) * 6)];
   rounded(-6, -20, 12, 15, 4); ctx.fill();
   ctx.fillStyle = "#f1c9a5"; ctx.beginPath(); ctx.arc(0, -25, 5.5, 0, 7); ctx.fill();
+  ctx.restore();
+}
+/* 🚏 a friendly character waiting at a bus stop, bobbing hopefully */
+function fpPassenger(p, ev){
+  if (p.sc < .08) return;
+  const s = p.sc * 2;
+  ctx.save(); ctx.translate(p.x, p.y);
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(0, 0, 14 * s, 4 * s, 0, 0, 7); ctx.fill();
+  ctx.scale(s, s);
+  // the stop pole + sign
+  ctx.fillStyle = "#556277"; ctx.fillRect(9, -30, 2.6, 30);
+  ctx.fillStyle = "#2456a6";
+  ctx.beginPath(); ctx.arc(10.3, -33, 6.5, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.font = "8px sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("🚏", 10.3, -30);
+  // the friend, bobbing with excitement
+  const bob = Math.sin(S.time * 3.2 + ev.at) * 1.6;
+  ctx.font = "19px sans-serif";
+  ctx.fillText(ev.emoji, -4, -6 + bob);
+  ctx.restore();
+}
+/* the drop-off sign showing where this friend wants to go */
+function fpDestSign(p, ev){
+  if (p.sc < .08) return;
+  const s = p.sc * 2;
+  ctx.save(); ctx.translate(p.x, p.y);
+  ctx.fillStyle = "rgba(0,0,0,.18)";
+  ctx.beginPath(); ctx.ellipse(0, 0, 12 * s, 4 * s, 0, 0, 7); ctx.fill();
+  ctx.scale(s, s);
+  ctx.fillStyle = "#556277"; ctx.fillRect(-1.3, -28, 2.6, 28);
+  const bounce = Math.sin(S.time * 4) * 1.4;
+  ctx.fillStyle = "rgba(255,255,255,.94)";
+  rounded(-12, -46 + bounce, 24, 17, 5); ctx.fill();
+  ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+  ctx.fillText(ev.destEmoji, 0, -33.5 + bounce);
   ctx.restore();
 }
 function fpCone(p){

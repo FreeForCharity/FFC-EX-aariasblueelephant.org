@@ -611,9 +611,65 @@
         if (b.classList.contains("done")) return;
         b.classList.add("done"); K.sfx.pop();
         p.querySelector("#gBag").textContent = "🛍️" + "✨";
-        if (--left === 0) setTimeout(finishTrip, 600 * K.speed());
+        if (--left === 0) setTimeout(startKitchen, 600 * K.speed());
       });
     });
+  }
+
+  /* 👩‍🍳 the kitchen beat: the list was secretly a RECIPE — now we cook it!
+     Sequencing practice (first… then… last…), no-fail: tapping another food
+     just gets a warm nudge back to the order. */
+  function startKitchen() {
+    if (G.got.length < 2) { finishTrip(); return; }   // tiny lists skip straight on
+    const dish = (G.theme && {
+      breakfast: ["🥣", "Yummy Breakfast", "Desayuno Rico"],
+      birthday: ["🎂", "Party Plate", "Plato de Fiesta"],
+      sick: ["🍵", "Feel-Better Tray", "Bandeja para Sentirse Mejor"],
+      picnic: ["🥪", "Picnic Plate", "Plato de Pícnic"],
+    }[G.theme.id]) || ["🍽️", "Snack Plate", "Plato de Botanas"];
+    const order = G.got.slice();
+    const tiles = order.slice().sort(() => Math.random() - 0.5);
+    let step = 0;
+    K.say(K.tr(`Kitchen time! Our list was a recipe — let us make a ${dish[1]}!`,
+               `¡A cocinar! Nuestra lista era una receta — ¡hagamos un ${dish[2]}!`));
+    const p = panel(`<h2>👩‍🍳 ${K.tr("Kitchen time!", "¡A cocinar!")}</h2>
+      <p style="font-weight:900;margin:2px 0">${K.tr(`We are making a ${dish[1]}!`, `¡Haremos un ${dish[2]}!`)}</p>
+      <p id="gDish" style="font-size:52px;min-height:60px;margin:6px 0">${dish[0]}</p>
+      <p id="gCookAsk" style="font-weight:900;min-height:26px"></p>
+      <div>${tiles.map((id) =>
+        `<button class="gScanItem" data-id="${id}" title="${foodById(id).name}">${foodById(id).emoji}</button>`).join("")}</div>`);
+    const ORDER_W = [["First", "Primero"], ["Then", "Luego"], ["Next", "Después"], ["Next", "Después"], ["Last", "Al final"], ["Last", "Al final"]];
+    const ask = () => {
+      const f = foodById(order[step]);
+      const w = ORDER_W[Math.min(step === order.length - 1 ? 4 : step, 5)];
+      p.querySelector("#gCookAsk").textContent = `${K.tr(w[0], w[1])}: ${foodName(f)} ${f.emoji}`;
+      K.say(K.tr(`${w[0]}, ${f.name}!`, `${w[1]}, ${f.nameEs}!`));
+    };
+    p.querySelectorAll(".gScanItem").forEach((b) => {
+      b.addEventListener("pointerdown", () => {
+        if (b.classList.contains("done")) return;
+        const want = order[step];
+        if (b.dataset.id === want) {
+          b.classList.add("done"); b.style.opacity = .35;
+          step++;
+          p.querySelector("#gDish").textContent = dish[0] + " " + order.slice(0, step).map((id) => foodById(id).emoji).join("");
+          K.sfx.pop();
+          if (step >= order.length) {
+            p.querySelector("#gCookAsk").textContent = K.tr("Munch munch! 😋 Delicious!", "¡Ñam ñam! 😋 ¡Delicioso!");
+            K.sfx.star();
+            K.recordEvent("cook", G.trips);
+            K.say(K.tr(`You made a ${dish[1]}! Munch munch — delicious!`,
+                       `¡Hiciste un ${dish[2]}! Ñam ñam — ¡delicioso!`));
+            setTimeout(finishTrip, 2400 * K.speed());
+          } else ask();
+        } else {
+          const f = foodById(want);
+          K.sfx.tap();
+          K.say(K.tr(`Soon! ${f.name} first!`, `¡Pronto! ¡Primero ${f.nameEs}!`));
+        }
+      });
+    });
+    ask();
   }
 
   function finishTrip() {
@@ -783,7 +839,8 @@
 
   buildStore();
   // tiny debug/test handle, same convention as Dough Lab's window.DL
-  window.GS = { G, P, stands, tryGrab: () => tryGrab(), useHint: () => useHint(), endReveal: () => endReveal() };
+  window.GS = { G, P, stands, tryGrab: () => tryGrab(), useHint: () => useHint(), endReveal: () => endReveal(),
+                startKitchen: () => startKitchen(), foodById };
   player = buildElephant(0x7ec8f7); scene.add(player);
   cart = buildCart(); scene.add(cart);
   frame(0); // draw once behind the title screen

@@ -377,7 +377,7 @@
     if (G.plan.length < MIN_STEPS) return;
     K.save(`plan.${G.routine}`, G.plan);
     K.save("routine", G.routine);
-    G.mode = "live"; G.idx = 0; G.panelOpen = false;
+    G.mode = "live"; G.idx = 0; G.panelOpen = false; G.surprised = false;
     $("dpPlanner").style.display = "none";
     $("dpStrip").style.display = "block";
     $("dpStripTitle").textContent = K.tr(`${ROUTINES[G.routine].emoji} My plan`, `${ROUTINES[G.routine].emoji} Mi plan`);
@@ -443,11 +443,57 @@
     G.idx++;
     renderStrip();
     if (G.idx >= G.plan.length) { setTimeout(finishDay, 1100 * K.speed()); }
+    else if (!G.surprised && G.plan.length >= 3 && G.idx >= 1 && Math.random() < 0.45) {
+      // 🔄 SURPRISE CHANGE — the clinically important one: plans sometimes
+      // change, and handling that gently is a skill we can practice here,
+      // in the safest place there is. Both choices are praised.
+      setTimeout(surpriseChange, 1200 * K.speed());
+    }
     else {
       refreshChip(); placeBeacon();
       const nxt = stepOf(G.plan[G.idx]);
       setTimeout(() => K.say(K.tr(`Now, ${nxt.label}!`, `¡Ahora, ${stepLabel(nxt)}!`)), 1400 * K.speed());
     }
+  }
+
+  /* 🔄 a planned step suddenly can't happen — Nilu models flexible thinking */
+  function surpriseChange() {
+    if (G.mode !== "live" || G.idx >= G.plan.length) return;
+    G.surprised = true;
+    const curId = G.plan[G.idx];
+    const cur = stepOf(curId);
+    // offer a swap to a step that is NOT already in the plan
+    const alts = Object.keys(STEPS).filter((id) => !G.plan.includes(id));
+    const altId = alts[Math.floor(Math.random() * alts.length)] || curId;
+    const alt = stepOf(altId);
+    K.sfx.pop();
+    K.say(K.tr(`Oh! Surprise! ${cur.label} needs to wait a little. That is okay — take a big breath with me. Whoo… We can swap it, or still try!`,
+               `¡Oh! ¡Sorpresa! ${stepLabel(cur)} tiene que esperar un poquito. Está bien — respira hondo conmigo. Fuu… ¡Podemos cambiarlo o intentarlo igual!`));
+    const p = panel(`<h2>🔄 ${K.tr("Surprise!", "¡Sorpresa!")}</h2>
+      <p style="font-weight:900">${K.tr(`${cur.emoji} ${cur.label} needs to wait a little. That is okay!`,
+                                        `${cur.emoji} ${stepLabel(cur)} tiene que esperar un poquito. ¡Está bien!`)}</p>
+      <p>${K.tr("Take a big breath… whoo! What shall we do?", "Respira hondo… ¡fuu! ¿Qué hacemos?")}</p>
+      <button class="kBig" id="dpSwap">${alt.emoji} ${K.tr(`Swap to ${alt.label}! 🔄`, `¡Cambiar a ${stepLabel(alt)}! 🔄`)}</button>
+      <button class="kBig kAlt" id="dpKeep">${cur.emoji} ${K.tr(`Still try ${cur.label} 💪`, `Intentar ${stepLabel(cur)} igual 💪`)}</button>`);
+    p.querySelector("#dpSwap").addEventListener("pointerdown", () => {
+      G.plan[G.idx] = altId;
+      closePanel();
+      K.sfx.star();
+      K.recordEvent("flex", G.idx);
+      K.say(K.tr(`Wow — you flexed like a superhero! Change is okay! Now, ${alt.label}!`,
+                 `¡Guau — te adaptaste como superhéroe! ¡Los cambios están bien! ¡Ahora, ${stepLabel(alt)}!`));
+      K.toast(K.tr("🦸 Flexible thinking! Change is okay! ⭐", "🦸 ¡Pensamiento flexible! ¡Los cambios están bien! ⭐"), 3600);
+      renderStrip(); refreshChip(); placeBeacon();
+    });
+    p.querySelector("#dpKeep").addEventListener("pointerdown", () => {
+      closePanel();
+      K.sfx.yes();
+      K.recordEvent("flex", G.idx);
+      K.say(K.tr(`Okay! Sometimes we can still try — with a little patience. Let us go to ${cur.label}!`,
+                 `¡Bien! A veces podemos intentarlo igual — con paciencia. ¡Vamos a ${stepLabel(cur)}!`));
+      K.toast(K.tr("💪 Patient and brave! ⭐", "💪 ¡Paciencia y valentía! ⭐"), 3200);
+      refreshChip(); placeBeacon();
+    });
   }
 
   function readPlan() {
@@ -612,7 +658,8 @@
   setMood("morning");
   player = buildElephant(0x7ec8f7); scene.add(player);
   // debug/test handle, same convention as grocery's window.GS
-  window.DP = { G, P, stations, tryDo: () => tryDo(), startDay: () => startDay(), openPlanner: () => openPlanner() };
+  window.DP = { G, P, stations, tryDo: () => tryDo(), startDay: () => startDay(), openPlanner: () => openPlanner(),
+                surpriseChange: () => surpriseChange(), STEPS };
   frame(0);
 
   K.init({

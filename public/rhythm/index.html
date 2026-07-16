@@ -55,6 +55,7 @@
 <div id="rWord"></div>
 
 <script src="lib/three.min.js"></script>
+<script src="../gamekit/festive.js"></script>
 <script src="../gamekit/kit.js"></script>
 <script>
 (function () {
@@ -648,6 +649,47 @@
     scene.add(fl); flies.push(fl);
   }
 
+  // the meadow celebrates real days (shared festive calendar) 🎃🪔🎄
+  if (window.ABEFestive) {
+    for (const e of ABEFestive.drift()) for (let i = 0; i < 4; i++) {
+      const s = emojiSprite(e, 0.7);
+      s.userData = { cx: (Math.random() - 0.5) * 24, cy: 2.5 + Math.random() * 4, cz: -6 + Math.random() * 12,
+                     a: Math.random() * 9, r: 2 + Math.random() * 3, sp: 0.25 + Math.random() * 0.4, joy: 0 };
+      scene.add(s); flies.push(s);
+    }
+    const h = ABEFestive.holiday();
+    if (h === 'diwali') {
+      for (let i = 0; i < 10; i++) {         // diyas ring the pond
+        const a = (i / 10) * Math.PI * 2;
+        const d = new THREE.Group();
+        const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), lam(0xb5651d, 0x4a2808));
+        bowl.scale.y = 0.8; d.add(bowl);
+        const fl = glowSprite('rgba(255,214,120,1)', 'rgba(255,150,40,0)', 0.8);
+        fl.position.y = 0.35; d.add(fl);
+        d.position.set(Math.cos(a) * 4, 0.05, 3.2 + Math.sin(a) * 4);
+        scene.add(d);
+      }
+    } else if (h === 'christmas') {
+      const tree = new THREE.Group();
+      [[1.4, 1.1], [1.05, 2.0], [0.7, 2.8]].forEach(([r, y]) => {
+        const tier = new THREE.Mesh(new THREE.ConeGeometry(r, 1.3, 10), lam(0x2f7d4a, 0x11301c));
+        tier.position.y = y; tree.add(tier);
+      });
+      const star = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+      star.position.y = 3.6; tree.add(star);
+      tree.position.set(-8, 0, -3); scene.add(tree);
+    } else if (h === 'halloween') {
+      for (const [x, z] of [[-9, 1], [9, 0], [-6, 6]]) {
+        const pk = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), lam(0xe8871e, 0x4a2a08));
+        body.scale.y = 0.75; body.position.y = 0.4; pk.add(body);
+        const gl = glowSprite('rgba(255,190,80,0.9)', 'rgba(255,140,30,0)', 1.3);
+        gl.position.y = 0.5; pk.add(gl);
+        pk.position.set(x, 0, z); scene.add(pk);
+      }
+    }
+  }
+
   // tap the animals (big invisible targets), or keys 1-4
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
   renderer.domElement.addEventListener('pointerdown', (e) => {
@@ -711,6 +753,8 @@
       word(K.tr('tap the animals to make music! 🎶', '¡toca los animales para hacer música! 🎶'));
       K.say(K.tr('Welcome to the music meadow! Tap my friends to play — every note grows a flower!',
                  '¡Bienvenido al prado musical! Toca a mis amigos — ¡cada nota hace crecer una flor!'));
+      const fest = window.ABEFestive && ABEFestive.helloOnce('rhythm');
+      if (fest) setTimeout(() => K.toast(K.tr(fest.en, fest.es), 4200), 5200);
     },
     onPause() {},
     onFrame: frame,
