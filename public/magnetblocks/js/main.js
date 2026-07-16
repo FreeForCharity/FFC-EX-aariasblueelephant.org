@@ -456,6 +456,9 @@ window.MB = window.MB || {};
       $('soundBtn').textContent = ui.muted ? '🔇' : '🔊';
       if (ui.muted){ MB.Audio.bgm(false); MB.Audio.tidy(false); } else MB.Audio.bgm(true);
     });
+    $('mirrorBtn').addEventListener('click', () => {
+      $('mirrorBtn').classList.toggle('on', MB.Mirror.toggle());
+    });
     $('calmBtn').addEventListener('click', () => {
       calm = !calm; ui.calm = calm;
       try { localStorage.setItem('mb_calm', calm ? '1' : '0'); } catch(e){}

@@ -61,6 +61,18 @@
     padding: 6px 13px; border-radius: 16px; box-shadow: 0 3px 8px rgba(0,0,0,.15);
     pointer-events: none;
   }
+  #orderCard {
+    position: absolute; top: 48px; left: 10px; z-index: 15; max-width: 220px;
+    background: rgba(255,255,255,.94); color: #5c4a32; font-weight: 800; font-size: 13px;
+    padding: 9px 12px; border-radius: 16px; border: 3px solid #f7b267;
+    box-shadow: 0 4px 12px rgba(0,0,0,.18); display: flex; align-items: center; gap: 8px;
+  }
+  #orderCard[hidden] { display: none; }
+  #orderWho { font-size: 28px; line-height: 1; }
+  #orderSkip {
+    border: 0; background: #f1e4cf; border-radius: 10px; min-width: 34px; min-height: 34px;
+    font-size: 15px; cursor: pointer; flex-shrink: 0;
+  }
 
   #toast {
     position: absolute; top: 14px; left: 50%; z-index: 20;
@@ -298,6 +310,11 @@ try{
   <canvas id="three"></canvas>
   <canvas id="ui"></canvas>
   <div id="chip">🍪 Shapes made: <span id="chipCount">0</span></div>
+  <div id="orderCard" hidden>
+    <span id="orderWho"></span>
+    <div id="orderTxt"></div>
+    <button id="orderSkip" title="Maybe later — the friend will wait">💤</button>
+  </div>
   <button id="abeExitBtn" class="hudBtn" data-abe="exit" title="Leave the game — back to all games" style="position:absolute;top:10px;left:10px;z-index:15">🏠<span class="hudLbl">Exit</span></button>
   <div id="hudBtns">
     <button id="muteBtn" class="hudBtn" data-abe="sound" title="Mute sound">🔊<span class="hudLbl">Sound</span></button>
@@ -2066,6 +2083,101 @@ window.DL = {
   unlock, markInteract, startAttract,
   get attractOn() { return attractOn; },
 };
+
+/* ---------- 🧾 cookie orders: friends drop by with dough requests ----------
+   Each order is checkable from the REAL soft-body state (piece count, shape,
+   flatness) — the physics is the answer sheet. No-fail: the friend waits
+   forever, cheers any progress, and a 💤 sends them off warmly. */
+const ORDER_PALS = ["🐰", "🐸", "🐻", "🐦"];
+const ORDER_NAMES = { "🐰": "Pip", "🐸": "Momo", "🐻": "Bo", "🐦": "Twee" };
+function doughMetrics() {
+  // per-component particle sets (same union walk as DL.components, kept local)
+  const adj = new Map();
+  for (const c of constraints) {
+    if (c.dead) continue;
+    if (!adj.has(c.a)) adj.set(c.a, []);
+    if (!adj.has(c.b)) adj.set(c.b, []);
+    adj.get(c.a).push(c.b); adj.get(c.b).push(c.a);
+  }
+  const seen = new Set(), comps = [];
+  for (let i = 0; i < particles.length; i++) {
+    if (seen.has(i)) continue;
+    const q = [i], idx = [];
+    seen.add(i);
+    while (q.length) {
+      const k = q.pop(); idx.push(k);
+      for (const n of (adj.get(k) || [])) if (!seen.has(n)) { seen.add(n); q.push(n); }
+    }
+    if (idx.length < 6) continue;                    // crumbs don't count
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const k of idx) {
+      const p = particles[k];
+      if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x;
+      if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
+      if (p.z < z0) z0 = p.z; if (p.z > z1) z1 = p.z;
+    }
+    const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
+    const long = Math.max(dx, dz), short = Math.max(0.12, Math.min(dx, dz));
+    comps.push({ n: idx.length, dx, dy, dz, long, aspect: long / short });
+  }
+  return comps;
+}
+const ORDERS = [
+  { id: "two", txt: ["Can you split the dough into TWO pieces?", "¿Puedes dividir la masa en DOS pedazos?"],
+    hint: ["Try the knife! 🔪", "¡Prueba el cuchillo! 🔪"], ok: (c) => c.length >= 2 },
+  { id: "snake", txt: ["Roll me a looong snake! 🐍", "¡Hazme una serpiente laaarga! 🐍"],
+    hint: ["Roll the dough back and forth! 🥖", "¡Rueda la masa de un lado a otro! 🥖"],
+    ok: (c) => c.some((k) => k.aspect > 2.6 && k.long > 2.2) },
+  { id: "pancake", txt: ["Squish me a BIG flat pancake! 🥞", "¡Aplasta un panqueque GRANDE y plano! 🥞"],
+    hint: ["Press it flat with pokes! 👇", "¡Aplástala con toquecitos! 👇"],
+    ok: (c) => c.some((k) => k.dy < 0.7 && k.dx > 1.5 && k.dz > 1.5) },
+  { id: "three", txt: ["THREE little pieces, please!", "¡TRES pedacitos, por favor!"],
+    hint: ["Cut, then cut again! 🔪🔪", "¡Corta y vuelve a cortar! 🔪🔪"], ok: (c) => c.length >= 3 },
+];
+const ORD = { cur: null, pal: null, done: 0, cooldown: 18, hintT: 0, poll: 0 };
+function nextOrder() {
+  ORD.pal = ORDER_PALS[(ORD.done + Math.floor(Math.random() * 2)) % ORDER_PALS.length];
+  ORD.cur = ORDERS[ORD.done % ORDERS.length];
+  ORD.hintT = 0;
+  const card = document.getElementById("orderCard");
+  document.getElementById("orderWho").textContent = ORD.pal;
+  document.getElementById("orderTxt").textContent = ABELang.es ? ORD.cur.txt[1] : ORD.cur.txt[0];
+  card.hidden = false;
+  toastQueue.push((ABELang.es ? ORD.cur.txt[1] : ORD.cur.txt[0])); pumpToast();
+  SND.plop && SND.plop();
+}
+function orderDone() {
+  const pal = ORD.pal, name = ORDER_NAMES[pal];
+  ORD.cur = null; ORD.done++; ORD.cooldown = 24 + Math.random() * 10;
+  document.getElementById("orderCard").hidden = true;
+  toastQueue.push(pal + " " + ABELang.t("{#} loves it! Thank you, chef! 💛").replace("{#}", name));
+  pumpToast();
+  SND.stamp && SND.stamp(); haptic && haptic(30);
+  unlock && unlock("shape3");
+}
+document.getElementById("orderSkip").addEventListener("click", () => {
+  if (!ORD.cur) return;
+  ORD.cur = null; ORD.cooldown = 30;
+  document.getElementById("orderCard").hidden = true;
+  toastQueue.push(ORD.pal + " " + ABELang.t("waves bye — see you later! 💤")); pumpToast();
+});
+setInterval(() => {
+  if (document.getElementById("titleScreen").style.display !== "none") return;
+  if (ORD.cur) {
+    ORD.poll++;
+    if (ORD.cur.ok(doughMetrics())) { orderDone(); return; }
+    ORD.hintT += 1;
+    if (ORD.hintT === 14) { toastQueue.push(ABELang.es ? ORD.cur.hint[1] : ORD.cur.hint[0]); pumpToast(); }
+  } else {
+    ORD.cooldown -= 1;
+    if (ORD.cooldown <= 0) nextOrder();
+  }
+}, 1000);
+ABELang.register({
+  "{#} loves it! Thank you, chef! 💛": "¡A {#} le encanta! ¡Gracias, chef! 💛",
+  "waves bye — see you later! 💤": "dice adiós — ¡hasta luego! 💤",
+});
+window.DL.orders = { ORD, nextOrder, doughMetrics };
 
 /* ---------- go ---------- */
 document.getElementById("startBtn").addEventListener("click", () => {

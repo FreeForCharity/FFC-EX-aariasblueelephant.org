@@ -388,11 +388,27 @@ try{
       <button class="big" id="setVoice" style="font-size:17px"></button>
       <button class="big" id="setCalm" style="font-size:17px"></button>
       <button class="big" id="setFs" style="font-size:17px">⛶ Full screen</button>
+      <button class="big" id="setMakeFriend" style="font-size:17px">🎨 Make a friend! — design your own Tubby</button>
       <button class="big" id="setReplay" style="font-size:17px">▶️ My Movie — watch your adventure!</button>
       <button class="big" id="setImportReplay" style="font-size:17px">📥 Watch a friend's adventure</button>
       <button class="big" id="setParent" style="font-size:17px">👨‍👩‍👧 For grown-ups</button>
     </div>
     <button class="big" id="setClose">Done ▶</button>
+  </div></div>
+
+  <!-- 🎨 design-your-own Tubby: pick a color, give a name — they live here forever -->
+  <div class="overlay" id="friendMaker"><div class="panel" style="max-width:430px">
+    <h1>🎨 Make a friend!</h1>
+    <p id="fmIntro" style="font-weight:800;margin:6px 0">Pick their pyjama color:</p>
+    <div id="fmColors" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0"></div>
+    <p style="font-weight:800;margin:8px 0 4px" id="fmNameLbl">And their name:</p>
+    <input id="fmName" type="text" maxlength="12" autocomplete="off"
+      style="width:80%;font:inherit;font-size:20px;font-weight:800;text-align:center;padding:10px;border-radius:14px;border:3px solid #b197fc" placeholder="Sunny">
+    <div id="fmSuggest" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+      <button class="big" id="fmMake" style="font-size:18px">✨ Bring them to life!</button>
+      <button class="big" id="fmCancel" style="font-size:18px;background:#dfe3ee;color:#3a3a5a">Later</button>
+    </div>
   </div></div>
 
   <!-- Grown-up gate: a tiny typed math check keeps this out of kid-taps -->
@@ -532,6 +548,13 @@ try{
 ABELang.register({
 /* ---------------- title screen / static chrome ---------------- */
 "Built for":"Hecho para",
+"🎨 Make a friend! — design your own Tubby":"🎨 ¡Crea un amigo! — diseña tu propio Tubby",
+"Pick their pyjama color:":"Elige el color de su pijama:",
+"And their name:":"Y su nombre:",
+"✨ Bring them to life!":"✨ ¡Dale vida!",
+"{#} giggles — your very own friend!":"¡{#} se ríe — tu propio amigo!",
+"{#} is alive! You MADE a friend — they live here now!":"¡{#} está vivo! ¡CREASTE un amigo — ahora vive aquí!",
+"🎨 Say hello to {#}! 💛":"🎨 ¡Saluda a {#}! 💛",
 "— bouncy elephant friends in sunny Trunkland!":"— ¡amigos elefantes saltarines en el soleado Trunkland!",
 "▶ Play!":"▶ ¡Jugar!",
 "❓ How to Play":"❓ Cómo Jugar",
@@ -1016,6 +1039,7 @@ const $=id=>document.getElementById(id);
   if($('setFs'))$('setFs').textContent=t('⛶ Full screen');
   if($('setReplay'))$('setReplay').textContent=t('▶️ My Movie — watch your adventure!');
   if($('setImportReplay'))$('setImportReplay').textContent=t('📥 Watch a friend\'s adventure');
+  if($('setMakeFriend'))$('setMakeFriend').textContent=t('🎨 Make a friend! — design your own Tubby');
   if($('setParent'))$('setParent').textContent=t('👨‍👩‍👧 For grown-ups');
   {const h=document.querySelector('#settings h1');if(h)h.textContent=t('⚙️ Settings');}
   if($('setClose'))$('setClose').textContent=t('Done ▶');
@@ -3940,6 +3964,7 @@ function frame(now){
   else if(mode==='replay')updateReplay(dt,time);   // 🎬 play back a recorded path — visuals/sound only
   else animEllie(player,time,dt,false);
   for(const id in tubbies)animEllie(tubbies[id],time,dt,false);
+  if(typeof updateCustomTubby==='function')updateCustomTubby(dt,time);   // 🎨 the child's own friend
 
   // living water: waves roll, and the glitter path always points at the Sun Baby
   {const sw=frame._sunW||(frame._sunW=new T.Vector3());
@@ -4119,6 +4144,84 @@ function renderParentPanel(){
 }
 $('setParent').onclick=()=>{sfx.tap();$('settings').classList.remove('show');
   $('parentAns').value='';$('parentGateErr').textContent='';$('parentGate').classList.add('show');};
+/* 🎨 design-your-own Tubby */
+const FM_COLORS=[['#e35d78','#b13a54'],['#f2a24a','#c67722'],['#f4d03f','#c2a52c'],['#5fc06e','#3d9450'],
+                 ['#39b7c9','#25919f'],['#7b6bd6','#5847b3'],['#e07ad0','#b04ba2'],['#8d9aa8','#5c6874']];
+const FM_NAMES=['Sunny','Coco','Pippin','Luna','Ziggy','Mimi'];
+let fmPick=FM_COLORS[0];
+function openFriendMaker(){
+  const row=$('fmColors');row.innerHTML='';
+  FM_COLORS.forEach(([c,d])=>{
+    const b=document.createElement('button');
+    b.style.cssText='width:52px;height:52px;border-radius:50%;border:4px solid '+(fmPick[0]===c?'#3a3a5a':'transparent')+';background:'+c+';cursor:pointer';
+    b.title=c;b.onclick=()=>{sfx.tap();fmPick=[c,d];openFriendMaker();};
+    row.appendChild(b);
+  });
+  const sug=$('fmSuggest');sug.innerHTML='';
+  FM_NAMES.forEach(n=>{
+    const b=document.createElement('button');
+    b.textContent=n;b.style.cssText='font:inherit;font-weight:800;padding:6px 12px;border-radius:12px;border:2px solid #b197fc;background:#fff;cursor:pointer';
+    b.onclick=()=>{sfx.tap();$('fmName').value=n;};
+    sug.appendChild(b);
+  });
+  $('fmIntro').textContent=ABELang.t('Pick their pyjama color:');
+  $('fmNameLbl').textContent=ABELang.t('And their name:');
+  $('fmMake').textContent=ABELang.t('✨ Bring them to life!');
+  $('friendMaker').classList.add('show');
+}
+$('setMakeFriend').onclick=()=>{sfx.tap();$('settings').classList.remove('show');openFriendMaker();};
+$('fmCancel').onclick=()=>{sfx.tap();$('friendMaker').classList.remove('show');};
+$('fmMake').onclick=()=>{
+  const name=($('fmName').value||'').trim()||FM_NAMES[Math.floor(Math.random()*FM_NAMES.length)];
+  S.customTubby={name:name.slice(0,12),body:fmPick[0],dark:fmPick[1]};save();
+  $('friendMaker').classList.remove('show');
+  spawnCustomTubby(true);
+};
+/* the custom friend lives in Trunkland as a wandering pal */
+let cTub=null,cWander={t:0,tx:6,tz:-4};
+function spawnCustomTubby(fresh){
+  if(!S.customTubby)return;
+  if(cTub){scene.remove(cTub.group);cTub=null;}
+  const cfg={name:S.customTubby.name,body:S.customTubby.body,dark:S.customTubby.dark,antenna:'star',antCol:'#ffd447'};
+  cTub=makeEllie(cfg);
+  const px=player.group.position;
+  cTub.group.position.set(px.x+3,terrainH(px.x+3,px.z+2),px.z+2);
+  scene.add(cTub.group);
+  cTub.anim.tv('💛');
+  const nb=bannerSprite(cfg.name,cfg.dark||'#555',0.55);nb.position.y=4.5;cTub.group.add(nb);
+  addTappable(cTub.group,()=>{
+    if(mode!=='roam')return;
+    giggle();doMove(cTub,['jump','spin','wave'][Math.floor(Math.random()*3)],0.9);
+    floatSprite('💛',cTub.group.position,3,1.2,1.1);
+    say('💛',ABELang.t('{#} giggles — your very own friend!').replace('{#}',cfg.name));
+  },true,true);
+  if(fresh){
+    burst(cTub.group.position,24,'#ffdc00');sfx.star();
+    say('💛',ABELang.t('{#} is alive! You MADE a friend — they live here now!').replace('{#}',cfg.name));
+    celebToast(ABELang.t('🎨 Say hello to {#}! 💛').replace('{#}',cfg.name),3200);
+  }
+}
+function updateCustomTubby(dt,time){
+  if(!cTub)return;
+  cWander.t-=dt;
+  if(cWander.t<=0){
+    cWander.t=5+Math.random()*6;
+    const a=Math.random()*Math.PI*2,r=4+Math.random()*10;
+    const px=player.group.position;
+    cWander.tx=Math.max(-38,Math.min(38,px.x+Math.cos(a)*r));
+    cWander.tz=Math.max(-38,Math.min(38,px.z+Math.sin(a)*r));
+  }
+  const g=cTub.group,dx=cWander.tx-g.position.x,dz=cWander.tz-g.position.z;
+  const d=Math.hypot(dx,dz);
+  const walking=d>0.6;
+  if(walking){
+    g.position.x+=dx/d*dt*1.6;g.position.z+=dz/d*dt*1.6;
+    g.rotation.y=Math.atan2(dx,dz);
+  }
+  g.position.y=terrainH(g.position.x,g.position.z);
+  animEllie(cTub,time,dt,walking);
+}
+if(S.customTubby)spawnCustomTubby(false);
 $('parentGateCancel').onclick=()=>{sfx.tap();$('parentGate').classList.remove('show');$('settings').classList.add('show');};
 $('parentGateGo').onclick=()=>{
   if(($('parentAns').value||'').trim()===String(6+7)){

@@ -222,6 +222,7 @@ window.MB = window.MB || {};
       squashBounce(inst.group);
       spawnSnapFlash(B.snap.point);
       if (B.snap.parent && MB.ui && MB.ui.milestone) MB.ui.milestone('snap', '🎉 First snap! Blocks click together like magic!');
+      MB.Mirror && MB.Mirror.echo(inst);              // 🪞
       MB.Undo && MB.Undo.push();
     } else {
       // no magnet: drop where it is — falls to the floor and becomes a stray
@@ -241,7 +242,7 @@ window.MB = window.MB || {};
         const e = 1 - Math.pow(1-k, 2.2);
         const dy = (to.y - from.y) * e, dx = (to.x-from.x)*e, dz = (to.z-from.z)*e;
         g.members.forEach((m,i) => m.inst.group.position.set(membersFrom[i].x+dx, membersFrom[i].y+dy, membersFrom[i].z+dz));
-      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); inst.group.userData.seq = MB.Bag.nextSeq(); if (MB.Stats) MB.Stats.bump('blocksPlaced'); } MB.cleanupCheck && MB.cleanupCheck(); MB.Undo && MB.Undo.push(); });
+      }, () => { if (inst.onTable){ MB.Audio.snap(); squashBounce(inst.group); spawnSnapFlash(to); inst.group.userData.seq = MB.Bag.nextSeq(); if (MB.Stats) MB.Stats.bump('blocksPlaced'); MB.Mirror && MB.Mirror.echo(inst); } MB.cleanupCheck && MB.cleanupCheck(); MB.Undo && MB.Undo.push(); });
     }
     B.snap = null;
     changed();
@@ -325,6 +326,7 @@ window.MB = window.MB || {};
 
   // fly a block (and its stack) back to its shelf bin, then remove
   B.flyToShelf = function(inst, thenRemove = true){
+    if (thenRemove && MB.Mirror) MB.Mirror.echoRemove(inst);   // 🪞 the twin goes home too
     const members = [...MB.Magnet.subtree(inst)];
     MB.Audio.whoosh();
     for (const m of members) m._flying = true;
