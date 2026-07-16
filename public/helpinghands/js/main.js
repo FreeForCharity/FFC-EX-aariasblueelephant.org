@@ -414,6 +414,7 @@ const MODE_CARDS = [
   { id: "explore", icon: "🌍", title: "Explore My World", desc: "Visit home & school" },
   { id: "hand", icon: "🖐️", title: "My Helping Hand", desc: "Pick 5 helpers who keep you safe" },
   { id: "practice", icon: "💪", title: "Practice Being Brave", desc: "Try safe choices with Nilu" },
+  { id: "roleplay", icon: "🤝", title: "Practice with a Grown-Up", desc: "A grown-up reads the parts out loud" },
 ];
 function renderMenuCards() {
   const wrap = $("menuCards"); wrap.innerHTML = "";
@@ -426,6 +427,7 @@ function renderMenuCards() {
       if (m.id === "explore") enterExplore();
       else if (m.id === "hand") enterHand();
       else if (m.id === "practice") enterPractice();
+      else if (m.id === "roleplay") enterRolePlay();
     });
     wrap.appendChild(card);
   });
@@ -1177,6 +1179,101 @@ function wireHand() { /* interactions wired per-render */ }
    or room is not walkable (shouldn't happen for the tier-A set).
    --------------------------------------------------------------- */
 let practiceState = null;
+
+/* ---------------------------------------------------------------
+   🤝 PRACTICE WITH A GROWN-UP — the tablet becomes a shared script.
+   The grown-up reads role cards out loud (the tricky person, then the
+   helper) while the child practices the same safe responses the
+   curriculum already teaches — now with a real voice and real eyes.
+   --------------------------------------------------------------- */
+let roleState = null;
+const rpEsc = (s) => String(s == null ? "" : s).replace(/</g, "&lt;");
+function enterRolePlay() {
+  showScreen("practiceScreen");
+  prepState = null; practiceState = null;
+  roleState = { sc: null, step: "intro" };
+  renderRolePlay();
+}
+function rpCard(body, html) {
+  const d = document.createElement("div");
+  d.className = "practice-step";
+  d.innerHTML = html;
+  body.appendChild(d);
+  return d;
+}
+function rpBtn(body, label, fn) {
+  const b = document.createElement("button");
+  b.className = "choice-btn";
+  b.style.cssText = "display:block;margin:10px auto 0;min-height:52px;font-weight:800;max-width:560px;width:100%";
+  b.textContent = label;
+  b.addEventListener("click", () => { SND.pop && SND.pop(); fn(); });
+  body.appendChild(b);
+  return b;
+}
+function renderRolePlay() {
+  const body = $("practiceBody"); body.innerHTML = "";
+  const st = roleState;
+  if (st.step === "intro") {
+    setNilu("Practice with your grown-up! 🤝");
+    rpCard(body, `<h2 class="practice-title">🤝 Practice with a Grown-Up</h2>
+      <p style="text-align:left"><b>Grown-ups:</b> you'll read short role cards out loud — first the tricky person, then the helper — while your child practices the safe responses. Go slow, cheer everything, repeat favorites.</p>
+      <p style="text-align:left;font-size:13px;color:#5a6b86">These practice scripts are AI-assisted and may not be perfect for every child — adapt any wording freely, and please tell us about anything that seems off: <b>hi@aariasblueelephant.org</b></p>`);
+    rpBtn(body, "Let's practice! ▶", () => { st.step = "pick"; renderRolePlay(); });
+    rpBtn(body, "⬅ Back", () => { showScreen("menuScreen"); });
+    return;
+  }
+  if (st.step === "pick") {
+    setNilu("Pick a story to act out together! 🤝");
+    rpCard(body, `<h2 class="practice-title">Which story shall we practice?</h2>`);
+    C.SCENARIOS.forEach((sc) => {
+      rpBtn(body, `${sc.emoji} ${sc.title}`, () => { st.sc = sc; st.step = "act"; renderRolePlay(); });
+    });
+    rpBtn(body, "⬅ Back", () => { st.step = "intro"; renderRolePlay(); });
+    return;
+  }
+  const sc = st.sc;
+  if (st.step === "act") {
+    setNilu("Listen to your grown-up… then use your strong words! 💪");
+    const actor = (C.SCENARIO_ACTORS && C.SCENARIO_ACTORS[sc.id]) || {};
+    rpCard(body, `<h2 class="practice-title">${sc.emoji} ${rpEsc(sc.title)}</h2>
+      <div style="background:#fff5da;border:3px solid #f0b429;border-radius:14px;padding:12px;margin:8px 0;text-align:left">
+        <b>🎭 GROWN-UP reads out loud:</b><br>
+        <span style="font-size:17px">“${rpEsc(actor.bubble || sc.setup)}”</span>
+      </div>
+      <p><b>Your turn! What can you do FIRST?</b></p>`);
+    const correct = sc.reactA[0];
+    sc.reactA.slice().sort(() => Math.random() - 0.5).forEach((opt) => {
+      rpBtn(body, opt, () => {
+        if (opt === correct) { SND.chime(); st.step = "tell"; renderRolePlay(); }
+        else setNilu("Hmm — is that the SAFE choice? Try another! 💛");
+      });
+    });
+    return;
+  }
+  if (st.step === "tell") {
+    const h = (C.HELPERS && C.HELPERS[sc.tellTo && sc.tellTo[0]]) ||
+      { emoji: "🧑", name: "a helper", line: "I am listening. Tell me everything." };
+    setNilu("Now TELL the helper — say it out loud! 🗣️");
+    rpCard(body, `<div style="background:#e8f6ec;border:3px solid #57ae5b;border-radius:14px;padding:12px;margin:8px 0;text-align:left">
+        <b>🎭 GROWN-UP now plays ${h.emoji} ${rpEsc(h.name)} — read out loud:</b><br>
+        <span style="font-size:17px">“${rpEsc(h.line)}”</span>
+      </div>
+      <p><b>Child: tell the helper what happened, in your own words!</b></p>
+      <p style="font-size:13px;color:#5a6b86">Grown-up tip: listen all the way through, then say "Thank you for telling me. You did the right thing."</p>`);
+    rpBtn(body, "🗣️ I told them!", () => { st.step = "resolve"; renderRolePlay(); });
+    return;
+  }
+  if (st.step === "resolve") {
+    setNilu("You practiced with a REAL voice — the bravest practice of all! ⭐");
+    confettiBig(); SND.chime();
+    rpCard(body, `<h2 class="practice-title">🌟 Wonderful!</h2>
+      <p>${rpEsc(sc.resolve)}</p>
+      <p><b>High five each other — you practiced it for real!</b> 🙌</p>`);
+    rpBtn(body, "Practice another story ▶", () => { st.sc = null; st.step = "pick"; renderRolePlay(); });
+    rpBtn(body, "🏠 Done", () => { showScreen("menuScreen"); });
+    return;
+  }
+}
 
 function enterPractice() {
   showScreen("practiceScreen");

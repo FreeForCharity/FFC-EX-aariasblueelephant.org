@@ -240,6 +240,8 @@ try{
   <script src="/gamekit/lang.js"></script>
   <script>
   ABELang.register({
+    '🪞 Mirror Magic ON! Build on one side — the mirror builds the other!': '🪞 ¡Espejo Mágico ACTIVADO! Construye de un lado — ¡el espejo construye el otro!',
+    '🪞 Mirror Magic off. Your pieces stay!': '🪞 Espejo Mágico apagado. ¡Tus piezas se quedan!',
     "Built for <b>Aaria and Her Friends</b> 💖 — magnetic blocks that click, stack &amp; drive!":
       "Hecho para <b>Aaria y sus Amigos</b> 💖 — ¡bloques magnéticos que se pegan, se apilan y se manejan!",
     "Welcome to the playroom! Take blocks off the shelves, feel them <b>click</b> together like magic magnets, and build anything you dream of. Snap a photo to keep your creation safe in your school bag! 🎒":
@@ -381,6 +383,7 @@ try{
       <button class="menuBtn" id="soundBtn" data-abe="sound" title="Sound on or off">🔊</button>
       <button class="menuBtn" id="replayBtn" title="Watch your build appear piece by piece!" style="display:none">▶️ My Movie</button>
       <button class="menuBtn" id="shareBtn" title="Save your build as a file to share" style="display:none">📤 Share</button>
+      <button class="menuBtn" id="mirrorBtn" title="Mirror Magic — build one side, the mirror builds the other!">🪞</button>
       <button class="menuBtn" id="calmBtn" title="Calm mode">😌</button>
       <button class="menuBtn" id="tableBtn" title="Change the table color">🟩 Table</button>
       <button class="menuBtn" id="tidyNowBtn" title="Tidy up — put stray pieces back">🧹 Tidy</button>
@@ -488,6 +491,7 @@ try{
   <script src="js/undo.js"></script>
   <script src="js/replay.js"></script>
   <script src="js/cleanup.js"></script>
+  <script src="js/mirror.js"></script>
   <script src="js/help.js"></script>
   <script src="js/main.js"></script>
   <script src="/gamekit/passport.js" data-game="magnetblocks" defer></script>
