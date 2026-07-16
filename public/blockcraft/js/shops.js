@@ -40,6 +40,7 @@ ABC.shops = (function () {
     const g = awning(c1, c2); g.position.set(px, 1, pz); scene.add(ABC.world.entityShadows(g));
     const s = sign(name); s.position.set(px, 4.4, pz); scene.add(ABC.world.entityShadows(s));
     stalls.push({ g, s, x: px, z: pz });
+    ABC.space && ABC.space.reserve(px, pz, 3.2);   // 📏 keep decorations off the shop
   }
   function vendor(s, vx, vz) {
     const v = ABC.animals.spawn(s.animal, vx, vz, s.name);

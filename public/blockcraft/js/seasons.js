@@ -72,13 +72,22 @@ ABC.seasons = (function () {
     const tb = ABC.world.topBlock(Math.round(x), Math.round(z));
     return tb ? tb.y + 1 : 1;
   };
-  /* scatter spots in a ring around home, away from the main build area */
+  /* scatter spots in a ring around home, away from the main build area —
+     every spot goes through the breathing-room guard (ABC.space), which
+     slides it outward if shops/tracks/squishies/other props are close,
+     and drops it entirely when the meadow is genuinely full */
   function spots(n, seed) {
     const out = [];
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + seed;
-      const r = 14 + ((i * 7 + seed * 13) % 14);
-      out.push([Math.cos(a) * r, Math.sin(a) * r]);
+      const r = 16 + ((i * 7 + seed * 13) % 16);
+      let x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (ABC.space) {
+        const spot = ABC.space.claim(x, z, 2.6);
+        if (!spot) continue;
+        x = spot.x; z = spot.z;
+      }
+      out.push([x, z]);
     }
     return out;
   }
@@ -227,13 +236,18 @@ ABC.seasons = (function () {
   const holidayFX = [];          // twinkling things that need per-frame love
   function holidayDecorate(h) {
     if (h === 'diwali') {
-      // two warm rows of diyas along the home path
-      for (let i = -4; i <= 4; i++) { for (const zz of [4, 7]) { const d = diya(i * 1.6, zz); scene.add(d); holidayFX.push(d); } }
+      // two warm rows of diyas along the home path — skip spots in use
+      for (let i = -4; i <= 4; i++) for (const zz of [4, 7]) {
+        if (ABC.space && !ABC.space.isFree(i * 1.6, zz, 0.9)) continue;
+        ABC.space && ABC.space.reserve(i * 1.6, zz, 0.9);
+        const d = diya(i * 1.6, zz); scene.add(d); holidayFX.push(d);
+      }
     } else if (h === 'halloween') {
       spots(6, 3).forEach(([x, z]) => { const j = jacko(x, z); scene.add(j); });
       for (let i = 0; i < 5; i++) drifter('👻', 0.7, 'flutter');
     } else if (h === 'christmas') {
-      const t = xmasTree(6, 8); scene.add(t); holidayFX.push(t);
+      const tp = ABC.space ? ABC.space.claim(6, 8, 3) : { x: 6, z: 8 };
+      if (tp) { const t = xmasTree(tp.x, tp.z); scene.add(t); holidayFX.push(t); }
       for (let i = 0; i < 4; i++) { const s = spriteOf('🍭', 0.8); const [x, z] = [4 - i * 2.6, 5]; s.position.set(x, gy(x, z) + 0.4, z); scene.add(s); }
     } else if (h === 'flags' || h === 'july4') {
       spots(6, 5).forEach(([x, z]) => { const f = flag(x, z); scene.add(f); holidayFX.push(f); });
@@ -303,7 +317,9 @@ ABC.seasons = (function () {
     return g;
   }
 
-  function init(sc) { scene = sc; decorate(); }
+  /* decorate AFTER the world save has loaded, so tracks/squishies/shops
+     have reserved their spots first (ABC.space) and we keep clear of them */
+  function init(sc) { scene = sc; }
 
   function update(dt) {
     t += dt;
@@ -338,5 +354,5 @@ ABC.seasons = (function () {
   /* test hook: force a holiday's decorations (never persists) */
   function _force(h) { if (h) holidayDecorate(h); return HOLIDAY_HELLO[h]; }
 
-  return { init, update, cur, holiday, _force };
+  return { init, update, cur, holiday, decorate, _force };
 })();
