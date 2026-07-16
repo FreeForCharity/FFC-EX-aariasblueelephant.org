@@ -33,6 +33,7 @@
 <div id="fFriend" hidden></div>
 
 <script src="lib/three.min.js"></script>
+<script src="../gamekit/festive.js"></script>
 <script src="../gamekit/kit.js"></script>
 <script>
 (function () {
@@ -311,6 +312,7 @@
   function startFriend(f) {
     FR.active = f; FR.t = 0;
     FR.prompt = null; FR.promptT = 3.5; FR.dir = 'down';
+    FR.lead = null; FR.ledOnce = false;
     f.cd = 999;
     if (f.teach === 'color') colorRings(true);
     K.sfx.star();
@@ -522,6 +524,61 @@
         new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 }));
       scene.add(s); streaks.push({ m: s, off: [(Math.random() - 0.5) * 16, (Math.random() - 0.5) * 9, -Math.random() * 26 - 4] });
     }
+    // the sky celebrates real days (shared festive calendar) 🎃🪔🎄
+    if (window.ABEFestive) {
+      const em = ABEFestive.drift();
+      for (const e of em) for (let i = 0; i < 4; i++) {
+        const s = emojiSprite(e, 1.5);
+        s.position.set((Math.random() - 0.5) * 110, 10 + Math.random() * 22, -20 - Math.random() * 150);
+        s.userData = { t: Math.random() * 9 };
+        scene.add(s); birds.push(s);            // they bob — and twirl at your trumpet!
+      }
+      const h = ABEFestive.holiday();
+      const lamG = (c, e2) => new THREE.MeshLambertMaterial({ color: c, emissive: e2 });
+      if (h === 'diwali') {
+        for (let i = 0; i < 8; i++) {           // diyas ring the rainbow island
+          const a = (i / 8) * Math.PI * 2;
+          const d = new THREE.Group();
+          const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), lamG(0xb5651d, 0x4a2808));
+          bowl.scale.y = 0.8; d.add(bowl);
+          const fl = glowSprite('rgba(255,214,120,1)', 'rgba(255,150,40,0)', 1.6);
+          fl.position.y = 0.7; d.add(fl);
+          d.position.set(Math.cos(a) * 6.5, 2.7, Math.sin(a) * 6.5);
+          pad.add(d);
+        }
+      } else if (h === 'christmas') {
+        const tree = new THREE.Group();
+        [[2.2, 1.6], [1.7, 3.0], [1.2, 4.2]].forEach(([r, y]) => {
+          const tier = new THREE.Mesh(new THREE.ConeGeometry(r, 2, 10), lamG(0x2f7d4a, 0x11301c));
+          tier.position.y = y; tree.add(tier);
+        });
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+        star.position.y = 5.4; tree.add(star);
+        tree.position.set(-4, 2.5, 3); pad.add(tree);
+      } else if (h === 'halloween') {
+        for (const isle of ISLES.slice(0, 4)) {
+          const pk = new THREE.Group();
+          const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), lamG(0xe8871e, 0x4a2a08));
+          body.scale.y = 0.75; pk.add(body);
+          const gl = glowSprite('rgba(255,190,80,0.9)', 'rgba(255,140,30,0)', 2.2);
+          gl.position.y = 0.2; pk.add(gl);
+          pk.position.set(isle.x + 1.5, isle.topY + 0.6, isle.z);
+          scene.add(pk);
+        }
+      } else if (h === 'flags' || h === 'july4') {
+        for (const isle of ISLES.slice(0, 4)) {
+          const f = new THREE.Group();
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.6, 6), lamG(0x9aa3b2, 0x3a3f47));
+          pole.position.y = 1.3; f.add(pole);
+          for (let i = 0; i < 3; i++) {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.16, 0.05), lamG(i % 2 ? 0xf4f8fc : 0xc0392b, i % 2 ? 0x555c62 : 0x4a120c));
+            stripe.position.set(0.62, 2.4 - i * 0.16, 0); f.add(stripe);
+          }
+          f.position.set(isle.x - 1.5, isle.topY, isle.z);
+          scene.add(f);
+        }
+      }
+    }
     // Nilu's soft blob shadow — grounds her against ocean and lawns
     shadowBlob = new THREE.Mesh(new THREE.CircleGeometry(1.5, 20),
       new THREE.MeshBasicMaterial({ color: 0x1a2a4a, transparent: true, opacity: 0.15, depthWrite: false }));
@@ -665,11 +722,20 @@
   }
 
   function takeOff() {
-    G.flying = true;
-    P.yaw = Math.PI; P.pitch = 0.3; P.sp = F.cruise; P.y += 2;
-    spawnRings();
-    K.sfx.yes();
-    K.say(K.tr('Up, up and away!', '¡Arriba, arriba y a volar!'));
+    if (G.counting) return;
+    G.counting = true;                       // 🚀 count BACKWARDS to launch
+    K.say(K.tr('Count down with me! Five… four… three… two… one…',
+               '¡Cuenta conmigo! Cinco… cuatro… tres… dos… uno…'));
+    const NUMS = ['5️⃣', '4️⃣', '3️⃣', '2️⃣', '1️⃣'];
+    NUMS.forEach((n, i) => setTimeout(() => { K.toast(n, 700); K.sfx.tap(); }, 400 + i * 750));
+    setTimeout(() => {
+      G.counting = false;
+      G.flying = true;
+      P.yaw = Math.PI; P.pitch = 0.3; P.sp = F.cruise; P.y += 2;
+      spawnRings();
+      K.sfx.yes();
+      K.say(K.tr('Up, up and away!', '¡Arriba, arriba y a volar!'));
+    }, 400 + 5 * 750);
   }
 
   function trumpet() {
@@ -733,6 +799,35 @@
       const g = f.g;
       if (FR.active === f && G.flying && !K.replaying) {
         FR.t += dt;
+        // 🐾 follow-the-leader: sometimes the friend darts ahead and asks
+        // to be followed — imitation practice, warmly narrated either way
+        if (!FR.lead && FR.t > 8 && FR.t < 26 && !FR.ledOnce) {
+          FR.ledOnce = true;
+          FR.lead = { t: 7, dx: (Math.random() < 0.5 ? -1 : 1) * 10, dy: Math.random() < 0.5 ? 5 : -4 };
+          K.say(K.tr('Follow me! Fly just like me!', '¡Sígueme! ¡Vuela como yo!'));
+          K.toast(K.tr('🐾 Follow the leader!', '🐾 ¡Sigue al líder!'), 2600);
+        }
+        if (FR.lead) {
+          FR.lead.t -= dt;
+          const fx0 = -Math.sin(P.yaw), fz0 = -Math.cos(P.yaw);
+          const lx = P.x + fx0 * 9 - fz0 * FR.lead.dx * 0.8;
+          const ly = Math.max(5, P.y + FR.lead.dy);
+          const lz = P.z + fz0 * 9 + fx0 * FR.lead.dx * 0.8;
+          const lk = 1 - Math.exp(-dt * 2);
+          g.position.x += (lx - g.position.x) * lk;
+          g.position.y += (ly - g.position.y) * lk;
+          g.position.z += (lz - g.position.z) * lk;
+          g.rotation.y = P.yaw + Math.PI;
+          if (FR.lead.t <= 0) {
+            const d = Math.hypot(g.position.x - P.x, g.position.y - P.y, g.position.z - P.z);
+            if (d < 9) { K.sfx.star(); K.say(K.tr('You followed me! Just like me — wonderful!', '¡Me seguiste! ¡Igualito que yo — maravilloso!')); }
+            else K.say(K.tr('I am over here! Let us fly together again.', '¡Estoy por acá! Volemos juntos otra vez.'));
+            FR.lead = null;
+          }
+          if (f.teach === 'updown') stella(dt);
+          if (FR.t > 34) endFriend();
+          continue;
+        }
         const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
         const tx = P.x + fx * 3.6 - fz * f.side * 3.6;
         const ty = P.y + 1.1 + Math.sin(f.bob * 2) * 0.5;
@@ -931,6 +1026,8 @@
       spawnRings();
       K.say(K.tr('Flap those big ears, Nilu! Fly through the star rings!',
                  '¡Aletea esas orejotas, Nilu! ¡Vuela por los anillos de estrellas!'));
+      const fest = window.ABEFestive && ABEFestive.helloOnce('flying');
+      if (fest) setTimeout(() => K.toast(K.tr(fest.en, fest.es), 4200), 5200);
     },
     onPause() {},
     onFrame: frame,
