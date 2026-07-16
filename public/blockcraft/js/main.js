@@ -547,8 +547,8 @@
     }
     if (info.kind === 'track') {                       // dig mode picks tracks back up
       if (m === 'dig' || hand.kind === 'tool') { ABC.train.removeAt(info.cell); return; }
-      if (hand.kind === 'track') {                     // extend the line right on top
-        ABC.ui.toast(ABC.tpl('🛤️ Tap the ground NEXT to a track to keep the line going!'), 2600, true);
+      if (hand.kind === 'track') {                     // taps extend the line by themselves now
+        ABC.ui.toast(ABC.tpl('🛤️ Tap the ground anywhere — the track lays itself to that spot!'), 2600, true);
         return;
       }
       return;

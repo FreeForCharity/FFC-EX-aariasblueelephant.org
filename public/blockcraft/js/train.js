@@ -141,27 +141,62 @@ ABC.train = (function () {
     }
   }
 
-  function place(x, y, z, rot) {
+  /* one cell, no fanfare — the building block of place() below */
+  function addCell(x, y, z, out) {
     const k = key(x, y, z);
-    if (pieces.has(k)) return false;
-    const data = { x, y, z, rot: rot || 0 };
-    const p = { data, group: null };
-    pieces.set(k, p);
+    if (pieces.has(k)) return null;
+    const data = { x, y, z, rot: 0 };
+    pieces.set(k, { data, group: null });
     ABC.space && ABC.space.reserve(x + 0.5, z + 0.5, 1.4);   // 📏 keep props off the railway
     refreshAround(x, y, z);
+    out.push(data);
+    return data;
+  }
+
+  /* tap ANYWHERE and the line extends there by itself: an L-shaped run of
+     track is laid from the nearest existing rail to the tapped spot, all at
+     one height — so the line is ALWAYS connected and the train always has
+     somewhere real to run. This is the whole trick that makes track-laying
+     something a child can actually do. */
+  function place(x, y, z, rot) {
+    if (riding) return false;
+    const added = [];
+    if (!pieces.size) {
+      addCell(x, y, z, added);
+    } else {
+      // nearest existing rail (any height) — the line grows from there
+      let near = null, best = 1e9;
+      for (const p of pieces.values()) {
+        const d = Math.abs(p.data.x - x) + Math.abs(p.data.z - z);
+        if (d < best) { best = d; near = p.data; }
+      }
+      if (best === 0) return false;                     // tapped the track itself
+      if (best > 40) {
+        ABC.ui.toast(ABC.tpl('🛤️ A bit closer to your track, little engineer!'), 2600, true);
+        return false;
+      }
+      // L-path from the nearest rail to the tap, at the LINE's height
+      let cx = near.x, cz = near.z;
+      const sx = Math.sign(x - cx), sz = Math.sign(z - cz);
+      while (cx !== x) { cx += sx; addCell(cx, near.y, cz, added); }
+      while (cz !== z) { cz += sz; addCell(cx, near.y, cz, added); }
+    }
+    if (!added.length) return false;
+    const last = added[added.length - 1];
     ABC.audio.sfx.pop();
     ABC.saveSoon && ABC.saveSoon();
     // counting practice on the way to 10 — the CONNECTED line is what counts
-    const lineN = component(data).size;
+    const lineN = component(last).size;
     if (!train && lineN < MIN_TRACKS) {
       const left = MIN_TRACKS - lineN;
       ABC.ui.toast('🛤️ ' + (lineN === 1
         ? ABC.tpl('1 track! Let us count to 10 — then your train will come!')
         : ABC.tpl(`${lineN} tracks — ${left} more and your train will come!`)), 2400, true);
     }
-    ensureTrain(data);
-    if (train && !riding) parkTrain(data);  // the train follows your newest track
-    updateMarker(data);
+    ensureTrain(last);
+    // the train only relocates to a line it can actually RUN on
+    if (train && !riding && component(last).size >= MIN_TRACKS) parkTrain(last);
+    updateMarker(last);
     return true;
   }
   function removeAt(cell) {
@@ -506,7 +541,9 @@ ABC.train = (function () {
   /* ================================================================
      RIDING
      ================================================================ */
-  function canRide() { return !!train && pieces.size >= MIN_TRACKS; }
+  /* boardable only when the LINE UNDER THE TRAIN is long enough — never
+     a ping-pong ride on some two-piece stub */
+  function canRide() { return !!train && R.cell && component(R.cell).size >= MIN_TRACKS; }
   function board() {
     riding = true;
     R.speed = 0;
@@ -573,7 +610,11 @@ ABC.train = (function () {
           R.prog = 0.999;
           R.pauseT = 1.1;                              // sweet stop at the end of the line
           R.speed = 0;
-          ABC.ui.toast(ABC.tpl('🚂 End of the line! Turning around…'), 2200, true);
+          const nowMs = Date.now();                    // announce at most every 10s
+          if (!R.endToastAt || nowMs - R.endToastAt > 10000) {
+            R.endToastAt = nowMs;
+            ABC.ui.toast(ABC.tpl('🚂 End of the line! Turning around…'), 2200, true);
+          }
           break;
         }
         R.prog -= 1;
