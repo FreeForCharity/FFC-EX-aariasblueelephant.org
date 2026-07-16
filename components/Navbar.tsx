@@ -9,7 +9,7 @@ import Button from './Button';
 import Logo from './Logo';
 import DonationQR from './DonationQR';
 import { useAuth } from '../context/AuthContext';
-import { tr, toggleLang, langLabel } from '../lib/lang';
+import { tr, toggleLang, langLabel, isEs } from '../lib/lang';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -132,7 +132,7 @@ const Navbar: React.FC = () => {
               </Link>
 
               {/* Navbar QR Code CTA */}
-              <div className="flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="hidden xl:flex flex-col items-center gap-1.5 pl-4 sm:pl-6 border-l border-slate-200 dark:border-slate-800 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="group relative shrink-0" title="Make a Donation">
                   <div className="absolute -inset-2 bg-sky-500/40 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
                   <div className="relative z-10 h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 bg-white rounded-2xl border-2 border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.2)] group-hover:shadow-[0_0_25px_rgba(14,165,233,0.5)] transition-all duration-300 ring-4 ring-sky-500/10 group-hover:ring-sky-500 overflow-hidden flex items-center justify-center">
@@ -166,17 +166,17 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 1 */}
-            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-10"></div>
+            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 2: Navigation Links */}
             <div className="hidden lg:flex flex-none justify-center shrink-0 min-w-0 mx-auto">
-              <div className="flex items-center space-x-4 xl:space-x-8 px-2">
+              <div className="flex items-center space-x-1 min-[1900px]:space-x-6 px-2">
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
                     to={link.path}
                     onClick={(e) => handleNavClick(link.path, e)}
-                    className={`group/nav rounded-2xl px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
+                    className={`group/nav rounded-2xl px-1.5 min-[1900px]:px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
                       ? 'text-sky-600 dark:text-sky-400'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
@@ -187,19 +187,19 @@ const Navbar: React.FC = () => {
                       color={isActive(link.path) ? link.color : '#94a3b8'}
                       className="transition-all"
                     />
-                    <span className="text-[10px] xl:text-[11px] font-black uppercase tracking-[0.15em]">{link.name}</span>
+                    <span className="hidden xl:block text-[9px] min-[1900px]:text-[11px] font-black uppercase tracking-[0.05em] min-[1900px]:tracking-[0.15em]" title={link.name}>{link.name}</span>
                   </Link>
                 ))}
               </div>
             </div>
 
             {/* Vertical Divider 2 */}
-            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-10"></div>
+            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 3: Utilities & Donate Tagline */}
-            <div className="hidden lg:flex flex-1 justify-end items-center gap-4 xl:gap-8">
+            <div className="hidden lg:flex flex-1 justify-end items-center gap-2 xl:gap-3">
               {/* Auth Section - Only visible when signed in */}
-              <div className="flex items-center gap-4 mr-4">
+              <div className="flex items-center gap-3 mr-2">
                 {user && (
                   <div className="flex flex-col items-center gap-1.5 min-w-0">
                     <div className="relative">
@@ -250,10 +250,10 @@ const Navbar: React.FC = () => {
               <div className="flex flex-col items-center gap-1 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
                   <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
-                    {tr('Donate', 'Dona')} <span className="hidden xl:inline">{tr('for the Cause', 'por la causa')}</span> <HeartPulse className="h-4 w-4 shrink-0" />
+                    {tr('Donate', 'Dona')} <span className="hidden min-[1900px]:inline">{tr('for the Cause', 'por la causa')}</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
-                <div className="flex flex-col items-center leading-tight">
+                <div className="hidden min-[1900px]:flex flex-col items-center leading-tight">
                   <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase">
                     {tr('100% Free. Fully Inclusive.', '100% gratis. Totalmente inclusivo.')}
                   </span>
@@ -264,19 +264,20 @@ const Navbar: React.FC = () => {
               </div>
 
               {/* Language Toggle - Desktop */}
-              <div className="flex items-center pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
+              <div className="flex items-center pl-1 border-l border-slate-200 dark:border-slate-800 ml-1">
                 <button
                   onClick={toggleLang}
-                  className="px-3 py-2 rounded-full text-[11px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 transition-colors whitespace-nowrap"
+                  className="px-2 py-2 rounded-full text-[11px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 transition-colors whitespace-nowrap"
                   aria-label={tr('Switch language to Spanish', 'Cambiar idioma a inglés')}
                   title={tr('Ver el sitio en español', 'View this site in English')}
                 >
-                  {langLabel()}
+                  <span className="hidden min-[1900px]:inline">{langLabel()}</span>
+                  <span className="min-[1900px]:hidden">🌐 {isEs() ? 'EN' : 'ES'}</span>
                 </button>
               </div>
 
               {/* Theme Toggle Slider - Desktop */}
-              <div className="flex items-center pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
+              <div className="flex items-center pl-1 border-l border-slate-200 dark:border-slate-800 ml-1">
                 <button
                   onClick={toggleTheme}
                   className="group relative inline-flex h-9 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-full p-1 transition-all duration-500 ease-in-out bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-inner overflow-hidden shrink-0"
