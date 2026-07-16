@@ -58,6 +58,63 @@ const VIEW_ROUTES: Record<string, string> = {
   wheel: '/wheel',
 };
 
+/* 🐘💌 Nilu's Postcard — a weekly recap of everything the child did across
+   ALL the games, read from the same on-device saves the games keep. Shows
+   this week's growth (vs. a weekly snapshot); first visit shows totals.
+   Nothing leaves the device — it's a postcard from Nilu, not analytics. */
+const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string }> = [
+  { key: 'abe.rhythm.garden', emoji: '🌸', line: (n) => `${n} flowers grew in your Music Meadow` },
+  { key: 'abe.flying.stars', emoji: '⭐', line: (n) => `${n} star rings flown with Nilu` },
+  { key: 'abe.flying.friends', emoji: '🐋', line: (n) => `${n} flights with sky friends` },
+  { key: 'abe.feelings.made', emoji: '🎭', line: (n) => `${n} feeling faces built` },
+  { key: 'abe.grocery.trips', emoji: '🛒', line: (n) => `${n} shopping trips finished` },
+  { key: 'abe.dayplanner.days', emoji: '🏠', line: (n) => `${n} days planned and lived` },
+  { key: 'abe.rhythm.songs', emoji: '🎶', line: (n) => `${n} little songs echoed back` },
+];
+const weekId = () => {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  return `${d.getFullYear()}-w${Math.floor((d.getTime() - jan1.getTime()) / 604800000)}`;
+};
+const NiluPostcard: React.FC = () => {
+  const [rows, setRows] = useState<Array<{ emoji: string; text: string }>>([]);
+  const [fresh, setFresh] = useState(false);
+  useEffect(() => {
+    try {
+      const now: Record<string, number> = {};
+      for (const m of METRICS) now[m.key] = Number(JSON.parse(localStorage.getItem(m.key) || '0')) || 0;
+      const snapRaw = localStorage.getItem('abe.postcard');
+      const snap = snapRaw ? JSON.parse(snapRaw) : null;
+      const isNewWeek = !snap || snap.week !== weekId();
+      const base: Record<string, number> = isNewWeek && snap ? snap.values : (snap ? snap.base : {});
+      if (isNewWeek) localStorage.setItem('abe.postcard', JSON.stringify({ week: weekId(), values: now, base: snap ? snap.values : {} }));
+      const out: Array<{ emoji: string; text: string }> = [];
+      for (const m of METRICS) {
+        const delta = snap ? now[m.key] - (base[m.key] || 0) : now[m.key];
+        if (delta > 0) out.push({ emoji: m.emoji, text: m.line(delta) });
+      }
+      setFresh(!snap);
+      setRows(out.slice(0, 5));
+    } catch { /* private mode */ }
+  }, []);
+  if (!rows.length) return null;
+  return (
+    <div className="max-w-md mx-auto mb-8 rounded-2xl border-4 border-dashed border-sky-300 dark:border-sky-700 bg-amber-50 dark:bg-slate-800/70 p-5 text-left shadow-lg rotate-[-1deg]">
+      <div className="flex items-start justify-between">
+        <h2 className="font-black text-slate-900 dark:text-white">💌 A postcard from Nilu</h2>
+        <span className="text-2xl" aria-hidden>🐘</span>
+      </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{fresh ? 'Everything so far…' : 'This week…'}</p>
+      <ul className="space-y-1">
+        {rows.map((r) => (
+          <li key={r.text} className="text-sm font-bold text-slate-700 dark:text-slate-200">{r.emoji} {r.text}</li>
+        ))}
+      </ul>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">I'm so proud of you! 💙 — Nilu</p>
+    </div>
+  );
+};
+
 const Games: React.FC = () => {
   const cards = useLiveCatalog();
   return (
@@ -71,6 +128,7 @@ const Games: React.FC = () => {
         No accounts, no ads, and nothing leaves your device. Collect a passport stamp in every one!
       </p>
     </div>
+    <NiluPostcard />
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
       {cards.map((g) => {
         const href = g.path ?? (g.view ? VIEW_ROUTES[g.view] : undefined);
