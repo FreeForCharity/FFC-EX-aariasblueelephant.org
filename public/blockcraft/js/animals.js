@@ -289,6 +289,11 @@ ABC.animals = (function () {
     // shops (incl. vendors) are placed by ABC.shops after spawnAll
     // a few gentle friends near home — the parks add their own as you explore
     spawn('bunny', -6, -10); spawn('butterfly', 2, 4); spawn('puppy', 8, 6);
+    if (ABC.space){                                   // 📏 friends need wiggle room
+      ABC.space.reserve(4, -8, 4);                    // Nilu the guide
+      for (const [x, z] of [[-6, -10], [2, 4], [8, 6]]) ABC.space.reserve(x, z, 2.5);
+      ABC.space.reserve(0, 0, 5);                     // the spawn clearing itself
+    }
     return list;
   }
 

@@ -147,6 +147,7 @@ ABC.train = (function () {
     const data = { x, y, z, rot: rot || 0 };
     const p = { data, group: null };
     pieces.set(k, p);
+    ABC.space && ABC.space.reserve(x + 0.5, z + 0.5, 1.4);   // 📏 keep props off the railway
     refreshAround(x, y, z);
     ABC.audio.sfx.pop();
     ABC.saveSoon && ABC.saveSoon();
@@ -616,7 +617,7 @@ ABC.train = (function () {
     for (const p of pieces.values()) p.group && scene.remove(p.group);
     pieces.clear();
     if (train) { scene.remove(train); train = null; }
-    (arr || []).forEach((d) => pieces.set(key(d.x, d.y, d.z), { data: d, group: null }));
+    (arr || []).forEach((d) => { pieces.set(key(d.x, d.y, d.z), { data: d, group: null }); ABC.space && ABC.space.reserve(d.x + 0.5, d.z + 0.5, 1.4); });
     for (const p of pieces.values()) refreshPiece(p);
     ensureTrain();
     if (!train && pieces.size) updateMarker(pieces.values().next().value.data);

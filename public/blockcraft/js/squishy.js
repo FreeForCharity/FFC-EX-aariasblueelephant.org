@@ -150,6 +150,7 @@ ABC.squishy = (function () {
       spring: { sx: 1, sy: 1, vx: 0, vy: 0 },   // squash & stretch springs
       wobbleT: Math.random() * 10, carried: false };
     g.traverse(o => { if (o.isMesh) o.userData.squishyRef = s; });
+    ABC.space && ABC.space.reserve(data.x, data.z, 2);   // 📏 breathing room
     list.push(s);
     return s;
   }

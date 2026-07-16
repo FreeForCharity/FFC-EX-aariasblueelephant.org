@@ -1141,6 +1141,9 @@
   /* ---------------- start flow ---------------- */
   let started = false;
   const hadSave = load();
+  // 📏 seasonal decorations arrive LAST, so they claim only genuinely free
+  // spots (shops, tracks, squishies and friends have all reserved theirs)
+  ABC.seasons.decorate();
   $('playerNameInput').value = ABC.state.playerName;
 
   $('playBtn').onclick = () => {
