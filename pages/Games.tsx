@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GAME_CARDS, GameCard } from '../data/games';
+import { tr, isEs } from '../lib/lang';
 
 // In the NATIVE APP, the launcher refreshes itself from the live site's
 // /games-catalog.json — a game shipped to the website appears here the same
@@ -63,13 +64,13 @@ const VIEW_ROUTES: Record<string, string> = {
    this week's growth (vs. a weekly snapshot); first visit shows totals.
    Nothing leaves the device — it's a postcard from Nilu, not analytics. */
 const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string }> = [
-  { key: 'abe.rhythm.garden', emoji: '🌸', line: (n) => `${n} flowers grew in your Music Meadow` },
-  { key: 'abe.flying.stars', emoji: '⭐', line: (n) => `${n} star rings flown with Nilu` },
-  { key: 'abe.flying.friends', emoji: '🐋', line: (n) => `${n} flights with sky friends` },
-  { key: 'abe.feelings.made', emoji: '🎭', line: (n) => `${n} feeling faces built` },
-  { key: 'abe.grocery.trips', emoji: '🛒', line: (n) => `${n} shopping trips finished` },
-  { key: 'abe.dayplanner.days', emoji: '🏠', line: (n) => `${n} days planned and lived` },
-  { key: 'abe.rhythm.songs', emoji: '🎶', line: (n) => `${n} little songs echoed back` },
+  { key: 'abe.rhythm.garden', emoji: '🌸', line: (n) => tr(`${n} flowers grew in your Music Meadow`, `${n} flores crecieron en tu Prado Musical`) },
+  { key: 'abe.flying.stars', emoji: '⭐', line: (n) => tr(`${n} star rings flown with Nilu`, `${n} anillos de estrellas volados con Nilu`) },
+  { key: 'abe.flying.friends', emoji: '🐋', line: (n) => tr(`${n} flights with sky friends`, `${n} vuelos con amigos del cielo`) },
+  { key: 'abe.feelings.made', emoji: '🎭', line: (n) => tr(`${n} feeling faces built`, `${n} caras de sentimientos armadas`) },
+  { key: 'abe.grocery.trips', emoji: '🛒', line: (n) => tr(`${n} shopping trips finished`, `${n} viajes de compras terminados`) },
+  { key: 'abe.dayplanner.days', emoji: '🏠', line: (n) => tr(`${n} days planned and lived`, `${n} días planeados y vividos`) },
+  { key: 'abe.rhythm.songs', emoji: '🎶', line: (n) => tr(`${n} little songs echoed back` , `${n} cancioncitas resonaron de vuelta`) },
 ];
 const weekId = () => {
   const d = new Date();
@@ -104,13 +105,13 @@ const NiluPostcard: React.FC = () => {
         <h2 className="font-black text-slate-900 dark:text-white">💌 A postcard from Nilu</h2>
         <span className="text-2xl" aria-hidden>🐘</span>
       </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{fresh ? 'Everything so far…' : 'This week…'}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{fresh ? tr('Everything so far…', 'Todo hasta ahora…') : tr('This week…', 'Esta semana…')}</p>
       <ul className="space-y-1">
         {rows.map((r) => (
           <li key={r.text} className="text-sm font-bold text-slate-700 dark:text-slate-200">{r.emoji} {r.text}</li>
         ))}
       </ul>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">I'm so proud of you! 💙 — Nilu</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{tr("I'm so proud of you! 💙 — Nilu", '¡Estoy muy orgullosa de ti! 💙 — Nilu')}</p>
     </div>
   );
 };
@@ -121,11 +122,13 @@ const Games: React.FC = () => {
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
     <div className="text-center pt-6 pb-8">
       <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white">
-        🎮 Our Games
+        🎮 {tr('Our Games', 'Nuestros Juegos')}
       </h1>
       <p className="mt-3 text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-        Free browser games built for Aaria and Her Friends 💖 — calm, kind, and safe.
-        No accounts, no ads, and nothing leaves your device. Collect a passport stamp in every one!
+        {tr(
+          'Free browser games built for Aaria and Her Friends 💖 — calm, kind, and safe. No accounts, no ads, and nothing leaves your device. Collect a passport stamp in every one!',
+          'Juegos de navegador gratis creados para Aaria y sus Amigos 💖 — tranquilos, amables y seguros. Sin cuentas, sin anuncios, y nada sale de tu dispositivo. ¡Colecciona un sello de pasaporte en cada uno!'
+        )}
       </p>
     </div>
     <NiluPostcard />
@@ -144,9 +147,9 @@ const Games: React.FC = () => {
               <h3 className="font-bold text-slate-900 dark:text-white">
                 {g.emoji} {g.title}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{g.oneLiner}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{isEs() && g.oneLiner_es ? g.oneLiner_es : g.oneLiner}</p>
               <p className="text-xs font-bold text-brand-cyan mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                ▶️ Play now
+                ▶️ {tr('Play now', 'Jugar ahora')}
               </p>
             </div>
           </a>
@@ -154,11 +157,11 @@ const Games: React.FC = () => {
       })}
     </div>
     <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-10">
-      Grown-ups: our games collect no personal information — see our{' '}
-      <a href="/privacy-policy" className="underline">privacy policy</a> and{' '}
-      <a href="/legal/disclosure.html" className="underline">general disclosure</a>.
-      {' '}Running a games table at an event?{' '}
-      <a href="/playtest" className="underline">Playtest Corner</a>.
+      {tr('Grown-ups: our games collect no personal information — see our', 'Adultos: nuestros juegos no recopilan información personal — consulta nuestra')}{' '}
+      <a href="/privacy-policy" className="underline">{tr('privacy policy', 'política de privacidad')}</a> {tr('and', 'y')}{' '}
+      <a href="/legal/disclosure.html" className="underline">{tr('general disclosure', 'divulgación general')}</a>.
+      {' '}{tr('Running a games table at an event?', '¿Tienes una mesa de juegos en un evento?')}{' '}
+      <a href="/playtest" className="underline">{tr('Playtest Corner', 'Rincón de Pruebas')}</a>.
     </p>
   </div>
   );

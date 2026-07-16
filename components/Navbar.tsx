@@ -9,6 +9,7 @@ import Button from './Button';
 import Logo from './Logo';
 import DonationQR from './DonationQR';
 import { useAuth } from '../context/AuthContext';
+import { tr, toggleLang, langLabel } from '../lib/lang';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -80,13 +81,13 @@ const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { name: 'Home', path: '/', icon: Home, color: '#0ea5e9' },
-    { name: 'Our Story', path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: 'Circle of Friends', path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
-    { name: 'Events', path: '/events', icon: Stars, color: '#8b5cf6' },
-    { name: 'Get Involved', path: '/volunteer', icon: HandHelping, color: '#10b981' },
-    { name: 'Resources', path: '/resources', icon: BookOpen, color: '#00AEEF' },
-    { name: 'Games', path: '/games', icon: Gamepad2, color: '#ec4899' },
+    { name: tr('Home', 'Inicio'), path: '/', icon: Home, color: '#0ea5e9' },
+    { name: tr('Our Story', 'Nuestra Historia'), path: '/about', icon: Heart, color: '#f43f5e' },
+    { name: tr('Circle of Friends', 'Círculo de Amigos'), path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
+    { name: tr('Events', 'Eventos'), path: '/events', icon: Stars, color: '#8b5cf6' },
+    { name: tr('Get Involved', 'Participa'), path: '/volunteer', icon: HandHelping, color: '#10b981' },
+    { name: tr('Resources', 'Recursos'), path: '/resources', icon: BookOpen, color: '#00AEEF' },
+    { name: tr('Games', 'Juegos'), path: '/games', icon: Gamepad2, color: '#ec4899' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -152,7 +153,7 @@ const Navbar: React.FC = () => {
                       {/* Horizontal Strip */}
                       <div className="w-full bg-white/90 dark:bg-slate-800/90 py-1.5 shadow-lg border-y border-slate-200/50 dark:border-slate-700/50 transform transition-transform group-hover:scale-95 flex flex-col items-center justify-center">
                         <span className="font-sans font-black uppercase text-slate-900 dark:text-white tracking-[0.1em] text-[10px] leading-none">
-                          CLICK OR SCAN
+                          {tr('CLICK OR SCAN', 'TOCA O ESCANEA')}
                         </span>
                       </div>
                     </div>
@@ -230,7 +231,7 @@ const Navbar: React.FC = () => {
                             onClick={handleLogout}
                             className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
                           >
-                            <LogOut className="h-4 w-4" /> Sign Out
+                            <LogOut className="h-4 w-4" /> {tr('Sign Out', 'Cerrar sesión')}
                           </button>
                         </div>
                       )}
@@ -240,7 +241,7 @@ const Navbar: React.FC = () => {
                       to="/dashboard"
                       className="flex items-center gap-1 text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors uppercase tracking-tight"
                     >
-                      <LayoutDashboard className="h-3 w-3" /> {isBoard ? 'Admin Dashboard' : 'Dashboard'}
+                      <LayoutDashboard className="h-3 w-3" /> {isBoard ? tr('Admin Dashboard', 'Panel de administración') : tr('Dashboard', 'Panel')}
                     </Link>
                   </div>
                 )}
@@ -249,17 +250,29 @@ const Navbar: React.FC = () => {
               <div className="flex flex-col items-center gap-1 shrink-0">
                 <a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="shrink-0 group">
                   <span className="px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs lg:text-sm tracking-wide transition-all group-hover:scale-105 shadow-md flex items-center gap-2 whitespace-nowrap">
-                    Donate <span className="hidden xl:inline">for the Cause</span> <HeartPulse className="h-4 w-4 shrink-0" />
+                    {tr('Donate', 'Dona')} <span className="hidden xl:inline">{tr('for the Cause', 'por la causa')}</span> <HeartPulse className="h-4 w-4 shrink-0" />
                   </span>
                 </a>
                 <div className="flex flex-col items-center leading-tight">
                   <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase">
-                    100% Free. Fully Inclusive.
+                    {tr('100% Free. Fully Inclusive.', '100% gratis. Totalmente inclusivo.')}
                   </span>
                   <span className="font-bold text-slate-500 dark:text-slate-400 text-[9px] xl:text-[11px] tracking-tight whitespace-nowrap uppercase">
-                    All Welcome
+                    {tr('All Welcome', 'Todos son bienvenidos')}
                   </span>
                 </div>
+              </div>
+
+              {/* Language Toggle - Desktop */}
+              <div className="flex items-center pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
+                <button
+                  onClick={toggleLang}
+                  className="px-3 py-2 rounded-full text-[11px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 transition-colors whitespace-nowrap"
+                  aria-label={tr('Switch language to Spanish', 'Cambiar idioma a inglés')}
+                  title={tr('Ver el sitio en español', 'View this site in English')}
+                >
+                  {langLabel()}
+                </button>
               </div>
 
               {/* Theme Toggle Slider - Desktop */}
@@ -287,6 +300,14 @@ const Navbar: React.FC = () => {
 
             {/* Mobile Actions Container */}
             <div className="flex lg:hidden items-center gap-3">
+              {/* Language Toggle - Mobile */}
+              <button
+                onClick={toggleLang}
+                className="flex h-10 items-center justify-center rounded-xl px-2 text-[10px] font-black uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm whitespace-nowrap"
+                aria-label={tr('Switch language to Spanish', 'Cambiar idioma a inglés')}
+              >
+                {langLabel()}
+              </button>
               {/* Dashboard Shortcut - Mobile */}
               {user && (
                 <Link
@@ -351,7 +372,7 @@ const Navbar: React.FC = () => {
                   className="flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-black text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 mb-2 border border-sky-100 dark:border-sky-800/50"
                 >
                   <LayoutDashboard className="h-6 w-6" />
-                  <span className="uppercase tracking-widest text-sm">{isBoard ? 'Admin Dashboard' : 'Dashboard'}</span>
+                  <span className="uppercase tracking-widest text-sm">{isBoard ? tr('Admin Dashboard', 'Panel de administración') : tr('Dashboard', 'Panel')}</span>
                 </Link>
               )}
 
@@ -397,7 +418,7 @@ const Navbar: React.FC = () => {
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full px-3 py-3 rounded-md text-base font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      <LogOut className="h-5 w-5" /> Sign Out
+                      <LogOut className="h-5 w-5" /> {tr('Sign Out', 'Cerrar sesión')}
                     </button>
                   </div>
                 </div>
@@ -429,12 +450,12 @@ const Navbar: React.FC = () => {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-sm sm:text-base leading-tight uppercase tracking-wide">Welcome to the herd!</p>
+                  <p className="font-black text-sm sm:text-base leading-tight uppercase tracking-wide">{tr('Welcome to the herd!', '¡Bienvenido a la manada!')}</p>
                   <p className="text-[10px] sm:text-[11px] text-sky-50 font-bold mt-1 opacity-90 leading-tight">
-                    Visit your dashboard to track your impact.
+                    {tr('Visit your dashboard to track your impact.', 'Visita tu panel para ver tu impacto.')}
                   </p>
                   <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-sky-100 flex items-center gap-1">
-                    Tap to Enter <ChevronRight className="h-3 w-3" />
+                    {tr('Tap to Enter', 'Toca para entrar')} <ChevronRight className="h-3 w-3" />
                   </div>
                 </div>
               </Link>

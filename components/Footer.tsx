@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import Logo from './Logo';
 import SocialLinks from './SocialLinks';
+import { tr, isEs } from '../lib/lang';
 
 const CandidSeal: React.FC = () => {
     const { ref, inView } = useInView({
@@ -44,9 +45,10 @@ const Footer: React.FC = () => {
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wider">Aaria's Blue Elephant</h2>
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm text-sm mb-8">
-                            We envision a world where neurodivergent and neurotypical children grow together.
-                            Our mission is to foster inclusive events, promote early intervention, and
-                            build a compassionate community through shared experiences.
+                            {tr(
+                                'We envision a world where neurodivergent and neurotypical children grow together. Our mission is to foster inclusive events, promote early intervention, and build a compassionate community through shared experiences.',
+                                'Imaginamos un mundo donde los niños neurodivergentes y neurotípicos crecen juntos. Nuestra misión es fomentar eventos inclusivos, promover la intervención temprana y construir una comunidad compasiva a través de experiencias compartidas.'
+                            )}
                         </p>
                         <SocialLinks />
                     </div>
@@ -54,31 +56,31 @@ const Footer: React.FC = () => {
                     {/* Links Column */}
                     <div className="lg:pl-12">
                         <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-6 uppercase tracking-wider relative inline-block">
-                            Useful Links
+                            {tr('Useful Links', 'Enlaces útiles')}
                             <span className="absolute -bottom-2 left-0 w-8 h-0.5 bg-sky-500"></span>
                         </h3>
                         <ul className="space-y-4">
-                            <li><Link to="/" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Home</Link></li>
-                            <li><Link to="/about" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">About Us</Link></li>
-                            <li><Link to="/events" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Events</Link></li>
-                            <li><Link to="/volunteer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Get Involved</Link></li>
-                            <li><a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">Donate</a></li>
+                            <li><Link to="/" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Home', 'Inicio')}</Link></li>
+                            <li><Link to="/about" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('About Us', 'Sobre nosotros')}</Link></li>
+                            <li><Link to="/events" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Events', 'Eventos')}</Link></li>
+                            <li><Link to="/volunteer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Get Involved', 'Participa')}</Link></li>
+                            <li><a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Donate', 'Dona')}</a></li>
                             <li className="pt-4 border-t border-slate-200 dark:border-slate-800/50">
                                 <button
                                     onClick={() => setPoliciesExpanded(!policiesExpanded)}
                                     className="w-full text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex justify-between items-center"
                                 >
-                                    <span>Policies & Legal</span>
+                                    <span>{tr('Policies & Legal', 'Políticas y legal')}</span>
                                     {policiesExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 </button>
                                 <div className={`overflow-hidden transition-all duration-300 ${policiesExpanded ? 'max-h-96 mt-3 opacity-100' : 'max-h-0 opacity-0'}`}>
                                     <ul className="space-y-3 pl-2 border-l-2 border-slate-200 dark:border-slate-800">
-                                        <li><Link to="/privacy-policy#privacy-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Privacy Policy</Link></li>
-                                        <li><Link to="/privacy-policy#cookie-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Cookie Policy</Link></li>
-                                        <li><Link to="/privacy-policy#terms-of-service" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Terms of Service</Link></li>
-                                        <li><Link to="/privacy-policy#donation-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Donation Policy</Link></li>
-                                        <li><Link to="/privacy-policy#vulnerability-disclosure" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">Vulnerability Disclosure</Link></li>
-                                        <li><a href="/legal/disclosure.html" target="_blank" rel="noopener" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">General Disclosure</a></li>
+                                        <li><Link to="/privacy-policy#privacy-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('Privacy Policy', 'Política de privacidad')}</Link></li>
+                                        <li><Link to="/privacy-policy#cookie-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('Cookie Policy', 'Política de cookies')}</Link></li>
+                                        <li><Link to="/privacy-policy#terms-of-service" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('Terms of Service', 'Términos de servicio')}</Link></li>
+                                        <li><Link to="/privacy-policy#donation-policy" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('Donation Policy', 'Política de donaciones')}</Link></li>
+                                        <li><Link to="/privacy-policy#vulnerability-disclosure" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('Vulnerability Disclosure', 'Divulgación de vulnerabilidades')}</Link></li>
+                                        <li><a href="/legal/disclosure.html" target="_blank" rel="noopener" className="text-sm text-slate-500 hover:text-sky-600 transition-colors block">{tr('General Disclosure', 'Aviso general')}</a></li>
                                     </ul>
                                 </div>
                             </li>
@@ -88,7 +90,7 @@ const Footer: React.FC = () => {
                     {/* Contact Column */}
                     <div>
                         <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-6 uppercase tracking-wider relative inline-block">
-                            Contact Us
+                            {tr('Contact Us', 'Contáctanos')}
                             <span className="absolute -bottom-2 left-0 w-8 h-0.5 bg-sky-500"></span>
                         </h3>
                         <ul className="space-y-4">
@@ -113,8 +115,8 @@ const Footer: React.FC = () => {
                             <li className="pt-10 border-t border-slate-200 dark:border-slate-800">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-12 justify-between">
                                     <div className="space-y-1">
-                                        <span className="block text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 font-bold mb-3">Legal Identity</span>
-                                        <span className="text-slate-700 dark:text-slate-200 font-semibold text-sm block">501(c)(3) Nonprofit Organization</span>
+                                        <span className="block text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 font-bold mb-3">{tr('Legal Identity', 'Identidad legal')}</span>
+                                        <span className="text-slate-700 dark:text-slate-200 font-semibold text-sm block">{tr('501(c)(3) Nonprofit Organization', 'Organización sin fines de lucro 501(c)(3)')}</span>
                                         <span className="block text-xs text-sky-700 dark:text-sky-500/70 font-mono italic">EIN: 39-4799956</span>
                                         <span className="block text-xs text-sky-700 dark:text-sky-500/70 font-mono italic">Entity No: B20250299015</span>
                                     </div>
@@ -131,14 +133,22 @@ const Footer: React.FC = () => {
 
             {/* Bottom Bar */}
             <div className="bg-white dark:bg-slate-950 py-6 border-t border-slate-200 dark:border-slate-900 transition-colors duration-500">
+                {isEs() && (
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-4">
+                        <p lang="es" className="text-slate-500 dark:text-slate-400 text-xs text-center md:text-left leading-relaxed">
+                            🌐 La traducción al español de este sitio fue hecha completamente con inteligencia artificial y puede tener errores — el texto en inglés es la versión oficial. Si encuentras algo raro, por favor avísanos y lo corregiremos con gusto.{' '}
+                            <a href="/legal/disclosure.html" target="_blank" rel="noopener" className="underline hover:text-sky-600">Ver aviso completo</a>
+                        </p>
+                    </div>
+                )}
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left">
-                        Copyright &copy; <span id="year">{new Date().getFullYear()}</span> Aaria's Blue Elephant. All Rights Reserved.
+                        Copyright &copy; <span id="year">{new Date().getFullYear()}</span> Aaria's Blue Elephant. {tr('All Rights Reserved.', 'Todos los derechos reservados.')}
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 gap-2 text-sm mt-4 md:mt-0 flex items-center justify-center md:justify-end">
-                        <span>Designed with</span>
+                        <span>{tr('Designed with', 'Diseñado con')}</span>
                         <Heart className="h-4 w-4 text-sky-600 dark:text-sky-500 animate-pulse" />
-                        <span>in California</span>
+                        <span>{tr('in California', 'en California')}</span>
                     </p>
                 </div>
             </div>

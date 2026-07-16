@@ -10,12 +10,14 @@ import { FriendEntry, Team } from '../lib/database/types';
 import { SummerBuddyUpRegistration } from '../components/SummerBuddyUpRegistration';
 import { SummerBuddyUpDashboard } from '../components/SummerBuddyUpDashboard';
 import { DevSimulationPanel } from '../components/DevSimulationPanel';
+import { tr } from '../lib/lang';
 
+// titleEn is the stored/compared category value (entries persist it) — must stay English in both languages; title is display-only.
 const AWARDS = [
-  { id: 'trunk', title: 'The "Trunk of Friendship" Award', subtitle: 'Connecting / Helping', icon: HandHelping, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-200 dark:border-rose-800', image: '/assets/elephants/trunk_friendship_1777051824961.webp' },
-  { id: 'mindset', title: 'The "Elephant Mindset" Award', subtitle: 'Learning / Memory / Education', icon: BookOpen, color: 'text-sky-500', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-sky-200 dark:border-sky-800', image: '/assets/elephants/elephant_mindset_1777051837375.webp' },
-  { id: 'barriers', title: 'The "Stomp Out Barriers" Award', subtitle: 'Environmental / Structural', icon: Mountain, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800', image: '/assets/elephants/stomp_barriers_1777051852262.webp' },
-  { id: 'leadership', title: 'The "Tusks of Leadership" Award', subtitle: 'Visionary / Action Plan', icon: Stars, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800', image: '/assets/elephants/tusks_leadership_1777051868281.webp' }
+  { id: 'trunk', titleEn: 'The "Trunk of Friendship" Award', title: tr('The "Trunk of Friendship" Award', 'El Premio "Trompa de la Amistad"'), subtitle: tr('Connecting / Helping', 'Conectar / Ayudar'), icon: HandHelping, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-200 dark:border-rose-800', image: '/assets/elephants/trunk_friendship_1777051824961.webp' },
+  { id: 'mindset', titleEn: 'The "Elephant Mindset" Award', title: tr('The "Elephant Mindset" Award', 'El Premio "Mentalidad de Elefante"'), subtitle: tr('Learning / Memory / Education', 'Aprendizaje / Memoria / Educación'), icon: BookOpen, color: 'text-sky-500', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-sky-200 dark:border-sky-800', image: '/assets/elephants/elephant_mindset_1777051837375.webp' },
+  { id: 'barriers', titleEn: 'The "Stomp Out Barriers" Award', title: tr('The "Stomp Out Barriers" Award', 'El Premio "Pisando Barreras"'), subtitle: tr('Environmental / Structural', 'Ambiental / Estructural'), icon: Mountain, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800', image: '/assets/elephants/stomp_barriers_1777051852262.webp' },
+  { id: 'leadership', titleEn: 'The "Tusks of Leadership" Award', title: tr('The "Tusks of Leadership" Award', 'El Premio "Colmillos de Liderazgo"'), subtitle: tr('Visionary / Action Plan', 'Visionario / Plan de Acción'), icon: Stars, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800', image: '/assets/elephants/tusks_leadership_1777051868281.webp' }
 ];
 
 const SCHOOLS = [
@@ -24,9 +26,10 @@ const SCHOOLS = [
 
 const GRADES = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
 
+// value = stored English category; label = what the visitor sees
 const CATEGORY_OPTIONS = [
-  ...AWARDS.map(a => a.title),
-  'General Submission'
+  ...AWARDS.map(a => ({ value: a.titleEn, label: a.title })),
+  { value: 'General Submission', label: tr('General Submission', 'Presentación General') }
 ];
 
 const STORAGE_KEY = 'circleOfFriendsEntries';
@@ -152,13 +155,13 @@ const EntryCardItem = ({
             </div>
             <div className="flex flex-col items-end text-right">
               <span className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest">{entry.school}</span>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Grade {entry.grade}</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{tr('Grade', 'Grado')} {entry.grade}</span>
             </div>
           </div>
           
           {mediaArray.length > 0 && (
             <div className={`relative mb-6 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 transition-all duration-700 ${isExpanded ? 'min-h-[300px]' : 'h-32 opacity-80 group-hover:opacity-100'}`}>
-              <div className="absolute inset-0 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); onMediaClick(mediaArray, imgIndex); }} title="View Full Image"></div>
+              <div className="absolute inset-0 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); onMediaClick(mediaArray, imgIndex); }} title={tr('View Full Image', 'Ver Imagen Completa')}></div>
               
               <AnimatePresence initial={false}>
                 <motion.img 
@@ -168,7 +171,7 @@ const EntryCardItem = ({
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   src={mediaArray[imgIndex]} 
-                  alt={`Submission media ${imgIndex + 1}`} 
+                  alt={tr(`Submission media ${imgIndex + 1}`, `Imagen de la presentación ${imgIndex + 1}`)}
                   className="absolute inset-0 w-full h-full object-cover" 
                 />
               </AnimatePresence>
@@ -197,7 +200,7 @@ const EntryCardItem = ({
           
           {isTruncated && (
             <div className="text-sky-600 dark:text-sky-400 text-xs font-black uppercase tracking-widest flex items-center gap-1.5 mb-6 opacity-60 hover:opacity-100 transition-opacity mt-auto">
-              {isExpanded ? 'Click to Roll Back' : 'Click to Unroll'} {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {isExpanded ? tr('Click to Roll Back', 'Haz Clic para Enrollar') : tr('Click to Unroll', 'Haz Clic para Desenrollar')} {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </div>
           )}
           
@@ -207,7 +210,7 @@ const EntryCardItem = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-slate-800 dark:text-white font-bold truncate text-sm">{entry.name}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">Teacher: {entry.teacher}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">{tr('Teacher', 'Maestro/a')}: {entry.teacher}</p>
             </div>
             {isAdmin && (
               <>
@@ -215,7 +218,7 @@ const EntryCardItem = ({
                   onClick={(e) => onEdit(entry, e)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 hover:text-sky-600 dark:hover:bg-sky-900/30 dark:hover:text-sky-400 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
                 >
-                  <Pencil className="h-3.5 w-3.5" /> Edit
+                  <Pencil className="h-3.5 w-3.5" /> {tr('Edit', 'Editar')}
                 </button>
                 <button 
                   onClick={(e) => onDelete(entry.id, e)}
@@ -403,7 +406,7 @@ const CircleOfFriends: React.FC = () => {
       return (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">Loading Cohort Data...</p>
+          <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">{tr('Loading Cohort Data...', 'Cargando Datos del Grupo...')}</p>
         </div>
       );
     }
@@ -416,22 +419,22 @@ const CircleOfFriends: React.FC = () => {
               <Users className="w-32 h-32 text-sky-600" />
             </div>
             <div className="relative z-10">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Pending Invitation</h2>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">{tr('Pending Invitation', 'Invitación Pendiente')}</h2>
               <p className="text-slate-600 dark:text-slate-300 font-medium max-w-xl mb-6">
-                You have been invited to join <strong>{pendingInvites[0].team?.team_name || 'a team'}</strong> as a Sub-Coach. Accept the invitation to join the cohort dashboard.
+                {tr('You have been invited to join', 'Has sido invitado/a a unirte a')} <strong>{pendingInvites[0].team?.team_name || tr('a team', 'un equipo')}</strong> {tr('as a Sub-Coach. Accept the invitation to join the cohort dashboard.', 'como Subentrenador/a. Acepta la invitación para unirte al panel del grupo.')}
               </p>
-              <button 
+              <button
                 onClick={async () => {
                   try {
                     await db.acceptSubCoachInvite(pendingInvites[0].id);
                     await loadMyTeam();
                   } catch (e) {
-                    alert('Failed to accept invite.');
+                    alert(tr('Failed to accept invite.', 'No se pudo aceptar la invitación.'));
                   }
                 }}
                 className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-md shadow-sky-500/20"
               >
-                Accept Invitation
+                {tr('Accept Invitation', 'Aceptar Invitación')}
               </button>
             </div>
           </div>
@@ -559,20 +562,20 @@ const CircleOfFriends: React.FC = () => {
       setIsModalOpen(false);
     } catch (e) {
       console.error('Failed to save entry', e);
-      alert('Failed to save entry. Make sure you are an admin.');
+      alert(tr('Failed to save entry. Make sure you are an admin.', 'No se pudo guardar la presentación. Asegúrate de ser administrador.'));
     }
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this entry?')) {
+    if (confirm(tr('Are you sure you want to delete this entry?', '¿Estás seguro de que quieres eliminar esta presentación?'))) {
       try {
         await db.deleteFriendEntry(id);
         const updatedEntries = entries.filter(entry => entry.id !== id);
         setEntries(updatedEntries);
       } catch (e) {
         console.error('Failed to delete entry', e);
-        alert('Failed to delete entry. Make sure you are an admin.');
+        alert(tr('Failed to delete entry. Make sure you are an admin.', 'No se pudo eliminar la presentación. Asegúrate de ser administrador.'));
       }
     }
   };
@@ -610,12 +613,12 @@ const CircleOfFriends: React.FC = () => {
 
   // Organize entries
   const awardEntries: Record<string, FriendEntry[]> = {};
-  AWARDS.forEach(a => awardEntries[a.title] = []);
+  AWARDS.forEach(a => awardEntries[a.titleEn] = []);
   
   const generalEntries: FriendEntry[] = [];
 
   entries.forEach(entry => {
-    if (AWARDS.some(a => a.title === entry.category)) {
+    if (AWARDS.some(a => a.titleEn === entry.category)) {
       if (awardEntries[entry.category].length < 2) {
         awardEntries[entry.category].push(entry);
       } else {
@@ -657,7 +660,7 @@ const CircleOfFriends: React.FC = () => {
               }`}
             >
               <Users className="h-4 w-4" />
-              Summer Buddy Up
+              {tr('Summer Buddy Up', 'Compañeros de Verano')}
             </button>
             <button
               type="button"
@@ -673,7 +676,7 @@ const CircleOfFriends: React.FC = () => {
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350'
               }`}
             >
-              Voices of the Herd
+              {tr('Voices of the Herd', 'Voces de la Manada')}
             </button>
           </div>
         </div>
@@ -685,7 +688,7 @@ const CircleOfFriends: React.FC = () => {
           {isAdmin && (
             <button type="button" onClick={handleOpenModal} className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 px-8 py-4 text-lg bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 shrink-0 group z-10 relative cursor-pointer">
               <PlusCircle className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
-              Submit an Idea
+              {tr('Submit an Idea', 'Enviar una Idea')}
             </button>
           )}
         </div>
@@ -694,12 +697,12 @@ const CircleOfFriends: React.FC = () => {
         <div className="space-y-6 mb-20">
           <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-8 flex items-center gap-3">
             <Stars className="h-6 w-6 text-amber-500" />
-            Featured Awards
+            {tr('Featured Awards', 'Premios Destacados')}
           </h2>
           
           <div className="grid grid-cols-1 gap-4">
             {AWARDS.map((award) => {
-              const awardSubs = awardEntries[award.title] || [];
+              const awardSubs = awardEntries[award.titleEn] || [];
               const isExpanded = expandedCategories.includes(award.id);
               
               return (
@@ -725,7 +728,7 @@ const CircleOfFriends: React.FC = () => {
                     <div className="flex items-center gap-4">
                       {awardSubs.length > 0 && (
                         <span className="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/50 dark:bg-slate-950/50 text-slate-600 dark:text-slate-300">
-                          {awardSubs.length} Winner{awardSubs.length !== 1 ? 's' : ''}
+                          {awardSubs.length} {awardSubs.length !== 1 ? tr('Winners', 'Ganadores') : tr('Winner', 'Ganador')}
                         </span>
                       )}
                       <div className={`p-2 rounded-full transition-transform duration-300 bg-white dark:bg-slate-800 shadow-sm ${isExpanded ? 'rotate-180' : ''}`}>
@@ -749,7 +752,7 @@ const CircleOfFriends: React.FC = () => {
                         ) : (
                           <div className="text-center py-12">
                             <award.icon className={`h-12 w-12 mx-auto mb-4 opacity-20 ${award.color}`} />
-                            <p className="text-slate-500 dark:text-slate-400 font-medium italic">No entries for this award yet.</p>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium italic">{tr('No entries for this award yet.', 'Aún no hay presentaciones para este premio.')}</p>
                           </div>
                         )}
                       </div>
@@ -766,16 +769,16 @@ const CircleOfFriends: React.FC = () => {
           <div className="flex flex-col items-center mb-16">
             <div className="flex items-center gap-6 mb-4">
               <div className="h-24 w-24 shrink-0 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-800/50 shadow-sm border border-slate-100 dark:border-slate-800 p-2">
-                <img src="/assets/elephants/elephant_herd_1778240839067.png" alt="Elephant Herd" className="h-full w-full object-contain mix-blend-multiply dark:mix-blend-normal" />
+                <img src="/assets/elephants/elephant_herd_1778240839067.png" alt={tr('Elephant Herd', 'Manada de Elefantes')} className="h-full w-full object-contain mix-blend-multiply dark:mix-blend-normal" />
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                Voices of the Herd
+                {tr('Voices of the Herd', 'Voces de la Manada')}
               </h2>
             </div>
             <div className="flex items-center gap-4 w-full">
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               <span className="text-sm font-black text-sky-600 dark:text-sky-400 uppercase tracking-[0.2em] px-4 whitespace-nowrap">
-                Student Inclusion Visions
+                {tr('Student Inclusion Visions', 'Visiones de Inclusión Estudiantil')}
               </span>
               <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
             </div>
@@ -805,7 +808,7 @@ const CircleOfFriends: React.FC = () => {
                     onClick={() => setViewAsCoach(!viewAsCoach)}
                     className="inline-flex items-center justify-center rounded-xl font-black uppercase tracking-wider transition duration-200 px-5 py-2 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer shadow-sm"
                   >
-                    {viewAsCoach ? 'Switch to Board View' : 'Switch to Coach View'}
+                    {viewAsCoach ? tr('Switch to Board View', 'Cambiar a Vista de Junta') : tr('Switch to Coach View', 'Cambiar a Vista de Entrenador')}
                   </button>
                 </div>
                 {viewAsCoach ? renderCoachPortal() : (
@@ -847,28 +850,28 @@ const CircleOfFriends: React.FC = () => {
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     {editingEntryId ? <Pencil className="h-5 w-5 text-sky-500" /> : <Send className="h-5 w-5 text-sky-500" />} 
-                    {editingEntryId ? 'Edit Idea' : 'Share an Idea'}
+                    {editingEntryId ? tr('Edit Idea', 'Editar Idea') : tr('Share an Idea', 'Compartir una Idea')}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Submit your entry for the Circle of Friends</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">{tr('Submit your entry for the Circle of Friends', 'Envía tu presentación para el Círculo de Amigos')}</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
                   <X className="h-5 w-5 text-slate-400" />
                 </button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 pb-20 sm:pb-6">
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Student Name</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Student Name', 'Nombre del Estudiante')}</label>
                       <input required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
-                    
+
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Grade</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Grade', 'Grado')}</label>
                       <select required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}>
-                        <option value="" disabled>Select Grade</option>
+                        <option value="" disabled>{tr('Select Grade', 'Selecciona el Grado')}</option>
                         {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
                     </div>
@@ -876,53 +879,53 @@ const CircleOfFriends: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">School</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('School', 'Escuela')}</label>
                       <select required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.school} onChange={e => setFormData({...formData, school: e.target.value})}>
-                        <option value="" disabled>Select School</option>
+                        <option value="" disabled>{tr('Select School', 'Selecciona la Escuela')}</option>
                         {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    
+
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Class Teacher</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Class Teacher', 'Maestro/a de Clase')}</label>
                       <input required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.teacher} onChange={e => setFormData({...formData, teacher: e.target.value})} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Category / Award</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Category / Award', 'Categoría / Premio')}</label>
                       <select className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                        {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                        {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Display Priority (1 = First, Default 23)</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Display Priority (1 = First, Default 23)', 'Prioridad de Visualización (1 = Primero, Predeterminado 23)')}</label>
                       <input type="number" min="1" required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" value={formData.priority} onChange={e => setFormData({...formData, priority: parseInt(e.target.value) || 23})} />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Story / Idea</label>
-                    <textarea required rows={5} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm resize-none" placeholder="Describe the idea..." value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Your Story / Idea', 'Tu Historia / Idea')}</label>
+                    <textarea required rows={5} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm resize-none" placeholder={tr('Describe the idea...', 'Describe la idea...')} value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Pictures / Media (Optional)</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Pictures / Media (Optional)', 'Fotos / Medios (Opcional)')}</label>
                     <div className="flex flex-col gap-4">
                       <label className="cursor-pointer px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all flex items-center justify-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300 self-start">
-                        <ImageIcon className="h-4 w-4" /> Add Images
+                        <ImageIcon className="h-4 w-4" /> {tr('Add Images', 'Agregar Imágenes')}
                         <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
                       </label>
-                      
+
                       {formData.media.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {formData.media.map((m, i) => (
                             <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-slate-200 group">
-                              <img src={m} alt={`Preview ${i}`} className="h-full w-full object-cover" />
-                              <button 
-                                type="button" 
+                              <img src={m} alt={tr(`Preview ${i}`, `Vista previa ${i}`)} className="h-full w-full object-cover" />
+                              <button
+                                type="button"
                                 onClick={() => setFormData(p => ({ ...p, media: p.media.filter((_, idx) => idx !== i) }))}
                                 className="absolute top-1 right-1 bg-black/60 hover:bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
@@ -936,7 +939,7 @@ const CircleOfFriends: React.FC = () => {
                   </div>
 
                   <div className="pt-4">
-                    <Button type="submit" className="w-full h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-sky-500/20">{editingEntryId ? 'Save Changes' : 'Submit Entry'}</Button>
+                    <Button type="submit" className="w-full h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-sky-500/20">{editingEntryId ? tr('Save Changes', 'Guardar Cambios') : tr('Submit Entry', 'Enviar Presentación')}</Button>
                   </div>
                 </form>
               </div>
@@ -977,8 +980,8 @@ const CircleOfFriends: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
                   transition={{ duration: 0.2 }}
-                  src={selectedMedia.images[selectedMedia.index]} 
-                  alt="Expanded media" 
+                  src={selectedMedia.images[selectedMedia.index]}
+                  alt={tr('Expanded media', 'Imagen ampliada')}
                   className="w-full h-full max-h-[90dvh] object-contain" 
                 />
               </AnimatePresence>
@@ -1038,10 +1041,10 @@ const SummerBuddyUpPromo: React.FC<{
           <Users className="h-10 w-10 animate-pulse" />
         </div>
         <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
-          Summer Buddy Up Cohorts
+          {tr('Summer Buddy Up Cohorts', 'Grupos de Compañeros de Verano')}
         </h2>
         <p className="text-base text-slate-600 dark:text-slate-350 max-w-2xl mx-auto leading-relaxed">
-          Create an inclusive summer playgroup, log your journey through milestones, and celebrate with physical certificates and awards at our end-of-summer ceremony in Tracy!
+          {tr('Create an inclusive summer playgroup, log your journey through milestones, and celebrate with physical certificates and awards at our end-of-summer ceremony in Tracy!', '¡Crea un grupo de juego inclusivo de verano, registra tu recorrido por los hitos, y celebra con certificados y premios físicos en nuestra ceremonia de fin de verano en Tracy!')}
         </p>
       </div>
 
@@ -1051,9 +1054,9 @@ const SummerBuddyUpPromo: React.FC<{
             1
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Cohort Team Roles</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{tr('Cohort Team Roles', 'Roles del Equipo del Grupo')}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              <strong>Head Coach</strong> registers the cohort. Up to 3 co-parent <strong>Sub-Coaches</strong> join to claim profiles and execute digital consents.
+              <strong>{tr('Head Coach', 'Entrenador Principal')}</strong> {tr('registers the cohort. Up to 3 co-parent', 'registra el grupo. Hasta 3')} <strong>{tr('Sub-Coaches', 'Subentrenadores')}</strong> {tr('join to claim profiles and execute digital consents.', 'copadres se unen para reclamar perfiles y firmar consentimientos digitales.')}
             </p>
           </div>
         </div>
@@ -1063,9 +1066,9 @@ const SummerBuddyUpPromo: React.FC<{
             2
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">The Inclusion Ratio</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{tr('The Inclusion Ratio', 'La Proporción de Inclusión')}</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Enforces structured inclusion. Each group can have up to 3 Gen Ed Students for every 1 Inclusion Buddy (Special Education/ND).
+              {tr('Enforces structured inclusion. Each group can have up to 3 Gen Ed Students for every 1 Inclusion Buddy (Special Education/ND).', 'Aplica una inclusión estructurada. Cada grupo puede tener hasta 3 estudiantes de educación general por cada 1 Compañero de Inclusión (Educación Especial/ND).')}
             </p>
           </div>
         </div>
@@ -1075,9 +1078,9 @@ const SummerBuddyUpPromo: React.FC<{
             3
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Waiver & Consent Gate</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{tr('Waiver & Consent Gate', 'Puerta de Exención y Consentimiento')}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Protecting safety and privacy. Sub-coaches must authenticate via Google to sign liability waivers before logs can be uploaded.
+              {tr('Protecting safety and privacy. Sub-coaches must authenticate via Google to sign liability waivers before logs can be uploaded.', 'Protegiendo la seguridad y la privacidad. Los subentrenadores deben autenticarse con Google para firmar exenciones de responsabilidad antes de poder subir registros.')}
             </p>
           </div>
         </div>
@@ -1087,30 +1090,30 @@ const SummerBuddyUpPromo: React.FC<{
             4
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Physical Award Locking</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{tr('Physical Award Locking', 'Bloqueo de Premio Físico')}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Students within LUSD and Tracy Unified school districts are automatically locked to physical attendance at the ceremony to claim their trophies.
+              {tr('Students within LUSD and Tracy Unified school districts are automatically locked to physical attendance at the ceremony to claim their trophies.', 'Los estudiantes de los distritos escolares de LUSD y Tracy Unified deben asistir físicamente a la ceremonia para reclamar sus trofeos.')}
             </p>
           </div>
         </div>
       </div>
 
       <div className="text-center p-8 bg-sky-50 dark:bg-sky-950/30 rounded-2xl border border-sky-100 dark:border-sky-900/35 shadow-inner">
-        <h4 className="font-extrabold text-sky-900 dark:text-sky-300 text-lg mb-2">Ready to buddy up this summer?</h4>
+        <h4 className="font-extrabold text-sky-900 dark:text-sky-300 text-lg mb-2">{tr('Ready to buddy up this summer?', '¿Listo para hacer equipo este verano?')}</h4>
         <p className="text-sm text-sky-700/80 dark:text-sky-400/80 mb-6 max-w-md mx-auto">
-          Authenticate using Google Auth to start registering your student cohort or access your coach dashboard.
+          {tr('Authenticate using Google Auth to start registering your student cohort or access your coach dashboard.', 'Autentícate con Google para comenzar a registrar el grupo de tu estudiante o acceder a tu panel de entrenador.')}
         </p>
         <button
           onClick={onLogin}
           className="inline-flex items-center justify-center rounded-xl font-black uppercase tracking-wider transition duration-200 px-8 py-3.5 text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 cursor-pointer"
         >
-          Continue with Google Auth
+          {tr('Continue with Google Auth', 'Continuar con Google Auth')}
         </button>
 
         {isLocalhost && (
           <div className="mt-6 pt-6 border-t border-sky-100 dark:border-sky-900/50">
             <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mb-3 uppercase tracking-[0.15em] text-center">
-              Local Development Bypass (Google Auth is unavailable on localhost)
+              {tr('Local Development Bypass (Google Auth is unavailable on localhost)', 'Acceso de Desarrollo Local (Google Auth no está disponible en localhost)')}
             </p>
             <div className="flex flex-wrap justify-center gap-3 mt-3">
               <button
@@ -1118,14 +1121,14 @@ const SummerBuddyUpPromo: React.FC<{
                 onClick={() => onSimulateLogin('admin')}
                 className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition cursor-pointer shadow-md"
               >
-                Simulate Admin
+                {tr('Simulate Admin', 'Simular Administrador')}
               </button>
               <button
                 type="button"
                 onClick={() => onSimulateLogin('head_coach')}
                 className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition cursor-pointer shadow-md"
               >
-                Simulate Coach
+                {tr('Simulate Coach', 'Simular Entrenador')}
               </button>
             </div>
           </div>
@@ -1155,9 +1158,9 @@ const SummerBuddyUpAdmin: React.FC<{
     setSavingConfig(true);
     try {
       await db.updateBuddyUpConfig(config);
-      alert('Program Settings Saved!');
+      alert(tr('Program Settings Saved!', '¡Configuración del Programa Guardada!'));
     } catch (e) {
-      alert('Failed to save program settings.');
+      alert(tr('Failed to save program settings.', 'No se pudo guardar la configuración del programa.'));
     }
     setSavingConfig(false);
   };
@@ -1169,7 +1172,7 @@ const SummerBuddyUpAdmin: React.FC<{
       onRefresh();
     } catch (err) {
       console.error('Failed to update status:', err);
-      alert('Failed to update team status.');
+      alert(tr('Failed to update team status.', 'No se pudo actualizar el estado del equipo.'));
     } finally {
       setUpdatingTeamId(null);
     }
@@ -1182,21 +1185,21 @@ const SummerBuddyUpAdmin: React.FC<{
       onRefresh();
     } catch (err) {
       console.error('Error updating ratio override:', err);
-      alert('Failed to update ratio override');
+      alert(tr('Failed to update ratio override', 'No se pudo actualizar la anulación de proporción'));
     } finally {
       setUpdatingTeamId(null);
     }
   };
 
   const handleDeleteTeam = async (teamId: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this team? All associated sub-coaches, students, and check-ins will be deleted as well.')) return;
+    if (!window.confirm(tr('Are you sure you want to permanently delete this team? All associated sub-coaches, students, and check-ins will be deleted as well.', '¿Estás seguro de que quieres eliminar este equipo de forma permanente? También se eliminarán todos los subentrenadores, estudiantes y registros asociados.'))) return;
     try {
       setUpdatingTeamId(teamId);
       await db.deleteTeam(teamId);
       onRefresh();
     } catch (err) {
       console.error('Error deleting team:', err);
-      alert('Failed to delete team');
+      alert(tr('Failed to delete team', 'No se pudo eliminar el equipo'));
     } finally {
       setUpdatingTeamId(null);
     }
@@ -1206,7 +1209,7 @@ const SummerBuddyUpAdmin: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">Loading Administrative Oversight Data...</p>
+        <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">{tr('Loading Administrative Oversight Data...', 'Cargando Datos de Supervisión Administrativa...')}</p>
       </div>
     );
   }
@@ -1215,8 +1218,8 @@ const SummerBuddyUpAdmin: React.FC<{
     return (
       <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800">
         <Users className="h-12 w-12 text-slate-350 dark:text-slate-600 mx-auto mb-4 animate-bounce" />
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">No Cohorts Registered Yet</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Registered playgroups and team check-ins will be listed here.</p>
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{tr('No Cohorts Registered Yet', 'Aún No Hay Grupos Registrados')}</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">{tr('Registered playgroups and team check-ins will be listed here.', 'Los grupos de juego registrados y los registros del equipo aparecerán aquí.')}</p>
       </div>
     );
   }
@@ -1226,24 +1229,24 @@ const SummerBuddyUpAdmin: React.FC<{
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
-            Summer Buddy Up Administration Console
+            {tr('Summer Buddy Up Administration Console', 'Consola de Administración de Compañeros de Verano')}
           </h2>
           <p className="text-xs text-slate-555 dark:text-slate-450 mt-1">
-            Review registered playgroups, override mentor ratios, toggle statuses, and check YouTube logs.
+            {tr('Review registered playgroups, override mentor ratios, toggle statuses, and check YouTube logs.', 'Revisa los grupos de juego registrados, anula proporciones de mentores, cambia estados y revisa los registros de YouTube.')}
           </p>
         </div>
         <div className="shrink-0 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-850 text-right">
-          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Total Cohorts</span>
-          <span className="text-lg font-black text-sky-600 dark:text-sky-400">{teams.length} Registered</span>
+          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">{tr('Total Cohorts', 'Grupos Totales')}</span>
+          <span className="text-lg font-black text-sky-600 dark:text-sky-400">{teams.length} {tr('Registered', 'Registrados')}</span>
         </div>
       </div>
 
       {config && (
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 space-y-4">
-          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wide border-b border-slate-100 pb-2">Program Settings</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wide border-b border-slate-100 pb-2">{tr('Program Settings', 'Configuración del Programa')}</h3>
           
           <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Unlock Specific Milestones App-Wide</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">{tr('Unlock Specific Milestones App-Wide', 'Desbloquear Hitos Específicos en Toda la App')}</span>
             <div className="flex flex-wrap gap-4">
               {['JULY_15', 'JULY_30', 'AUGUST_15', 'AUGUST_30'].map(milestone => (
                 <label key={milestone} className="flex items-center gap-2 cursor-pointer bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
@@ -1266,7 +1269,7 @@ const SummerBuddyUpAdmin: React.FC<{
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Check-In Questions (One per line)</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">{tr('Check-In Questions (One per line)', 'Preguntas de Registro (Una por línea)')}</label>
             <textarea
               value={config.checkin_questions.join('\n')}
               onChange={e => setConfig({...config, checkin_questions: e.target.value.split('\n').filter(q => q.trim())})}
@@ -1280,7 +1283,7 @@ const SummerBuddyUpAdmin: React.FC<{
             disabled={savingConfig}
             className="bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 font-bold text-xs px-4 py-2 rounded-xl transition hover:bg-slate-800 dark:hover:bg-slate-700"
           >
-            {savingConfig ? 'Saving...' : 'Save Settings'}
+            {savingConfig ? tr('Saving...', 'Guardando...') : tr('Save Settings', 'Guardar Configuración')}
           </button>
         </div>
       )}
@@ -1301,7 +1304,7 @@ const SummerBuddyUpAdmin: React.FC<{
                     {team.team_name}
                   </h3>
                   <p className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mt-1">
-                    Focus Area: {team.focus_area}
+                    {tr('Focus Area', 'Área de Enfoque')}: {team.focus_area}
                   </p>
                 </div>
                 
@@ -1311,7 +1314,7 @@ const SummerBuddyUpAdmin: React.FC<{
                       ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border-emerald-100 dark:border-emerald-900/30'
                       : 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/30'
                   }`}>
-                    Ratio: {peerMentors} Mentors / {inclusionBuddies} Inclusion {ratioValid ? '✓' : '⚠️'}
+                    {tr('Ratio', 'Proporción')}: {peerMentors} {tr('Mentors', 'Mentores')} / {inclusionBuddies} {tr('Inclusion', 'Inclusión')} {ratioValid ? '✓' : '⚠️'}
                   </span>
 
                   <button
@@ -1323,11 +1326,11 @@ const SummerBuddyUpAdmin: React.FC<{
                         : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    {team.ratio_override ? 'Override Enabled' : 'Override Ratio'}
+                    {team.ratio_override ? tr('Override Enabled', 'Anulación Activada') : tr('Override Ratio', 'Anular Proporción')}
                   </button>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black text-slate-450 uppercase tracking-widest">Status:</span>
+                    <span className="text-[9px] font-black text-slate-450 uppercase tracking-widest">{tr('Status', 'Estado')}:</span>
                     <span className={`px-2 py-1 rounded-md text-xs font-bold border ${
                       team.status === 'PENDING_ADMIN_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                       team.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -1343,7 +1346,7 @@ const SummerBuddyUpAdmin: React.FC<{
                         disabled={updatingTeamId === team.id}
                         className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors animate-pulse hover:animate-none shadow shadow-emerald-500/20"
                       >
-                        Approve Cohort
+                        {tr('Approve Cohort', 'Aprobar Grupo')}
                       </button>
                     )}
 
@@ -1353,7 +1356,7 @@ const SummerBuddyUpAdmin: React.FC<{
                         disabled={updatingTeamId === team.id}
                         className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
                       >
-                        Deactivate
+                        {tr('Deactivate', 'Desactivar')}
                       </button>
                     )}
 
@@ -1362,7 +1365,7 @@ const SummerBuddyUpAdmin: React.FC<{
                       disabled={updatingTeamId === team.id}
                       className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ml-2"
                     >
-                      Delete
+                      {tr('Delete', 'Eliminar')}
                     </button>
                   </div>
                 </div>
@@ -1373,7 +1376,7 @@ const SummerBuddyUpAdmin: React.FC<{
                 {/* Column 1: Coaches */}
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
-                    Coaches & Parents ({subCoaches.length + 1})
+                    {tr('Coaches & Parents', 'Entrenadores y Padres')} ({subCoaches.length + 1})
                   </h4>
                   
                   <div className="space-y-3">
@@ -1381,10 +1384,10 @@ const SummerBuddyUpAdmin: React.FC<{
                       <div className="w-1.5 h-1.5 bg-sky-500 rounded-full mt-1 shrink-0"></div>
                       <div>
                         <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          Primary Coordinator <span className="text-[8px] font-black bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 rounded">HEAD COACH</span>
+                          {tr('Primary Coordinator', 'Coordinador Principal')} <span className="text-[8px] font-black bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 rounded">{tr('HEAD COACH', 'ENTRENADOR PRINCIPAL')}</span>
                         </p>
                         <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5" title={team.head_coach_id}>
-                          ID: {team.head_coach_id.substring(0, 8)}...
+                          {tr('ID', 'ID')}: {team.head_coach_id.substring(0, 8)}...
                         </p>
                       </div>
                     </div>
@@ -1400,10 +1403,10 @@ const SummerBuddyUpAdmin: React.FC<{
                                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
                                 : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-450'
                             }`}>
-                              {coach.consent_accepted ? 'Consented' : 'Pending waiver'}
+                              {coach.consent_accepted ? tr('Consented', 'Consentido') : tr('Pending waiver', 'Exención pendiente')}
                             </span>
                           </p>
-                          <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">{coach.email} • {coach.phone || 'No Phone'}</p>
+                          <p className="text-[10px] text-slate-450 dark:text-slate-500 font-mono mt-0.5">{coach.email} • {coach.phone || tr('No Phone', 'Sin Teléfono')}</p>
                         </div>
                       </div>
                     ))}
@@ -1413,7 +1416,7 @@ const SummerBuddyUpAdmin: React.FC<{
                 {/* Column 2: Students */}
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
-                    Student Roster ({students.length})
+                    {tr('Student Roster', 'Lista de Estudiantes')} ({students.length})
                   </h4>
 
                   <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
@@ -1422,7 +1425,7 @@ const SummerBuddyUpAdmin: React.FC<{
                         <div className="font-bold text-slate-850 dark:text-slate-200">{student.name}</div>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                           <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-600 dark:text-slate-450 font-medium">
-                            Grade {student.grade}
+                            {tr('Grade', 'Grado')} {student.grade}
                           </span>
                           <span className={`text-[9px] px-1 py-0.5 rounded font-black uppercase tracking-wider ${
                             student.classification === 'Inclusion Buddy'
@@ -1433,7 +1436,7 @@ const SummerBuddyUpAdmin: React.FC<{
                           </span>
                         </div>
                         <div className="text-[9px] text-slate-455 dark:text-slate-500 mt-1">
-                          District: {student.school_district} | Delivery: {student.award_delivery_type}
+                          {tr('District', 'Distrito')}: {student.school_district} | {tr('Delivery', 'Entrega')}: {student.award_delivery_type}
                         </div>
                       </div>
                     ))}
@@ -1443,7 +1446,7 @@ const SummerBuddyUpAdmin: React.FC<{
                 {/* Column 3: Milestones */}
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-455 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-2">
-                    Milestone check-ins ({checkIns.length}/4)
+                    {tr('Milestone check-ins', 'Registros de hitos')} ({checkIns.length}/4)
                   </h4>
 
                   <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
@@ -1459,23 +1462,23 @@ const SummerBuddyUpAdmin: React.FC<{
                                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-450' 
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                             }`}>
-                              {log ? 'Submitted' : 'Missing'}
+                              {log ? tr('Submitted', 'Enviado') : tr('Missing', 'Faltante')}
                             </span>
                           </div>
                           {log ? (
                             <div className="mt-2 space-y-1">
-                              <p className="text-slate-500 dark:text-slate-450 italic line-clamp-2">"{String(Object.values(log.answers || {})[0] || 'Log submitted')}"</p>
+                              <p className="text-slate-500 dark:text-slate-450 italic line-clamp-2">"{String(Object.values(log.answers || {})[0] || tr('Log submitted', 'Registro enviado'))}"</p>
                               <a 
                                 href={log.youtube_url} 
                                 target="_blank" 
                                 rel="noreferrer" 
                                 className="text-sky-600 dark:text-sky-400 font-bold hover:underline inline-block mt-0.5 truncate max-w-full"
                               >
-                                Watch Video Log ↗
+                                {tr('Watch Video Log', 'Ver Registro en Video')} ↗
                               </a>
                             </div>
                           ) : (
-                            <p className="text-[9px] text-slate-455 italic mt-1">No logs uploaded.</p>
+                            <p className="text-[9px] text-slate-455 italic mt-1">{tr('No logs uploaded.', 'No se han subido registros.')}</p>
                           )}
                         </div>
                       );

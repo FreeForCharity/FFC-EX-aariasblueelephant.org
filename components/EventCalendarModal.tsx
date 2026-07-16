@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import StickerIcon from './StickerIcon';
 import StagedFadeIn from './StagedFadeIn';
 import { parseDateLocal } from '../lib/utils';
+import { tr, isEs } from '../lib/lang';
 
 interface EventCalendarModalProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface EventCalendarModalProps {
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_OF_WEEK_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function EventCalendarModal({ isOpen, onClose, events }: EventCalendarModalProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -92,7 +94,7 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                             <StickerIcon icon={CalendarIcon} size={28} color="#00AEEF" />
-                            Event Calendar
+                            {tr('Event Calendar', 'Calendario de Eventos')}
                         </h2>
                         <button
                             onClick={onClose}
@@ -111,7 +113,7 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                            {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                            {currentDate.toLocaleString(isEs() ? 'es' : 'default', { month: 'long', year: 'numeric' })}
                         </h3>
                         <button
                             onClick={handleNextMonth}
@@ -123,9 +125,9 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
 
                     {/* Calendar Grid */}
                     <div className="grid grid-cols-7 gap-2 mb-4">
-                        {DAYS_OF_WEEK.map(day => (
+                        {DAYS_OF_WEEK.map((day, i) => (
                             <div key={day} className="text-center text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-2">
-                                {day}
+                                {tr(day, DAYS_OF_WEEK_ES[i])}
                             </div>
                         ))}
 
@@ -189,8 +191,8 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
 
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
                         {selectedDate
-                            ? selectedDate.toLocaleDateString('default', { weekday: 'long', month: 'short', day: 'numeric' })
-                            : 'Select a date'}
+                            ? selectedDate.toLocaleDateString(isEs() ? 'es' : 'default', { weekday: 'long', month: 'short', day: 'numeric' })
+                            : tr('Select a date', 'Selecciona una fecha')}
                     </h3>
 
                     <div className="flex-1 overflow-y-auto pr-2 space-y-4">
@@ -200,7 +202,7 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
                                     <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                         <CalendarIcon className="w-8 h-8 opacity-50" />
                                     </div>
-                                    <p className="font-medium text-sm">No events scheduled on this day.</p>
+                                    <p className="font-medium text-sm">{tr('No events scheduled on this day.', 'No hay eventos programados este día.')}</p>
                                 </div>
                             </StagedFadeIn>
                         ) : (
@@ -230,7 +232,7 @@ export default function EventCalendarModal({ isOpen, onClose, events }: EventCal
                                         </div>
 
                                         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-sky-600 dark:text-sky-400 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-1 group-hover:translate-y-0">
-                                            View Details
+                                            {tr('View Details', 'Ver Detalles')}
                                             <ArrowRight className="w-3.5 h-3.5" />
                                         </div>
                                     </Link>

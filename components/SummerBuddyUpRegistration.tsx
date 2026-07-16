@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../lib/database';
 import { Team, SubCoach, Student } from '../lib/database/types';
+import { tr } from '../lib/lang';
 
 interface SummerBuddyUpRegistrationProps {
   currentUser: {
@@ -42,11 +43,11 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
   const [acceptCoordinatorRole, setAcceptCoordinatorRole] = useState(false);
   
   const focusAreas = [
-    { value: 'DIGITAL DISCOVERY', label: 'DIGITAL DISCOVERY: Co-build a community park or "dream school" in Minecraft or Roblox.' },
-    { value: 'PERFORMANCE ARTS', label: 'PERFORMANCE ARTS: Choreograph a dance, write the "Blue Elephant Anthem," or perform a puppet show.' },
-    { value: 'COMMUNITY SPIRIT', label: 'COMMUNITY SPIRIT: Create "Welcome to the Herd" care packages for new students or a large mural for a favorite teacher.' },
-    { value: 'CREATIVE PLAY', label: 'CREATIVE PLAY: Use clay for stop-motion animation, build Lego murals, or write joint poems.' },
-    { value: 'Other', label: 'Other' }
+    { value: 'DIGITAL DISCOVERY', label: tr('DIGITAL DISCOVERY: Co-build a community park or "dream school" in Minecraft or Roblox.', 'DESCUBRIMIENTO DIGITAL: Construyan juntos un parque comunitario o una "escuela de ensueño" en Minecraft o Roblox.') },
+    { value: 'PERFORMANCE ARTS', label: tr('PERFORMANCE ARTS: Choreograph a dance, write the "Blue Elephant Anthem," or perform a puppet show.', 'ARTES ESCÉNICAS: Coreografíen un baile, escriban el "Himno del Elefante Azul" o hagan un show de títeres.') },
+    { value: 'COMMUNITY SPIRIT', label: tr('COMMUNITY SPIRIT: Create "Welcome to the Herd" care packages for new students or a large mural for a favorite teacher.', 'ESPÍRITU COMUNITARIO: Creen paquetes de bienvenida "Bienvenido a la Manada" para estudiantes nuevos o un gran mural para un maestro favorito.') },
+    { value: 'CREATIVE PLAY', label: tr('CREATIVE PLAY: Use clay for stop-motion animation, build Lego murals, or write joint poems.', 'JUEGO CREATIVO: Usen plastilina para animación stop-motion, construyan murales de Lego o escriban poemas en conjunto.') },
+    { value: 'Other', label: tr('Other', 'Otro') }
   ];
 
   // Add/Remove Sub-Coach handlers
@@ -203,9 +204,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
     } catch (err: any) {
       console.error(err);
       if (err.message?.includes('teams_team_name_key') || err.message?.includes('duplicate key value')) {
-        setErrorMsg(`The team name "${teamName}" is already taken. Please choose a different name.`);
+        setErrorMsg(tr(`The team name "${teamName}" is already taken. Please choose a different name.`, `El nombre de equipo "${teamName}" ya está en uso. Por favor elige un nombre diferente.`));
       } else {
-        setErrorMsg(err.message || 'Failed to register the team. Please try again.');
+        setErrorMsg(err.message || tr('Failed to register the team. Please try again.', 'No se pudo registrar el equipo. Por favor intenta de nuevo.'));
       }
     } finally {
       setLoading(false);
@@ -214,19 +215,19 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
   // Get list of parent email options (Head coach + valid Sub-coaches)
   const parentEmailOptions = [
-    { email: currentUser.email, label: `Me (Head Coach - ${currentUser.email})` },
+    { email: currentUser.email, label: tr(`Me (Head Coach - ${currentUser.email})`, `Yo (Entrenador Principal - ${currentUser.email})`) },
     ...subCoaches
       .filter(c => c.email.trim() && c.email.includes('@'))
-      .map(c => ({ email: c.email.trim().toLowerCase(), label: `${c.name || 'Co-Parent'} (${c.email.trim()})` }))
+      .map(c => ({ email: c.email.trim().toLowerCase(), label: `${c.name || tr('Co-Parent', 'Copadre/madre')} (${c.email.trim()})` }))
   ];
 
   return (
     <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden font-sans">
       {/* Premium Header */}
       <div className="bg-gradient-to-r from-sky-500 via-sky-400 to-indigo-500 px-6 py-8 text-white relative">
-        <h2 className="text-3xl font-extrabold tracking-tight">Summer Buddy Up Roster Wizard</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight">{tr('Summer Buddy Up Roster Wizard', 'Asistente de Registro Summer Buddy Up')}</h2>
         <p className="text-sky-50 mt-1 text-sm md:text-base">
-          Bring children of all abilities together for local sensory-friendly projects and fun!
+          {tr('Bring children of all abilities together for local sensory-friendly projects and fun!', '¡Reúne a niños de todas las habilidades para proyectos locales y diversión sensorial-amigable!')}
         </p>
 
 
@@ -257,7 +258,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
       <form onSubmit={step === 4 ? handleSubmit : handleNext} className="p-6 md:p-8 space-y-6">
         {errorMsg && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg text-sm text-red-700 flex items-start gap-2">
-            <span className="font-semibold">Error:</span>
+            <span className="font-semibold">{tr('Error:', 'Error:')}</span>
             <span>{errorMsg}</span>
           </div>
         )}
@@ -266,21 +267,21 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
         {step === 1 && (
           <div className="space-y-5">
             <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-xl font-bold text-slate-800">Step 1: Create Team Profile</h3>
-              <p className="text-xs text-slate-500 mt-1">Set up your team identity and coordinator contact details.</p>
+              <h3 className="text-xl font-bold text-slate-800">{tr('Step 1: Create Team Profile', 'Paso 1: Crear Perfil de Equipo')}</h3>
+              <p className="text-xs text-slate-500 mt-1">{tr('Set up your team identity and coordinator contact details.', 'Configura la identidad de tu equipo y los datos de contacto del coordinador.')}</p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label htmlFor="teamName" className="block text-sm font-semibold text-slate-700 mb-1">
-                  Team Name <span className="text-red-500">*</span>
+                  {tr('Team Name', 'Nombre del Equipo')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   id="teamName"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. Tracy Inclusion Explorers"
+                  placeholder={tr('e.g. Tracy Inclusion Explorers', 'ej. Tracy Inclusion Explorers')}
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-350 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition text-slate-800 placeholder-slate-400"
                 />
@@ -289,7 +290,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="focusArea" className="block text-sm font-semibold text-slate-700 mb-1">
-                    Activity Focus Area
+                    {tr('Activity Focus Area', 'Área de Enfoque de Actividad')}
                   </label>
                   <select
                     id="focusArea"
@@ -305,14 +306,14 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
 
                 <div>
                   <label htmlFor="headPhone" className="block text-sm font-semibold text-slate-700 mb-1">
-                    Your Phone Number <span className="text-red-500">*</span>
+                    {tr('Your Phone Number', 'Tu Número de Teléfono')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
                     id="headPhone"
                     value={headCoachPhone}
                     onChange={(e) => setHeadCoachPhone(e.target.value)}
-                    placeholder="e.g. (209) 555-0199"
+                    placeholder={tr('e.g. (209) 555-0199', 'ej. (209) 555-0199')}
                     required
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-350 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition text-slate-800 placeholder-slate-400"
                   />
@@ -327,9 +328,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           <div className="space-y-5">
             <div className="border-b border-slate-100 pb-3 flex justify-between items-end">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Step 2: Add Co-Parent Partners (Sub-Coaches)</h3>
+                <h3 className="text-xl font-bold text-slate-800">{tr('Step 2: Add Co-Parent Partners (Sub-Coaches)', 'Paso 2: Agregar Copadres/madres Socios (Sub-Entrenadores)')}</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Add other student parents who will help coordinate activities and check-ins.
+                  {tr('Add other student parents who will help coordinate activities and check-ins.', 'Agrega a otros padres de estudiantes que ayudarán a coordinar las actividades y los reportes de avance.')}
                 </p>
               </div>
               <button
@@ -338,7 +339,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 disabled={subCoaches.length >= 3}
                 className="text-xs font-bold bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl shadow-sm transition-colors"
               >
-                + Add Partner
+                {tr('+ Add Partner', '+ Agregar Socio')}
               </button>
             </div>
 
@@ -346,46 +347,46 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               {subCoaches.map((coach, index) => (
                 <div key={index} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Partner #{index + 1}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tr('Partner', 'Socio')} #{index + 1}</span>
                     {subCoaches.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeSubCoach(index)}
                         className="text-xs text-red-500 hover:text-red-700 font-semibold"
                       >
-                        Remove
+                        {tr('Remove', 'Eliminar')}
                       </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Name</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Name', 'Nombre')}</label>
                       <input
                         type="text"
                         value={coach.name}
                         onChange={(e) => updateSubCoach(index, 'name', e.target.value)}
-                        placeholder="Name"
+                        placeholder={tr('Name', 'Nombre')}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Google Account Email</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Google Account Email', 'Correo de Cuenta de Google')}</label>
                       <input
                         type="email"
                         value={coach.email}
                         onChange={(e) => updateSubCoach(index, 'email', e.target.value)}
-                        placeholder="Google login email"
+                        placeholder={tr('Google login email', 'Correo de inicio de sesión de Google')}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Phone Number</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Phone Number', 'Número de Teléfono')}</label>
                       <input
                         type="tel"
                         value={coach.phone}
                         onChange={(e) => updateSubCoach(index, 'phone', e.target.value)}
-                        placeholder="Phone"
+                        placeholder={tr('Phone', 'Teléfono')}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       />
                     </div>
@@ -394,7 +395,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               ))}
 
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-250 text-xs text-amber-800">
-                <span className="font-semibold">Note:</span> Co-parents added here must accept their legal waivers via a login gate before the team can upload milestones or finalize active registration. No email invitations are sent; you will receive a magic dashboard link to copy-paste and share with them manually.
+                <span className="font-semibold">{tr('Note:', 'Nota:')}</span> {tr('Co-parents added here must accept their legal waivers via a login gate before the team can upload milestones or finalize active registration. No email invitations are sent; you will receive a magic dashboard link to copy-paste and share with them manually.', 'Los copadres/madres agregados aquí deben aceptar sus exenciones legales mediante un inicio de sesión antes de que el equipo pueda subir hitos o finalizar el registro activo. No se envían invitaciones por correo; recibirás un enlace mágico al panel para copiar y compartir manualmente.')}
               </div>
             </div>
           </div>
@@ -405,9 +406,9 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
           <div className="space-y-5">
             <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Step 3: Register Students (Min 2, Max 9)</h3>
+                <h3 className="text-xl font-bold text-slate-800">{tr('Step 3: Register Students (Min 2, Max 9)', 'Paso 3: Registrar Estudiantes (Mín. 2, Máx. 9)')}</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Compose your buddy cohort. Maintain the inclusive Gen Ed ratio!
+                  {tr('Compose your buddy cohort. Maintain the inclusive Gen Ed ratio!', 'Forma tu grupo de amigos. ¡Mantén la proporción inclusiva de Educación General!')}
                 </p>
               </div>
               {students.length < 9 ? (
@@ -416,7 +417,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                   onClick={addStudent}
                   className="text-xs font-bold bg-sky-500 text-white hover:bg-sky-600 px-4 py-2 rounded-xl shadow-sm transition-colors"
                 >
-                  + Add Student
+                  {tr('+ Add Student', '+ Agregar Estudiante')}
                 </button>
               ) : (
                 <div className="relative group">
@@ -425,10 +426,10 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     disabled
                     className="text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 px-3 py-1.5 rounded-xl cursor-not-allowed"
                   >
-                    Max Reached (9)
+                    {tr('Max Reached (9)', 'Máximo Alcanzado (9)')}
                   </button>
                   <div className="absolute right-0 bottom-8 hidden group-hover:block w-64 bg-slate-855 text-white p-2 rounded-lg text-[11px] shadow-lg leading-relaxed z-50">
-                    Maximum of 9 students per team reached! If you have more students, we highly recommend splitting into two separate teams so that all buddies get optimal quality focus.
+                    {tr('Maximum of 9 students per team reached! If you have more students, we highly recommend splitting into two separate teams so that all buddies get optimal quality focus.', '¡Se alcanzó el máximo de 9 estudiantes por equipo! Si tienes más estudiantes, te recomendamos dividir en dos equipos separados para que todos los amigos reciban una atención de calidad óptima.')}
                   </div>
                 </div>
               )}
@@ -438,73 +439,73 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               {students.map((student, index) => (
                 <div key={index} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student #{index + 1}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tr('Student', 'Estudiante')} #{index + 1}</span>
                     {students.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeStudent(index)}
                         className="text-xs text-red-500 hover:text-red-700 font-semibold"
                       >
-                        Remove
+                        {tr('Remove', 'Eliminar')}
                       </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Child's Name</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr("Child's Name", 'Nombre del Niño/a')}</label>
                       <input
                         type="text"
                         value={student.name}
                         onChange={(e) => updateStudent(index, 'name', e.target.value)}
-                        placeholder="Child's Name"
+                        placeholder={tr("Child's Name", 'Nombre del Niño/a')}
                         required
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Grade Level</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Grade Level', 'Grado Escolar')}</label>
                       <select
                         value={student.grade}
                         onChange={(e) => updateStudent(index, 'grade', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       >
                         {['TK', 'K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'].map(g => (
-                          <option key={g} value={g}>{g} Grade</option>
+                          <option key={g} value={g}>{g} {tr('Grade', 'Grado')}</option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">School District</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('School District', 'Distrito Escolar')}</label>
                       <select
                         value={student.school_district}
                         onChange={(e) => updateStudent(index, 'school_district', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       >
                         <option value="Tracy Unified">Tracy Unified</option>
-                        <option value="LUSD">LUSD (Lammersville)</option>
-                        <option value="Other Out of Area">Other Out of Area</option>
+                        <option value="LUSD">{tr('LUSD (Lammersville)', 'LUSD (Lammersville)')}</option>
+                        <option value="Other Out of Area">{tr('Other Out of Area', 'Otro Fuera del Área')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Classification</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Classification', 'Clasificación')}</label>
                       <select
                         value={student.classification}
                         onChange={(e) => updateStudent(index, 'classification', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                       >
-                        <option value="Gen Ed, without any special accommodation">Gen Ed, without any special accommodation</option>
-                        <option value="Inclusion Buddy">Inclusion Buddy (Special Education)</option>
+                        <option value="Gen Ed, without any special accommodation">{tr('Gen Ed, without any special accommodation', 'Educación General, sin adaptaciones especiales')}</option>
+                        <option value="Inclusion Buddy">{tr('Inclusion Buddy (Special Education)', 'Amigo de Inclusión (Educación Especial)')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Parent Google Account Email</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Parent Google Account Email', 'Correo de Cuenta de Google del Padre/Madre')}</label>
                       <select
                         value={student.parent_email}
                         onChange={(e) => updateStudent(index, 'parent_email', e.target.value)}
@@ -517,13 +518,13 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Award Delivery Type</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">{tr('Award Delivery Type', 'Tipo de Entrega de Premio')}</label>
                       {student.school_district === 'Tracy Unified' || student.school_district === 'LUSD' ? (
                         <div className="flex flex-col gap-1">
                           <span className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-2 rounded-lg border border-indigo-200">
-                            🏆 In-Person Ceremony
+                            🏆 {tr('In-Person Ceremony', 'Ceremonia en Persona')}
                           </span>
-                          <span className="text-[9px] text-slate-400">Locked for local Tracy/LUSD district partners</span>
+                          <span className="text-[9px] text-slate-400">{tr('Locked for local Tracy/LUSD district partners', 'Bloqueado para socios de los distritos locales Tracy/LUSD')}</span>
                         </div>
                       ) : (
                         <select
@@ -531,8 +532,8 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                           onChange={(e) => updateStudent(index, 'award_delivery_type', e.target.value)}
                           className="w-full px-3 py-2 rounded-lg border border-slate-350 outline-none focus:ring-1 focus:ring-sky-400 text-xs text-slate-800"
                         >
-                          <option value="VIRTUAL_DIGITAL">Virtual Digital Award</option>
-                          <option value="IN_PERSON_ONLY">In-Person Ceremony</option>
+                          <option value="VIRTUAL_DIGITAL">{tr('Virtual Digital Award', 'Premio Digital Virtual')}</option>
+                          <option value="IN_PERSON_ONLY">{tr('In-Person Ceremony', 'Ceremonia en Persona')}</option>
                         </select>
                       )}
                     </div>
@@ -543,15 +544,15 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               {/* Roster composition helper & validations */}
               <div className="p-4 bg-sky-50 rounded-2xl border border-sky-150 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="text-xs text-slate-700">
-                  <div className="font-semibold text-slate-900">Current Cohort Composition:</div>
+                  <div className="font-semibold text-slate-900">{tr('Current Cohort Composition:', 'Composición Actual del Grupo:')}</div>
                   <div className="flex gap-4 mt-1.5">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <div className="text-slate-600 font-medium">Gen Ed Students: <strong className="text-slate-900">{peerMentors}</strong></div>
+                      <div className="text-slate-600 font-medium">{tr('Gen Ed Students:', 'Estudiantes de Educación General:')} <strong className="text-slate-900">{peerMentors}</strong></div>
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                      Inclusion Buddies: <strong className="text-slate-900">{inclusionBuddies}</strong>
+                      {tr('Inclusion Buddies:', 'Amigos de Inclusión:')} <strong className="text-slate-900">{inclusionBuddies}</strong>
                     </span>
                   </div>
                 </div>
@@ -559,7 +560,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 {ratioViolated ? (
                   <div className="flex-1 bg-red-50 border border-red-200 p-3 rounded-xl">
                     <div className="text-xs font-bold text-red-800 mb-1">
-                      ⚠️ Ratio Alert (Needs at least 1 Inclusion Buddy for every 3 Gen Ed Students)
+                      ⚠️ {tr('Ratio Alert (Needs at least 1 Inclusion Buddy for every 3 Gen Ed Students)', 'Alerta de Proporción (Se necesita al menos 1 Amigo de Inclusión por cada 3 Estudiantes de Educación General)')}
                     </div>
                     <label className="flex items-start gap-1.5 select-none cursor-pointer">
                       <input
@@ -569,14 +570,14 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                         className="mt-0.5"
                       />
                       <span className="text-[11px] text-red-750 font-medium">
-                        Request Admin Ratio Override
+                        {tr('Request Admin Ratio Override', 'Solicitar Excepción de Proporción al Administrador')}
                       </span>
                     </label>
                     {ratioOverrideRequested && (
                       <textarea
                         value={overrideExplanation}
                         onChange={(e) => setOverrideExplanation(e.target.value)}
-                        placeholder="Briefly explain your scenario (e.g., waiting for matching buddies)..."
+                        placeholder={tr('Briefly explain your scenario (e.g., waiting for matching buddies)...', 'Explica brevemente tu situación (ej. esperando amigos compatibles)...')}
                         className="w-full mt-2 p-2 border border-red-300 rounded text-xs outline-none focus:ring-1 focus:ring-red-400"
                         rows={2}
                       />
@@ -584,7 +585,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                   </div>
                 ) : peerMentors > 0 && inclusionBuddies > 0 ? (
                   <div className="text-xs bg-emerald-50 text-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-200 font-semibold flex items-center gap-1.5">
-                    ✓ Inclusion Buddy ratio constraints met!
+                    ✓ {tr('Inclusion Buddy ratio constraints met!', '¡Se cumplen los requisitos de proporción de Amigos de Inclusión!')}
                   </div>
                 ) : null}
               </div>
@@ -596,18 +597,18 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
         {step === 4 && (
           <div className="space-y-5">
             <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-xl font-bold text-slate-800">Step 4: Certifications & Legal Waiver</h3>
-              <p className="text-xs text-slate-500 mt-1">Submit roster certifications as the primary Team Coordinator.</p>
+              <h3 className="text-xl font-bold text-slate-800">{tr('Step 4: Certifications & Legal Waiver', 'Paso 4: Certificaciones y Exención Legal')}</h3>
+              <p className="text-xs text-slate-500 mt-1">{tr('Submit roster certifications as the primary Team Coordinator.', 'Envía las certificaciones del equipo como Coordinador Principal.')}</p>
             </div>
 
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-700">
-                <h4 className="font-bold text-slate-850">Primary Head Coach Certification and Obligations:</h4>
+                <h4 className="font-bold text-slate-850">{tr('Primary Head Coach Certification and Obligations:', 'Certificación y Obligaciones del Entrenador Principal:')}</h4>
                 <p>
-                  As the primary submitter (Head Coach), you are the administrative owner of this Aaria's Blue Elephant team. You acknowledge that Aaria's Blue Elephant is a 501(c)(3) nonprofit entity (Entity No. B20250299015).
+                  {tr("As the primary submitter (Head Coach), you are the administrative owner of this Aaria's Blue Elephant team. You acknowledge that Aaria's Blue Elephant is a 501(c)(3) nonprofit entity (Entity No. B20250299015).", "Como el remitente principal (Entrenador Principal), eres el propietario administrativo de este equipo de Aaria's Blue Elephant. Reconoces que Aaria's Blue Elephant es una entidad sin fines de lucro 501(c)(3) (Entidad No. B20250299015).")}
                 </p>
                 <p>
-                  You agree to conduct your group projects in safe, sensory-friendly public spaces or consenting parent homes, ensuring inclusion and safety for children of all sensory profiles.
+                  {tr('You agree to conduct your group projects in safe, sensory-friendly public spaces or consenting parent homes, ensuring inclusion and safety for children of all sensory profiles.', 'Aceptas realizar tus proyectos grupales en espacios públicos seguros y sensorialmente amigables, o en hogares de padres que consientan, garantizando la inclusión y seguridad de niños con todo tipo de perfil sensorial.')}
                 </p>
               </div>
 
@@ -620,8 +621,8 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     className="mt-1 w-4 h-4 rounded text-sky-500 border-slate-350 focus:ring-sky-400 focus:ring-opacity-25"
                   />
                   <div className="text-xs text-slate-700 font-medium">
-                    <span className="text-slate-900 font-bold block mb-0.5">I certify offline parental consents are obtained *</span>
-                    I verify that I have printed, distributed, and obtained physical/offline parent-signed waivers (Liability, Media Release, No-Face photography agreement) for all registered students prior to adding them to this database.
+                    <span className="text-slate-900 font-bold block mb-0.5">{tr('I certify offline parental consents are obtained *', 'Certifico que se obtuvieron los consentimientos de los padres en papel *')}</span>
+                    {tr('I verify that I have printed, distributed, and obtained physical/offline parent-signed waivers (Liability, Media Release, No-Face photography agreement) for all registered students prior to adding them to this database.', 'Verifico que he impreso, distribuido y obtenido exenciones físicas/en papel firmadas por los padres (Responsabilidad, Liberación de Medios, acuerdo de fotografía Sin Rostro) para todos los estudiantes registrados antes de agregarlos a esta base de datos.')}
                   </div>
                 </label>
 
@@ -633,8 +634,8 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                     className="mt-1 w-4 h-4 rounded text-sky-500 border-slate-350 focus:ring-sky-400 focus:ring-opacity-25"
                   />
                   <div className="text-xs text-slate-700 font-medium">
-                    <span className="text-slate-900 font-bold block mb-0.5">Accept Coordinator responsibilities *</span>
-                    I accept the duties of a Head Coach and agree to ensure all milestone videos are uploaded according to Aaria's Blue Elephant's privacy guardrails (unlisted YouTube URLs only, no child names in titles).
+                    <span className="text-slate-900 font-bold block mb-0.5">{tr('Accept Coordinator responsibilities *', 'Acepto las responsabilidades de Coordinador *')}</span>
+                    {tr("I accept the duties of a Head Coach and agree to ensure all milestone videos are uploaded according to Aaria's Blue Elephant's privacy guardrails (unlisted YouTube URLs only, no child names in titles).", "Acepto los deberes de un Entrenador Principal y me comprometo a asegurar que todos los videos de hitos se suban según las normas de privacidad de Aaria's Blue Elephant (solo enlaces de YouTube no listados, sin nombres de niños en los títulos).")}
                   </div>
                 </label>
               </div>
@@ -651,7 +652,7 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
               disabled={loading}
               className="px-5 py-2.5 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-100 transition font-bold text-sm disabled:opacity-50"
             >
-              Back
+              {tr('Back', 'Atrás')}
             </button>
           ) : (
             <div />
@@ -665,19 +666,19 @@ export const SummerBuddyUpRegistration: React.FC<SummerBuddyUpRegistrationProps>
                 disabled={loading}
                 className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
-                Skip for now
+                {tr('Skip for now', 'Omitir por ahora')}
               </button>
             )}
             <button
               type="submit"
               disabled={!isStepValid() || loading}
               className={`px-6 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-                step === 4 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-200' 
+                step === 4
+                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-200'
                   : 'bg-sky-500 hover:bg-sky-400 shadow-sky-100'
               }`}
             >
-              {loading ? 'Registering...' : step === 4 ? 'Submit Roster & Register Team' : 'Continue'}
+              {loading ? tr('Registering...', 'Registrando...') : step === 4 ? tr('Submit Roster & Register Team', 'Enviar Lista y Registrar Equipo') : tr('Continue', 'Continuar')}
             </button>
           </div>
         </div>

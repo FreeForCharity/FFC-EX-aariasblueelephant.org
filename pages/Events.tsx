@@ -15,6 +15,7 @@ import RichText from '../components/RichText';
 import { parseDateLocal, formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
 import ResilientImage from '../components/ResilientImage';
+import { tr } from '../lib/lang';
 
 type Tab = 'upcoming' | 'all' | 'past';
 
@@ -117,7 +118,7 @@ const EventCardShort: React.FC<{
       {showToast && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black py-2 px-6 rounded-full shadow-2xl flex items-center gap-2 border border-sky-500/30 animate-in fade-in zoom-in duration-300">
           <Check className="w-3 h-3 text-sky-400 dark:text-sky-600" />
-          LINK COPIED!
+          {tr('LINK COPIED!', '¡ENLACE COPIADO!')}
         </div>
       )}
 
@@ -150,10 +151,10 @@ const EventCardShort: React.FC<{
       <div className="p-6 flex flex-col flex-grow md:justify-center">
         <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-[9px] mb-2 uppercase tracking-widest opacity-80">
           <Calendar className="w-3 h-3" />
-          <span>{event.date ? formatDateLocal(event.date) : 'Date TBD'}</span>
+          <span>{event.date ? formatDateLocal(event.date) : tr('Date TBD', 'Fecha por confirmar')}</span>
           <span className="text-slate-200 dark:text-slate-700 mx-1">•</span>
           <Clock className="w-3 h-3" />
-          <span>{event.time || 'Time TBD'}</span>
+          <span>{event.time || tr('Time TBD', 'Hora por confirmar')}</span>
         </div>
         
         <h3 
@@ -175,22 +176,22 @@ const EventCardShort: React.FC<{
           <div className="w-full flex flex-col gap-2 mb-1">
             <span className="text-[11px] font-[900] text-brand-purple dark:text-brand-purple uppercase tracking-tight flex items-center justify-center md:justify-end gap-1.5 mb-1">
               <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span>
-              SUPPORT SELECTION REQUIRED TO SIGN UP
+              {tr('SUPPORT SELECTION REQUIRED TO SIGN UP', 'SELECCIONA UNA OPCIÓN DE APOYO PARA INSCRIBIRTE')}
             </span>
-            
+
             <div className="flex flex-col gap-2 w-full">
-              <button 
+              <button
                 onClick={(e) => handleRegister(e, false)}
                 className="w-full py-3 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-cyan hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
               >
-                SIGN UP (NO SUPPORT)
+                {tr('SIGN UP (NO SUPPORT)', 'INSCRIBIRSE (SIN APOYO)')}
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <button 
+              <button
                 onClick={(e) => handleRegister(e, true)}
                 className="w-full py-3 px-4 bg-white dark:bg-slate-800 border-2 border-brand-purple text-brand-purple rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-purple hover:text-white transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
               >
-                SIGN UP (WITH SUPPORT)
+                {tr('SIGN UP (WITH SUPPORT)', 'INSCRIBIRSE (CON APOYO)')}
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -203,7 +204,7 @@ const EventCardShort: React.FC<{
               onClick={(e) => handleRegister(e, false)}
               className="flex-grow py-3 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-[10px] shadow-lg transition-all uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-sky-600 dark:hover:bg-sky-400"
             >
-              SIGN UP NOW
+              {tr('SIGN UP NOW', 'INSCRIBIRSE AHORA')}
               <ChevronRight className="h-4 w-4" />
             </button>
            </div>
@@ -222,27 +223,27 @@ const EventCardShort: React.FC<{
               >
                 {userRegistration?.status === 'Approved' ? (
                   <>
-                    <Check className="h-3.5 w-3.5" /> JOINED
+                    <Check className="h-3.5 w-3.5" /> {tr('JOINED', 'CONFIRMADO')}
                   </>
                 ) : (
                   <>
-                    <Clock className="h-3.5 w-3.5 animate-pulse" /> PENDING APPROVAL
+                    <Clock className="h-3.5 w-3.5 animate-pulse" /> {tr('PENDING APPROVAL', 'APROBACIÓN PENDIENTE')}
                   </>
                 )}
               </button>
             ) : (
               <div className="flex-grow bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-center animate-pulse shadow-lg shadow-emerald-500/20">
-                SUCCESS!
+                {tr('SUCCESS!', '¡LISTO!')}
               </div>
             )}
           </div>
         )}
 
-        <button 
+        <button
           onClick={handleShare}
           className="w-full py-2 flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 hover:text-sky-500 transition-colors"
         >
-          <Share2 className="h-3.5 w-3.5" /> SHARE EVENT
+          <Share2 className="h-3.5 w-3.5" /> {tr('SHARE EVENT', 'COMPARTIR EVENTO')}
         </button>
       </div>
     </div>
@@ -329,14 +330,14 @@ const CardContent: React.FC<CardContentProps> = ({
             </span>
             {isPast && (
               <span className="ml-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md bg-slate-600 text-white">
-                Past
+                {tr('Past', 'Pasado')}
               </span>
             )}
           </div>
           {!isPast && (
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 hidden lg:flex items-center justify-center">
               <span className="flex items-center bg-sky-600 text-white font-bold px-6 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                View Details <ChevronRight className="ml-2 h-4 w-4" />
+                {tr('View Details', 'Ver Detalles')} <ChevronRight className="ml-2 h-4 w-4" />
               </span>
             </div>
           )}
@@ -363,14 +364,14 @@ const CardContent: React.FC<CardContentProps> = ({
                 </div>
                 <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
                   <StickerIcon icon={Users} size={18} color="#00AEEF" className="mr-4" />
-                  <span>{activeEvent.registered} / {activeEvent.capacity} Registered</span>
+                  <span>{activeEvent.registered} / {activeEvent.capacity} {tr('Registered', 'Inscritos')}</span>
                 </div>
               </div>
             </div>
 
             {activeEvent.mediaLink && (
               <div className="flex-1 mb-8 lg:mb-0 lg:max-w-[50%] h-full flex flex-col">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Event Media</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">{tr('Event Media', 'Contenido del Evento')}</h3>
                 <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl overflow-y-auto slim-scrollbar flex-1 relative min-h-[200px]">
                   <div className="absolute inset-0 p-3">
                     <RichText content={activeEvent.mediaLink} className="w-full text-slate-600 dark:text-slate-300" />
@@ -386,8 +387,8 @@ const CardContent: React.FC<CardContentProps> = ({
                 {registrationSubmitted ? (
                   <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-xl border border-green-200 dark:border-green-800 text-center text-sm font-bold flex flex-col gap-2">
                     <Check className="h-6 w-6 mx-auto mb-1 animate-bounce" />
-                    Registration Submitted!
-                    <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>View Details</Button>
+                    {tr('Registration Submitted!', '¡Registro Enviado!')}
+                    <Button fullWidth size="sm" variant="secondary" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}>{tr('View Details', 'Ver Detalles')}</Button>
                   </div>
                 ) : isRegistered ? (
                   <Button 
@@ -398,9 +399,9 @@ const CardContent: React.FC<CardContentProps> = ({
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigate(`/events/${activeEvent.id}`); }}
                   >
                     {userRegistration?.status === 'Approved' ? (
-                      <span className="flex items-center gap-2 justify-center"><Check className="h-5 w-5" /> JOINED</span>
+                      <span className="flex items-center gap-2 justify-center"><Check className="h-5 w-5" /> {tr('JOINED', 'CONFIRMADO')}</span>
                     ) : (
-                      <span className="flex items-center gap-2 justify-center"><Clock className="h-5 w-5 animate-pulse" /> PENDING APPROVAL</span>
+                      <span className="flex items-center gap-2 justify-center"><Clock className="h-5 w-5 animate-pulse" /> {tr('PENDING APPROVAL', 'APROBACIÓN PENDIENTE')}</span>
                     )}
                   </Button>
                 ) : activeEvent.registered < activeEvent.capacity ? (
@@ -409,32 +410,32 @@ const CardContent: React.FC<CardContentProps> = ({
                       <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                         <label className="text-sm font-black text-brand-purple dark:text-brand-purple block mb-2 text-center uppercase tracking-tight flex items-center justify-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-brand-purple animate-pulse"></span>
-                          Required: Support Needed? (Helps us Prepare)
+                          {tr('Required: Support Needed? (Helps us Prepare)', 'Requerido: ¿Necesita Apoyo? (Nos Ayuda a Prepararnos)')}
                         </label>
                         <div className="flex gap-2">
                           <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === true ? 'bg-brand-purple/10 border-brand-purple text-brand-purple dark:bg-brand-purple/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
                             <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === true} onChange={() => setNeedsAccommodation(true)} />
-                            <span className="font-medium text-xs text-center">Yes</span>
+                            <span className="font-medium text-xs text-center">{tr('Yes', 'Sí')}</span>
                           </label>
                           <label className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg border cursor-pointer transition-all ${needsAccommodation === false ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan dark:bg-brand-cyan/20 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'}`} onClick={(e) => e.stopPropagation()}>
                             <input type="radio" name={`acc-${activeEvent.id}`} className="hidden" checked={needsAccommodation === false} onChange={() => setNeedsAccommodation(false)} />
-                            <span className="font-medium text-xs text-center">No</span>
+                            <span className="font-medium text-xs text-center">{tr('No', 'No')}</span>
                           </label>
                         </div>
                       </div>
                     )}
                     <Button fullWidth size="lg" className="shadow-lg shadow-brand-cyan/20" onClick={handleRegister} disabled={needsAccommodation === null}>
-                      {needsAccommodation === null ? 'Selection Required to Sign Up' : user ? 'Register Now' : 'Sign in to Register'}
+                      {needsAccommodation === null ? tr('Selection Required to Sign Up', 'Selecciona una Opción para Inscribirte') : user ? tr('Register Now', 'Inscribirse Ahora') : tr('Sign in to Register', 'Inicia Sesión para Inscribirte')}
                     </Button>
                   </div>
                 ) : (
-                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Event Full</Button>
+                  <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>{tr('Event Full', 'Evento Lleno')}</Button>
                 )}
               </div>
             )}
 
             {isPast && (
-              <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Event Concluded</Button>
+              <Button fullWidth size="lg" variant="secondary" disabled onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>{tr('Event Concluded', 'Evento Concluido')}</Button>
             )}
 
             <div className="flex w-full gap-2 mt-2">
@@ -446,7 +447,7 @@ const CardContent: React.FC<CardContentProps> = ({
                 }}
                 className="flex-[2] px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sky-600 dark:text-sky-400 font-bold"
               >
-                View Details
+                {tr('View Details', 'Ver Detalles')}
               </button>
               <button
                 onClick={(e) => {
@@ -455,7 +456,7 @@ const CardContent: React.FC<CardContentProps> = ({
                   toggleLike(e, activeEvent.id);
                 }}
                 className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                aria-label="Like"
+                aria-label={tr('Like', 'Me gusta')}
               >
                 <Heart className={`h-5 w-5 ${likedEvents[activeEvent.id] ? 'fill-brand-pink text-brand-pink' : 'text-slate-400'}`} />
               </button>
@@ -466,7 +467,7 @@ const CardContent: React.FC<CardContentProps> = ({
                   handleShare(e, activeEvent.id);
                 }}
                 className="flex-1 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                aria-label="Share"
+                aria-label={tr('Share', 'Compartir')}
               >
                 {copiedId === activeEvent.id ? <Check className="h-5 w-5 text-green-400" /> : <Share2 className="h-5 w-5 text-slate-400" />}
               </button>
@@ -592,8 +593,8 @@ export default function Events() {
       <StagedFadeIn>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Upcoming Events & Classes</h1>
-            <p className="text-slate-600 dark:text-slate-400">Join our inclusive sessions designed for all abilities.</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{tr('Upcoming Events & Classes', 'Próximos Eventos y Clases')}</h1>
+            <p className="text-slate-600 dark:text-slate-400">{tr('Join our inclusive sessions designed for all abilities.', 'Únete a nuestras sesiones inclusivas diseñadas para todas las capacidades.')}</p>
           </div>
           <div className="mt-4 md:mt-0 flex space-x-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             {(['upcoming', 'all', 'past'] as Tab[]).map((tab) => (
@@ -605,7 +606,7 @@ export default function Events() {
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800'
                   }`}
               >
-                {tab} Events
+                {tr(`${tab} Events`, `${tab === 'upcoming' ? 'Próximos' : tab === 'all' ? 'Todos los' : 'Pasados'} Eventos`)}
               </button>
             ))}
             <div className="w-px h-6 bg-slate-300 dark:bg-slate-700 self-center mx-1"></div>
@@ -614,7 +615,7 @@ export default function Events() {
               className="px-4 py-2 rounded-md text-sm font-medium transition-all bg-sky-100/50 hover:bg-sky-200 dark:bg-sky-900/30 dark:hover:bg-sky-800/50 text-sky-700 dark:text-sky-300 flex items-center gap-2"
             >
               <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Calendar</span>
+              <span className="hidden sm:inline">{tr('Calendar', 'Calendario')}</span>
             </button>
           </div>
         </div>
@@ -623,15 +624,15 @@ export default function Events() {
       {isLoading && events.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed animate-pulse">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-cyan border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">Loading events...</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">{tr('Loading events...', 'Cargando eventos...')}</h2>
         </div>
       ) : filteredEvents.length === 0 ? (
         <div className="py-20 px-4 text-center text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30 rounded-2xl border border-slate-300 dark:border-slate-700/50 border-dashed">
           <StickerIcon icon={Calendar} size={32} color="#94a3b8" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">No events found</h2>
-          <p>There are no {activeTab} events scheduled at this time.</p>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-4 mb-2">{tr('No events found', 'No se encontraron eventos')}</h2>
+          <p>{tr(`There are no ${activeTab} events scheduled at this time.`, `No hay eventos${activeTab === 'upcoming' ? ' próximos' : activeTab === 'past' ? ' pasados' : ''} programados en este momento.`)}</p>
           {activeTab !== 'all' && (
-            <button onClick={() => setActiveTab('all')} className="mt-4 text-brand-cyan hover:underline">View all events</button>
+            <button onClick={() => setActiveTab('all')} className="mt-4 text-brand-cyan hover:underline">{tr('View all events', 'Ver todos los eventos')}</button>
           )}
         </div>
       ) : (
@@ -703,10 +704,10 @@ export default function Events() {
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <Users className="h-24 w-24 text-sky-600" />
           </div>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">Become an Event Host</h3>
-          <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 text-lg font-medium">Interested in facilitating inclusive play in your neighborhood? We provide all materials and guidance.</p>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">{tr('Become an Event Host', 'Conviértete en Anfitrión de un Evento')}</h3>
+          <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 text-lg font-medium">{tr('Interested in facilitating inclusive play in your neighborhood? We provide all materials and guidance.', '¿Te interesa facilitar juego inclusivo en tu vecindario? Nosotros brindamos todos los materiales y la guía.')}</p>
           <Button size="lg" className="px-10" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
-            Inquire to Host <ArrowRight className="ml-2 h-5 w-5" />
+            {tr('Inquire to Host', 'Solicitar Ser Anfitrión')} <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </StagedFadeIn>
@@ -717,8 +718,8 @@ export default function Events() {
           <div className="h-16 w-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-6">
             <StickerIcon icon={HeartHandshake} size={32} color="#00AEEF" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">100% Free. Fully Inclusive.</h2>
-          <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl max-w-4xl mx-auto font-medium">We believe financial constraints should never be a barrier to joy, growth, and connection.</p>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase">{tr('100% Free. Fully Inclusive.', '100% Gratis. Totalmente Inclusivo.')}</h2>
+          <p className="text-slate-600 dark:text-slate-300 text-lg md:text-xl max-w-4xl mx-auto font-medium">{tr('We believe financial constraints should never be a barrier to joy, growth, and connection.', 'Creemos que las limitaciones económicas nunca deben ser una barrera para la alegría, el crecimiento y la conexión.')}</p>
         </div>
       </StagedFadeIn>
 

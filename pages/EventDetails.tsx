@@ -11,6 +11,7 @@ import RichText from '../components/RichText';
 import { formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
 import ResilientImage from '../components/ResilientImage';
+import { tr } from '../lib/lang';
 
 
 export default function EventDetails() {
@@ -192,7 +193,7 @@ export default function EventDetails() {
           <Link to="/events"
             className="flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-md hover:bg-black/70 transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> {tr('Back', 'Volver')}
           </Link>
         </div>
       </div>
@@ -205,25 +206,25 @@ export default function EventDetails() {
               <Check className="h-10 w-10 text-green-600 dark:text-green-400 animate-bounce" />
             </div>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-              Registration Successful!
+              {tr('Registration Successful!', '¡Registro Exitoso!')}
             </h2>
             <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-8">
-              Thank you for registering for <span className="font-bold text-brand-cyan">{event.title}</span>. Your registration is currently <span className="font-bold text-amber-500">Pending Approval</span>. You will receive an update once our team reviews your request.
+              {tr('Thank you for registering for', 'Gracias por registrarte para')} <span className="font-bold text-brand-cyan">{event.title}</span>. {tr('Your registration is currently', 'Tu registro está actualmente')} <span className="font-bold text-amber-500">{tr('Pending Approval', 'Pendiente de Aprobación')}</span>. {tr('You will receive an update once our team reviews your request.', 'Recibirás una actualización en cuanto nuestro equipo revise tu solicitud.')}
             </p>
             <div className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-6 mb-8 border border-sky-100 dark:border-sky-800/50">
-              <p className="text-sky-800 dark:text-sky-300 font-medium mb-3">Want to amplify your impact right now?</p>
+              <p className="text-sky-800 dark:text-sky-300 font-medium mb-3">{tr('Want to amplify your impact right now?', '¿Quieres amplificar tu impacto ahora mismo?')}</p>
               <p className="text-sky-600 dark:text-sky-400 text-sm mb-4">
-                Your support helps us keep our events and events free for all families.
+                {tr('Your support helps us keep our events and events free for all families.', 'Tu apoyo nos ayuda a mantener nuestros eventos gratuitos para todas las familias.')}
               </p>
               <Link to="/#join-herd"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-brand-cyan text-white rounded-full font-bold hover:bg-sky-500 transition-all shadow-lg hover:shadow-sky-500/25"
                 onClick={() => setRegistrationSubmitted(false)}
               >
-                Signify Impact with a Donation <HeartHandshake className="h-4 w-4" />
+                {tr('Signify Impact with a Donation', 'Demuestra tu Impacto con una Donación')} <HeartHandshake className="h-4 w-4" />
               </Link>
             </div>
             <Button variant="ghost" onClick={() => setRegistrationSubmitted(false)} className="text-slate-500 dark:text-slate-400">
-              Back to Event Details
+              {tr('Back to Event Details', 'Volver a los Detalles del Evento')}
             </Button>
           </div>
         ) : (
@@ -265,33 +266,33 @@ export default function EventDetails() {
             <div className="grid grid-cols-1 lg:grid-cols-3">
               {/* Left Column: Details */}
               <div className="col-span-2 p-6 sm:p-10 border-t lg:border-t-0 lg:border-r border-slate-200 dark:border-slate-800 order-last lg:order-none">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">About this Event</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{tr('About this Event', 'Sobre este Evento')}</h2>
                 <div className="text-lg leading-relaxed text-slate-600 dark:text-slate-300 mb-8 whitespace-pre-line">
                   {event.description}
                 </div>
 
                 {event.mediaLink && (
                   <div className="mb-8">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Event Media</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{tr('Event Media', 'Contenido del Evento')}</h3>
                     <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl">
                       <RichText content={event.mediaLink} className="text-slate-600 dark:text-slate-300" />
                     </div>
                   </div>
                 )}
 
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">What to expect</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{tr('What to expect', 'Qué esperar')}</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400 mb-8">
                   <li className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan"></div>
-                    <span>Inclusive environment for all abilities</span>
+                    <span>{tr('Inclusive environment for all abilities', 'Ambiente inclusivo para todas las capacidades')}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan"></div>
-                    <span>Small group sizes for better engagement</span>
+                    <span>{tr('Small group sizes for better engagement', 'Grupos pequeños para mejor participación')}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan"></div>
-                    <span>Materials and sensory tools provided</span>
+                    <span>{tr('Materials and sensory tools provided', 'Materiales y herramientas sensoriales incluidos')}</span>
                   </li>
                 </ul>
               </div>
@@ -306,27 +307,27 @@ export default function EventDetails() {
                       registrationStatus === 'Pending' ? (
                         <Button fullWidth size="lg" variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 shadow-sm" disabled>
                           <div className="flex items-center gap-2 justify-center">
-                            <Clock className="h-5 w-5 animate-pulse" /> PENDING APPROVAL
+                            <Clock className="h-5 w-5 animate-pulse" /> {tr('PENDING APPROVAL', 'APROBACIÓN PENDIENTE')}
                           </div>
                         </Button>
                       ) : (
                         <Button fullWidth size="lg" variant="primary" className="bg-green-600 hover:bg-green-700 text-white border-none shadow-lg shadow-green-500/20" disabled>
                           <div className="flex items-center gap-2 justify-center">
-                            <Check className="h-5 w-5" /> JOINED
+                            <Check className="h-5 w-5" /> {tr('JOINED', 'CONFIRMADO')}
                           </div>
                         </Button>
                       )
                     ) : isPastEvent ? (
                       <div className="space-y-4">
                         <Button fullWidth size="lg" variant="secondary" disabled>
-                          Event Concluded
+                          {tr('Event Concluded', 'Evento Concluido')}
                         </Button>
                         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
                           <p className="text-amber-800 dark:text-amber-400 font-medium">
-                            Missed the event? No worries!
+                            {tr('Missed the event? No worries!', '¿Te perdiste el evento? ¡No te preocupes!')}
                           </p>
                           <Link to="/events" className="text-sm text-amber-600 dark:text-amber-300 hover:underline mt-1 inline-block">
-                            Check out our upcoming events here →
+                            {tr('Check out our upcoming events here →', 'Descubre nuestros próximos eventos aquí →')}
                           </Link>
                         </div>
                       </div>
@@ -336,15 +337,15 @@ export default function EventDetails() {
                            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-brand-purple/20 dark:border-brand-purple/30 shadow-xl overflow-hidden relative">
                              {/* Decorative accent */}
                              <div className="absolute top-0 left-0 w-full h-1 bg-brand-purple"></div>
-                             
+
                              <label className="text-lg font-[900] text-brand-purple dark:text-brand-purple block mb-2 uppercase tracking-tight flex items-center gap-2">
                                <span className="w-2.5 h-2.5 rounded-full bg-brand-purple animate-pulse"></span>
-                               SUPPORT SELECTION REQUIRED TO SIGN UP
+                               {tr('SUPPORT SELECTION REQUIRED TO SIGN UP', 'SELECCIONA UNA OPCIÓN DE APOYO PARA INSCRIBIRTE')}
                              </label>
                              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-                               To help us provide the best experience, please select your support level below to complete your registration.
+                               {tr('To help us provide the best experience, please select your support level below to complete your registration.', 'Para ayudarnos a brindarte la mejor experiencia, selecciona tu nivel de apoyo a continuación para completar tu registro.')}
                              </p>
-                             
+
                              <div className="flex flex-col gap-3">
                                <Button
                                  fullWidth
@@ -352,7 +353,7 @@ export default function EventDetails() {
                                  className="py-6 shadow-lg shadow-slate-200 dark:shadow-none font-black text-sm tracking-widest"
                                  onClick={() => handleRegister(false)}
                                >
-                                 SIGN UP (NO SUPPORT)
+                                 {tr('SIGN UP (NO SUPPORT)', 'INSCRIBIRSE (SIN APOYO)')}
                                </Button>
                                <Button
                                  fullWidth
@@ -361,7 +362,7 @@ export default function EventDetails() {
                                  className="py-6 border-2 border-brand-purple text-brand-purple hover:bg-brand-purple hover:text-white font-black text-sm tracking-widest"
                                  onClick={() => handleRegister(true)}
                                >
-                                 SIGN UP (WITH SUPPORT)
+                                 {tr('SIGN UP (WITH SUPPORT)', 'INSCRIBIRSE (CON APOYO)')}
                                </Button>
                              </div>
                            </div>
@@ -374,13 +375,13 @@ export default function EventDetails() {
                             className="py-6 shadow-xl shadow-brand-cyan/20 transform transition hover:-translate-y-1 font-black tracking-widest"
                             onClick={() => handleRegister(false)}
                           >
-                            REGISTER NOW
+                            {tr('REGISTER NOW', 'INSCRIBIRSE AHORA')}
                           </Button>
                          )}
                        </div>
                     ) : (
                       <Button fullWidth size="lg" variant="secondary" disabled>
-                        Event Full
+                        {tr('Event Full', 'Evento Lleno')}
                       </Button>
                     )}
                   </div>
@@ -390,7 +391,7 @@ export default function EventDetails() {
                       <Calendar className="h-6 w-6 text-brand-cyan" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Date</p>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tr('Date', 'Fecha')}</p>
                       <div className="text-lg font-semibold text-slate-900 dark:text-white">
                         {formatDateLocal(event.date)}
                       </div>
@@ -402,7 +403,7 @@ export default function EventDetails() {
                       <Clock className="h-6 w-6 text-brand-cyan" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Time</p>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tr('Time', 'Hora')}</p>
                       <p className="text-lg font-semibold text-slate-900 dark:text-white">{event.time}</p>
                     </div>
                   </div>
@@ -412,7 +413,7 @@ export default function EventDetails() {
                       <MapPin className="h-6 w-6 text-brand-cyan" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Location</p>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tr('Location', 'Ubicación')}</p>
                       <p className="text-lg font-semibold text-slate-900 dark:text-white">{event.location}</p>
                       <a
                         href={`https://maps.google.com/?q=${encodeURIComponent(event.location)}`}
@@ -420,7 +421,7 @@ export default function EventDetails() {
                         rel="noopener noreferrer"
                         className="text-sm text-brand-cyan hover:underline mt-1 block"
                       >
-                        Get Directions
+                        {tr('Get Directions', 'Cómo Llegar')}
                       </a>
                     </div>
                   </div>
@@ -430,7 +431,7 @@ export default function EventDetails() {
                       <Users className="h-6 w-6 text-brand-cyan" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Availability</p>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tr('Availability', 'Disponibilidad')}</p>
                       <div className="mt-1 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-brand-cyan to-brand-purple"
@@ -438,7 +439,7 @@ export default function EventDetails() {
                         ></div>
                       </div>
                       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                        {event.capacity - event.registered} spots remaining
+                        {tr(`${event.capacity - event.registered} spots remaining`, `${event.capacity - event.registered} lugares disponibles`)}
                       </p>
                     </div>
                   </div>
@@ -447,10 +448,10 @@ export default function EventDetails() {
                   <div className="mt-4 p-5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700 transition-colors duration-300 shadow-sm group text-center">
                     <div className="flex items-center gap-3 mb-2 justify-center">
                       <HeartHandshake className="h-5 w-5 text-sky-600 dark:text-sky-400 group-hover:text-sky-500 transition-colors" />
-                      <strong className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors uppercase tracking-wide">100% Free & Inclusive</strong>
+                      <strong className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors uppercase tracking-wide">{tr('100% Free & Inclusive', '100% Gratis e Inclusivo')}</strong>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                      Children of all abilities are welcome to play and learn side-by-side. All materials are provided at no cost. Donations are never required.
+                      {tr('Children of all abilities are welcome to play and learn side-by-side. All materials are provided at no cost. Donations are never required.', 'Niños de todas las capacidades son bienvenidos a jugar y aprender juntos. Todos los materiales se proveen sin costo. Las donaciones nunca son obligatorias.')}
                     </p>
                   </div>
                 </div>

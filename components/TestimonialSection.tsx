@@ -10,6 +10,7 @@ import Button from './Button';
 import { Testimonial } from '../types';
 import ResilientImage from './ResilientImage';
 import NetworkAlert from './NetworkAlert';
+import { tr } from '../lib/lang';
 
 const TestimonialSection: React.FC = () => {
   const { testimonials, addTestimonial, fetchTestimonialMedia, isNetworkBlocked } = useData();
@@ -195,10 +196,10 @@ const TestimonialSection: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
           <div className="flex items-center gap-3">
             <Quote className="h-8 w-8 text-sky-500" />
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Voices of our Community</h2>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{tr('Voices of our Community', 'Voces de Nuestra Comunidad')}</h2>
           </div>
           <Button onClick={() => setIsSubmittingStory(true)} variant="primary" size="lg" className="group/btn shadow-lg shadow-sky-500/20">
-            Share Your Story <ArrowRight className="ml-2 w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            {tr('Share Your Story', 'Comparte Tu Historia')} <ArrowRight className="ml-2 w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
           </Button>
         </div>
         
@@ -242,7 +243,7 @@ const TestimonialSection: React.FC = () => {
                           <div className="flex gap-0.5 p-1 bg-white/50 dark:bg-slate-900/50 rounded-lg border border-slate-200/30 shadow-inner">
                             {[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${i < (item.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />)}
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); copyShareLink(item.id); }} className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-100 rounded-md transition-all text-slate-400 hover:text-sky-500" title="Copy link"><LinkIcon className="h-4 w-4" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); copyShareLink(item.id); }} className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-100 rounded-md transition-all text-slate-400 hover:text-sky-500" title={tr('Copy link', 'Copiar enlace')}><LinkIcon className="h-4 w-4" /></button>
                         </div>
                       </div>
                       {media && (
@@ -282,7 +283,7 @@ const TestimonialSection: React.FC = () => {
                         <RichText content={text} className="inline italic" />
                       </div>
                       {isTruncated && <div className="text-sky-600 dark:text-sky-400 text-xs font-black uppercase tracking-widest flex items-center gap-1.5 mb-6 opacity-60 hover:opacity-100 transition-opacity">
-                        {isExpanded ? 'Click to Roll Back' : 'Click to Unroll'} {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        {isExpanded ? tr('Click to Roll Back', 'Haz clic para enrollar') : tr('Click to Unroll', 'Haz clic para desenrollar')} {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </div>}
                       <div className="flex items-center gap-4 pt-4 border-t border-slate-200/50 mt-auto relative z-10 transition-colors">
                         <div className="h-10 w-10 rounded-full bg-white dark:bg-slate-800 overflow-hidden shadow-[0_3px_0_#e2e8f0] flex-shrink-0 ring-2 ring-sky-500/20 transition-transform group-hover:scale-105">
@@ -311,7 +312,7 @@ const TestimonialSection: React.FC = () => {
           </div>
         ) : (
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800">
-            <Quote className="h-12 w-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" /><p className="text-slate-500 dark:text-slate-400 font-medium italic">"Check back soon..."</p>
+            <Quote className="h-12 w-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" /><p className="text-slate-500 dark:text-slate-400 font-medium italic">{tr('"Check back soon..."', '"Vuelve pronto..."')}</p>
           </div>
         )}
 
@@ -319,7 +320,7 @@ const TestimonialSection: React.FC = () => {
         <AnimatePresence>
           {showCopyFeedback && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
-              <ClipboardCheck className="h-5 w-5 text-sky-400" /><span className="text-sm font-bold uppercase tracking-widest leading-none">Link Copied!</span>
+              <ClipboardCheck className="h-5 w-5 text-sky-400" /><span className="text-sm font-bold uppercase tracking-widest leading-none">{tr('Link Copied!', '¡Enlace copiado!')}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -330,29 +331,29 @@ const TestimonialSection: React.FC = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-slate-900/60 backdrop-blur-sm" onClick={() => submissionStatus !== 'Submitting' && setIsSubmittingStory(false)}>
               <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full max-w-lg h-[90dvh] sm:h-auto sm:max-h-[85vh] bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()} ref={submissionModalRef} tabIndex={-1}>
                 {submissionStatus === 'Success' ? (
-                  <div className="p-12 text-center flex flex-col items-center"><div className="h-20 w-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 animate-bounce"><Send className="h-10 w-10" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Story Received!</h3><p className="text-slate-600 dark:text-slate-400">Thank you for sharing your experience.</p></div>
+                  <div className="p-12 text-center flex flex-col items-center"><div className="h-20 w-20 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 animate-bounce"><Send className="h-10 w-10" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{tr('Story Received!', '¡Historia recibida!')}</h3><p className="text-slate-600 dark:text-slate-400">{tr('Thank you for sharing your experience.', 'Gracias por compartir tu experiencia.')}</p></div>
                 ) : pendingTestimonial ? (
-                  <div className="p-12 text-center flex flex-col items-center"><div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/20 text-amber-600 rounded-full flex items-center justify-center mb-6 ring-8 ring-amber-50"><MessageSquare className="h-10 w-10" /></div><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Review in Progress</h2><p className="text-slate-600 dark:text-slate-400 max-w-sm mb-6">You currently have a story waiting for approval.</p><Button variant="ghost" onClick={() => setIsSubmittingStory(false)} className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Close</Button></div>
+                  <div className="p-12 text-center flex flex-col items-center"><div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/20 text-amber-600 rounded-full flex items-center justify-center mb-6 ring-8 ring-amber-50"><MessageSquare className="h-10 w-10" /></div><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{tr('Review in Progress', 'Revisión en Progreso')}</h2><p className="text-slate-600 dark:text-slate-400 max-w-sm mb-6">{tr('You currently have a story waiting for approval.', 'Actualmente tienes una historia esperando aprobación.')}</p><Button variant="ghost" onClick={() => setIsSubmittingStory(false)} className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">{tr('Close', 'Cerrar')}</Button></div>
                 ) : submissionStatus === 'Error' ? (
-                  <div className="p-12 text-center flex flex-col items-center"><div className="h-20 w-20 bg-red-100 dark:bg-red-500/20 text-red-600 rounded-full flex items-center justify-center mb-6"><X className="h-10 w-10" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Submission Failed</h3><Button onClick={() => setSubmissionStatus('Idle')} className="w-full h-12 text-sm font-black uppercase tracking-widest">Try Again</Button></div>
+                  <div className="p-12 text-center flex flex-col items-center"><div className="h-20 w-20 bg-red-100 dark:bg-red-500/20 text-red-600 rounded-full flex items-center justify-center mb-6"><X className="h-10 w-10" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{tr('Submission Failed', 'Envío Fallido')}</h3><Button onClick={() => setSubmissionStatus('Idle')} className="w-full h-12 text-sm font-black uppercase tracking-widest">{tr('Try Again', 'Intentar de Nuevo')}</Button></div>
                 ) : !user ? (
-                  <div className="p-12 text-center flex flex-col items-center"><div className="h-16 w-16 bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center mb-6"><Quote className="h-8 w-8" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Sign in to Share</h3><Button onClick={() => { localStorage.setItem('authReturnTo', '/?share=story'); loginWithGoogle(); }} className="w-full h-12 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3">Continue with Google</Button></div>
+                  <div className="p-12 text-center flex flex-col items-center"><div className="h-16 w-16 bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center mb-6"><Quote className="h-8 w-8" /></div><h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">{tr('Sign in to Share', 'Inicia sesión para compartir')}</h3><Button onClick={() => { localStorage.setItem('authReturnTo', '/?share=story'); loginWithGoogle(); }} className="w-full h-12 text-sm font-black uppercase tracking-widest flex items-center justify-center gap-3">{tr('Continue with Google', 'Continuar con Google')}</Button></div>
                 ) : (
                   <>
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center"><div><h3 className="text-xl font-bold text-slate-900 dark:text-white">Share Your Story</h3><p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mt-0.5">Community Impact</p></div><button onClick={() => setIsSubmittingStory(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"><X className="h-5 w-5 text-slate-400" /></button></div>
+                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center"><div><h3 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Share Your Story', 'Comparte Tu Historia')}</h3><p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mt-0.5">{tr('Community Impact', 'Impacto Comunitario')}</p></div><button onClick={() => setIsSubmittingStory(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"><X className="h-5 w-5 text-slate-400" /></button></div>
                     <div className="flex-1 overflow-y-auto overscroll-contain">
                       <form onSubmit={handleSubmitStory} className="p-6 space-y-6 pb-20 sm:pb-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Name</label><input required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" placeholder="Jane Doe" value={newStory.author} onChange={e => setNewStory({...newStory, author: e.target.value})} /></div>
-                          <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Role</label><input className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" placeholder="e.g. Parent, Donor" value={newStory.role} onChange={e => setNewStory({...newStory, role: e.target.value})} /></div>
+                          <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Your Name', 'Tu Nombre')}</label><input required className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" placeholder="Jane Doe" value={newStory.author} onChange={e => setNewStory({...newStory, author: e.target.value})} /></div>
+                          <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Your Role', 'Tu Rol')}</label><input className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm" placeholder={tr('e.g. Parent, Donor', 'ej. Padre, Donante')} value={newStory.role} onChange={e => setNewStory({...newStory, role: e.target.value})} /></div>
                         </div>
-                        <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Your Story</label><textarea required rows={4} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm resize-none" placeholder="Tell us about..." value={newStory.content} onChange={e => setNewStory({...newStory, content: e.target.value})} /></div>
+                        <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Your Story', 'Tu Historia')}</label><textarea required rows={4} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm resize-none" placeholder={tr('Tell us about...', 'Cuéntanos sobre...')} value={newStory.content} onChange={e => setNewStory({...newStory, content: e.target.value})} /></div>
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Media (Optional)</label>
-                          <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-sky-500 transition-all group text-center"><input type="text" className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 rounded-xl outline-none text-sm" placeholder="Paste a link (YouTube, Instagram, etc.)" value={newStory.media} onChange={e => setNewStory({...newStory, media: e.target.value})} /></div>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{tr('Media (Optional)', 'Multimedia (Opcional)')}</label>
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-sky-500 transition-all group text-center"><input type="text" className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 rounded-xl outline-none text-sm" placeholder={tr('Paste a link (YouTube, Instagram, etc.)', 'Pega un enlace (YouTube, Instagram, etc.)')} value={newStory.media} onChange={e => setNewStory({...newStory, media: e.target.value})} /></div>
                         </div>
-                        <div className="space-y-3 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20 text-center"><label className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest block">Rating</label><div className="flex justify-center gap-1.5">{[1, 2, 3, 4, 5].map(star => <button key={star} type="button" onClick={() => setNewStory({...newStory, rating: star})} className="transition-transform active:scale-90"><Star className={`h-8 w-8 ${star <= newStory.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} /></button>)}</div></div>
-                        <Button type="submit" className="w-full h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-sky-500/20" disabled={submissionStatus === 'Submitting'}>{submissionStatus === 'Submitting' ? 'Submitting...' : 'Post Story'}</Button>
+                        <div className="space-y-3 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20 text-center"><label className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest block">{tr('Rating', 'Calificación')}</label><div className="flex justify-center gap-1.5">{[1, 2, 3, 4, 5].map(star => <button key={star} type="button" onClick={() => setNewStory({...newStory, rating: star})} className="transition-transform active:scale-90"><Star className={`h-8 w-8 ${star <= newStory.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`} /></button>)}</div></div>
+                        <Button type="submit" className="w-full h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-sky-500/20" disabled={submissionStatus === 'Submitting'}>{submissionStatus === 'Submitting' ? tr('Submitting...', 'Enviando...') : tr('Post Story', 'Publicar Historia')}</Button>
                       </form>
                     </div>
                   </>
