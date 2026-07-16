@@ -63,7 +63,7 @@ const VIEW_ROUTES: Record<string, string> = {
    ALL the games, read from the same on-device saves the games keep. Shows
    this week's growth (vs. a weekly snapshot); first visit shows totals.
    Nothing leaves the device — it's a postcard from Nilu, not analytics. */
-const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string }> = [
+const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string; read?: () => number }> = [
   { key: 'abe.rhythm.garden', emoji: '🌸', line: (n) => tr(`${n} flowers grew in your Music Meadow`, `${n} flores crecieron en tu Prado Musical`) },
   { key: 'abe.flying.stars', emoji: '⭐', line: (n) => tr(`${n} star rings flown with Nilu`, `${n} anillos de estrellas volados con Nilu`) },
   { key: 'abe.flying.friends', emoji: '🐋', line: (n) => tr(`${n} flights with sky friends`, `${n} vuelos con amigos del cielo`) },
@@ -71,6 +71,13 @@ const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string }
   { key: 'abe.grocery.trips', emoji: '🛒', line: (n) => tr(`${n} shopping trips finished`, `${n} viajes de compras terminados`) },
   { key: 'abe.dayplanner.days', emoji: '🏠', line: (n) => tr(`${n} days planned and lived`, `${n} días planeados y vividos`) },
   { key: 'abe.rhythm.songs', emoji: '🎶', line: (n) => tr(`${n} little songs echoed back` , `${n} cancioncitas resonaron de vuelta`) },
+  // the two big worlds keep their own save formats — read them directly
+  { key: 'bc.blocks', emoji: '🧱', line: (n) => tr(`${n} blocks built in Block Craft`, `${n} bloques construidos en Block Craft`),
+    read: () => { try { return Number(JSON.parse(localStorage.getItem('aariasBlockCraft3') || '{}')?.metrics?.blocksPlaced) || 0; } catch { return 0; } } },
+  { key: 'bc.stars', emoji: '🌟', line: (n) => tr(`${n} stars earned in Block Craft`, `${n} estrellas ganadas en Block Craft`),
+    read: () => { try { return Number(JSON.parse(localStorage.getItem('aariasBlockCraft3') || '{}')?.stars) || 0; } catch { return 0; } } },
+  { key: 'elly.sparks', emoji: '✨', line: (n) => tr(`${n} sparkles collected in Trunkland`, `${n} chispitas juntadas en Trunkland`),
+    read: () => { try { return Number(JSON.parse(localStorage.getItem('ellyTubbies.v3') || '{}')?.sparks) || 0; } catch { return 0; } } },
 ];
 const weekId = () => {
   const d = new Date();
@@ -83,7 +90,7 @@ const NiluPostcard: React.FC = () => {
   useEffect(() => {
     try {
       const now: Record<string, number> = {};
-      for (const m of METRICS) now[m.key] = Number(JSON.parse(localStorage.getItem(m.key) || '0')) || 0;
+      for (const m of METRICS) now[m.key] = m.read ? m.read() : Number(JSON.parse(localStorage.getItem(m.key) || '0')) || 0;
       const snapRaw = localStorage.getItem('abe.postcard');
       const snap = snapRaw ? JSON.parse(snapRaw) : null;
       const isNewWeek = !snap || snap.week !== weekId();
