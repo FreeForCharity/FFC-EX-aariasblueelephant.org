@@ -109,6 +109,8 @@ const out = await page.evaluate(() => {
     return !one.normalMap || !one.roughnessMap;
   });
 
+  R.diag = W.diag ? W.diag() : null;
+
   // ---- PERF: 150 place+dig cycles high in the air (no terrain interaction)
   const cells = [];
   for (let i = 0; i < 150; i++) cells.push([-20 + (i % 15), 14 + ((i / 15) | 0), -20]);

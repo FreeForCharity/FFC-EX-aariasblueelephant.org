@@ -507,26 +507,43 @@ ABC.world = (function () {
     t.needsUpdate = true;                    // colorSpace stays linear — these are DATA, not colour
     return t;
   }
+  let _pbrMs = 0, _pbrMaps = 0;         // diagnostics — see ABC.world.diag()
   function pbrTex(kind, base, base2, bump) {
     const map = realTexture(kind, base, base2);
     const ck = kind + base + (base2 || ''), pk = ck + '|' + bump;
     if (_realPbr[pk]) return _realPbr[pk];
     const cv = _realCv[ck];
     if (!cv) return (_realPbr[pk] = { map });
+    const _t0 = performance.now();
     const S = cv.width;
     let src;
     try { src = cv.getContext('2d').getImageData(0, 0, S, S).data; }
     catch (e) { return (_realPbr[pk] = { map }); }   // tainted canvas — colour only, still fine
-    const lum = new Float32Array(S * S);
-    for (let i = 0; i < S * S; i++)
-      lum[i] = (src[i*4] * 0.299 + src[i*4+1] * 0.587 + src[i*4+2] * 0.114) / 255;
-    const at = (x, y) => lum[((y % S) + S) % S * S + (((x % S) + S) % S)];
-    const nrm = new Uint8Array(S * S * 4), rgh = new Uint8Array(S * S * 4);
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-      const i = y * S + x;
+    /* Derive at HALF the colour map's resolution. Relief survives downsampling
+       far better than colour does, and full res cost real money on the devices
+       this game is for: measured at 256 the Sobel was 274ms of a 428ms scene
+       build and the derived maps alone were ~18MB of texture. Half res is a
+       quarter of both, for no difference you can see on a block face. */
+    const D = S >> 1, sc = S / D;
+    const lum = new Float32Array(D * D);
+    for (let y = 0; y < D; y++) for (let x = 0; x < D; x++) {
+      let a = 0;                                     // box-filter down, then Sobel that
+      for (let oy = 0; oy < sc; oy++) for (let ox = 0; ox < sc; ox++) {
+        const j = ((y * sc + oy) * S + (x * sc + ox)) * 4;
+        a += src[j] * 0.299 + src[j+1] * 0.587 + src[j+2] * 0.114;
+      }
+      lum[y * D + x] = a / (255 * sc * sc);
+    }
+    const at = (x, y) => lum[((y % D) + D) % D * D + (((x % D) + D) % D)];
+    // a feature spans half as many texels at half res, so the same visual slope
+    // comes out of half the gain
+    const gain = bump / sc;
+    const nrm = new Uint8Array(D * D * 4), rgh = new Uint8Array(D * D * 4);
+    for (let y = 0; y < D; y++) for (let x = 0; x < D; x++) {
+      const i = y * D + x;
       const dx = (at(x+1,y-1) + 2*at(x+1,y) + at(x+1,y+1)) - (at(x-1,y-1) + 2*at(x-1,y) + at(x-1,y+1));
       const dy = (at(x-1,y+1) + 2*at(x,y+1) + at(x+1,y+1)) - (at(x-1,y-1) + 2*at(x,y-1) + at(x+1,y-1));
-      const nx = -dx * bump, ny = -dy * bump, l = Math.hypot(nx, ny, 1);
+      const nx = -dx * gain, ny = -dy * gain, l = Math.hypot(nx, ny, 1);
       nrm[i*4]     = (nx / l * 0.5 + 0.5) * 255;
       nrm[i*4 + 1] = (ny / l * 0.5 + 0.5) * 255;
       nrm[i*4 + 2] = (1  / l * 0.5 + 0.5) * 255;
@@ -534,7 +551,9 @@ ABC.world = (function () {
       const r = 255 * (0.58 + (1 - lum[i]) * 0.42);
       rgh[i*4] = rgh[i*4 + 1] = rgh[i*4 + 2] = r; rgh[i*4 + 3] = 255;
     }
-    return (_realPbr[pk] = { map, normalMap: dataTex(nrm, S), roughnessMap: dataTex(rgh, S) });
+    const out = { map, normalMap: dataTex(nrm, D), roughnessMap: dataTex(rgh, D) };
+    _pbrMs += performance.now() - _t0; _pbrMaps += 2;
+    return (_realPbr[pk] = out);
   }
 
   function modernStd(tex, extra) {
@@ -1539,7 +1558,9 @@ ABC.world = (function () {
   }
 
   /* ---------- scene setup ---------- */
+  let _initMs = 0;
   function initScene(renderer) {
+    const _t0 = performance.now();
     scene = new THREE.Scene();
     _maxAniso = renderer.capabilities.getMaxAnisotropy();
     if (SMOOTH) {
@@ -1647,7 +1668,28 @@ ABC.world = (function () {
     scene.add(_sunBall);
     buildStars();
     initMeshes();
+    _initMs = performance.now() - _t0;
     return scene;
+  }
+  /* what the scene cost to stand up — how long initScene took, how much of that
+     was deriving normal/roughness maps, and the texture memory they add. Read by
+     scripts/bc-verify.mjs; safe to call any time. */
+  function diag() {
+    const seen = new Set();
+    let bytes = 0, count = 0;
+    const add = (t) => {
+      if (!t || seen.has(t)) return;
+      seen.add(t);
+      const w = (t.image && t.image.width) || 0, h = (t.image && t.image.height) || 0;
+      if (!w) return;
+      count++;
+      bytes += w * h * 4 * (t.generateMipmaps ? 4 / 3 : 1);
+    };
+    for (const m of Object.values(materials))
+      for (const one of (Array.isArray(m) ? m : [m]))
+        { add(one.map); add(one.normalMap); add(one.roughnessMap); }
+    return { initMs: +_initMs.toFixed(1), pbrMs: +_pbrMs.toFixed(1), pbrMaps: _pbrMaps,
+             texCount: count, texMB: +(bytes / 1048576).toFixed(2) };
   }
 
   /* ---------- save / load (diff against the generated world) ---------- */
@@ -2078,5 +2120,5 @@ ABC.world = (function () {
   return { SIZE, MAX_Y, MIN_Y, initScene, generate: infiniteInit, get, set, remove, flush, key,
            blockMeshes, serialize: serializeEdits, deserialize: deserializeEdits, materials,
            ensureChunks, setTheme, gradeFrame, updateSky, updateSun, getRot, topBlock,
-           entityShadows, setSkyPipeline, footstep, findNear, getScene: () => scene };
+           entityShadows, setSkyPipeline, footstep, findNear, getScene: () => scene, diag };
 })();
