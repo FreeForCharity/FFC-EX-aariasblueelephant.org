@@ -379,6 +379,81 @@ ABC.world = (function () {
         }
         for (let i = 0; i < 10; i++) blob(rnd() * S, rnd() * S, 8 + rnd() * 14, '#ffffff', 0.14); // sparkle
         break;
+      /* ---- crafted surfaces: the blocks kids actually BUILD with ----
+         The natural ground already looked real while planks and bricks were
+         still on the old flat pattern painter, so every house read as a toy
+         sitting in a convincing landscape. These four cover the whole build
+         palette once modernMaterial routes them by def.pat. */
+      case 'plank': {
+        const rows = 4, rh = S / rows;
+        g.fillStyle = shade(base, -0.06); g.fillRect(0, 0, S, S);
+        for (let r = 0; r < rows; r++) {
+          const y0 = r * rh;
+          g.fillStyle = shade(base, -0.10 + rnd() * 0.2);   // each board a slightly different cut
+          g.fillRect(0, y0, S, rh);
+          for (let i = 0; i < 34; i++) {                    // long grain, period-exact so it tiles in x
+            const gy = y0 + 3 + rnd() * (rh - 6), wob = 1 + (rnd() * 2 | 0), ph = rnd() * 7;
+            g.strokeStyle = shade(base, -0.3 + rnd() * 0.5); g.lineWidth = 0.7 + rnd();
+            g.globalAlpha = 0.22 + rnd() * 0.3; g.beginPath();
+            for (let x = 0; x <= S; x += 8) g.lineTo(x, gy + Math.sin(x / S * Math.PI * 2 * wob + ph) * 1.8);
+            g.stroke(); g.globalAlpha = 1;
+          }
+          if (rnd() < 0.45) {                               // the odd knot
+            const kx = 20 + rnd() * (S - 40), ky = y0 + rh * 0.5;
+            for (let rr = 7; rr > 1.5; rr -= 1.8) {
+              g.fillStyle = shade(base, rr % 3.6 < 1.8 ? -0.34 : 0.08);
+              g.beginPath(); g.ellipse(kx, ky, rr * 1.6, rr, 0, 0, 7); g.fill();
+            }
+          }
+          g.globalAlpha = 0.85; g.fillStyle = shade(base, -0.55);   // shadowed seam between boards
+          g.fillRect(0, y0, S, 2.5);
+          g.globalAlpha = 0.35; g.fillStyle = shade(base, 0.32);    // lit lip just under it
+          g.fillRect(0, y0 + 2.5, S, 1.5); g.globalAlpha = 1;
+        }
+        break; }
+      case 'brick': {
+        const rows = 4, rh = S / rows, bw = S / 2, m = 3;
+        g.fillStyle = shade(base, -0.42); g.fillRect(0, 0, S, S);   // mortar bed
+        for (let r = 0; r < rows; r++) {
+          const off = (r % 2) ? bw / 2 : 0, y = r * rh;
+          for (let c = -1; c < 3; c++) {                            // -1..2 so the running bond wraps
+            const x = c * bw + off;
+            g.fillStyle = shade(base, -0.12 + rnd() * 0.24);
+            g.fillRect(x + m, y + m, bw - m * 2, rh - m * 2);
+            g.globalAlpha = 0.55; g.lineWidth = 1.6;                // sun-catching top-left arris…
+            g.strokeStyle = shade(base, 0.3);
+            g.beginPath(); g.moveTo(x+m, y+rh-m); g.lineTo(x+m, y+m); g.lineTo(x+bw-m, y+m); g.stroke();
+            g.strokeStyle = shade(base, -0.38);                     // …shadowed bottom-right
+            g.beginPath(); g.moveTo(x+bw-m, y+m); g.lineTo(x+bw-m, y+rh-m); g.lineTo(x+m, y+rh-m); g.stroke();
+            g.globalAlpha = 0.3;
+            for (let i = 0; i < 18; i++) {                          // fired-clay speckle
+              g.fillStyle = shade(base, (rnd() - 0.5) * 0.34);
+              g.fillRect(x + m + rnd() * (bw - m*2), y + m + rnd() * (rh - m*2), 2, 2);
+            }
+            g.globalAlpha = 1;
+          }
+        }
+        break; }
+      case 'plaster':                          // the solid colour blocks: painted render, not flat fill
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        mottle(16, 0.07, 30, 90);
+        for (let i = 0; i < 900; i++) {
+          const c = shade(base, (rnd() < 0.5 ? -1 : 1) * (0.05 + rnd() * 0.09));
+          W(rnd() * S, rnd() * S, (px, py) => { g.fillStyle = c; g.fillRect(px, py, 1.6, 1.6); });
+        }
+        break;
+      case 'glasspane':                        // faint sheen + a catch along the pane edge
+        g.fillStyle = base; g.fillRect(0, 0, S, S);
+        g.globalAlpha = 0.16; g.strokeStyle = shade(base, 0.75);
+        for (let i = 0; i < 4; i++) {
+          const x0 = rnd() * S; g.lineWidth = 8 + rnd() * 20;
+          g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + S * 0.6, S); g.stroke();
+          g.beginPath(); g.moveTo(x0 - S, 0); g.lineTo(x0 - S + S * 0.6, S); g.stroke();
+        }
+        g.globalAlpha = 0.45; g.lineWidth = 5; g.strokeStyle = shade(base, 0.55);
+        g.strokeRect(2.5, 2.5, S - 5, S - 5);
+        g.globalAlpha = 1;
+        break;
       case 'tuft': case 'tuftFlower': {        // transparent blade fan for scattered grass tufts
         g.clearRect(0, 0, S, S);
         for (let i = 0; i < 15; i++) {
@@ -409,33 +484,96 @@ ABC.world = (function () {
     tex.generateMipmaps = true;
     tex.anisotropy = Math.min(16, _maxAniso);
     tex.needsUpdate = true;
+    _realCv[ck] = cv;                        // kept so pbrTex can derive relief from it
     return (_realTex[ck] = tex);
+  }
+
+  /* ---------- derived relief: normal + roughness from the SAME canvas ----------
+     Every texture above already draws its relief as light and shade — bark
+     ridges, stone cracks, the mortar between bricks, the soil under a grass
+     lip. That means a Sobel over the painted luminance IS the bump map, and
+     the inverse of that luminance is a serviceable roughness (crevices hold
+     grit and scatter; lit ridges are worn smoother). Free, no assets to fetch,
+     and it stays in step with the colour map because it IS the colour map.
+     Sampling wraps, so the derived maps tile exactly like their source. */
+  const _realCv = {}, _realPbr = {};
+  function dataTex(buf, S) {
+    const t = new THREE.DataTexture(buf, S, S, THREE.RGBAFormat);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.anisotropy = Math.min(16, _maxAniso);
+    t.needsUpdate = true;                    // colorSpace stays linear — these are DATA, not colour
+    return t;
+  }
+  function pbrTex(kind, base, base2, bump) {
+    const map = realTexture(kind, base, base2);
+    const ck = kind + base + (base2 || ''), pk = ck + '|' + bump;
+    if (_realPbr[pk]) return _realPbr[pk];
+    const cv = _realCv[ck];
+    if (!cv) return (_realPbr[pk] = { map });
+    const S = cv.width;
+    let src;
+    try { src = cv.getContext('2d').getImageData(0, 0, S, S).data; }
+    catch (e) { return (_realPbr[pk] = { map }); }   // tainted canvas — colour only, still fine
+    const lum = new Float32Array(S * S);
+    for (let i = 0; i < S * S; i++)
+      lum[i] = (src[i*4] * 0.299 + src[i*4+1] * 0.587 + src[i*4+2] * 0.114) / 255;
+    const at = (x, y) => lum[((y % S) + S) % S * S + (((x % S) + S) % S)];
+    const nrm = new Uint8Array(S * S * 4), rgh = new Uint8Array(S * S * 4);
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      const i = y * S + x;
+      const dx = (at(x+1,y-1) + 2*at(x+1,y) + at(x+1,y+1)) - (at(x-1,y-1) + 2*at(x-1,y) + at(x-1,y+1));
+      const dy = (at(x-1,y+1) + 2*at(x,y+1) + at(x+1,y+1)) - (at(x-1,y-1) + 2*at(x,y-1) + at(x+1,y-1));
+      const nx = -dx * bump, ny = -dy * bump, l = Math.hypot(nx, ny, 1);
+      nrm[i*4]     = (nx / l * 0.5 + 0.5) * 255;
+      nrm[i*4 + 1] = (ny / l * 0.5 + 0.5) * 255;
+      nrm[i*4 + 2] = (1  / l * 0.5 + 0.5) * 255;
+      nrm[i*4 + 3] = 255;
+      const r = 255 * (0.58 + (1 - lum[i]) * 0.42);
+      rgh[i*4] = rgh[i*4 + 1] = rgh[i*4 + 2] = r; rgh[i*4 + 3] = 255;
+    }
+    return (_realPbr[pk] = { map, normalMap: dataTex(nrm, S), roughnessMap: dataTex(rgh, S) });
   }
 
   function modernStd(tex, extra) {
     return new THREE.MeshStandardMaterial(Object.assign(
       { map: tex, roughness: 0.96, metalness: 0, envMapIntensity: 0.22 }, extra));
   }
+  /* same, but fed the {map, normalMap, roughnessMap} bundle from pbrTex. The
+     authored `roughness` stays as a MULTIPLIER over the derived map so the
+     per-surface tuning below (snow 0.9, leaf 0.88 …) keeps its meaning. */
+  function modernPbr(bundle, extra) {
+    return new THREE.MeshStandardMaterial(Object.assign(
+      { roughness: 0.96, metalness: 0, envMapIntensity: 0.22 }, bundle, extra));
+  }
+  /* how hard to push the Sobel for each surface — deep-cut things (bark ridges,
+     mortar courses, stone cracks) take a strong slope; flat paint barely any */
+  const PAT_KIND = { planks: 'plank', bricks: 'brick', plain: 'plaster', glass: 'glasspane' };
+  const BUMP = { bark: 2.2, stone: 1.8, brick: 2.0, plank: 1.4, dirt: 1.6, grassSide: 1.4,
+                 grassTop: 1.0, foliage: 0.9, sand: 0.8, snow: 0.5, plaster: 0.5, glasspane: 0.3 };
   /* material overrides for the "real" blocks; grass gets per-face materials
      (green top / lipped dirt sides / dirt bottom — BoxGeometry group order
      is +x,-x,+y,-y,+z,-z). Everything else in the game keeps its Smooth look. */
   function modernMaterial(id, def) {
     const base = def.color;
+    const pbr = (kind, b, b2) => pbrTex(kind, b, b2, BUMP[kind] || 1);
     switch (id) {
       case 'grass': {
         const lip = def.top || base;           // data.js has always defined top: — finally used!
-        const side = modernStd(realTexture('grassSide', lip, ABC.BLOCK_DEFS.dirt.color));
-        return [side, side, modernStd(realTexture('grassTop', lip)),
-                modernStd(realTexture('dirt', ABC.BLOCK_DEFS.dirt.color)), side, side];
+        const side = modernPbr(pbr('grassSide', lip, ABC.BLOCK_DEFS.dirt.color));
+        return [side, side, modernPbr(pbr('grassTop', lip)),
+                modernPbr(pbr('dirt', ABC.BLOCK_DEFS.dirt.color)), side, side];
       }
-      case 'moss':      return modernStd(realTexture('grassTop', base));
-      case 'dirt':      return modernStd(realTexture('dirt', base));
-      case 'sand': case 'sandstone': return modernStd(realTexture('sand', base));
-      case 'snow':      return modernStd(realTexture('snow', base), { roughness: 0.9, envMapIntensity: 0.45 });
+      case 'moss':      return modernPbr(pbr('grassTop', base));
+      case 'dirt':      return modernPbr(pbr('dirt', base));
+      case 'sand': case 'sandstone': return modernPbr(pbr('sand', base));
+      case 'snow':      return modernPbr(pbr('snow', base), { roughness: 0.9, envMapIntensity: 0.45 });
       case 'stone': case 'redrock': case 'granite': case 'blackrock':
-                        return modernStd(realTexture('stone', base));
-      case 'wood':      return modernStd(realTexture('bark', base));
-      case 'leaf':      return modernStd(realTexture('foliage', base), { roughness: 0.88 });
+                        return modernPbr(pbr('stone', base));
+      case 'wood':      return modernPbr(pbr('bark', base));
+      case 'leaf':      return modernPbr(pbr('foliage', base), { roughness: 0.88 });
       case 'water': {
         const tex = realTexture('water', base);
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;   // the map drifts each frame
@@ -459,7 +597,21 @@ ABC.world = (function () {
         return m;
       }
     }
-    return null;
+    /* Everything a child actually BUILDS with. Routed by def.pat rather than by
+       id, so the shaped variants inherit the same surface as the full cube they
+       are cut from: the plank slab, plank stair, brick wedge, glass pane and
+       wooden door all pick this up for free.
+       Glow blocks are deliberately left to makeBlockMaterial — their emissive is
+       hand-balanced against ACES (see the lava note there) and a roughness map
+       over the top would unbalance it. */
+    if (def.glow) return null;
+    const kind = PAT_KIND[def.pat];
+    if (!kind) return null;
+    const b = pbr(kind, base);
+    const extra = def.alpha != null
+      ? { transparent: true, opacity: def.alpha, roughness: 0.16, envMapIntensity: 0.8 }
+      : { roughness: 0.92, envMapIntensity: 0.3 };
+    return modernPbr(b, extra);
   }
   let _waterTex = null, _waterT = 0;
   const _waterWave = { value: 0 };
@@ -736,7 +888,10 @@ ABC.world = (function () {
     const m = new THREE.InstancedMesh(modernGeoFor(id) || geoFor(ABC.BLOCK_DEFS[id]), materials[id], cap);
     m.count = 0;
     m.userData.type = id;
-    m.userData.positions = [];
+    m.userData.positions = [];      // slot i -> [x,y,z]  (also read by findNear + rebuildTufts)
+    m.userData.keys = [];           // slot i -> "x,y,z"
+    m.userData.lo = m.userData.hi = null;   // dirtied slot range, for partial uploads
+    m.userData.full = true;         // a fresh buffer must be uploaded whole once
     m.frustumCulled = false;
     if (SMOOTH) {
       // opaque blocks cast shadows; transparent ones (water/glass/ice/slime/pane)
@@ -782,20 +937,141 @@ ABC.world = (function () {
         && s.has(map.get(key(x, y + 1, z)))
         && (y - 1 < MIN_Y || s.has(map.get(key(x, y - 1, z))));
   }
-  /* an edit can EXPOSE a neighbour that was culled (dig the grass off a hillside
-     and the dirt under it has to appear), so every write also dirties the types
-     around it. Cheap now that a rebuild only walks its own type. */
-  function dirtyAround(x, y, z) {
-    if (!SOLID_HIDE) return;
-    for (const d of NEIGHBORS) {
-      const t = map.get(key(x + d[0], y + d[1], z + d[2]));
-      if (t && SOLID_HIDE.has(t)) dirty.add(t);
-    }
-  }
   const NEIGHBORS = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
 
-  function rebuild(type) {
+  /* ---------- instance slots ----------
+     positions[i]/keys[i] ARE the instance living in slot i; slotIdx/slotTyp say
+     where a given block currently sits and what it is drawn as. With that
+     bookkeeping a single edit patches its own slot (plus at most six
+     neighbours') in place instead of rewriting a whole block type. That matters
+     most for grass, whose per-instance moisture tint costs a vnoise per
+     instance — rewriting ten thousand of those on every dig was ~18ms. */
+  const slotIdx = new Map();      // key -> instance slot
+  const slotTyp = new Map();      // key -> the type it is currently DRAWN as
+  const pending = new Set();      // meshes whose instance buffer needs an upload
+
+  function markSlot(m, i) {
+    const u = m.userData;
+    if (u.lo == null || i < u.lo) u.lo = i;
+    if (u.hi == null || i > u.hi) u.hi = i;
+    pending.add(m);
+  }
+  /* write one instance. Identical maths to the old rebuild loop — modern "real
+     world" blocks get a hash-keyed (stable, so no flicker) yaw + brightness
+     jitter to break up the tiled texture; leaf puffs also wobble in size so
+     canopies read as organic clumps; grass carries a broad moisture tint. */
+  function writeInst(m, i, k, x, y, z, type) {
+    if (MODERN && REAL_JITTER.has(type)) {
+      const leafy = type === 'leaf';
+      const h = hash2(x * 13 + y * 7, z * 11 + y);
+      // ground boxes must stay grid-flush: yaw only in exact quarter turns
+      _m4.makeRotationY(leafy ? h * 6.283 : ((h * 4) | 0) * Math.PI / 2);
+      if (leafy) { const s = 0.9 + ((h * 31) % 1) * 0.5; _m4.scale(_v1.set(s, s * (0.85 + ((h * 17) % 1) * 0.3), s)); }
+      // subtle brightness jitter (stronger reads as checkerboard under ACES)
+      const j2 = 0.95 + ((h * 53) % 1) * 0.1;
+      if (type === 'grass') {
+        // broad, gentle moisture drift — tighter scales/deltas read as blotches
+        const moist = vnoise(x + 31, z - 17, 61);
+        _cJ.setRGB(j2 * (1 + (0.5 - moist) * 0.13), j2 * (1 + (moist - 0.5) * 0.08), j2 * (1 - Math.abs(moist - 0.5) * 0.05));
+      } else _cJ.setScalar(j2);
+      m.setColorAt(i, _cJ);
+    } else {
+      const raw = rotMap.get(k) || 0;
+      const rot = (raw & 3) + ((raw & 4) ? 1 : 0);    // bit 4 = door swung open
+      _m4.makeRotationY(rot * Math.PI / 2);
+    }
+    _m4.setPosition(x + 0.5, y + 0.5, z + 0.5);
+    m.setMatrixAt(i, _m4);
+    markSlot(m, i);
+  }
+  function ensureCap(type, need) {
     let m = meshes[type];
+    if (need <= m.instanceMatrix.count) return m;
+    let cap = m.instanceMatrix.count || 1;
+    while (cap < need) cap *= 2;
+    const old = m;
+    scene.remove(old);
+    m = meshes[type] = newMesh(type, cap);
+    m.userData.positions = old.userData.positions;
+    m.userData.keys = old.userData.keys;
+    m.count = old.count;
+    for (let i = 0; i < m.count; i++) {
+      const p = m.userData.positions[i];
+      writeInst(m, i, m.userData.keys[i], p[0], p[1], p[2], type);
+    }
+    m.userData.full = true;                 // brand new buffer: upload all of it
+    pending.delete(old); old.dispose();
+    return m;
+  }
+  function instAdd(type, k, x, y, z) {
+    const m = ensureCap(type, meshes[type].count + 1);
+    const i = m.count++;
+    m.userData.positions[i] = [x, y, z];
+    m.userData.keys[i] = k;
+    writeInst(m, i, k, x, y, z, type);
+    slotIdx.set(k, i); slotTyp.set(k, type);
+    if (MODERN && type === 'grass') _tuftsDirty = true;
+  }
+  function instDel(k) {
+    const type = slotTyp.get(k);
+    if (type === undefined) return;
+    const m = meshes[type], i = slotIdx.get(k), last = m.count - 1;
+    if (i !== last) {                       // swap the tail instance into the hole
+      const p = m.userData.positions[last], lk = m.userData.keys[last];
+      m.userData.positions[i] = p; m.userData.keys[i] = lk;
+      writeInst(m, i, lk, p[0], p[1], p[2], type);
+      slotIdx.set(lk, i);
+    }
+    m.userData.positions.length = last;
+    m.userData.keys.length = last;
+    m.count = last;
+    slotIdx.delete(k); slotTyp.delete(k);
+    pending.add(m);
+    if (MODERN && type === 'grass') _tuftsDirty = true;
+  }
+  /* bring ONE cell's instance in line with the map — the whole incremental path */
+  function syncCell(x, y, z) {
+    const k = key(x, y, z);
+    const t = map.get(k);
+    const want = t !== undefined && !buried(t, x, y, z);
+    const drawnAs = slotTyp.get(k);
+    if (drawnAs !== undefined && (!want || drawnAs !== t)) instDel(k);
+    if (!want) return;
+    if (slotTyp.get(k) === undefined) instAdd(t, k, x, y, z);
+    else writeInst(meshes[t], slotIdx.get(k), k, x, y, z, t);   // same type, rotation may have moved
+  }
+  /* an edit can expose or hide its neighbours (dig the grass off a hillside and
+     the dirt under it has to appear), so each write settles its own cell and the
+     six around it. Seven O(1) patches instead of seven whole-type rebuilds. */
+  function syncAround(x, y, z) {
+    syncCell(x, y, z);
+    for (const d of NEIGHBORS) syncCell(x + d[0], y + d[1], z + d[2]);
+  }
+  function uploadPending() {
+    for (const m of pending) {
+      const u = m.userData, im = m.instanceMatrix;
+      if (u.full || u.lo == null) im.needsUpdate = true;
+      else if (im.addUpdateRange) {          // r170: a list of ranges
+        if (im.updateRanges) im.updateRanges.length = 0;
+        im.addUpdateRange(u.lo * 16, (u.hi - u.lo + 1) * 16);
+        im.needsUpdate = true;
+      } else if (im.updateRange) {           // r128: a single range
+        im.updateRange.offset = u.lo * 16;
+        im.updateRange.count = (u.hi - u.lo + 1) * 16;
+        im.needsUpdate = true;
+      } else im.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      u.lo = u.hi = null; u.full = false;
+    }
+    pending.clear();
+  }
+
+  /* full rebuild of one type — still the right tool for bulk work (a chunk
+     generating or unloading, a save being loaded), and authoritative over
+     anything the incremental path did. */
+  function rebuild(type) {
+    const old = meshes[type];
+    for (const k of old.userData.keys) { slotIdx.delete(k); slotTyp.delete(k); }
     const pos = [], keys = [];
     const own = byType.get(type);
     if (own) for (const k of own) {
@@ -803,53 +1079,41 @@ ABC.world = (function () {
       if (buried(type, x, y, z)) continue;
       pos.push([x,y,z]); keys.push(k);
     }
+    let m = old;
     if (pos.length > m.instanceMatrix.count) {       // grow capacity
       scene.remove(m);
-      let cap = m.instanceMatrix.count;
+      let cap = m.instanceMatrix.count || 1;
       while (cap < pos.length) cap *= 2;
       m = meshes[type] = newMesh(type, cap);
+      pending.delete(old); old.dispose();
     }
     m.count = pos.length;
-    const slabOff = ABC.BLOCK_DEFS[type].shape === 'slab' ? 0 : 0;  // slab geo already offset
-    // modern "real world": break the tiled-texture repetition with a hash-keyed
-    // (stable — no flicker on rebuild) yaw + brightness jitter per block; leaf
-    // puffs also get a size wobble so canopies read as organic clumps.
-    const jitter = MODERN && REAL_JITTER.has(type);
-    const leafy = jitter && type === 'leaf';
-    for (let i=0;i<m.count;i++) {
-      const raw = rotMap.get(keys[i]) || 0;
-      const rot = (raw & 3) + ((raw & 4) ? 1 : 0);    // bit 4 = door swung open
-      if (jitter) {
-        const h = hash2(pos[i][0] * 13 + pos[i][1] * 7, pos[i][2] * 11 + pos[i][1]);
-        // ground boxes must stay grid-flush: yaw only in exact quarter turns
-        _m4.makeRotationY(leafy ? h * 6.283 : ((h * 4) | 0) * Math.PI / 2);
-        if (leafy) { const s = 0.9 + ((h * 31) % 1) * 0.5; _m4.scale(_v1.set(s, s * (0.85 + ((h * 17) % 1) * 0.3), s)); }
-        // subtle brightness jitter (stronger reads as checkerboard under ACES);
-        // grass ALSO gets a large-scale moisture tint — lush deep green in damp
-        // hollows drifting to warm straw on dry rises, like a real meadow
-        const j2 = 0.95 + ((h * 53) % 1) * 0.1;
-        if (type === 'grass') {
-          // broad, gentle moisture drift — tighter scales/deltas read as blotches
-          const moist = vnoise(pos[i][0] + 31, pos[i][2] - 17, 61);
-          _cJ.setRGB(j2 * (1 + (0.5 - moist) * 0.13), j2 * (1 + (moist - 0.5) * 0.08), j2 * (1 - Math.abs(moist - 0.5) * 0.05));
-        } else _cJ.setScalar(j2);
-        m.setColorAt(i, _cJ);
-      } else {
-        _m4.makeRotationY(rot * Math.PI / 2);
-      }
-      _m4.setPosition(pos[i][0]+0.5, pos[i][1]+0.5 + slabOff, pos[i][2]+0.5);
-      m.setMatrixAt(i, _m4);
-    }
     m.userData.positions = pos;
-    m.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.userData.keys = keys;
+    for (let i = 0; i < m.count; i++) {
+      writeInst(m, i, keys[i], pos[i][0], pos[i][1], pos[i][2], type);
+      slotIdx.set(keys[i], i); slotTyp.set(keys[i], type);
+    }
+    m.userData.full = true;
+    pending.add(m);
   }
+  /* Tufts scatter over every open grass top, so rebuilding them walks the whole
+     grass instance list. flush() runs several times a FRAME — once per placed
+     block, once per generated chunk — so that walk was happening several times
+     a frame. Record the need here and settle it once, from the per-frame hook.
+     The old `dirty.size > 3` proxy for "a chunk generated" also misfires now
+     that an edit dirties its neighbours' types too; dirty.has('grass') is both
+     cheaper and exactly right. */
+  let _tuftsDirty = false;
   function flush() {
-    if (!dirty.size) return;
-    const grassDirty = MODERN && (dirty.has('grass') || dirty.size > 3);  // >3 ≈ chunk gen/unload
-    for (const t of dirty) rebuild(t); dirty.clear();
-    if (grassDirty) rebuildTufts();
+    if (dirty.size) {                    // bulk work only — single edits already settled themselves
+      if (MODERN && dirty.has('grass')) _tuftsDirty = true;
+      for (const t of dirty) rebuild(t);
+      dirty.clear();
+    }
+    uploadPending();
   }
+  function settleTufts() { if (_tuftsDirty) { _tuftsDirty = false; rebuildTufts(); } }
 
   function inBounds(x,y,z) { return Math.abs(x)<=SIZE && Math.abs(z)<=SIZE && y>=MIN_Y && y<=MAX_Y; }
   function get(x,y,z) { return map.get(key(x,y,z)) || null; }
@@ -858,11 +1122,9 @@ ABC.world = (function () {
     const k = key(x,y,z);
     const old = map.get(k);
     if (old === type && (rotMap.get(k)||0) === (rot||0)) return false;
-    if (old) dirty.add(old);
     map.set(k, type);
     if (rot) rotMap.set(k, rot); else rotMap.delete(k);
-    dirty.add(type);
-    dirtyAround(x, y, z);                       // swapping dirt for glass exposes its neighbours
+    syncAround(x, y, z);                        // O(1): this cell + its six neighbours
     editSet.set(k, { t: type, r: rot || 0 });   // player edits persist forever
     editDel.delete(k);
     return true;
@@ -874,8 +1136,7 @@ ABC.world = (function () {
     if (!old) return false;
     map.delete(k);
     rotMap.delete(k);
-    dirty.add(old);
-    dirtyAround(x, y, z);                 // digging a hole reveals whatever was culled behind it
+    syncAround(x, y, z);                  // digging a hole reveals whatever was culled behind it
     editSet.delete(k);
     editDel.add(k);                              // remember the hole forever
     return true;
@@ -1206,6 +1467,7 @@ ABC.world = (function () {
     }
     updateVolcano(x, z, dt);
     updateFootsteps(dt);
+    settleTufts();                              // at most one tuft rebuild per frame
   }
 
   /* ---------- night sky: stars + Milky Way 🌌 ---------- */
@@ -1715,6 +1977,9 @@ ABC.world = (function () {
         const [cx, cz] = ck.split(',').map(Number);
         if (Math.max(Math.abs(cx - ccx), Math.abs(cz - ccz)) > UNLOAD_R) {
           for (const k of keys) { const t = map.get(k); if (t) { map.delete(k); rotMap.delete(k); dirty.add(t); } }
+          // blocks in the RETAINED chunk next door may have been culled behind
+          // the ones just deleted, so every hideable type has to be re-examined
+          if (SOLID_HIDE) for (const t of SOLID_HIDE) if (byType.get(t)) dirty.add(t);
           chunks.delete(ck);
         }
       }

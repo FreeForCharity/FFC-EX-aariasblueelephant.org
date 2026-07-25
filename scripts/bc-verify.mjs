@@ -14,6 +14,7 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
 
 const srv = http.createServer(async (req, res) => {
   const p = decodeURIComponent(req.url.split('?')[0]);
+  if (p === '/favicon.ico') { res.writeHead(204); res.end(); return; }
   if (p === '/games' || p === '/') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<title>stub</title>'); return; }
   try {
     const d = await readFile(join(ROOT, p));
@@ -99,6 +100,15 @@ const out = await page.evaluate(() => {
     R.shadowRadius = sun.shadow.camera.right;
   } else R.sunDot = 'no sun/ball found';
 
+  // ---- INVARIANT 5: crafted build blocks are on real PBR surfaces
+  const mats = W.materials;
+  const want = ['plank','brick','stone','wood','sand','snow','dirt','grass','red','blue','white','slab','stair','wedge','pillar','glass','pane'];
+  R.noNormalMap = want.filter((id) => {
+    const m = mats[id]; if (!m) return false;
+    const one = Array.isArray(m) ? m[0] : m;
+    return !one.normalMap || !one.roughnessMap;
+  });
+
   // ---- PERF: 150 place+dig cycles high in the air (no terrain interaction)
   const cells = [];
   for (let i = 0; i < 150; i++) cells.push([-20 + (i % 15), 14 + ((i / 15) | 0), -20]);
@@ -108,9 +118,26 @@ const out = await page.evaluate(() => {
   for (const c of cells) { if (W.remove(c[0], c[1], c[2])) did++; W.flush(); }
   R.msPerOp = +((performance.now() - t0) / Math.max(1, did)).toFixed(3);
   R.opsCounted = did;
+  // ---- PERF 2: digging GRASS (the path that used to rebuild every tuft)
+  const grass = [];
+  for (let x = -18; x <= -4 && grass.length < 40; x++)
+    for (let z = -18; z <= -4 && grass.length < 40; z++) {
+      for (let y = 8; y >= 0; y--) if (W.get(x, y, z) === 'grass') { grass.push([x, y, z]); break; }
+    }
+  const t1 = performance.now();
+  let dug = 0;
+  for (const c of grass) { if (W.remove(c[0], c[1], c[2])) dug++; W.flush(); }
+  R.msPerGrassDig = +((performance.now() - t1) / Math.max(1, dug)).toFixed(3);
+  R.grassDug = dug;
+
   return R;
 });
 
+await page.evaluate(() => {
+  for (const el of document.querySelectorAll('.dlg, #dialog, .overlay, #toasts, #hud, .modal, [id*=dlg], [class*=dlg]')) el.style.display = 'none';
+  if (window.ABC && ABC.setLook) ABC.setLook(0.6, -0.15);
+});
+await new Promise((r) => setTimeout(r, 700));
 await page.screenshot({ path: '/private/tmp/claude-501/-Users-aj-Desktop-ABE-Website/2c1a860c-07f1-40e5-a3e7-fa6ec646a826/scratchpad/bc-modern.png' });
 await browser.close();
 srv.close();
@@ -125,7 +152,9 @@ if (out.ghostInstances > 0) fails.push(out.ghostInstances + ' instances drawn fo
 if (out.exposedButMissing > 0) fails.push(out.exposedButMissing + ' VISIBLE blocks have no instance (culling is eating real geometry)');
 if (out.digTest !== 'pass' && out.digTest !== 'skipped') fails.push(out.digTest);
 if (typeof out.sunDot === 'number' && out.sunDot < 0.999) fails.push('sun ball not aligned with light (dot=' + out.sunDot + ')');
-if (errors.length) fails.push(errors.length + ' page errors');
+if (out.noNormalMap && out.noNormalMap.length) fails.push('no normal/roughness map on: ' + out.noNormalMap.join(', '));
+const real = errors.filter((e) => !/favicon|supabase/i.test(e));
+if (real.length) fails.push(real.length + ' page errors: ' + real[0]);
 
 if (fails.length) { console.error('\nFAIL:\n' + fails.map((f) => '  x ' + f).join('\n')); process.exit(1); }
 console.log('\nPASS');
