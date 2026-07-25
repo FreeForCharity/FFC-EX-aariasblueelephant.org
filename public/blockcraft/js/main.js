@@ -1247,8 +1247,11 @@
   ABC.nextSkin = nextSkin;
   ABC.skinDisplay = skinDisplay;
   function labelSkinBtn() {
-    const b = $('skinBtn'); if (b) b.textContent = '🎨 Look: ' + skinTitleLabel(currentSkin());
-    const h = $('skinHint'); if (h) h.innerHTML = SKIN_HINT[currentSkin()] || SKIN_HINT.modern;
+    // built from translatable pieces: this runs after the title screen's own
+    // Spanish pass, so it has to translate itself or it reverts the page to English
+    const t = (s) => (window.ABELang ? ABELang.t(s) : s);
+    const b = $('skinBtn'); if (b) b.textContent = t('🎨 Look:') + ' ' + t(skinTitleLabel(currentSkin()));
+    const h = $('skinHint'); if (h) h.innerHTML = t(SKIN_HINT[currentSkin()] || SKIN_HINT.modern);
   }
   ABC.setSkin = (skin) => {
     try { localStorage.setItem('abcSkin', (skin === 'smooth' || skin === 'classic') ? skin : 'modern'); } catch (e) {}

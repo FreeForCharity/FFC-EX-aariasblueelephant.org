@@ -91,6 +91,17 @@
     '✨ Modern': '✨ Moderno',
     '🌤️ Smooth': '🌤️ Suave',
     '🧱 Classic': '🧱 Clásico',
+    /* the one cycling "Look" button on the title screen + its hint line */
+    '🎨 Look:': '🎨 Estilo:',
+    'Modern ✨': 'Moderno ✨',
+    'Smooth': 'Suave',
+    'Classic': 'Clásico',
+    '✨ <b>Modern</b> is our newest look — sharper lighting and richer detail (still being polished!).':
+      '✨ <b>Moderno</b> es nuestro estilo más nuevo — luz más nítida y más detalle (¡todavía en mejora!).',
+    '✨ <b>Smooth</b> gives soft, rounded blocks, gentle shadows &amp; a tidy, spacious layout — a calmer, more polished world.':
+      '✨ <b>Suave</b> te da bloques redondeados, sombras suaves y todo más ordenado — un mundo más tranquilo y pulido.',
+    '🧱 <b>Classic</b> is the original blocky look — simple, fast and familiar.':
+      '🧱 <b>Clásico</b> es el look original de bloques — simple, rápido y de siempre.',
     '📥 Visit a friend\'s world': '📥 Visitar el mundo de un amigo',
     'General Disclosure': 'Aviso General',
 
