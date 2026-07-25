@@ -86,6 +86,13 @@
       composer = new L.EffectComposer(renderer);
       composer.addPass(new L.RenderPass(scene, camera));
       const gtao = new L.GTAOPass(scene, camera, W, H);
+      // GTAOPass ships metre-scale defaults (radius 0.25, denoise depthPhi 2), but a
+      // block here is 1 unit — so retune in block units: occlusion reaches 3/4 of a
+      // face, a hit only counts as an occluder within one block's depth (cubes are
+      // solid, not shells), and the denoise stops at half a block so AO can't bleed
+      // over a 1-block ledge. 12 samples = 3 directions x 4 steps, the tablet rung.
+      gtao.updateGtaoMaterial({ radius: 0.75, thickness: 1.0, samples: 12 });
+      gtao.updatePdMaterial({ radius: 6, depthPhi: 0.5 });
       gtao.blendIntensity = 0.85;            // soft contact shading, not a dirt pass
       // decorative geometry (grass tufts, rain, smoke, clouds, footprints) must
       // not write AO — alphaTest quads/points read as solid slabs in the AO

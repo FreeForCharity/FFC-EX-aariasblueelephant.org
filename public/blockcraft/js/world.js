@@ -37,9 +37,41 @@ ABC.world = (function () {
 
   let scene, materials = {}, meshes = {}, dirty = new Set(), underMesh = null;
   let blockGeo = null;
-  let _maxAniso = 1, _sky = null, _shadowR = 32;   // smooth-skin render state
+  let _maxAniso = 1, _sky = null, _shadowR = 32, _sunBall = null;   // smooth-skin render state
   const _clouds = [];                              // modern drifting clouds
-  const map = new Map();      // "x,y,z" -> type
+  /* "x,y,z" -> type. A thin wrapper over a real Map that ALSO keeps a
+     type -> Set(key) index up to date on every write. rebuild(type) used to
+     scan every loaded block in the world (~130k entries, each with a
+     split(',').map(Number)) to find the few thousand of one type — so the cost
+     of placing a block grew with how much you had already built. With the index
+     a rebuild only ever walks its own type. The wrapper keeps the index honest
+     without touching the eleven places that write to the map. */
+  const byType = new Map();   // type -> Set(key)
+  const map = {
+    _m: new Map(),
+    get(k) { return this._m.get(k); },
+    has(k) { return this._m.has(k); },
+    get size() { return this._m.size; },
+    keys() { return this._m.keys(); },
+    entries() { return this._m.entries(); },
+    [Symbol.iterator]() { return this._m[Symbol.iterator](); },
+    set(k, t) {
+      const old = this._m.get(k);
+      if (old === t) return this;
+      if (old !== undefined) { const s = byType.get(old); if (s) s.delete(k); }
+      this._m.set(k, t);
+      let s = byType.get(t); if (!s) byType.set(t, s = new Set());
+      s.add(k);
+      return this;
+    },
+    delete(k) {
+      const old = this._m.get(k);
+      if (old === undefined) return false;
+      const s = byType.get(old); if (s) s.delete(k);
+      return this._m.delete(k);
+    },
+    clear() { this._m.clear(); byType.clear(); },
+  };
   const rotMap = new Map();   // "x,y,z" -> 0..3 quarter-turns (rotating shapes only)
   const key = (x,y,z) => x + ',' + y + ',' + z;
 
@@ -734,11 +766,41 @@ ABC.world = (function () {
   }
 
   const _m4 = new THREE.Matrix4(), _v1 = new THREE.Vector3(), _cJ = new THREE.Color();
+  /* Modern only: a flat "real ground" cube whose six neighbours are all flat
+     ground cubes can never be seen, so it gets no instance at all. Restricted to
+     REAL_GROUND on purpose — those are the only blocks modernGeoFor gives a
+     seam-tiling flat BoxGeometry. The craft blocks keep their 0.07 bevel, which
+     leaves a visible gap at every join, so hiding one behind another would punch
+     a hole through a wall. Below MIN_Y counts as covered: the dark underMesh
+     already seals the floor, so the whole bedrock layer drops out too. */
+  const SOLID_HIDE = MODERN ? new Set(REAL_GROUND) : null;
+  function buried(type, x, y, z) {
+    const s = SOLID_HIDE;
+    if (!s || !s.has(type)) return false;
+    return s.has(map.get(key(x + 1, y, z))) && s.has(map.get(key(x - 1, y, z)))
+        && s.has(map.get(key(x, y, z + 1))) && s.has(map.get(key(x, y, z - 1)))
+        && s.has(map.get(key(x, y + 1, z)))
+        && (y - 1 < MIN_Y || s.has(map.get(key(x, y - 1, z))));
+  }
+  /* an edit can EXPOSE a neighbour that was culled (dig the grass off a hillside
+     and the dirt under it has to appear), so every write also dirties the types
+     around it. Cheap now that a rebuild only walks its own type. */
+  function dirtyAround(x, y, z) {
+    if (!SOLID_HIDE) return;
+    for (const d of NEIGHBORS) {
+      const t = map.get(key(x + d[0], y + d[1], z + d[2]));
+      if (t && SOLID_HIDE.has(t)) dirty.add(t);
+    }
+  }
+  const NEIGHBORS = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+
   function rebuild(type) {
     let m = meshes[type];
     const pos = [], keys = [];
-    for (const [k, t] of map) if (t === type) {
+    const own = byType.get(type);
+    if (own) for (const k of own) {
       const [x,y,z] = k.split(',').map(Number);
+      if (buried(type, x, y, z)) continue;
       pos.push([x,y,z]); keys.push(k);
     }
     if (pos.length > m.instanceMatrix.count) {       // grow capacity
@@ -800,6 +862,7 @@ ABC.world = (function () {
     map.set(k, type);
     if (rot) rotMap.set(k, rot); else rotMap.delete(k);
     dirty.add(type);
+    dirtyAround(x, y, z);                       // swapping dirt for glass exposes its neighbours
     editSet.set(k, { t: type, r: rot || 0 });   // player edits persist forever
     editDel.delete(k);
     return true;
@@ -812,6 +875,7 @@ ABC.world = (function () {
     map.delete(k);
     rotMap.delete(k);
     dirty.add(old);
+    dirtyAround(x, y, z);                 // digging a hole reveals whatever was culled behind it
     editSet.delete(k);
     editDel.add(k);                              // remember the hole forever
     return true;
@@ -1174,13 +1238,21 @@ ABC.world = (function () {
      1024 map covers a small area at high quality. Rounds the target to reduce
      shadow swim as you walk (a soft help — the sun axis is diagonal, so it's not
      a perfect texel lock, but enough at this map size to stay calm). */
-  const _sunBase = new THREE.Vector3(40, 80, 25);
+  /* Sun direction. The old (40,80,25) sat ~60° up — near-noon, so every block
+     cast a stubby shadow and the world read flat. (62,52,38) is the same
+     distance but ~36° up: long raking shadows down the side of a build, which
+     is the single strongest "this is a real game" cue in a voxel screenshot. */
+  const _sunBase = new THREE.Vector3(62, 52, 38);
+  const SUN_DIST = 2.7;                     // ball sits at 2.7x the light's offset (≈241 — inside the 280 sky dome)
   function updateSun(px, pz) {
     if (!SMOOTH || !sunLight) return;
     const texel = (_shadowR * 2) / sunLight.shadow.mapSize.x;
     const tx = Math.round(px / texel) * texel, tz = Math.round(pz / texel) * texel;
     sunLight.target.position.set(tx, 0, tz);
     sunLight.position.set(tx + _sunBase.x, _sunBase.y, tz + _sunBase.z);
+    // the visible sun sits along the SAME ray the light comes from, so shadows
+    // finally point away from the thing casting them
+    if (_sunBall) _sunBall.position.set(tx + _sunBase.x * SUN_DIST, _sunBase.y * SUN_DIST, tz + _sunBase.z * SUN_DIST);
   }
 
   function updateSky(cam, dt) {
@@ -1223,16 +1295,22 @@ ABC.world = (function () {
       scene.environment = makeEnvironment(renderer);   // soft daylight fill for the PBR blocks
       // one warm key sun that casts a single soft, player-following shadow
       sunLight = new THREE.DirectionalLight(0xfff3da, 2.4 * LIGHT_SCALE);
-      sunLight.position.set(40, 80, 25);
+      sunLight.position.copy(_sunBase);
       sunLight.castShadow = true;
-      // modern: crisper, wider shadows (2048px over R=40) — r170 handles it fine
+      // modern: crisper, wider shadows (2048px over R=55) — r170 handles it fine.
+      // R grew with the lower sun: a 35° sun throws a shadow ~1.4x the caster's
+      // height, so a tall build at the edge of the old R=40 box lost its tip.
       sunLight.shadow.mapSize.set(MODERN ? 2048 : 1024, MODERN ? 2048 : 1024);
-      _shadowR = MODERN ? 40 : 32;
+      _shadowR = MODERN ? 55 : 32;
       const sc = sunLight.shadow.camera;
       sc.left = -_shadowR; sc.right = _shadowR; sc.top = _shadowR; sc.bottom = -_shadowR;
       sc.near = 1; sc.far = 220; sc.updateProjectionMatrix();
-      sunLight.shadow.bias = -0.0005;
-      sunLight.shadow.normalBias = 0.5;               // primary fix for axis-aligned voxel acne
+      // normalBias 0.5 was a sledgehammer against axis-aligned voxel acne, and it
+      // ate the contact shadow at every block seam along with the acne. Modern's
+      // ground is flat, seam-tiling cubes, so a bias just over one shadow texel
+      // (2*55/2048 ≈ 0.054) is enough — block-on-block contact comes back.
+      sunLight.shadow.bias = MODERN ? -0.0009 : -0.0005;
+      sunLight.shadow.normalBias = MODERN ? 0.06 : 0.5;
       scene.add(sunLight); scene.add(sunLight.target);
       scene.add(new THREE.AmbientLight(0xcfe8ff, 0.5 * LIGHT_SCALE));
       hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x6f9c52, 0.34 * LIGHT_SCALE);
@@ -1294,11 +1372,17 @@ ABC.world = (function () {
     }
     // sun ball — on modern its color sits above 1.0 so the bloom pass gives it
     // a real glow (everything else stays under the bloom threshold)
-    const sunMat = new THREE.MeshBasicMaterial({ color:0xffe45e });
+    // The ball used to be nailed to world (70,60,-80) while the light shone from
+    // player+(40,80,25) — so the shadows pointed away from a sun that wasn't
+    // there, and after a long walk the "sun" slid off behind you. It now rides
+    // the light's own direction (see updateSky) and ignores fog, so it stays put
+    // in the sky wherever you wander.
+    const sunMat = new THREE.MeshBasicMaterial({ color:0xffe45e, fog:false });
     if (MODERN) sunMat.color.setRGB(2.6, 2.2, 1.2);
-    const sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), sunMat);
-    sunBall.position.set(70, 60, -80);
-    scene.add(sunBall);
+    _sunBall = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), sunMat);
+    _sunBall.frustumCulled = false;
+    _sunBall.userData.noAO = true;          // a glowing ball must not stamp AO on the sky
+    scene.add(_sunBall);
     buildStars();
     initMeshes();
     return scene;
