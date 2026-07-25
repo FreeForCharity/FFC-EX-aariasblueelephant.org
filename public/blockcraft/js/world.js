@@ -604,14 +604,33 @@ ABC.world = (function () {
         // (Safe to inject — modern pins three at r170, our vendored build.)
         m.onBeforeCompile = (sh) => {
           sh.uniforms.uWave = _waterWave;
-          sh.vertexShader = 'uniform float uWave;\n' + sh.vertexShader.replace(
+          sh.vertexShader = 'uniform float uWave;\nattribute vec2 aWater;\n' +
+            'varying vec2 vWaterD;\nvarying vec3 vLocalP;\n' + sh.vertexShader.replace(
             '#include <begin_vertex>',
             '#include <begin_vertex>\n' +
+            'vWaterD = aWater; vLocalP = position;\n' +
             '#ifdef USE_INSTANCING\n' +
             '  vec4 abcW = instanceMatrix * vec4(position, 1.0);\n' +
             '  if (position.y > 0.45) transformed.y += sin(abcW.x * 0.9 + uWave * 1.6) * 0.05' +
             '    + cos(abcW.z * 0.7 + uWave * 1.15) * 0.05 - 0.05;\n' +
             '#endif\n');
+          /* Injected after emissivemap_fragment because that is the first point
+             where `normal` is resolved — the fresnel term needs it. Three things
+             a flat blue cube cannot do: open water sits darker than a puddle,
+             grazing angles catch the sky instead of staying uniformly blue, and
+             the edge against a bank gets a foam collar. */
+          sh.fragmentShader = 'varying vec2 vWaterD;\nvarying vec3 vLocalP;\n' +
+            sh.fragmentShader.replace(
+            '#include <emissivemap_fragment>',
+            '#include <emissivemap_fragment>\n' +
+            'diffuseColor.rgb *= mix(1.0, 0.62, vWaterD.y);\n' +
+            'float abcF = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 3.0);\n' +
+            'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.72, 0.88), abcF * 0.55);\n' +
+            'diffuseColor.a = clamp(diffuseColor.a + abcF * 0.35, 0.0, 1.0);\n' +
+            'float abcRim = max(abs(vLocalP.x), abs(vLocalP.z));\n' +
+            'float abcFoam = vWaterD.x * smoothstep(0.30, 0.5, abcRim) * step(0.45, vLocalP.y);\n' +
+            'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.97, 1.0), abcFoam * 0.75);\n' +
+            'diffuseColor.a = clamp(diffuseColor.a + abcFoam * 0.4, 0.0, 1.0);\n');
         };
         return m;
       }
@@ -638,7 +657,7 @@ ABC.world = (function () {
   /* geometry overrides: flat seam-tiling boxes for ground (the toy bevel gap
      between blocks is what reads as "plastic"), bark cylinders for trunks,
      lumpy displaced icospheres for foliage. Instanced-safe plain geometry. */
-  let _flatGeo = null, _trunkGeo = null, _foliageGeo = null;
+  let _flatGeo = null, _trunkGeo = null, _foliageGeo = null, _waterGeo = null;
   function foliageGeo() {
     const geo = new THREE.IcosahedronGeometry(0.68, 1);   // non-indexed → faceted, stylized-organic
     const p = geo.attributes.position;
@@ -654,7 +673,11 @@ ABC.world = (function () {
   }
   function modernGeoFor(id) {
     if (!MODERN) return null;
-    if (REAL_GROUND.includes(id) || id === 'water') return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
+    // water gets its OWN box, not the shared ground one: it carries a per-instance
+    // aWater attribute (shoreline + depth) and an InstancedBufferAttribute cannot
+    // be shared across meshes with different instance counts
+    if (id === 'water') return _waterGeo || (_waterGeo = new THREE.BoxGeometry(1, 1, 1));
+    if (REAL_GROUND.includes(id)) return _flatGeo || (_flatGeo = new THREE.BoxGeometry(1, 1, 1));
     if (id === 'wood') return _trunkGeo || (_trunkGeo = new THREE.CylinderGeometry(0.44, 0.5, 1, 10));
     if (id === 'leaf') return _foliageGeo || (_foliageGeo = foliageGeo());
     return null;
@@ -911,6 +934,9 @@ ABC.world = (function () {
     m.userData.keys = [];           // slot i -> "x,y,z"
     m.userData.lo = m.userData.hi = null;   // dirtied slot range, for partial uploads
     m.userData.full = true;         // a fresh buffer must be uploaded whole once
+    if (MODERN && id === 'water')   // x = touches a shore, y = has water beneath it
+      m.geometry.setAttribute('aWater',
+        new THREE.InstancedBufferAttribute(new Float32Array(cap * 2), 2));
     m.frustumCulled = false;
     if (SMOOTH) {
       // opaque blocks cast shadows; transparent ones (water/glass/ice/slime/pane)
@@ -1001,7 +1027,20 @@ ABC.world = (function () {
     }
     _m4.setPosition(x + 0.5, y + 0.5, z + 0.5);
     m.setMatrixAt(i, _m4);
+    if (MODERN && type === 'water') writeWater(m, i, x, y, z);
     markSlot(m, i);
+  }
+  /* Per-instance water facts the shader cannot work out for itself: whether this
+     block touches a shore (so it gets a foam collar) and whether more water sits
+     under it (so open lake reads deeper than a puddle). syncCell re-runs this for
+     the six neighbours of any edit, so digging a bank re-foams the water beside it. */
+  function writeWater(m, i, x, y, z) {
+    const a = m.geometry.getAttribute('aWater');
+    if (!a || i >= a.count) return;
+    const edge = (map.get(key(x+1,y,z)) !== 'water' || map.get(key(x-1,y,z)) !== 'water' ||
+                  map.get(key(x,y,z+1)) !== 'water' || map.get(key(x,y,z-1)) !== 'water') ? 1 : 0;
+    a.setXY(i, edge, map.get(key(x, y-1, z)) === 'water' ? 1 : 0);
+    a.needsUpdate = true;
   }
   function ensureCap(type, need) {
     let m = meshes[type];

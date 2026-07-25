@@ -39,6 +39,18 @@ await new Promise((r) => setTimeout(r, 1500));
 await page.evaluate(() => document.getElementById('playBtn')?.click());
 await new Promise((r) => setTimeout(r, 3500));
 
+// Spawn has no water (the ponds are all out in the park regions), so the water
+// material would never compile and the check below would pass vacuously. Build a
+// pond first, render a few frames, and let any shader error surface.
+await page.evaluate(() => {
+  const W = window.ABC && window.ABC.world; if (!W) return;
+  for (let x = 4; x <= 8; x++) for (let z = 4; z <= 8; z++) {
+    W.set(x, 0, z, 'water'); W.set(x, -1, z, 'water');
+  }
+  W.flush();
+});
+await new Promise((r) => setTimeout(r, 900));
+
 const out = await page.evaluate(() => {
   const W = window.ABC && window.ABC.world;
   if (!W) return { fatal: 'ABC.world missing' };
@@ -109,6 +121,15 @@ const out = await page.evaluate(() => {
     return !one.normalMap || !one.roughnessMap;
   });
 
+  // ---- INVARIANT 6: water carries its per-instance shoreline/depth data
+  const wm = W.blockMeshes().find((m) => m.userData.type === 'water');
+  if (!wm) R.water = 'no water mesh';
+  else {
+    const a = wm.geometry.getAttribute('aWater');
+    let edges = 0, deep = 0;
+    if (a) for (let i = 0; i < wm.count; i++) { if (a.getX(i) > 0.5) edges++; if (a.getY(i) > 0.5) deep++; }
+    R.water = { instances: wm.count, hasAttr: !!a, attrCap: a ? a.count : 0, shoreline: edges, deep: deep };
+  }
   R.diag = W.diag ? W.diag() : null;
 
   // ---- PERF: 150 place+dig cycles high in the air (no terrain interaction)
@@ -136,8 +157,10 @@ const out = await page.evaluate(() => {
 });
 
 await page.evaluate(() => {
-  for (const el of document.querySelectorAll('.dlg, #dialog, .overlay, #toasts, #hud, .modal, [id*=dlg], [class*=dlg]')) el.style.display = 'none';
-  if (window.ABC && ABC.setLook) ABC.setLook(0.6, -0.15);
+  // hide every overlay so the screenshot is the WORLD, then stand at the test pond
+  for (const el of document.body.children) if (el.tagName !== 'CANVAS') el.style.display = 'none';
+  // NB: ABC.teleport/setLook do not stick here — the game loop resets the camera
+  // within a frame — so this screenshot is always the spawn view, NOT the test pond.
 });
 await new Promise((r) => setTimeout(r, 700));
 await page.screenshot({ path: '/private/tmp/claude-501/-Users-aj-Desktop-ABE-Website/2c1a860c-07f1-40e5-a3e7-fa6ec646a826/scratchpad/bc-modern.png' });
@@ -154,6 +177,11 @@ if (out.ghostInstances > 0) fails.push(out.ghostInstances + ' instances drawn fo
 if (out.exposedButMissing > 0) fails.push(out.exposedButMissing + ' VISIBLE blocks have no instance (culling is eating real geometry)');
 if (out.digTest !== 'pass' && out.digTest !== 'skipped') fails.push(out.digTest);
 if (typeof out.sunDot === 'number' && out.sunDot < 0.999) fails.push('sun ball not aligned with light (dot=' + out.sunDot + ')');
+if (!out.water || !out.water.instances) fails.push('water never rendered - the shader is still unverified');
+if (out.water && out.water.instances > 0 && !out.water.hasAttr) fails.push('water mesh has no aWater attribute');
+if (out.water && out.water.instances > 0 && out.water.deep === 0) fails.push('no water block flagged as deep');
+if (out.water && out.water.instances > 0 && out.water.shoreline === 0) fails.push('no water block flagged as shoreline');
+if (out.water && out.water.attrCap < out.water.instances) fails.push('aWater smaller than instance count');
 if (out.noNormalMap && out.noNormalMap.length) fails.push('no normal/roughness map on: ' + out.noNormalMap.join(', '));
 const real = errors.filter((e) => !/favicon|supabase/i.test(e));
 if (real.length) fails.push(real.length + ' page errors: ' + real[0]);
