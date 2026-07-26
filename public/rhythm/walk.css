@@ -1,0 +1,582 @@
+/* ============================================================================
+   Nilu's Music Meadow — Walk & Discover chrome  (walk.css)
+   © Aaria's Blue Elephant · Built by Aaria and her Friends 💙
+
+   Styles ONLY. Every element here is created by walk.js (window.RWalk) and
+   world.js (window.RWorld) and appended to <body>. There is NO text in this
+   sheet — all copy comes from the JS through K.tr(), so English and Spanish
+   both flow through the same boxes (Spanish runs ~20% longer, so every chip
+   and card below wraps or hugs its content instead of assuming a width).
+
+   Design rules baked in (autistic / neurodivergent players, ages 3-8):
+     · every tappable thing is >= 56px, one-handed reachable on a 360px phone
+     · nothing strobes, nothing flashes red, nothing says "no"
+     · the celebration card never blocks the meadow — no full-screen scrim,
+       so a child can always see (and reach) the world behind it
+     · all motion is off under prefers-reduced-motion
+
+   ---------------------------------------------------------------------------
+   SCREEN ZONES — what this sheet reserves, and what it deliberately leaves
+   alone. Verified against kit.css, index.html's <style> and play.css at
+   360×640, 768×1024, 1440×900 and short/landscape phones (max-height 560).
+
+     TAKEN BY OTHERS (never touched here)
+       top-left      #kExit (kit, 52px) then #rCount (game/play.css, ends ~top+104)
+       top-right     #kHud (kit) — wraps to TWO rows at 360px, so it reaches
+                     down to ~top+122 and left to x≈108. Nothing of mine goes there.
+       top-centre    #kChip / #kReplayBar (kit) and #rgHud + .rgJudge (play.css,
+                     top+72…top+255). SIBLING ZONE — this sheet stays out of it.
+       bottom-left   #kStick (kit joystick, 132px) — re-shown by this sheet
+       bottom-right  #kActs (kit actions, 3 × 74px = 242px tall)
+       bottom-centre #rWord / #rTempo (game + play.css)
+       overlays      #rgPick (z 78) · #rgResult (z 79) · #kToast (80) ·
+                     #kPanel (90) · #kReplayBar (95) · #kPause (96) · #kTitle (100)
+
+     RESERVED BY THIS SHEET
+       A. top-left column, 3rd slot   #rwFind  top+112 (right under #rCount)
+       B. top-left column, 4th slot   #rwHome  top+166 (see note at §3)
+       C. right edge, mid-low         #rwZoom  bottom + acts-stack + 26px
+       D. bottom band above controls  .rwHint  bottom + tallest-control + 8px,
+                                      centred inside a band that already
+                                      excludes the #rwZoom column
+       E. screen centre               #rwCard  z 88 (over toast, under panels)
+
+   ---------------------------------------------------------------------------
+   ⚠️ ONE CROSS-FILE NOTE FOR THE INTEGRATOR (not fixable from this file):
+   play.css pins `body #rWord` and `body #rTempo` to `left: var(--rg-left)`,
+   which was safe while the joystick was hidden. With #kStick back, at 360px
+   those two now sit on top of the joystick circle (x 16…148, y 492…624).
+   Suggested one-line fix in play.css: pin them between the two thumb zones —
+       body #rWord, body #rTempo { left: calc(var(--rg-left) + 148px); }
+   — or lift them above the controls with `bottom: calc(var(--rg-bottom) + 258px)`
+   and bump `--rw-hint-extra` below so .rwHint stacks above them.
+
+   SECTIONS
+     0. tokens
+     1. #kStick        — undo index.html's blanket hide of the kit joystick
+     2. #rwFind        — discovery counter chip
+     3. #rwHome        — "walk back to Nilu" chip
+     4. #rwZoom        — ➕ / ➖ camera zoom pair (house pattern: magnetblocks)
+     5. #rwCard        — "you found something!" celebration card
+     6. .rwHint        — transient bottom hint line
+     7. responsive · song-mode step-aside · reduced motion
+   ============================================================================ */
+
+
+/* ---------------------------------------------------------------------------
+   0. TOKENS — every position below is derived from these, so the layout can be
+      retuned in one place. Kept on the --rw-* prefix so they can never collide
+      with play.css's --rg-* tokens or the kit's --k-* tokens.
+   --------------------------------------------------------------------------- */
+:root {
+  /* safe-area shorthands — same max(px, env()) pattern the kit uses */
+  --rw-top:    max(10px, env(safe-area-inset-top));
+  --rw-bottom: max(16px, env(safe-area-inset-bottom));
+  --rw-left:   max(10px, env(safe-area-inset-left));
+  --rw-right:  max(16px, env(safe-area-inset-right));
+
+  /* footprints of the kit chrome we must stay clear of.
+     --rw-acts-h = #kActs height: 3 actions × 74px + 2 gaps × 10px.
+     ▸ If a 4th action button is ever added to K.init, set this to 326px and
+       everything on the right edge and the bottom band moves out of the way. */
+  --rw-acts-h: 242px;
+  --rw-stick:  132px;   /* #kStick joystick diameter */
+
+  /* the zoom pair */
+  --rw-btn:    60px;    /* button size — comfortably over the 56px minimum */
+  --rw-gap:    10px;
+  --rw-zoom-w: 60px;    /* horizontal room the zoom column claims (row: 130px) */
+
+  /* extra lift for .rwHint, in case the integrator moves #rWord up into the
+     same band (see the cross-file note above). Default: no lift needed. */
+  --rw-hint-extra: 0px;
+
+  /* meadow twilight palette — the same violet/gold/cream family as play.css,
+     written out literally so this sheet stands on its own if play.css is absent */
+  --rw-violet:      #8b5cf6;
+  --rw-violet-deep: #6d28d9;
+  --rw-violet-soft: #c4b5fd;
+  --rw-violet-mist: #ede9fe;
+  --rw-gold:        #ffd166;
+  --rw-ink-soft:    #6b5aa0;
+  --rw-glass:  linear-gradient(180deg, rgba(255,255,255,.95), rgba(246,243,255,.88));
+  --rw-rim:    linear-gradient(135deg, var(--rw-violet-soft), var(--rw-violet) 48%, var(--rw-gold));
+  --rw-shadow: 0 4px 14px rgba(58, 40, 110, .18);
+}
+
+
+/* ---------------------------------------------------------------------------
+   1. #kStick — GIVE THE CHILD THEIR LEGS BACK
+      index.html's <style> currently carries `#kStick { display: none !important; }`
+      from the days when this was a tap-only game. The integrator will delete
+      that line; until then (and whichever order the sheets are parsed in) the
+      rule below out-specifies it: `#kStick[style*=…]` is (1,1,0) and beats a
+      plain `#kStick` (1,0,0) even when both are !important.
+
+      Crucially it only fires when the KIT itself has asked for the joystick:
+      kit.js writes the inline `display: block` on start / end-of-replay and
+      inline `display: none` on the title screen and during My Movie. So the
+      kit keeps full control of show/hide — we only cancel the blanket hide.
+   --------------------------------------------------------------------------- */
+#kStick[style*="display: block"] { display: block !important; }
+
+
+/* ---------------------------------------------------------------------------
+   2. #rwFind — the discovery counter, e.g. "🔎 3 / 12"
+      Zone A: top-left column, directly under #rCount (which play.css gives a
+      40px min-height at top+64, so it ends at ~top+104 — we start at +112).
+      Purely informational: pointer-events off so it can never swallow a tap
+      meant for the meadow behind it.
+   --------------------------------------------------------------------------- */
+#rwFind {
+  position: fixed;
+  z-index: 40;                       /* same band as #rCount */
+  top: calc(var(--rw-top) + 112px);
+  left: var(--rw-left);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 16px;
+
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--rw-glass) padding-box, var(--rw-rim) border-box;
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: var(--rw-shadow), inset 0 1px 0 rgba(255,255,255,.9);
+
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--k-ink, #3a3a5a);
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity .3s ease, transform .3s ease;
+}
+/* walk.js may add .pop for a heartbeat when the number goes up — optional */
+#rwFind.pop { animation: rwFindPop .45s cubic-bezier(.22, 1.4, .38, 1); }
+@keyframes rwFindPop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.14); box-shadow: 0 0 0 7px rgba(196,181,253,.32), var(--rw-shadow); }
+  100% { transform: scale(1); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   3. #rwHome — "⬅️ Nilu": a soft way back, shown only when the child has
+      wandered far from the band. Tapping it walks them home; it is never a
+      warning and never says "you can't go there".
+
+      NOTE ON PLACEMENT: the brief sketched this near the top-centre, but
+      play.css owns top-centre (#rgHud at top+72 with .rgJudge floating below
+      it, down to ~top+255). Rather than fight for that strip, #rwHome docks as
+      the 4th chip in the top-left column — the closest free zone, and it keeps
+      "where am I / how do I get back" together with the counters. It clears
+      the joystick easily (which starts at y ≈ viewport-height − 148).
+
+      Hidden by default: walk.js can either add .show or set an inline
+      `display: flex` — both work, because an inline style beats this rule.
+   --------------------------------------------------------------------------- */
+#rwHome {
+  position: fixed;
+  z-index: 46;
+  top: calc(var(--rw-top) + 166px);
+  left: var(--rw-left);
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 52px;
+  max-width: min(56vw, 260px);
+  padding: 10px 18px;
+
+  border: 2px solid var(--rw-violet-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--rw-violet-deep);
+  background: linear-gradient(180deg, #ffffff, var(--rw-violet-mist));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 0 rgba(139, 92, 246, .28), 0 6px 16px rgba(58, 40, 110, .18),
+              inset 0 1px 0 rgba(255,255,255,.95);
+
+  -webkit-user-select: none;
+  user-select: none;
+  animation: rwHomePulse 2.8s ease-in-out infinite;   /* slow, no flashing */
+}
+#rwHome.show { display: inline-flex; }
+#rwHome:active { transform: translateY(3px) scale(.97); animation: none;
+                 box-shadow: 0 1px 0 rgba(139, 92, 246, .28), 0 3px 10px rgba(58, 40, 110, .16); }
+#rwHome:focus-visible { outline: 3px solid var(--rw-violet-deep); outline-offset: 3px; }
+@keyframes rwHomePulse {
+  0%, 100% { transform: scale(1);
+             box-shadow: 0 4px 0 rgba(139,92,246,.28), 0 6px 16px rgba(58,40,110,.18), inset 0 1px 0 rgba(255,255,255,.95); }
+  50%      { transform: scale(1.045);
+             box-shadow: 0 4px 0 rgba(139,92,246,.28), 0 8px 22px rgba(109,40,217,.3), 0 0 0 6px rgba(196,181,253,.22), inset 0 1px 0 rgba(255,255,255,.95); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   4. #rwZoom — the ➕ / ➖ pair (same ids as magnetblocks so the whole family
+      of games is driven the same way: #zoomInBtn / #zoomOutBtn, eased nudge).
+      Zone C: right edge, parked directly ABOVE the #kActs stack so it can
+      never collide with the action buttons, and far below the two-row #kHud.
+
+        360×640  → x 284…344, y 226…356   (HUD ends 122, #kActs starts 382) ✓
+        768×1024 → x 692…752, y 610…740                                     ✓
+        1440×900 → x 1364…1424, y 486…616                                   ✓
+
+      The container is pointer-transparent so the gap between the two buttons
+      never eats a drag meant to orbit the camera.
+   --------------------------------------------------------------------------- */
+#rwZoom {
+  position: fixed;
+  z-index: 46;
+  right: var(--rw-right);
+  bottom: calc(var(--rw-bottom) + var(--rw-acts-h) + 26px);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--rw-gap);
+  pointer-events: none;
+}
+#rwZoom > button {
+  width: var(--rw-btn);
+  height: var(--rw-btn);
+  min-width: var(--rw-btn);
+  min-height: var(--rw-btn);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+
+  font: inherit;
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rw-violet-deep);
+  background: var(--rw-glass);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: 0 4px 0 rgba(139, 92, 246, .3), 0 6px 16px rgba(58, 40, 110, .22),
+              inset 0 1px 0 rgba(255,255,255,.95);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+#rwZoom > button:hover { transform: scale(1.07); }
+#rwZoom > button:active {
+  transform: translateY(3px) scale(.96);
+  box-shadow: 0 1px 0 rgba(139, 92, 246, .3), 0 3px 10px rgba(58, 40, 110, .18),
+              inset 0 1px 0 rgba(255,255,255,.95);
+}
+#rwZoom > button:focus-visible { outline: 3px solid var(--rw-violet-deep); outline-offset: 3px; }
+
+
+/* ---------------------------------------------------------------------------
+   5. #rwCard — "you found something!"
+      Zone E: dead centre, floating on its own. Deliberately NO full-screen
+      scrim: the meadow stays visible and reachable around it, so the card is a
+      little present rather than a wall. Sits over #kToast (80) but under the
+      kit's panels (90) / replay bar (95) / pause (96) / title (100).
+   --------------------------------------------------------------------------- */
+#rwCard {
+  position: fixed;
+  z-index: 88;
+  left: 50%;
+  top: 50%;
+  width: min(88vw, 380px);
+  max-height: min(80vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 20px 20px;
+  text-align: center;
+
+  border: 3px solid transparent;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, #fffaf2, #f6f1ff 62%, #efe8ff) padding-box,
+    var(--rw-rim) border-box;
+  box-shadow: 0 22px 60px rgba(24, 16, 60, .38),
+              0 0 0 10px rgba(196, 181, 253, .16),
+              inset 0 1px 0 rgba(255,255,255,.92);
+  color: var(--k-ink, #3a3a5a);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(.84);
+  transition: opacity .28s ease,
+              transform .42s cubic-bezier(.2, 1.35, .35, 1),
+              visibility .28s;
+}
+/* .show is the agreed API; the [style] hedges keep the card visible if the JS
+   ever chooses to reveal it with an inline display instead. */
+#rwCard.show,
+#rwCard[style*="display: block"],
+#rwCard[style*="display: flex"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.rwCardEmoji {
+  display: block;
+  font-size: clamp(46px, 15vw, 70px);
+  line-height: 1.05;
+  filter: drop-shadow(0 4px 10px rgba(58, 40, 110, .25));
+}
+#rwCard.show .rwCardEmoji { animation: rwEmojiLand .8s cubic-bezier(.2, 1.4, .38, 1) both; }
+@keyframes rwEmojiLand {
+  0%   { opacity: 0; transform: scale(1.9) rotate(-16deg); }
+  55%  { opacity: 1; transform: scale(.92) rotate(5deg); }
+  78%  { transform: scale(1.08) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.rwCardTitle {
+  display: block;
+  margin: 6px 0 0;
+  font-size: clamp(20px, 5.6vw, 26px);
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  background: linear-gradient(100deg, var(--rw-violet-deep), var(--rw-violet) 52%, #f0a92e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rwCardText {
+  display: block;
+  margin: 8px 0 16px;
+  font-size: clamp(14px, 4vw, 17px);
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  color: var(--rw-ink-soft);
+}
+
+.rwCardBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: -moz-fit-content;
+  width: fit-content;
+  min-width: min(220px, 100%);
+  max-width: 100%;
+  min-height: 58px;
+  padding: 14px 26px;
+
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  font: inherit;
+  font-size: clamp(16px, 4.4vw, 19px);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #fff;
+  background: linear-gradient(180deg, #a78bfa, var(--rw-violet) 60%, var(--rw-violet-deep));
+  box-shadow: 0 5px 0 #5b21b6, 0 8px 20px rgba(109, 40, 217, .36);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.rwCardBtn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #5b21b6, 0 4px 12px rgba(109, 40, 217, .36);
+}
+.rwCardBtn:focus-visible { outline: 3px solid var(--rw-gold); outline-offset: 3px; }
+
+
+/* ---------------------------------------------------------------------------
+   6. .rwHint — a soft, transient line of guidance.
+      Zone D: the full-width band that sits just above BOTH thumb zones (the
+      joystick on the left, the action stack on the right), so it is readable
+      at 360px without ever sliding under a control. `left`/`right` fence the
+      band (the right fence already excludes the #rwZoom column) and
+      `width: fit-content; margin-inline: auto` hugs the text and centres it
+      inside that fence — so it stays clear no matter how many lines the
+      Spanish string needs.
+
+      Created and removed by the JS, so it is visible as soon as it exists;
+      .rwHint.hide fades it out if the JS prefers to keep the node around.
+   --------------------------------------------------------------------------- */
+.rwHint {
+  position: fixed;
+  z-index: 44;
+  left: var(--rw-left);
+  right: calc(var(--rw-right) + var(--rw-zoom-w) + 14px);
+  bottom: calc(var(--rw-bottom) + max(var(--rw-acts-h), var(--rw-stick)) + 8px + var(--rw-hint-extra));
+  width: -moz-fit-content;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(240,236,255,.9));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 18px rgba(58, 40, 110, .2), inset 0 1px 0 rgba(255,255,255,.95);
+
+  font: inherit;
+  font-size: clamp(13px, 3.6vw, 16px);
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--rw-ink-soft);
+
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  opacity: 1;
+  transition: opacity .35s ease, transform .35s ease;
+  animation: rwHintIn .42s cubic-bezier(.2, 1.2, .35, 1);
+}
+.rwHint.hide { opacity: 0; transform: translateY(6px); }
+.rwHint:empty { display: none; }
+@keyframes rwHintIn {
+  from { opacity: 0; transform: translateY(10px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   7. RESPONSIVE · SONG-MODE STEP-ASIDE · MOTION
+   --------------------------------------------------------------------------- */
+
+/* 7a. Song mode owns the top of the screen. play.css already fades #rCount out
+   while #rgHud is up; the two walk chips ride along, so the top-left column and
+   the song HUD are never on screen together. Pure progressive enhancement —
+   without :has everything above still works, exactly as play.css assumes. */
+@supports selector(:has(*)) {
+  body:has(#rgHud.show) #rwFind,
+  body:has(#rgHud.show) #rwHome {
+    opacity: 0;
+    transform: translateY(-8px) scale(.92);
+    pointer-events: none;
+  }
+}
+
+/* 7b. Very narrow phones (≤380px): trim the pair a little so the right edge
+   never crowds the meadow. 56px is still comfortably over the tap minimum. */
+@media (max-width: 380px) {
+  :root { --rw-btn: 56px; --rw-zoom-w: 56px; --rw-gap: 9px; }
+  #rwZoom > button { font-size: 23px; }
+  #rwHome { font-size: 15px; padding: 10px 15px; }
+  #rwFind { font-size: 15px; padding: 7px 13px; }
+  #rwCard { padding: 18px 16px 16px; border-radius: 24px; }
+}
+
+/* 7c. Short / landscape phones (≤560px tall). Vertical room disappears, so:
+   · the kit shrinks its own chrome (#kAct → 62px, #kStick → 108px) — mirrored here
+   · #rwZoom turns into a horizontal pair tucked above the action stack,
+     between the single-row #kHud (ends ~y 56) and #kActs (starts ~y 138)
+   · the left-hand chips climb, staying clear of the joystick (starts ~y 236)
+   Checked at 640×360: zoom x 506…624 y 74…128 · .rwHint band x 10…492 y 90…130
+   · #rwFind y 114…148 · #rwHome y 162…210 · joystick y 236…344. No overlaps. */
+@media (max-height: 560px) {
+  :root {
+    --rw-acts-h: 206px;   /* 3 × 62px + 2 × 10px */
+    --rw-stick:  108px;
+    --rw-btn:    54px;
+    --rw-gap:    10px;
+    --rw-zoom-w: 118px;   /* now a ROW: 2 × 54 + 10 */
+  }
+  #rwZoom {
+    flex-direction: row;
+    bottom: calc(var(--rw-bottom) + var(--rw-acts-h) + 10px);
+  }
+  #rwZoom > button { font-size: 22px; }
+  #rwFind { top: calc(var(--rw-top) + 104px); min-height: 34px; padding: 6px 12px; font-size: 14px; }
+  #rwHome { top: calc(var(--rw-top) + 152px); min-height: 48px; padding: 9px 15px; font-size: 15px; }
+  #rwCard { padding: 16px 16px 14px; max-height: 92vh; }
+  .rwCardEmoji { font-size: clamp(34px, 9vw, 46px); }
+  .rwCardTitle { font-size: clamp(18px, 4.6vw, 23px); }
+  .rwCardText  { margin: 6px 0 12px; }
+  .rwCardBtn   { min-height: 54px; padding: 12px 22px; }
+}
+
+/* 7d. Roomy screens: a slightly larger, easier target for little hands that
+   are further from the glass, and a calmer card scale. */
+@media (min-width: 1024px) and (min-height: 700px) {
+  :root { --rw-btn: 64px; --rw-zoom-w: 64px; }
+  #rwZoom > button { font-size: 27px; }
+  #rwCard { width: min(60vw, 420px); }
+}
+
+/* 7e. Thin, unobtrusive scrollbar if a very long discovery text needs one */
+#rwCard::-webkit-scrollbar { width: 8px; }
+#rwCard::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(139, 92, 246, .28); }
+
+/* 7f. Reduced motion — kit.css already blanket-disables animation/transition;
+   this restates the promise for everything above and, importantly, pins the
+   end states so the card and chips are still fully visible without motion. */
+@media (prefers-reduced-motion: reduce) {
+  #rwFind,
+  #rwHome,
+  #rwZoom > button,
+  #rwCard,
+  #rwCard .rwCardEmoji,
+  .rwCardBtn,
+  .rwHint {
+    animation: none !important;
+    transition: none !important;
+  }
+  #rwHome { transform: none; }
+  #rwCard.show,
+  #rwCard[style*="display: block"],
+  #rwCard[style*="display: flex"] { transform: translate(-50%, -50%) scale(1); }
+  #rwCard.show .rwCardEmoji { opacity: 1; transform: none; }
+  .rwHint { opacity: 1; transform: none; }
+}
+
+/* ============================================================================
+   8. INTEGRATION RECONCILIATION
+   Added when the three new layers were wired into index.html.
+
+   (a) The meadow now carries FIVE kit action buttons — 🎤 Songs · 📖 Journal ·
+       🎶 Echo · 🫧 Breathe · 🌙 My Song — so the right-hand column is much
+       taller than the three-button default this sheet was written against.
+   (b) play.css pinned #rWord and #rTempo to the bottom-LEFT, which was only
+       safe while index.html hid the joystick. The joystick is back, so both
+       are lifted clear above it instead of fighting it for the thumb zone.
+   ========================================================================== */
+:root { --rw-acts-h: 410px; }                                  /* 5 × 74 + 4 × 10 */
+@media (max-height: 560px) { :root { --rw-acts-h: 350px; } }   /* 5 × 62 + 4 × 10 */
+
+body #rWord  { bottom: calc(var(--rw-bottom) + var(--rw-stick) + 26px); }
+body #rTempo { bottom: calc(var(--rw-bottom) + var(--rw-stick) + 92px); }
+
+/* (c) The discovery card is centred, and the kit's action column runs from
+   roughly 56% of the height down. Lift the card so 🎤 Songs stays reachable
+   while a "you found something!" card is up, and keep it off the right rail. */
+#rwCard {
+  top: 42%;
+  width: min(84vw, 360px);
+  max-width: calc(100vw - var(--rw-left) - var(--rw-right) - 96px);
+}

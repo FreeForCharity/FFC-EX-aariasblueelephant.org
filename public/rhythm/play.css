@@ -1,0 +1,790 @@
+/* ============================================================================
+   Nilu's Music Meadow — Song Mode skin  (play.css)
+   © Aaria's Blue Elephant · Built by Aaria and her Friends 💙
+
+   Styles ONLY. All markup is created by game.js (window.RGame) and appended to
+   <body>; this sheet also re-skins the free-play chrome that already lives in
+   index.html (#rCount, #rWord, #rTempo, .rChip) so the whole meadow feels new.
+
+   Design rules baked in here (autistic / neurodivergent players, ages 3-8):
+     · no strobing, no red, no "wrong" colours — violet, cream and gold only
+     · every tappable thing is >= 56px
+     · nothing ever covers the kit chrome: 🏠 exit + HUD live at top 10-62px,
+       the action buttons live bottom-right (~90px wide, ~258px tall)
+     · every animation is switched off under prefers-reduced-motion
+
+   SECTIONS
+     0. tokens
+     1. #rgHud            floating glass HUD (title / score / combo / stars / bar)
+     2. .rgJudge          floating judgement word
+     3. #rgPick           song-select bottom sheet
+     4. #rgResult         celebration card
+     5. existing chrome   #rCount · #rWord · #rTempo · .rChip
+     6. responsive + reduced motion
+   ============================================================================ */
+
+
+/* ---------------------------------------------------------------------------
+   0. TOKENS  — the whole sheet is driven from here
+   --------------------------------------------------------------------------- */
+:root {
+  /* safe-area shorthands (kit.css uses the same max(10px, env(...)) pattern) */
+  --rg-top:    max(10px, env(safe-area-inset-top));
+  --rg-bottom: max(16px, env(safe-area-inset-bottom));
+  --rg-left:   max(10px, env(safe-area-inset-left));
+  --rg-right:  max(10px, env(safe-area-inset-right));
+
+  /* the meadow's twilight palette */
+  --rg-violet:      #8b5cf6;
+  --rg-violet-deep: #6d28d9;
+  --rg-violet-soft: #c4b5fd;
+  --rg-violet-mist: #ede9fe;
+  --rg-gold:        #ffd166;
+  --rg-gold-deep:   #f0a92e;
+  --rg-cream:       #fffaf2;
+
+  /* one glass recipe, reused everywhere */
+  --rg-glass: linear-gradient(180deg, rgba(255,255,255,.95), rgba(246,243,255,.88));
+  --rg-rim:   linear-gradient(135deg, var(--rg-violet-soft), var(--rg-violet) 48%, var(--rg-gold));
+  --rg-shadow: 0 10px 30px rgba(58, 40, 110, .26);
+  --rg-shadow-sm: 0 4px 14px rgba(58, 40, 110, .18);
+
+  /* how far the bottom-right action buttons reach in from the right edge */
+  --rg-acts: 96px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   1. #rgHud — the floating glass score bar
+       layout:   [ title .......... ★★★ ]
+                 [ score ......... combo ]
+                 [ ==== progress bar ==== ]
+       Sits centred at the top, always BELOW the kit's 🏠/HUD row, and (on
+       browsers with :has) tucks up under it once #rCount politely steps aside.
+   --------------------------------------------------------------------------- */
+#rgHud {
+  position: fixed;
+  z-index: 46;                                  /* over the scene, under kToast(80) */
+  top: calc(var(--rg-top) + 108px);             /* safe default: clears #rCount */
+  left: 50%;
+  width: min(94vw, 460px);
+  max-width: calc(100vw - 20px);
+  padding: 10px 14px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title stars"
+    "score combo"
+    "bar   bar";
+  align-items: center;
+  gap: 2px 10px;
+
+  border: 2px solid transparent;
+  border-radius: 22px;
+  background: var(--rg-glass) padding-box, var(--rg-rim) border-box;
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: var(--rg-shadow), inset 0 1px 0 rgba(255,255,255,.9);
+  color: var(--k-ink);
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -20px) scale(.96);
+  pointer-events: none;                          /* purely informational */
+  transition: opacity .32s ease, transform .38s cubic-bezier(.2, 1.15, .35, 1), visibility .32s;
+}
+#rgHud.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0) scale(1);
+}
+
+/* song title */
+#rgHud .rgTitle {
+  grid-area: title;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  color: #6b5aa0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* the big, happy score number */
+#rgHud .rgScore {
+  grid-area: score;
+  font-size: clamp(26px, 7.4vw, 34px);
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.5px;
+  background: linear-gradient(100deg, var(--rg-violet-deep), var(--rg-violet) 55%, var(--rg-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform-origin: left center;
+}
+/* the number gives a little kick whenever the combo pill pops (progressive) */
+#rgHud:has(.rgCombo.pulse) .rgScore { animation: rgScoreKick .34s ease-out; }
+@keyframes rgScoreKick {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.13); }
+  100% { transform: scale(1); }
+}
+
+/* combo pill — pops on every hit */
+#rgHud .rgCombo {
+  grid-area: combo;
+  justify-self: end;
+  min-width: 60px;
+  min-height: 30px;
+  padding: 4px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #fff;
+  background: linear-gradient(180deg, #a78bfa, var(--rg-violet));
+  box-shadow: 0 3px 10px rgba(139, 92, 246, .38);
+  transition: opacity .25s ease;
+}
+#rgHud .rgCombo:empty { opacity: 0; }
+#rgHud .rgCombo.pulse { animation: rgComboPop .42s cubic-bezier(.22, 1.4, .38, 1); }
+@keyframes rgComboPop {
+  0%   { transform: scale(1);    box-shadow: 0 3px 10px rgba(139,92,246,.38); }
+  35%  { transform: scale(1.22); box-shadow: 0 0 0 8px rgba(196,181,253,.35), 0 6px 18px rgba(139,92,246,.5); }
+  100% { transform: scale(1);    box-shadow: 0 3px 10px rgba(139,92,246,.38); }
+}
+
+/* the 3-star track */
+#rgHud .rgStars {
+  grid-area: stars;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 15px;
+  line-height: 1;
+}
+#rgHud .rgStar {
+  display: inline-block;
+  opacity: .28;
+  filter: grayscale(1);
+  transform: scale(.88);
+  transition: opacity .3s ease, filter .3s ease, transform .3s cubic-bezier(.2, 1.5, .4, 1);
+}
+#rgHud .rgStar.on {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.14);
+  text-shadow: 0 0 10px rgba(255, 209, 102, .8);
+}
+
+/* slim progress bar */
+#rgHud .rgBar {
+  grid-area: bar;
+  position: relative;
+  height: 9px;
+  margin-top: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(109, 40, 217, .13);
+  box-shadow: inset 0 1px 2px rgba(58, 40, 110, .16);
+}
+#rgHud .rgFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rg-violet-soft), var(--rg-violet) 55%, var(--rg-gold));
+  box-shadow: 0 0 10px rgba(139, 92, 246, .55);
+  transition: width .22s linear;
+}
+/* a soft sheen travelling along the filled part */
+#rgHud .rgFill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.65) 50%, transparent 80%);
+  background-size: 220% 100%;
+  animation: rgSheen 2.6s linear infinite;
+}
+@keyframes rgSheen {
+  from { background-position: 140% 0; }
+  to   { background-position: -60% 0; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   2. .rgJudge — the floating judgement word ("Perfect!" / "Nice!" / "Ahh 🎵")
+       Lives inside #rgHud, floats out just underneath it so it never covers
+       the animals the child is aiming at.
+   --------------------------------------------------------------------------- */
+#rgHud .rgJudge {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translate(-50%, 0) scale(.6);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: clamp(24px, 7.2vw, 38px);
+  font-weight: 900;
+  letter-spacing: .5px;
+  background: linear-gradient(100deg, var(--rg-violet-deep), var(--rg-violet) 40%, var(--rg-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 8px rgba(255, 255, 255, .95))
+          drop-shadow(0 4px 14px rgba(109, 40, 217, .3));
+}
+#rgHud .rgJudge.show { animation: rgJudgeFloat .95s cubic-bezier(.15, .9, .3, 1) both; }
+@keyframes rgJudgeFloat {
+  0%   { opacity: 0; transform: translate(-50%,  6px) scale(.55); }
+  22%  { opacity: 1; transform: translate(-50%,  0px) scale(1.14); }
+  38%  { opacity: 1; transform: translate(-50%, -2px) scale(1); }
+  70%  { opacity: 1; transform: translate(-50%, -16px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(.94); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   3. #rgPick — the song-select bottom sheet
+   --------------------------------------------------------------------------- */
+#rgPick {
+  position: fixed;
+  inset: 0;
+  z-index: 78;                                   /* over kit chrome, under kToast/kPause */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(70, 50, 130, .48), rgba(22, 18, 48, .62));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .3s ease, visibility .3s;
+}
+#rgPick.show { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.rgSheet {
+  width: min(100%, 700px);
+  max-height: min(88vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px calc(var(--rg-bottom) + 16px);
+  border-radius: 30px 30px 0 0;
+  border-top: 3px solid transparent;
+  background:
+    linear-gradient(180deg, var(--rg-cream) 0%, #f7f3ff 40%, #f2ecff 100%) padding-box,
+    var(--rg-rim) border-box;
+  box-shadow: 0 -14px 44px rgba(30, 20, 70, .38);
+  color: var(--k-ink);
+  transform: translateY(102%);
+  transition: transform .42s cubic-bezier(.2, 1.02, .32, 1);
+}
+#rgPick.show .rgSheet { transform: translateY(0); }
+
+/* a friendly grab-handle at the top of the sheet */
+.rgSheet::before {
+  content: "";
+  display: block;
+  width: 52px;
+  height: 5px;
+  margin: -6px auto 12px;
+  border-radius: 999px;
+  background: rgba(109, 40, 217, .22);
+}
+
+.rgPickHead { text-align: center; margin-bottom: 6px; }
+.rgPickHead h2 {
+  margin: 0;
+  font-size: clamp(21px, 5.6vw, 27px);
+  font-weight: 900;
+  background: linear-gradient(100deg, var(--rg-violet-deep), var(--rg-violet) 55%, var(--rg-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rgPickHead p {
+  margin: 5px 0 0;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 700;
+  color: #6b5aa0;
+  line-height: 1.35;
+}
+
+/* "★ 7 / 18" badge */
+.rgTotal {
+  display: block;
+  width: -moz-fit-content;
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px auto 14px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #7a4f00;
+  background: linear-gradient(180deg, #fff3d3, #ffe1a3);
+  box-shadow: 0 3px 10px rgba(240, 169, 46, .3), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* the grid of song cards */
+.rgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.rgCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 138px;
+  padding: 14px 10px 12px;
+  border: 2px solid rgba(196, 181, 253, .55);
+  border-radius: 22px;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  color: var(--k-ink);
+  background: linear-gradient(180deg, #ffffff, #fbf8ff);
+  box-shadow: 0 6px 16px rgba(58, 40, 110, .14), inset 0 1px 0 #fff;
+  transition: transform .18s cubic-bezier(.2, 1.3, .4, 1), box-shadow .18s ease, border-color .18s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.rgCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--rg-violet-soft);
+  box-shadow: 0 12px 24px rgba(58, 40, 110, .2), inset 0 1px 0 #fff;
+}
+.rgCard:active {
+  transform: scale(.95);
+  box-shadow: 0 3px 10px rgba(58, 40, 110, .18), inset 0 1px 0 #fff;
+}
+.rgCard:focus-visible { outline: 3px solid var(--rg-violet); outline-offset: 3px; }
+
+.rgCardEmoji {
+  font-size: 38px;
+  line-height: 1.05;
+  filter: drop-shadow(0 3px 6px rgba(58, 40, 110, .2));
+}
+.rgCardTitle {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+/* difficulty — works whether game.js writes dots, text or child spans */
+.rgCardDiff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  color: #9a86d8;
+}
+.rgCardDiff i,
+.rgCardDiff span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  font-size: 0;
+  background: rgba(139, 92, 246, .22);
+}
+.rgCardDiff i.on,
+.rgCardDiff span.on { background: var(--rg-violet); }
+
+.rgCardBest {
+  min-height: 18px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: var(--rg-gold-deep);
+  text-shadow: 0 1px 3px rgba(240, 169, 46, .35);
+}
+
+/* close / back button */
+.rgClose {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--rg-violet-deep);
+  background: linear-gradient(180deg, #ffffff, var(--rg-violet-mist));
+  box-shadow: 0 4px 0 rgba(139, 92, 246, .35), 0 6px 18px rgba(58, 40, 110, .16);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.rgClose:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(139, 92, 246, .35), 0 3px 10px rgba(58, 40, 110, .16);
+}
+
+
+/* ---------------------------------------------------------------------------
+   4. #rgResult — the celebration card (never a "fail" screen, always warm)
+   --------------------------------------------------------------------------- */
+#rgResult {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--rg-top) + 12px) 16px calc(var(--rg-bottom) + 12px);
+  background: radial-gradient(120% 90% at 50% 30%, rgba(88, 62, 160, .5), rgba(22, 18, 48, .66));
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .32s ease, visibility .32s;
+}
+#rgResult.show { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.rgResCard {
+  width: min(94vw, 430px);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 20px 20px;
+  text-align: center;
+  border: 3px solid transparent;
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, var(--rg-cream), #f6f1ff 65%, #efe8ff) padding-box,
+    var(--rg-rim) border-box;
+  box-shadow: 0 22px 60px rgba(24, 16, 60, .45), inset 0 1px 0 rgba(255,255,255,.9);
+  color: var(--k-ink);
+  transform: scale(.86) translateY(14px);
+  opacity: 0;
+  transition: transform .45s cubic-bezier(.2, 1.3, .35, 1), opacity .3s ease;
+}
+#rgResult.show .rgResCard { transform: scale(1) translateY(0); opacity: 1; }
+
+/* three BIG stars that land one after the other */
+.rgResStars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 10px;
+  line-height: 1;
+}
+.rgResStar {
+  font-size: clamp(42px, 13vw, 58px);
+  opacity: .2;
+  filter: grayscale(1);
+  transform: scale(.72);
+}
+.rgResStar.on { animation: rgStarLand .7s cubic-bezier(.2, 1.4, .38, 1) both; }
+.rgResStar.on:nth-child(1) { animation-delay: .16s; }
+.rgResStar.on:nth-child(2) { animation-delay: .46s; }
+.rgResStar.on:nth-child(3) { animation-delay: .76s; }
+@keyframes rgStarLand {
+  0%   { opacity: 0; transform: scale(2.3) rotate(-22deg); filter: grayscale(1); }
+  55%  { opacity: 1; transform: scale(.9)  rotate(6deg);   filter: none; }
+  78%  { transform: scale(1.12) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: none;
+         text-shadow: 0 0 18px rgba(255, 209, 102, .85); }
+}
+
+.rgResTitle {
+  margin: 0;
+  font-size: clamp(22px, 6.2vw, 28px);
+  font-weight: 900;
+  line-height: 1.2;
+  background: linear-gradient(100deg, var(--rg-violet-deep), var(--rg-violet) 50%, var(--rg-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rgResScore {
+  margin: 8px auto 4px;
+  font-size: clamp(34px, 11vw, 46px);
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  color: var(--rg-violet-deep);
+  text-shadow: 0 3px 0 rgba(255,255,255,.9), 0 6px 16px rgba(109, 40, 217, .22);
+}
+.rgResLine {
+  margin: 6px 0 16px;
+  font-size: clamp(14px, 4vw, 17px);
+  font-weight: 800;
+  line-height: 1.4;
+  color: #6b5aa0;
+}
+
+.rgResBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.rgBtn {
+  flex: 1 1 140px;
+  min-height: 58px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: clamp(15px, 4.2vw, 18px);
+  font-weight: 900;
+  color: var(--rg-violet-deep);
+  background: linear-gradient(180deg, #ffffff, var(--rg-violet-mist));
+  box-shadow: 0 4px 0 rgba(139, 92, 246, .32), 0 6px 16px rgba(58, 40, 110, .16);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.rgBtn.primary {
+  color: #fff;
+  background: linear-gradient(180deg, #a78bfa, var(--rg-violet) 60%, var(--rg-violet-deep));
+  box-shadow: 0 5px 0 #5b21b6, 0 8px 20px rgba(109, 40, 217, .38);
+}
+.rgBtn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(139, 92, 246, .32), 0 3px 10px rgba(58, 40, 110, .16);
+}
+.rgBtn.primary:active { box-shadow: 0 2px 0 #5b21b6, 0 4px 12px rgba(109, 40, 217, .38); }
+.rgBtn:focus-visible,
+.rgClose:focus-visible { outline: 3px solid var(--rg-gold); outline-offset: 3px; }
+
+
+/* ---------------------------------------------------------------------------
+   5. EXISTING CHROME — re-skinned so free play matches song mode.
+       These selectors are prefixed with `body` on purpose: index.html carries
+       its own <style> block for the same ids, and the extra specificity means
+       this sheet wins no matter which order the two are parsed in.
+   --------------------------------------------------------------------------- */
+
+/* 5a. #rCount — top-left stat chip → polished glass pill */
+body #rCount {
+  top: calc(var(--rg-top) + 64px);
+  left: var(--rg-left);
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  color: var(--k-ink);
+  background: var(--rg-glass) padding-box, var(--rg-rim) border-box;
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: var(--rg-shadow-sm), inset 0 1px 0 rgba(255,255,255,.9);
+  transition: opacity .3s ease, transform .3s ease;
+}
+
+/* 5b. #rWord — bottom banner → breathing gradient pill.
+       Pinned between the left edge and the kit's bottom-right action buttons
+       so it can never sit underneath them, and free to wrap on tiny screens. */
+body #rWord {
+  left: var(--rg-left);
+  right: calc(var(--rg-right) + var(--rg-acts));
+  bottom: calc(var(--rg-bottom) + 8px);
+  transform: none;
+  max-width: none;
+  padding: 10px 20px;
+  border-radius: 22px;
+  font-size: clamp(14px, 3.6vw, 18px);
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  color: var(--rg-violet-deep);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(238,233,254,.94));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(58, 40, 110, .22), inset 0 1px 0 rgba(255,255,255,.95);
+  animation: rgBreathe 5.4s ease-in-out infinite;
+}
+body #rWord:empty { display: none; }
+@keyframes rgBreathe {
+  0%, 100% { transform: scale(1);    box-shadow: 0 6px 20px rgba(58, 40, 110, .22), inset 0 1px 0 rgba(255,255,255,.95); }
+  50%      { transform: scale(1.025); box-shadow: 0 10px 26px rgba(109, 40, 217, .26), inset 0 1px 0 rgba(255,255,255,.95); }
+}
+
+/* 5c. #rTempo + .rChip — bigger, clearer, violet ring on the chosen tempo */
+body #rTempo {
+  left: var(--rg-left);
+  right: calc(var(--rg-right) + var(--rg-acts));
+  bottom: calc(var(--rg-bottom) + 82px);
+  transform: none;
+  justify-content: center;
+  gap: 10px;
+}
+body .rChip {
+  min-width: 62px;
+  min-height: 56px;
+  padding: 8px 16px;
+  border: 3px solid rgba(196, 181, 253, .5);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--k-ink);
+  background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(246,243,255,.92));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(58, 40, 110, .2), inset 0 1px 0 rgba(255,255,255,.95);
+  transition: transform .14s cubic-bezier(.2, 1.3, .4, 1), box-shadow .18s ease, border-color .18s ease;
+}
+body .rChip:active { transform: scale(.92); }
+body .rChip.on {
+  border-color: var(--rg-violet);
+  background: linear-gradient(180deg, #ffffff, var(--rg-violet-mist));
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, .22), 0 6px 16px rgba(109, 40, 217, .28);
+  transform: scale(1.06);
+}
+body .rChip:focus-visible { outline: 3px solid var(--rg-violet-deep); outline-offset: 3px; }
+
+
+/* ---------------------------------------------------------------------------
+   6. RESPONSIVE + MOTION
+   --------------------------------------------------------------------------- */
+
+/* Once a song starts, the free-play flower counter steps aside — which lets the
+   HUD tuck up neatly under the kit's 🏠/HUD row, and pushes toasts clear of it.
+   Everything here is a pure enhancement: without :has the safe layout above
+   (HUD at +108px, counter visible) still works perfectly. */
+@supports selector(:has(*)) {
+  #rgHud { top: calc(var(--rg-top) + 72px); }
+  body:has(#rgHud.show) #rCount {
+    opacity: 0;
+    transform: translateY(-8px) scale(.92);
+    pointer-events: none;
+  }
+  body:has(#rgHud.show) #kToast { top: calc(var(--rg-top) + 196px); }
+}
+
+/* desktop / tablet: roomier sheet, centred like a card, calmer type scale */
+@media (min-width: 760px) {
+  #rgPick { align-items: center; padding: 24px; }
+  .rgSheet {
+    max-height: 84vh;
+    padding: 22px 24px 24px;
+    border: 3px solid transparent;
+    border-radius: 30px;
+    box-shadow: 0 26px 70px rgba(24, 16, 60, .45);
+    transform: scale(.9) translateY(18px);
+    opacity: 0;
+    transition: transform .4s cubic-bezier(.2, 1.25, .35, 1), opacity .28s ease;
+  }
+  #rgPick.show .rgSheet { transform: scale(1) translateY(0); opacity: 1; }
+  .rgSheet::before { display: none; }
+  .rgGrid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+  .rgClose { width: -moz-fit-content; width: fit-content; min-width: 220px; margin: 0 auto; }
+  body #rWord  { left: 50%; right: auto; transform: translateX(-50%); max-width: min(70vw, 620px); }
+  body #rTempo { left: 50%; right: auto; transform: translateX(-50%); }
+  /* the breathing keyframe must keep the desktop centring transform */
+  @keyframes rgBreathe {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50%      { transform: translateX(-50%) scale(1.025); }
+  }
+}
+
+/* very narrow phones (360px and below): tighten, never overflow */
+@media (max-width: 380px) {
+  #rgHud { padding: 9px 12px 11px; }
+  #rgHud .rgScore { font-size: 26px; }
+  #rgHud .rgCombo { min-width: 54px; padding: 4px 10px; font-size: 14px; }
+  .rgSheet { padding: 16px 12px calc(var(--rg-bottom) + 14px); }
+  .rgGrid { gap: 10px; }
+  .rgCard { min-height: 126px; padding: 12px 8px 10px; }
+  .rgCardEmoji { font-size: 34px; }
+  .rgCardTitle { font-size: 14px; }
+  body #rWord { padding: 9px 14px; }
+}
+
+/* short / landscape phones: pull everything in so the meadow stays visible */
+@media (max-height: 560px) {
+  #rgHud { top: calc(var(--rg-top) + 62px); padding: 8px 12px 10px; }
+  #rgHud .rgScore { font-size: 24px; }
+  #rgHud .rgBar { height: 8px; margin-top: 5px; }
+  #rgHud .rgJudge { font-size: clamp(20px, 4.6vw, 30px); }
+  body #rCount { min-height: 34px; padding: 6px 12px; font-size: 14px; }
+  body .rChip { min-height: 56px; min-width: 58px; font-size: 21px; }
+  body #rTempo { bottom: calc(var(--rg-bottom) + 74px); }
+  .rgSheet { max-height: 94vh; padding-top: 14px; }
+  .rgResStar { font-size: clamp(34px, 9vw, 46px); }
+  .rgResScore { font-size: clamp(28px, 8vw, 38px); }
+  .rgResLine { margin-bottom: 12px; }
+}
+
+/* thin, unobtrusive scrollbars inside the overlays */
+.rgSheet::-webkit-scrollbar,
+.rgResCard::-webkit-scrollbar { width: 8px; }
+.rgSheet::-webkit-scrollbar-thumb,
+.rgResCard::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(139, 92, 246, .28);
+}
+
+/* Reduced motion — kit.css already blanket-disables animation, this makes the
+   promise explicit for everything above and keeps the end states readable. */
+@media (prefers-reduced-motion: reduce) {
+  #rgHud,
+  #rgHud .rgScore,
+  #rgHud .rgCombo,
+  #rgHud .rgStar,
+  #rgHud .rgFill,
+  #rgHud .rgFill::after,
+  #rgHud .rgJudge,
+  #rgHud .rgJudge.show,
+  .rgSheet,
+  .rgCard,
+  .rgClose,
+  .rgResCard,
+  .rgResStar,
+  .rgResStar.on,
+  .rgBtn,
+  body #rCount,
+  body #rWord,
+  body .rChip,
+  #rgPick,
+  #rgResult {
+    animation: none !important;
+    transition: none !important;
+  }
+  #rgHud .rgFill::after { display: none; }
+  #rgHud.show { transform: translate(-50%, 0); }
+  #rgPick.show .rgSheet { transform: none; opacity: 1; }
+  #rgResult.show .rgResCard { transform: none; opacity: 1; }
+  #rgHud .rgJudge.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  .rgResStar.on { opacity: 1; filter: none; transform: scale(1); }
+  body #rWord { transform: none; }
+  @media (min-width: 760px) {
+    body #rWord { transform: translateX(-50%); }
+  }
+}
