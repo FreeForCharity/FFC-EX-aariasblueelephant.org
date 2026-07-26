@@ -1,0 +1,769 @@
+/* ============================================================================
+   Nilu's Music Meadow — Adventure skin  (adventure.css)   LAYER 3
+   © Aaria's Blue Elephant · Built by Aaria and her Friends 💙
+
+   Styles ONLY. Every element here is created by quest.js (window.RQuest) and
+   appended to <body>. This sheet is the third of three (kit.css → play.css →
+   walk.css → adventure.css) and is written to look like the same hand drew all
+   of them: soft glass, violet + gold, storybook warmth, generous round corners.
+
+   ---------------------------------------------------------------------------
+   SCREEN ZONES USED BY THIS SHEET  (verified at 360 / 768 / 1440 px wide)
+   ---------------------------------------------------------------------------
+     LEFT COLUMN, THIRD SLOT  →  #rqChip
+        top: safe-top + 176px · left: safe-left · z-index 44 · max-width min(72vw, 340px)
+        The left rail stacks, top to bottom:
+            #kExit      safe-top +  0 … + 52   (kit.css)
+            #rCount     safe-top + 64 … +104   (play.css)
+            #rwFind     safe-top +112 … +152   (walk.js — layer 2)
+            #rqChip     safe-top +176 … +230   (this sheet)
+        It also clears #kToast (index.html parks it at safe-top + 118px, ~48px
+        tall) by 10px, and it fades away completely while a song is playing
+        (body:has(#rgHud.show)) so song mode stays uncluttered. Where :has() is
+        supported and #rwFind is absent, the chip slides up into the +112 slot.
+
+     FULL-SCREEN MODAL         →  #rqJournal   z-index 82
+        Above #rgPick(78) · #rgResult(79) · #kToast(80).
+        Below #kPanel(90) · #kReplayBar(95) · #kPause(96) · #kTitle(100).
+
+     SCREEN CENTRE, TRANSIENT  →  #rqStamp     z-index 88, pointer-events:none
+        A ~1.6s flourish, then gone. Nothing is ever tapped here.
+
+   NOT TOUCHED (owned by siblings):
+     top-centre #rgHud · bottom-centre #rWord + #rTempo · top-left #rCount /
+     #rwFind · top-right #kHud · right edge #rwZoom · bottom-left #kStick ·
+     bottom-right #kActs.
+
+   ACCESSIBILITY PROMISES
+     · every tappable thing is >= 56px (the chip's ✕ uses an invisible 56px
+       hit-pad so the visible button can stay small and calm)
+     · no red, no strobing, no "wrong" colours — a locked card is soft grey,
+       never a failure
+     · nothing here relies on colour alone: locked = silhouette + ? + hint
+     · all motion is switched off under prefers-reduced-motion, with readable
+       end states left in place
+
+   SECTIONS
+     0. tokens
+     1. #rqChip        the one current objective
+     2. #rqJournal     the adventure journal / sticker album
+     3. .rqCard        the sticker slots (found + locked)
+     4. #rqStamp       the "new stamp!" flourish
+     5. responsive
+     6. reduced motion
+   ============================================================================ */
+
+
+/* ---------------------------------------------------------------------------
+   0. TOKENS
+      Everything falls back to play.css's --rg-* palette when it is loaded, and
+      to the same literal values when it is not, so this sheet can never render
+      un-themed on its own.
+   --------------------------------------------------------------------------- */
+:root {
+  --rq-top:    var(--rg-top,    max(10px, env(safe-area-inset-top)));
+  --rq-bottom: var(--rg-bottom, max(16px, env(safe-area-inset-bottom)));
+  --rq-left:   var(--rg-left,   max(10px, env(safe-area-inset-left)));
+  --rq-right:  var(--rg-right,  max(10px, env(safe-area-inset-right)));
+
+  /* shared twilight palette */
+  --rq-violet:      var(--rg-violet,      #8b5cf6);
+  --rq-violet-deep: var(--rg-violet-deep, #6d28d9);
+  --rq-violet-soft: var(--rg-violet-soft, #c4b5fd);
+  --rq-violet-mist: var(--rg-violet-mist, #ede9fe);
+  --rq-gold:        var(--rg-gold,        #ffd166);
+  --rq-gold-deep:   var(--rg-gold-deep,   #f0a92e);
+  --rq-cream:       var(--rg-cream,       #fffaf2);
+
+  /* the journal's own warm paper */
+  --rq-paper:  #fffdf7;
+  --rq-paper2: #fdf4e3;
+  --rq-line:   rgba(139, 92, 246, .16);      /* faint ruled/edge lines */
+  --rq-muted:  #7c6ca8;
+
+  --rq-glass:  var(--rg-glass, linear-gradient(180deg, rgba(255,255,255,.95), rgba(246,243,255,.88)));
+  --rq-rim:    var(--rg-rim,   linear-gradient(135deg, #c4b5fd, #8b5cf6 48%, #ffd166));
+  --rq-shadow:    var(--rg-shadow,    0 10px 30px rgba(58, 40, 110, .26));
+  --rq-shadow-sm: var(--rg-shadow-sm, 0 4px 14px rgba(58, 40, 110, .18));
+
+  /* where the objective chip sits in the left rail (see the zone map above) */
+  --rq-chip-top: 176px;
+}
+
+
+/* ===========================================================================
+   1. #rqChip — ONE objective at a time, never a list, never a nag.
+      Layout:  [ 🎵 ]  Find Twee's chime bar by the stream      [ ✕ ]
+      Default state is VISIBLE (so simply appending it works); it hides when
+      empty, when JS sets [hidden] / .hide, and while a song is running.
+      =========================================================================== */
+#rqChip {
+  position: fixed;
+  z-index: 44;                                   /* under #rgHud(46), over the scene */
+  top: calc(var(--rq-top) + var(--rq-chip-top));
+  left: var(--rq-left);
+  max-width: min(72vw, 340px);
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 8px 8px 8px 14px;
+
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: var(--rq-glass) padding-box, var(--rq-rim) border-box;
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: var(--rq-shadow-sm), inset 0 1px 0 rgba(255,255,255,.9);
+
+  color: var(--k-ink, #3a3a5a);
+  font: inherit;
+  font-size: clamp(13px, 3.5vw, 15px);
+  font-weight: 900;
+  line-height: 1.28;
+  text-align: left;
+  cursor: pointer;                               /* tapping it opens the journal */
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity .3s ease, transform .3s cubic-bezier(.2, 1.15, .35, 1);
+}
+#rqChip:empty,
+#rqChip.hide,
+#rqChip[hidden] { display: none; }
+
+/* .show is optional sugar — quest.js may use it for an entrance */
+#rqChip.show { opacity: 1; transform: none; }
+
+/* the objective text itself (whatever wrapper quest.js uses) */
+#rqChip .rqChipText,
+#rqChip > span:not(.rqChipX):not(.rqChipEmoji):not(.rqChipDot) {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* a leading emoji, if quest.js marks one up */
+#rqChip .rqChipEmoji {
+  flex: 0 0 auto;
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(58, 40, 110, .22));
+  -webkit-line-clamp: none;
+  display: inline;
+  overflow: visible;
+}
+
+/* dismiss ✕ — 40px of visible button inside a 56px invisible tap pad */
+#rqChip .rqChipX {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rq-violet-deep);
+  background: rgba(139, 92, 246, .12);
+  transition: transform .12s ease, background-color .18s ease;
+}
+#rqChip .rqChipX::before {                        /* the 56px hit pad */
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+#rqChip .rqChipX:active { transform: scale(.88); background: rgba(139, 92, 246, .22); }
+#rqChip .rqChipX:focus-visible,
+#rqChip:focus-visible { outline: 3px solid var(--rq-violet); outline-offset: 3px; }
+
+/* the gentle guide's ONE soft pulse (quest.js adds .pulse or .nudge, then removes it) */
+#rqChip.pulse,
+#rqChip.nudge { animation: rqChipPulse 1.5s cubic-bezier(.32, .9, .38, 1) 1; }
+@keyframes rqChipPulse {
+  0%, 100% { transform: scale(1);
+             box-shadow: var(--rq-shadow-sm), inset 0 1px 0 rgba(255,255,255,.9); }
+  22%      { transform: scale(1.045);
+             box-shadow: 0 0 0 7px rgba(196, 181, 253, .3), 0 8px 22px rgba(109, 40, 217, .28), inset 0 1px 0 rgba(255,255,255,.9); }
+  55%      { transform: scale(1.01); }
+}
+
+/* a tiny "there's something new in the journal" dot */
+#rqChip .rqChipDot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffe9a8, var(--rq-gold-deep));
+  box-shadow: 0 0 0 2px var(--rq-cream), 0 2px 6px rgba(240, 169, 46, .5);
+}
+
+/* progressive polish: only where :has() exists */
+@supports selector(:has(*)) {
+  /* no layer-2 find chip on screen? take its slot instead of leaving a hole */
+  body:not(:has(#rwFind)) #rqChip { top: calc(var(--rq-top) + 112px); }
+  /* song mode owns the screen — the objective waits quietly */
+  body:has(#rgHud.show) #rqChip {
+    opacity: 0;
+    transform: translateY(-8px) scale(.94);
+    pointer-events: none;
+  }
+}
+
+
+/* ===========================================================================
+   2. #rqJournal — the adventure journal.
+      A treasured sticker album: warm paper, a gold-foil head, tabbed pages and
+      a grid of slots. Full-screen so a 3-year-old cannot miss it or mis-tap it.
+      =========================================================================== */
+#rqJournal {
+  position: fixed;
+  inset: 0;
+  z-index: 82;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--rq-top) + 8px) 10px calc(var(--rq-bottom) + 8px);
+
+  background: radial-gradient(120% 90% at 50% 12%, rgba(84, 60, 152, .48), rgba(22, 18, 48, .66));
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .3s ease, visibility .3s;
+}
+#rqJournal.show { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.rqBook {
+  width: min(96vw, 720px);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;              /* head · tabs · grid(scrolls) · close */
+  overflow: hidden;
+  padding: 16px 14px 14px;
+
+  border: 3px solid transparent;
+  border-radius: 30px;
+  background:
+    /* faint paper speckle, then the warm page itself */
+    radial-gradient(circle at 18% 22%, rgba(240, 169, 46, .07) 0 2px, transparent 3px) padding-box,
+    radial-gradient(circle at 72% 68%, rgba(139, 92, 246, .06) 0 2px, transparent 3px) padding-box,
+    linear-gradient(180deg, var(--rq-paper) 0%, var(--rq-paper2) 58%, #f7eeff 100%) padding-box,
+    var(--rq-rim) border-box;
+  background-size: 46px 46px, 62px 62px, auto, auto;
+  box-shadow: 0 24px 64px rgba(24, 16, 60, .46), inset 0 1px 0 rgba(255,255,255,.95);
+  color: var(--k-ink, #3a3a5a);
+
+  transform: scale(.9) translateY(16px);
+  opacity: 0;
+  transition: transform .42s cubic-bezier(.2, 1.25, .35, 1), opacity .28s ease;
+}
+#rqJournal.show .rqBook { transform: scale(1) translateY(0); opacity: 1; }
+
+/* --- 2a. head: title · "🔎 7 / 21" · progress ring ------------------------ */
+.rqBookHead {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 4px 12px;
+  border-bottom: 2px dashed var(--rq-line);
+  margin-bottom: 10px;
+}
+.rqBookHead h2,
+.rqBookHead .rqBookTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: clamp(19px, 5.4vw, 26px);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: .2px;
+  background: linear-gradient(100deg, var(--rq-violet-deep), var(--rq-violet) 52%, var(--rq-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  overflow-wrap: anywhere;
+}
+.rqBookHead h2 small,
+.rqBookHead .rqBookSub {
+  display: block;
+  margin-top: 3px;
+  font-size: clamp(11px, 3.2vw, 13px);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--rq-muted);
+  -webkit-text-fill-color: var(--rq-muted);      /* escape the gradient clip */
+}
+
+/* the "🔎 7 / 21" tally */
+.rqBookHead .rqCount,
+.rqBookHead .rqTally {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #7a4f00;
+  background: linear-gradient(180deg, #fff3d3, #ffe1a3);
+  box-shadow: 0 3px 10px rgba(240, 169, 46, .3), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* the progress ring. Driven either by --rq-p (0-100) on a plain <div>,
+   or by an <svg> child — both are styled here so quest.js can pick. */
+.rqRing {
+  --rq-p: 0;
+  position: relative;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--rq-gold-deep) calc(var(--rq-p) * 1%), rgba(139, 92, 246, .15) 0);
+  box-shadow: 0 3px 10px rgba(58, 40, 110, .18);
+  transition: background .5s ease;
+}
+.rqRing::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--rq-paper);
+  box-shadow: inset 0 1px 3px rgba(58, 40, 110, .14);
+}
+.rqRing > * {
+  position: relative;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--rq-violet-deep);
+  line-height: 1;
+}
+/* …or an SVG ring, if that is what quest.js builds */
+.rqRing svg { position: relative; width: 100%; height: 100%; transform: rotate(-90deg); }
+.rqRing svg circle { fill: none; stroke-width: 6; stroke-linecap: round; }
+.rqRing svg circle { stroke: rgba(139, 92, 246, .15); }
+.rqRing svg circle + circle { stroke: var(--rq-gold-deep); transition: stroke-dashoffset .6s ease; }
+@supports selector(:has(*)) {
+  .rqRing:has(svg) { background: none; box-shadow: none; }
+  .rqRing:has(svg)::before { display: none; }
+}
+
+/* --- 2b. tabs: All · Places · Friends · Quests ---------------------------- */
+.rqTabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 2px 2px 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.rqTabs::-webkit-scrollbar { display: none; }
+
+.rqTab {
+  flex: 0 0 auto;
+  min-height: 56px;
+  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 3px solid rgba(196, 181, 253, .5);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 900;
+  white-space: nowrap;
+  color: var(--k-ink, #3a3a5a);
+  background: linear-gradient(180deg, #ffffff, #fbf6ec);
+  box-shadow: 0 3px 9px rgba(58, 40, 110, .14), inset 0 1px 0 #fff;
+  transition: transform .14s cubic-bezier(.2, 1.3, .4, 1), box-shadow .18s ease,
+              border-color .18s ease, background-color .18s ease;
+}
+.rqTab:active { transform: scale(.94); }
+.rqTab.on {
+  border-color: var(--rq-violet);
+  color: var(--rq-violet-deep);
+  background: linear-gradient(180deg, #ffffff, var(--rq-violet-mist));
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, .18), 0 5px 14px rgba(109, 40, 217, .24);
+}
+.rqTab:focus-visible { outline: 3px solid var(--rq-violet-deep); outline-offset: 3px; }
+
+/* --- 2c. the album page ---------------------------------------------------- */
+.rqGrid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(136px, 100%), 1fr));
+  gap: 11px;
+  margin: 0 0 12px;
+  padding: 4px 4px 6px;
+  list-style: none;
+}
+.rqGrid::-webkit-scrollbar { width: 8px; }
+.rqGrid::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(139, 92, 246, .26); }
+
+/* a section label, if quest.js groups the grid */
+.rqGrid .rqSection {
+  grid-column: 1 / -1;
+  margin: 6px 2px 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  color: var(--rq-muted);
+}
+
+
+/* ===========================================================================
+   3. .rqCard — one sticker slot.
+      .found  = a real sticker, slightly tilted, warm and proud
+      .locked = an empty slot: grey silhouette, a ? seal and a tiny hint
+      =========================================================================== */
+.rqCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 128px;
+  padding: 13px 9px 11px;
+
+  border: 2px solid rgba(196, 181, 253, .45);
+  border-radius: 20px;
+  font: inherit;
+  text-align: center;
+  color: var(--k-ink, #3a3a5a);
+  background: linear-gradient(180deg, #ffffff, #fdf8ef);
+  box-shadow: 0 5px 14px rgba(58, 40, 110, .13), inset 0 1px 0 #fff;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform .18s cubic-bezier(.2, 1.3, .4, 1), box-shadow .18s ease, border-color .18s ease;
+}
+/* only give the pointer/press feedback when the card actually does something */
+button.rqCard, .rqCard[role="button"], .rqCard[tabindex] { cursor: pointer; }
+button.rqCard:active, .rqCard[role="button"]:active { transform: scale(.96); }
+.rqCard:focus-visible { outline: 3px solid var(--rq-violet); outline-offset: 3px; }
+
+/* --- 3a. found: a sticker stuck in the album ------------------------------ */
+.rqCard.found {
+  border-color: rgba(240, 169, 46, .5);
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 233, 168, .55), transparent 60%),
+    linear-gradient(180deg, #ffffff, #fff6e4);
+  box-shadow: 0 7px 18px rgba(58, 40, 110, .16), inset 0 1px 0 #fff;
+}
+/* a hand-stuck tilt, alternating, tiny — pure charm, no motion */
+.rqCard.found:nth-child(3n+1) { transform: rotate(-1.1deg); }
+.rqCard.found:nth-child(3n+2) { transform: rotate(.8deg); }
+.rqCard.found:nth-child(3n)   { transform: rotate(-.4deg); }
+button.rqCard.found:active,
+.rqCard.found[role="button"]:active { transform: scale(.96) rotate(0deg); }
+/* peeled corner highlight */
+.rqCard.found::before {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: -18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 70%, rgba(255, 209, 102, .55), transparent 70%);
+  pointer-events: none;
+}
+/* just-collected: one gentle shimmer, then still */
+.rqCard.fresh { animation: rqCardPop .8s cubic-bezier(.2, 1.35, .35, 1) 1; }
+@keyframes rqCardPop {
+  0%   { transform: scale(.82) rotate(-4deg); box-shadow: 0 0 0 0 rgba(255, 209, 102, .7); }
+  55%  { transform: scale(1.06) rotate(1.5deg); box-shadow: 0 0 0 12px rgba(255, 209, 102, 0); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* --- 3b. locked: an empty slot that says "go and look" -------------------- */
+.rqCard.locked {
+  border-style: dashed;
+  border-color: rgba(139, 92, 246, .3);
+  background:
+    repeating-linear-gradient(135deg, rgba(139, 92, 246, .045) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, #fbf9f4, #f4eee6);
+  box-shadow: inset 0 2px 6px rgba(58, 40, 110, .08);
+}
+/* the little "?" seal in the corner — always there, whatever glyph JS writes */
+.rqCard.locked::after {
+  content: "?";
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  background: rgba(139, 92, 246, .45);
+  box-shadow: 0 2px 5px rgba(58, 40, 110, .18);
+  pointer-events: none;
+}
+
+/* --- 3c. card innards ------------------------------------------------------ */
+.rqCardEmoji {
+  font-size: 36px;
+  line-height: 1.1;
+  filter: drop-shadow(0 3px 6px rgba(58, 40, 110, .2));
+}
+/* brightness(0) flattens any emoji to a solid shape; opacity greys it out —
+   a true silhouette, so the child can see the SHAPE of what is still missing */
+.rqCard.locked .rqCardEmoji {
+  filter: brightness(0) opacity(.24);
+  -webkit-filter: brightness(0) opacity(.24);
+}
+
+.rqCardName {
+  font-size: 13.5px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.rqCard.locked .rqCardName { color: #9b91b5; letter-spacing: .3px; }
+
+.rqCardHint {
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--rq-muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rqCard.locked .rqCardHint { font-style: italic; color: #8d84a8; }
+
+/* a quest-stamp card wears its gold star ribbon */
+.rqCard.stamp.found .rqCardName { color: #7a4f00; }
+
+
+/* --- 3d. .rqClose — one big, unmissable way out --------------------------- */
+.rqClose {
+  flex: 0 0 auto;
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: clamp(16px, 4.4vw, 19px);
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #a78bfa, var(--rq-violet) 60%, var(--rq-violet-deep));
+  box-shadow: 0 5px 0 #5b21b6, 0 8px 20px rgba(109, 40, 217, .35);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.rqClose:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #5b21b6, 0 4px 12px rgba(109, 40, 217, .35);
+}
+.rqClose:focus-visible { outline: 3px solid var(--rq-gold); outline-offset: 3px; }
+
+
+/* ===========================================================================
+   4. #rqStamp — "a new stamp for the journal!"
+      Big emoji, a gold burst, a short warm line. Purely decorative: it never
+      takes a tap and never blocks anything.
+      =========================================================================== */
+#rqStamp {
+  position: fixed;
+  z-index: 88;
+  left: 50%;
+  top: 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 26px;
+  max-width: min(86vw, 380px);
+
+  border: 3px solid transparent;
+  border-radius: 26px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 233, 168, .95), rgba(255, 250, 242, .96)) padding-box,
+    var(--rq-rim) border-box;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  /* the sunburst is an outer glow, not a pseudo-element: a positioned child
+     would paint over the card's own face inside this stacking context */
+  box-shadow:
+    0 0 0 10px rgba(255, 209, 102, .16),
+    0 0 46px 14px rgba(255, 209, 102, .3),
+    0 16px 44px rgba(58, 40, 110, .34),
+    inset 0 1px 0 rgba(255,255,255,.95);
+
+  text-align: center;
+  color: var(--k-ink, #3a3a5a);
+  font-size: clamp(15px, 4.2vw, 18px);
+  font-weight: 900;
+  line-height: 1.3;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(.5) rotate(-8deg);
+}
+#rqStamp.show {
+  visibility: visible;
+  animation: rqStampIn 1.9s cubic-bezier(.18, 1.3, .32, 1) both;
+}
+@keyframes rqStampIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.5) rotate(-9deg); }
+  16%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(3deg); }
+  28%  { transform: translate(-50%, -50%) scale(.97) rotate(-1.5deg); }
+  38%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  78%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -58%) scale(.96) rotate(0deg); }
+}
+#rqStamp .rqStampEmoji {
+  font-size: clamp(46px, 14vw, 64px);
+  line-height: 1;
+  filter: drop-shadow(0 5px 12px rgba(240, 169, 46, .55));
+}
+#rqStamp .rqStampName {
+  font-size: clamp(17px, 5vw, 21px);
+  font-weight: 900;
+  background: linear-gradient(100deg, var(--rq-violet-deep), var(--rq-violet) 50%, var(--rq-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+#rqStamp .rqStampLine { font-size: clamp(13px, 3.7vw, 15px); font-weight: 800; color: var(--rq-muted); }
+
+
+/* ===========================================================================
+   5. RESPONSIVE  — checked at 360, 768 and 1440 px
+      =========================================================================== */
+
+/* narrow phones (360px): 2 columns, tighter chip, nothing overflows */
+@media (max-width: 400px) {
+  #rqChip { max-width: min(76vw, 280px); padding: 7px 7px 7px 12px; min-height: 52px; }
+  .rqBook { padding: 13px 11px 12px; border-radius: 26px; }
+  .rqBookHead { gap: 9px; padding-bottom: 10px; }
+  .rqRing { width: 46px; height: 46px; }
+  .rqRing::before { inset: 5px; }
+  .rqRing > * { font-size: 12px; }
+  .rqGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .rqCard { min-height: 118px; padding: 11px 7px 9px; border-radius: 18px; }
+  .rqCardEmoji { font-size: 32px; }
+  .rqCardName { font-size: 12.5px; }
+  .rqCardHint { font-size: 11px; -webkit-line-clamp: 2; }
+  .rqTab { padding: 8px 14px; }
+}
+
+/* tablet + desktop: roomier album, calmer close button, more columns */
+@media (min-width: 760px) {
+  .rqBook { padding: 20px 20px 18px; }
+  .rqBookHead { gap: 14px; padding-bottom: 14px; margin-bottom: 12px; }
+  .rqRing { width: 62px; height: 62px; }
+  .rqRing > * { font-size: 15px; }
+  .rqGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .rqCard { min-height: 140px; }
+  .rqCardEmoji { font-size: 40px; }
+  .rqCardName { font-size: 15px; }
+  .rqCardHint { font-size: 12.5px; }
+  .rqClose { width: -moz-fit-content; width: fit-content; min-width: 240px; margin: 0 auto; }
+  #rqChip { max-width: min(38vw, 360px); }
+}
+
+/* big screens: keep the album a book, not a billboard */
+@media (min-width: 1280px) {
+  .rqBook { width: min(78vw, 780px); }
+  .rqGrid { grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); }
+}
+
+/* short / landscape phones: everything pulls in so the meadow stays visible */
+@media (max-height: 560px) {
+  :root { --rq-chip-top: 122px; }
+  #rqChip { min-height: 46px; padding: 6px 6px 6px 11px; font-size: 13px; }
+  #rqChip .rqChipX { width: 38px; height: 38px; }
+  @supports selector(:has(*)) {
+    body:not(:has(#rwFind)) #rqChip { top: calc(var(--rq-top) + 74px); }
+  }
+  .rqBook { padding: 11px 12px 11px; border-radius: 22px; }
+  .rqBookHead { padding-bottom: 8px; margin-bottom: 8px; }
+  .rqBookHead h2, .rqBookHead .rqBookTitle { font-size: 19px; }
+  .rqRing { width: 44px; height: 44px; }
+  .rqTabs { padding-bottom: 8px; }
+  .rqTab { min-height: 48px; padding: 6px 14px; }
+  .rqGrid { grid-template-columns: repeat(auto-fill, minmax(min(124px, 100%), 1fr)); gap: 9px; margin-bottom: 9px; }
+  .rqCard { min-height: 104px; padding: 9px 7px 8px; }
+  .rqCardEmoji { font-size: 28px; }
+  .rqCardHint { -webkit-line-clamp: 2; }
+  .rqClose { min-height: 52px; padding: 11px 20px; }
+  #rqStamp { top: 46%; padding: 13px 20px; }
+  #rqStamp .rqStampEmoji { font-size: 40px; }
+}
+
+
+/* ===========================================================================
+   6. REDUCED MOTION
+      kit.css already blanket-disables animation; this repeats the promise for
+      everything above and, crucially, leaves every end state readable.
+      =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  #rqChip,
+  #rqChip.pulse,
+  #rqChip.nudge,
+  #rqChip .rqChipX,
+  #rqJournal,
+  .rqBook,
+  .rqRing,
+  .rqRing svg circle + circle,
+  .rqTab,
+  .rqCard,
+  .rqCard.fresh,
+  .rqClose,
+  #rqStamp,
+  #rqStamp.show {
+    animation: none !important;
+    transition: none !important;
+  }
+  #rqJournal.show .rqBook { transform: none; opacity: 1; }
+  .rqCard.found:nth-child(3n+1),
+  .rqCard.found:nth-child(3n+2),
+  .rqCard.found:nth-child(3n) { transform: none; }
+  /* the stamp still needs to be SEEN — it just arrives without the flourish */
+  #rqStamp.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+}

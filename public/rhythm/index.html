@@ -15,8 +15,11 @@
      Bilingual EN/ES from birth. -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
 <link rel="stylesheet" href="../gamekit/kit.css">
+<link rel="stylesheet" href="play.css">
+<link rel="stylesheet" href="walk.css">
+<link rel="stylesheet" href="adventure.css">
 <style>
-  #kStick { display: none !important; }   /* tap game — no joystick */
+  /* the joystick is back: this is a walk-around meadow now (see walk.js) */
   #rCount {
     position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 64px); left: max(10px, env(safe-area-inset-left));
     z-index: 40; background: var(--k-card); border-radius: 16px; padding: 8px 14px;
@@ -41,7 +44,8 @@
     box-shadow: 0 3px 8px rgba(40,40,90,.18); color: #3a3a5a;
   }
   .rChip.on { border-color: #8b5cf6; background: #fff; }
-  #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 118px); }
+  /* toasts drop below BOTH stat chips (🎵🌸 counter and 🔎 discovery counter) */
+  #kToast { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 178px); }
 </style>
 </head>
 <body>
@@ -57,6 +61,12 @@
 <script src="lib/three.min.js"></script>
 <script src="../gamekit/festive.js"></script>
 <script src="../gamekit/kit.js"></script>
+<script src="songs.js"></script>
+<script src="game.js"></script>
+<script src="walk.js"></script>
+<script src="world.js"></script>
+<script src="places.js"></script>
+<script src="quest.js"></script>
 <script>
 (function () {
   "use strict";
@@ -443,6 +453,7 @@
       K.toast(K.tr('🎵 Tap the animals to make a little song first!', '🎵 ¡Toca a los animales para hacer una cancioncita primero!'), 3000);
       return;
     }
+    if (window.RGame && RGame.active) RGame.stop();   // leave song mode first
     if (G.breathing) stopBreathing();
     G.lullaby = true;
     word(K.tr('your song… 🌙', 'tu canción… 🌙'));
@@ -470,13 +481,21 @@
   const word = (s) => { $('rWord').textContent = s; };
 
   /* ---------- taps ---------- */
-  function animalTap(i, silent) {
-    if (K.paused) return;
-    play(i);
+  /* the visual half of a tap — song mode drives this one on its own */
+  function tapVisual(i) {
     const an = animals[i];
+    if (!an) return;
     an.anim = 1;
     an.glow.material.opacity = 0.85;
     noteFly(i);
+  }
+  function animalTap(i, silent) {
+    if (K.paused) return;
+    // 🎤 song mode gets first refusal: when it takes the tap it plays the note,
+    // the visuals and the flower itself, so free-play bookkeeping stands aside
+    if (!silent && window.RGame && RGame.active && RGame.onTap(i)) return;
+    play(i);
+    tapVisual(i);
     if (!silent) {
       // 🎵 the meadow remembers: keep the child's recent melody as a lullaby
       const now = performance.now();
@@ -507,6 +526,7 @@
   /* ---------- echo game: Nilu conducts with her trunk ---------- */
   function startEcho() {
     if (G.echo || K.replaying) return;
+    if (window.RGame && RGame.active) RGame.stop();   // leave song mode first
     if (G.breathing) stopBreathing();
     const len = Math.min(2 + Math.floor(G.songs / 3), 5);
     const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 4));
@@ -594,13 +614,16 @@
     dimmer.material.opacity = G.night * 0.5;
     hemi.intensity = 0.85 - G.night * 0.5;            // the meadow itself dims…
     sun.intensity = 0.95 - G.night * 0.65;            // …so the night is FELT
-    // gentle camera: settles low over the pond, keeping Nilu + sky in frame
+    // gentle camera: settles low over the pond, keeping Nilu + sky in frame.
+    // 🚶 when the child is walking the meadow, walk.js owns the camera instead.
     const cN = G.night;
-    camera.position.set(
-      Math.sin(camT * 0.12) * 0.8 * (1 - cN),
-      6.1 * (1 - cN) + 3.6 * cN,
-      12.5 * (1 - cN) + 11 * cN);
-    camera.lookAt(0, 1.6 + cN * 0.8, -1 * (1 - cN) + 0.5 * cN);
+    if (!(window.RWalk && RWalk.owns())) {
+      camera.position.set(
+        Math.sin(camT * 0.12) * 0.8 * (1 - cN),
+        6.1 * (1 - cN) + 3.6 * cN,
+        12.5 * (1 - cN) + 11 * cN);
+      camera.lookAt(0, 1.6 + cN * 0.8, -1 * (1 - cN) + 0.5 * cN);
+    }
 
     // Nilu: sways with the music, ears breathe in breathe mode, trunk conducts
     const breathe = G.breathing ? Math.sin((G.breathT / breathPeriod()) * Math.PI) * (G.breathIn ? 1 : -1) : 0;
@@ -661,6 +684,17 @@
       fl.material.opacity = 0.5 + Math.sin(t * 3 + u.a) * 0.3 + G.night * 0.2;
     }
     if (!K.replaying) breathTick(dt);
+    if (!K.replaying && window.RGame) RGame.tick(dt);   // 🎤 falling notes in song mode
+    // 🚶 the child walks, the meadow and the far places live.
+    // The band borrows the camera for a song, an echo or a breath — then hands it back.
+    if (window.RWalk) {
+      const want = (window.RGame && RGame.active) || G.echo || G.breathing || G.lullaby ? 'band' : 'follow';
+      if (RWalk.mode() !== want) RWalk.setMode(want);   // only on the change: setMode refreshes chrome
+      RWalk.tick(dt);
+    }
+    if (window.RWorld) RWorld.tick(dt);
+    if (window.RPlaces) RPlaces.tick(dt);
+    if (window.RQuest) RQuest.tick(dt);
     renderer.render(scene, camera);
   }
 
@@ -733,6 +767,9 @@
   // tap the animals (big invisible targets), or keys 1-4
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
   renderer.domElement.addEventListener('pointerdown', (e) => {
+    // 🚶 walk.js owns pointers once walking is live (it tells a tap from a camera
+    // drag, and taps the animals itself) — two handlers would play every note twice
+    if (window.RWalk && RWalk.owns()) return;
     ptr.x = (e.clientX / innerWidth) * 2 - 1;
     ptr.y = -(e.clientY / innerHeight) * 2 + 1;
     ray.setFromCamera(ptr, camera);
@@ -744,7 +781,46 @@
     if (i >= 0) animalTap(i);
   });
 
-  window.RM = { G, animalTap, startEcho, toggleBreathing, playLullaby, animals: () => animals, flowers: () => flowers };  // debug/test
+  window.RM = { G, animalTap, startEcho, toggleBreathing, playLullaby, scene, camera, animals: () => animals, flowers: () => flowers };  // debug/test
+
+  // every flower earned anywhere in the meadow counts for the same garden
+  const gardenFlower = (i) => {
+    plantFlower(i);
+    G.garden++; K.save('garden', G.garden); chip();
+  };
+
+  // 🎤 song mode (game.js) — animals[] exists by now, so it can find the stage pads
+  if (window.RGame) {
+    RGame.init({
+      THREE, scene, camera, K, animals,
+      playNote: play,
+      tapVisual,
+      plantFlower: gardenFlower,                 // song flowers count for the garden too
+      niluPoint: (i) => { G.point = { at: i, t: 0.5 }; },
+      colors: ['#ffb35c', '#ffd6e0', '#93d97e', '#9fc8ff'],
+    });
+  }
+
+  // 🚶 walk the meadow (walk.js), then fill it with things to find (world.js)
+  // and places to travel to (places.js)
+  if (window.RWalk && RWalk.init({
+    THREE, scene, camera, renderer, K, animals,
+    tapAnimal: (i) => animalTap(i),
+    plantFlower: gardenFlower,
+  })) {
+    const worldHost = { THREE, scene, K, RWalk, playNote: play, plantFlower: gardenFlower };
+    if (window.RWorld) { try { RWorld.build(worldHost); } catch (e) {} }
+    if (window.RPlaces) { try { RPlaces.build(worldHost); } catch (e) {} }
+    // the 🔎 counter adds up on its own: walk.js starts at world.js's 12 and
+    // places.js adds its own 10 when it builds — don't tally them again here
+    // 📖 the adventure on top: five little quests and the discovery journal
+    if (window.RQuest) {
+      try {
+        RQuest.init({ K, RWalk, RWorld: window.RWorld, RPlaces: window.RPlaces,
+                      plantFlower: gardenFlower, playNote: play });
+      } catch (e) {}
+    }
+  }
   frame(0);
 
   K.init({
@@ -752,10 +828,11 @@
     name: "Aaria's Rhythm & Calm",
     emoji: '🎵',
     accent: '#8b5cf6',
-    tagline: "make music with Nilu's meadow band — every note grows a flower!",
-    taglineEs: 'haz música con la banda del prado de Nilu — ¡cada nota hace crecer una flor!',
+    tagline: "play real songs with Nilu's meadow band — every note grows a flower!",
+    taglineEs: 'toca canciones de verdad con la banda del prado de Nilu — ¡cada nota hace crecer una flor!',
     emojis: ['🎵', '🐻', '🐰', '🐸', '🐦'],
     howTo: [
+      ['🎤', 'Songs: pick a real song and tap each animal as its light lands'],
       ['👆', 'Tap the animal musicians — every tap sounds good!'],
       ['🌸', 'Every note plants a flower — watch your meadow bloom'],
       ['🎶', 'Echo: Nilu points her trunk at a little song — tap it back'],
@@ -763,6 +840,7 @@
       ['🫧', 'Breathe: the pond ripples with you and the stars come out'],
     ],
     howToEs: [
+      ['🎤', 'Canciones: elige una canción de verdad y toca a cada animal cuando llegue su lucecita'],
       ['👆', 'Toca los animales músicos — ¡todo suena bonito!'],
       ['🌸', 'Cada nota planta una flor — mira florecer tu prado'],
       ['🎶', 'Eco: Nilu señala una cancioncita con su trompa — repítela'],
@@ -771,11 +849,13 @@
     ],
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
     actions: [
+      { emoji: '🎤', label: 'Songs', labelEs: 'Canciones', title: 'Play a real song with the band!', titleEs: '¡Toca una canción de verdad con la banda!', onTap: () => window.RGame && RGame.openPicker() },
+      { emoji: '📖', label: 'Journal', labelEs: 'Diario', title: 'Everything you have found — and what is still out there', titleEs: 'Todo lo que encontraste — y lo que falta por descubrir', onTap: () => window.RQuest && RQuest.toggleJournal() },
       { emoji: '🎶', label: 'Echo', labelEs: 'Eco', title: 'Nilu taps a little song — tap it back!', titleEs: 'Nilu toca una cancioncita — ¡repítela!', onTap: startEcho },
       { emoji: '🫧', label: 'Breathe', labelEs: 'Respira', title: 'Breathe with the pond', titleEs: 'Respira con el estanque', onTap: toggleBreathing },
       { emoji: '🌙', label: 'My Song', labelEs: 'Mi Canción', title: 'The meadow plays YOUR melody back!', titleEs: '¡El prado toca TU melodía!', onTap: playLullaby },
     ],
-    playerPos: () => ({ x: 0, z: 0, ry: 0 }),
+    playerPos: () => (window.RWalk && RWalk.pose()) || { x: 0, z: 0, ry: 0 },   // My Movie walks too
     replayableState: {
       get: () => ({ songs: G.songs, garden: G.garden, breathing: G.breathing }),
       set: (s) => { G.songs = s.songs; G.garden = s.garden; G.breathing = s.breathing; chip(); },
