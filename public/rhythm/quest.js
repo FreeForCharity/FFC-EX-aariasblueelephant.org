@@ -9,17 +9,18 @@
    out there — the thing a child comes back for.
 
    WHAT THIS FILE OWNS
-     · #rqChip     one objective at a time, in the left rail's fourth slot
+     · #rqChip     one objective at a time, in the left rail's last slot
      · #rqJournal  a full-screen sticker album of everything discoverable
-     · #rqStamp    the "new stamp!" flourish (decorative, never tapped)
+     · #rqStamp    the "new stamp!" flourish (decorative, never tapped — and
+                   held back while walk.js's #rwCard has the screen centre)
      · in-world:   ONE glowing beacon at the current target + 6 trail fireflies
                    (9 objects total; every geometry/material/texture reused)
    Styles live in adventure.css. Screen zones: see that file's zone map — this
    file touches nothing in top-centre, bottom-centre, right edge, bottom-left
    or bottom-right, which belong to siblings. Verified in a real browser at
    360 / 768 / 1440 px wide, in English and in Spanish: no horizontal scroll,
-   the chip sits under #rCount / #rwFind, and every tab, card and Done button
-   clears 56px.
+   the chip sits under #rCount / #rwFind / #rwHome / #kToast, and every tab,
+   card and Done button clears 56px.
 
    NO-FAIL PROMISES (please keep these if you edit)
      · every quest is optional, order-free, and can be ignored forever
@@ -57,11 +58,19 @@
                      the real world (world.js / places.js); the FALLBACK_AT
                      table below is only used if that lookup finds nothing.
         step.r       how close counts as "there" (metres)
-        step.need    'reach' (default) · 'berries' · 'stones' · 'high'
+        step.need    'reach' (default) · 'berries' · 'stones' · 'ramp'
         step.dwell   seconds standing at the target that ALSO complete the
                      step — the promise that nothing can ever get stuck
         step.find    a discovery kind that completes the step wherever the
                      child happens to be standing when layer 2 announces it
+
+        q.stampSoft / q.finishSoft
+                     Told instead of q.stamp / q.finish when the quest was
+                     finished by the dwell kindness clause rather than by
+                     really doing the thing. Same warmth, no untrue claim:
+                     "you found the waterfall" instead of "you played all four
+                     stepping-stones". Optional — leave them out where arriving
+                     IS the whole job.
      ====================================================================== */
 
   var QUESTS = [
@@ -105,8 +114,12 @@
                 es: 'Alguien naranja se esconde en la colina.' },
       stamp:  { en: 'Three berries made a friend. The fox cub plays with the band!',
                 es: 'Tres moritas hicieron un amigo. ¡El zorrito toca con la banda!' },
+      stampSoft: { en: 'You sat with the shy fox cub. Now he plays with the band!',
+                   es: 'Te sentaste con el zorrito tímido. ¡Ahora toca con la banda!' },
       finish: { en: 'The fox cub is not shy any more. He wants to play with you!',
                 es: 'El zorrito ya no es tímido. ¡Quiere tocar contigo!' },
+      finishSoft: { en: 'You waited so gently that the fox cub came out. He wants to play with you!',
+                    es: 'Esperaste con tanta calma que el zorrito salió. ¡Quiere tocar contigo!' },
       reward: 'band',
       steps: [
         { to: 'berry', r: 7, need: 'berries', n: 3, dwell: 9, find: null,
@@ -134,8 +147,12 @@
                 es: 'Hacia el noroeste, cae agua y tararea.' },
       stamp:  { en: 'You played all four stepping-stones. The waterfall sang along!',
                 es: 'Tocaste las cuatro piedras. ¡La cascada cantó contigo!' },
+      stampSoft: { en: 'You found the Waterfall Grotto, all the way out past the trees!',
+                   es: '¡Encontraste la Gruta de la Cascada, allá lejos pasando los árboles!' },
       finish: { en: 'Listen! The whole waterfall is singing your song.',
                 es: '¡Escucha! Toda la cascada está cantando tu canción.' },
+      finishSoft: { en: 'You found the waterfall! Hop on the four flat stones — every one of them sings.',
+                    es: '¡Encontraste la cascada! Salta en las cuatro piedras planas — todas cantan.' },
       reward: 'water',
       steps: [
         { to: 'grotto', r: 7, need: 'stones', n: 4, dwell: 10, find: null,
@@ -183,15 +200,22 @@
                 es: 'El concierto en la casa del árbol' },
       teaser: { en: 'A ramp winds up a very big tree.',
                 es: 'Una rampa sube por un árbol muy grande.' },
-      stamp:  { en: 'You reached the treehouse and the whole meadow played for you!',
-                es: '¡Llegaste a la casa del árbol y todo el prado tocó para ti!' },
-      finish: { en: 'From up here you can see everything. Everybody, play!',
-                es: 'Desde aquí se ve todo. ¡Todos a tocar!' },
+      stamp:  { en: 'You lit every ramp lantern and the whole meadow played for you!',
+                es: '¡Encendiste todos los faroles de la rampa y todo el prado tocó para ti!' },
+      stampSoft: { en: "You found Nilu's treehouse and the whole meadow played for you!",
+                   es: '¡Encontraste la casa del árbol de Nilu y todo el prado tocó para ti!' },
+      finish: { en: 'Every lantern is lit and the big tree is glowing. Everybody, play!',
+                es: 'Todos los faroles encendidos y el árbol grande brillando. ¡Todos a tocar!' },
+      finishSoft: { en: 'You found the big blossom tree! Walk round and round the trunk to light its lanterns.',
+                    es: '¡Encontraste el árbol grande de flores! Da vueltas al tronco para encender sus faroles.' },
       reward: 'chord',
+      /* The gate is the six ramp lanterns, not height: RWalk.pose() is x/z
+         only, so 'high' could never be true and the old find:'treehouse'
+         handed the stamp over the moment the child arrived on the grass. */
       steps: [
-        { to: 'treehouse', r: 7, need: 'high', dwell: 7, find: 'treehouse',
-          chip: { en: 'Walk up the ramp to the treehouse platform',
-                  es: 'Sube por la rampa hasta la casa del árbol' },
+        { to: 'treehouse', r: 7, need: 'ramp', n: 6, dwell: 7,
+          chip: { en: 'Lanterns {have}/{n} · walk round and round up the ramp',
+                  es: 'Faroles {have}/{n} · sube dando vueltas por la rampa' },
           say:  { en: 'There is a big tree to the south-east with a ramp that goes round and round. Go up!',
                   es: 'Hay un árbol grandote al sureste con una rampa que da vueltas y vueltas. ¡Súbete!' } }
       ]
@@ -228,7 +252,10 @@
   var KINDS = [
     [/step|hop.?stone|stone.?\d/i,               'stepstone'],
     [/grot|waterfall|water.?fall|cascad|fall/i,  'grotto'],
-    [/berr|mora|baya|hollow/i,                   'berry'],
+    /* NOT a bare /hollow/: world.js's "The Hollow Log" would swallow it nine
+       rows before the 'log' rule, and every berry objective in the meadow
+       would point at a log in the middle of the grass. */
+    [/berr|mora|baya|berry.?hollow/i,            'berry'],
     [/star|estrell|clearing|claro/i,             'star'],
     [/tree.?house|platform|casa.?arbol|arbol/i,  'treehouse'],
     [/sign|post|letrero|arrow/i,                 'signpost'],
@@ -478,6 +505,7 @@
   var CARDS = [];              // every journal card, meadow + far + quests
   var FOUND = {};              // ids this file has seen discovered
   var DONE  = {};              // finished quest ids
+  var SOFT  = {};              // quest ids finished by the dwell kindness clause
   var STAGE = {};              // quest id -> which step we are on
   var DWELL = {};              // quest id -> seconds spent at the current target
   var activeId = null;         // the one quest showing on the chip
@@ -495,7 +523,7 @@
   var elJour = null, elBook = null, elTitle = null, elSub = null, elCount = null,
       elRing = null, elRingTxt = null, elTabs = null, elGrid = null, elClose = null;
   var elStamp = null, stEmoji = null, stName = null, stLine = null;
-  var lastChipKey = '';
+  var lastChipKey = '', pendingStamp = null;
 
   /* three.js — all optional */
   var TH = null, SC = null, beacon = null, bGlow = null, bBeam = null, bEmoji = null;
@@ -561,6 +589,10 @@
     };
     if (typeof e.x === 'number' && typeof e.z === 'number') { c.x = e.x; c.z = e.z; }
     if (typeof e.r === 'number') c.r = e.r;
+    /* an EARNED card (places.js's "you played all four stones") carries the
+       coordinates of the place it belongs to, purely so the fireflies know
+       which way to point. Standing there must never award it — see safetyNet. */
+    if (e.earned === true) c.earned = true;
     if (e.found === true) FOUND[id] = 1;      /* the sibling already knows */
     return c;
   }
@@ -613,7 +645,8 @@
       var q = QUESTS[i];
       quests.push({
         id: 'q:' + q.id, quest: q.id, zone: 'quest', kind: 'quest', emoji: q.emoji,
-        name: q.title, hint: q.teaser, line: q.stamp, real: true
+        name: q.title, hint: q.teaser,
+        line: (SOFT[q.id] && q.stampSoft) || q.stamp, real: true
       });
     }
 
@@ -908,6 +941,7 @@
       txt = T(st.chip);
       if (st.need === 'berries') txt = fmt(txt, Math.min(berryCount(), st.n || 3), st.n || 3);
       if (st.need === 'stones')  txt = fmt(txt, Math.min(stoneCount(), st.n || 4), st.n || 4);
+      if (st.need === 'ramp')    txt = fmt(txt, Math.min(rampCount(), st.n || 6), st.n || 6);
       var pip = proximityWord();
       if (pip) txt += ' · ' + pip;
       chipX.style.display = '';
@@ -1009,6 +1043,21 @@
     for (i = 0; i < CARDS.length; i++) if (CARDS[i].kind === 'stepstone' && isFound(CARDS[i])) n++;
     return Math.max(n, stonesSeen);
   }
+  /* how many of the treehouse ramp's lanterns are alight — the only honest
+     measure of "went up", because RWalk.pose() has no y to test */
+  function rampCount() {
+    var P = host && host.RPlaces ? host.RPlaces : window.RPlaces, v;
+    try {
+      if (P) {
+        v = P.rampLit;
+        if (typeof v === 'function') v = v.call(P);
+        if (typeof v === 'number' && isFinite(v)) return v;
+      }
+    } catch (e) {}
+    var a = load('places.ramp', null), n = 0;
+    if (a && a.length) for (var i = 0; i < a.length; i++) if (a[i]) n++;
+    return n;
+  }
   /* a discovery of the right kind quietly finishes a waiting step */
   function creditFind(kind) {
     for (var i = 0; i < QUESTS.length; i++) {
@@ -1036,14 +1085,26 @@
       var ok = false;
       if (st.need === 'berries')      ok = berryCount() >= (st.n || 3);
       else if (st.need === 'stones')  ok = stoneCount() >= (st.n || 4);
-      else if (st.need === 'high')    ok = near && (typeof p.y === 'number' ? p.y > 2 : false);
+      else if (st.need === 'ramp')    ok = rampCount() >= (st.n || 6);
       else                            ok = near;                      /* plain 'reach' */
 
-      /* the kindness clause: standing there long enough is always enough */
-      if (!ok && near && st.dwell && DWELL[key] >= st.dwell) ok = true;
+      /* the kindness clause: standing there long enough is always enough.
+         It is remembered, so the ending says "you found it" rather than
+         claiming the child did something they did not do. */
+      if (!ok && near && st.dwell && DWELL[key] >= st.dwell) { ok = true; markSoft(q); }
 
       if (ok) advance(q);
     }
+  }
+
+  function markSoft(q) {
+    if (SOFT[q.id]) return;
+    SOFT[q.id] = 1;
+    save('quest.soft', SOFT);
+  }
+  /* the warm line to tell: the honest one when the dwell clause did the work */
+  function ending(q, which) {
+    return T((SOFT[q.id] && q[which + 'Soft']) || q[which]);
   }
 
   function advance(q) {
@@ -1104,8 +1165,8 @@
     try { K.streakBump && K.streakBump(); } catch (e) {}
     try { K.recordEvent && K.recordEvent('quest', q.id); } catch (e) {}
     playReward(q.reward);
-    showStamp(q.emoji, T(q.title), T(q.stamp));
-    say(T(q.finish));
+    showStamp(q.emoji, T(q.title), ending(q, 'stamp'));
+    say(ending(q, 'finish'));
 
     if (activeId === q.id) { activeId = null; hideBeacon(); trailT = 0; }
     save('quest.active', activeId || '');
@@ -1147,7 +1208,19 @@
     elStamp.appendChild(stLine);
     document.body.appendChild(elStamp);
   }
+  /* Layer 2's "you found something!" card owns dead centre (#rwCard, z 88,
+     top 42%) and our flourish sits in exactly the same spot at exactly the
+     same z. Both are fired by the same discovery on the treehouse and the fox,
+     so the stamp would land on the card's 💙 button. The card is the one with
+     a button in it, so the card wins and the stamp waits its turn. */
+  function cardUp() {
+    try {
+      var c = document.getElementById('rwCard');
+      return !!(c && c.classList.contains('show'));
+    } catch (e) { return false; }
+  }
   function showStamp(emoji, name, line) {
+    if (cardUp()) { pendingStamp = [emoji, name, line]; return; }
     buildStamp();
     if (!elStamp) return;
     stEmoji.textContent = emoji || '⭐';
@@ -1239,6 +1312,7 @@
       var s = T(st.chip);
       if (st.need === 'berries') s = fmt(s, Math.min(berryCount(), st.n || 3), st.n || 3);
       if (st.need === 'stones')  s = fmt(s, Math.min(stoneCount(), st.n || 4), st.n || 4);
+      if (st.need === 'ramp')    s = fmt(s, Math.min(rampCount(), st.n || 6), st.n || 6);
       return s;
     }
     return T(UI.notYet);
@@ -1340,6 +1414,7 @@
     if (chipDot) chipDot.style.display = 'none';
     /* a stamp in mid-flourish sits above the book — let the book have the screen */
     if (elStamp && stampTimer > 0) { elStamp.classList.remove('show'); stampTimer = 0; }
+    pendingStamp = null;            /* the new sticker is right there in the album */
     renderGrid();
     elJour.classList.add('show');
     try { if (elClose && elClose.focus) elClose.focus({ preventScroll: true }); } catch (e) {}
@@ -1468,6 +1543,11 @@
       stampTimer -= dt;
       if (stampTimer <= 0 && elStamp) elStamp.classList.remove('show');
     }
+    if (pendingStamp && !cardUp()) {           /* the centre is free again */
+      var ps = pendingStamp;
+      pendingStamp = null;
+      showStamp(ps[0], ps[1], ps[2]);
+    }
     if (chipPulseT > 0) {
       chipPulseT -= dt;
       if (chipPulseT <= 0 && elChip) elChip.classList.remove('pulse');
@@ -1509,14 +1589,22 @@
   }
 
   /* A very quiet backstop: if the child has been standing right on top of an
-     undiscovered thing for a second and a half and nobody has announced it,
+     undiscovered PLACE for a second and a half and nobody has announced it,
      we announce it ourselves. Layer 2 always wins the race in practice — this
-     only ever catches a gap, so nothing in the journal can be unreachable. */
+     only ever catches a gap, so nothing in the journal can be unreachable.
+
+     Earned cards are exempt. Their x/z is the place they belong to, not a
+     trigger: awarding "the waterfall sang" from the coordinates alone would
+     mark it found before the child ever touched a stone, and the real
+     celebration — the flowers, the spoken line, the card — would then be
+     skipped forever, because places.js reads its own achievement back as
+     already-found. */
   function safetyNet(dt, p) {
     var best = null, bd = 2.2;
     for (var i = 0; i < CARDS.length; i++) {
       var c = CARDS[i];
-      if (c.zone === 'quest' || !c.real || typeof c.x !== 'number' || isFound(c)) continue;
+      if (c.zone === 'quest' || !c.real || c.earned ||
+          typeof c.x !== 'number' || isFound(c)) continue;
       var d = Math.hypot(p.x - c.x, p.z - c.z);
       if (d < bd) { bd = d; best = c; }
     }
@@ -1546,6 +1634,8 @@
     if (f && f.length) for (var i = 0; i < f.length; i++) FOUND[String(f[i])] = 1;
     var d = load('quest.done', {});
     if (d && typeof d === 'object') for (var k in d) if (d.hasOwnProperty(k)) DONE[k] = 1;
+    var so = load('quest.soft', {});
+    if (so && typeof so === 'object') for (var k3 in so) if (so.hasOwnProperty(k3)) SOFT[k3] = 1;
     var s = load('quest.stage', {});
     if (s && typeof s === 'object') for (var k2 in s) if (s.hasOwnProperty(k2)) STAGE[k2] = s[k2] | 0;
     autoPick = load('quest.auto', 1) ? true : false;
@@ -1595,9 +1685,10 @@
 
   /* grown-up / test helper — start the whole adventure again */
   function forget() {
-    FOUND = {}; DONE = {}; STAGE = {}; DWELL = {};
+    FOUND = {}; DONE = {}; SOFT = {}; STAGE = {}; DWELL = {};
     learned = 0; berriesSeen = 0; stonesSeen = 0; guides = 0;
     save('quest.found', []); save('quest.done', {}); save('quest.stage', {});
+    save('quest.soft', {});
     save('quest.berries', 0); save('quest.active', '');
     autoPick = true; save('quest.auto', 1);
     activeId = firstOpenQuest();

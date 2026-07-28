@@ -46,7 +46,9 @@
 
   /* ============================================================== constants */
   const WALK_SPEED = 4.2;            // units / second at normal speed
-  const BOUND = 34;                  // soft world radius — eased, never a wall
+  let BOUND = 34;                    // soft world radius — eased, never a wall.
+                                     // places.js widens it via setBound() so the
+                                     // far places are actually walkable.
   const BAND = { x: 0, z: -1.0 };    // middle of the four musicians
   const HOME = { x: -3.4, z: 1.2 };  // the "come back to Nilu" landing spot
   const HOME_DIST = 16;              // show the ⬅️ Nilu chip past this
@@ -873,6 +875,9 @@
     hasFound(id) { return !!(foundSet && foundSet.has(id)); },
     foundCount() { return foundSet ? foundSet.size : 0; },
     setTotal(n) { n = parseInt(n, 10); if (n > 0) { total = n; refreshFind(); } },
+    /* the world grows when places.js adds somewhere new to walk to */
+    setBound(n) { n = +n; if (n >= 20 && n <= 120) { BOUND = n; return true; } return false; },
+    bound() { return BOUND; },
     total() { return total; },
 
     hint,
