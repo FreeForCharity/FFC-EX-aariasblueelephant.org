@@ -10,29 +10,50 @@
    ---------------------------------------------------------------------------
    SCREEN ZONES USED BY THIS SHEET  (verified at 360 / 768 / 1440 px wide)
    ---------------------------------------------------------------------------
-     LEFT COLUMN, THIRD SLOT  →  #rqChip
-        top: safe-top + 176px · left: safe-left · z-index 44 · max-width min(72vw, 340px)
-        The left rail stacks, top to bottom:
+     LEFT COLUMN, LAST SLOT   →  #rqChip
+        top: safe-top + 236px · left: safe-left · z-index 44 · max-width min(72vw, 340px)
+        The left rail stacks, top to bottom — measured in the real stylesheets,
+        not from anybody's comment:
             #kExit      safe-top +  0 … + 52   (kit.css)
             #rCount     safe-top + 64 … +104   (play.css)
-            #rwFind     safe-top +112 … +152   (walk.js — layer 2)
-            #rqChip     safe-top +176 … +230   (this sheet)
-        It also clears #kToast (index.html parks it at safe-top + 118px, ~48px
-        tall) by 10px, and it fades away completely while a song is playing
-        (body:has(#rgHud.show)) so song mode stays uncluttered. Where :has() is
-        supported and #rwFind is absent, the chip slides up into the +112 slot.
+            #rwFind     safe-top +112 … +152   (walk.css §2 — layer 2)
+            #rwHome     safe-top +166 … +218   (walk.css §3 — layer 2, z 46,
+                                                shown whenever the child is
+                                                more than 16m from the band,
+                                                i.e. all through an adventure)
+            #kToast     safe-top +178 … ~226   (index.html:48 re-parks the kit
+                                                toast here; z 80, centred but
+                                                88vw wide, so on a phone it
+                                                covers this rail too)
+            #rqChip     safe-top +236 … +290   (this sheet — clears #rwHome by
+                                                18px; grows downward to ~+306
+                                                when a long objective wraps to
+                                                three lines, into empty rail)
+        The chip fades away completely while a song is playing
+        (body:has(#rgHud.show)) and while a toast is actually saying something
+        (body:has(#kToast.show)) — one voice at a time. Where :has() is
+        supported and #rwFind is absent, walk.css is absent too — no #rwHome
+        either — so the chip slides up into the +112 slot.
+
+        LANDSCAPE (≤560px tall) the rail runs out of rows entirely — #kStick
+        starts at y 236 — so the chip moves into a second COLUMN beside
+        #rwHome instead. See §5.
 
      FULL-SCREEN MODAL         →  #rqJournal   z-index 82
         Above #rgPick(78) · #rgResult(79) · #kToast(80).
         Below #kPanel(90) · #kReplayBar(95) · #kPause(96) · #kTitle(100).
 
      SCREEN CENTRE, TRANSIENT  →  #rqStamp     z-index 88, pointer-events:none
-        A ~1.6s flourish, then gone. Nothing is ever tapped here.
+        A ~1.9s flourish, then gone. Nothing is ever tapped here. This is a
+        SHARED zone: walk.css §5 parks #rwCard at the same top: 42% and the
+        same z 88, and the same discovery can fire both. The card has a button
+        in it, so the card wins — quest.js holds the stamp back until #rwCard
+        has dropped its .show rather than this sheet trying to dodge it.
 
    NOT TOUCHED (owned by siblings):
      top-centre #rgHud · bottom-centre #rWord + #rTempo · top-left #rCount /
-     #rwFind · top-right #kHud · right edge #rwZoom · bottom-left #kStick ·
-     bottom-right #kActs.
+     #rwFind / #rwHome · top-right #kHud · right edge #rwZoom · bottom-left
+     #kStick · bottom-right #kActs · dead centre #rwCard (walk.css "Zone E").
 
    ACCESSIBILITY PROMISES
      · every tappable thing is >= 56px (the chip's ✕ uses an invisible 56px
@@ -86,8 +107,13 @@
   --rq-shadow:    var(--rg-shadow,    0 10px 30px rgba(58, 40, 110, .26));
   --rq-shadow-sm: var(--rg-shadow-sm, 0 4px 14px rgba(58, 40, 110, .18));
 
-  /* where the objective chip sits in the left rail (see the zone map above) */
-  --rq-chip-top: 176px;
+  /* Where the objective chip sits in the left rail (see the zone map above).
+     236 = below walk.css's #rwHome (ends +218) and below index.html's
+     re-parked #kToast (starts +178, ~48px tall). Both of those are owned by
+     other sheets: if either moves, this number moves with it. */
+  /* clears a two-line #kToast: index.html pins the toast at safe-top+178px
+     and a wrapped toast runs ~72px tall, so the chip starts below 250. */
+  --rq-chip-top: 268px;
 }
 
 
@@ -212,12 +238,22 @@
 
 /* progressive polish: only where :has() exists */
 @supports selector(:has(*)) {
-  /* no layer-2 find chip on screen? take its slot instead of leaving a hole */
+  /* no layer-2 find chip on screen? then no #rwHome either — take the free
+     slot instead of leaving a 120px hole */
   body:not(:has(#rwFind)) #rqChip { top: calc(var(--rq-top) + 112px); }
   /* song mode owns the screen — the objective waits quietly */
   body:has(#rgHud.show) #rqChip {
     opacity: 0;
     transform: translateY(-8px) scale(.94);
+    pointer-events: none;
+  }
+  /* …and so does an actual toast. #kToast is centred but 88vw wide and z 80,
+     so on a phone it lies right across this rail, and a two-line one reaches
+     down past the chip. One voice at a time: the passive objective steps back
+     while something is actually being said, and comes straight back after. */
+  body:has(#kToast.show) #rqChip {
+    opacity: 0;
+    transform: translateY(-6px) scale(.96);
     pointer-events: none;
   }
 }
@@ -709,13 +745,31 @@ button.rqCard.found:active,
   .rqGrid { grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); }
 }
 
-/* short / landscape phones: everything pulls in so the meadow stays visible */
+/* short / landscape phones: everything pulls in so the meadow stays visible.
+   The rail runs OUT of rows here — measured at 740x360 it is #rwFind 114…153,
+   #rwHome 161…211, then #kStick from 236 — so there is no fourth row to have.
+   The chip takes the second COLUMN instead: same row as #rwHome (which is
+   never wider than ~100px: one nowrap "⬅️ Nilu"), 118px to its right, and
+   clear of the joystick's right edge too. No :has(), so no jumping about as
+   #rwHome comes and goes. Measured clean at 740x360, 640x360 and 568x320 in
+   both languages: no overlap with #kExit, #rCount, #rwFind, #rwHome or
+   #kStick, and no horizontal overflow. */
 @media (max-height: 560px) {
-  :root { --rq-chip-top: 122px; }
-  #rqChip { min-height: 46px; padding: 6px 6px 6px 11px; font-size: 13px; }
+  :root { --rq-chip-top: 152px; }
+  #rqChip {
+    /* 118px also clears the joystick's right edge (#kStick is 108px wide at
+       left 16 here), which matters on the shortest phones where the chip's
+       row and the joystick's row are the same row */
+    left: calc(var(--rq-left) + 118px);
+    max-width: min(56vw, 300px);
+    min-height: 46px;
+    padding: 6px 6px 6px 11px;
+    font-size: 13px;
+  }
   #rqChip .rqChipX { width: 38px; height: 38px; }
   @supports selector(:has(*)) {
-    body:not(:has(#rwFind)) #rqChip { top: calc(var(--rq-top) + 74px); }
+    /* no walk.css: no #rwFind and no #rwHome, so take the whole rail back */
+    body:not(:has(#rwFind)) #rqChip { top: calc(var(--rq-top) + 74px); left: var(--rq-left); }
   }
   .rqBook { padding: 11px 12px 11px; border-radius: 22px; }
   .rqBookHead { padding-bottom: 8px; margin-bottom: 8px; }

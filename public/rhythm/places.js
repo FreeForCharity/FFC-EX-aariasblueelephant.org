@@ -23,6 +23,12 @@
    meadow (0..34) belongs to another layer and is never touched. Path spokes
    begin at r=27 inside the tree ring (26..38), which is the agreed soft edge.
 
+   REACHING IT: layer 2 (walk.js) gathers the child back inside r=34 and has no
+   setBound(), so on its own not one of these places could ever be walked to.
+   roam() below widens that edge to cover this ring — see §4b. Because it works
+   through RWalk.pos, index.html must keep ticking RPlaces straight after RWalk
+   (it does).
+
    NO-FAIL: nothing here can be failed, missed forever, or softlocked. Berries
    regrow, stones can be replayed, every path is lit in both directions.
 
@@ -95,31 +101,35 @@
               es: 'Camina hasta el borde del prado y mira a dónde van los caminos.' },
       card: { en: 'Four wooden arms, pointing at four adventures.',
               es: 'Cuatro brazos de madera que señalan cuatro aventuras.' } },
-    { id: 'grotto.song', emoji: '🎼',
+    { id: 'grotto.song', emoji: '🎼', earned: true,
       name: { en: 'The Waterfall Song', es: 'La Canción de la Cascada' },
       hint: { en: 'Four stones in the water. Step on every one.',
               es: 'Cuatro piedras en el agua. Písalas todas.' },
       card: { en: 'You played all four stepping-stones and the waterfall sang.',
               es: 'Tocaste las cuatro piedras y la cascada cantó.' } },
-    { id: 'berry.basket', emoji: '🧺',
+    { id: 'berry.basket', emoji: '🧺', earned: true,
       name: { en: 'A Basket of Berries', es: 'Una Cesta de Bayas' },
       hint: { en: 'Pick five berries in one little walk.',
               es: 'Recoge cinco bayas en un mismo paseo.' },
       card: { en: 'Five berries at once! Somebody shy might like those.',
               es: '¡Cinco bayas a la vez! A alguien tímido le pueden gustar.' } },
-    { id: 'star.wish', emoji: '🌠',
+    { id: 'star.wish', emoji: '🌠', earned: true,
       name: { en: 'A Wishing Star', es: 'Una Estrella de los Deseos' },
-      hint: { en: 'Stand still in the big dark bowl while the night is out.',
-              es: 'Quédate quieto en el cuenco oscuro cuando salga la noche.' },
+      hint: { en: 'Stand very still in the middle of the big dark bowl.',
+              es: 'Quédate muy quieto en el medio del cuenco oscuro.' },
       card: { en: 'A star slid right across the sky, just for you.',
               es: 'Una estrella cruzó el cielo entero, solo para ti.' } },
-    { id: 'treehouse.top', emoji: '🔭',
-      name: { en: 'Top of the Treehouse', es: 'La Cima de la Casa del Árbol' },
+    /* This one is earned by walking the spiral ramp's six lanterns alight. The
+       walker has no y-axis (RWalk.pose() is x/z only), so the copy talks about
+       what really happens — the tree lighting up — and never claims a view from
+       a platform the child has not actually stood on. */
+    { id: 'treehouse.top', emoji: '🏮', earned: true,
+      name: { en: 'The Lantern Climb', es: 'La Subida de los Faroles' },
       hint: { en: 'Circle the big tree until every ramp lantern is lit.',
               es: 'Rodea el árbol grande hasta encender todos los faroles de la rampa.' },
-      card: { en: 'From up here you can see every lantern path in the world.',
-              es: 'Desde aquí arriba se ven todos los caminos de faroles del mundo.' } },
-    { id: 'lanternloop', emoji: '🗺️',
+      card: { en: 'You lit every lantern on the spiral ramp. The whole tree glows!',
+              es: 'Encendiste todos los faroles de la rampa. ¡El árbol entero brilla!' } },
+    { id: 'lanternloop', emoji: '🗺️', earned: true,
       name: { en: 'The Lantern Loop', es: 'La Vuelta de los Faroles' },
       hint: { en: 'Visit all four faraway places.',
               es: 'Visita los cuatro lugares lejanos.' },
@@ -130,7 +140,8 @@
   const SIGN = { x: 0, z: -35 };          // meadow edge, dead ahead of the band
   const SPOKE_R = 27;                     // where a spoke leaves the tree ring
   const DOOR_IN = 9;                      // front door = place radius minus this
-  const BERRY_CAP = 12;                   // carrying more than this isn't legible
+  const BERRY_CAP = 12;                   // the basket stops LOOKING fuller past this
+  const MEADOW_BOUND = 34;                // layer 2's own soft edge (walk.js BOUND)
 
   /* ======================================================================
      2. tiny safe wrappers — the meadow must never break because of us
@@ -172,6 +183,8 @@
     stones: [0, 0, 0, 0], stonesLit: 0,
     ramp: [0, 0, 0, 0, 0, 0], rampLit: 0,
     inPlace: '', atStarMid: false, dwell: 0,
+    roamR: MEADOW_BOUND,                 // how far out the child may walk (set in build)
+    localNight: 0, starToastT: 0,        // the Star Clearing's own private dusk
     topDone: false, topCool: 0, totalDone: false,
     lanternBoost: 0, lanternTarget: 0,
     wishT: -1,
@@ -301,6 +314,52 @@
     return out;
   }
   const _w = { x: 0, z: 0 };
+
+  /* ======================================================================
+     4b. THE WALKABLE WORLD — how the child is allowed out here at all
+
+     walk.js gathers the child back inside r = MEADOW_BOUND every frame:
+
+         if (r > BOUND) { pull = (r - BOUND) * lerpK(dt, 3.5); ... }
+
+     which settles a walker at r ≈ 35.2 — short of even the nearest of our
+     front doors. It is exactly the right edge for the meadow, and layer 2
+     offers no way to move it, so we widen it from our side instead. index.html
+     ticks RPlaces immediately after RWalk, so every frame we undo the gather
+     it just applied (the maths is invertible and exact) and re-apply the very
+     same easing at OUR edge. Same soft feel, same "no wall, no message"
+     promise — just a world big enough to hold the places in it.
+
+     S.roamR is derived from the PLACES table in build(), so moving a place
+     moves the edge with it and no number here can drift out of date.
+     ====================================================================== */
+
+  function roam(raw) {
+    if (S.boundOwned) return;              // walk.js is easing at our edge itself
+    const w = walk();
+    const p = w && w.pos;
+    if (!p || typeof p.x !== 'number' || typeof p.z !== 'number') return;
+    let rep = false;
+    try { rep = !!K.replaying; } catch (e) {}
+    if (rep) return;                       // My Movie drives the child; hands off
+    const d = Math.max(0, Math.min(0.05, +raw || 0));   // walk.js clamps dt the same way
+    const k = 1 - Math.exp(-3.5 * d);
+    if (!(k > 0) || k >= 1) return;
+    let r = Math.hypot(p.x, p.z);
+    if (r > MEADOW_BOUND) {
+      /* invert  r' = r(1 - k) + BOUND·k  to recover the step actually walked.
+         Capped a little past our own edge so that if layer 2 ever stops
+         applying the gather, giving back a gather that never happened can
+         never send a child sailing off across the ground plane. */
+      const back = Math.min((r - MEADOW_BOUND * k) / (1 - k), S.roamR + 6);
+      if (back > r) { p.x *= back / r; p.z *= back / r; r = back; }
+    }
+    if (r > S.roamR) {                     // our own soft edge, eased identically
+      const pull = (r - S.roamR) * k;
+      p.x -= (p.x / r) * pull;
+      p.z -= (p.z / r) * pull;
+    }
+  }
 
   /* ======================================================================
      5. paths: gentle bezier curves, resampled into stones + lanterns
@@ -765,10 +824,6 @@
   function pickBerry(b) {
     const bush = P.bushes && P.bushes[b];
     if (!bush) return;
-    if (S.berries >= BERRY_CAP) {
-      toast(tr('🫐 Your hands are full of berries!', '🫐 ¡Tienes las manos llenas de bayas!'), 2200);
-      return;
-    }
     if (bush.left <= 0) {
       toast(tr('🌱 This bush is growing more…', '🌱 A este arbusto le están creciendo más…'), 2000);
       return;
@@ -779,7 +834,9 @@
     bush.regrow = 7;
     bush.pop = 1;
     hideInst(P.berryMesh, idx);
-    S.berries++;
+    /* the cap is COSMETIC — past a basketful the pile simply stops looking
+       fuller. Picking a berry always works; this game never says no. */
+    S.berries = Math.min(BERRY_CAP, S.berries + 1);
     save('places.berries', S.berries);
     sfxTap();
     emit('berry', S.berries);
@@ -912,11 +969,15 @@
     toWorld(grp, 0, 0, _w);
     addSpot('rp.starmid', _w.x, _w.z, 4.0, false, function () {
       S.dwell = 0; S.atStarMid = true;
-      if (nightness() > 0.3) {
+      /* one invitation per visit — the 4m spot re-fires whenever a child
+         mills about in the middle, and a repeating line is a nag */
+      if (S.starToastT > 0) return;
+      S.starToastT = 20;
+      if (Math.max(nightness(), S.localNight) > 0.3) {
         toast(tr('✨ Look up… stay still a moment.', '✨ Mira hacia arriba… no te muevas ni un poquito.'), 3200);
       } else {
-        toast(tr('☀️ Come back when the sky goes dark — try the 🫧 Breathe button!',
-                 '☀️ Vuelve cuando el cielo se oscurezca — ¡prueba el botón 🫧 Respira!'), 4200);
+        toast(tr('✨ Stand very still right here and the sky will go dark.',
+                 '✨ Quédate muy quieto aquí y el cielo se pondrá oscuro.'), 3600);
       }
     }, function () { S.atStarMid = false; S.dwell = 0; });
 
@@ -1077,18 +1138,19 @@
     /* at the top. First time is a fanfare; later visits stay warm but quiet. */
     if (!S.topDone) {
       S.topDone = true; S.topCool = 25;
-      discover('treehouse.top', 'Top of the Treehouse', 'La Cima de la Casa del Árbol');
+      discover('treehouse.top', 'The Lantern Climb', 'La Subida de los Faroles');
       S.lanternTarget = 1;
       sfxStar(); bump(); rec('place', 8);
       for (let f = 0; f < 4; f++) plantFlower(f);
-      say(tr('You made it to the top! Look — every lantern path in the whole world is glowing.',
-             '¡Llegaste hasta arriba! Mira — todos los caminos de faroles del mundo están brillando.'));
-      celebrate('🔭 The view from the top!', '🔭 ¡La vista desde arriba!', 4000);
+      say(tr('Every lantern on the ramp is lit! Look — the whole tree is glowing, and so is every path in the world.',
+             '¡Todos los faroles de la rampa están encendidos! Mira — el árbol entero brilla, y también todos los caminos del mundo.'));
+      celebrate('🏮 The whole ramp is glowing!', '🏮 ¡La rampa entera está brillando!', 4000);
     } else if (S.topCool <= 0) {
       S.topCool = 25;
       S.lanternTarget = 1;
       sfxStar();
-      toast(tr('🔭 Up top again — what a view!', '🔭 ¡Otra vez arriba — qué vista!'), 3000);
+      toast(tr('🏮 Every lantern lit again — look at it glow!',
+               '🏮 ¡Otra vez todos los faroles encendidos — mira cómo brilla!'), 3000);
     }
   }
 
@@ -1253,6 +1315,21 @@
     S.topDone = !!S.found['treehouse.top'];
     if (S.found['treehouse.top'] || S.found['lanternloop']) S.lanternTarget = 1;
 
+    /* how far out the child may walk: far enough to stand inside every place
+       we are about to build (see §4b). Derived, never assumed. */
+    let far = MEADOW_BOUND;
+    for (let i = 0; i < PLACES.length; i++) {
+      far = Math.max(far, Math.hypot(PLACES[i].x, PLACES[i].z) + PLACES[i].radius);
+    }
+    S.roamR = far;
+    /* Preferred route: just tell walk.js the world is bigger now, and let its
+       own easing do the work at the new edge. roam() below is the fallback for
+       a walk.js without setBound() — keep both, they are mutually exclusive. */
+    try {
+      const w0 = walk();
+      S.boundOwned = !!(w0 && w0.setBound && w0.setBound(far));
+    } catch (e) { S.boundOwned = false; }
+
     const root = new THREE.Group();
     root.name = 'RPlaces';
     S.root = root;
@@ -1289,6 +1366,9 @@
 
   function tick(dt) {
     if (!S.built) return;
+    /* before anything else, and even while paused: layer 2 gathers the child
+       inward every single frame, so our edge has to answer every single frame */
+    roam(dt);
     if (!(dt > 0)) dt = 0;
     if (dt > 0.1) dt = 0.1;
     try { if (K.paused) return; } catch (e) {}
@@ -1428,17 +1508,26 @@
       P.berryFlies.geometry.attributes.position.needsUpdate = true;
     }
 
-    /* --- ✨ star clearing --- */
+    /* --- ✨ star clearing ---
+       The clearing brews its OWN night: stand still in the middle and the bowl
+       darkens by itself. It used to need the 🫧 Breathe button, which is the
+       one thing that hands the camera to the band — so the payoff played
+       fifty-odd metres behind the child's back. Now standing here is enough,
+       the follow camera stays put, and the wish crosses the sky overhead. */
+    if (S.starToastT > 0) S.starToastT -= dt;
+    const wantLocal = (S.atStarMid && !songPlaying()) ? 1 : 0;
+    S.localNight += (wantLocal - S.localNight) * Math.min(1, dt * (wantLocal ? 0.5 : 1.1));
+    const sky = Math.max(night, S.localNight);
     const sd0 = PLACES[2];
     const sdx = S.px - sd0.x, sdz = S.pz - sd0.z;
     const sNear = Math.max(0, 1 - Math.sqrt(sdx * sdx + sdz * sdz) / 34);
-    if (P.starSky) P.starSky.material.opacity = Math.min(1, (0.18 + night * 0.9) * sNear * 1.2);
-    if (P.starMid) P.starMid.material.opacity = 0.2 + night * 0.35 + sNear * 0.15;
-    if (P.starRing) P.starRing.material.opacity = 0.3 + Math.sin(t * 0.8) * (rm ? 0 : 0.12) + night * 0.25;
-    const conO = Math.max(0, (night - 0.3) / 0.7) * sNear;
+    if (P.starSky) P.starSky.material.opacity = Math.min(1, (0.18 + sky * 0.9) * sNear * 1.2);
+    if (P.starMid) P.starMid.material.opacity = 0.2 + sky * 0.35 + sNear * 0.15;
+    if (P.starRing) P.starRing.material.opacity = 0.3 + Math.sin(t * 0.8) * (rm ? 0 : 0.12) + sky * 0.25;
+    const conO = Math.max(0, (sky - 0.3) / 0.7) * sNear;
     if (P.conPts) P.conPts.material.opacity = conO;
     if (P.conLines) P.conLines.material.opacity = conO * 0.55;
-    if (S.atStarMid && night > 0.3 && !songPlaying()) {
+    if (S.atStarMid && sky > 0.3 && !songPlaying()) {
       S.dwell += dt;
       if (S.dwell > 4.5) { S.dwell = -18; grantWish(); }
     }
@@ -1524,6 +1613,10 @@
         name: { en: m.name.en, es: m.name.es },
         hint: { en: m.hint.en, es: m.hint.es },
         card: { en: m.card.en, es: m.card.es },
+        /* x/z here says "this belongs to that place", NOT "stand here and it is
+           yours". An earned moment is only ever awarded by doing the thing, so
+           a reader must never treat these coordinates as a proximity trigger. */
+        earned: !!m.earned,
         found: !!S.found[m.id], group: 'places',
       });
     }
