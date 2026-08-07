@@ -163,6 +163,46 @@
     return s;
   }
 
+  /* An answer drawn INSIDE its own disc: the picture on top, a short phrase
+     under it. The old version hung a separate caption card below the bubble,
+     which overlapped its neighbours, got clipped, and turned three simple
+     choices into a wall of text. One object, one glance. */
+  function discAnswer(emoji, text) {
+    const S_ = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = S_;
+    const g = c.getContext('2d');
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '78px "Apple Color Emoji","Segoe UI Emoji",serif';
+    g.fillText(emoji, S_ / 2, S_ * 0.32);
+
+    g.fillStyle = '#1f3350';
+    const wrap = (fs) => {
+      g.font = 'bold ' + fs + 'px "Comic Sans MS","Chalkboard SE",sans-serif';
+      const words = String(text).split(/\s+/);
+      const out = []; let line = '';
+      for (const w of words) {
+        const t2 = line ? line + ' ' + w : w;
+        if (g.measureText(t2).width > S_ * 0.74 && line) { out.push(line); line = w; }
+        else line = t2;
+      }
+      if (line) out.push(line);
+      return out;
+    };
+    let size = 30, lines = wrap(size);
+    while (lines.length > 3 && size > 18) { size -= 2; lines = wrap(size); }
+    const lh = size * 1.2;
+    const y0 = S_ * 0.66 - ((lines.length - 1) * lh) / 2;
+    lines.forEach((ln, i) => g.fillText(ln, S_ / 2, y0 + i * lh));
+
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(c), transparent: true,
+      depthWrite: false, depthTest: false, fog: false }));
+    sp.scale.set(2.45, 2.45, 1);
+    sp.renderOrder = 910;
+    return sp;
+  }
+
   /* the real gear, shrunk to fit inside an answer bubble */
   function miniModel(id) {
     const g = new THREE.Group();
@@ -407,17 +447,16 @@
 
     opts.forEach((o, i) => {
       const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.6, at.z, emojiSprite(o.emoji, 1.15), tr(o.whatFor));
+      const b = makeBubble(at.x, 2.6, at.z, discAnswer(o.emoji, tr(o.whatFor)), null);
       b.id = o.id;
       b.right = o.id === item.id;
       bubbles.push(b);
     });
     niluAside(stage);
     say(C.gearQ.function, { thing: tr(item.name) }, { emoji: item.emoji });
-    /* read the three choices out loud, so it works for a non-reader */
-    opts.forEach((o, i) => setTimeout(() => {
-      if (Q.active && Q.active.item === item) { try { LV().voice(tr(o.whatFor)); } catch (e) {} }
-    }, (2600 + i * 2400) * speedMul()));
+    /* Deliberately NOT reading all three aloud. Hearing every option before
+       choosing is a lot to hold in your head; the child hears back the one
+       they actually pick instead. */
   }
 
   /* ---- round D: SAFETY ------------------------------------------------ */
@@ -450,7 +489,7 @@
     Q.tries = 0;
     opts.forEach((o, i) => {
       const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.6, at.z, emojiSprite(o.emoji, 1.15), tr(o.rule));
+      const b = makeBubble(at.x, 2.6, at.z, discAnswer(o.emoji, tr(o.rule)), null);
       b.id = o.id;
       b.right = o.id === rule.id;
       bubbles.push(b);
@@ -484,6 +523,21 @@
     wrongAnswer(id);
   }
 
+  /* Say a label that has already been translated. There is no template here
+     on purpose — wrapping it in a t('{picked}.', '{picked}.') would put a
+     string with nothing to translate into the coaches' file. */
+  function sayPicked(text, emoji) {
+    if (!text) return;
+    say({ en: text, es: text }, null, { emoji: emoji || '💛' });
+  }
+
+  /* what to call the thing they just tapped, in the words of the round */
+  function labelFor(kind, id) {
+    if (kind === 'safety') return tr(((C.safety.find((x) => x.id === id)) || {}).rule || '');
+    if (kind === 'function') return tr(((byId(id)) || {}).whatFor || '');
+    return tr(((byId(id)) || {}).name || '');
+  }
+
   function rightAnswer() {
     const a = Q.active;
     if (!a) return;
@@ -491,9 +545,13 @@
     lockUntil = clock + 0.6;
     sfx('yes');
     record('learn');
-    const nameTxt = a.kind === 'safety' ? tr(a.item.rule) : tr(a.item.name);
-    if (a.kind === 'thing' || a.kind === 'place') say(C.gearQ.right, { thing: nameTxt }, { emoji: a.item.emoji });
-    else say(C.gearQ.rightFn, null, { emoji: a.item.emoji });
+    if (a.kind === 'thing' || a.kind === 'place') {
+      say(C.gearQ.right, { thing: tr(a.item.name) }, { emoji: a.item.emoji });
+    } else {
+      /* say back the one they chose, then confirm it */
+      sayPicked(labelFor(a.kind, a.item.id), a.item.emoji);
+      setTimeout(() => say(C.gearQ.rightFn, null, { emoji: '⭐' }), 1600 * speedMul());
+    }
 
     /* the winning bubble blooms; the others fade */
     for (const b of bubbles) {
@@ -504,9 +562,10 @@
     if (!Q.done.includes(a.item.id)) { Q.done.push(a.item.id); persist(); }
     /* the note is the teaching moment — say it while the bubble blooms */
     if (a.item.note) {
-      setTimeout(() => { try { const n = LV().fill(tr(a.item.note)); LV().voice(n); LV().cue(n, a.item.emoji); } catch (e) {} }, 1500 * speedMul());
+      /* after "you picked X" and "that's right" have both had their moment */
+      setTimeout(() => { try { const n = LV().fill(tr(a.item.note)); LV().voice(n); LV().cue(n, a.item.emoji); } catch (e) {} }, 3400 * speedMul());
     }
-    setTimeout(() => { clearAll(); next(); }, 4200 * speedMul());
+    setTimeout(() => { clearAll(); next(); }, 5800 * speedMul());
   }
 
   function wrongAnswer(id) {
@@ -515,13 +574,13 @@
     Q.tries++;
     lockUntil = clock + 0.5;
     sfx('pop');
-    const picked = a.kind === 'safety'
-      ? tr((C.safety.find((s) => s.id === id) || {}).rule || '')
-      : tr((byId(id) || {}).name || '');
+    const picked = labelFor(a.kind, id);
     if (a.kind === 'thing' || a.kind === 'place') {
       say(C.gearQ.softMiss, { picked: picked, thing: tr(a.item.name) }, { emoji: '💛' });
     } else {
-      say(C.gearQ.softMissFn, null, { emoji: '💛' });
+      /* name the one they chose, then correct it — nothing else is read out */
+      sayPicked(picked, '💛');
+      setTimeout(() => say(C.gearQ.softMissFn, null, { emoji: '💛' }), 1400 * speedMul());
     }
     if (Q.tries >= 2) {
       /* two tries is enough — show them, warmly. This can never be failed. */

@@ -104,6 +104,23 @@
     if (renderer) renderer.render(scene, camera);
   }
 
+  /* Background music OFF by default here. A game about listening to a coach
+     has enough going on without a loop under it — and for a child who finds
+     sound hard, it is one more thing to filter out. Still a switch in
+     Settings → 🎵 Music for anyone who wants it. */
+  try {
+    const prof = localStorage.getItem('abe.profile.current') || 'p1';
+    const key = (prof === 'p1' ? 'abe.softball' : 'abe.softball.' + prof) + '.settings';
+    const cur = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!cur) {
+      localStorage.setItem(key, JSON.stringify({ music: false }));
+    } else if (!localStorage.getItem('abe.softball.musicoff')) {
+      cur.music = false;                      // once, for anyone who already played
+      localStorage.setItem(key, JSON.stringify(cur));
+      localStorage.setItem('abe.softball.musicoff', '1');
+    }
+  } catch (e) {}
+
   /* ------------------------------------------------------------ the kit
      K.init MUST come first: until the kit knows the slug, every K.load()
      returns its fallback, so anything that reads a save (handedness, level
