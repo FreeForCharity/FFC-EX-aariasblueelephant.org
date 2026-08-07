@@ -273,6 +273,16 @@
   }
   S.refreshStrip = refreshStrip;
 
+  /* The schedule strip sits across the top of the screen and was covering the
+     answers whenever a question put them up there. While a question is on
+     screen the child doesn't need the strip — so it steps out of the way. */
+  function stripVisible(on) {
+    if (!elStrip) return;
+    elStrip.style.display = on ? 'flex' : 'none';
+    if (on) placeStrip();
+  }
+  S.stripVisible = stripVisible;
+
   function showChrome(on) {
     if (elCue) elCue.style.display = on && elCueText.textContent ? 'flex' : 'none';
     if (elStrip) elStrip.style.display = on ? 'flex' : 'none';

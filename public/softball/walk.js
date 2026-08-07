@@ -232,8 +232,13 @@
 
     let tx = P.x, ty = 1.15, tz = P.z;
     let wTheta = orbit.theta, wPhi = orbit.phi, wRadius = orbit.radius;
-    if (camLock) {                       // a drill can frame a station for a beat
-      tx = camLock.x; ty = camLock.y != null ? camLock.y : 1.3; tz = camLock.z;
+    if (camLock) {
+      /* A lock WITH a position frames a fixed spot (a throw between two
+         people). A lock WITHOUT one keeps following the child but takes over
+         the angle and the zoom — which is what a moving action like chasing a
+         grounder needs: close enough to read, still yours to walk. */
+      if (camLock.x != null) { tx = camLock.x; tz = camLock.z; }
+      if (camLock.y != null) ty = camLock.y;
       if (camLock.theta != null) wTheta = camLock.theta;
       if (camLock.phi != null) wPhi = camLock.phi;
       if (camLock.radius != null) wRadius = camLock.radius;

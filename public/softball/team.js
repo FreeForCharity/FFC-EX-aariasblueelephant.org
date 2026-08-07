@@ -103,13 +103,17 @@
       if (i === mine) mineRing = ring;
     });
 
-    /* Nilu comes to the line-up too, and waits at the child's own spot. She
-       is how a child knows where to go — leaving her behind the dugout while
-       everyone else lines up is exactly how this gets confusing. */
+    /* Nilu lines up too — at the end of the row, as one of the team. She used
+       to be sent to a gap between the line and the dugout, which is where the
+       kit bag and the cooler live, so she ended up wedged among them with her
+       name tag on top of everyone else's. In the row she is on open grass,
+       clearly one of the group, and she stretches from there with the rest. */
     const N = F.nilu;
+    const niluSpot = { x: spots[0].x - 2.4, z: spots[0].z };
+    marks.push(F.footprints(niluSpot.x, niluSpot.z, Math.PI));
     if (N) {
       N.pose = null;
-      N.goTo(spots[mine].x - 1.9, spots[mine].z - 1.6, () => {
+      N.goTo(niluSpot.x, niluSpot.z, () => {
         try { N.lookAt(L.lineUpCoach.x, L.lineUpCoach.z); } catch (e) {}
       });
     }
@@ -122,11 +126,10 @@
       const mate = mates[mi++];
       if (!mate) continue;
       mate.pose = null;
+      /* stagger the labels so five names in a row don't stack into a stripe */
+      try { if (mate.tag) mate.tag.position.y = 2.15 + (i % 2) * 0.5; } catch (e) {}
       const sp = spots[i];
-      setTimeout(() => {
-        if (!lining) return;
-        mate.goTo(sp.x, sp.z, () => { mate.ry = Math.PI; mate.lookAt(L.lineUpCoach.x, L.lineUpCoach.z); });
-      }, (600 + mi * 700) * speedMul());
+      mate.goTo(sp.x, sp.z, () => { mate.ry = Math.PI; mate.lookAt(L.lineUpCoach.x, L.lineUpCoach.z); });
     }
 
     setTimeout(() => {

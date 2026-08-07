@@ -139,6 +139,60 @@
   }
   function hideButton() { if (elDo) elDo.style.display = 'none'; }
 
+  /* ══════════════════════════════════════════════════ FRAME THE ACTION
+     A throw across twelve metres, watched from behind the child at full zoom,
+     is two dots and a speck. For the moment that actually matters — the ball
+     leaving a hand and arriving in a glove — the camera swings side-on to the
+     line of the throw and comes in close enough to read it, then hands control
+     straight back.
+
+     Side-on is deliberate: from behind, a ball thrown away from you barely
+     moves on screen. From the side you see the whole arc. */
+  function frameAction(a, b, secs, then) {
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const px = -dz / len, pz = dx / len;          // perpendicular to the throw
+    const t1 = Math.atan2(px, pz), t2 = Math.atan2(-px, -pz);
+    let cur = 0;
+    try { cur = SWalk.camTheta(); } catch (e) {}
+    const off = (t) => { let d = t - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return Math.abs(d); };
+    /* whichever side is closer to where they were already looking, so the
+       world never spins round underneath them */
+    const theta = off(t1) <= off(t2) ? t1 : t2;
+    try {
+      SWalk.lockCam({ x: mx, y: 1.35, z: mz, theta: theta, phi: 1.0,
+                      radius: Math.max(8.5, Math.min(len * 1.15 + 4.5, 20)) });
+    } catch (e) {}
+    setTimeout(() => {
+      try { SWalk.lockCam(null); } catch (e) {}
+      if (then) { try { then(); } catch (e) {} }
+    }, (secs || 3.4) * 1000 * speedMul());
+  }
+  S.frameAction = frameAction;
+
+  /* For an action the child has to MOVE through — chasing a grounder, running
+     the bases. Keeps following them, but swings side-on to what is happening
+     and comes in close, so they can still walk while seeing it properly. */
+  function frameFollow(a, b, secs, then) {
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const px = -dz / len, pz = dx / len;
+    const t1 = Math.atan2(px, pz), t2 = Math.atan2(-px, -pz);
+    let cur = 0;
+    try { cur = SWalk.camTheta(); } catch (e) {}
+    const off = (t) => { let d = t - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return Math.abs(d); };
+    try {
+      SWalk.lockCam({ theta: off(t1) <= off(t2) ? t1 : t2, phi: 1.02,
+                      radius: Math.max(9, Math.min(len * 0.85 + 5, 16)) });
+    } catch (e) {}
+    setTimeout(() => {
+      try { SWalk.lockCam(null); } catch (e) {}
+      if (then) { try { then(); } catch (e) {} }
+    }, (secs || 5) * 1000 * speedMul());
+  }
+  S.frameFollow = frameFollow;
+
   /* ════════════════════════════════════════════════════ balls in flight */
   function flyBall(from, to, opts) {
     opts = opts || {};
@@ -381,8 +435,16 @@
     footprintsAt(st.me.x, st.me.z, Math.atan2(st.coach.x - st.me.x, st.coach.z - st.me.z));
     markerAt(st.me.x, st.me.z, 0xffd43b, 1.5);
 
+    /* Nilu waits BEHIND the child, on the far side from the coach. The action
+       camera swings side-on to that line, so she can never end up standing
+       between the camera and whatever the child is doing. */
     const N = F.nilu;
-    if (N) N.goTo(st.me.x + 2.2, st.me.z + 1.6, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
+    if (N) {
+      const bx = st.me.x - st.coach.x, bz = st.me.z - st.coach.z;
+      const bl = Math.hypot(bx, bz) || 1;
+      N.goTo(st.me.x + (bx / bl) * 3.2, st.me.z + (bz / bl) * 3.2,
+        () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
+    }
 
     say(C.nilu.followMe, null, { emoji: '🐘' });
     setTimeout(() => {
@@ -421,6 +483,8 @@
       if (co && demo) {
         say(C.nilu.watchCoach, { coach: co.info.name }, { emoji: '🐘' });
         const target = cur.id === 'pitch' ? { x: L.home.x, y: 0.4, z: L.home.z } : cur.st.me;
+        /* watch the coach from the side, close enough to see what they do */
+        frameAction({ x: co.x, z: co.z }, { x: target.x, z: target.z }, 3.6);
         demo(co, target, () => {
           SWalk.freeze(false);
           say(C.nilu.yourTurn, null, { emoji: '🐘' });
@@ -454,6 +518,8 @@
       const at = spec.at ? spec.at() : cur.st.me;
       const r = spec.r || 2.0;
       markerAt(at.x, at.z, 0xffd43b, Math.max(1.2, r * 0.85));
+      /* a long run round the bases reads much better side-on and close in */
+      if (Math.hypot(at.x - SWalk.pos.x, at.z - SWalk.pos.z) > 6) frameFollow(SWalk.pos, at, 9);
       if (SWalk.at(at, r)) { setTimeout(() => { if (running && !paused) nextStep(i + 1); }, 900 * speedMul()); return; }
       SWalk.addSpot({ id: 'drillStep', x: at.x, z: at.z, r: r, once: true,
         onEnter: () => { if (running && !paused) nextStep(i + 1); } });
@@ -577,6 +643,9 @@
     const co = cur.coach;
     const to = co ? { x: co.x, y: 1.4, z: co.z } : { x: cur.st.coach.x, y: 1.4, z: cur.st.coach.z };
     record('throw');
+    /* hold still and watch it — the whole beat is about four seconds */
+    SWalk.freeze(true);
+    frameAction(SWalk.pos, to, 4.6, () => SWalk.freeze(false));
     playerThrowPose(() => {
       SWalk.hold(null);
       const p = SWalk.pos;
@@ -608,6 +677,9 @@
   /* ── the pitch: one big underhand circle ─────────────────────────────── */
   function doArc(i) {
     record('throw');
+    const co0 = cur.coach;
+    SWalk.freeze(true);
+    frameAction(SWalk.pos, co0 ? { x: co0.x, z: co0.z } : L.home, 4.8, () => SWalk.freeze(false));
     playerPitchPose(() => {
       SWalk.hold(null);
       const p = SWalk.pos;
@@ -639,6 +711,9 @@
   /* ── 🏏 the swing: off the tee, and the ball really goes somewhere ───── */
   function doSwing(i) {
     record('hit');
+    /* side-on to the swing, looking down the line the ball will travel */
+    SWalk.freeze(true);
+    frameAction(SWalk.pos, { x: L.circle.x, z: L.circle.z }, 3.8, () => SWalk.freeze(false));
     const tee = F.props && F.props.tee;
     const teeBall = tee && tee.userData && tee.userData.ball;
     let t = 0;
@@ -695,6 +770,8 @@
       };
       setTimeout(() => { if (running && co) co.pose = null; }, 1500 * speedMul());
     }
+    /* side-on to the roll, and close — you can still run, you can now see */
+    frameFollow(from, to, 7);
     setTimeout(() => {
       if (!running || paused) return;
       sfx('pop');
@@ -706,6 +783,7 @@
           sfx('yes');
           SWalk.hold('ball');
           try { F.discard(mark); } catch (e) {}
+          try { SWalk.lockCam(null); } catch (e) {}
           if (!paused) nextStep(i + 1);
         },
         /* if it stops before they reach it, that is fine — Nilu just says so */
@@ -720,6 +798,8 @@
     const to = cover ? { x: cover.x, y: 1.4, z: cover.z }
                      : { x: L.firstCover.x, y: 1.4, z: L.firstCover.z };
     record('throw');
+    SWalk.freeze(true);
+    frameAction(SWalk.pos, to, 4.4, () => SWalk.freeze(false));
     playerThrowPose(() => {
       SWalk.hold(null);
       const p = SWalk.pos;
@@ -820,7 +900,7 @@
     clearMarks();
     clearBalls();
     try { SWalk.removeSpot('drillStand'); SWalk.removeSpot('drillStep'); } catch (e) {}
-    try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.cancelArc(); } catch (e) {}
+    try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.cancelArc(); SWalk.lockCam(null); } catch (e) {}
   }
   S.leave = leave;
 
@@ -829,6 +909,7 @@
     if (!running) return;
     paused = true;
     hideButton();
+    try { SWalk.lockCam(null); } catch (e) {}   // a raised hand gets the camera back
     try { SWalk.cancelArc(); } catch (e) {}
     for (const m of marks) m.visible = false;
   };
