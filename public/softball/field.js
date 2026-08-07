@@ -377,13 +377,13 @@
     const grp = new THREE.Group();
     const R = 9.5;
     for (let i = 0; i <= 10; i++) {
-      const a = -Math.PI * 0.32 + (i / 10) * Math.PI * 0.64;
+      const a = -Math.PI * 0.22 + (i / 10) * Math.PI * 0.44;
       const x = Math.sin(a) * R, z = Math.cos(a) * R;
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.0, 6), M.metalDark);
       post.position.set(x, 1.5, z);
       grp.add(post); blocks(post);
       if (i < 10) {
-        const a2 = -Math.PI * 0.32 + ((i + 1) / 10) * Math.PI * 0.64;
+        const a2 = -Math.PI * 0.22 + ((i + 1) / 10) * Math.PI * 0.44;
         const x2 = Math.sin(a2) * R, z2 = Math.cos(a2) * R;
         const seg = new THREE.Mesh(
           new THREE.BoxGeometry(Math.hypot(x2 - x, z2 - z) + 0.05, 2.8, 0.05),
@@ -1008,6 +1008,7 @@
     buildBackstop();
     buildBleachers();
     buildDugout();
+    buildSolids();
 
     /* Nilu */
     F.nilu = buildNilu();
@@ -1105,6 +1106,88 @@
         }
       }
     }
+  };
+
+  /* ══════════════════════════════════════════════════════════ SOLID THINGS
+     Barriers you cannot walk through. Registered as circles, boxes or arcs,
+     and resolved every frame in walk.js: the child is pushed back out of
+     anything they overlap, so the fence is a fence and the dugout wall is a
+     wall. Nothing here can trap them — every push is straight out along the
+     shortest way, so they always slide along a surface rather than sticking. */
+  const solids = F.solids = [];
+  const solidCircle = (x, z, r) => { solids.push({ k: 'c', x: x, z: z, r: r }); };
+  const solidBox = (x, z, hw, hd) => { solids.push({ k: 'b', x: x, z: z, hw: hw, hd: hd }); };
+  /* an arc barrier centred on `c`: `inside` true keeps the child within radius
+     r, false keeps them outside it. `half` is the half-angle around `face`. */
+  const solidArc = (cx, cz, r, face, half, inside) =>
+    solids.push({ k: 'a', x: cx, z: cz, r: r, face: face, half: half, inside: inside });
+
+  function buildSolids() {
+    /* the outfield fence — you stay on the field */
+    solidArc(L.home.x, L.home.z, L.fenceR - 0.9, Math.PI, Math.PI / 4 + 0.06, true);
+    /* the backstop behind home — you can walk around it, not through it */
+    solidArc(L.home.x, L.home.z, 9.5 - 0.5, 0, Math.PI * 0.22 + 0.03, true);
+    /* foul poles */
+    for (const s of [-1, 1]) {
+      solidCircle(s * Math.sin(Math.PI / 4) * L.fenceR, -Math.cos(Math.PI / 4) * L.fenceR, 0.6);
+    }
+    /* the dugout: the back wall and its posts are solid — the bench is NOT,
+       because sitting on it during a break is the whole point */
+    solidBox(L.dugout.x, L.dugout.z - 1.5, 4.9, 0.35);
+    for (const s of [-1, 1]) solidCircle(L.dugout.x + s * 4.9, L.dugout.z + 2.3, 0.35);
+    /* the seats */
+    solidBox(0, 15.4, 6.8, 2.6);
+    /* the gear you'd trip over */
+    solidBox(L.rack.x, L.rack.z, 1.5, 0.45);          // bat + helmet rack
+    solidBox(L.bag.x, L.bag.z, 1.2, 0.6);             // equipment bag
+    solidCircle(L.water.x, L.water.z, 0.7);           // water cooler
+    solidCircle(L.tee.x, L.tee.z, 0.55);              // the batting tee
+  }
+
+  /* Push a point out of every solid it overlaps. `pr` is the child's own
+     radius. Returns true if anything moved them. */
+  F.collide = function (p, pr) {
+    pr = pr || 0.34;
+    let hit = false;
+    for (let i = 0; i < solids.length; i++) {
+      const s = solids[i];
+      if (s.k === 'c') {
+        const dx = p.x - s.x, dz = p.z - s.z;
+        const d = Math.hypot(dx, dz), need = s.r + pr;
+        if (d < need) {
+          /* dead centre has no direction to push along — pick one rather than
+             leaving them standing inside the water cooler */
+          if (d < 0.0001) { p.x = s.x; p.z = s.z + need; }
+          else { p.x = s.x + (dx / d) * need; p.z = s.z + (dz / d) * need; }
+          hit = true;
+        }
+      } else if (s.k === 'b') {
+        const dx = p.x - s.x, dz = p.z - s.z;
+        const ox = s.hw + pr - Math.abs(dx), oz = s.hd + pr - Math.abs(dz);
+        if (ox > 0 && oz > 0) {
+          /* out along whichever wall is nearest — this is what lets a child
+             slide along a wall instead of catching on it */
+          if (ox < oz) p.x = s.x + Math.sign(dx || 1) * (s.hw + pr);
+          else p.z = s.z + Math.sign(dz || 1) * (s.hd + pr);
+          hit = true;
+        }
+      } else {
+        const dx = p.x - s.x, dz = p.z - s.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.0001) continue;    // dead centre of an arc is always the open side
+        /* angle measured from the arc's facing direction */
+        let a = Math.atan2(dx, dz) - s.face;
+        while (a > Math.PI) a -= Math.PI * 2;
+        while (a < -Math.PI) a += Math.PI * 2;
+        if (Math.abs(a) > s.half) continue;
+        if (s.inside && d > s.r - pr) {
+          const k = (s.r - pr) / d; p.x = s.x + dx * k; p.z = s.z + dz * k; hit = true;
+        } else if (!s.inside && d < s.r + pr) {
+          const k = (s.r + pr) / d; p.x = s.x + dx * k; p.z = s.z + dz * k; hit = true;
+        }
+      }
+    }
+    return hit;
   };
 
   /* a soft glowing disc used to say "stand here" / "this is the spot" */

@@ -27,7 +27,61 @@
     } catch (e) { return (o && o.en) || en || ''; }
   };
   const toast = (m, ms) => { try { K.toast && K.toast(m, ms); } catch (e) {} };
-  const say = (m) => { try { K.say && K.say(m); } catch (e) {} };
+  /* ══════════════════════════════════════════════════════════ ONE VOICE
+     Lines are queued and spoken one at a time, in order — never over the top
+     of each other. Two coaches talking at once is noise, and for a child who
+     is already working hard to listen it is worse than silence.
+
+     A line only ever waits its turn; it is never dropped unless the queue has
+     genuinely run away (a level change, a burst of praise), in which case the
+     oldest are let go so the child isn't listening to stale instructions.
+     K.say already no-ops when the kit is muted or read-aloud is off, so the
+     🔊 Sound button and Settings → Read aloud still switch all of this off. */
+  const voiceQ = [];
+  let voiceBusy = false, voiceTimer = 0, voiceGuard = 0;
+
+  function voicePump() {
+    if (voiceBusy) return;
+    const next = voiceQ.shift();
+    if (next == null) return;
+    voiceBusy = true;
+    try { K.say && K.say(next); } catch (e) {}
+    clearInterval(voiceTimer); clearTimeout(voiceGuard);
+    /* give the engine a beat to start, then wait for it to fall silent */
+    setTimeout(() => {
+      voiceTimer = setInterval(() => {
+        let busy = false;
+        try { busy = !!(speechSynthesis.speaking || speechSynthesis.pending); } catch (e) {}
+        if (busy) return;
+        clearInterval(voiceTimer); clearTimeout(voiceGuard);
+        voiceBusy = false;
+        voicePump();
+      }, 160);
+    }, 220);
+    /* a browser that never reports going idle must not jam the queue forever */
+    voiceGuard = setTimeout(() => {
+      clearInterval(voiceTimer);
+      voiceBusy = false;
+      voicePump();
+    }, 14000);
+  }
+
+  const say = (m) => {
+    if (!m) return;
+    voiceQ.push(String(m));
+    /* don't build a backlog — a child should hear what is happening NOW */
+    while (voiceQ.length > 2) voiceQ.shift();
+    voicePump();
+  };
+  /* drop anything still waiting (level change, a break starting) */
+  function voiceClear() {
+    voiceQ.length = 0;
+    clearInterval(voiceTimer); clearTimeout(voiceGuard);
+    voiceBusy = false;
+    try { speechSynthesis.cancel(); } catch (e) {}
+  }
+  S.voice = say;
+  S.voiceClear = voiceClear;
   const sfx = (n) => { try { K.sfx && K.sfx[n] && K.sfx[n](); } catch (e) {} };
   const save = (k, v) => { try { K.save && K.save(k, v); } catch (e) {} };
   const load = (k, d) => { try { return K.load ? K.load(k, d) : d; } catch (e) { return d; } };
@@ -358,6 +412,7 @@
     try { window.SBTeam && SBTeam.suspend && SBTeam.suspend(); } catch (e) {}
     try { window.SBGame && SBGame.suspend && SBGame.suspend(); } catch (e) {}
 
+    voiceClear();                     // a raised hand takes the floor
     returnTo = { x: SWalk.pos.x, z: SWalk.pos.z, ry: SWalk.pos.ry };
     SWalk.freeze(true);
     SWalk.raiseHand(true);
@@ -718,6 +773,7 @@
 
   function goToLevel(id) {
     if (!G.open[id]) { toast(tr(C.ui.locked), 2600); return false; }
+    voiceClear();                     // nothing from the last level talks over the new one
     G.level = id;
     saveState();
     refreshStrip();

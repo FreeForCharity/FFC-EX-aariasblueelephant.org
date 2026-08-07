@@ -421,8 +421,13 @@
       if (co && demo) {
         say(C.nilu.watchCoach, { coach: co.info.name }, { emoji: '🐘' });
         const target = cur.id === 'pitch' ? { x: L.home.x, y: 0.4, z: L.home.z } : cur.st.me;
-        demo(co, target, () => { say(C.nilu.yourTurn, null, { emoji: '🐘' }); nextStep(0); });
+        demo(co, target, () => {
+          SWalk.freeze(false);
+          say(C.nilu.yourTurn, null, { emoji: '🐘' });
+          nextStep(0);
+        });
       } else {
+        SWalk.freeze(false);
         nextStep(0);
       }
     }, (cur.reps === 0 ? 8200 : 3200) * speedMul());
@@ -430,7 +435,9 @@
 
   function nextStep(i) {
     if (!running || !cur) return;
-    SWalk.freeze(true);
+    /* The child can always walk. The stick is never a dead control — only the
+       coach's demonstration holds them still, and only for a moment. */
+    SWalk.freeze(false);
     const steps = cur.def.steps;
     if (i >= steps.length) return finishRep();
     cur.stepIdx = i;
@@ -761,7 +768,7 @@
       if (!running) return;
       say(cur.def.again, null, { emoji: cur.def.emoji });
       showButton(cur.def.emoji, tr(cur.def.again), tr(cur.def.again));
-      waiting = { kind: 'tap', go: () => { SWalk.freeze(true); nextStep(0); } };
+      waiting = { kind: 'tap', go: () => { nextStep(0); } };
     }, 5200 * speedMul());
   }
 

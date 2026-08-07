@@ -170,6 +170,24 @@
     },
   });
 
+  /* One sound at a time. Two cues firing together is just noise, and for a
+     child already working hard to listen it's worse than silence. Wrapping the
+     kit's sfx once here covers every module. Speech is queued separately in
+     levels.js; the 🔊 Sound button still switches all of it off. */
+  (function oneSoundAtATime() {
+    const GAP = 140;
+    let last = 0;
+    for (const k of Object.keys(K.sfx)) {
+      const fn = K.sfx[k];
+      K.sfx[k] = function () {
+        const now = performance.now();
+        if (now - last < GAP) return;
+        last = now;
+        return fn.apply(this, arguments);
+      };
+    }
+  })();
+
   boot();
 })();
 </script>

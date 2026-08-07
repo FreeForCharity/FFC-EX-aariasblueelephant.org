@@ -343,7 +343,11 @@
       if (claimed) return;
     }
     if (!caster.ray.intersectPlane(groundPlane, hitV)) return;
-    walkTo(hitV.x, hitV.z);
+    /* nudge the tap out of anything solid, so tapping the fence walks you up
+       to it rather than into it */
+    const t = { x: hitV.x, z: hitV.z };
+    try { SBField.collide(t, 0.5); } catch (e) {}
+    walkTo(t.x, t.z);
     sfx('tap');
   }
 
@@ -468,6 +472,17 @@
       P.x -= ((P.x - c.x) / r) * pull;
       P.z -= ((P.z - c.z) / r) * pull;
     }
+
+    /* Hard bounds: the fence, the backstop, the dugout wall, the seats and
+       the gear are real. If we've been pushed out of one, drop the tap-to-walk
+       target too — otherwise the child grinds against a wall trying to reach
+       somewhere they can't get to. */
+    try {
+      if (SBField.collide(P, 0.34)) {
+        const t2 = K.consumeWalkTarget ? K.consumeWalkTarget() : null;
+        if (t2 && Math.hypot(t2.x - P.x, t2.z - P.z) > 1.2) clearWalk();
+      }
+    } catch (e) {}
   }
 
   function poseTick(dt) {

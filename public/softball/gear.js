@@ -117,8 +117,10 @@
     g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(emoji, 64, 70);
     const s = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, fog: false }));
+      map: new THREE.CanvasTexture(c), transparent: true,
+      depthWrite: false, depthTest: false, fog: false }));
     s.scale.set(scale, scale, 1);
+    s.renderOrder = 900;
     return s;
   }
 
@@ -209,6 +211,11 @@
     g.traverse((o) => {
       if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
       o.material = o.material.clone();
+      /* An answer the child cannot see is not an answer. These are floating
+         UI that happens to live in the world, so they draw over anything that
+         wanders in front — Nilu, a coach, a fence post. */
+      o.material.depthTest = false;
+      o.renderOrder = 900;
       /* glow in its OWN colour, so the ball stays yellow and the helmet stays
          blue — a flat grey lift desaturated everything into pebbles */
       if (o.material.emissive && o.material.color) o.material.emissive.copy(o.material.color).multiplyScalar(0.45);
@@ -247,7 +254,7 @@
       map: new THREE.CanvasTexture(c), transparent: true,
       depthWrite: false, depthTest: false, fog: false }));
     sp.scale.set(scale, scale, 1);
-    sp.renderOrder = -2;                 // drawn first, so the item sits on top
+    sp.renderOrder = 880;                // over the world, under its contents
     return sp;
   }
 
@@ -340,7 +347,18 @@
       bubbles.push(b);
     });
     anchorMark = F.marker(stage.stand.x, stage.stand.z, 0xffd43b, 1.4);
+    niluAside(stage);
     say(C.gearQ.naming, { thing: tr(item.name) }, { emoji: item.emoji });
+  }
+
+  /* Park Nilu off to the far side of the stage while a question is up. She
+     is a big elephant and she was standing in front of the answers. */
+  function niluAside(stage) {
+    const N = F.nilu;
+    if (!N) return;
+    N.goTo(stage.at.x - (SPREAD + 3.4), stage.at.z - 2.2, () => {
+      try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {}
+    });
   }
 
   /* ---- round B: PLACES ------------------------------------------------ */
@@ -379,10 +397,11 @@
       b.right = o.id === item.id;
       bubbles.push(b);
     });
+    niluAside(stage);
     say(C.gearQ.function, { thing: tr(item.name) }, { emoji: item.emoji });
     /* read the three choices out loud, so it works for a non-reader */
     opts.forEach((o, i) => setTimeout(() => {
-      if (Q.active && Q.active.item === item) { try { K.say(tr(o.whatFor)); } catch (e) {} }
+      if (Q.active && Q.active.item === item) { try { LV().voice(tr(o.whatFor)); } catch (e) {} }
     }, (2600 + i * 2400) * speedMul()));
   }
 
@@ -421,6 +440,7 @@
       b.right = o.id === rule.id;
       bubbles.push(b);
     });
+    niluAside(stage);
     say(rule.why, null, { emoji: '🛟' });
     setTimeout(() => {
       if (Q.active && Q.active.item === rule) say(C.safetyQ.ask, null, { emoji: '🛟' });
@@ -469,7 +489,7 @@
     if (!Q.done.includes(a.item.id)) { Q.done.push(a.item.id); persist(); }
     /* the note is the teaching moment — say it while the bubble blooms */
     if (a.item.note) {
-      setTimeout(() => { try { K.say(LV().fill(tr(a.item.note))); LV().cue(LV().fill(tr(a.item.note)), a.item.emoji); } catch (e) {} }, 1500 * speedMul());
+      setTimeout(() => { try { const n = LV().fill(tr(a.item.note)); LV().voice(n); LV().cue(n, a.item.emoji); } catch (e) {} }, 1500 * speedMul());
     }
     setTimeout(() => { clearAll(); next(); }, 4200 * speedMul());
   }
