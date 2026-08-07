@@ -459,6 +459,57 @@
        they actually pick instead. */
   }
 
+  /* ══════════════════════════════════ EARN YOUR WAY ONTO THE FIELD EARLY
+     Thirty-three questions before you touch a ball is too many; a child loses
+     interest long before the fun part. So each skill opens as soon as you
+     know the gear it actually needs — throwing after the ball and the glove,
+     which is two questions in — and you're asked, right then, whether you'd
+     like to go and do it. Staying to learn more is an equally good answer,
+     and Level 1 picks up exactly where you left it. */
+  const EARLY = [
+    { level: 'throw', needs: ['ball', 'glove'] },
+    { level: 'bat', needs: ['bat', 'helmet'] },
+    { level: 'pitch', needs: ['ball', 'circle'] },
+    { level: 'field', needs: ['glove', 'first'] },
+    { level: 'run', needs: ['first', 'second', 'third'] },
+  ];
+
+  function checkEarlyUnlock() {
+    for (const e of EARLY) {
+      try { if (LV().G.open[e.level]) continue; } catch (err) { continue; }
+      if (!e.needs.every((id) => Q.done.indexOf(id) >= 0)) continue;
+      try { LV().unlock(e.level); } catch (err) {}
+      return e.level;
+    }
+    return null;
+  }
+
+  /* the offer itself — two big buttons, neither of them wrong */
+  function offerJump(level) {
+    let name = level;
+    try { name = LV().levelName(level); } catch (e) {}
+    const p = LV().panel('sbUnlock',
+      '<h2>🔓 ' + LV().fill(tr(C.gearQ.unlockedGo), { level: name }) + '</h2>' +
+      '<p class="sbSub">' + tr(C.gearQ.unlockedAsk) + '</p>' +
+      '<button class="sbBig" id="sbGoNow">' + tr(C.gearQ.goNow) + '</button>' +
+      '<button class="sbLink" id="sbStay">' + tr(C.gearQ.keepLearning) + '</button>');
+    say(C.gearQ.unlockedGo, { level: name }, { emoji: '🔓' });
+    document.getElementById('sbGoNow').addEventListener('click', () => {
+      sfx('star');
+      p._close();
+      /* they lined up when practice started a few minutes ago — going to play
+         the thing they just unlocked shouldn't put another line-up in the way */
+      try { window.SBTeam && SBTeam.markLinedUp(level); } catch (e) {}
+      try { LV().goToLevel(level); } catch (e) {}
+    });
+    document.getElementById('sbStay').addEventListener('click', () => {
+      sfx('tap');
+      p._close();
+      say(C.gearQ.comeBack, { level: name }, { emoji: '💙' });
+      setTimeout(() => { clearAll(); next(); }, 2200 * speedMul());
+    });
+  }
+
   /* ---- round D: SAFETY ------------------------------------------------ */
   let safetyStep = 0;
   function nextSafety() {
@@ -565,7 +616,13 @@
       /* after "you picked X" and "that's right" have both had their moment */
       setTimeout(() => { try { const n = LV().fill(tr(a.item.note)); LV().voice(n); LV().cue(n, a.item.emoji); } catch (e) {} }, 3400 * speedMul());
     }
-    setTimeout(() => { clearAll(); next(); }, 5800 * speedMul());
+    setTimeout(() => {
+      clearAll();
+      /* did that answer just earn them a station? ask before carrying on */
+      const won = checkEarlyUnlock();
+      if (won) { offerJump(won); return; }
+      next();
+    }, 5800 * speedMul());
   }
 
   function wrongAnswer(id) {
