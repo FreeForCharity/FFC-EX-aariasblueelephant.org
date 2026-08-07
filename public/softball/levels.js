@@ -101,6 +101,7 @@
     stickers: [],
     onboarded: 0,
     assist: 1,
+    repTarget: 0,          // 0 = each drill's own default; 1..5 overrides it
     finished: 0,          // 1 once Game Day and the medal are done
   };
 
@@ -116,12 +117,13 @@
     G.onboarded = +load('onboarded', 0) || 0;
     G.finished = +load('finished', 0) || 0;
     G.assist = load('assist', 1) ? 1 : 0;
+    G.repTarget = Math.max(0, Math.min(5, +load('repTarget', 0) || 0));
   }
   function saveState() {
     save('name', G.name); save('hand', G.hand); save('level', G.level);
     save('open', G.open); save('reps', G.reps); save('breaks', G.breaks); save('needs', G.needs);
     save('stickers', G.stickers); save('onboarded', G.onboarded); save('assist', G.assist);
-    save('finished', G.finished);
+    save('finished', G.finished); save('repTarget', G.repTarget);
   }
   S.save = saveState;
 
@@ -333,11 +335,17 @@
     const p = panel('sbHand',
       '<h2>' + tr(C.start.askHand) + '</h2>' +
       '<p class="sbSub">' + tr(C.start.askHandWhy) + '</p>' +
+      /* LEFT on the left of the screen and RIGHT on the right, so it matches
+         the child's own hands as they look at it. Each says which it is. */
       '<div class="sbHandRow">' +
-        '<button class="sbHandBtn" id="sbHandR"><span class="sbHandEmoji">✋</span>' +
-          '<span class="sbHandLbl">' + tr(C.start.handRight) + '</span></button>' +
-        '<button class="sbHandBtn" id="sbHandL"><span class="sbHandEmoji sbFlip">✋</span>' +
-          '<span class="sbHandLbl">' + tr(C.start.handLeft) + '</span></button>' +
+        '<button class="sbHandBtn sbHandLeft" id="sbHandL">' +
+          '<span class="sbHandEmoji sbFlip">✋</span>' +
+          '<span class="sbHandLbl">' + tr(C.start.handLeft) + '</span>' +
+          '<span class="sbHandHint">' + tr(C.start.handLeftHint) + '</span></button>' +
+        '<button class="sbHandBtn sbHandRight" id="sbHandR">' +
+          '<span class="sbHandEmoji">✋</span>' +
+          '<span class="sbHandLbl">' + tr(C.start.handRight) + '</span>' +
+          '<span class="sbHandHint">' + tr(C.start.handRightHint) + '</span></button>' +
       '</div>' +
       '<button class="sbLink" id="sbHandU">' + tr(C.start.handUnsure) + '</button>');
     const pick = (h) => {

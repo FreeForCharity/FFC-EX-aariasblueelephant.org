@@ -27,8 +27,11 @@
 @media (max-width: 760px) {
   :root { --sb-row1: calc(var(--sb-top) + 120px); --sb-row2: calc(var(--sb-top) + 186px); }
 }
+/* A phone on its side has almost no height, and a centred cue band sat right
+   on top of the answers. There IS free width up top between 🏠 Exit and the
+   HUD though — so the band tucks into it, at the very top, out of the view. */
 @media (max-height: 480px) {
-  :root { --sb-row1: calc(var(--sb-top) + 58px); --sb-row2: calc(var(--sb-top) + 118px); }
+  :root { --sb-row1: var(--sb-top); --sb-row2: calc(var(--sb-top) + 58px); }
 }
 
 /* ══════════════════════════════ the cue band — ONE instruction at a time */
@@ -166,7 +169,10 @@
 }
 .sbHandBtn:active { transform: scale(.95); }
 .sbHandBtn .sbHandEmoji { font-size: 54px; line-height: 1; }
-.sbHandBtn .sbHandLbl { font-size: 15px; font-weight: 900; }
+.sbHandBtn .sbHandLbl { font-size: 16px; font-weight: 900; letter-spacing: .3px; }
+.sbHandBtn .sbHandHint { font-size: 11.5px; font-weight: 800; color: #5a6a80; }
+.sbHandBtn.sbHandLeft { border-color: #b197fc; background: #f2eefe; }
+.sbHandBtn.sbHandRight { border-color: #4dabf7; background: #eaf4ff; }
 .sbFlip { display: inline-block; transform: scaleX(-1); }
 
 /* 🙋 "What do you need?" — a picture menu. Every option is a real request a
@@ -295,3 +301,78 @@
 .sbStationBtn .sbStationState { position: absolute; top: 5px; right: 8px; font-size: 11px; opacity: .7; }
 .sbStationBtn.open { background: #eafaf0; }
 .sbStationBtn.now { border-color: var(--k-accent); background: #fff; }
+
+/* Coach Mode: turns-per-station, and the cue sheet's station chips */
+.sbRepsSub { margin-bottom: 6px !important; }
+.sbRepsRow { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 2px 0 4px; }
+.sbRepsBtn {
+  min-width: 52px; min-height: 52px; border: 0; cursor: pointer; border-radius: 16px;
+  background: #eef4ff; font: inherit; font-size: 24px; font-weight: 900; color: var(--sb-ink);
+}
+.sbRepsBtn:active { transform: scale(.92); }
+.sbRepsVal { min-width: 110px; font-size: 17px; font-weight: 900; color: var(--k-accent); }
+.sbCueChips {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 0 0 10px;
+}
+.sbCueChip {
+  border: 0; cursor: pointer; border-radius: 999px; padding: 8px 12px; min-height: 40px;
+  background: #eef4ff; font: inherit; font-size: 12.5px; font-weight: 800; color: var(--sb-ink);
+}
+.sbCueChip.on { background: var(--k-accent); color: #fff; }
+.sbCueChip:active { transform: scale(.95); }
+
+/* ══════════════════════════════ phones
+   The kit HUD wraps to two rows under about 400px, which pushes Settings onto
+   its own line and eats the top of the view. Tighten it just enough to fit,
+   and pull the on-screen controls in so the 3D view keeps as much room as
+   possible. Every tap target stays at or above 44px. */
+@media (max-width: 480px) {
+  #kHud { max-width: 80vw; gap: 5px; }
+  .kBtn { min-width: 46px; min-height: 46px; font-size: 17px; padding: 3px 5px; }
+  .kBtn .kLbl { font-size: 8px; }
+  #kExit { min-width: 46px; min-height: 46px; font-size: 17px; padding: 3px 6px; }
+  .kAct { width: 60px; height: 60px; font-size: 21px; }
+  .kAct .kLbl { font-size: 8.5px; }
+  #kStick { width: 108px; height: 108px; }
+  #kKnob { width: 46px; height: 46px; }
+  #swZoom { bottom: calc(var(--sb-bottom) + 122px); gap: 6px; }
+  #swZoom button { width: 46px; height: 46px; font-size: 19px; }
+  #sbCue { max-width: 92vw; padding: 7px 8px 7px 11px; }
+  #sbDo { min-width: 108px; min-height: 68px; }
+  .sbHandBtn { min-height: 108px; }
+  .sbHandBtn .sbHandEmoji { font-size: 44px; }
+}
+/* landscape phones are very short — every row has to earn its height */
+@media (max-height: 430px) {
+  .kAct { width: 54px; height: 54px; font-size: 19px; }
+  .kAct .kLbl { display: none; }
+  #kActs { gap: 7px; }
+  #kStick { width: 96px; height: 96px; }
+  #swZoom { bottom: calc(var(--sb-bottom) + 104px); }
+  #swZoom button { width: 42px; height: 42px; font-size: 17px; }
+  #sbDo { min-height: 60px; padding: 6px 14px; }
+  #sbDo .sbDoEmoji { font-size: 22px; }
+  #sbCue { padding: 6px 8px 6px 10px; font-size: 14px; }
+}
+
+/* ── the cue band on a phone held sideways ──────────────────────────────────
+   This block has to live AFTER the base #sbCue rule: same specificity, so
+   whichever comes last wins, and the base rule re-centres it otherwise.
+
+   Not centred here — the HUD is wide enough that a centred band would have to
+   shrink to nothing to clear it. Start after 🏠 Exit and run to just short of
+   the HUD: all the free width, none of the collisions. */
+@media (max-height: 480px) {
+  #sbCue {
+    left: calc(var(--sb-left) + 62px); transform: none;
+    max-width: none;
+    width: calc(100vw - var(--sb-left) - var(--sb-right) - 62px - 300px);
+    font-size: clamp(11.5px, 2.3vw, 15px);
+    padding: 6px 6px 6px 10px;
+  }
+  #sbCue.pop { animation: sbCuePopFlat .3s ease; }
+  @keyframes sbCuePopFlat { 0% { transform: scale(.95); } 60% { transform: scale(1.02); } 100% { transform: scale(1); } }
+  #sbCue .sbCueEmoji { font-size: 1.1em; }
+  #sbAgain { min-width: 40px; min-height: 40px; font-size: 16px; }
+  #sbStrip { top: calc(var(--sb-top) + 56px); }
+}

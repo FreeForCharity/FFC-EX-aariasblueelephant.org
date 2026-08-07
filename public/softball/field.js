@@ -865,6 +865,18 @@
   }
   F.makePerson = makePerson;
 
+  /* HOW FAR AWAY A NAME TAG IS STILL WORTH SHOWING
+     Tags draw over the whole world, which is what makes people findable — but
+     on a phone eight of them at once is most of the screen. So they fade out
+     with distance, and by how much room there is. Coaches stay readable from
+     further off because "walk to Coach Scott" needs to be answerable; Nilu is
+     never hidden at any range. */
+  F.tagRange = function (kind) {
+    const small = (typeof innerWidth === 'number' && innerWidth < 760);
+    if (kind === 'coach') return small ? 17 : 26;
+    return small ? 6.5 : 11;                       // teammates and everyone else
+  };
+
   /* one shared animation step for every NPC (the player has its own in walk.js) */
   function personTick(P, dt) {
     let want = 0;
@@ -894,6 +906,13 @@
     }
     P.moveAmt += (want - P.moveAmt) * Math.min(1, dt * 8);
     P.idle += dt;
+
+    /* only show this person's name when they're near enough to matter */
+    if (P.tag) {
+      let me = null;
+      try { me = window.SWalk && SWalk.pos; } catch (e) {}
+      if (me) P.tag.visible = Math.hypot(P.x - me.x, P.z - me.z) < F.tagRange(P.tagKind);
+    }
 
     const bob = Math.abs(Math.sin(P.phase)) * 0.035 * P.moveAmt
               + Math.sin(P.idle * 1.4) * 0.012 * (1 - P.moveAmt);
@@ -1165,6 +1184,7 @@
       p.lookAt(L.home.x, L.home.z);
       p.home = { x: at.x, z: at.z };
       p.info = c;
+      p.tagKind = 'coach';
       F.coaches[c.id] = p;
       people.push(p);
     }

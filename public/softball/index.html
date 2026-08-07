@@ -67,6 +67,7 @@
     renderer.setSize(innerWidth, innerHeight);
     try { renderer.outputEncoding = THREE.sRGBEncoding; } catch (e) {}
     stage.appendChild(renderer.domElement);
+    window.__sbCam = camera;      // handy for layout checks; harmless in play
 
     SBField.init({ THREE: THREE, scene: scene });
     SWalk.init({ THREE: THREE, scene: scene, camera: camera, renderer: renderer, K: K, onTap: onSceneTap });
@@ -78,11 +79,25 @@
     if (b) b.remove();
   }
 
+  /* On a phone held upright the view is tall and narrow, and a fixed vertical
+     field of view leaves almost nothing to the sides — the outer two answers
+     were sliced off by the screen edges. Hold the HORIZONTAL field of view
+     roughly constant instead, and let the vertical one grow on a narrow
+     screen (clamped, so it never goes fisheye). */
+  const H_FOV = 62;                        // degrees across, on any shape of screen
+  function fovFor(aspect) {
+    const h = (H_FOV * Math.PI) / 180;
+    const v = 2 * Math.atan(Math.tan(h / 2) / Math.max(0.35, aspect));
+    return Math.max(48, Math.min(78, (v * 180) / Math.PI));
+  }
   function onResize() {
     if (!renderer) return;
-    camera.aspect = innerWidth / innerHeight;
+    const aspect = innerWidth / innerHeight;
+    camera.aspect = aspect;
+    camera.fov = fovFor(aspect);
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
+    try { window.SBGear && SBGear.relayout && SBGear.relayout(); } catch (e) {}
   }
 
   /* Level layers get first refusal on a tap (answer bubbles, gear, people).

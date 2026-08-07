@@ -843,7 +843,7 @@
     /* a few good reps is the whole bar. It is not a test, and a rep counts
        on effort, not accuracy. Running all four bases is tiring, so that one
        asks for fewer. */
-    if (n >= (REPS[cur.id] || 3)) { setTimeout(finishDrill, 5200 * speedMul()); return; }
+    if (n >= repTarget(cur.id)) { setTimeout(finishDrill, 5200 * speedMul()); return; }
     setTimeout(() => {
       if (!running) return;
       say(cur.def.again, null, { emoji: cur.def.emoji });
@@ -856,6 +856,13 @@
      hitting off the tee, then stepping in and out of the box */
   const CHAIN = { bat: 'box' };
   const REPS = { throw: 3, pitch: 3, field: 3, bat: 3, box: 2, run: 2 };
+  /* a coach can override how many turns each station asks for, in Coach Mode */
+  function repTarget(id) {
+    let t = 0;
+    try { t = LV().G.repTarget || 0; } catch (e) {}
+    return t > 0 ? t : (REPS[id] || 3);
+  }
+  S.repTarget = repTarget;
   const NEXT_LEVEL = { throw: 'pitch', pitch: 'field', field: 'bat', box: 'run', run: 'team', team: 'game' };
 
   function finishDrill() {
