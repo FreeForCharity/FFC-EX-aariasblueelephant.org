@@ -167,6 +167,7 @@
     { slug: 'feelings', name: "Aaria's Feelings Faces", emoji: '🎭', url: '/10' },
     { slug: 'rhythm', name: "Aaria's Rhythm & Calm", emoji: '🎵', url: '/11' },
     { slug: 'flying', name: "Aaria's Flying Elephant", emoji: '🐘', url: '/12' },
+    { slug: 'softball', name: "Aaria's Softball Stars", emoji: '🥎', url: '/13' },
   ];
   const passKey = () => prof === 'p1' ? 'abe.passport.v1' : `abe.passport.${prof}.v1`;
   function passGet() { try { return JSON.parse(localStorage.getItem(passKey())) || {}; } catch (e) { return {}; } }

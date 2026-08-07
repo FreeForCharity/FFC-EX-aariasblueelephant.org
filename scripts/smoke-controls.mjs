@@ -42,6 +42,7 @@ const GAMES = [
   { slug: 'feelings', url: '/feelings/index.html', start: async (p) => { await p.click('#kPlay'); } },
   { slug: 'rhythm', url: '/rhythm/index.html', start: async (p) => { await p.click('#kPlay'); } },
   { slug: 'flying', url: '/flying/index.html', start: async (p) => { await p.click('#kPlay'); } },
+  { slug: 'softball', url: '/softball/index.html', start: async (p) => { await p.click('#kPlay'); } },
 ];
 
 const srv = http.createServer(async (req, res) => {

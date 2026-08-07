@@ -1,0 +1,278 @@
+/* © 2026 Aaria's Blue Elephant · Aaria's Softball Stars — game-specific styles.
+   Everything else (HUD, joystick, title card, panels) comes from gamekit/kit.css.
+
+   ── SCREEN ZONE MAP ────────────────────────────────────────────────────────
+   top-left      #kExit (kit)          → under it: #swHome  (⬅️ Nilu)
+   top-right     #kHud (kit)             wraps to 2 rows under ~760px wide
+   top-centre    #sbCue   (row 1)       ← the ONE instruction, pushed below the
+                 #sbStrip (row 2)          HUD on narrow screens
+   bottom-left   #kStick (kit)         → above it: #swZoom (➕➖)
+   bottom-right  #kActs (kit)
+   bottom-centre #kToast (kit, 18vh)   → above it: #swHint
+   centre        #swCard, .sbPanel
+   Verified at 360 / 768 / 1440 px wide, English and Spanish: no horizontal
+   scroll, nothing overlaps, every tap target clears 44px.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sb-top: max(10px, env(safe-area-inset-top));
+  --sb-left: max(10px, env(safe-area-inset-left));
+  --sb-right: max(10px, env(safe-area-inset-right));
+  --sb-bottom: max(16px, env(safe-area-inset-bottom));
+  --sb-row1: calc(var(--sb-top) + 62px);
+  --sb-row2: calc(var(--sb-top) + 128px);
+  --sb-ink: #25324a;
+}
+/* the kit HUD wraps to two rows under ~760px — drop both rows below it */
+@media (max-width: 760px) {
+  :root { --sb-row1: calc(var(--sb-top) + 120px); --sb-row2: calc(var(--sb-top) + 186px); }
+}
+@media (max-height: 480px) {
+  :root { --sb-row1: calc(var(--sb-top) + 58px); --sb-row2: calc(var(--sb-top) + 118px); }
+}
+
+/* ══════════════════════════════ the cue band — ONE instruction at a time */
+#sbCue {
+  position: fixed; top: var(--sb-row1); left: 50%; transform: translateX(-50%);
+  z-index: 46; display: flex; align-items: center; gap: 8px;
+  max-width: min(84vw, 620px); padding: 9px 10px 9px 14px;
+  background: rgba(255, 255, 255, .95); border: 3px solid var(--k-accent);
+  border-radius: 18px; box-shadow: 0 6px 18px rgba(40, 40, 90, .22);
+  font-weight: 900; font-size: clamp(14px, 3.6vw, 19px); line-height: 1.25;
+  color: var(--sb-ink); text-align: left;
+}
+#sbCue .sbCueEmoji { font-size: 1.3em; flex: 0 0 auto; }
+#sbCue .sbCueText { flex: 1 1 auto; min-width: 0; }
+#sbAgain {
+  flex: 0 0 auto; min-width: 44px; min-height: 44px; border: 0; cursor: pointer;
+  border-radius: 12px; background: #eef4ff; font: inherit; font-size: 20px;
+}
+#sbAgain:active { transform: scale(.9); }
+#sbCue.pop { animation: sbCuePop .3s ease; }
+@keyframes sbCuePop { 0% { transform: translateX(-50%) scale(.94); } 60% { transform: translateX(-50%) scale(1.03); } 100% { transform: translateX(-50%) scale(1); } }
+
+/* ══════════════════════════════ the visual schedule — what's now, what's next */
+#sbStrip {
+  position: fixed; top: var(--sb-row2); left: 50%; transform: translateX(-50%);
+  z-index: 45; display: flex; gap: 5px; padding: 5px 7px;
+  max-width: min(92vw, 660px); overflow-x: auto; overflow-y: hidden;
+  background: rgba(255, 255, 255, .82); border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(40, 40, 90, .16);
+  scrollbar-width: none;
+}
+#sbStrip::-webkit-scrollbar { display: none; }
+.sbStripCard {
+  flex: 0 0 auto; border: 0; cursor: pointer; font: inherit; color: var(--sb-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 46px; min-height: 44px; padding: 3px 5px; gap: 1px;
+  border-radius: 12px; background: rgba(255, 255, 255, .9);
+}
+.sbStripCard .sbStripEmoji { font-size: 19px; line-height: 1; }
+.sbStripCard .sbStripName { font-size: 8.5px; font-weight: 800; letter-spacing: .1px; max-width: 62px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbStripCard.locked { opacity: .38; filter: grayscale(.7); }
+.sbStripCard.now { background: var(--k-accent); color: #fff; box-shadow: 0 2px 8px rgba(40,40,90,.28); transform: scale(1.06); }
+.sbStripCard:active { transform: scale(.94); }
+
+/* ══════════════════════════════ walking chrome (owned by walk.js) */
+#swZoom {
+  position: fixed; left: var(--sb-left); bottom: calc(var(--sb-bottom) + 142px);
+  z-index: 40; display: flex; flex-direction: column; gap: 8px;
+}
+#swZoom button {
+  width: 54px; height: 54px; border-radius: 16px; border: 0; cursor: pointer;
+  background: rgba(255, 255, 255, .92); font: inherit; font-size: 22px; font-weight: 900;
+  box-shadow: 0 4px 10px rgba(40, 40, 90, .18);
+}
+#swZoom button:active { transform: scale(.9); }
+
+#swHome {
+  position: fixed; left: var(--sb-left); top: calc(var(--sb-top) + 62px);
+  z-index: 45; display: none; align-items: center; gap: 4px;
+  min-height: 44px; padding: 6px 14px; border: 0; cursor: pointer;
+  border-radius: 999px; background: rgba(255, 255, 255, .92); color: var(--sb-ink);
+  font: inherit; font-size: 15px; font-weight: 900;
+  box-shadow: 0 4px 10px rgba(40, 40, 90, .18);
+}
+#swHome:active { transform: scale(.94); }
+
+/* sits ABOVE #kToast (kit, bottom:18vh) so a festive greeting never lands on it */
+#swHint {
+  position: fixed; left: 50%; bottom: calc(18vh + 72px); transform: translateX(-50%);
+  z-index: 44; max-width: min(86vw, 520px); padding: 10px 18px; text-align: center;
+  background: rgba(255, 248, 225, .96); border: 2px dashed #f5a524; border-radius: 16px;
+  font-weight: 800; font-size: clamp(13px, 3.4vw, 16px); color: var(--sb-ink);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+#swHint.show { opacity: 1; }
+
+#swCard {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.9);
+  z-index: 70; width: min(90vw, 380px); padding: 20px 22px; text-align: center;
+  background: rgba(255, 255, 255, .97); border-radius: 26px;
+  box-shadow: 0 18px 50px rgba(60, 60, 120, .32);
+  opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+}
+#swCard.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+#swCard .swCardEmoji { font-size: 52px; line-height: 1; }
+#swCard .swCardTitle { font-size: 21px; font-weight: 900; margin: 6px 0 4px; color: var(--k-accent); }
+#swCard .swCardText { font-size: 15px; font-weight: 700; color: var(--sb-ink); line-height: 1.4; }
+#swCard .swCardBtn {
+  margin-top: 14px; min-height: 52px; padding: 12px 30px; border: 0; cursor: pointer;
+  border-radius: 999px; font: inherit; font-size: 18px; font-weight: 900; color: #fff;
+  background: linear-gradient(180deg, #34d399, #10b981); box-shadow: 0 5px 0 #059669;
+}
+#swCard .swCardBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 #059669; }
+
+/* ══════════════════════════════ panels: name, hand, break, coach mode */
+.sbPanel {
+  position: fixed; inset: 0; z-index: 92; display: flex; align-items: center; justify-content: center;
+  background: rgba(30, 46, 70, .42); backdrop-filter: blur(3px); padding: 16px;
+}
+.sbPanelCard {
+  background: rgba(255, 255, 255, .97); border-radius: 26px; padding: 22px;
+  width: min(92vw, 430px); max-height: 88vh; overflow-y: auto; text-align: center;
+  box-shadow: 0 18px 50px rgba(60, 60, 120, .34);
+}
+.sbPanelCard h2 { margin: 0 0 10px; font-size: clamp(19px, 5vw, 24px); color: var(--k-accent); }
+.sbPanelCard .sbSub { font-size: 14px; font-weight: 700; color: #5a6a80; margin: 0 0 14px; line-height: 1.4; }
+.sbPanelCard input[type="text"], .sbPanelCard input[type="number"] {
+  width: 100%; min-height: 56px; padding: 12px 16px; margin: 6px 0 14px;
+  border: 3px solid var(--k-accent); border-radius: 16px; font: inherit;
+  font-size: 20px; font-weight: 800; text-align: center; color: var(--sb-ink);
+  background: #fff;
+}
+.sbBig {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; cursor: pointer; font: inherit; font-weight: 900; font-size: clamp(17px, 4.5vw, 21px);
+  min-height: 56px; padding: 13px 32px; border-radius: 999px; color: #fff; margin: 4px;
+  background: linear-gradient(180deg, #34d399, #10b981); box-shadow: 0 6px 0 #059669;
+}
+.sbBig:active { transform: translateY(3px); box-shadow: 0 3px 0 #059669; }
+.sbBig.alt { background: linear-gradient(180deg, #93c5fd, #3b82f6); box-shadow: 0 6px 0 #1d4ed8; }
+.sbLink {
+  display: block; margin: 10px auto 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 15px; font-weight: 800; color: #5a6a80;
+  text-decoration: underline; min-height: 44px; padding: 8px 16px;
+}
+
+/* handedness picker — two big hands, one of them mirrored */
+.sbHandRow { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.sbHandBtn {
+  flex: 1 1 130px; max-width: 170px; min-height: 130px; border: 3px solid transparent; cursor: pointer;
+  border-radius: 22px; background: #eef4ff; font: inherit; color: var(--sb-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 4px 10px rgba(40, 40, 90, .14);
+}
+.sbHandBtn:active { transform: scale(.95); }
+.sbHandBtn .sbHandEmoji { font-size: 54px; line-height: 1; }
+.sbHandBtn .sbHandLbl { font-size: 15px; font-weight: 900; }
+.sbFlip { display: inline-block; transform: scaleX(-1); }
+
+/* 🙋 "What do you need?" — a picture menu. Every option is a real request a
+   child can make on a real field: a break, water, the bathroom, their
+   grown-up, or telling a coach something hurts. */
+.sbNeedGrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px; margin: 6px 0 4px;
+}
+.sbNeedBtn {
+  border: 3px solid transparent; cursor: pointer; border-radius: 20px;
+  background: #eef4ff; font: inherit; color: var(--sb-ink);
+  min-height: 104px; padding: 10px 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 4px 10px rgba(40, 40, 90, .14);
+}
+.sbNeedBtn:active { transform: scale(.95); }
+.sbNeedBtn .sbNeedEmoji { font-size: 40px; line-height: 1; }
+.sbNeedBtn .sbNeedLbl { font-size: 13.5px; font-weight: 900; line-height: 1.2; }
+
+/* the break bench: a slow breathing circle, nothing to get right */
+.sbRestPanel .sbPanelCard { background: rgba(240, 250, 255, .97); }
+.sbBreathe {
+  width: 116px; height: 116px; margin: 4px auto 12px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #bfe6ff, #7cc4f0);
+  box-shadow: 0 0 0 10px rgba(124, 196, 240, .22);
+  animation: sbBreathe 7s ease-in-out infinite;
+}
+@keyframes sbBreathe {
+  0%, 100% { transform: scale(.78); box-shadow: 0 0 0 6px rgba(124,196,240,.18); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 18px rgba(124,196,240,.26); }
+}
+
+@media (max-height: 560px) {
+  #swZoom { bottom: calc(var(--sb-bottom) + 118px); }
+  #swZoom button { width: 46px; height: 46px; font-size: 19px; }
+  #swHint { bottom: calc(18vh + 56px); padding: 7px 14px; }
+  .sbHandBtn { min-height: 100px; }
+  .sbHandBtn .sbHandEmoji { font-size: 42px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #sbCue.pop, .sbBreathe { animation: none; }
+}
+
+/* ══════════════════════════════ #sbDo — the one big button
+   Every drill step that needs an action uses this and only this. Bottom
+   centre, thumb-sized, with the coach's own words on it. It sits above the
+   toast line and clear of the joystick (left) and the action stack (right). */
+#sbDo {
+  position: fixed; left: 50%; bottom: calc(var(--sb-bottom) + 22px); transform: translateX(-50%);
+  z-index: 47; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 132px; max-width: min(48vw, 260px); min-height: 84px; padding: 10px 20px;
+  border: 0; cursor: pointer; border-radius: 26px; font: inherit; color: #fff;
+  background: linear-gradient(180deg, #ffc93c, #f59e0b); box-shadow: 0 7px 0 #b45309;
+  text-shadow: 0 2px 4px rgba(120, 70, 0, .35);
+}
+#sbDo:active { transform: translateX(-50%) translateY(4px); box-shadow: 0 3px 0 #b45309; }
+#sbDo .sbDoEmoji { font-size: 30px; line-height: 1; text-shadow: none; }
+#sbDo .sbDoLbl { font-size: 15px; font-weight: 900; line-height: 1.15; text-align: center; }
+#sbDo.pop { animation: sbDoPop .34s ease; }
+@keyframes sbDoPop {
+  0% { transform: translateX(-50%) scale(.8); }
+  65% { transform: translateX(-50%) scale(1.06); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+/* the step counter pill inside the cue band */
+.sbStepPill {
+  flex: 0 0 auto; font-size: 11px; font-weight: 900; color: #fff;
+  background: var(--k-accent); border-radius: 999px; padding: 4px 9px; white-space: nowrap;
+}
+@media (max-width: 520px) {
+  #sbDo { min-width: 112px; min-height: 74px; padding: 8px 14px; }
+  #sbDo .sbDoEmoji { font-size: 26px; }
+  #sbDo .sbDoLbl { font-size: 13px; }
+  .sbStepPill { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { #sbDo.pop { animation: none; } }
+
+/* ══════════════════════════════ Coach Mode (grown-ups) */
+.sbPanelCard.wide { width: min(96vw, 720px); }
+.sbCoachHead {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center;
+  font-size: 15px; font-weight: 700; color: var(--sb-ink);
+  background: #eef4ff; border-radius: 14px; padding: 10px 14px; margin-bottom: 6px;
+}
+.sbCoachH3 {
+  margin: 16px 0 6px; font-size: 14px; font-weight: 900; letter-spacing: .3px;
+  text-transform: uppercase; color: #5a6a80; text-align: left;
+}
+.sbCoachRow {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin: 4px 0;
+  background: rgba(255,255,255,.8); border-radius: 12px; opacity: .55; text-align: left;
+}
+.sbCoachRow.done { opacity: 1; background: #fff; box-shadow: 0 2px 6px rgba(40,40,90,.1); }
+.sbCoachEmoji { font-size: 22px; }
+.sbCoachName { flex: 1; font-size: 15px; font-weight: 800; }
+.sbCoachVal { font-size: 13px; font-weight: 800; color: #2f6fb5; white-space: nowrap; }
+.sbCoachAdv { background: #eafaf0; border-radius: 14px; padding: 12px; }
+.sbAdvBig { font-size: 15px; font-weight: 900; color: #148f4b; }
+.sbAdvRow { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 6px; font-weight: 800; }
+.sbNeedTally { background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+.sbCoachNote { margin-top: 14px; font-size: 12.5px; }
+.sbCueSheet { text-align: left; max-height: 52vh; overflow-y: auto; padding-right: 6px; }
+.sbCue2 {
+  padding: 7px 10px; margin: 4px 0; background: rgba(255,255,255,.85); border-radius: 10px;
+  font-size: 14px; line-height: 1.4;
+}
+.sbCue2 b { display: block; font-weight: 800; }
+.sbCue2 span { display: block; font-size: 12.5px; color: #5a6a80; }

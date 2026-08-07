@@ -71,6 +71,12 @@ const METRICS: Array<{ key: string; emoji: string; line: (n: number) => string; 
   { key: 'abe.grocery.trips', emoji: '🛒', line: (n) => tr(`${n} shopping trips finished`, `${n} viajes de compras terminados`) },
   { key: 'abe.dayplanner.days', emoji: '🏠', line: (n) => tr(`${n} days planned and lived`, `${n} días planeados y vividos`) },
   { key: 'abe.rhythm.songs', emoji: '🎶', line: (n) => tr(`${n} little songs echoed back` , `${n} cancioncitas resonaron de vuelta`) },
+  // Softball Stars keeps a rep count per skill and a tally of times the child
+  // asked a coach for what they needed — both are wins worth reporting home.
+  { key: 'sb.reps', emoji: '🥎', line: (n) => tr(`${n} softball reps with Coach AJ's team`, `${n} repeticiones de softbol con el equipo del Coach AJ`),
+    read: () => { try { return Object.values(JSON.parse(localStorage.getItem('abe.softball.reps') || '{}') as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0); } catch { return 0; } } },
+  { key: 'sb.needs', emoji: '🙋', line: (n) => tr(`${n} times you asked for what you needed`, `${n} veces que pediste lo que necesitabas`),
+    read: () => { try { return Object.values(JSON.parse(localStorage.getItem('abe.softball.needs') || '{}') as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0); } catch { return 0; } } },
   // the two big worlds keep their own save formats — read them directly
   { key: 'bc.blocks', emoji: '🧱', line: (n) => tr(`${n} blocks built in Block Craft`, `${n} bloques construidos en Block Craft`),
     read: () => { try { return Number(JSON.parse(localStorage.getItem('aariasBlockCraft3') || '{}')?.metrics?.blocksPlaced) || 0; } catch { return 0; } } },
