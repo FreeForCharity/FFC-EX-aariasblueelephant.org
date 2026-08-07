@@ -854,9 +854,9 @@
     P.goTo = (x, z, done) => {
       /* never send anyone to a spot inside a wall — they'd grind against it
          forever and never fire their arrival callback */
-      const t = { x: x, z: z };
-      try { F.collide(t, 0.45); } catch (e) {}
-      P.target = { x: t.x, z: t.z, done: done };
+      let t = { x: x, z: z };
+      try { t = F.freeSpot(x, z, 0.45); } catch (e) {}
+      P.target = { x: t.x, z: t.z, done: done, t: 0, last: null };
     };
     P.stop = () => { P.target = null; };
     P.lookAt = (x, z) => { P.ry = Math.atan2(x - P.x, z - P.z); };
@@ -875,6 +875,11 @@
         const cb = P.target.done;
         P.target = null;
         if (cb) { try { cb(); } catch (e) {} }
+      } else if (unstick(P, d, dt, () => {
+        const cb = P.target.done; P.target = null;
+        if (cb) { try { cb(); } catch (e) {} }
+      })) {
+        /* rescued */
       } else {
         const sp = P.speed;
         P.x += (dx / d) * sp * dt;
@@ -1025,9 +1030,9 @@
         shadow.position.set(x, 0.028, z);
       },
       goTo(x, z, done) {
-        const t = { x: x, z: z };
-        try { F.collide(t, 0.9); } catch (e) {}
-        this.target = { x: t.x, z: t.z, done: done };
+        let t = { x: x, z: z };
+        try { t = F.freeSpot(x, z, 0.95); } catch (e) {}
+        this.target = { x: t.x, z: t.z, done: done, t: 0, last: null };
       },
       lookAt(x, z) { this.ry = Math.atan2(x - this.x, z - this.z); },
     };
@@ -1050,6 +1055,24 @@
     },
   };
 
+  /* If someone stops making progress towards where they're going — caught on
+     a corner, boxed in by furniture — put them there and fire the callback.
+     Nilu wedged behind the dugout bench is exactly the failure this closes:
+     a child looking for her would have waited forever. */
+  function unstick(P, d, dt, arrive) {
+    if (P.target.last == null || d < P.target.last - 0.04) {
+      P.target.last = d; P.target.t = 0;
+      return false;
+    }
+    P.target.t += dt;
+    if (P.target.t < 3.5) return false;
+    let q = { x: P.target.x, z: P.target.z };
+    try { q = F.freeSpot(P.target.x, P.target.z, 0.9); } catch (e) {}
+    P.x = q.x; P.z = q.z;
+    arrive();
+    return true;
+  }
+
   function niluTick(N, dt) {
     let want = 0;
     if (N.target) {
@@ -1058,6 +1081,11 @@
       if (d < 0.3) {
         const cb = N.target.done; N.target = null;
         if (cb) { try { cb(); } catch (e) {} }
+      } else if (unstick(N, d, dt, () => {
+        const cb = N.target.done; N.target = null;
+        if (cb) { try { cb(); } catch (e) {} }
+      })) {
+        /* rescued — nothing more to do this frame */
       } else {
         N.x += (dx / d) * N.speed * dt;
         N.z += (dz / d) * N.speed * dt;
@@ -1295,6 +1323,27 @@
       }
     }
     return hit;
+  };
+
+  /* The nearest patch of OPEN ground to x,z. F.collide only shoves a point out
+     of whatever it overlaps, which can land it on the wrong side of a wall —
+     behind the dugout instead of in front of it. This searches outward until
+     it finds somewhere genuinely clear, so nobody is ever parked inside the
+     furniture. */
+  F.freeSpot = function (x, z, r) {
+    r = r || 0.9;
+    const p = { x: x, z: z };
+    if (!F.collide(p, r)) return { x: x, z: z };
+    for (let ring = 1; ring <= 7; ring++) {
+      const rad = ring * 1.3;
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        const q = { x: x + Math.cos(a) * rad, z: z + Math.sin(a) * rad };
+        const t = { x: q.x, z: q.z };
+        if (!F.collide(t, r)) return q;
+      }
+    }
+    return p;
   };
 
   /* a soft glowing disc used to say "stand here" / "this is the spot" */

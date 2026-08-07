@@ -93,10 +93,10 @@
      kept parking answers inside the dugout roof or behind the backstop's
      posts — and because a child who knows where to look does better. */
   const STAGES = {
-    bag:    { at: { x: -9.5, z: -3.0 }, stand: { x: -9.5, z: 0.6 } },
-    rack:   { at: { x: -13.0, z: -5.2 }, stand: { x: -13.0, z: -1.6 } },
-    plate:  { at: { x: -5.5, z: -6.6 }, stand: { x: -5.5, z: -3.0 } },
-    dugout: { at: { x: -11.5, z: -2.0 }, stand: { x: -11.5, z: 1.6 } },
+    bag:    { at: { x: -9.5, z: -3.0 }, stand: { x: -9.5, z: 0.6 }, nilu: { x: -9.5, z: -6.6 } },
+    rack:   { at: { x: -13.0, z: -5.2 }, stand: { x: -13.0, z: -1.6 }, nilu: { x: -13.0, z: -8.8 } },
+    plate:  { at: { x: -5.5, z: -6.6 }, stand: { x: -5.5, z: -3.0 }, nilu: { x: -5.5, z: -10.2 } },
+    dugout: { at: { x: -11.5, z: -2.0 }, stand: { x: -11.5, z: 1.6 }, nilu: { x: -11.5, z: -5.6 } },
   };
   const SPREAD = 3.6;                    // metres between neighbouring bubbles
 
@@ -211,10 +211,19 @@
     g.traverse((o) => {
       if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
       o.material = o.material.clone();
-      /* An answer the child cannot see is not an answer. These are floating
-         UI that happens to live in the world, so they draw over anything that
-         wanders in front — Nilu, a coach, a fence post. */
+      /* An answer the child cannot see is not an answer. These are floating UI
+         that happens to live in the world, so they draw over anything that
+         wanders in front — Nilu, a coach, a fence post.
+
+         `transparent` matters even at full opacity: three.js draws the whole
+         opaque pass BEFORE the transparent one, so opaque gear would be
+         painted over by the (transparent-sprite) bubble disc behind it. Moving
+         it into the transparent pass lets renderOrder actually decide, and the
+         item lands on top of its own background where it belongs. */
+      o.material.transparent = true;
+      o.material.opacity = 1;
       o.material.depthTest = false;
+      o.material.depthWrite = false;
       o.renderOrder = 900;
       /* glow in its OWN colour, so the ball stays yellow and the helmet stays
          blue — a flat grey lift desaturated everything into pebbles */
@@ -236,18 +245,24 @@
     /* a soft cool disc: pale gear needs something to sit against, but it must
        stay light enough that a dark bat still reads. Additive glow was tried
        first and smeared three bubbles into one white blob — don't go back. */
-    /* mid-tone navy: light enough that a dark bat handle still reads, dark
-       enough that a pale ball or a white helmet pops off it. Too light and
-       everything vanishes; too dark and the bat disappears. */
-    const gr = g.createRadialGradient(S_ / 2, S_ / 2, 10, S_ / 2, S_ / 2, S_ * 0.46);
-    gr.addColorStop(0, 'rgba(37,58,86,0.40)');
-    gr.addColorStop(0.74, 'rgba(37,58,86,0.34)');
-    gr.addColorStop(0.95, 'rgba(37,58,86,0.18)');
-    gr.addColorStop(1, 'rgba(37,58,86,0)');
-    g.beginPath(); g.arc(S_ / 2, S_ / 2, S_ * 0.46, 0, 7); g.fillStyle = gr; g.fill();
+    /* SOLID, not tinted glass. Grass stripes, chalk and dirt showing through
+       made the gear hard to pick out — a plain opaque disc gives every item a
+       clean background to sit on, whatever it is standing in front of. Light,
+       because most of the gear is dark-edged; the ball is optic yellow now,
+       which reads fine against it. */
+    const gr = g.createRadialGradient(S_ * 0.42, S_ * 0.34, 12, S_ / 2, S_ / 2, S_ * 0.47);
+    gr.addColorStop(0, '#ffffff');
+    gr.addColorStop(0.55, '#f4f9ff');
+    gr.addColorStop(1, '#d7e6f4');
+    g.beginPath(); g.arc(S_ / 2, S_ / 2, S_ * 0.455, 0, 7); g.fillStyle = gr; g.fill();
+    /* a soft inner edge so it reads as a disc rather than a flat hole */
+    const inner = g.createRadialGradient(S_ / 2, S_ / 2, S_ * 0.32, S_ / 2, S_ / 2, S_ * 0.455);
+    inner.addColorStop(0, 'rgba(120,150,180,0)');
+    inner.addColorStop(1, 'rgba(120,150,180,0.30)');
+    g.beginPath(); g.arc(S_ / 2, S_ / 2, S_ * 0.455, 0, 7); g.fillStyle = inner; g.fill();
     /* the ring — thick, gold, and perfectly circular from any angle */
     g.beginPath(); g.arc(S_ / 2, S_ / 2, S_ * 0.435, 0, 7);
-    g.lineWidth = 15; g.strokeStyle = '#f0ad20'; g.stroke();
+    g.lineWidth = 16; g.strokeStyle = '#e09b12'; g.stroke();
     g.beginPath(); g.arc(S_ / 2, S_ / 2, S_ * 0.435, 0, 7);
     g.lineWidth = 6; g.strokeStyle = '#ffe08a'; g.stroke();
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -355,8 +370,8 @@
      is a big elephant and she was standing in front of the answers. */
   function niluAside(stage) {
     const N = F.nilu;
-    if (!N) return;
-    N.goTo(stage.at.x - (SPREAD + 3.4), stage.at.z - 2.2, () => {
+    if (!N || !stage.nilu) return;
+    N.goTo(stage.nilu.x, stage.nilu.z, () => {
       try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {}
     });
   }
@@ -557,8 +572,10 @@
   function leadTo(at, then) {
     Q.at = { x: at.x, z: at.z };
     const N = F.nilu;
-    /* off to one side: she was standing right where the answers appear */
-    if (N) N.goTo(at.x - 3.4, at.z - 1.2, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
+    /* she waits on open grass past the answers — close enough to follow, and
+       never routed into the dugout, where she used to get wedged behind the
+       bench */
+    if (N) N.goTo(at.x, at.z - 3.4, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
     anchorMark = F.marker(at.x, at.z, 0xffd43b, 1.5);
     const p = SWalk.pos;
     if (Math.hypot(p.x - at.x, p.z - at.z) < 4.2) { then(); return; }
