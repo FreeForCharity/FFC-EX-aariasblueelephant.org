@@ -108,6 +108,7 @@
       '<button class="kRow" id="sbCoachAssist">' + tr(M.assist) + ': <b>' +
         tr(G.assist ? M.assistOn : M.assistOff) + '</b></button>' +
       '<button class="kRow" id="sbCoachHand">🤚 ' + tr(M.resetHand) + '</button>' +
+      '<button class="kRow" id="sbCoachGo">' + tr(M.goStation) + '</button>' +
       '<button class="kRow" id="sbCoachCues">' + tr(M.cueSheet) + '</button>' +
       '<button class="kRow" id="sbCoachCard">' + tr(M.practiceCard) + '</button>' +
       '<button class="kRow" id="sbCoachReset">♻️ ' + tr({ en: 'Start practice over', es: 'Empezar la práctica de nuevo' }) + '</button>' +
@@ -124,9 +125,58 @@
       try { SWalk.setHand(h); } catch (e) {}
       sfx('yes'); p._close(); panel();
     });
+    document.getElementById('sbCoachGo').addEventListener('click', () => { sfx('tap'); p._close(); stationPicker(); });
     document.getElementById('sbCoachCues').addEventListener('click', () => { sfx('tap'); p._close(); cueSheet(); });
     document.getElementById('sbCoachCard').addEventListener('click', () => { sfx('tap'); sharePracticeCard(); });
     document.getElementById('sbCoachReset').addEventListener('click', () => { sfx('tap'); p._close(); confirmReset(); });
+  }
+
+  /* ══════════════════════════ 🎯 go straight to a station
+     A child's own path stays in order on purpose — the same eight cards in
+     the same order every time is most of why this game is calm. But a coach
+     running one skill on a Saturday, or a kid who came to hit today, should
+     not have to work through the gear round first. So: a grown-up can open
+     any station and go there. */
+  function stationPicker() {
+    const G = LV().G;
+    const M = C.coachMode;
+    const cards = (C.levels || []).map((l) => {
+      const open = !!G.open[l.id];
+      const now = l.id === G.level;
+      return '<button class="sbStationBtn' + (now ? ' now' : '') + (open ? ' open' : '') +
+        '" data-lvl="' + l.id + '">' +
+        '<span class="sbStationEmoji">' + l.emoji + '</span>' +
+        '<span class="sbStationLbl">' + esc(tr(l.name)) + '</span>' +
+        '<span class="sbStationState">' + (open ? '✓' : '🔒') + '</span></button>';
+    }).join('');
+    const p = LV().panel('sbStations',
+      '<h2>' + tr(M.goStation) + '</h2>' +
+      '<p class="sbSub">' + tr(M.goStationSub) + '</p>' +
+      '<div class="sbStationGrid">' + cards + '</div>' +
+      '<button class="kRow" id="sbOpenAll">' + tr(M.openAll) + '</button>' +
+      '<button class="sbBig" id="sbStationsDone">' + tr(M.close) + '</button>');
+
+    p.querySelectorAll('.sbStationBtn').forEach((b) => b.addEventListener('click', () => {
+      const id = b.dataset.lvl;
+      sfx('yes');
+      G.open[id] = 1;                 // opening it is the whole point
+      LV().save();
+      LV().refreshStrip();
+      p._close();
+      /* straight to the skill: they picked it deliberately, so skip the
+         line-up and warm-up they'd otherwise sit through first */
+      try { window.SBTeam && SBTeam.markLinedUp(id); } catch (e) {}
+      try { LV().goToLevel(id); } catch (e) {}
+    }));
+    document.getElementById('sbOpenAll').addEventListener('click', () => {
+      for (const l of (C.levels || [])) G.open[l.id] = 1;
+      LV().save();
+      LV().refreshStrip();
+      sfx('star');
+      try { K.toast(tr(M.openAllDone), 3200); } catch (e) {}
+      p._close(); stationPicker();
+    });
+    document.getElementById('sbStationsDone').addEventListener('click', () => { sfx('tap'); p._close(); panel(); });
   }
 
   /* ══════════════════════════ 📋 the cue sheet — everything the game says */

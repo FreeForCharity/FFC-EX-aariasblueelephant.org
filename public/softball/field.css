@@ -276,3 +276,22 @@
 }
 .sbCue2 b { display: block; font-weight: 800; }
 .sbCue2 span { display: block; font-size: 12.5px; color: #5a6a80; }
+
+/* 🎯 the station picker in Coach Mode — jump straight to a skill */
+.sbStationGrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px; margin: 4px 0 10px;
+}
+.sbStationBtn {
+  position: relative; border: 2px solid transparent; cursor: pointer; border-radius: 16px;
+  background: #eef4ff; font: inherit; color: var(--sb-ink);
+  min-height: 74px; padding: 8px 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  box-shadow: 0 3px 8px rgba(40, 40, 90, .12);
+}
+.sbStationBtn:active { transform: scale(.95); }
+.sbStationBtn .sbStationEmoji { font-size: 26px; line-height: 1; }
+.sbStationBtn .sbStationLbl { font-size: 12px; font-weight: 900; line-height: 1.15; text-align: center; }
+.sbStationBtn .sbStationState { position: absolute; top: 5px; right: 8px; font-size: 11px; opacity: .7; }
+.sbStationBtn.open { background: #eafaf0; }
+.sbStationBtn.now { border-color: var(--k-accent); background: #fff; }

@@ -181,6 +181,9 @@
     S.lineUp(then);
   };
   S.forgetLineUps = function () { for (const k in linedUp) delete linedUp[k]; warmedUp = false; };
+  /* a grown-up jumping straight to a station in Coach Mode has already decided
+     what they want — don't make them line up and warm up first */
+  S.markLinedUp = function (id) { linedUp[id] = 1; warmedUp = true; };
 
   /* ═════════════════════════════════════ 💪 the short warm-up after a line-up
      Two stretches, about fifteen seconds, with Nilu copying along beside you.
