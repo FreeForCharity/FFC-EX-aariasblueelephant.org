@@ -105,6 +105,13 @@
         '<div class="sbAdvBig">' + LV().fill(tr(C.needs.tally), { n: needTotal }) + '</div>' +
         '<div class="sbAdvRow">' + (needRows || '—') + '</div>' +
       '</div>' +
+      '<h3 class="sbCoachH3">' + tr(M.repsTitle) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.repsSub) + '</p>' +
+      '<div class="sbRepsRow">' +
+        '<button class="sbRepsBtn" id="sbRepsDown">−</button>' +
+        '<span class="sbRepsVal">' + (G.repTarget ? G.repTarget : tr(M.repsDefault)) + '</span>' +
+        '<button class="sbRepsBtn" id="sbRepsUp">+</button>' +
+      '</div>' +
       '<button class="kRow" id="sbCoachAssist">' + tr(M.assist) + ': <b>' +
         tr(G.assist ? M.assistOn : M.assistOff) + '</b></button>' +
       '<button class="kRow" id="sbCoachHand">🤚 ' + tr(M.resetHand) + '</button>' +
@@ -116,6 +123,12 @@
       '<button class="sbBig" id="sbCoachDone">' + tr(M.close) + '</button>');
 
     document.getElementById('sbCoachDone').addEventListener('click', () => { sfx('tap'); p._close(); });
+    const bumpReps = (d) => {
+      G.repTarget = Math.max(0, Math.min(5, (G.repTarget || 0) + d));
+      LV().save(); sfx('tap'); p._close(); panel();
+    };
+    document.getElementById('sbRepsDown').addEventListener('click', () => bumpReps(-1));
+    document.getElementById('sbRepsUp').addEventListener('click', () => bumpReps(1));
     document.getElementById('sbCoachAssist').addEventListener('click', () => {
       G.assist = G.assist ? 0 : 1; LV().save(); sfx('tap'); p._close(); panel();
     });
@@ -181,60 +194,87 @@
 
   /* ══════════════════════════ 📋 the cue sheet — everything the game says */
   function cueSheet() {
-    const fill = (s) => LV().fill(tr(s));
-    const sec = (title, body) => '<h3 class="sbCoachH3">' + esc(title) + '</h3>' + body;
+    const fill = (s2) => LV().fill(tr(s2));
     const line = (a, b) => '<div class="sbCue2"><b>' + esc(a) + '</b>' + (b ? '<span>' + esc(b) + '</span>' : '') + '</div>';
 
-    let html = '';
+    /* one entry per station, so the chips above can show them one at a time */
+    const sections = [];
+    const add = (id, emoji, title, body) => sections.push({ id: id, emoji: emoji, title: title, body: body });
 
-    html += sec('🐘 ' + tr({ en: 'Nilu (the narrator)', es: 'Nilu (la narradora)' }),
+    add('nilu', '🐘', tr({ en: 'Nilu', es: 'Nilu' }),
       Object.keys(C.nilu).map((k) => line(fill(C.nilu[k]))).join(''));
 
-    html += sec('🧢 Coach AJ',
+    add('aj', '🧢', 'Coach AJ',
       Object.keys(C.aj).filter((k) => k !== 'id').map((k) => line(fill(C.aj[k]))).join(''));
 
-    html += sec('🙋 ' + tr(C.needs.title),
+    add('needs', '🙋', tr(C.needs.title),
       line(fill(C.needs.how)) +
       (C.needs.items || []).map((it) =>
         line(it.emoji + ' ' + tr(it.label), fill(it.say) + '  →  ' + fill(it.reply))).join(''));
 
-    html += sec('🥎 ' + tr({ en: 'The gear', es: 'El equipo' }),
+    add('gear', '🥎', tr({ en: 'The gear', es: 'El equipo' }),
       (C.gear || []).map((g) =>
         line(g.emoji + ' ' + tr(g.name), tr(g.whatFor) + (g.note ? ' · ' + fill(g.note) : ''))).join(''));
 
-    html += sec('🛟 ' + tr({ en: 'Safety', es: 'Seguridad' }),
+    add('safety', '🛟', tr({ en: 'Safety', es: 'Seguridad' }),
       (C.safety || []).map((r) => line(r.emoji + ' ' + tr(r.rule), tr(r.why))).join(''));
 
     for (const id of ['throw', 'pitch', 'field', 'bat', 'box', 'run']) {
       const d = C.drills[id];
       if (!d) continue;
       const co = (C.coaches.find((c) => c.id === d.coach) || {}).name || '';
-      html += sec(d.emoji + ' ' + tr(d.title) + ' — ' + co,
+      let turns = 3;
+      try { turns = SBDrills.repTarget(id); } catch (e) {}
+      add(id, d.emoji, tr(d.title),
+        line(tr(d.title) + ' — ' + co, LV().fill(tr(C.coachMode.reps), { n: turns })) +
         line(tr({ en: 'Intro', es: 'Introducción' }), fill(d.intro)) +
         d.steps.map((st, i) =>
-          line((i + 1) + '. ' + fill(st.do), tr({ en: 'coach says', es: 'el coach dice' }) + ': ' + fill(st.show))).join('') +
+          line((i + 1) + '. ' + fill(st.do),
+               tr({ en: 'coach says', es: 'el coach dice' }) + ': ' + fill(st.show))).join('') +
         d.praise.map((pr) => line('⭐', fill(pr))).join('') +
         line(tr({ en: 'Finish', es: 'Cierre' }), fill(d.done)));
     }
 
-    html += sec('👥 ' + tr({ en: 'Team time', es: 'Trabajo en equipo' }),
+    add('team', '👥', tr({ en: 'Team time', es: 'Trabajo en equipo' }),
       line(fill(C.team.whistle)) + line(fill(C.team.lineUpSay)) + line(fill(C.team.lineUpDo)) +
-      line(fill(C.team.stretchIntro)) +
+      line(fill(C.team.withNilu)) + line(fill(C.team.stretchIntro)) +
       (C.team.stretches || []).map((x) => line(x.emoji, tr(x.do))).join('') +
       line(fill(C.team.waterSay)) + line(fill(C.team.cheer)));
 
-    html += sec('🏆 ' + tr({ en: 'Game day', es: 'Día de juego' }),
+    add('game', '🏆', tr({ en: 'Game day', es: 'Día de juego' }),
       Object.keys(C.gameDay).map((k) => line(fill(C.gameDay[k]))).join(''));
+
+    const html = sections.map((x) =>
+      '<div data-secid="' + x.id + '"><h3 class="sbCoachH3">' + esc(x.emoji + ' ' + x.title) + '</h3>' +
+      x.body + '</div>').join('');
+
+    /* Station chips: the whole script at once is a wall. Pick one and read
+       just that — which is how you'd actually check it before a session. */
+    const chips = [{ id: 'all', label: tr(C.coachMode.cueAll), emoji: '📋' }]
+      .concat(sections.map((x) => ({ id: x.id, label: x.title, emoji: x.emoji })));
+    const chipRow = chips.map((c) =>
+      '<button class="sbCueChip" data-sec="' + c.id + '">' + c.emoji + ' ' + esc(c.label) + '</button>').join('');
 
     const p = LV().panel('sbCues',
       '<h2>📋 ' + tr(C.coachMode.cueSheet) + '</h2>' +
       '<p class="sbSub">' + tr({
-        en: 'Everything the game says, in order. Wrong? Edit content.js — nothing else needs to change.',
-        es: 'Todo lo que dice el juego, en orden. ¿Algo no cuadra? Edita content.js — no hace falta tocar nada más.',
+        en: 'Everything the game says. Wrong? Edit content.js — nothing else needs to change.',
+        es: 'Todo lo que dice el juego. ¿Algo no cuadra? Edita content.js — no hace falta tocar nada más.',
       }) + '</p>' +
+      '<div class="sbCueChips">' + chipRow + '</div>' +
       '<div class="sbCueSheet">' + html + '</div>' +
       '<button class="sbBig" id="sbCuesDone">' + tr(C.coachMode.close) + '</button>');
     p.querySelector('.sbPanelCard').classList.add('wide');
+    const show = (id) => {
+      p.querySelectorAll('.sbCueChip').forEach((c) => c.classList.toggle('on', c.dataset.sec === id));
+      p.querySelectorAll('[data-secid]').forEach((sec) => {
+        sec.style.display = (id === 'all' || sec.dataset.secid === id) ? '' : 'none';
+      });
+      const sheet = p.querySelector('.sbCueSheet');
+      if (sheet) sheet.scrollTop = 0;
+    };
+    p.querySelectorAll('.sbCueChip').forEach((c) => c.addEventListener('click', () => { sfx('tap'); show(c.dataset.sec); }));
+    show('all');
     document.getElementById('sbCuesDone').addEventListener('click', () => { sfx('tap'); p._close(); panel(); });
   }
 

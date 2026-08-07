@@ -111,13 +111,32 @@
        stands she reads as beside the answers, never behind one */
     nilu:  { x: -21.5, z: -6.0 },
   };
-  const SPREAD = 3.6;                 // metres between neighbouring answers
   let stageRing = null;
 
+  /* HOW THE THREE ANSWERS ARE ARRANGED
+     A wide screen gets them side by side. A phone held upright has no room
+     for that — three discs in a row ran off both edges — so it gets them
+     stacked front-to-back instead, which is exactly the shape a tall screen
+     has room for. The child still reads them top to bottom, still taps or
+     walks into them, and the fixed answer spot doesn't move. */
+  function layout() {
+    const w = innerWidth, h = innerHeight;
+    /* phone upright: no width for a row, so stack them front-to-back */
+    if (w / h < 0.95) return { spread: 2.55, depth: 3.3, scale: 2.5, y: 1.85, back: 0 };
+    /* phone on its side: barely any height, and the cue band owns the top —
+       so sit them lower and a little further off, out from under it */
+    if (h < 470) return { spread: 3.4, depth: 0, scale: 2.5, y: 1.7, back: 0.8 };
+    return { spread: 3.6, depth: 0, scale: 3.0, y: 1.95, back: 0 };
+  }
+  const SPREAD = 3.6;                 // metres between neighbouring answers (wide screens)
+
     function stageFor() { return STAGE; }
-  /* the three slots, left to right */
+  /* the three slots — left to right on a wide screen, near to far on a phone */
   function slot(stage, i) {
-    return { x: stage.at.x + (i - 1) * SPREAD, z: stage.at.z };
+    const L2 = layout();
+    return { x: stage.at.x + (i - 1) * L2.spread,
+             z: stage.at.z - (i - 1) * L2.depth - (L2.back || 0),
+             y: L2.y };
   }
   /* a chalk ring on the grass so the answer spot is a place, not a surprise */
   function markStage() {
@@ -335,7 +354,7 @@
     const grp = new THREE.Group();
     grp.position.set(x, y, z);
 
-    const rim = bubblePlate(3.0);
+    const rim = bubblePlate(layout().scale);
     grp.add(rim);
 
     /* a little shadow on the grass under each one, so they read as objects
@@ -353,7 +372,7 @@
     grp.add(spin);
 
     /* the tap target: a plain invisible sphere, generous on purpose */
-    const hit = new THREE.Mesh(new THREE.SphereGeometry(1.15, 10, 8),
+    const hit = new THREE.Mesh(new THREE.SphereGeometry(layout().scale * 0.42, 10, 8),
       new THREE.MeshBasicMaterial({ visible: false }));
     grp.add(hit);
 
@@ -419,7 +438,7 @@
 
     opts.forEach((o, i) => {
       const at = slot(stage, i);
-      const b = makeBubble(at.x, 1.95, at.z, miniModel(o.id), null);
+      const b = makeBubble(at.x, at.y, at.z, miniModel(o.id), null);
       b.id = o.id;
       b.right = o.id === item.id;
       bubbles.push(b);
@@ -471,8 +490,8 @@
     Q.tries = 0;
 
     opts.forEach((o, i) => {
-      const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.15, at.z, discAnswer(o.emoji, tr(o.whatFor)), null);
+      const at = slot(stage, i);
+      const b = makeBubble(at.x, at.y + 0.2, at.z, discAnswer(o.emoji, tr(o.whatFor)), null);
       b.id = o.id;
       b.right = o.id === item.id;
       bubbles.push(b);
@@ -565,8 +584,8 @@
     Q.active = { kind: 'safety', item: rule, opts: opts.map((o) => o.id) };
     Q.tries = 0;
     opts.forEach((o, i) => {
-      const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.15, at.z, discAnswer(o.emoji, tr(o.rule)), null);
+      const at = slot(stage, i);
+      const b = makeBubble(at.x, at.y + 0.2, at.z, discAnswer(o.emoji, tr(o.rule)), null);
       b.id = o.id;
       b.right = o.id === rule.id;
       bubbles.push(b);
@@ -903,6 +922,17 @@
     }
 
     if (anchorMark) anchorMark.material.opacity = 0.5 + Math.sin(clock * 2.4) * 0.25;
+  };
+
+  /* the phone turned — put the answers back where they now fit */
+  S.relayout = function () {
+    if (!running || !bubbles.length) return;
+    bubbles.forEach((b, i) => {
+      const at = slot(STAGE, i);
+      b.x = at.x; b.z = at.z;
+      b.y = at.y + (Q.active && Q.active.kind !== 'thing' ? 0.2 : 0);
+      b.grp.position.set(b.x, b.y, b.z);
+    });
   };
 
   /* grown-up / test helpers — also what Coach Mode reads */
