@@ -42,7 +42,9 @@
   const WALK_SPEED = 4.4;
   const CAM_R_MIN = 6, CAM_R_MAX = 34, CAM_PHI_MIN = 0.3, CAM_PHI_MAX = 1.3;
   const TAP_PX = 8, TAP_MS = 300;
-  const HOME_DIST = 22;             // show the "⬅️ Nilu" chip past this
+  const HOME_DIST = 13;             // show the "⬅️ Nilu" chip past this — she
+                                    // is how you know where to go, so point at
+                                    // her early rather than only when lost
 
   /* ================================================================== state */
   let THREE = null, scene = null, camera = null, renderer = null, canvas = null, host = null;

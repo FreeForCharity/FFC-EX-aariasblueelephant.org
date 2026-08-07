@@ -791,7 +791,13 @@
       outer.rotation.y = P.ry;
       shadow.position.set(x, 0.03, z);
     };
-    P.goTo = (x, z, done) => { P.target = { x: x, z: z, done: done }; };
+    P.goTo = (x, z, done) => {
+      /* never send anyone to a spot inside a wall — they'd grind against it
+         forever and never fire their arrival callback */
+      const t = { x: x, z: z };
+      try { F.collide(t, 0.45); } catch (e) {}
+      P.target = { x: t.x, z: t.z, done: done };
+    };
     P.stop = () => { P.target = null; };
     P.lookAt = (x, z) => { P.ry = Math.atan2(x - P.x, z - P.z); };
     P.place(0, 0, 0);
@@ -932,6 +938,15 @@
        a little shorter than a coach, a little taller than the child. */
     g.scale.setScalar(0.56);
 
+    /* NILU CAN NEVER BE HIDDEN. She is the child's way of knowing where to go;
+       if she ends up behind the dugout roof the game feels broken. Her tag
+       draws over the whole world, exactly like the coaches' — so wherever she
+       is, you can see her. */
+    const tag = nameTag('🐘 Nilu', 'rgba(214,240,255,0.96)');
+    tag.scale.set(1.9, 0.58, 1);
+    tag.renderOrder = 950;
+    scene.add(tag);
+
     const shadow = new THREE.Mesh(
       new THREE.CircleGeometry(0.78, 22),
       new THREE.MeshBasicMaterial({ map: F.shadowTexture(), transparent: true, depthWrite: false, opacity: 0.6, fog: false }));
@@ -940,7 +955,8 @@
     scene.add(shadow);
 
     return {
-      group: g, earL: earL, earR: earR, trunk: trunkG, shadow: shadow,
+      group: g, earL: earL, earR: earR, trunk: trunkG, shadow: shadow, tag: tag,
+      pose: null,
       x: 0, z: 0, ry: 0, target: null, phase: 0, moveAmt: 0, speed: 4.6, bounce: 0,
       place(x, z, ry) {
         this.x = x; this.z = z;
@@ -948,10 +964,31 @@
         g.position.set(x, 0, z); g.rotation.y = this.ry;
         shadow.position.set(x, 0.028, z);
       },
-      goTo(x, z, done) { this.target = { x: x, z: z, done: done }; },
+      goTo(x, z, done) {
+        const t = { x: x, z: z };
+        try { F.collide(t, 0.9); } catch (e) {}
+        this.target = { x: t.x, z: t.z, done: done };
+      },
       lookAt(x, z) { this.ry = Math.atan2(x - this.x, z - this.z); },
     };
   }
+
+  /* Poses Nilu can hold. Her rig is an elephant's — no shoulders to swing —
+     so "stretching" for her is a trunk swing, big ear flaps and a bounce. */
+  F.niluPoses = {
+    stretch(N, dt, t) {
+      N.trunk.rotation.x = 0.5 + Math.sin(t * 3.1) * 0.95;
+      N.earL.rotation.y = 0.35 + Math.sin(t * 4.2) * 0.55;
+      N.earR.rotation.y = -0.35 - Math.sin(t * 4.2) * 0.55;
+      N.group.position.y = Math.abs(Math.sin(t * 3.1)) * 0.34;
+    },
+    cheer(N, dt, t) {
+      N.trunk.rotation.x = -0.5 + Math.sin(t * 6) * 0.3;
+      N.earL.rotation.y = 0.35 + Math.abs(Math.sin(t * 6)) * 0.7;
+      N.earR.rotation.y = -0.35 - Math.abs(Math.sin(t * 6)) * 0.7;
+      N.group.position.y = Math.abs(Math.sin(t * 5)) * 0.5;
+    },
+  };
 
   function niluTick(N, dt) {
     let want = 0;
@@ -974,16 +1011,26 @@
     }
     N.moveAmt += (want - N.moveAmt) * Math.min(1, dt * 7);
     N.bounce += dt;
+    /* she is solid-aware too, so she never ends up standing inside the dugout */
+    try { F.collide(N, 0.85); } catch (e) {}
     const hop = Math.abs(Math.sin(N.phase)) * 0.14 * N.moveAmt
               + Math.sin(N.bounce * 1.6) * 0.05 * (1 - N.moveAmt);
     N.group.position.set(N.x, hop, N.z);
     N.group.rotation.y = N.ry;
     N.shadow.position.set(N.x, 0.028, N.z);
     N.shadow.material.opacity = 0.6 - hop * 0.8;
-    const flap = Math.sin(N.bounce * 2.2) * 0.18 + N.moveAmt * 0.2;
-    N.earL.rotation.y = 0.35 + flap;
-    N.earR.rotation.y = -0.35 - flap;
-    N.trunk.rotation.x = 0.5 + Math.sin(N.bounce * 1.1) * 0.16;
+    if (N.pose) {
+      N.poseT = (N.poseT || 0) + dt;
+      try { N.pose(N, dt, N.poseT); } catch (e) {}
+    } else {
+      N.poseT = 0;
+      const flap = Math.sin(N.bounce * 2.2) * 0.18 + N.moveAmt * 0.2;
+      N.earL.rotation.y = 0.35 + flap;
+      N.earR.rotation.y = -0.35 - flap;
+      N.trunk.rotation.x = 0.5 + Math.sin(N.bounce * 1.1) * 0.16;
+    }
+    /* the tag rides above her, drawn over everything */
+    if (N.tag) N.tag.position.set(N.x, 2.35 + N.group.position.y, N.z);
   }
 
   /* ═════════════════════════════════════════════════════════════ build */
