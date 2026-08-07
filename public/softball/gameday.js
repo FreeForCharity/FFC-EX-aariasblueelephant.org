@@ -145,6 +145,7 @@
     const me = SWalk.pos;
     const to = { x: me.x + (Math.random() - 0.5) * 5, z: me.z + 2 + Math.random() * 3 };
     const from = { x: L.home.x, y: 1.2, z: L.home.z };
+    try { SBDrills.frameFollow(from, to, 7); } catch (e) {}
     setTimeout(() => {
       if (!running || paused) return;
       sfx('pop');
@@ -203,6 +204,7 @@
   function doSwing() {
     if (!running) return;
     record('hit');
+    try { SBDrills.frameAction(SWalk.pos, L.circle, 4.0); } catch (e) {}
     const tee = F.props && F.props.tee;
     const teeBall = tee && tee.userData && tee.userData.ball;
     const left = SWalk.hand() === 'L';
@@ -252,6 +254,7 @@
       if (i >= route.length) return medal();
       const p = route[i++];
       marks.push(F.marker(p.x, p.z, 0x69db7c, 2.4));
+      try { SBDrills.frameFollow(SWalk.pos, p, 9); } catch (e) {}
       const step = C.drills.run.steps[Math.min(i - 1, C.drills.run.steps.length - 1)];
       say(step.do, null, { emoji: '🏃' });
       SWalk.addSpot({ id: 'gameRun', x: p.x, z: p.z, r: 2.6, once: true, onEnter: () => {
@@ -367,12 +370,15 @@
   S.leave = function () {
     running = false;
     clearMarks(); clearBalls();
+    try { SWalk.lockCam(null); } catch (e) {}
     try { SBDrills.hide(); } catch (e) {}
     try { SWalk.removeSpot('gamePos'); SWalk.removeSpot('gameBox'); SWalk.removeSpot('gameRun'); } catch (e) {}
     try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.helmet(false); } catch (e) {}
     for (const p of (F && F.people) || []) p.pose = null;
   };
-  S.suspend = function () { paused = true; for (const m of marks) m.visible = false; try { SBDrills.hide(); } catch (e) {} };
+  S.suspend = function () { paused = true; for (const m of marks) m.visible = false;
+    try { SBDrills.hide(); } catch (e) {}
+    try { SWalk.lockCam(null); } catch (e) {} };
   S.resume = function () { paused = false; for (const m of marks) m.visible = true; };
   S.tick = function (dt) {
     if (!running) return;

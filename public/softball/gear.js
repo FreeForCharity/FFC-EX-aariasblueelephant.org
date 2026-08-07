@@ -71,12 +71,6 @@
   /* Answers are staged on the open grass in FRONT of the gear (towards the
      field), never behind home plate: the backstop's posts stripe right
      through anything parked back there. */
-  function anchorFor(item) {
-    if (item.at === 'rack') return { x: L.rack.x - 0.4, z: L.rack.z - 5.4 };
-    if (item.at === 'dugout') return { x: L.water.x + 1.6, z: L.water.z - 6.0 };
-    if (item.at === 'plate') return { x: L.home.x - 6.0, z: L.home.z - 5.2 };
-    return { x: L.bag.x - 0.2, z: L.bag.z - 6.6 };     // the equipment bag
-  }
   const DUGOUT_STAGE = () => ({ x: L.dugout.x + 4.0, z: L.dugout.z - 5.0 });
 
   /* Lay out the three answer bubbles in an arc that the child can actually
@@ -92,20 +86,44 @@
      is computed from where the child happens to be standing, because that
      kept parking answers inside the dugout roof or behind the backstop's
      posts — and because a child who knows where to look does better. */
-  const STAGES = {
-    bag:    { at: { x: -9.5, z: -3.0 }, stand: { x: -9.5, z: 0.6 }, nilu: { x: -9.5, z: -6.6 } },
-    rack:   { at: { x: -13.0, z: -5.2 }, stand: { x: -13.0, z: -1.6 }, nilu: { x: -13.0, z: -8.8 } },
-    plate:  { at: { x: -5.5, z: -6.6 }, stand: { x: -5.5, z: -3.0 }, nilu: { x: -5.5, z: -10.2 } },
-    dugout: { at: { x: -11.5, z: -2.0 }, stand: { x: -11.5, z: 1.6 }, nilu: { x: -11.5, z: -5.6 } },
-  };
-  const SPREAD = 3.6;                    // metres between neighbouring bubbles
+  /* ══════════════════════════════════ THE ANSWER SPOT — one place, always
+     Answers used to be staged next to whatever gear they were about, which
+     meant four different patches of grass and a constant fight with whatever
+     happened to be standing in each: the dugout roof, a kit bag, Nilu, a
+     coach walking past.
 
-  function stageFor(item) {
-    return STAGES[item && item.at] || STAGES.bag;
-  }
-  /* the three slots of a stage, left to right */
+     There is one answer spot now. Always the same patch of open grass, always
+     the same three positions on it, with a chalk ring on the ground so it
+     reads as the place where questions happen. Nothing else is ever routed
+     into it: the coaches idle far away, the teammates wait in the dugout, and
+     Nilu has her own fixed spot off to the side.
+
+     A child also learns where to look — and stops walking between stations
+     for every single question.
+
+     If you move this, check it stays clear of: the backstop arc (anything at
+     z > 0 near home), the dugout (x < -11.6 with z between 0.5 and 4.2), the
+     bat rack, the kit bag, the cooler, and third base at (-11.3, -11.3). */
+  const STAGE = {
+    at:    { x: -11.5, z: -6.0 },     // where the three answers hang
+    stand: { x: -11.5, z: -2.3 },     // where the child stands to look at them
+    /* well to the left of the row, level with it — from where the child
+       stands she reads as beside the answers, never behind one */
+    nilu:  { x: -21.5, z: -6.0 },
+  };
+  const SPREAD = 3.6;                 // metres between neighbouring answers
+  let stageRing = null;
+
+    function stageFor() { return STAGE; }
+  /* the three slots, left to right */
   function slot(stage, i) {
     return { x: stage.at.x + (i - 1) * SPREAD, z: stage.at.z };
+  }
+  /* a chalk ring on the grass so the answer spot is a place, not a surprise */
+  function markStage() {
+    if (stageRing) return;
+    stageRing = F.marker(STAGE.at.x, STAGE.at.z + 1.6, 0xffffff, 5.6);
+    stageRing.material.opacity = 0.28;
   }
 
   /* ══════════════════════════════════════════════════ little 3D factories */
@@ -352,8 +370,13 @@
   function clearBubbles() {
     for (const b of bubbles) { try { F.discard(b.grp); } catch (e) {} }
     bubbles.length = 0;
+    if (!rings.length) showStrip(true);
   }
+  /* the strip lives across the top of the screen, exactly where the answers
+     appear — it steps aside while a question is up */
+  function showStrip(on) { try { LV().stripVisible(on); } catch (e) {} }
   function clearRings() {
+    if (!bubbles.length) showStrip(true);
     for (const r of rings) {
       try { F.discard(r.mesh); } catch (e) {}
       try { if (r.tag) F.discard(r.tag); } catch (e) {}
@@ -396,13 +419,14 @@
 
     opts.forEach((o, i) => {
       const at = slot(stage, i);
-      const b = makeBubble(at.x, 2.25, at.z, miniModel(o.id), null);
+      const b = makeBubble(at.x, 1.95, at.z, miniModel(o.id), null);
       b.id = o.id;
       b.right = o.id === item.id;
       bubbles.push(b);
     });
     anchorMark = F.marker(stage.stand.x, stage.stand.z, 0xffd43b, 1.4);
     niluAside(stage);
+    showStrip(false);
     say(C.gearQ.naming, { thing: tr(item.name) }, { emoji: item.emoji });
   }
 
@@ -434,25 +458,27 @@
       /* the sprite is a separate scene child — remember to take it away too */
       mesh.userData.tag = tag;
     }
+    showStrip(false);
     say(C.gearQ.where, { thing: tr(item.name) }, { emoji: item.emoji });
     try { SWalk.hint(LV().fill(tr(C.gearQ.walkTo), { thing: tr(item.name) }), 4200); } catch (e) {}
   }
 
   /* ---- round C: WHAT IS IT FOR --------------------------------------- */
   function askFunction(item) {
-    const stage = STAGES.dugout;
+    const stage = STAGE;
     const opts = shuffle([item].concat(pickOthers(funcs(), item.id, 2)));
     Q.active = { kind: 'function', item: item, opts: opts.map((o) => o.id) };
     Q.tries = 0;
 
     opts.forEach((o, i) => {
       const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.6, at.z, discAnswer(o.emoji, tr(o.whatFor)), null);
+      const b = makeBubble(at.x, 2.15, at.z, discAnswer(o.emoji, tr(o.whatFor)), null);
       b.id = o.id;
       b.right = o.id === item.id;
       bubbles.push(b);
     });
     niluAside(stage);
+    showStrip(false);
     say(C.gearQ.function, { thing: tr(item.name) }, { emoji: item.emoji });
     /* Deliberately NOT reading all three aloud. Hearing every option before
        choosing is a lot to hold in your head; the child hears back the one
@@ -534,18 +560,19 @@
 
   function askSafety(rule) {
     if (!rule) { nextSafety(); return; }
-    const stage = STAGES.dugout;
+    const stage = STAGE;
     const opts = shuffle([rule].concat(pickOthers(C.safety, rule.id, 2)));
     Q.active = { kind: 'safety', item: rule, opts: opts.map((o) => o.id) };
     Q.tries = 0;
     opts.forEach((o, i) => {
       const at = { x: stage.at.x + (i - 1) * 4.6, z: stage.at.z };
-      const b = makeBubble(at.x, 2.6, at.z, discAnswer(o.emoji, tr(o.rule)), null);
+      const b = makeBubble(at.x, 2.15, at.z, discAnswer(o.emoji, tr(o.rule)), null);
       b.id = o.id;
       b.right = o.id === rule.id;
       bubbles.push(b);
     });
     niluAside(stage);
+    showStrip(false);
     say(rule.why, null, { emoji: '🛟' });
     setTimeout(() => {
       if (Q.active && Q.active.item === rule) say(C.safetyQ.ask, null, { emoji: '🛟' });
@@ -661,7 +688,7 @@
       if (Q.i >= list.length) { Q.round = 'places'; Q.i = 0; persist(); return startPlaces(); }
       const item = list[Q.i++];
       persist();
-      leadTo(stageFor(item).stand, () => askThing(item));
+      leadTo(STAGE.stand, () => askThing(item));
       return;
     }
     if (Q.round === 'places') {
@@ -707,7 +734,7 @@
     setTimeout(next, 2600 * speedMul());
   }
   function startFunction() {
-    const at = STAGES.dugout.stand;
+    const at = STAGE.stand;
     say({ en: 'Come back to the dugout — I want to know what they are FOR!',
           es: '¡Vuelve al dugout — quiero saber para qué SIRVEN!' }, null, { emoji: '🏠' });
     leadTo(at, () => setTimeout(next, 400));
@@ -758,6 +785,7 @@
     if (!PLACE_AT) buildPlaceMap();
     restore();
     running = true; paused = false;
+    markStage();
     clearAll();
     next();
     return true;
@@ -767,6 +795,8 @@
     running = false;
     Q.active = null;
     clearAll();
+    if (stageRing) { try { F.discard(stageRing); } catch (e) {} stageRing = null; }
+    showStrip(true);
     try { SWalk.removeSpot('gearStop'); } catch (e) {}
   };
 
