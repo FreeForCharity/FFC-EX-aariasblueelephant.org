@@ -411,6 +411,15 @@
     glowHelp: t('Here it is — this one. 💙', 'Aquí está — este. 💙'),
     allDone: t('You know all the gear, {name}! Coach Scott is waiting at the throwing station.',
                '¡Ya conoces todo el equipo, {name}! El Coach Scott te espera en la estación de lanzar.'),
+
+    /* A skill opens the moment you know the gear it needs — you can go and
+       play it right now, or stay and learn more. Both answers are good ones. */
+    unlockedGo: t('You know the gear for {level}!', '¡Ya conoces el equipo para {level}!'),
+    unlockedAsk: t('Want to go and do it now?', '¿Quieres ir a hacerlo ahora?'),
+    goNow: t('Yes, let\'s go! 🥎', '¡Sí, vamos! 🥎'),
+    keepLearning: t('Stay and learn more', 'Quedarme y aprender más'),
+    comeBack: t('{level} is waiting whenever you want it. 💙',
+                '{level} te espera cuando quieras. 💙'),
   };
 
   /* ═══════════════════════════════════════════════════════ 5. SAFETY RULES */

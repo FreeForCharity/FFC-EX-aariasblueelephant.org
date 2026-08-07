@@ -261,6 +261,9 @@
       b.addEventListener('click', () => {
         sfx('tap');
         if (!open) { toast(tr(C.ui.locked), 2600); return; }
+        /* choosing a station from the strip is "I want to go there now" — the
+           line-up belongs to practice moving on, not to the child choosing */
+        try { window.SBTeam && SBTeam.markLinedUp(l.id); } catch (e) {}
         goToLevel(l.id);
       });
       elStrip.appendChild(b);
