@@ -726,6 +726,11 @@
 
     stretchIntro: t('Warm up first, so nothing hurts.',
                     'Primero calentamos, para que nada te duela.'),
+    /* the short warm-up that follows EVERY line-up — Nilu does it with you */
+    withNilu: t('Stretch with me! Copy what I do. 🐘',
+                '¡Estírate conmigo! Copia lo que hago. 🐘'),
+    warmDone: t('Nice stretching. Now we\'re ready.',
+                'Qué bien te estiraste. Ahora sí estamos listos.'),
     stretches: [
       { id: 'arms', emoji: '🔄', do: t('Big arm circles.', 'Círculos grandes con los brazos.') },
       { id: 'toes', emoji: '🙇', do: t('Reach down to your toes.', 'Toca los dedos de tus pies.') },

@@ -35,6 +35,7 @@
   let running = false, lining = false;
   let clock = 0;
   const linedUp = {};              // level id → already lined up this session
+  let warmedUp = false;            // you stretch once at the start, not eight times
 
   function clearMarks() {
     for (const m of marks) { try { F.discard(m); } catch (e) {} }
@@ -102,6 +103,17 @@
       if (i === mine) mineRing = ring;
     });
 
+    /* Nilu comes to the line-up too, and waits at the child's own spot. She
+       is how a child knows where to go — leaving her behind the dugout while
+       everyone else lines up is exactly how this gets confusing. */
+    const N = F.nilu;
+    if (N) {
+      N.pose = null;
+      N.goTo(spots[mine].x - 1.9, spots[mine].z - 1.6, () => {
+        try { N.lookAt(L.lineUpCoach.x, L.lineUpCoach.z); } catch (e) {}
+      });
+    }
+
     /* the teammates walk to theirs and wait — nobody starts without the child */
     const mates = (F.mates || []).slice(0, 4);
     let mi = 0;
@@ -136,7 +148,11 @@
         clearMarks();
         mineRing = null;
         if (co) co.pose = null;
-        if (then) then();
+        /* every line-up is followed by a short stretch — that's how practice
+           actually goes, and Nilu does it with you */
+        if (opts.noWarm || warmedUp) { if (then) then(); return; }
+        warmedUp = true;
+        quickWarmUp(then);
       }, 2600 * speedMul());
     };
     if (SWalk.at(target, 2.0)) setTimeout(arrive, 2600 * speedMul());
@@ -164,7 +180,37 @@
     linedUp[levelId] = 1;
     S.lineUp(then);
   };
-  S.forgetLineUps = function () { for (const k in linedUp) delete linedUp[k]; };
+  S.forgetLineUps = function () { for (const k in linedUp) delete linedUp[k]; warmedUp = false; };
+
+  /* ═════════════════════════════════════ 💪 the short warm-up after a line-up
+     Two stretches, about fifteen seconds, with Nilu copying along beside you.
+     Team Time runs the full five plus a lap; this is the everyday version. */
+  function quickWarmUp(then) {
+    const picks = ['arms', 'toes'];
+    let i = 0;
+    const step = () => {
+      if (i >= picks.length) {
+        say(C.team.warmDone, null, { emoji: '💪' });
+        try { SBDrills.hide(); } catch (e) {}
+        setTimeout(() => { if (then) then(); }, 1600 * speedMul());
+        return;
+      }
+      const id = picks[i++];
+      const st = (C.team.stretches || []).find((x) => x.id === id) || { emoji: '💪', do: C.team.stretchIntro };
+      say(st.do, null, { emoji: st.emoji });
+      everyoneDo(id, 4.2);
+      try {
+        SBDrills.ask(st.emoji, tr(st.do), tr(st.do), () => {
+          sfx('pop');
+          everyoneDo(id, 2.8);
+          setTimeout(step, 3000 * speedMul());
+        });
+      } catch (e) { setTimeout(step, 4200 * speedMul()); }
+    };
+    say(C.team.withNilu, null, { emoji: '🐘' });
+    setTimeout(step, 2200 * speedMul());
+  }
+  S.quickWarmUp = quickWarmUp;
 
   /* ══════════════════════════════════════════════════════ 💪 WARM-UP */
   const POSES = {
@@ -208,10 +254,14 @@
     if (co) who.push(co);
     for (const m of (F.mates || []).slice(0, 4)) who.push(m);
     for (const p of who) p.pose = wrap;
+    /* Nilu stretches too — trunk, ears and a bounce, since she has no shoulders */
+    const N = F.nilu;
+    if (N) { N.poseT = 0; N.pose = F.niluPoses.stretch; }
     let pt = 0;
     SWalk.setPose((me, dt) => { pt += dt / speedMul(); fn(me, dt, pt); });
     setTimeout(() => {
       for (const p of who) { p.pose = null; p.lean.rotation.y = 0; p.legL.rotation.z = 0; p.legR.rotation.z = 0; }
+      if (N) N.pose = null;
       SWalk.setPose(null);
       const rig = SWalk.rig();
       if (rig) { rig.lean.rotation.y = 0; rig.legL.rotation.z = 0; rig.legR.rotation.z = 0; }
@@ -227,7 +277,7 @@
     step = 0;
     clearMarks();
     /* Team Time always opens with a line-up, then the warm-up */
-    S.lineUp(() => { if (running) nextWarm(); });
+    S.lineUp(() => { if (running) nextWarm(); }, { noWarm: true });
     return true;
   };
 
@@ -359,6 +409,7 @@
     try { SWalk.removeSpot('lineUpSpot'); SWalk.removeSpot('lapSpot'); SWalk.removeSpot('waterSpot'); } catch (e) {}
     try { SWalk.setPose(null); SWalk.freeze(false); } catch (e) {}
     for (const p of (F && F.people) || []) p.pose = null;
+    try { if (F && F.nilu) F.nilu.pose = null; } catch (e) {}
   };
   S.suspend = function () { for (const m of marks) m.visible = false; try { SBDrills.hide(); } catch (e) {} };
   S.resume = function () { for (const m of marks) m.visible = true; };
