@@ -41,7 +41,7 @@
     boxOut: { x: -4.4, z: 2.6 },      // where "step out" puts you (righty; mirrored for lefty)
 
     dugout: { x: -16.5, z: 2.5 },
-    bench:  { x: -16.5, z: 2.2 },
+    bench:  { x: -16.5, z: 1.75 },   // sitting spot lines up with the seat
     rack:   { x: -12.6, z: 1.0 },     // bat + helmet rack
     bag:    { x: -11.0, z: 4.4 },     // equipment bag: balls, gloves, cleats
     water:  { x: -14.6, z: 4.8 },
@@ -164,6 +164,40 @@
     tx.repeat.set(14, 14);
     return tx;
   }
+
+  /* chain-link: the diamond weave, drawn once and tiled. This is what makes a
+     real park dugout see-through — an opaque box hid whoever stepped behind
+     it, which for Nilu meant the child couldn't find her. */
+  let linkTex = null;
+  function chainLink() {
+    if (linkTex) return linkTex;
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.strokeStyle = 'rgba(206,216,226,0.9)';
+    g.lineWidth = 2.6;
+    for (let i = -64; i < 128; i += 16) {
+      g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke();
+      g.beginPath(); g.moveTo(i, 64); g.lineTo(i + 64, 0); g.stroke();
+    }
+    linkTex = new THREE.CanvasTexture(c);
+    linkTex.wrapS = linkTex.wrapT = THREE.RepeatWrapping;
+    return linkTex;
+  }
+  /* one panel of fencing, `w` by `h`, centred at x/y/z */
+  function meshPanel(x, y, z, w, h, ry) {
+    const tex = chainLink().clone();
+    tex.needsUpdate = true;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(Math.max(1, Math.round(w * 1.1)), Math.max(1, Math.round(h * 1.1)));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide,
+                                    depthWrite: false, opacity: 0.85, fog: false }));
+    m.position.set(x, y, z);
+    if (ry) m.rotation.y = ry;
+    return m;
+  }
+  F.meshPanel = meshPanel;
 
   function shadowTexture() {
     const c = document.createElement('canvas');
@@ -446,28 +480,54 @@
 
   /* ══════════════════════════════════════════════════ dugout & the gear */
   function buildDugout() {
+    /* A real park dugout: a metal frame with chain-link, so you can see
+       straight through it. Nothing that walks behind it — a teammate, a coach,
+       Nilu — can ever be lost to the child. Deliberately NOT a camera blocker
+       either: there is nothing to hide behind. */
     const d = L.dugout, grp = new THREE.Group();
-    const back = new THREE.Mesh(new THREE.BoxGeometry(9.5, 2.2, 0.3), lam(0xdfe4ea));
-    back.position.set(d.x, 1.1, d.z - 1.5);
-    grp.add(back);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(10.4, 0.22, 4.2), lam(0x2f6fb5));
-    roof.position.set(d.x, 2.5, d.z + 0.4);
-    grp.add(roof); blocks(roof); blocks(back);
-    for (const s of [-1, 1]) {
-      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 2.5, 8), M.metal);
-      p.position.set(d.x + s * 4.9, 1.25, d.z + 2.3);
+    const W = 9.6, DPT = 3.4, H = 2.4;
+
+    /* uprights: four corners plus two in the middle of the back */
+    for (const s of [-1, -0.33, 0.33, 1]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, H, 8), M.metalDark);
+      p.position.set(d.x + s * (W / 2), H / 2, d.z - DPT / 2);
       grp.add(p);
     }
+    for (const s of [-1, 1]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, H, 8), M.metalDark);
+      p.position.set(d.x + s * (W / 2), H / 2, d.z + DPT / 2);
+      grp.add(p);
+    }
+    /* the fencing: back and both ends. The front stays open — that's the way in. */
+    grp.add(meshPanel(d.x, H / 2, d.z - DPT / 2, W, H));
+    for (const s of [-1, 1]) {
+      grp.add(meshPanel(d.x + s * (W / 2), H / 2, d.z, DPT, H, Math.PI / 2));
+    }
+    /* top rails, and a shade roof you can also see through */
+    for (const zz of [d.z - DPT / 2, d.z + DPT / 2]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(W + 0.2, 0.1, 0.1), M.metal);
+      rail.position.set(d.x, H, zz); grp.add(rail);
+    }
+    for (const s of [-1, 1]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, DPT), M.metal);
+      rail.position.set(d.x + s * (W / 2), H, d.z); grp.add(rail);
+    }
+    const roof = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.2, DPT),
+      new THREE.MeshBasicMaterial({ color: 0x9fd0ee, transparent: true, opacity: 0.3,
+                                    side: THREE.DoubleSide, depthWrite: false, fog: false }));
+    roof.rotation.x = -Math.PI / 2;
+    roof.position.set(d.x, H + 0.06, d.z);
+    grp.add(roof);
     /* the bench you sit on during a break */
     const seat = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.2, 0.85), M.wood);
-    seat.position.set(d.x, 0.62, d.z);
+    seat.position.set(d.x, 0.62, d.z - 0.5);
     grp.add(seat);
     const rest = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.75, 0.16), M.wood);
-    rest.position.set(d.x, 1.05, d.z - 0.42);
+    rest.position.set(d.x, 1.05, d.z - 0.92);
     grp.add(rest);
     for (const s of [-1, 0, 1]) {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.62, 0.7), M.woodDark);
-      leg.position.set(d.x + s * 3.6, 0.31, d.z);
+      leg.position.set(d.x + s * 3.6, 0.31, d.z - 0.5);
       grp.add(leg);
     }
     scene.add(grp);
@@ -1180,8 +1240,8 @@
     }
     /* the dugout: the back wall and its posts are solid — the bench is NOT,
        because sitting on it during a break is the whole point */
-    solidBox(L.dugout.x, L.dugout.z - 1.5, 4.9, 0.35);
-    for (const s of [-1, 1]) solidCircle(L.dugout.x + s * 4.9, L.dugout.z + 2.3, 0.35);
+    solidBox(L.dugout.x, L.dugout.z - 1.7, 4.9, 0.25);   // the back fence line
+    for (const s of [-1, 1]) solidCircle(L.dugout.x + s * 4.8, L.dugout.z + 1.7, 0.3);
     /* the seats */
     solidBox(0, 15.4, 6.8, 2.6);
     /* the gear you'd trip over */
