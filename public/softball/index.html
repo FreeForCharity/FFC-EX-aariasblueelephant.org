@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aaria's Softball Stars | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org · Built by Aaria and her Friends 💙
+     A rehearsal space for Saturday practice with Special Olympics Northern
+     California. Walk a real ballpark with Nilu, learn the gear and the words,
+     then learn to throw, pitch, field, bat and run the bases the way Coach
+     Scott, Coach Sam and Coach AJ teach it. Line up. Ask for a break.
+     No timers, no score, no losing. Every word lives in content.js. -->
+<meta name="description" content="Learn softball with Nilu — gear, safety, throwing, pitching, fielding, batting and base running. Built for Special Olympics athletes.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥎</text></svg>">
+<link rel="stylesheet" href="../gamekit/kit.css">
+<link rel="stylesheet" href="field.css">
+<style>
+  /* the joystick stays hidden until the field is actually up — walk.js
+     re-enables it (see injectStickFallback) so a slow three.js load never
+     leaves a stick that moves nothing */
+  #kStick { display: none; }
+  #kStage { background: linear-gradient(180deg, #6fb6ea 0%, #bfe2f7 60%, #e9f3d9 100%); }
+  #sbBoot {
+    position: fixed; inset: 0; z-index: 99; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: linear-gradient(180deg, #7ec8ff 0%, #b9e7ff 45%, #baf2bb 100%);
+    font-weight: 900; font-size: 18px; color: #25324a;
+  }
+  #sbBoot .sbBootBall { font-size: 54px; animation: sbBootSpin 1.6s linear infinite; }
+  @keyframes sbBootSpin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #sbBoot .sbBootBall { animation: none; } }
+</style>
+</head>
+<body>
+<div id="kStage"></div>
+<div id="sbBoot"><div class="sbBootBall">🥎</div><div id="sbBootMsg">Getting the field ready…</div></div>
+
+<script src="lib/three.min.js"></script>
+<script src="../gamekit/festive.js"></script>
+<script src="../gamekit/kit.js"></script>
+<script src="content.js"></script>
+<script src="field.js"></script>
+<script src="walk.js"></script>
+<script src="levels.js"></script>
+<script src="gear.js"></script>
+<script src="drills.js"></script>
+<script src="team.js"></script>
+<script src="gameday.js"></script>
+<script src="coach.js"></script>
+<script>
+(function () {
+  "use strict";
+  const K = window.ABEKit;
+  const C = window.SBContent;
+  const tr = (o) => (o && typeof o === 'object' ? K.tr(o.en, o.es) : o);
+
+  /* ---------------------------------------------------------- the stage */
+  let scene, camera, renderer;
+  const stage = document.getElementById('kStage');
+
+  function boot() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9ed3f0);
+    camera = new THREE.PerspectiveCamera(56, innerWidth / innerHeight, 0.1, 400);
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    try { renderer.outputEncoding = THREE.sRGBEncoding; } catch (e) {}
+    stage.appendChild(renderer.domElement);
+
+    SBField.init({ THREE: THREE, scene: scene });
+    SWalk.init({ THREE: THREE, scene: scene, camera: camera, renderer: renderer, K: K, onTap: onSceneTap });
+    SBLevels.init({ K: K });
+
+    addEventListener('resize', onResize);
+    onResize();
+    const b = document.getElementById('sbBoot');
+    if (b) b.remove();
+  }
+
+  function onResize() {
+    if (!renderer) return;
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }
+
+  /* Level layers get first refusal on a tap (answer bubbles, gear, people).
+     Returning true means "I handled it" and walk.js will not walk there. */
+  function onSceneTap(caster, ndc) {
+    try { if (window.SBGear && SBGear.onTap && SBGear.onTap(caster)) return true; } catch (e) {}
+    try { if (window.SBDrills && SBDrills.onTap && SBDrills.onTap(caster)) return true; } catch (e) {}
+    return false;
+  }
+
+  function frame(dt) {
+    try { SBField.tick(dt); } catch (e) {}
+    try { SWalk.tick(dt); } catch (e) {}
+    try { SBLevels.tick(dt); } catch (e) {}
+    try { window.SBGear && SBGear.tick && SBGear.tick(dt); } catch (e) {}
+    try { window.SBDrills && SBDrills.tick && SBDrills.tick(dt); } catch (e) {}
+    try { window.SBTeam && SBTeam.tick && SBTeam.tick(dt); } catch (e) {}
+    try { window.SBGame && SBGame.tick && SBGame.tick(dt); } catch (e) {}
+    if (renderer) renderer.render(scene, camera);
+  }
+
+  /* ------------------------------------------------------------ the kit
+     K.init MUST come first: until the kit knows the slug, every K.load()
+     returns its fallback, so anything that reads a save (handedness, level
+     progress, Level-1 position) has to be constructed after this call. */
+  K.init({
+    slug: 'softball',
+    name: "Aaria's Softball Stars",
+    emoji: '🥎',
+    accent: '#2f6fb5',
+    tagline: 'learn softball with Nilu — gear, throwing, pitching, batting and the bases!',
+    taglineEs: '¡aprende softbol con Nilu — el equipo, lanzar, pitchear, batear y las bases!',
+    emojis: ['🥎', '🧤', '🏏', '⛑️', '🐘'],
+    howTo: [
+      ['🐘', "I'm Nilu! I come to practice with you and show you everything"],
+      ['🕹️', 'Walk with the stick — or tap the field to go there'],
+      ['🧢', 'Coach AJ, Coach Scott and Coach Sam teach one step at a time'],
+      ['🙋', 'Need something? Raise your hand and ask Coach AJ — break, water, anything'],
+      ['🔁', 'Tap the arrows to hear it again'],
+      ['💙', 'No timers, no score, nobody can lose. Take all the time you want'],
+    ],
+    howToEs: [
+      ['🐘', '¡Soy Nilu! Voy contigo a la práctica y te enseño todo'],
+      ['🕹️', 'Camina con la palanca — o toca el campo para ir ahí'],
+      ['🧢', 'El Coach AJ, el Coach Scott y el Coach Sam enseñan paso a paso'],
+      ['🙋', '¿Necesitas algo? Levanta la mano y pídeselo al Coach AJ — descanso, agua, lo que sea'],
+      ['🔁', 'Toca las flechitas para volver a escucharlo'],
+      ['💙', 'Sin cronómetro, sin puntaje, nadie pierde. Tómate todo el tiempo'],
+    ],
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM',
+    actions: [
+      { emoji: '🙋', label: 'I need', labelEs: 'Necesito',
+        title: 'Raise your hand and ask Coach AJ — a break, water, the bathroom, your grown-up',
+        titleEs: 'Levanta la mano y pídele al Coach AJ — un descanso, agua, el baño, tu adulto',
+        onTap: () => { try { SBLevels.openNeeds(); } catch (e) {} } },
+      { emoji: '🐘', label: 'Nilu', labelEs: 'Nilu',
+        title: 'Walk back to Nilu — she shows you where to go',
+        titleEs: 'Vuelve con Nilu — ella te enseña a dónde ir',
+        onTap: () => { try { SWalk.goToNilu(); } catch (e) {} } },
+      { emoji: '🧢', label: 'Coach', labelEs: 'Coach',
+        title: 'Coach Mode — for grown-ups: progress, the cue sheet, the practice card',
+        titleEs: 'Modo Coach — para adultos: progreso, el guion y la tarjeta de práctica',
+        onTap: () => { try { SBCoach.open(); } catch (e) {} } },
+    ],
+    playerPos: () => { try { return SWalk.pose(); } catch (e) { return { x: 0, z: 0, ry: 0 }; } },
+    replayableState: {
+      get: () => { try { return { level: SBLevels.G.level }; } catch (e) { return null; } },
+      set: (s) => { try { if (s && s.level) SBLevels.G.level = s.level; SBLevels.refreshStrip(); } catch (e) {} },
+    },
+    onStart() {
+      try { SBLevels.begin(); } catch (e) {}
+      const fest = window.ABEFestive && ABEFestive.helloOnce('softball');
+      if (fest) setTimeout(() => K.toast(K.tr(fest.en, fest.es), 4200), 9000);
+    },
+    onPause(p) {
+      try { SBLevels.showChrome(!p); } catch (e) {}
+    },
+    onFrame: frame,
+    onReplayEvent(ev) {
+      /* My Movie replays the walk; the loud moments get a little echo */
+      if (ev.kind === 'break') K.toast('🙋');
+      else if (ev.kind === 'hit') { K.toast('🥎'); K.sfx.star(); }
+      else if (ev.kind === 'throw') K.toast('🤾');
+      else if (ev.kind === 'learn') K.sfx.pop();
+    },
+  });
+
+  /* One sound at a time. Two cues firing together is just noise, and for a
+     child already working hard to listen it's worse than silence. Wrapping the
+     kit's sfx once here covers every module. Speech is queued separately in
+     levels.js; the 🔊 Sound button still switches all of it off. */
+  (function oneSoundAtATime() {
+    const GAP = 140;
+    let last = 0;
+    for (const k of Object.keys(K.sfx)) {
+      const fn = K.sfx[k];
+      K.sfx[k] = function () {
+        const now = performance.now();
+        if (now - last < GAP) return;
+        last = now;
+        return fn.apply(this, arguments);
+      };
+    }
+  })();
+
+  /* The page description and <html lang> follow the language toggle too —
+     everything user-facing ships in both, including what shows up in a search
+     result or a shared link. */
+  try {
+    document.documentElement.lang = K.es() ? 'es' : 'en';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) {
+      meta.setAttribute('content', K.tr(
+        'Learn softball with Nilu — gear, safety, throwing, pitching, fielding, batting and base running. Built for Special Olympics athletes.',
+        'Aprende softbol con Nilu — el equipo, la seguridad, lanzar, pitchear, fildear, batear y correr las bases. Hecho para atletas de Olimpiadas Especiales.'));
+    }
+  } catch (e) {}
+
+  boot();
+})();
+</script>
+</body>
+</html>
