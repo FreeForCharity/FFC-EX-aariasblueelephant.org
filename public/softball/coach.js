@@ -259,6 +259,7 @@
     });
   }
 
-  S.cueSheetHTML = () => { C = window.SBContent; return practiceCardHTML(); };
+  /* the practice card, as HTML — named for what it actually returns */
+  S.practiceCardHTML = () => { C = window.SBContent; return practiceCardHTML(); };
   window.SBCoach = S;
 })();

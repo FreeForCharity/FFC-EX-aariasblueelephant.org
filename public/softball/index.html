@@ -188,6 +188,19 @@
     }
   })();
 
+  /* The page description and <html lang> follow the language toggle too —
+     everything user-facing ships in both, including what shows up in a search
+     result or a shared link. */
+  try {
+    document.documentElement.lang = K.es() ? 'es' : 'en';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) {
+      meta.setAttribute('content', K.tr(
+        'Learn softball with Nilu — gear, safety, throwing, pitching, fielding, batting and base running. Built for Special Olympics athletes.',
+        'Aprende softbol con Nilu — el equipo, la seguridad, lanzar, pitchear, fildear, batear y correr las bases. Hecho para atletas de Olimpiadas Especiales.'));
+    }
+  } catch (e) {}
+
   boot();
 })();
 </script>
