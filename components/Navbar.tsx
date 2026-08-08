@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight, Gamepad2 } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogIn, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
@@ -245,6 +245,17 @@ const Navbar: React.FC = () => {
                     </Link>
                   </div>
                 )}
+                {/* Signed out: the ONLY way into /login from the nav. Without this the
+                    login page is unreachable unless you guess the URL or land on a
+                    protected route — families never find it. */}
+                {!user && (
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-2 px-4 lg:px-5 py-2.5 lg:py-3 rounded-full border-2 border-sky-600 dark:border-sky-400 text-sky-700 dark:text-sky-300 hover:bg-sky-600 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white font-bold text-xs lg:text-sm tracking-wide transition-all hover:scale-105 shadow-sm whitespace-nowrap"
+                  >
+                    <LogIn className="h-4 w-4 shrink-0" /> {tr('Sign In', 'Iniciar sesión')}
+                  </Link>
+                )}
               </div>
 
               <div className="flex flex-col items-center gap-1 shrink-0">
@@ -320,6 +331,22 @@ const Navbar: React.FC = () => {
                   <LayoutDashboard className="h-5 w-5" />
                 </Link>
               )}
+              {/* Sign In - Mobile. Icon-only below sm and hidden entirely under 360px:
+                  measured, a visible label here shoves the hamburger off-screen (in
+                  Spanish "Iniciar sesión" pushes it to x=398 on a 390px phone, so the
+                  menu vanishes). Icon-only costs zero width at >=360px. Phones get the
+                  full labelled entry at the top of the drawer instead. */}
+              {!user && (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="hidden min-[360px]:flex h-10 items-center justify-center gap-1.5 rounded-xl px-2.5 bg-sky-600 text-white border border-sky-700 transition-all active:scale-95 shadow-sm"
+                  aria-label={tr('Sign In', 'Iniciar sesión')}
+                >
+                  <LogIn className="h-5 w-5 shrink-0" />
+                  <span className="hidden sm:inline text-xs font-black uppercase tracking-wide whitespace-nowrap">{tr('Sign In', 'Iniciar sesión')}</span>
+                </Link>
+              )}
               {/* Theme Toggle Slider - Mobile */}
               <button
                 onClick={toggleTheme}
@@ -374,6 +401,21 @@ const Navbar: React.FC = () => {
                 >
                   <LayoutDashboard className="h-6 w-6" />
                   <span className="uppercase tracking-widest text-sm">{isBoard ? tr('Admin Dashboard', 'Panel de administración') : tr('Dashboard', 'Panel')}</span>
+                </Link>
+              )}
+              {!user && (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-4 rounded-2xl px-4 py-3 text-base font-black text-white bg-sky-600 mb-2 shadow-md"
+                >
+                  <LogIn className="h-6 w-6 shrink-0" />
+                  <span className="flex flex-col leading-tight">
+                    <span className="uppercase tracking-widest text-sm">{tr('Sign In', 'Iniciar sesión')}</span>
+                    <span className="text-[11px] font-bold normal-case tracking-normal text-sky-100">
+                      {tr('One tap with Google', 'Un toque con Google')}
+                    </span>
+                  </span>
                 </Link>
               )}
 
