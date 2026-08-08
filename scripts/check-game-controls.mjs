@@ -130,6 +130,42 @@ for (const [game, cfg] of Object.entries(GAMES)) {
   }
 }
 
+// R6  Play counting: every game that reports a play must be on the server-side
+// allowlist, or record_game_play() silently drops it — the client still gets a
+// 200, so the game looks fine and simply never appears in the Game Plays tab.
+// Softball shipped that way and went uncounted until someone noticed the empty
+// row. Reads the slug each game actually sends: kit games from K.init({slug}),
+// legacy games from their inline {g:'...'} body.
+{
+  const sql = readFileSync('supabase/create_game_play_counts.sql', 'utf8');
+  const labels = readFileSync('pages/Dashboard.tsx', 'utf8');
+  const labelBlock = (labels.match(/GAME_PLAY_LABELS[^{]*\{([\s\S]*?)\n\};/) || [])[1] || '';
+  const dirs = (readFileSync('scripts/minify-games.mjs', 'utf8').match(/GAME_DIRS = \[([^\]]+)\]/) || [])[1] || '';
+
+  // both allowlists must agree, or plays and play-time diverge
+  const lists = [...sql.matchAll(/if g not in \(([\s\S]*?)\) then/g)].map((m) =>
+    new Set([...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
+  if (lists.length === 2) {
+    for (const s of lists[0]) if (!lists[1].has(s)) fail('supabase', 'R6', `'${s}' is in record_game_play's allowlist but not record_game_time's`);
+    for (const s of lists[1]) if (!lists[0].has(s)) fail('supabase', 'R6', `'${s}' is in record_game_time's allowlist but not record_game_play's`);
+  } else {
+    fail('supabase', 'R6', `expected 2 allowlists in create_game_play_counts.sql, found ${lists.length}`);
+  }
+
+  for (const m of dirs.matchAll(/'([a-z0-9-]+)'/g)) {
+    const dir = m[1];
+    if (dir === 'gamekit') continue;
+    let html = '';
+    try { html = readFileSync(`public/${dir}/index.html`, 'utf8'); } catch { continue; }
+    const slug = (html.match(/slug:\s*'([a-z0-9-]+)'/) || html.match(/\bg:\s*'([a-z0-9-]+)'/) || [])[1];
+    if (!slug) continue; // not a play-reporting game
+    if (!lists.some((l) => l.has(slug)))
+      fail(dir, 'R6', `slug '${slug}' missing from the allowlists in supabase/create_game_play_counts.sql — plays are silently dropped. Add it AND re-run both function blocks in the Supabase SQL editor.`);
+    if (!labelBlock.includes(`'${slug}'`))
+      fail(dir, 'R6', `slug '${slug}' missing from GAME_PLAY_LABELS in pages/Dashboard.tsx — the Game Plays tab would show the raw slug`);
+  }
+}
+
 if (errors.length) {
   console.error('\nGame-control standard violations:\n' + errors.join('\n'));
   console.error('\nThe standard lives in scripts/check-game-controls.mjs — fix the game or (deliberately) update the rule.\n');
