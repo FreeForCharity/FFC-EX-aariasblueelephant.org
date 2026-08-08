@@ -856,13 +856,23 @@
      hitting off the tee, then stepping in and out of the box */
   const CHAIN = { bat: 'box' };
   const REPS = { throw: 3, pitch: 3, field: 3, bat: 3, box: 2, run: 2 };
-  /* a coach can override how many turns each station asks for, in Coach Mode */
+  /* How many turns a station asks for. A coach can set this three ways, and
+     the most specific one wins:
+       1. this station's own number   (Coach Mode → Set up → the station's ± )
+       2. one number for every station (Coach Mode → "same for every station")
+       3. what the drill was written with (REPS above)
+     Kept in that order so changing one station never disturbs the others. */
   function repTarget(id) {
-    let t = 0;
-    try { t = LV().G.repTarget || 0; } catch (e) {}
-    return t > 0 ? t : (REPS[id] || 3);
+    let G = null;
+    try { G = LV().G; } catch (e) {}
+    if (!G) return REPS[id] || 3;
+    const mine = +((G.repsBy || {})[id]) || 0;
+    if (mine > 0) return mine;
+    const all = +G.repTarget || 0;
+    return all > 0 ? all : (REPS[id] || 3);
   }
   S.repTarget = repTarget;
+  S.repDefault = (id) => REPS[id] || 3;   // what the drill was written with
   const NEXT_LEVEL = { throw: 'pitch', pitch: 'field', field: 'bat', box: 'run', run: 'team', team: 'game' };
 
   function finishDrill() {

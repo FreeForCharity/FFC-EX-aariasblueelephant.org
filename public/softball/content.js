@@ -860,6 +860,38 @@
     close: t('✔️ Done', '✔️ Listo'),
     note: t('Nothing here leaves this device. No names, no scores, no accounts.',
             'Nada de esto sale de este aparato. Sin nombres, sin puntajes, sin cuentas.'),
+
+    /* ---- the three tabs ---- */
+    tabToday:    t('📊 Today', '📊 Hoy'),
+    tabSetup:    t('🎚️ Set up', '🎚️ Ajustes'),
+    tabStations: t('🎯 Stations', '🎯 Estaciones'),
+
+    /* ---- Today ---- */
+    nowAt:      t('Working on now', 'Ahora mismo'),
+    upNext:     t('Up next', 'Sigue'),
+    allStations: t('Every station is finished 🏆', 'Todas las estaciones están terminadas 🏆'),
+    unlocked:   t('{a} of {b} stations open', '{a} de {b} estaciones abiertas'),
+    turnsOf:    t('{n} of {t} turns', '{n} de {t} turnos'),
+    stationDone: t('done', 'listo'),
+    changeIt:   t('change', 'cambiar'),
+
+    /* ---- Set up ---- */
+    setupIntro: t('Everything here changes how the game runs for this child. It saves as you tap — there is no OK button.',
+                  'Todo lo de aquí cambia cómo funciona el juego para este niño. Se guarda al tocar — no hay botón de aceptar.'),
+    perStation: t('Turns at each station', 'Turnos en cada estación'),
+    perStationSub: t('How many times the child does that skill before the game says it is finished. Tap − or + on any station.',
+                     'Cuántas veces hace el niño esa habilidad antes de que el juego la dé por terminada. Toca − o + en cualquier estación.'),
+    isDefault:  t('as written', 'como está escrito'),
+    changed:    t('changed', 'cambiado'),
+    sameForAll: t('Same number for every station', 'El mismo número para todas'),
+    backToWritten: t('↩️ Back to the written numbers', '↩️ Volver a los números originales'),
+    assistWhat: t('ON does the timing and the aim for them, so a throw or a swing can never be missed. Turn it off only for a child who wants a real challenge.',
+                  'SÍ hace el tiempo y la puntería por ellos, así que un lanzamiento o un batazo nunca se falla. Quítalo solo si el niño quiere un reto de verdad.'),
+    handWhat:   t('Flips the glove hand, the batting box, the stance and every left/right word the coaches say.',
+                  'Cambia la mano del guante, la caja de bateo, la postura y cada palabra de izquierda/derecha que dicen los coaches.'),
+    resetWhat:  t('Clears every level and sticker for this player. Their name, hand and your settings here are kept.',
+                  'Borra todos los niveles y calcomanías de este jugador. Se conservan su nombre, su mano y estos ajustes.'),
+    takeAway:   t('Take away', 'Para llevar'),
   };
 
   C.t = t;
