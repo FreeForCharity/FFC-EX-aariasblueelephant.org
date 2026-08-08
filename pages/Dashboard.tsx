@@ -100,6 +100,7 @@ const GAME_PLAY_LABELS: Record<string, string> = {
     'feelings': "Aaria's Feelings Faces 🎭",
     'rhythm': "Aaria's Rhythm & Calm 🎵",
     'flying': "Aaria's Flying Elephant 🐘",
+    'softball': "Aaria's Softball Stars 🥎",
 };
 
 interface GamePlayRow {
