@@ -1590,18 +1590,21 @@
   };
 
   /* two little footprints, the "stand here" the coaches actually use */
-  F.footprints = function (x, z, ry) {
+  /* `spread` widens the gap between the two prints — a batting stance wants the
+     feet properly apart, not the shoulder-width of a standing mark. */
+  F.footprints = function (x, z, ry, spread) {
     const g = new THREE.Group();
+    const sp = spread || 1;
     const mat = new THREE.MeshBasicMaterial({ color: 0xfff3c4, transparent: true, opacity: 0.9, depthWrite: false, fog: false });
     for (const s of [-1, 1]) {
       const f = new THREE.Mesh(new THREE.CircleGeometry(0.16, 12), mat);
       f.rotation.x = -Math.PI / 2;
       f.scale.set(1, 1.7, 1);
-      f.position.set(s * 0.19, 0.045, 0);
+      f.position.set(s * 0.19 * sp, 0.045, 0);
       g.add(f);
       const toe = new THREE.Mesh(new THREE.CircleGeometry(0.11, 10), mat);
       toe.rotation.x = -Math.PI / 2;
-      toe.position.set(s * 0.19, 0.045, 0.34);
+      toe.position.set(s * 0.19 * sp, 0.045, 0.34);
       g.add(toe);
     }
     g.position.set(x, 0, z);
