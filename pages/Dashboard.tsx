@@ -40,7 +40,9 @@ import {
     Cookie,
     Sun,
     Magnet,
-    RefreshCw
+    RefreshCw,
+    UserPlus,
+    Search
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
@@ -71,6 +73,7 @@ type ViewState =
     | 'manage-testimonials' 
     | 'media-outreach'
     | 'game-plays'
+    | 'signups'
     | 'games'
     | 'wheel'
     | 'blockcraft'
@@ -108,6 +111,18 @@ interface GamePlayRow {
     day: string; // YYYY-MM-DD (UTC)
     plays: number;
     seconds: number; // aggregate anonymous play time (0 for rows predating time tracking)
+}
+
+/* Everyone who has signed in with Google. public.profiles is kept in step with
+   auth.users automatically, so this IS the sign-up list — it just had no screen.
+   Event registrations were the only thing visible, which is a different and much
+   smaller number. */
+interface SignupRow {
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url: string;
+    created_at: string;
 }
 
 // "3h 24m" / "18m" style label for aggregate seconds
@@ -168,6 +183,33 @@ const Dashboard: React.FC = () => {
     const [gamePlayRows, setGamePlayRows] = useState<GamePlayRow[] | null>(null);
     const [gamePlaysLoading, setGamePlaysLoading] = useState(false);
     const [gamePlaysError, setGamePlaysError] = useState<string | null>(null);
+    const [signupRows, setSignupRows] = useState<SignupRow[] | null>(null);
+    const [signupsLoading, setSignupsLoading] = useState(false);
+    const [signupsError, setSignupsError] = useState<string | null>(null);
+    const [signupSearch, setSignupSearch] = useState('');
+
+    const fetchSignups = async () => {
+        setSignupsLoading(true);
+        setSignupsError(null);
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, email, full_name, avatar_url, created_at')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            setSignupRows((data || []).map((r: any) => ({
+                id: String(r.id),
+                email: String(r.email || ''),
+                full_name: String(r.full_name || ''),
+                avatar_url: String(r.avatar_url || ''),
+                created_at: String(r.created_at || ''),
+            })));
+        } catch (err: any) {
+            setSignupsError(err?.message || 'Failed to load sign-ups');
+        } finally {
+            setSignupsLoading(false);
+        }
+    };
 
     const fetchGamePlays = async () => {
         setGamePlaysLoading(true);
@@ -194,6 +236,9 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         if (activeView === 'game-plays' && gamePlayRows === null && !gamePlaysLoading) {
             fetchGamePlays();
+        }
+        if (activeView === 'signups' && signupRows === null && !signupsLoading) {
+            fetchSignups();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeView]);
@@ -460,6 +505,7 @@ const Dashboard: React.FC = () => {
         { id: 'manage-registrations', label: 'Manage Registrations', icon: Users, role: 'board' },
         { id: 'volunteers', label: 'Review Volunteers', icon: Heart, role: 'board' },
         { id: 'manage-testimonials', label: 'Manage Stories', icon: MessageSquare, role: 'board' },
+        { id: 'signups', label: 'Sign-ups', icon: UserPlus, role: 'board' },
         { id: 'game-plays', label: 'Game Plays', icon: Gamepad2, role: 'board' },
         
         // User View (Standard)
@@ -2218,6 +2264,142 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
+    /* Who has actually signed up. Until now the dashboard only showed event
+       REGISTRATIONS, which is a different and much smaller number — there was no
+       way to see the 104 people who have signed in with Google. */
+    const renderSignupsSection = () => {
+        const rows = signupRows || [];
+        const since = (days: number) => {
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            return d.getTime();
+        };
+        const ms = (r: SignupRow) => new Date(r.created_at).getTime();
+        const day1 = since(1), day7 = since(7), day30 = since(30);
+        const n24 = rows.filter(r => ms(r) >= day1).length;
+        const n7 = rows.filter(r => ms(r) >= day7).length;
+        const n30 = rows.filter(r => ms(r) >= day30).length;
+
+        const q = signupSearch.trim().toLowerCase();
+        const shown = q
+            ? rows.filter(r => r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q))
+            : rows;
+
+        const fmt = (s: string) => {
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? '—' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        };
+
+        /* a mailing list is the single most useful thing a small nonprofit can
+           take out of this screen */
+        const downloadCsv = () => {
+            const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+            const csv = ['Name,Email,Joined']
+                .concat(rows.map(r => [esc(r.full_name), esc(r.email), esc(r.created_at)].join(',')))
+                .join('\n');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = `abe-signups-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        };
+
+        const Stat: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</p>
+            </div>
+        );
+
+        return (
+            <div className="space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Sign-ups 🙋</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Everyone who has signed in with Google. This is different from event registrations.
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={fetchSignups}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200"
+                        >
+                            <RefreshCw className="h-4 w-4" /> Refresh
+                        </button>
+                        <button
+                            onClick={downloadCsv}
+                            disabled={!rows.length}
+                            className="inline-flex items-center gap-2 rounded-full bg-sky-600 hover:bg-sky-700 disabled:opacity-40 px-4 py-2 text-sm font-bold text-white"
+                        >
+                            <Download className="h-4 w-4" /> CSV
+                        </button>
+                    </div>
+                </div>
+
+                {signupsError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3">
+                        <p className="text-xs text-red-700 dark:text-red-400">{signupsError}</p>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Stat label="Total sign-ups" value={rows.length} />
+                    <Stat label="Last 24 hours" value={n24} />
+                    <Stat label="Last 7 days" value={n7} />
+                    <Stat label="Last 30 days" value={n30} />
+                </div>
+
+                <div className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                        value={signupSearch}
+                        onChange={(e) => setSignupSearch(e.target.value)}
+                        placeholder="Search by name or email…"
+                        aria-label="Search sign-ups"
+                        className="w-full rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 pl-9 pr-4 py-2.5 text-sm text-slate-900 dark:text-white"
+                    />
+                </div>
+
+                {signupsLoading ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+                ) : shown.length === 0 ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {rows.length === 0 ? 'No sign-ups yet.' : 'Nobody matches that search.'}
+                    </p>
+                ) : (
+                    <>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Showing {shown.length} of {rows.length}, newest first
+                        </p>
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            {shown.map((r, i) => (
+                                <div
+                                    key={r.id}
+                                    className={`flex items-center gap-3 px-4 py-3 ${i % 2 ? 'bg-slate-50 dark:bg-slate-800/60' : 'bg-white dark:bg-slate-800'}`}
+                                >
+                                    {r.avatar_url ? (
+                                        <img src={r.avatar_url} alt="" referrerPolicy="no-referrer" loading="lazy"
+                                             className="h-9 w-9 rounded-full object-cover shrink-0" />
+                                    ) : (
+                                        <span className="h-9 w-9 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 grid place-items-center font-black shrink-0">
+                                            {(r.full_name || r.email || '?').charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-slate-900 dark:text-white truncate">{r.full_name || '—'}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.email}</p>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">{fmt(r.created_at)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+        );
+    };
+
     const renderGamePlaysSection = () => {
         const rows = gamePlayRows || [];
 
@@ -2523,6 +2705,7 @@ const Dashboard: React.FC = () => {
             case 'volunteers': return renderVolunteersSection();
             case 'manage-testimonials': return renderManageTestimonialsSection();
             case 'media-outreach': return renderMediaOutreachSection();
+            case 'signups': return renderSignupsSection();
             case 'game-plays': return renderGamePlaysSection();
             case 'games': return renderGamesGallerySection();
             case 'wheel': return renderWheelSection();
