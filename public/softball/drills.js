@@ -895,6 +895,12 @@
       setTimeout(() => { if (window.SBLevels) start(nextDrill); }, 4200 * speedMul());
       return;
     }
+    /* finishing a whole station is the biggest win in the game outside the
+       medal — give it the full burst, over the child's own head */
+    try {
+      const p = SWalk.pos;
+      SBField.confetti(p.x, 2.9, p.z, 46);
+    } catch (e) {}
     try { LV().sticker(id, LV().levelName(id)); } catch (e) {}
     try { K.streakBump && K.streakBump(); } catch (e) {}
     say(cur.def.done, null, { emoji: '⭐' });

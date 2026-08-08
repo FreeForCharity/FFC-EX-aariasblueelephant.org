@@ -312,6 +312,44 @@
 .sbRepsBtn:active { transform: scale(.92); }
 .sbRepsVal { min-width: 110px; font-size: 17px; font-weight: 900; color: var(--k-accent); }
 
+/* ⭐ the sticker book — the empty slots are the point, so they are shown as
+   real slots rather than hidden until earned */
+.sbStickGrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 8px; margin: 6px 0 4px;
+}
+.sbStick {
+  border: 2px dashed #c3d2e2; cursor: pointer; border-radius: 16px; padding: 10px 4px;
+  background: rgba(255,255,255,.5); font: inherit; color: #8a94a6;
+  min-height: 86px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px;
+}
+.sbStick:active { transform: scale(.94); }
+.sbStick .sbStickFace { font-size: 30px; line-height: 1; filter: grayscale(1); opacity: .45; }
+.sbStick .sbStickName { font-size: 11px; font-weight: 800; line-height: 1.15; text-align: center; }
+.sbStick.got {
+  border: 2px solid #ffd43b; background: #fffaf0; color: var(--sb-ink);
+  box-shadow: 0 3px 10px rgba(190,150,20,.22);
+}
+.sbStick.got .sbStickFace { filter: none; opacity: 1; }
+.sbStickHint { margin-top: 8px !important; }
+.sbStickSay {
+  min-height: 22px; font-size: 14px; font-weight: 800; color: #2f6fb5;
+  text-align: center; line-height: 1.35; padding: 0 4px;
+}
+/* the running count on the ⭐ button: "3/11" says there are eight more.
+   kit.css leaves .kAct static, so it has to be positioned for the badge to
+   anchor to the button rather than to whatever ancestor happens to be. */
+.kAct { position: relative; }
+.kAct .sbBadge {
+  position: absolute; top: -4px; right: -4px; background: #e8564f; color: #fff;
+  border-radius: 999px; padding: 1px 6px; font-size: 10px; font-weight: 900;
+  line-height: 1.5; box-shadow: 0 2px 5px rgba(0,0,0,.25); pointer-events: none;
+}
+@keyframes sbPopK { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+.kAct.sbPop { animation: sbPopK .55s ease-out 2; }
+@media (prefers-reduced-motion: reduce) { .kAct.sbPop { animation: none; } }
+
 /* Coach Mode tabs — reading / settings / where-to-go, kept apart on purpose */
 .sbTabs {
   display: flex; gap: 6px; margin: 2px 0 12px; background: #eef4ff;

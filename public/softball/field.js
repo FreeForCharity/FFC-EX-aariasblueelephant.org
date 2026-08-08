@@ -132,7 +132,11 @@
     M.woodDark = lam(0x6f4a2c);
     M.metal = lam(0xb9c2cc);
     M.metalDark = lam(0x7c8792);
-    M.ball = lam(0xd9e34a);            // optic-yellow softball — the real ones are vivid
+    /* optic-yellow softball — the real ones are vivid. The white-and-red seam
+       texture is tinted by this colour, so the stitching comes out warm red on
+       yellow rather than sitting on top as a flat decal. */
+    M.ball = new THREE.MeshLambertMaterial({ color: 0xe4ef4f, map: ballTexture() });
+    M.batAlloy = lam(0xe8564f);        // a red alloy bat: kids pick it out of a rack instantly
     M.seam = basic(0xd6455a);
     M.rubber = lam(0x2f3238);
     M.blue = lam(0x6db9f2);
@@ -184,15 +188,19 @@
     linkTex.wrapS = linkTex.wrapT = THREE.RepeatWrapping;
     return linkTex;
   }
-  /* one panel of fencing, `w` by `h`, centred at x/y/z */
-  function meshPanel(x, y, z, w, h, ry) {
+  /* One panel of fencing, `w` by `h`, centred at x/y/z. `dens` is weave repeats
+     per world unit — the dugout's 1.1 was tuned against its own big panels, but
+     on the backstop's short arc segments it produced metre-wide diamonds, so
+     that one asks for a finer mesh. */
+  function meshPanel(x, y, z, w, h, ry, dens, opacity) {
+    const d = dens || 1.1;
     const tex = chainLink().clone();
     tex.needsUpdate = true;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(Math.max(1, Math.round(w * 1.1)), Math.max(1, Math.round(h * 1.1)));
+    tex.repeat.set(Math.max(1, Math.round(w * d)), Math.max(1, Math.round(h * d)));
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide,
-                                    depthWrite: false, opacity: 0.85, fog: false }));
+                                    depthWrite: false, opacity: opacity || 0.85, fog: false }));
     m.position.set(x, y, z);
     if (ry) m.rotation.y = ry;
     return m;
@@ -243,6 +251,111 @@
   }
   const clouds = [];
 
+  /* ═════════════════════════════════════════════════════════════ confetti
+     A win that only prints a line of text does not feel like a win. This throws
+     a burst of paper into the air above a spot and lets it tumble down — used
+     on a right answer, on finishing a station, and on the medal.
+
+     Deliberately cheap: flat coloured squares on one shared geometry, no
+     texture, no physics, removed the moment they land. Calm Mode turns it into
+     a much smaller, slower puff rather than switching it off, because a child
+     who needs calm still deserves to be told they did it. */
+  const confetti = [];
+  const CONF_COLOURS = [0xffd43b, 0xff8fab, 0x63c7ff, 0x8ce99a, 0xffa94d, 0xe599f7];
+  let confGeo = null;
+
+  F.confetti = function (x, y, z, n) {
+    if (!scene || !THREE) return;
+    let calm = false;
+    try { calm = !!(window.ABEKit && ABEKit.calm && ABEKit.calm()); } catch (e) {}
+    const count = Math.max(4, Math.round((n || 26) * (calm ? 0.35 : 1)));
+    if (confetti.length > 260) return;              // never let it pile up
+    if (!confGeo) confGeo = new THREE.PlaneGeometry(0.14, 0.2);
+    for (let i = 0; i < count; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: CONF_COLOURS[i % CONF_COLOURS.length],
+        side: THREE.DoubleSide, transparent: true, depthWrite: false, fog: false });
+      const m = new THREE.Mesh(confGeo, mat);
+      m.position.set(x, y, z);
+      m.renderOrder = 950;
+      scene.add(m);
+      const a = Math.random() * Math.PI * 2;
+      const sp = (calm ? 0.7 : 1) * (1.4 + Math.random() * 2.2);
+      confetti.push({
+        m: m,
+        vx: Math.cos(a) * sp * 0.5,
+        vy: (calm ? 2.2 : 4.0) + Math.random() * 2.2,
+        vz: Math.sin(a) * sp * 0.5,
+        sx: (Math.random() - 0.5) * (calm ? 3 : 9),
+        sy: (Math.random() - 0.5) * (calm ? 3 : 9),
+        life: 0,
+        max: 1.6 + Math.random() * 1.1,
+      });
+    }
+  };
+
+  function stepConfetti(dt) {
+    for (let i = confetti.length - 1; i >= 0; i--) {
+      const c = confetti[i];
+      c.life += dt;
+      c.vy -= 9.2 * dt;                              // gravity
+      c.vx *= 0.985; c.vz *= 0.985;                  // a little drag, so it flutters
+      c.m.position.x += c.vx * dt;
+      c.m.position.y += c.vy * dt;
+      c.m.position.z += c.vz * dt;
+      c.m.rotation.x += c.sx * dt;
+      c.m.rotation.z += c.sy * dt;
+      const k = c.life / c.max;
+      if (k > 0.72) c.m.material.opacity = Math.max(0, 1 - (k - 0.72) / 0.28);
+      if (c.life >= c.max || c.m.position.y < -0.4) {
+        scene.remove(c.m);
+        if (c.m.material) c.m.material.dispose();    // geometry is shared, material is not
+        confetti.splice(i, 1);
+      }
+    }
+  }
+
+  /* ═══════════════════════════════════════ trees, hills, a world past the fence
+     The park used to end at the outfield fence with nothing behind it. Now that
+     the horizon is in shot there has to be somewhere out there — so: a low ridge
+     of hills, then a ring of trees at varied distances. All of it sits beyond
+     every collider, is never walked to, and is built once. */
+  function buildBeyond() {
+    const trunkM = lam(0x7a5433);
+    const leafM = [lam(0x2f7d3a), lam(0x39913f), lam(0x276b34)];
+
+    /* hills first, furthest back, wide and flat so they read as land not cones */
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + 0.35;
+      const r = 235 + ((i * 37) % 45);
+      const h = 26 + ((i * 17) % 22);
+      const hill = new THREE.Mesh(new THREE.ConeGeometry(60 + ((i * 23) % 40), h, 9),
+        lam(i % 2 ? 0x4a8a56 : 0x568f5c));
+      hill.position.set(Math.sin(a) * r, h / 2 - 6, Math.cos(a) * r);
+      scene.add(hill);
+    }
+
+    /* then the treeline — two loose rings so it has depth rather than a wall */
+    for (let i = 0; i < 46; i++) {
+      const a = (i / 46) * Math.PI * 2 + (i % 3) * 0.06;
+      const r = 96 + ((i * 29) % 62);
+      const s = 0.85 + ((i * 13) % 7) / 10;
+      const x = Math.sin(a) * r, z = Math.cos(a) * r;
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5 * s, 0.7 * s, 4.2 * s, 6), trunkM);
+      trunk.position.set(x, 2.1 * s, z);
+      scene.add(trunk);
+
+      /* two stacked cones give a fuller, friendlier tree than one */
+      const c1 = new THREE.Mesh(new THREE.ConeGeometry(3.4 * s, 6.2 * s, 8), leafM[i % 3]);
+      c1.position.set(x, 6.4 * s, z);
+      scene.add(c1);
+      const c2 = new THREE.Mesh(new THREE.ConeGeometry(2.5 * s, 4.6 * s, 8), leafM[(i + 1) % 3]);
+      c2.position.set(x, 9.6 * s, z);
+      scene.add(c2);
+    }
+  }
+
   function cloudTexture() {
     const c = document.createElement('canvas');
     c.width = 128; c.height = 64;
@@ -291,6 +404,16 @@
   F.strip = strip;
 
   function buildGround() {
+    /* The world beyond the park. Once the camera sits low enough to see the
+       horizon, the mown disc below ends in a hard circular edge floating in
+       sky — so this lays a much wider, plainer field under it that runs past
+       where the fog closes in. Flat colour, no texture: it is only ever seen
+       far away and half-faded. */
+    const far = new THREE.Mesh(new THREE.CircleGeometry(320, 48), lam(0x4f9243));
+    far.rotation.x = -Math.PI / 2;
+    far.position.y = -0.06;
+    scene.add(far);
+
     const g = new THREE.Mesh(new THREE.CircleGeometry(L.groundR, 56),
       new THREE.MeshLambertMaterial({ map: grassTexture() }));
     g.rotation.x = -Math.PI / 2;
@@ -419,11 +542,13 @@
       if (i < 10) {
         const a2 = -Math.PI * 0.22 + ((i + 1) / 10) * Math.PI * 0.44;
         const x2 = Math.sin(a2) * R, z2 = Math.cos(a2) * R;
-        const seg = new THREE.Mesh(
-          new THREE.BoxGeometry(Math.hypot(x2 - x, z2 - z) + 0.05, 2.8, 0.05),
-          new THREE.MeshLambertMaterial({ color: 0xd6dde4, transparent: true, opacity: 0.22 }));
-        seg.position.set((x + x2) / 2, 1.5, (z + z2) / 2);
-        seg.rotation.y = Math.atan2(x2 - x, z2 - z) + Math.PI / 2;
+        /* Real chain-link weave, the same as the dugout. These panels used to be
+           a flat grey at 0.22 opacity, which read as nothing at all — so from
+           behind home the backstop looked like a row of bare scaffolding poles
+           standing in the outfield. The weave makes it a backstop. */
+        const w = Math.hypot(x2 - x, z2 - z) + 0.05;
+        const seg = meshPanel((x + x2) / 2, 1.5, (z + z2) / 2, w, 2.8,
+          Math.atan2(x2 - x, z2 - z) + Math.PI / 2, 3.4, 0.62);
         grp.add(seg);
       }
     }
@@ -610,29 +735,84 @@
   const props = F.props = {};
 
   /* ═══════════════════════════════════════════════════ the gear, modelled */
-  function makeBall(r) {
-    const g = new THREE.Group();
-    const b = new THREE.Mesh(new THREE.SphereGeometry(r || 0.15, 14, 12), M.ball);
-    g.add(b);
-    for (const s of [-1, 1]) {
-      const seam = new THREE.Mesh(new THREE.TorusGeometry((r || 0.15) * 0.82, (r || 0.15) * 0.055, 6, 20, Math.PI), M.seam);
-      seam.rotation.y = Math.PI / 2;
-      seam.position.x = s * (r || 0.15) * 0.38;
-      seam.rotation.z = s > 0 ? 0 : Math.PI;
-      g.add(seam);
+  /* The seam, painted rather than modelled. It used to be a pair of torus rings
+     of radius 0.84R sitting inside a sphere of radius R — completely enclosed,
+     so no ball in this game has ever shown a stitch. A texture cannot hide
+     inside the ball, costs one canvas, and gives crisp stitching from any
+     distance.
+
+     Drawn white-on-red and tinted by the material's optic yellow, so body and
+     seam stay in the same colour family however the light falls. */
+  let ballTex = null;
+  function ballTexture() {
+    if (ballTex) return ballTex;
+    const W = 512, H = 256;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+
+    /* Two mirrored waves: on a sphere's equirectangular UVs this is what the
+       classic figure-eight seam unwraps to. */
+    const curve = (dir) => {
+      g.beginPath();
+      for (let i = 0; i <= W; i++) {
+        const u = i / W;
+        const v = H / 2 + dir * Math.sin(u * Math.PI * 2) * H * 0.29;
+        if (i === 0) g.moveTo(i, v); else g.lineTo(i, v);
+      }
+    };
+    for (const dir of [1, -1]) {
+      g.strokeStyle = '#ff8f8f'; g.lineWidth = 7; g.lineCap = 'round';
+      curve(dir); g.stroke();
+      /* the stitch ticks — angled across the seam, which is the detail a child
+         actually reads as "ball" */
+      g.strokeStyle = '#ff6b6b'; g.lineWidth = 4;
+      for (let i = 8; i < W; i += 22) {
+        const u = i / W;
+        const v = H / 2 + dir * Math.sin(u * Math.PI * 2) * H * 0.29;
+        const slope = dir * Math.cos(u * Math.PI * 2) * Math.PI * 2 * H * 0.29 / W;
+        const nx = -slope, ny = 1;
+        const len = Math.hypot(nx, ny) || 1;
+        g.beginPath();
+        g.moveTo(i - (nx / len) * 9, v - (ny / len) * 9);
+        g.lineTo(i + (nx / len) * 9, v + (ny / len) * 9);
+        g.stroke();
+      }
     }
+    ballTex = new THREE.CanvasTexture(c);
+    return ballTex;
+  }
+
+  function makeBall(r) {
+    const R = r || 0.15;
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(R, 22, 16), M.ball));
     return g;
   }
   F.makeBall = makeBall;
 
   function makeBat() {
     const g = new THREE.Group();
-    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.05, 0.72, 10), lam(0xd9a066));
-    barrel.position.y = 0.36; g.add(barrel);
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.032, 0.42, 8), lam(0x2f3238));
-    handle.position.y = -0.14; g.add(handle);
-    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 8), lam(0x2f3238));
-    knob.position.y = -0.36; g.add(knob);
+    /* a real bat's silhouette: fat barrel, a taper down the middle, then a thin
+       taped handle. One straight cylinder read as a rolling pin. */
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.075, 0.46, 14), M.batAlloy);
+    barrel.position.y = 0.5; g.add(barrel);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.082, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.batAlloy);
+    cap.position.y = 0.73; g.add(cap);
+    const taper = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.036, 0.3, 12), M.batAlloy);
+    taper.position.y = 0.12; g.add(taper);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.034, 0.4, 10), lam(0x2f3238));
+    handle.position.y = -0.23; g.add(handle);
+    /* grip tape: three rings, so it looks wrapped rather than painted */
+    for (let i = 0; i < 3; i++) {
+      const t = new THREE.Mesh(new THREE.TorusGeometry(0.037, 0.008, 6, 14), lam(0x1b6ec2));
+      t.rotation.x = Math.PI / 2;
+      t.position.y = -0.1 - i * 0.11;
+      g.add(t);
+    }
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.05, 0.045, 12), lam(0x1b6ec2));
+    knob.position.y = -0.45; g.add(knob);
     return g;
   }
   F.makeBat = makeBat;
@@ -665,19 +845,44 @@
   }
   F.makeMask = makeMask;
 
+  /* A mitt: a flat rounded pad, fingers fanned along the top edge, a thumb up
+     the side and a laced web in the notch between them. The pocket is a shallow
+     dish, NOT a deep bowl with a rim around it — that combination read as a
+     gramophone horn rather than a glove. */
   function makeGlove() {
     const g = new THREE.Group();
-    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), lam(0x8a5a30));
-    palm.scale.set(1, 1.15, 0.5); g.add(palm);
+    const leather = lam(0xa9682f), leatherHi = lam(0xbb763a), lace = lam(0xf5e2b8);
+
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 12), leather);
+    palm.scale.set(1, 1.05, 0.36); g.add(palm);
+
+    /* a shallow darker dish, only just proud of the palm */
+    const pocket = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), lam(0x8f5626));
+    pocket.scale.set(1, 1, 0.2); pocket.position.set(0.02, -0.02, 0.075); g.add(pocket);
+
+    /* four fingers along the top, fanned and leaning outward */
     for (let i = 0; i < 4; i++) {
-      const f = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.22, 6), lam(0x94623a));
-      f.position.set(-0.11 + i * 0.075, 0.26, 0);
+      const f = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), leatherHi);
+      f.scale.set(0.85, 1.7, 0.55);
+      f.position.set(-0.075 + i * 0.072, 0.235 - Math.abs(i - 1.5) * 0.018, 0);
+      f.rotation.z = (i - 1.5) * 0.13;
       g.add(f);
     }
-    const thumb = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 6), lam(0x94623a));
-    thumb.position.set(-0.2, 0.1, 0); thumb.rotation.z = 0.7; g.add(thumb);
-    const web = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.16, 0.03), lam(0x6f4522));
-    web.position.set(-0.14, 0.22, 0.01); g.add(web);
+
+    /* the thumb, down the left side */
+    const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), leatherHi);
+    thumb.scale.set(0.8, 1.6, 0.55);
+    thumb.position.set(-0.205, 0.055, 0); thumb.rotation.z = 0.55; g.add(thumb);
+
+    /* the laced web in the notch — the bit everyone pictures when you say glove */
+    const web = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.15, 0.02), lam(0x8f5626));
+    web.position.set(-0.152, 0.2, 0.005); web.rotation.z = 0.25; g.add(web);
+    for (let i = 0; i < 3; i++) {
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.014, 0.026), lace);
+      l.position.set(-0.152, 0.155 + i * 0.05, 0.018);
+      l.rotation.z = 0.25 + (i % 2 ? 0.3 : -0.3);
+      g.add(l);
+    }
     return g;
   }
   F.makeGlove = makeGlove;
@@ -1147,16 +1352,22 @@
     if (!THREE || !scene) return false;
 
     buildMaterials();
-    scene.fog = new THREE.Fog(0xcfe4f2, 70, 168);
+    /* Tinted to the sky's own horizon band, and closing in well before the far
+       field's edge at 320, so distance dissolves into sky instead of stopping
+       at a rim. */
+    scene.fog = new THREE.Fog(0xdcecf4, 62, 210);
 
-    /* a bright but not blown-out afternoon: one warm sun, one sky bounce */
-    scene.add(new THREE.HemisphereLight(0xbcdcf5, 0x3c6b35, 0.55));
-    const sun = new THREE.DirectionalLight(0xfff0cc, 0.55);
+    /* a bright but not blown-out afternoon: one warm sun, one sky bounce.
+       The hemisphere was the paler of the two and washed the grass out, so the
+       sun now carries more of the load and the sky bounce reads as sky. */
+    scene.add(new THREE.HemisphereLight(0xa9d3f2, 0x3f7a36, 0.42));
+    const sun = new THREE.DirectionalLight(0xfff4d6, 0.78);
     sun.position.set(28, 46, 22);
     scene.add(sun);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.14));
 
     buildSky();
+    buildBeyond();
     buildGround();
     buildFence();
     buildBackstop();
@@ -1242,6 +1453,7 @@
       c.s.position.x += c.sp * dt;
       if (c.s.position.x > 150) c.s.position.x = -150;
     }
+    stepConfetti(dt);
     /* the grown-up in the stands: stand up, wave, sit back down */
     const gu = F.grownUp;
     if (gu) {

@@ -27,6 +27,8 @@
     } catch (e) { return (o && o.en) || en || ''; }
   };
   const toast = (m, ms) => { try { K.toast && K.toast(m, ms); } catch (e) {} };
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   /* ══════════════════════════════════════════════════════════ ONE VOICE
      Lines are queued and spoken one at a time, in order — never over the top
      of each other. Two coaches talking at once is noise, and for a child who
@@ -768,7 +770,78 @@
     saveState();
     sfx('star');
     toast('⭐ ' + label, 4200);
+    /* make the sticker-book button jump, so a child sees where it went and has
+       a reason to go and look */
+    refreshAlbumBadge(true);
     return true;
+  };
+
+  /* ═══════════════════════════════════════════════════ ⭐ the sticker book */
+  function albumItems() {
+    return ((window.SBContent || C).album || {}).items || [];
+  }
+
+  /* The kit builds its action buttons itself and gives us no hook on them, so
+     find ours by the emoji it was registered with. */
+  function albumBtn() {
+    return [...document.querySelectorAll('#kActs .kAct')]
+      .find((b) => b.textContent.trim().charAt(0) === '⭐') || null;
+  }
+
+  /* a small count on the button — "3/11" is a far better invitation than a bare
+     star, because it says there are eight more out there */
+  function refreshAlbumBadge(pop) {
+    try {
+      const btn = albumBtn();
+      if (!btn) return;
+      let bad = btn.querySelector('.sbBadge');
+      if (!bad) {
+        bad = document.createElement('span');
+        bad.className = 'sbBadge';
+        btn.appendChild(bad);
+      }
+      bad.textContent = G.stickers.length + '/' + albumItems().length;
+      if (pop) { btn.classList.remove('sbPop'); void btn.offsetWidth; btn.classList.add('sbPop'); }
+    } catch (e) {}
+  }
+  S.refreshAlbumBadge = refreshAlbumBadge;
+
+  S.openAlbum = function () {
+    C = window.SBContent;
+    if (!C || !C.album) return;
+    sfx('tap');
+    const items = albumItems();
+    const got = items.filter((i) => G.stickers.includes(i.id)).length;
+
+    const cells = items.map((it) => {
+      const have = G.stickers.includes(it.id);
+      return '<button class="sbStick' + (have ? ' got' : '') + '" data-st="' + it.id + '">' +
+        '<span class="sbStickFace">' + (have ? it.emoji : '❔') + '</span>' +
+        '<span class="sbStickName">' + (have ? esc(tr(it.name)) : tr(C.album.locked)) + '</span>' +
+      '</button>';
+    }).join('');
+
+    const p = panel('sbAlbum',
+      '<h2>⭐ ' + tr(C.album.title) + '</h2>' +
+      '<p class="sbSub">' + (got === items.length
+        ? tr(C.album.allDone)
+        : (got === 0 ? tr(C.album.empty) : fill(tr(C.album.sub), { n: got, t: items.length }))) + '</p>' +
+      '<div class="sbStickGrid">' + cells + '</div>' +
+      '<p class="sbSub sbStickHint">' + tr(C.album.hint) + '</p>' +
+      '<div class="sbStickSay" id="sbStickSay"></div>' +
+      '<button class="sbBig" id="sbAlbumDone">' + tr(C.coachMode.close) + '</button>');
+
+    const out = document.getElementById('sbStickSay');
+    p.querySelectorAll('.sbStick').forEach((b) => b.addEventListener('click', () => {
+      const it = items.find((i) => i.id === b.dataset.st);
+      if (!it) return;
+      const have = G.stickers.includes(it.id);
+      sfx(have ? 'star' : 'tap');
+      const line = have ? tr(it.how) : tr(C.album.locked);
+      out.textContent = (have ? it.emoji + ' ' : '') + line;
+      speak(line);
+    }));
+    document.getElementById('sbAlbumDone').addEventListener('click', () => { sfx('tap'); p._close(); });
   };
 
   S.unlock = function (id) {
@@ -866,6 +939,7 @@
     try { SWalk.setHand(G.hand); } catch (e) {}
     refreshStrip();
     showChrome(true);
+    refreshAlbumBadge();      // show "0/11" from the first frame — it is the invitation
     /* Nilu opens every session — she is the narrator of this whole game. On a
        child's FIRST practice she also teaches the one thing that matters most:
        how to ask a grown-up for what you need. */

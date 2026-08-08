@@ -894,6 +894,50 @@
     takeAway:   t('Take away', 'Para llevar'),
   };
 
+  /* ═══════════════════════════════════════════════ ⭐ THE STICKER BOOK
+     Every sticker the game already awarded, somewhere a child can actually look
+     at them. The empty slots are the point: a book with gaps is a reason to
+     come back, where a list of things you already did is not.
+
+     SPANISH: the names are neutral noun-phrases on purpose ("¡Qué batazo!",
+     not "Gran bateador") — we never know the child's gender, and a sticker
+     that misgenders them is worse than one with a duller name. The "how" lines
+     use 2nd-person verbs (bateaste, corriste), which carry no gender. */
+  C.album = {
+    title: t('My sticker book', 'Mi álbum de calcomanías'),
+    sub: t('{n} of {t} collected', '{n} de {t} conseguidas'),
+    allDone: t('You collected every one! 🏆', '¡Las conseguiste todas! 🏆'),
+    empty: t('No stickers yet — go and get your first one!',
+             'Todavía no hay calcomanías — ¡ve por la primera!'),
+    locked: t('Not yet', 'Todavía no'),
+    hint: t('Tap a sticker to hear about it.', 'Toca una calcomanía para escucharla.'),
+    items: [
+      { id: 'gear', emoji: '🥎', name: t('Gear Expert', 'Conoce el equipo'),
+        how: t('You learned the name of every piece of gear.', 'Aprendiste el nombre de cada cosa del equipo.') },
+      { id: 'safety', emoji: '🛟', name: t('Safety Star', 'Seguridad primero'),
+        how: t('You know how to keep everybody safe.', 'Sabes cómo cuidar a todos.') },
+      { id: 'throw', emoji: '🤾', name: t('Big Thrower', '¡Qué lanzamiento!'),
+        how: t('You threw the ball to Coach Scott.', 'Le lanzaste la pelota al Coach Scott.') },
+      { id: 'pitch', emoji: '🌀', name: t('Pitcher', '¡Qué pitcheo!'),
+        how: t('You pitched underhand to Coach Sam.', 'Pitcheaste por debajo al Coach Sam.') },
+      { id: 'field', emoji: '🧤', name: t('Glove Hero', 'Guante mágico'),
+        how: t('You got in front of the ball and fielded it.', 'Te pusiste frente a la pelota y la fildeaste.') },
+      { id: 'box', emoji: '🏏', name: t('Big Hitter', '¡Qué batazo!'),
+        how: t('You hit off the tee, and stepped in and out of the box.', 'Bateaste del tee, y entraste y saliste de la caja.') },
+      { id: 'run', emoji: '🏃', name: t('Base Runner', 'A correr las bases'),
+        how: t('You ran all the way around the bases.', 'Corriste todas las bases.') },
+      { id: 'lineup', emoji: '👣', name: t('Line-up Pro', 'En la fila'),
+        how: t('You walked to your spot when the coach called LINE UP.', 'Fuiste a tu lugar cuando el coach dijo A FORMARSE.') },
+      { id: 'team', emoji: '👥', name: t('Teammate', 'En equipo'),
+        how: t('You warmed up with the whole team.', 'Calentaste con todo el equipo.') },
+      { id: 'asking', emoji: '🙋', name: t('Brave Asker', 'Valiente para pedir'),
+        how: t('You raised your hand and asked for what you needed. That is a brave thing to do.',
+               'Levantaste la mano y pediste lo que necesitabas. Eso es ser muy valiente.') },
+      { id: 'game', emoji: '🏆', name: t('Game Day Medal', 'Medalla del día de juego'),
+        how: t('You played a real game and got your medal.', 'Jugaste un partido de verdad y ganaste tu medalla.') },
+    ],
+  };
+
   C.t = t;
   window.SBContent = C;
 })();
