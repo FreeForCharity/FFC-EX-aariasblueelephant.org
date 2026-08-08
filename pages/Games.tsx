@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GAME_CARDS, GameCard } from '../data/games';
+import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
 
 // In the NATIVE APP, the launcher refreshes itself from the live site's
@@ -129,6 +130,32 @@ const NiluPostcard: React.FC = () => {
   );
 };
 
+/* Signed-out nudge toward an account. Deliberately NOT "sign in to play" — the
+   games are genuinely free and account-free, and the promise right above says so.
+   The honest reason is staying reachable, so that's what it says. Hidden in the
+   native app, where OAuth has nowhere sensible to redirect. */
+const SignInNudge: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  if (user || isLoading || (window as any).Capacitor) return null;
+  return (
+    <div className="max-w-2xl mx-auto mb-8 rounded-2xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <p className="text-sm text-slate-700 dark:text-slate-200 flex-1">
+        <span className="font-bold">{tr('Playing with us at practice?', '¿Juegas con nosotros en la práctica?')}</span>{' '}
+        {tr(
+          'Sign in so we can reach you about practice — and keep progress and all our games in one place.',
+          'Inicia sesión para que podamos avisarte sobre la práctica — y tener el progreso y todos nuestros juegos en un solo lugar.'
+        )}
+      </p>
+      <a
+        href="/login"
+        className="shrink-0 text-center px-5 py-2.5 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm transition-colors shadow-sm"
+      >
+        {tr('Sign in with Google', 'Iniciar sesión con Google')}
+      </a>
+    </div>
+  );
+};
+
 const Games: React.FC = () => {
   const cards = useLiveCatalog();
   return (
@@ -144,6 +171,7 @@ const Games: React.FC = () => {
         )}
       </p>
     </div>
+    <SignInNudge />
     <NiluPostcard />
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
       {cards.map((g) => {
