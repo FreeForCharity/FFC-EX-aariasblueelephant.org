@@ -650,9 +650,14 @@
       setTimeout(() => say(C.gearQ.rightFn, null, { emoji: '⭐' }), 1600 * speedMul());
     }
 
-    /* the winning bubble blooms; the others fade */
+    /* the winning bubble blooms, the others fade — and paper goes up over the
+       one they got, so the win is something that happens rather than something
+       they are told */
     for (const b of bubbles) {
-      if (b.right) b.win = 0.001; else b.fade = 0.001;
+      if (b.right) {
+        b.win = 0.001;
+        try { F.confetti(b.x, b.y + 0.9, b.z, 24); } catch (e) {}
+      } else b.fade = 0.001;
     }
     for (const r of rings) { if (!r.right) r.fade = 0.001; else r.win = 0.001; }
 

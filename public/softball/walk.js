@@ -40,7 +40,13 @@
 
   /* ============================================================== constants */
   const WALK_SPEED = 4.4;
-  const CAM_R_MIN = 6, CAM_R_MAX = 34, CAM_PHI_MIN = 0.3, CAM_PHI_MAX = 1.3;
+  /* CAM_PHI_MAX used to be 1.3 and the default phi 1.0, which pitched the
+     camera 33° down — with a 41° vertical FOV that put the horizon 12° ABOVE
+     the top of the frame. The sky, the sun and the nine drifting clouds this
+     game builds were never once visible to a child playing it; the pale band at
+     the top of the screen was just fogged grass. Sitting closer to horizontal
+     shows the ballpark the way you actually stand in one. */
+  const CAM_R_MIN = 6, CAM_R_MAX = 34, CAM_PHI_MIN = 0.3, CAM_PHI_MAX = 1.45;
   const TAP_PX = 8, TAP_MS = 300;
   const HOME_DIST = 13;             // show the "⬅️ Nilu" chip past this — she
                                     // is how you know where to go, so point at
@@ -60,8 +66,8 @@
   let held = null;                  // 'bat' | 'ball' | null — what's in the throwing hand
   let heldMesh = null;
 
-  const orbit = { theta: 0, phi: 1.0, radius: 17 };
-  const view = { theta: 0, phi: 1.0, radius: 17 };
+  const orbit = { theta: 0, phi: 1.22, radius: 14.5 };
+  const view = { theta: 0, phi: 1.22, radius: 14.5 };
   let camTarget = null, camLock = null;
 
   const tweens = [];
