@@ -311,6 +311,54 @@
 }
 .sbRepsBtn:active { transform: scale(.92); }
 .sbRepsVal { min-width: 110px; font-size: 17px; font-weight: 900; color: var(--k-accent); }
+
+/* Coach Mode tabs — reading / settings / where-to-go, kept apart on purpose */
+.sbTabs {
+  display: flex; gap: 6px; margin: 2px 0 12px; background: #eef4ff;
+  border-radius: 999px; padding: 4px;
+}
+.sbTab {
+  flex: 1; border: 0; cursor: pointer; border-radius: 999px; padding: 10px 6px; min-height: 44px;
+  background: transparent; font: inherit; font-size: 13px; font-weight: 900; color: #5a6a80;
+  white-space: nowrap;
+}
+.sbTab.on { background: #fff; color: var(--sb-ink); box-shadow: 0 2px 6px rgba(40,40,90,.14); }
+.sbTab:active { transform: scale(.97); }
+.sbTabBody { text-align: left; }
+
+/* "working on now / up next" — the question a coach opens this panel to answer */
+.sbNowNext {
+  background: #fff7e6; border-radius: 14px; padding: 12px 14px; margin: 8px 0 10px;
+  box-shadow: 0 2px 6px rgba(40,40,90,.1);
+}
+.sbNNRow { display: flex; align-items: baseline; gap: 10px; }
+.sbNNRow.next { margin-top: 6px; opacity: .78; }
+.sbNNLbl {
+  flex: none; min-width: 96px; font-size: 11px; font-weight: 900; letter-spacing: .3px;
+  text-transform: uppercase; color: #8a7550;
+}
+.sbNNVal { font-size: 16px; font-weight: 900; color: var(--sb-ink); }
+.sbNowBig { font-size: 16px; font-weight: 900; color: #148f4b; text-align: center; }
+.sbUnlocked { font-size: 12.5px; font-weight: 800; color: #5a6a80; text-align: center; }
+.sbDots { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin: 6px 0 2px; }
+.sbDot {
+  font-size: 15px; line-height: 1; padding: 5px; border-radius: 999px;
+  background: #eef1f6; filter: grayscale(1); opacity: .5;
+}
+.sbDot.on { filter: none; opacity: 1; background: #eafaf0; }
+.sbDot.now { outline: 2px solid var(--k-accent); }
+
+/* per-station turn steppers */
+.sbStepRow {
+  display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin: 4px 0;
+  background: rgba(255,255,255,.85); border-radius: 12px; text-align: left;
+}
+.sbStepRow.allRow { background: #eef4ff; margin-top: 10px; }
+.sbStepName { flex: 1; font-size: 14.5px; font-weight: 800; line-height: 1.2; }
+.sbStepName small { display: block; font-size: 11px; font-weight: 700; color: #8a94a6; }
+.sbStepper { display: flex; align-items: center; gap: 8px; flex: none; }
+.sbStepper .sbRepsBtn { min-width: 42px; min-height: 42px; font-size: 21px; border-radius: 13px; }
+.sbStepVal { min-width: 24px; text-align: center; font-size: 18px; font-weight: 900; color: var(--k-accent); }
 .sbCueChips {
   display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 0 0 10px;
 }

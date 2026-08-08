@@ -69,88 +69,137 @@
     }
   };
 
-  /* ══════════════════════════════════════════════════════ the main panel */
-  function panel() {
+  /* ══════════════════════════════════════════════════════ the main panel
+
+     Three tabs, because one long column of unlabelled buttons is what made the
+     first version unreadable — you could not tell what was a reading, what was
+     a setting, and what would move the child somewhere:
+       📊 Today    what is happening right now — read only, nothing to break
+       🎚️ Set up   every knob, each with a line saying what it actually does
+       🎯 Stations where to send the child next
+     Every control saves the moment it is tapped. There is no OK button, which
+     is deliberate: a coach reading this on a phone mid-practice should never
+     lose a change by closing the panel. */
+  const SKILLS = ['throw', 'pitch', 'field', 'bat', 'box', 'run'];
+  let TAB = 'today';
+
+  /* which station is on now, and what follows it */
+  function nowNext() {
+    const G = LV().G;
+    const L = C.levels || [];
+    let i = L.findIndex((l) => l.id === G.level);
+    if (i < 0) i = 0;
+    return { now: L[i] || null, next: L[i + 1] || null };
+  }
+
+  function todayHTML() {
     const G = LV().G;
     const M = C.coachMode;
+    const nn = nowNext();
 
-    const skills = ['throw', 'pitch', 'field', 'bat', 'box', 'run'];
-    const rows = skills.map((id) => {
+    const openCount = (C.levels || []).filter((l) => G.open[l.id]).length;
+    const dots = (C.levels || []).map((l) =>
+      '<span class="sbDot' + (G.open[l.id] ? ' on' : '') + (l.id === G.level ? ' now' : '') +
+      '" title="' + esc(tr(l.name)) + '">' + l.emoji + '</span>').join('');
+
+    const rows = SKILLS.map((id) => {
       const d = C.drills[id];
       if (!d) return '';
       const n = G.reps[id] || 0;
-      const done = n > 0;
-      return '<div class="sbCoachRow' + (done ? ' done' : '') + '">' +
+      let t = 3;
+      try { t = SBDrills.repTarget(id); } catch (e) {}
+      const done = n >= t;
+      return '<div class="sbCoachRow' + (n > 0 ? ' done' : '') + '">' +
         '<span class="sbCoachEmoji">' + d.emoji + '</span>' +
         '<span class="sbCoachName">' + esc(tr(d.title)) + '</span>' +
-        '<span class="sbCoachVal">' + (done ? LV().fill(tr(M.reps), { n: n }) : tr(M.notYet)) + '</span></div>';
+        '<span class="sbCoachVal">' + (n > 0 ? LV().fill(tr(M.turnsOf), { n: n, t: t }) : tr(M.notYet)) +
+        (done ? ' ✓' : '') + '</span></div>';
     }).join('');
 
     const needTotal = Object.keys(G.needs || {}).reduce((s, k) => s + (G.needs[k] || 0), 0);
     const needRows = (C.needs.items || []).map((it) => {
       const n = (G.needs || {})[it.id] || 0;
-      if (!n) return '';
-      return '<span class="sbNeedTally">' + it.emoji + ' ' + n + '</span>';
+      return n ? '<span class="sbNeedTally">' + it.emoji + ' ' + n + '</span>' : '';
     }).join('');
 
-    const p = LV().panel('sbCoach',
-      '<h2>🧢 ' + tr(M.title) + '</h2>' +
-      '<div class="sbCoachHead">' +
+    return '<div class="sbCoachHead">' +
         '<div><b>' + tr(M.player) + ':</b> ' + esc(G.name || '—') + '</div>' +
         '<div><b>' + tr(M.hand) + ':</b> ' + tr(G.hand === 'L' ? M.handL : M.handR) + '</div>' +
       '</div>' +
+      (G.finished
+        ? '<div class="sbNowNext"><div class="sbNowBig">' + tr(M.allStations) + '</div></div>'
+        : '<div class="sbNowNext">' +
+            '<div class="sbNNRow"><span class="sbNNLbl">' + tr(M.nowAt) + '</span>' +
+              '<span class="sbNNVal">' + (nn.now ? nn.now.emoji + ' ' + esc(tr(nn.now.name)) : '—') + '</span></div>' +
+            (nn.next ? '<div class="sbNNRow next"><span class="sbNNLbl">' + tr(M.upNext) + '</span>' +
+              '<span class="sbNNVal">' + nn.next.emoji + ' ' + esc(tr(nn.next.name)) + '</span></div>' : '') +
+          '</div>') +
+      '<div class="sbUnlocked">' + LV().fill(tr(M.unlocked), { a: openCount, b: (C.levels || []).length }) + '</div>' +
+      '<div class="sbDots">' + dots + '</div>' +
       '<h3 class="sbCoachH3">' + tr(M.progress) + '</h3>' + rows +
       '<h3 class="sbCoachH3">' + tr(M.selfAdvocacy) + '</h3>' +
       '<div class="sbCoachAdv">' +
         '<div class="sbAdvBig">' + LV().fill(tr(C.needs.tally), { n: needTotal }) + '</div>' +
         '<div class="sbAdvRow">' + (needRows || '—') + '</div>' +
-      '</div>' +
-      '<h3 class="sbCoachH3">' + tr(M.repsTitle) + '</h3>' +
-      '<p class="sbSub sbRepsSub">' + tr(M.repsSub) + '</p>' +
-      '<div class="sbRepsRow">' +
-        '<button class="sbRepsBtn" id="sbRepsDown">−</button>' +
-        '<span class="sbRepsVal">' + (G.repTarget ? G.repTarget : tr(M.repsDefault)) + '</span>' +
-        '<button class="sbRepsBtn" id="sbRepsUp">+</button>' +
-      '</div>' +
-      '<button class="kRow" id="sbCoachAssist">' + tr(M.assist) + ': <b>' +
-        tr(G.assist ? M.assistOn : M.assistOff) + '</b></button>' +
-      '<button class="kRow" id="sbCoachHand">🤚 ' + tr(M.resetHand) + '</button>' +
-      '<button class="kRow" id="sbCoachGo">' + tr(M.goStation) + '</button>' +
-      '<button class="kRow" id="sbCoachCues">' + tr(M.cueSheet) + '</button>' +
-      '<button class="kRow" id="sbCoachCard">' + tr(M.practiceCard) + '</button>' +
-      '<button class="kRow" id="sbCoachReset">♻️ ' + tr({ en: 'Start practice over', es: 'Empezar la práctica de nuevo' }) + '</button>' +
-      '<p class="sbSub sbCoachNote">' + tr(M.note) + '</p>' +
-      '<button class="sbBig" id="sbCoachDone">' + tr(M.close) + '</button>');
-
-    document.getElementById('sbCoachDone').addEventListener('click', () => { sfx('tap'); p._close(); });
-    const bumpReps = (d) => {
-      G.repTarget = Math.max(0, Math.min(5, (G.repTarget || 0) + d));
-      LV().save(); sfx('tap'); p._close(); panel();
-    };
-    document.getElementById('sbRepsDown').addEventListener('click', () => bumpReps(-1));
-    document.getElementById('sbRepsUp').addEventListener('click', () => bumpReps(1));
-    document.getElementById('sbCoachAssist').addEventListener('click', () => {
-      G.assist = G.assist ? 0 : 1; LV().save(); sfx('tap'); p._close(); panel();
-    });
-    document.getElementById('sbCoachHand').addEventListener('click', () => {
-      const h = G.hand === 'L' ? 'R' : 'L';
-      G.hand = h; LV().save();
-      try { SWalk.setHand(h); } catch (e) {}
-      sfx('yes'); p._close(); panel();
-    });
-    document.getElementById('sbCoachGo').addEventListener('click', () => { sfx('tap'); p._close(); stationPicker(); });
-    document.getElementById('sbCoachCues').addEventListener('click', () => { sfx('tap'); p._close(); cueSheet(); });
-    document.getElementById('sbCoachCard').addEventListener('click', () => { sfx('tap'); sharePracticeCard(); });
-    document.getElementById('sbCoachReset').addEventListener('click', () => { sfx('tap'); p._close(); confirmReset(); });
+      '</div>';
   }
 
-  /* ══════════════════════════ 🎯 go straight to a station
-     A child's own path stays in order on purpose — the same eight cards in
-     the same order every time is most of why this game is calm. But a coach
-     running one skill on a Saturday, or a kid who came to hit today, should
-     not have to work through the gear round first. So: a grown-up can open
-     any station and go there. */
-  function stationPicker() {
+  function setupHTML() {
+    const G = LV().G;
+    const M = C.coachMode;
+
+    const stepRows = SKILLS.map((id) => {
+      const d = C.drills[id];
+      if (!d) return '';
+      let t = 3, def = 3;
+      try { t = SBDrills.repTarget(id); def = SBDrills.repDefault(id); } catch (e) {}
+      return '<div class="sbStepRow">' +
+        '<span class="sbCoachEmoji">' + d.emoji + '</span>' +
+        '<span class="sbStepName">' + esc(tr(d.title)) +
+          '<small>' + (t === def ? tr(M.isDefault) : tr(M.changed)) + '</small></span>' +
+        '<span class="sbStepper">' +
+          '<button class="sbRepsBtn" data-rep="' + id + '" data-d="-1" aria-label="−">−</button>' +
+          '<b class="sbStepVal">' + t + '</b>' +
+          '<button class="sbRepsBtn" data-rep="' + id + '" data-d="1" aria-label="+">+</button>' +
+        '</span></div>';
+    }).join('');
+
+    return '<p class="sbSub">' + tr(M.setupIntro) + '</p>' +
+      '<h3 class="sbCoachH3">' + tr(M.perStation) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.perStationSub) + '</p>' +
+      stepRows +
+      '<div class="sbStepRow allRow">' +
+        '<span class="sbCoachEmoji">🎚️</span>' +
+        '<span class="sbStepName">' + tr(M.sameForAll) +
+          '<small>' + (G.repTarget ? '' : tr(M.isDefault)) + '</small></span>' +
+        '<span class="sbStepper">' +
+          '<button class="sbRepsBtn" id="sbAllDown" aria-label="−">−</button>' +
+          '<b class="sbStepVal">' + (G.repTarget ? G.repTarget : '—') + '</b>' +
+          '<button class="sbRepsBtn" id="sbAllUp" aria-label="+">+</button>' +
+        '</span></div>' +
+      '<button class="sbLink" id="sbRepsReset">' + tr(M.backToWritten) + '</button>' +
+
+      '<h3 class="sbCoachH3">' + tr(M.assist) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.assistWhat) + '</p>' +
+      '<button class="kRow" id="sbCoachAssist">' + tr(M.assist) + ': <b>' +
+        tr(G.assist ? M.assistOn : M.assistOff) + '</b></button>' +
+
+      '<h3 class="sbCoachH3">' + tr(M.hand) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.handWhat) + '</p>' +
+      '<button class="kRow" id="sbCoachHand">🤚 ' + tr(M.resetHand) + ' — <b>' +
+        tr(G.hand === 'L' ? M.handL : M.handR) + '</b></button>' +
+
+      '<h3 class="sbCoachH3">♻️ ' + tr({ en: 'Start practice over', es: 'Empezar la práctica de nuevo' }) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.resetWhat) + '</p>' +
+      '<button class="kRow" id="sbCoachReset">♻️ ' +
+        tr({ en: 'Start practice over', es: 'Empezar la práctica de nuevo' }) + '</button>';
+  }
+
+  /* A child's own path stays in order on purpose — the same eight cards in the
+     same order every time is most of why this game is calm. But a coach running
+     one skill on a Saturday, or a kid who came to hit today, should not have to
+     work through the gear round first. */
+  function stationsHTML() {
     const G = LV().G;
     const M = C.coachMode;
     const cards = (C.levels || []).map((l) => {
@@ -162,34 +211,101 @@
         '<span class="sbStationLbl">' + esc(tr(l.name)) + '</span>' +
         '<span class="sbStationState">' + (open ? '✓' : '🔒') + '</span></button>';
     }).join('');
-    const p = LV().panel('sbStations',
-      '<h2>' + tr(M.goStation) + '</h2>' +
-      '<p class="sbSub">' + tr(M.goStationSub) + '</p>' +
+    return '<p class="sbSub">' + tr(M.goStationSub) + '</p>' +
       '<div class="sbStationGrid">' + cards + '</div>' +
-      '<button class="kRow" id="sbOpenAll">' + tr(M.openAll) + '</button>' +
-      '<button class="sbBig" id="sbStationsDone">' + tr(M.close) + '</button>');
+      '<button class="kRow" id="sbOpenAll">' + tr(M.openAll) + '</button>';
+  }
 
-    p.querySelectorAll('.sbStationBtn').forEach((b) => b.addEventListener('click', () => {
-      const id = b.dataset.lvl;
-      sfx('yes');
-      G.open[id] = 1;                 // opening it is the whole point
-      LV().save();
-      LV().refreshStrip();
-      p._close();
-      /* straight to the skill: they picked it deliberately, so skip the
-         line-up and warm-up they'd otherwise sit through first */
-      try { window.SBTeam && SBTeam.markLinedUp(id); } catch (e) {}
-      try { LV().goToLevel(id); } catch (e) {}
+  function panel() {
+    const G = LV().G;
+    const M = C.coachMode;
+
+    const tabs = [['today', M.tabToday], ['setup', M.tabSetup], ['stations', M.tabStations]];
+    const tabRow = tabs.map((x) =>
+      '<button class="sbTab' + (TAB === x[0] ? ' on' : '') + '" data-tab="' + x[0] + '">' +
+      tr(x[1]) + '</button>').join('');
+
+    const body = TAB === 'setup' ? setupHTML() : TAB === 'stations' ? stationsHTML() : todayHTML();
+
+    const p = LV().panel('sbCoach',
+      '<h2>🧢 ' + tr(M.title) + '</h2>' +
+      '<div class="sbTabs">' + tabRow + '</div>' +
+      '<div class="sbTabBody">' + body + '</div>' +
+      '<h3 class="sbCoachH3">' + tr(M.takeAway) + '</h3>' +
+      '<button class="kRow" id="sbCoachCues">' + tr(M.cueSheet) + '</button>' +
+      '<button class="kRow" id="sbCoachCard">' + tr(M.practiceCard) + '</button>' +
+      '<p class="sbSub sbCoachNote">' + tr(M.note) + '</p>' +
+      '<button class="sbBig" id="sbCoachDone">' + tr(M.close) + '</button>');
+
+    const redraw = () => { p._close(); panel(); };
+
+    p.querySelectorAll('.sbTab').forEach((b) => b.addEventListener('click', () => {
+      TAB = b.dataset.tab; sfx('tap'); redraw();
     }));
-    document.getElementById('sbOpenAll').addEventListener('click', () => {
-      for (const l of (C.levels || [])) G.open[l.id] = 1;
-      LV().save();
-      LV().refreshStrip();
-      sfx('star');
-      try { K.toast(tr(M.openAllDone), 3200); } catch (e) {}
-      p._close(); stationPicker();
-    });
-    document.getElementById('sbStationsDone').addEventListener('click', () => { sfx('tap'); p._close(); panel(); });
+
+    document.getElementById('sbCoachDone').addEventListener('click', () => { sfx('tap'); p._close(); });
+    document.getElementById('sbCoachCues').addEventListener('click', () => { sfx('tap'); p._close(); cueSheet(); });
+    document.getElementById('sbCoachCard').addEventListener('click', () => { sfx('tap'); sharePracticeCard(); });
+
+    if (TAB === 'setup') {
+      /* per-station ±. Stored only when it differs from what the drill was
+         written with, so "as written" keeps meaning what it says even after a
+         coach nudges a number up and back down again. */
+      p.querySelectorAll('[data-rep]').forEach((b) => b.addEventListener('click', () => {
+        const id = b.dataset.rep;
+        let cur = 3, def = 3;
+        try { cur = SBDrills.repTarget(id); def = SBDrills.repDefault(id); } catch (e) {}
+        const next = Math.max(1, Math.min(9, cur + (+b.dataset.d)));
+        G.repsBy = G.repsBy || {};
+        if (next === def && !G.repTarget) delete G.repsBy[id];
+        else G.repsBy[id] = next;
+        LV().save(); sfx('tap'); redraw();
+      }));
+      const bumpAll = (d) => {
+        G.repTarget = Math.max(0, Math.min(9, (G.repTarget || 0) + d));
+        G.repsBy = {};                 // one number for everything means everything
+        LV().save(); sfx('tap'); redraw();
+      };
+      document.getElementById('sbAllDown').addEventListener('click', () => bumpAll(-1));
+      document.getElementById('sbAllUp').addEventListener('click', () => bumpAll(1));
+      document.getElementById('sbRepsReset').addEventListener('click', () => {
+        G.repTarget = 0; G.repsBy = {};
+        LV().save(); sfx('yes'); redraw();
+      });
+      document.getElementById('sbCoachAssist').addEventListener('click', () => {
+        G.assist = G.assist ? 0 : 1; LV().save(); sfx('tap'); redraw();
+      });
+      document.getElementById('sbCoachHand').addEventListener('click', () => {
+        const h = G.hand === 'L' ? 'R' : 'L';
+        G.hand = h; LV().save();
+        try { SWalk.setHand(h); } catch (e) {}
+        sfx('yes'); redraw();
+      });
+      document.getElementById('sbCoachReset').addEventListener('click', () => { sfx('tap'); p._close(); confirmReset(); });
+    }
+
+    if (TAB === 'stations') {
+      p.querySelectorAll('.sbStationBtn').forEach((b) => b.addEventListener('click', () => {
+        const id = b.dataset.lvl;
+        sfx('yes');
+        G.open[id] = 1;                 // opening it is the whole point
+        LV().save();
+        LV().refreshStrip();
+        p._close();
+        /* straight to the skill: they picked it deliberately, so skip the
+           line-up and warm-up they'd otherwise sit through first */
+        try { window.SBTeam && SBTeam.markLinedUp(id); } catch (e) {}
+        try { LV().goToLevel(id); } catch (e) {}
+      }));
+      document.getElementById('sbOpenAll').addEventListener('click', () => {
+        for (const l of (C.levels || [])) G.open[l.id] = 1;
+        LV().save();
+        LV().refreshStrip();
+        sfx('star');
+        try { K.toast(tr(M.openAllDone), 3200); } catch (e) {}
+        redraw();
+      });
+    }
   }
 
   /* ══════════════════════════ 📋 the cue sheet — everything the game says */
