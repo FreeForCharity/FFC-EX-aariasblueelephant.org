@@ -157,8 +157,9 @@ for (const [game, cfg] of Object.entries(GAMES)) {
     if (dir === 'gamekit') continue;
     let html = '';
     try { html = readFileSync(`public/${dir}/index.html`, 'utf8'); } catch { continue; }
-    const slug = (html.match(/slug:\s*'([a-z0-9-]+)'/) || html.match(/\bg:\s*'([a-z0-9-]+)'/) || [])[1];
-    if (!slug) continue; // not a play-reporting game
+    // quote style varies between games — grocery/dayplanner use "double"
+    const slug = (html.match(/slug:\s*['"]([a-z0-9-]+)['"]/) || html.match(/\bg:\s*['"]([a-z0-9-]+)['"]/) || [])[1];
+    if (!slug) continue; // not a play-reporting game (e.g. craft3d, never shipped)
     if (!lists.some((l) => l.has(slug)))
       fail(dir, 'R6', `slug '${slug}' missing from the allowlists in supabase/create_game_play_counts.sql — plays are silently dropped. Add it AND re-run both function blocks in the Supabase SQL editor.`);
     if (!labelBlock.includes(`'${slug}'`))
