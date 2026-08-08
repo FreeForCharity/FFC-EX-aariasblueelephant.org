@@ -52,8 +52,13 @@
     pitch: { rubber: { kind: 'walk', at: () => L.circle, r: 2.2 }, ready: 'tap', back: 'tap',
              circle: 'arc', release: 'auto', stepto: 'tap' },
     field: { ready: 'tap', watch: 'auto', move: 'catch', scoop: 'tap', stand: 'tap', throwfirst: 'throwFirst' },
+    /* Batting: walk into the box, then SET the feet, then aim, then wait for the
+       coach's GO, then swing. 'look' used to be 'auto' — it announced itself and
+       moved on, so aiming was something the game said rather than something the
+       child did. */
     bat:   { helmet: 'helmet', pickbat: 'takeBat', grip: 'tap',
-             stance: { kind: 'walk', at: () => batBox(), r: 1.7 }, look: 'auto', swing: 'swing',
+             stance: { kind: 'walk', at: () => batBox(), r: 1.7 },
+             feet: 'stance', look: 'tap', waitgo: 'waitCoach', swing: 'swing',
              drop: 'dropBat', run: { kind: 'walk', at: () => throughFirst(), r: 2.6 } },
     box:   { in1: { kind: 'walk', at: () => batBox(), r: 1.6 },
              out1: { kind: 'walk', at: () => boxOut(), r: 1.8 },
@@ -262,8 +267,8 @@
     for (const m of marks) { try { F.discard(m); } catch (e) {} }
     marks = [];
   }
-  function footprintsAt(x, z, ry) {
-    const g = F.footprints(x, z, ry || 0);
+  function footprintsAt(x, z, ry, spread) {
+    const g = F.footprints(x, z, ry || 0, spread);
     marks.push(g);
     return g;
   }
@@ -435,14 +440,20 @@
     footprintsAt(st.me.x, st.me.z, Math.atan2(st.coach.x - st.me.x, st.coach.z - st.me.z));
     markerAt(st.me.x, st.me.z, 0xffd43b, 1.5);
 
-    /* Nilu waits BEHIND the child, on the far side from the coach. The action
-       camera swings side-on to that line, so she can never end up standing
-       between the camera and whatever the child is doing. */
+    /* Nilu waits BEHIND the child, on the far side from the coach, and well off
+       to one side. The action camera swings side-on to the child→coach line, so
+       "behind" alone was not enough: at 3.2 units she sat right on the lens and
+       filled the screen — a batting turn you could not see past. Further back,
+       and stepped sideways out of the sight-line. */
     const N = F.nilu;
     if (N) {
       const bx = st.me.x - st.coach.x, bz = st.me.z - st.coach.z;
       const bl = Math.hypot(bx, bz) || 1;
-      N.goTo(st.me.x + (bx / bl) * 3.2, st.me.z + (bz / bl) * 3.2,
+      const ux = bx / bl, uz = bz / bl;
+      const px = -uz, pz = ux;                     // sideways, out of the shot
+      const spot = F.freeSpot(st.me.x + ux * 5.6 + px * 3.4,
+                              st.me.z + uz * 5.6 + pz * 3.4, 1.1);
+      N.goTo(spot.x, spot.z,
         () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
     }
 
@@ -510,7 +521,10 @@
     const mech = (typeof raw === 'string') ? raw : raw.kind;
     const spec = (typeof raw === 'string') ? {} : raw;
 
-    say(step.do, null, { emoji: cur.def.emoji });
+    /* pass the coach's name so a step line can say "wait for Coach Sam" rather
+       than printing a literal {coach} */
+    say(step.do, { coach: (cur.coach && cur.coach.info && cur.coach.info.name) || '' },
+        { emoji: cur.def.emoji });
     try { LV().cueStep(i + 1, steps.length); } catch (e) {}
 
     if (mech === 'walk') {
@@ -555,6 +569,46 @@
       } };
       return;
     }
+    /* 👣 SET YOUR FEET — the stance. Two marks appear where the feet go, wide
+       apart and square to the plate, and the child's body holds the stance once
+       they tap. Standing in the box and standing READY are different things. */
+    if (mech === 'stance') {
+      const me = SWalk.pos;
+      const toPlate = Math.atan2(L.home.x - me.x, L.home.z - me.z);
+      footprintsAt(me.x, me.z, toPlate, 2.1);
+      say(C.drillUI.feetOn, null, { emoji: '👣' });
+      showButton('👣', tr(step.do), fill(tr(step.show)));
+      waiting = { kind: 'tap', go: () => {
+        sfx('yes');
+        battingStance();
+        setTimeout(() => { if (running && !paused) nextStep(i + 1); }, 1500 * speedMul());
+      } };
+      return;
+    }
+
+    /* ✋ WAIT FOR THE COACH. Deliberately has NO button: the only thing to do is
+       stand still and watch, which is the thing itself. The coach raises a hand,
+       holds it, then calls GO — and the game moves on by itself, so waiting can
+       never be failed. */
+    if (mech === 'waitCoach') {
+      hideButton();
+      battingStance();
+      const co = cur.coach;
+      if (co) {
+        try { co.pose = 'callOver'; } catch (e) {}
+        try { co.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {}
+      }
+      say(C.drillUI.getReady, { coach: (co && co.info && co.info.name) || '' }, { emoji: '✋' });
+      setTimeout(() => {
+        if (!running || paused) return;
+        say(C.drillUI.goNow, null, { emoji: '🟢' });
+        sfx('star');
+        if (co) { try { co.pose = null; } catch (e) {} }
+        setTimeout(() => { if (running && !paused) nextStep(i + 1); }, 1100 * speedMul());
+      }, 2400 * speedMul());
+      return;
+    }
+
     if (mech === 'swing') {
       showButton('🏏', tr(step.do), fill(tr(step.show)));
       waiting = { kind: 'tap', go: () => doSwing(i) };
@@ -600,6 +654,23 @@
       posePreview(step.id);
       setTimeout(() => { if (running && !paused) nextStep(i + 1); }, 1200 * speedMul());
     } };
+  }
+
+  /* The batting stance, held: feet apart and splayed, knees soft, turned side-on
+     to the plate, bat up by the shoulder. Held (not a one-shot animation) so it
+     is still there while they aim and while they wait for the coach. */
+  function battingStance() {
+    const left = SWalk.hand() === 'L';
+    SWalk.setPose((me) => {
+      me.lean.rotation.y = (left ? -0.35 : 0.35);
+      me.lean.rotation.x = 0.13;
+      /* feet apart: splay at the hip, and stagger one foot slightly back */
+      me.legL.rotation.z = 0.2; me.legR.rotation.z = -0.2;
+      me.legL.rotation.x = 0.1; me.legR.rotation.x = -0.1;
+      /* both hands up by the back shoulder, where a bat is actually held */
+      me.armL.rotation.x = -1.45; me.armL.rotation.z = (left ? -0.3 : 0.3);
+      me.armR.rotation.x = -1.45; me.armR.rotation.z = (left ? -0.3 : 0.3);
+    });
   }
 
   /* a small held pose so a "tap" step still LOOKS like the body doing it */

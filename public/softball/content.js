@@ -606,12 +606,24 @@
                   'Manos juntas. Mano {back} abajo.'),
           do: t('Hands together on the bat.', 'Manos juntas en el bate.') },
         { id: 'stance',
-          show: t('Stand in the box. Feet apart. Side to the ball.',
-                  'Párate en la caja. Pies separados. De lado a la pelota.'),
+          show: t('Step into the box, next to the plate.',
+                  'Métete a la caja, junto al plato.'),
           do: t('Step into the batter\'s box.', 'Métete a la caja de bateo.') },
+        /* Setting the feet is its own step now. Standing in the right square and
+           standing READY are two different things, and the second is the one the
+           coaches spend Saturdays on. */
+        { id: 'feet',
+          show: t('Feet apart, side to the ball. Knees soft. Bat up by your shoulder.',
+                  'Pies separados, de lado a la pelota. Rodillas suaves. El bate arriba, junto al hombro.'),
+          do: t('Set your feet.', 'Acomoda los pies.') },
         { id: 'look',
-          show: t('Look at the ball on the tee.', 'Mira la pelota en el tee.'),
+          show: t('Eyes on the ball. Keep looking at it.', 'Ojos en la pelota. No dejes de mirarla.'),
           do: t('Look at the ball.', 'Mira la pelota.') },
+        /* Waiting for the coach is the whole point of this one — no button, so
+           the only thing to do is watch and wait. */
+        { id: 'waitgo',
+          show: t('Wait. {coach} will say GO.', 'Espera. {coach} va a decir ¡YA!'),
+          do: t('Wait for the signal.', 'Espera la señal.') },
         { id: 'swing',
           show: t('Swing level, all the way around.', 'Batea derecho, gira completo.'),
           do: t('Swing!', '¡Batea!') },
@@ -717,6 +729,9 @@
     goodTry: t('Good try! Coaches try lots of times too.',
                '¡Buen intento! Los coaches también intentan muchas veces.'),
     standHere: t('Stand on the footprints. 👣', 'Párate en las huellas. 👣'),
+    getReady: t('Get ready… watch {coach}.', 'Prepárate… mira a {coach}.'),
+    goNow: t('GO! 🟢', '¡YA! 🟢'),
+    feetOn: t('Feet on the marks. 👣', 'Pies en las marcas. 👣'),
     bigButton: t('Tap the big button when you are ready.',
                  'Toca el botón grande cuando estés listo.'),
     mastered: t('⭐ {skill} — you did it!', '⭐ {skill} — ¡lo lograste!'),

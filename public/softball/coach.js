@@ -310,7 +310,12 @@
 
   /* ══════════════════════════ 📋 the cue sheet — everything the game says */
   function cueSheet() {
-    const fill = (s2) => LV().fill(tr(s2));
+    /* {coach} has to be substituted here or the sheet prints the token raw —
+       and the coaches read this sheet to check our wording against theirs. Lines
+       that belong to a named station pass that coach; Nilu's general lines have
+       no one coach, so they get the generic word. */
+    const anyCoach = tr({ en: 'the coach', es: 'el coach' });
+    const fill = (s2, co) => LV().fill(tr(s2), { coach: co || anyCoach });
     const line = (a, b) => '<div class="sbCue2"><b>' + esc(a) + '</b>' + (b ? '<span>' + esc(b) + '</span>' : '') + '</div>';
 
     /* one entry per station, so the chips above can show them one at a time */
@@ -345,8 +350,8 @@
         line(tr(d.title) + ' — ' + co, LV().fill(tr(C.coachMode.reps), { n: turns })) +
         line(tr({ en: 'Intro', es: 'Introducción' }), fill(d.intro)) +
         d.steps.map((st, i) =>
-          line((i + 1) + '. ' + fill(st.do),
-               tr({ en: 'coach says', es: 'el coach dice' }) + ': ' + fill(st.show))).join('') +
+          line((i + 1) + '. ' + fill(st.do, co),
+               tr({ en: 'coach says', es: 'el coach dice' }) + ': ' + fill(st.show, co))).join('') +
         d.praise.map((pr) => line('⭐', fill(pr))).join('') +
         line(tr({ en: 'Finish', es: 'Cierre' }), fill(d.done)));
     }
