@@ -73,6 +73,19 @@ const Navbar: React.FC = () => {
   // When clicking a link to the current page, React Router doesn't trigger a navigation event
   // that would normally fire ScrollToTop. This ensures we scroll up if already there.
   const handleNavClick = (path: string, e: React.MouseEvent) => {
+    /* The Games tab goes through sign-in first. Bringing families into an
+       account is the point of the tab — Login carries returnTo and drops them
+       straight onto /games once they are in, so the trip costs one tap and they
+       still land where they were headed.
+
+       Typing /games still works, and the games themselves are still free and
+       account-free. A nudge, not a gate. */
+    if (path === '/games' && !user) {
+      e.preventDefault();
+      setIsOpen(false);
+      navigate('/login', { state: { returnTo: '/games' } });
+      return;
+    }
     if (isActive(path)) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
