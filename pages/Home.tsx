@@ -274,64 +274,44 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Free Events Guarantee Banner */}
-            <section className="bg-slate-50 dark:bg-slate-950 py-8 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-                    {/* Decorative background icons for the section */}
-                    <div className="absolute -top-10 -left-6 opacity-20 sm:opacity-100 z-0">
-                        <motion.div
-                            animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
-                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            {/* Games — one card, and it leads with signing in.
+                This used to be two straight-to-play banners ("Keep playing…",
+                "Play now ▶") that both said "No login needed", which is the
+                opposite of what we want the landing page to do: people were
+                playing and leaving without ever telling us who they are. The
+                games themselves are still free and still reachable from the
+                Games link in the nav — this is a nudge, not a gate. */}
+            <section className="pb-20 bg-white dark:bg-slate-900 transition-colors">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div
+                        className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all sm:flex-row sm:text-left"
+                        style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
+                    >
+                        <div className="text-6xl transition-transform group-hover:scale-110">🐘🎮</div>
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-black text-sky-700">
+                                {tr('Games for Aaria and her friends', 'Juegos para Aaria y sus amigos')}
+                            </h3>
+                            <p className="mt-1 text-slate-600 dark:text-slate-500">
+                                {user
+                                    ? tr('Sky islands, a softball field, a music meadow and more — they are all waiting in your dashboard.',
+                                         'Islas en el cielo, un campo de softbol, un prado musical y más — todos te esperan en tu panel.')
+                                    : tr('Free, no-fail games — sky islands, a softball field, a music meadow and more. Sign in and they are all in one place, and it is how we reach you about practice and events.',
+                                         'Juegos gratuitos y sin fallos — islas en el cielo, un campo de softbol, un prado musical y más. Inicia sesión y los tendrás todos en un solo lugar, y así podemos avisarte sobre las prácticas y los eventos.')}
+                            </p>
+                        </div>
+                        <Link
+                            to={user ? '/dashboard' : '/login'}
+                            className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400"
                         >
-                            <StickerIcon icon={Cloud} size={56} color="#00AEEF" bgColor="bg-sky-50" />
-                        </motion.div>
-                    </div>
-                    <div className="absolute -bottom-10 -right-6 opacity-20 sm:opacity-100 z-0">
-                        <motion.div
-                            animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
-                            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-                        >
-                            <StickerIcon icon={Star} size={48} color="#f59e0b" bgColor="bg-amber-50" />
-                        </motion.div>
-                    </div>
-
-                    <div className={`bg-white dark:bg-slate-800 border-[3px] border-dashed border-sky-100 dark:border-slate-700 p-8 sm:p-12 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group sticker-shadow relative overflow-hidden ${a("anim-bounce-up anim-delay-300")}`}>
-                        {/* Inner decorative floating icons */}
-                        <div className="absolute top-4 right-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            <motion.div
-                                animate={{ y: [0, -8, 0], rotate: [12, 20, 12] }}
-                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                            >
-                                <StickerIcon icon={Gift} size={24} color="#ec4899" bgColor="bg-pink-50" />
-                            </motion.div>
-                        </div>
-                        <div className="absolute bottom-8 left-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            <motion.div
-                                animate={{ y: [0, 8, 0], rotate: [-12, -20, -12] }}
-                                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                            >
-                                <StickerIcon icon={Smile} size={24} color="#10b981" bgColor="bg-emerald-50" />
-                            </motion.div>
-                        </div>
-
-                        <div className={`mb-8 ${a("anim-rubber-pop anim-delay-500")}`}>
-                            <StickerIcon icon={HeartHandshake} size={40} color="#00AEEF" />
-                        </div>
-                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 flex items-center justify-center gap-3 flex-wrap">
-                            <StickerIcon icon={Music} size={20} color="#8b5cf6" bgColor="bg-purple-50" className="hidden sm:flex" />
-                            {tr('100% Free. Fully Inclusive. All Are Welcome.', '100% Gratis. Totalmente Inclusivo. Todos Son Bienvenidos.')}
-                            <StickerIcon icon={Palette} size={20} color="#f43f5e" bgColor="bg-rose-50" className="hidden sm:flex" />
-                        </div>
-                        <div className="w-24 h-1.5 bg-sky-100 dark:bg-sky-900 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
-                        <div className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl relative">
-                            <span className="absolute -left-6 -top-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
-                            {tr('We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.', 'Creemos que las limitaciones económicas nunca deben ser un obstáculo para la alegría, el crecimiento y la conexión. Aunque está pensado especialmente para niños con necesidades especiales, fomentamos un ambiente verdaderamente inclusivo donde hermanos, amigos y niños de todas las capacidades juegan y aprenden lado a lado. Desde hace más de dos años, nuestros eventos y materiales se ofrecen completamente gratis. Las donaciones apoyan nuestra misión, pero nunca son obligatorias.')}
-                            <span className="absolute -right-6 -bottom-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
-                        </div>
+                            {user
+                                ? tr('Open my games ▶', 'Abrir mis juegos ▶')
+                                : tr('Sign in with Google', 'Iniciar sesión con Google')}
+                        </Link>
                     </div>
                 </div>
             </section>
-            
+
             {/* Voices of our Community - Testimonials */}
             <TestimonialSection />
 
@@ -391,40 +371,60 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Games — one card, and it leads with signing in.
-                This used to be two straight-to-play banners ("Keep playing…",
-                "Play now ▶") that both said "No login needed", which is the
-                opposite of what we want the landing page to do: people were
-                playing and leaving without ever telling us who they are. The
-                games themselves are still free and still reachable from the
-                Games link in the nav — this is a nudge, not a gate. */}
-            <section className="pb-20 bg-white dark:bg-slate-900 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div
-                        className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all sm:flex-row sm:text-left"
-                        style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
-                    >
-                        <div className="text-6xl transition-transform group-hover:scale-110">🐘🎮</div>
-                        <div className="flex-1">
-                            <h3 className="text-2xl font-black text-sky-700">
-                                {tr('Games for Aaria and her friends', 'Juegos para Aaria y sus amigos')}
-                            </h3>
-                            <p className="mt-1 text-slate-600 dark:text-slate-500">
-                                {user
-                                    ? tr('Sky islands, a softball field, a music meadow and more — they are all waiting in your dashboard.',
-                                         'Islas en el cielo, un campo de softbol, un prado musical y más — todos te esperan en tu panel.')
-                                    : tr('Free, no-fail games — sky islands, a softball field, a music meadow and more. Sign in and they are all in one place, and it is how we reach you about practice and events.',
-                                         'Juegos gratuitos y sin fallos — islas en el cielo, un campo de softbol, un prado musical y más. Inicia sesión y los tendrás todos en un solo lugar, y así podemos avisarte sobre las prácticas y los eventos.')}
-                            </p>
-                        </div>
-                        <Link
-                            to={user ? '/dashboard' : '/login'}
-                            className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400"
+            {/* Free Events Guarantee Banner */}
+            <section className="bg-slate-50 dark:bg-slate-950 py-8 transition-colors">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+                    {/* Decorative background icons for the section */}
+                    <div className="absolute -top-10 -left-6 opacity-20 sm:opacity-100 z-0">
+                        <motion.div
+                            animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                         >
-                            {user
-                                ? tr('Open my games ▶', 'Abrir mis juegos ▶')
-                                : tr('Sign in with Google', 'Iniciar sesión con Google')}
-                        </Link>
+                            <StickerIcon icon={Cloud} size={56} color="#00AEEF" bgColor="bg-sky-50" />
+                        </motion.div>
+                    </div>
+                    <div className="absolute -bottom-10 -right-6 opacity-20 sm:opacity-100 z-0">
+                        <motion.div
+                            animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+                            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                        >
+                            <StickerIcon icon={Star} size={48} color="#f59e0b" bgColor="bg-amber-50" />
+                        </motion.div>
+                    </div>
+
+                    <div className={`bg-white dark:bg-slate-800 border-[3px] border-dashed border-sky-100 dark:border-slate-700 p-8 sm:p-12 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center group sticker-shadow relative overflow-hidden ${a("anim-bounce-up anim-delay-300")}`}>
+                        {/* Inner decorative floating icons */}
+                        <div className="absolute top-4 right-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <motion.div
+                                animate={{ y: [0, -8, 0], rotate: [12, 20, 12] }}
+                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                            >
+                                <StickerIcon icon={Gift} size={24} color="#ec4899" bgColor="bg-pink-50" />
+                            </motion.div>
+                        </div>
+                        <div className="absolute bottom-8 left-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <motion.div
+                                animate={{ y: [0, 8, 0], rotate: [-12, -20, -12] }}
+                                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+                            >
+                                <StickerIcon icon={Smile} size={24} color="#10b981" bgColor="bg-emerald-50" />
+                            </motion.div>
+                        </div>
+
+                        <div className={`mb-8 ${a("anim-rubber-pop anim-delay-500")}`}>
+                            <StickerIcon icon={HeartHandshake} size={40} color="#00AEEF" />
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-wide group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300 flex items-center justify-center gap-3 flex-wrap">
+                            <StickerIcon icon={Music} size={20} color="#8b5cf6" bgColor="bg-purple-50" className="hidden sm:flex" />
+                            {tr('100% Free. Fully Inclusive. All Are Welcome.', '100% Gratis. Totalmente Inclusivo. Todos Son Bienvenidos.')}
+                            <StickerIcon icon={Palette} size={20} color="#f43f5e" bgColor="bg-rose-50" className="hidden sm:flex" />
+                        </div>
+                        <div className="w-24 h-1.5 bg-sky-100 dark:bg-sky-900 mb-8 rounded-full group-hover:bg-sky-500 transition-colors duration-300"></div>
+                        <div className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium max-w-4xl relative">
+                            <span className="absolute -left-6 -top-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
+                            {tr('We believe financial constraints should never be a barrier to joy, growth, and connection. While thoughtfully designed for children with special needs, we foster a truly inclusive environment where siblings, friends, and children of all abilities play and learn side-by-side. For over two years, our events and materials have been provided completely free of charge. Donations support our mission, but are never required.', 'Creemos que las limitaciones económicas nunca deben ser un obstáculo para la alegría, el crecimiento y la conexión. Aunque está pensado especialmente para niños con necesidades especiales, fomentamos un ambiente verdaderamente inclusivo donde hermanos, amigos y niños de todas las capacidades juegan y aprenden lado a lado. Desde hace más de dos años, nuestros eventos y materiales se ofrecen completamente gratis. Las donaciones apoyan nuestra misión, pero nunca son obligatorias.')}
+                            <span className="absolute -right-6 -bottom-2 opacity-40"><Sparkles className="h-4 w-4 text-amber-400" /></span>
+                        </div>
                     </div>
                 </div>
             </section>
