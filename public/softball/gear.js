@@ -747,9 +747,10 @@
     const p = SWalk.pos;
     if (Math.hypot(p.x - at.x, p.z - at.z) < 4.2) { then(); return; }
     say(C.start.followHint, null, { emoji: '🐘' });
+    try { F.guideTo(at.x, at.z, 1.5); } catch (e) {}
     SWalk.addSpot({
       id: 'gearStop', x: at.x, z: at.z, r: 4.2, once: true,
-      onEnter: () => { if (running && !paused) then(); },
+      onEnter: () => { try { F.guideOff(); } catch (e) {} if (running && !paused) then(); },
     });
   }
 

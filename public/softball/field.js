@@ -315,6 +315,85 @@
     }
   }
 
+  /* ══════════════════════════════════════════════════════ 👣 THE GUIDE TRAIL
+     A short run of dashes on the grass between the child and wherever they have
+     been asked to walk, pulsing along the path so it reads as "this way".
+
+     It is rebuilt from the child's CURRENT position every frame, which is the
+     whole trick: dashes only ever exist between them and the target, so walking
+     forward consumes the trail behind you without anything having to be tracked
+     or removed. Arrive, and it clears itself.
+
+     Never a permanent decoration — it exists only while a step is actually
+     asking the child to move, and it stops well short of the ring so it nudges
+     rather than draws on top of the thing it is pointing at. */
+  const GUIDE = { on: false, x: 0, z: 0, r: 1.2, t: 0, fade: 0, dashes: [] };
+  const GUIDE_MAX = 16, GUIDE_GAP = 1.15, GUIDE_START = 1.35;
+
+  /* Wide and long enough to survive the camera's downward pitch — lying flat,
+     these foreshorten hard, and the first pass at 0.26 x 0.8 read as specks from
+     the default view. */
+  function guideDash() {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 1.05),
+      new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0,
+                                    depthWrite: false, fog: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = 0.055;
+    m.renderOrder = 4;
+    m.visible = false;
+    scene.add(m);
+    return m;
+  }
+
+  F.guideTo = function (x, z, r) {
+    GUIDE.on = true; GUIDE.x = x; GUIDE.z = z; GUIDE.r = r || 1.2;
+  };
+  F.guideOff = function () {
+    GUIDE.on = false;
+    for (const d of GUIDE.dashes) d.visible = false;
+  };
+
+  function stepGuide(dt) {
+    if (!scene || !THREE) return;
+    /* fade the whole trail in and out rather than snapping it on */
+    GUIDE.fade += ((GUIDE.on ? 1 : 0) - GUIDE.fade) * Math.min(1, dt * 6);
+    if (GUIDE.fade < 0.02) {
+      if (GUIDE.dashes.length) for (const d of GUIDE.dashes) d.visible = false;
+      return;
+    }
+    let me = null;
+    try { me = window.SWalk && SWalk.pos; } catch (e) {}
+    if (!me) return;
+
+    GUIDE.t += dt;
+    const dx = GUIDE.x - me.x, dz = GUIDE.z - me.z;
+    const dist = Math.hypot(dx, dz);
+    const ux = dx / (dist || 1), uz = dz / (dist || 1);
+    /* stop short of the ring, and start clear of the child's own feet */
+    const from = GUIDE_START, to = dist - Math.max(GUIDE.r * 0.85, 0.7);
+    const span = to - from;
+    const n = span <= 0 ? 0 : Math.min(GUIDE_MAX, Math.floor(span / GUIDE_GAP) + 1);
+
+    let calm = false, slow = false;
+    try { calm = !!(window.ABEKit && ABEKit.calm && ABEKit.calm()); } catch (e) {}
+    try { slow = !!(window.ABEKit && ABEKit.reduceMotion); } catch (e) {}
+    const still = calm || slow;
+
+    for (let i = 0; i < GUIDE_MAX; i++) {
+      let d = GUIDE.dashes[i];
+      if (i >= n) { if (d) d.visible = false; continue; }
+      if (!d) { d = guideDash(); GUIDE.dashes[i] = d; }
+      const s = from + (n === 1 ? span / 2 : (i / Math.max(1, n - 1)) * span);
+      d.position.set(me.x + ux * s, 0.055, me.z + uz * s);
+      d.rotation.z = -Math.atan2(ux, uz);
+      /* a bright band travelling toward the target — the nudge. Calm Mode gets a
+         steady glow instead of a pulse, so it still guides without flickering. */
+      const wave = still ? 0.72 : 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(GUIDE.t * 3.4 - i * 0.85));
+      d.material.opacity = wave * GUIDE.fade;
+      d.visible = true;
+    }
+  }
+
   /* ═══════════════════════════════════════ trees, hills, a world past the fence
      The park used to end at the outfield fence with nothing behind it. Now that
      the horizon is in shot there has to be somewhere out there — so: a low ridge
@@ -1454,6 +1533,7 @@
       if (c.s.position.x > 150) c.s.position.x = -150;
     }
     stepConfetti(dt);
+    stepGuide(dt);
     /* the grown-up in the stands: stand up, wave, sit back down */
     const gu = F.grownUp;
     if (gu) {
