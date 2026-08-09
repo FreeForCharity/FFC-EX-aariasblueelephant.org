@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { HeartPulse, Sparkles, HeartHandshake, Users, Calendar, ChevronLeft, ChevronRight, Cloud, Smile, Gift, Palette, Music, Star } from 'lucide-react';
 import Logo from '../components/Logo';
@@ -58,34 +59,12 @@ const imagesToPreload = [
 // Track initial app load to allow random initialization on refresh but skip on internal navigation
 let isAppInitialLoad = true;
 
-// The games kids can play — used to power the smart "Play" button on Home.
-// Aaria's Helping Hands is excluded from the random "surprise me" pool since
-// it's password-gated safety-ed content, not open-ended free play.
-type PlayGame = { url: string; name: string; emoji: string; isReactRoute?: boolean; sampler?: boolean };
-const RANDOM_GAMES: PlayGame[] = [
-    { url: '/elly-tubbies/index.html', name: "Aaria's Elly-Tubbies", emoji: '🐘', sampler: true },
-    { url: '/blockcraft/index.html', name: 'Block Craft 3D', emoji: '🧱', sampler: true },
-    { url: '/roadsafety/index.html', name: "Aaria's Road Safety Heroes", emoji: '🚴', sampler: true },
-    { url: '/doughlab/index.html', name: "Aaria's Dough Lab", emoji: '🌈', sampler: true },
-    { url: '/magnetblocks/index.html', name: 'Magnet Blocks', emoji: '🧲', sampler: true },
-    { url: '/grocery/index.html', name: "Aaria's Grocery Store", emoji: '🛒' },
-    { url: '/dayplanner/index.html', name: "Aaria's Day Planner", emoji: '📅' },
-    { url: '/feelings/index.html', name: "Aaria's Feelings Faces", emoji: '🎭' },
-    { url: '/rhythm/index.html', name: "Aaria's Rhythm & Calm", emoji: '🎵' },
-    { url: '/flying/index.html', name: "Aaria's Flying Elephant", emoji: '🐘' },
-];
-
-type LastGame = { url: string; name: string; emoji: string; at: number };
-
-function pickRandomGame(): PlayGame {
-    return RANDOM_GAMES[Math.floor(Math.random() * RANDOM_GAMES.length)];
-}
-
 const Home: React.FC = () => {
     // Animations play on full refresh (isAppInitialLoad is true)
     // but skip on internal navigation (isAppInitialLoad becomes false after first mount)
     const shouldAnimate = useRef(isAppInitialLoad).current;
     const { events: dbEvents, isLoading, mediaAlbumUrl, carouselMode } = useData();
+    const { user } = useAuth();
     const navigate = useNavigate();
     
     // Media Album State
@@ -146,24 +125,6 @@ const Home: React.FC = () => {
     const a = (cls: string) => shouldAnimate ? cls : '';
 
     const [isHydrated, setIsHydrated] = useState(false);
-    const [lastGame, setLastGame] = useState<LastGame | null>(null);
-
-    // Read the "last game played" stamp (written by each game on mount) so
-    // we can offer a one-tap "keep playing" button on first paint.
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem('abe_last_game');
-            if (raw) setLastGame(JSON.parse(raw));
-        } catch { /* ignore */ }
-    }, []);
-
-    // "Surprise me" — picks a random static game and appends ?sampler=1 so
-    // it can show a lightweight taste of the game to a first-time visitor.
-    const goToRandomGame = () => {
-        const game = pickRandomGame();
-        const dest = game.sampler ? `${game.url}?sampler=1` : game.url;
-        window.location.href = dest;
-    };
 
     useEffect(() => {
         setIsHydrated(true);
@@ -430,82 +391,41 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Play — free, kid-facing games built for Aaria & friends.
-                Kept simple/warm rather than matching the marketing sections above,
-                since this card is for kids and parents to click through and play.
-                Smart: offers to resume the last game played, or picks a random
-                one for first-time visitors. */}
+            {/* Games — one card, and it leads with signing in.
+                This used to be two straight-to-play banners ("Keep playing…",
+                "Play now ▶") that both said "No login needed", which is the
+                opposite of what we want the landing page to do: people were
+                playing and leaving without ever telling us who they are. The
+                games themselves are still free and still reachable from the
+                Games link in the nav — this is a nudge, not a gate. */}
             <section className="pb-20 bg-white dark:bg-slate-900 transition-colors">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div
                         className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all sm:flex-row sm:text-left"
                         style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
                     >
-                        <div className="text-6xl transition-transform group-hover:scale-110">
-                            {lastGame ? lastGame.emoji : '🎲'}
-                        </div>
+                        <div className="text-6xl transition-transform group-hover:scale-110">🐘🎮</div>
                         <div className="flex-1">
                             <h3 className="text-2xl font-black text-sky-700">
-                                {lastGame ? `${tr('Keep playing', 'Sigue jugando')} ${lastGame.name}` : tr('Play — surprise me!', '¡Juega — sorpréndeme!')}
+                                {tr('Games for Aaria and her friends', 'Juegos para Aaria y sus amigos')}
                             </h3>
                             <p className="mt-1 text-slate-600 dark:text-slate-500">
-                                {lastGame
-                                    ? `${tr('Jump back into', 'Vuelve a')} ${lastGame.name} ${tr('right where you left off.', 'justo donde lo dejaste.')}`
-                                    : tr('Free, no-fail games built for Aaria and her friends — pick a game at random and see what you get. No login needed.', 'Juegos gratuitos y sin fallos hechos para Aaria y sus amigos — elige un juego al azar y descubre qué te toca. No necesitas iniciar sesión.')}
+                                {user
+                                    ? tr('Sky islands, a softball field, a music meadow and more — they are all waiting in your dashboard.',
+                                         'Islas en el cielo, un campo de softbol, un prado musical y más — todos te esperan en tu panel.')
+                                    : tr('Free, no-fail games — sky islands, a softball field, a music meadow and more. Sign in and they are all in one place, and it is how we reach you about practice and events.',
+                                         'Juegos gratuitos y sin fallos — islas en el cielo, un campo de softbol, un prado musical y más. Inicia sesión y los tendrás todos en un solo lugar, y así podemos avisarte sobre las prácticas y los eventos.')}
                             </p>
                         </div>
-                        <div className="flex flex-none flex-col items-center gap-3 sm:items-end">
-                            {lastGame ? (
-                                lastGame.url === '/nelus-world' ? (
-                                    <Link
-                                        to="/nelus-world"
-                                        className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
-                                    >
-                                        ▶️ {tr('Keep playing', 'Sigue jugando')} {lastGame.name} {lastGame.emoji}
-                                    </Link>
-                                ) : (
-                                    <a
-                                        href={lastGame.url}
-                                        className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
-                                    >
-                                        ▶️ {tr('Keep playing', 'Sigue jugando')} {lastGame.name} {lastGame.emoji}
-                                    </a>
-                                )
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={goToRandomGame}
-                                    className="rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition hover:bg-sky-400"
-                                >
-                                    ▶️ {tr('Play — surprise me!', '¡Juega — sorpréndeme!')}
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                onClick={goToRandomGame}
-                                className="rounded-full bg-white/80 dark:bg-slate-800/80 border border-sky-200 dark:border-sky-800 px-5 py-2 text-sm font-bold text-sky-600 dark:text-sky-300 shadow transition hover:bg-white"
-                            >
-                                🎲 {tr('Surprise me!', '¡Sorpréndeme!')}
-                            </button>
-                        </div>
+                        <Link
+                            to={user ? '/dashboard' : '/login'}
+                            className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400"
+                        >
+                            {user
+                                ? tr('Open my games ▶', 'Abrir mis juegos ▶')
+                                : tr('Sign in with Google', 'Iniciar sesión con Google')}
+                        </Link>
                     </div>
-
-                    <Link
-                        to="/nelus-world"
-                        className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-100 dark:border-sky-900 p-10 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl sm:flex-row sm:text-left"
-                        style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
-                    >
-                        <div className="text-6xl transition-transform group-hover:scale-110">🐘🌈</div>
-                        <div className="flex-1">
-                            <h3 className="text-2xl font-black text-sky-700">{tr("Play Aaria's Floating Islands 🐘🌈", "Juega Islas Flotantes de Aaria 🐘🌈")}</h3>
-                            <p className="mt-1 text-slate-600 dark:text-slate-500">
-                                {tr('A free, no-fail 3D adventure built for Aaria and her friends — explore sky islands, meet gentle friends, and help Nilu grow. No login needed.', 'Una aventura 3D gratuita y sin fallos hecha para Aaria y sus amigos — explora islas en el cielo, conoce amigos gentiles y ayuda a Nilu a crecer. No necesitas iniciar sesión.')}
-                            </p>
-                        </div>
-                        <span className="flex-none rounded-full bg-sky-500 px-8 py-3 text-lg font-bold text-white shadow-lg transition group-hover:bg-sky-400">
-                            {tr('Play now ▶', 'Jugar ahora ▶')}
-                        </span>
-                    </Link>
                 </div>
             </section>
 
