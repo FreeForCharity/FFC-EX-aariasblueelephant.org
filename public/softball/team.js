@@ -40,6 +40,7 @@
   function clearMarks() {
     for (const m of marks) { try { F.discard(m); } catch (e) {} }
     marks = [];
+    try { F.guideOff(); } catch (e) {}   // never outlive the mark it points at
   }
   function ready() {
     C = window.SBContent; F = window.SBField; L = F && F.L;
@@ -140,9 +141,13 @@
 
     const target = spots[mine];
     SWalk.freeze(false);
+    /* dashes from wherever they are to THEIR numbered spot — five identical
+       footprints in a row is exactly where a child loses which one is theirs */
+    try { F.guideTo(target.x, target.z, 1.1); } catch (e) {}
     const arrive = () => {
       if (!lining) return;
       lining = false;
+      try { F.guideOff(); } catch (e) {}
       sfx('yes');
       SWalk.facing(L.lineUpCoach.x, L.lineUpCoach.z);
       say(C.team.lineUpDone, null, { emoji: '💙' });

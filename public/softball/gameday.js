@@ -44,6 +44,7 @@
   function clearMarks() {
     for (const m of marks) { try { F.discard(m); } catch (e) {} }
     marks = [];
+    try { F.guideOff(); } catch (e) {}   // never outlive the mark it points at
   }
   function clearBalls() {
     for (const b of balls) { try { F.discard(b.m); } catch (e) {} }
@@ -126,6 +127,7 @@
     scene.add(tag); marks.push(tag);
 
     SWalk.freeze(false);
+    try { F.guideTo(at.x, at.z, 2.4); } catch (e) {}
     SWalk.addSpot({ id: 'gamePos', x: at.x, z: at.z, r: 2.6, once: true, onEnter: () => {
       if (!running || paused) return;
       sfx('yes');
@@ -188,6 +190,7 @@
     SWalk.freeze(false);
     SWalk.helmet(true);
     say(C.drills.bat.steps[3].do, null, { emoji: '🏏' });
+    try { F.guideTo(box.x, box.z, 1.6); } catch (e) {}
     SWalk.addSpot({ id: 'gameBox', x: box.x, z: box.z, r: 1.8, once: true, onEnter: () => {
       if (!running || paused) return;
       SWalk.freeze(true);

@@ -266,6 +266,8 @@
   function clearMarks() {
     for (const m of marks) { try { F.discard(m); } catch (e) {} }
     marks = [];
+    /* the trail belongs to whatever mark it was pointing at — never outlive it */
+    try { F.guideOff(); } catch (e) {}
   }
   function footprintsAt(x, z, ry, spread) {
     const g = F.footprints(x, z, ry || 0, spread);
@@ -464,9 +466,12 @@
     }, 2600 * speedMul());
 
     /* wait for them to arrive — no rush, no timer */
-    const arrive = () => { if (running && !paused) intro(); };
+    const arrive = () => { try { F.guideOff(); } catch (e) {} if (running && !paused) intro(); };
     if (SWalk.at(st.me, 3.2)) setTimeout(arrive, 1200 * speedMul());
-    else SWalk.addSpot({ id: 'drillStand', x: st.me.x, z: st.me.z, r: 3.2, once: true, onEnter: arrive });
+    else {
+      try { F.guideTo(st.me.x, st.me.z, 1.5); } catch (e) {}
+      SWalk.addSpot({ id: 'drillStand', x: st.me.x, z: st.me.z, r: 3.2, once: true, onEnter: arrive });
+    }
     return true;
   }
 
@@ -535,8 +540,9 @@
       /* a long run round the bases reads much better side-on and close in */
       if (Math.hypot(at.x - SWalk.pos.x, at.z - SWalk.pos.z) > 6) frameFollow(SWalk.pos, at, 9);
       if (SWalk.at(at, r)) { setTimeout(() => { if (running && !paused) nextStep(i + 1); }, 900 * speedMul()); return; }
+      try { F.guideTo(at.x, at.z, r); } catch (e) {}
       SWalk.addSpot({ id: 'drillStep', x: at.x, z: at.z, r: r, once: true,
-        onEnter: () => { if (running && !paused) nextStep(i + 1); } });
+        onEnter: () => { try { F.guideOff(); } catch (e) {} if (running && !paused) nextStep(i + 1); } });
       return;
     }
 
