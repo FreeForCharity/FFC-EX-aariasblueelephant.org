@@ -47,7 +47,7 @@
     "autoprefixer": "^10.4.27",
     "express": "^5.2.1",
     "html-minifier-terser": "^7.2.0",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.26",
     "puppeteer": "^24.38.0",
     "tailwindcss": "^4.2.2",
     "terser": "^5.49.0",
