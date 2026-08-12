@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
 import { tr } from '../lib/lang';
+import { SUMMER_BUDDY_UP_ENABLED } from '../lib/features';
+
+// Where a sign-in lands when nothing else was requested. Summer Buddy Up was the
+// draw while the cohort was running; off-season it goes to Circle of Friends itself.
+const DEFAULT_RETURN_TO = SUMMER_BUDDY_UP_ENABLED ? '/circle-of-friends?tab=summer-buddy-up' : '/circle-of-friends';
 
 const Login: React.FC = () => {
   const { loginWithGoogle, user, isLoading } = useAuth();
@@ -77,9 +82,9 @@ const Login: React.FC = () => {
     localStorage.setItem('abe_sim_session', JSON.stringify(mockSession));
     
     // Check if there was a returnTo path saved
-    let returnTo = localStorage.getItem('authReturnTo') || '/circle-of-friends?tab=summer-buddy-up';
+    let returnTo = localStorage.getItem('authReturnTo') || DEFAULT_RETURN_TO;
     if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
-      returnTo = '/circle-of-friends?tab=summer-buddy-up';
+      returnTo = DEFAULT_RETURN_TO;
     }
     localStorage.removeItem('authReturnTo');
     localStorage.setItem('showDashboardPrompt', 'true');
