@@ -55,6 +55,7 @@ import RichText, { extractMedia } from '../components/RichText';
 import WheelOfFun from '../components/WheelOfFun';
 import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
 import { GAME_CARDS } from '../data/games';
+import { SUMMER_BUDDY_UP_ENABLED } from '../lib/features';
 import ResilientImage from '../components/ResilientImage';
 
 import { 
@@ -516,11 +517,12 @@ const Dashboard: React.FC = () => {
         { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor' }, 
         
         // Always Visible (at the end)
-        { id: 'buddy-up', label: 'Summer Buddy Up', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
+        { id: 'buddy-up', label: SUMMER_BUDDY_UP_ENABLED ? 'Summer Buddy Up' : 'Summer Buddy Up (Ended)', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
         { id: 'games', label: 'Games Gallery', icon: Gamepad2, role: 'all' },
     ].filter(item => {
-        // Special case for the games gallery and buddy-up - always show
-        if (item.id === 'games' || item.id === 'buddy-up') return true;
+        // Games gallery always shows; Buddy Up is board-only once the summer cohort has ended
+        if (item.id === 'games') return true;
+        if (item.id === 'buddy-up') return SUMMER_BUDDY_UP_ENABLED || isBoard;
 
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)

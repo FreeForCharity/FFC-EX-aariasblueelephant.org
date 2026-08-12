@@ -11,6 +11,7 @@ import { SummerBuddyUpRegistration } from '../components/SummerBuddyUpRegistrati
 import { SummerBuddyUpDashboard } from '../components/SummerBuddyUpDashboard';
 import { DevSimulationPanel } from '../components/DevSimulationPanel';
 import { tr } from '../lib/lang';
+import { SUMMER_BUDDY_UP_ENABLED } from '../lib/features';
 
 // titleEn is the stored/compared category value (entries persist it) — must stay English in both languages; title is display-only.
 const AWARDS = [
@@ -314,8 +315,12 @@ const CircleOfFriends: React.FC = () => {
       if (tabParam === 'voices') {
         return 'voices';
       }
+      // Off-season the program is no longer the landing tab, but a direct link still opens it.
+      if (tabParam === 'summer-buddy-up') {
+        return 'summer-buddy-up';
+      }
     }
-    return 'summer-buddy-up';
+    return SUMMER_BUDDY_UP_ENABLED ? 'summer-buddy-up' : 'voices';
   });
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
@@ -398,6 +403,13 @@ const CircleOfFriends: React.FC = () => {
       full_name: user.name || (user as any).user_metadata?.full_name || ''
     }
   } : null;
+
+  // Off-season: no new registrations, and the tab is only offered to the board
+  // (existing coaches can still reach their dashboard through a direct link).
+  const buddyUpClosed = !SUMMER_BUDDY_UP_ENABLED && !user?.isBoard;
+  // Off-season the tab is never offered — not even to the board. The switcher only
+  // reappears for someone already on the program (direct link) so they can get back to Voices.
+  const showBuddyUpTab = SUMMER_BUDDY_UP_ENABLED || activeTab === 'summer-buddy-up';
 
   const renderCoachPortal = () => {
     if (!mappedUser) return null;
@@ -642,7 +654,8 @@ const CircleOfFriends: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* Tab Switcher */}
+        {/* Tab Switcher — dropped entirely when Summer Buddy Up is off-season and there is only one tab left */}
+        {showBuddyUpTab && (
         <div className="flex justify-center mb-12">
           <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-inner">
             <button
@@ -650,7 +663,12 @@ const CircleOfFriends: React.FC = () => {
               onClick={() => {
                 setActiveTab('summer-buddy-up');
                 const url = new URL(window.location.href);
-                url.searchParams.delete('tab');
+                if (SUMMER_BUDDY_UP_ENABLED) {
+                  url.searchParams.delete('tab');
+                } else {
+                  // Off-season Voices is the default tab, so the program needs to stay in the URL.
+                  url.searchParams.set('tab', 'summer-buddy-up');
+                }
                 window.history.replaceState({}, '', url.toString());
               }}
               className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition duration-200 cursor-pointer flex items-center gap-2 ${
@@ -661,6 +679,11 @@ const CircleOfFriends: React.FC = () => {
             >
               <Users className="h-4 w-4" />
               {tr('Summer Buddy Up', 'Compañeros de Verano')}
+              {!SUMMER_BUDDY_UP_ENABLED && (
+                <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] tracking-wider">
+                  {tr('Ended', 'Finalizado')}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -680,11 +703,12 @@ const CircleOfFriends: React.FC = () => {
             </button>
           </div>
         </div>
+        )}
 
         {activeTab === 'voices' ? (
           <>
-            {/* Simple Action Bar */}
-        <div className="flex justify-end mb-12">
+            {/* Simple Action Bar — admin only, so it leaves no empty gap for visitors */}
+        <div className={`justify-end mb-12 ${isAdmin ? 'flex' : 'hidden'}`}>
           {isAdmin && (
             <button type="button" onClick={handleOpenModal} className="inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 px-8 py-4 text-lg bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 shrink-0 group z-10 relative cursor-pointer">
               <PlusCircle className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
@@ -794,7 +818,19 @@ const CircleOfFriends: React.FC = () => {
         ) : (
           /* Summer Buddy Up Portal */
           <div className="space-y-12">
-            {!user ? (
+            {buddyUpClosed && teamsLoading && user ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">{tr('Loading Cohort Data...', 'Cargando Datos del Grupo...')}</p>
+              </div>
+            ) : buddyUpClosed && !myTeam && pendingInvites.length === 0 ? (
+              <SummerBuddyUpEnded onSeeVoices={() => {
+                setActiveTab('voices');
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'voices');
+                window.history.replaceState({}, '', url.toString());
+              }} />
+            ) : !user ? (
               <SummerBuddyUpPromo 
                 onLogin={loginWithGoogle} 
                 isLocalhost={isLocalhost}
@@ -1029,7 +1065,37 @@ const CircleOfFriends: React.FC = () => {
 };
 
 // Guest Promotion view for unauthenticated users
-const SummerBuddyUpPromo: React.FC<{ 
+// Shown in place of the promo/registration wizard once the summer cohort has wrapped.
+const SummerBuddyUpEnded: React.FC<{ onSeeVoices: () => void }> = ({ onSeeVoices }) => {
+  return (
+    <div className="max-w-2xl mx-auto py-12 px-6 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/60 dark:border-slate-800 text-center">
+      <div className="inline-flex p-4 bg-slate-100 dark:bg-slate-800 rounded-3xl text-slate-500 dark:text-slate-400 mb-4 shadow-inner">
+        <Users className="h-10 w-10" />
+      </div>
+      <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-3">
+        {tr('Program Ended', 'Programa Finalizado')}
+      </span>
+      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+        {tr('Summer Buddy Up', 'Compañeros de Verano')}
+      </h2>
+      <p className="text-base text-slate-600 dark:text-slate-350 max-w-lg mx-auto leading-relaxed">
+        {tr('This summer’s cohorts have wrapped up — thank you to every coach, buddy and family who showed up for each other. Registration is closed for now and will open again next summer.', 'Los grupos de este verano ya terminaron: gracias a cada entrenador, compañero y familia que estuvo ahí para los demás. Las inscripciones están cerradas por ahora y volverán a abrir el próximo verano.')}
+      </p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed mt-4">
+        {tr('Want a heads-up when the next cohort opens? Write to us at hello@aariasblueelephant.org.', '¿Quieres que te avisemos cuando abra el próximo grupo? Escríbenos a hello@aariasblueelephant.org.')}
+      </p>
+      <button
+        type="button"
+        onClick={onSeeVoices}
+        className="mt-8 inline-flex items-center justify-center rounded-xl font-black uppercase tracking-wider transition duration-200 px-8 py-3.5 text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-xl shadow-sky-500/20 cursor-pointer"
+      >
+        {tr('See Voices of the Herd', 'Ver Voces de la Manada')}
+      </button>
+    </div>
+  );
+};
+
+const SummerBuddyUpPromo: React.FC<{
   onLogin: () => void; 
   isLocalhost: boolean; 
   onSimulateLogin: (role: 'admin' | 'head_coach') => void;
