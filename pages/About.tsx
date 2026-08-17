@@ -92,29 +92,29 @@ const About: React.FC = () => {
               {
                 name: "Anoop Nair",
                 description: tr('Committed to building inclusive environments where every child belongs.', 'Comprometido con crear ambientes inclusivos donde cada niño pertenece.'),
-                hasPhoto: false
+                photo: "/anoop_nair.jpeg"
               },
               {
                 name: "Naveed Shaik",
                 description: tr('Passionate about community outreach and fostering equality.', 'Apasionado por el acercamiento comunitario y el fomento de la igualdad.'),
-                hasPhoto: true
+                photo: "/board_member_placeholder_naveed.jpg"
               },
               {
                 name: "Prasanth Thomas",
                 description: tr('Dedicated to making a difference through compassion and community support.', 'Dedicado a hacer la diferencia a través de la compasión y el apoyo comunitario.'),
-                hasPhoto: false
+                photo: "/prasanth_thomas.jpeg"
               },
               {
                 name: "Gopal Valsan",
                 description: tr('Advocating for neurodiversity and building bridges in our community.', 'Defensor de la neurodiversidad y constructor de puentes en nuestra comunidad.'),
-                hasPhoto: false
+                photo: "/gopal_valsan.jpeg"
               }
             ].map((member, idx) => (
               <div key={idx} className="group p-6 rounded-2xl bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 hover:shadow-md">
                 <div className="relative mb-4">
-                  {member.hasPhoto ? (
+                  {member.photo ? (
                     <img
-                      src="/board_member_placeholder_naveed.jpg"
+                      src={member.photo}
                       alt={member.name}
                       className="h-24 w-24 rounded-full object-cover shadow-md border-2 border-sky-400 mx-auto"
                       loading="lazy"
