@@ -164,7 +164,7 @@ const Home: React.FC = () => {
                                 {/* Branding section */}
                                 <div className="relative z-10 flex flex-row items-center justify-center lg:justify-start gap-6">
                                     <div className={`h-12 w-12 sm:h-16 sm:w-16 lg:h-28 lg:w-28 rounded-[2rem] bg-white p-3 sm:p-4 flex items-center justify-center shadow-xl border border-slate-200 dark:border-none shrink-0 group transition-transform hover:rotate-3 ${a("anim-rubber-pop anim-delay-300")}`}>
-                                        <Logo id="hero-logo-static" src="./hero-logo.jpg" className="h-full w-full" alt={tr("Aaria's Blue Elephant Logo", "Logo de Aaria's Blue Elephant")} />
+                                        <Logo id="hero-logo-static" src="/hero-logo.jpg" className="h-full w-full" alt={tr("Aaria's Blue Elephant Logo", "Logo de Aaria's Blue Elephant")} />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0">
                                         <h1 className={`text-lg xs:text-xl sm:text-[30px] lg:text-[38px] xl:text-[48px] font-black text-sky-600 dark:text-sky-400 leading-[1.1] tracking-tight whitespace-nowrap overflow-visible drop-shadow-sm ${a("anim-bounce-right anim-delay-400")}`}>
