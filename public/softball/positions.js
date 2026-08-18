@@ -5,15 +5,25 @@
    short guided round:
 
      1 · THE TOUR    Nilu walks you to home plate, then to every infield spot
-                     in turn (outfield too, once a grown-up turns it on in
-                     Coach Mode). Arrive, hear what happens there, move on.
-     2 · THE AT-BAT  a coach — a different one each time — pitches to you for
-                     real. Swing whenever feels right; the window is huge and
-                     nothing can be missed.
+                     in turn, in a fresh shuffled order every round (outfield
+                     too, once a grown-up turns it on in Coach Mode). Arrive,
+                     hear what happens there, move on.
+     2 · THE AT-BAT  a coach — a different one can pitch every rep — pitches
+                     to you for real, a few times, so it's not over before it
+                     starts. Swing whenever feels right; the window is huge
+                     and nothing can be missed.
      3 · THE CALL    bat down, run to first, then watch the ball: sometimes
                      nobody's thrown it home yet, so you push for second, or
                      even score. Sometimes you're safe and done. Random each
                      time, so no two rounds play the same.
+     4 · THE REPLAY  right after, watch it back — batting and running, with
+                     broadcast-style labels ("FIRST BASE", "SWING!") popping
+                     up as each moment happens again.
+
+   📷 the camera defaults to a wide "best field area" view and only tightens
+   in for the pitch/swing itself, snapping back to wide right after — unless
+   the child has picked one of the four fixed angles themselves, which then
+   holds for the rest of the round no matter what's happening.
 
    Reuses the same 3D world, walking and ball-flight the drills already use —
    this file just directs it. Opening this stops whatever else was active
@@ -39,15 +49,16 @@
   let tour = [], curBox = null, hitLanding = null, pitchCoachId = null;
 
   /* ══════════════════════════════════════ 📷 pick your own camera angle
-     On for the WHOLE round, not just the pitch — Nilu's tour, the at-bat and
-     every run between bases all use whichever angle the child last picked.
-     None of the four locks a world point: the camera always keeps
-     re-centring on wherever the child actually IS, so the same angle works
-     whether they're standing still for a pitch or walking clear across the
-     outfield. Only the relative angle (theta/phi/radius) is fixed. */
-  const CAM_MODES = ['side', 'behind', 'facing', 'overhead'];
-  const CAM_LABEL = { side: 'camSide', behind: 'camBehind', facing: 'camFacing', overhead: 'camOverhead' };
-  let camIdx = 0, elCam = null, curTarget = null;
+     'auto' (the default, index 0) is context-aware: a wide view showing
+     plenty of field the rest of the time, tightened in only for the pitch
+     and swing, then straight back to wide. The other four are fixed angles
+     a child can pick instead — once picked, that one holds for the whole
+     rest of the round regardless of phase. None of the five locks a world
+     point: the camera always keeps re-centring on wherever the child
+     actually IS, only the relative angle (theta/phi/radius) is fixed. */
+  const CAM_MODES = ['auto', 'side', 'behind', 'facing', 'overhead'];
+  const CAM_LABEL = { auto: 'camAuto', side: 'camSide', behind: 'camBehind', facing: 'camFacing', overhead: 'camOverhead' };
+  let camIdx = 0, elCam = null, curTarget = null, curPhase = 'wide'; // curPhase: 'wide' | 'action'
 
   /* whichever perpendicular side is closer to where the camera already is,
      so the world never spins round underneath the child — same rule
@@ -67,7 +78,13 @@
     if (!curTarget || !running) return;
     const me = SWalk.pos, target = curTarget;
     const mode = CAM_MODES[camIdx];
-    if (mode === 'side') {
+    if (mode === 'auto') {
+      if (curPhase === 'action') {
+        try { SWalk.lockCam({ theta: perpTheta(me, target), phi: 1.05, radius: 10 }); } catch (e) {}
+      } else {
+        try { SWalk.lockCam({ theta: perpTheta(me, target), phi: 0.7, radius: 24 }); } catch (e) {}
+      }
+    } else if (mode === 'side') {
       try { SWalk.lockCam({ theta: perpTheta(me, target), phi: 1.05, radius: 10 }); } catch (e) {}
     } else if (mode === 'behind') {
       const theta = Math.atan2(me.x - target.x, me.z - target.z);
@@ -80,9 +97,14 @@
     }
     updateCamBtn();
   }
-  /* call whenever the destination changes (a new tour stop, the pitcher,
-     the next base) — re-applies whichever angle the child already picked */
-  function setCamTarget(t) { curTarget = t; applyCamAngle(); }
+  /* call whenever the destination (or the wide/action phase) changes — a
+     new tour stop, the pitcher, the next base — re-applies whichever angle
+     is currently in play, auto or picked */
+  function setCamTarget(t, phase) {
+    curTarget = t;
+    if (phase) curPhase = phase;
+    applyCamAngle();
+  }
 
   function buildCamBtn() {
     if (elCam || !document.body) return;
@@ -175,6 +197,21 @@
     try { F.guideOff(); } catch (e) {}
   }
 
+  /* ══════════════════════════════════ 🔁 recording, for the instant replay
+     Only the batting + running portion — "how he batted and ran the bases" —
+     not the walking tour. A position sample every ~0.12s, plus a labelled
+     timestamp at each broadcast-style moment (PITCH!, FIRST BASE…). */
+  let recording = false, recordClock = 0, lastSampleAt = -1;
+  let replayFrames = [], replayLabels = [];
+
+  function recordTick(dt) {
+    recordClock += dt;
+    if (recordClock - lastSampleAt < 0.12) return;
+    lastSampleAt = recordClock;
+    try { replayFrames.push({ t: recordClock, x: SWalk.pos.x, z: SWalk.pos.z, ry: SWalk.pos.ry }); } catch (e) {}
+  }
+  function replayLabel(text) { replayLabels.push({ t: recordClock, text: text }); }
+
   /* ══════════════════════════════════════════════════════ 1 · THE TOUR */
   const INFIELD_ORDER = ['1b', '2b', '3b', 'ss', 'p', 'c'];
   const OUTFIELD_ORDER = ['lf', 'cf', 'rf'];
@@ -206,7 +243,7 @@
     clearMarks();
     marks.push(F.marker(L.home.x, L.home.z, 0xffd43b, 2.4));
     guideNilu(L.home);
-    setCamTarget({ x: L.home.x, z: L.home.z });
+    setCamTarget({ x: L.home.x, z: L.home.z }, 'wide');
     try { F.guideTo(L.home.x, L.home.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: L.home.x, z: L.home.z, r: 2.8, once: true, onEnter: () => {
@@ -232,7 +269,7 @@
     scene.add(tag); marks.push(tag);
     moveSay(tr(pos.name));
     guideNilu(at);
-    setCamTarget({ x: at.x, z: at.z });
+    setCamTarget({ x: at.x, z: at.z }, 'wide');
     try { F.guideTo(at.x, at.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: at.x, z: at.z, r: 2.8, once: true, onEnter: () => {
@@ -260,7 +297,7 @@
     marks.push(F.marker(curBox.x, curBox.z, 0xffd43b, 1.6));
     marks.push(F.footprints(curBox.x, curBox.z, Math.PI));
     guideNilu(curBox);
-    setCamTarget({ x: curBox.x, z: curBox.z });
+    setCamTarget({ x: curBox.x, z: curBox.z }, 'wide');
     try { F.guideTo(curBox.x, curBox.z, 1.7); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: curBox.x, z: curBox.z, r: 1.9, once: true, onEnter: () => {
@@ -270,6 +307,10 @@
       SWalk.helmet(true);
       SWalk.facing(L.circle.x, L.circle.z);
       SWalk.hold('bat');
+      /* the replay starts here — right at the box, not the walk-up to it */
+      recording = true; recordClock = 0; lastSampleAt = -1;
+      replayFrames = []; replayLabels = [];
+      replayLabel(tr(C.posLesson.replayBox));
       setTimeout(() => { if (running && !paused) doPitch(); }, 900 * speedMul());
     } });
   }
@@ -302,28 +343,44 @@
     setTimeout(() => { if (running && !paused) launchPitch(co); }, 2600 * speedMul());
   }
 
+  /* a "which pitch is this" counter — the swing fallback timer below can't be
+     cancelled once a real tap resolves it early, so without this guard a
+     stale fallback from an EARLIER rep (tapped quickly) can fire onSwing()
+     again well after the round has moved on to a later rep or even into
+     running the bases, re-triggering the whole swing sequence out of context. */
+  let pitchGen = 0;
+
   function launchPitch(co) {
     if (!running) return;
     if (co) pitchPose(co);
     const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
-    /* the pitcher is now "where we're looking toward" for camera purposes —
-       whichever angle the child already had picked keeps applying here */
-    setCamTarget({ x: from.x, z: from.z });
+    /* the pitcher is "where we're looking toward" for camera purposes; this
+       is the one moment the default view actually zooms in */
+    setCamTarget({ x: from.x, z: from.z }, 'action');
+    replayLabel(tr(C.posLesson.replayPitch));
     flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
     setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
+    pitchGen++;
+    const myGen = pitchGen;
     const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
-    try { SBDrills.ask('🏏', tr(swing.do), tr(swing.show), onSwing); } catch (e) { onSwing(); }
+    try { SBDrills.ask('🏏', tr(swing.do), tr(swing.show), () => onSwing(myGen)); } catch (e) { onSwing(myGen); }
     /* nothing can be missed — if the child doesn't tap, the swing happens anyway */
-    setTimeout(() => { if (running && !paused) onSwing(); }, 3200 * speedMul());
+    setTimeout(() => { if (running && !paused) onSwing(myGen); }, 3200 * speedMul());
   }
 
-  let swung = false;
-  function onSwing() {
-    if (!running || swung) return;
-    swung = true;
+  /* the highest pitch generation already swung at — NOT a plain boolean,
+     because a boolean gets reset back to "not swung yet" as soon as the next
+     rep is scheduled, which reopens a window (before that next rep's own
+     launchPitch() has actually incremented pitchGen) where THIS pitch's own
+     stale 3200ms fallback can still sneak through and fire the swing twice. */
+  let resolvedGen = 0;
+  function onSwing(gen) {
+    if (!running || gen !== pitchGen || gen <= resolvedGen) return;
+    resolvedGen = gen;
     try { SBDrills.hide(); } catch (e) {}
     sfx('star');
     record('hit');
+    replayLabel(tr(C.posLesson.replaySwing));
     const box = curBox;
     SWalk.freeze(true);
     let t = 0;
@@ -352,9 +409,10 @@
       SWalk.setPose(null);
       const rig = SWalk.rig(); if (rig) rig.lean.rotation.y = 0;
       if (batRep < BAT_REPS) {
-        swung = false;
+        setCamTarget(curTarget, 'wide');
         setTimeout(() => { if (running && !paused) doPitch(); }, 1400 * speedMul());
       } else {
+        setCamTarget(curTarget, 'wide');
         afterHit();
       }
     }, 2000 * speedMul());
@@ -367,6 +425,7 @@
     const drop = (C.drills.drop.steps.find((s) => s.id === 'putdown')) || {};
     const go = () => {
       SWalk.hold(null); sfx('pop');
+      replayLabel(tr(C.posLesson.replayDrop));
       setTimeout(runToFirst, 700 * speedMul());
     };
     try { SBDrills.ask('👇', tr(drop.do), tr(drop.show), go); } catch (e) { go(); }
@@ -384,12 +443,13 @@
     clearMarks();
     marks.push(F.marker(target.x, target.z, 0x69db7c, 2.4));
     guideNilu(target);
-    setCamTarget({ x: target.x, z: target.z });
+    setCamTarget({ x: target.x, z: target.z }, 'wide');
     try { F.guideTo(target.x, target.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: target.x, z: target.z, r: 2.8, once: true, onEnter: () => {
       if (!running || paused) return;
       sfx('yes'); clearMarks();
+      replayLabel(tr(C.posLesson.replayFirst));
       decideAtFirst();
     } });
   }
@@ -426,13 +486,14 @@
     clearMarks();
     moveSay(posName('2b'));
     guideNilu(L.second);
-    setCamTarget({ x: L.second.x, z: L.second.z });
+    setCamTarget({ x: L.second.x, z: L.second.z }, 'wide');
     marks.push(F.marker(L.second.x, L.second.z, 0x69db7c, 2.4));
     try { F.guideTo(L.second.x, L.second.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: L.second.x, z: L.second.z, r: 2.8, once: true, onEnter: () => {
       if (!running || paused) return;
       sfx('yes'); clearMarks();
+      replayLabel(tr(C.posLesson.replaySecond));
       say(C.posLesson.safeSecond, null, { emoji: '✅' });
       setTimeout(() => endRound('second'), 1800 * speedMul());
     } });
@@ -442,6 +503,7 @@
     if (!running) return;
     const route = [L.second, L.third, L.home];
     const names = [posName('2b'), posName('3b'), HOME_NAME()];
+    const replayNames = [tr(C.posLesson.replaySecond), tr(C.posLesson.replayThird), tr(C.posLesson.replayHome)];
     let i = 0;
     const hop = () => {
       if (!running) return;
@@ -454,12 +516,14 @@
       const p = route[i], name = names[i]; i++;
       moveSay(name);
       guideNilu(p);
-      setCamTarget({ x: p.x, z: p.z });
+      setCamTarget({ x: p.x, z: p.z }, 'wide');
       marks.push(F.marker(p.x, p.z, 0x69db7c, 2.4));
       try { F.guideTo(p.x, p.z, 2.6); } catch (e) {}
       SWalk.addSpot({ id: 'posStop', x: p.x, z: p.z, r: 2.8, once: true, onEnter: () => {
         if (!running || paused) return;
-        sfx('yes'); hop();
+        sfx('yes');
+        replayLabel(replayNames[i - 1]);
+        hop();
       } });
     };
     hop();
@@ -467,6 +531,7 @@
 
   function endRound(outcome) {
     if (!running) return;
+    recording = false;
     clearMarks(); clearBalls();
     SWalk.freeze(true);
     try { SWalk.lockCam(null); } catch (e) {}
@@ -483,10 +548,94 @@
     say(C.aj.proud, null, { emoji: '🧢' });
     setTimeout(() => {
       if (!running) return;
-      try { SWalk.showCard('🎉', tr(title), tr(C.posLesson.playAgain), { sticky: true, btn: tr(C.ui.yay), onDone: finish }); }
-      catch (e) { finish(); }
+      try { SWalk.showCard('🎉', tr(title), tr(C.posLesson.playAgain), { sticky: true, btn: tr(C.ui.yay), onDone: offerReplay }); }
+      catch (e) { offerReplay(); }
     }, 1600 * speedMul());
   }
+
+  /* ══════════════════════════════════════════════════ 4 · THE REPLAY
+     A full instant replay of the batting + running just recorded — the
+     child's own path, played back with broadcast-style digital labels
+     popping up right as each base/moment comes around again. */
+  function offerReplay() {
+    if (!running || replayFrames.length < 2) { finish(); return; }
+    const p = LV().panel('sbPosReplay',
+      '<h2>🔁 ' + tr(C.posLesson.replayTitle) + '</h2>' +
+      '<p class="sbSub">' + tr(C.posLesson.replayIntro) + '</p>' +
+      '<button class="sbBig" id="sbReplayGo">' + tr(C.posLesson.replayWatch) + '</button>' +
+      '<button class="sbLink" id="sbReplaySkip">' + tr(C.ui.ok) + '</button>');
+    document.getElementById('sbReplayGo').addEventListener('click', () => { sfx('tap'); p._close(); startReplay(); });
+    document.getElementById('sbReplaySkip').addEventListener('click', () => { sfx('tap'); p._close(); finish(); });
+  }
+
+  let replaying = false, replayIdx = 0, replayElapsed = 0, replayLabelIdx = 0;
+  const REPLAY_SPEED = 1.8; // a snappier highlight-reel pace, not real-time
+
+  function startReplay() {
+    if (!replayFrames.length) { finish(); return; }
+    replaying = true; replayIdx = 0; replayElapsed = 0; replayLabelIdx = 0;
+    clearMarks(); clearBalls();
+    SWalk.freeze(true);
+    SWalk.hold(null);
+    SWalk.helmet(false);
+    showReplayBanner();
+    try { SWalk.lockCam({ theta: 0.6, phi: 0.62, radius: 17 }); } catch (e) {}
+    const f0 = replayFrames[0];
+    try { SWalk.teleport(f0.x, f0.z, f0.ry); } catch (e) {}
+  }
+
+  function replayTick(dt) {
+    replayElapsed += dt * REPLAY_SPEED;
+    const n = replayFrames.length;
+    while (replayIdx < n - 2 && replayFrames[replayIdx + 1].t <= replayElapsed) replayIdx++;
+    const a = replayFrames[replayIdx];
+    const b = replayFrames[Math.min(replayIdx + 1, n - 1)];
+    const span = Math.max(0.001, b.t - a.t);
+    const k = Math.max(0, Math.min(1, (replayElapsed - a.t) / span));
+    const x = a.x + (b.x - a.x) * k, z = a.z + (b.z - a.z) * k;
+    let dry = b.ry - a.ry;
+    while (dry > Math.PI) dry -= Math.PI * 2;
+    while (dry < -Math.PI) dry += Math.PI * 2;
+    const ry = a.ry + dry * k;
+    try { SWalk.teleport(x, z, ry); } catch (e) {}
+    while (replayLabelIdx < replayLabels.length && replayLabels[replayLabelIdx].t <= replayElapsed) {
+      showReplayLabel(replayLabels[replayLabelIdx].text);
+      replayLabelIdx++;
+    }
+    const endAt = n ? replayFrames[n - 1].t : 0;
+    if (replayElapsed >= endAt + 1.4) endReplay();
+  }
+
+  function endReplay() {
+    replaying = false;
+    hideReplayLabel();
+    hideReplayBanner();
+    try { SWalk.freeze(false); SWalk.lockCam(null); } catch (e) {}
+    finish();
+  }
+
+  let elReplayLabel = null, elReplayBadge = null, replayLabelHideTimer = null;
+  function buildReplayUI() {
+    if (elReplayLabel || !document.body) return;
+    elReplayLabel = document.createElement('div');
+    elReplayLabel.id = 'sbReplayLabel';
+    elReplayLabel.innerHTML = '<span class="sbReplayLabelText"></span>';
+    document.body.appendChild(elReplayLabel);
+    elReplayBadge = document.createElement('div');
+    elReplayBadge.id = 'sbReplayBadge';
+    document.body.appendChild(elReplayBadge);
+  }
+  function showReplayLabel(text) {
+    buildReplayUI();
+    elReplayLabel.querySelector('.sbReplayLabelText').textContent = text;
+    elReplayLabel.classList.add('show');
+    sfx('pop');
+    clearTimeout(replayLabelHideTimer);
+    replayLabelHideTimer = setTimeout(() => { if (elReplayLabel) elReplayLabel.classList.remove('show'); }, 2200);
+  }
+  function hideReplayLabel() { clearTimeout(replayLabelHideTimer); if (elReplayLabel) elReplayLabel.classList.remove('show'); }
+  function showReplayBanner() { buildReplayUI(); elReplayBadge.textContent = tr(C.posLesson.replayBadge); elReplayBadge.style.display = 'block'; }
+  function hideReplayBanner() { if (elReplayBadge) elReplayBadge.style.display = 'none'; }
 
   /* ══════════════════════════════════════════════════════════════ lifecycle */
   function ready() {
@@ -507,18 +656,21 @@
     try { window.SBTeam && SBTeam.leave && SBTeam.leave(); } catch (e) {}
     try { window.SBGame && SBGame.leave && SBGame.leave(); } catch (e) {}
     try { SWalk.clearSpots(); } catch (e) {}
-    running = true; paused = false; swung = false;
+    running = true; paused = false; pitchGen = 0; resolvedGen = 0;
     curBox = null; hitLanding = null; pitchCoachId = null;
-    camIdx = 0; curTarget = null;
+    camIdx = 0; curTarget = null; curPhase = 'wide';
+    recording = false; replayFrames = []; replayLabels = [];
     clearMarks(); clearBalls();
     startTour();
   };
 
   function finish() {
     running = false;
+    recording = false; replaying = false;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
+    hideReplayLabel(); hideReplayBanner();
     try { SWalk.lockCam(null); } catch (e) {}
     SWalk.freeze(false);
     SWalk.setPose(null);
@@ -533,9 +685,11 @@
 
   S.leave = function () {
     running = false;
+    recording = false; replaying = false;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
+    hideReplayLabel(); hideReplayBanner();
     try { SWalk.removeSpot('posStop'); } catch (e) {}
     try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.helmet(false); SWalk.lockCam(null); } catch (e) {}
     if (pitchCoachId) { const co = F.coaches && F.coaches[pitchCoachId]; if (co) co.pose = null; }
@@ -546,6 +700,7 @@
     paused = true;
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
+    if (replaying) hideReplayBanner();
     try { SWalk.lockCam(null); } catch (e) {}
     for (const m of marks) m.visible = false;
   };
@@ -553,14 +708,17 @@
     if (!running) return;
     paused = false;
     for (const m of marks) m.visible = true;
+    if (replaying) { showReplayBanner(); return; }
     /* bring the camera picker back and re-apply wherever it was pointed —
        a raised hand shouldn't cost the child their chosen view for the rest
        of the round */
     if (curTarget) { showCamBtn(); applyCamAngle(); }
   };
   S.tick = function (dt) {
+    if (replaying) { if (!paused) replayTick(dt); return; }
     if (!running) return;
     ballTick(dt);
+    if (recording) recordTick(dt);
   };
   /* lets goToLevel() (and the once-per-session onboarding flow that calls it
      on a delay after Play) know not to barge in on a round already underway */
