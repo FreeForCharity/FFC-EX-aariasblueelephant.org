@@ -155,7 +155,7 @@
 
      Side-on is deliberate: from behind, a ball thrown away from you barely
      moves on screen. From the side you see the whole arc. */
-  function frameAction(a, b, secs, then) {
+  function frameAction(a, b, secs, then, hold) {
     const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
     const dx = b.x - a.x, dz = b.z - a.z;
     const len = Math.hypot(dx, dz) || 1;
@@ -171,6 +171,11 @@
       SWalk.lockCam({ x: mx, y: 1.35, z: mz, theta: theta, phi: 1.0,
                       radius: Math.max(8.5, Math.min(len * 1.15 + 4.5, 20)) });
     } catch (e) {}
+    /* `hold` = true: for a moment that waits on the child (a swing that can
+       come at any tap), not a fixed animation — the caller unlocks the
+       camera itself, exactly when the moment actually ends, instead of a
+       timer guessing how long to wait. */
+    if (hold) return;
     setTimeout(() => {
       try { SWalk.lockCam(null); } catch (e) {}
       if (then) { try { then(); } catch (e) {} }

@@ -201,6 +201,11 @@
     if (!running) return;
     if (co) pitchPose(co);
     const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
+    /* side-on to the pitcher↔batter line, and held open (no auto-timer) —
+       a swing can come at any tap, so the shot stays until the swing itself
+       releases it, not until a clock guesses the wait is over. This is what
+       actually shows the pitch AND the batter together. */
+    try { SBDrills.frameAction({ x: from.x, z: from.z }, { x: curBox.x, z: curBox.z }, 0, null, true); } catch (e) {}
     flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
     setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
     const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
@@ -218,7 +223,6 @@
     record('hit');
     const box = curBox;
     SWalk.freeze(true);
-    try { SBDrills.frameAction(box, L.circle, 3.6, () => { if (running) SWalk.freeze(false); }); } catch (e) {}
     let t = 0;
     const left = SWalk.hand() === 'L';
     SWalk.setPose((me, dt) => {
@@ -243,6 +247,9 @@
       if (!running) return;
       SWalk.setPose(null);
       const rig = SWalk.rig(); if (rig) rig.lean.rotation.y = 0;
+      /* release the pitch/swing camera now, right as we hand off to the next
+         phase — not on a timer that has no idea whether we're still there */
+      try { SWalk.lockCam(null); } catch (e) {}
       afterHit();
     }, 2000 * speedMul());
   }
@@ -434,6 +441,9 @@
     if (!running) return;
     ballTick(dt);
   };
+  /* lets goToLevel() (and the once-per-session onboarding flow that calls it
+     on a delay after Play) know not to barge in on a round already underway */
+  S.isRunning = () => running;
 
   window.SBPositions = S;
 })();

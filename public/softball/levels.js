@@ -507,10 +507,15 @@
     finishNeed();
   }
 
-  /* walk somewhere with Nilu, then run `then` when we arrive (or time out) */
+  /* walk somewhere with Nilu, then run `then` when we arrive (or time out).
+     goRest()'s bench spot sits close enough to the dugout that Nilu's old
+     offset (+1.8x) landed her right on top of the dugout's front corner
+     post — the same class of bug already fixed for her elsewhere (see
+     gear.js's niluAside/leadTo and team.js's line-up spot): give her a wide
+     berth by favoring +z (open grass) over +x (toward the dugout corner). */
   function walkWithNilu(at, then, timeout) {
     const N = window.SBField && SBField.nilu;
-    if (N) N.goTo(at.x + 1.8, at.z + 1.2, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
+    if (N) N.goTo(at.x - 0.3, at.z + 2.2, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
     SWalk.freeze(false);
     SWalk.walkTo(at.x, at.z);
     let t = 0;
@@ -874,6 +879,12 @@
 
   function goToLevel(id) {
     if (!G.open[id]) { toast(tr(C.ui.locked), 2600); return false; }
+    /* a Positions round in progress must never get walked over by a level
+       switch that fires on its own delay — the once-per-session onboarding
+       flow calls goToLevel() a few seconds after Play, and if a curious kid
+       has already tapped 🧭 Positions by then, that delayed call used to
+       barge in and start the team warm-up underneath the round in progress */
+    try { if (window.SBPositions && SBPositions.isRunning && SBPositions.isRunning()) { toast(tr(C.ui.locked), 2600); return false; } } catch (e) {}
     voiceClear();                     // nothing from the last level talks over the new one
     G.level = id;
     saveState();
