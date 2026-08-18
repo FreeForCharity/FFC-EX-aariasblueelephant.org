@@ -133,25 +133,92 @@ const NiluPostcard: React.FC = () => {
 /* Signed-out nudge toward an account. Deliberately NOT "sign in to play" — the
    games are genuinely free and account-free, and the promise right above says so.
    The honest reason is staying reachable, so that's what it says. Hidden in the
-   native app, where OAuth has nowhere sensible to redirect. */
+   native app, where OAuth has nowhere sensible to redirect. Sized and styled to
+   match the Home page sign-in card so the same pitch feels consistent everywhere
+   it appears. */
 const SignInNudge: React.FC = () => {
   const { user, isLoading } = useAuth();
   if (user || isLoading || (window as any).Capacitor) return null;
   return (
-    <div className="max-w-2xl mx-auto mb-8 rounded-2xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <p className="text-sm text-slate-700 dark:text-slate-200 flex-1">
-        <span className="font-bold">{tr('Playing with us at practice?', '¿Juegas con nosotros en la práctica?')}</span>{' '}
-        {tr(
-          'Sign in so we can reach you about practice — and keep progress and all our games in one place.',
-          'Inicia sesión para que podamos avisarte sobre la práctica — y tener el progreso y todos nuestros juegos en un solo lugar.'
-        )}
-      </p>
+    <div
+      className="group relative flex flex-col items-center gap-4 overflow-hidden rounded-3xl border border-sky-200 dark:border-sky-800 p-6 sm:p-8 text-center shadow-sm mb-8 sm:flex-row sm:text-left"
+      style={{ background: 'linear-gradient(120deg,#eaf6ff,#fef6e4)' }}
+    >
+      <div className="text-5xl shrink-0 transition-transform group-hover:scale-110" aria-hidden>📬</div>
+      <div className="flex-1">
+        <h3 className="text-xl font-black text-sky-700">
+          {tr("Don't miss what's next", 'No te pierdas lo que viene')}
+        </h3>
+        <p className="mt-1 text-slate-600">
+          {tr(
+            'Sign in with Google so we can reach you about new events, activities, and games — and keep everything in one place.',
+            'Inicia sesión con Google para que podamos avisarte sobre nuevos eventos, actividades y juegos — y tener todo en un solo lugar.'
+          )}
+        </p>
+      </div>
       <a
         href="/login"
-        className="shrink-0 text-center px-5 py-2.5 rounded-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm transition-colors shadow-sm"
+        className="flex-none rounded-full bg-sky-600 hover:bg-sky-700 px-8 py-3 text-base sm:text-lg font-bold text-white shadow-lg transition group-hover:scale-105"
       >
         {tr('Sign in with Google', 'Iniciar sesión con Google')}
       </a>
+    </div>
+  );
+};
+
+/* One-time acknowledgment that the games are educational, not therapy or
+   medical advice, and that a grown-up should stay involved — summarized from
+   /legal/disclosure.html. Deliberately NOT tied to an account: it is a
+   disclaimer checkpoint, not an access gate, so it only blocks the landing
+   page once per device (localStorage), never individual game URLs. */
+const DISCLAIMER_KEY = 'abe.games.disclaimerAck';
+const DisclaimerGate: React.FC = () => {
+  const [accepted, setAccepted] = useState(() => {
+    try { return localStorage.getItem(DISCLAIMER_KEY) === '1'; } catch { return true; }
+  });
+  const [checked, setChecked] = useState(false);
+
+  if (accepted) return null;
+
+  const acknowledge = () => {
+    try { localStorage.setItem(DISCLAIMER_KEY, '1'); } catch { /* private mode */ }
+    setAccepted(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm px-4 py-8">
+      <div className="max-w-md w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-6 sm:p-8">
+        <div className="text-3xl mb-2" aria-hidden>🛡️</div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-3">
+          {tr('Before you play', 'Antes de jugar')}
+        </h2>
+        <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300 mb-4 list-disc pl-5">
+          <li>{tr('These games are for learning through play — not therapy, medical, or professional advice.', 'Estos juegos son para aprender jugando — no son terapia, asesoría médica ni profesional.')}</li>
+          <li>{tr('Please stay involved: play alongside your child and talk about what they see.', 'Por favor mantente involucrado: juega junto a tu hijo o hija y conversa sobre lo que ve.')}</li>
+          <li>{tr('No accounts needed and nothing leaves your device — some content is AI-assisted or AI-translated.', 'No se necesitan cuentas y nada sale de tu dispositivo — parte del contenido está creado o traducido con IA.')}</li>
+        </ul>
+        <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200 mb-5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => setChecked(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+          />
+          <span>{tr("I understand, and I'll stay involved as my child plays.", 'Entiendo, y me mantendré involucrado/a mientras mi hijo o hija juega.')}</span>
+        </label>
+        <button
+          onClick={acknowledge}
+          disabled={!checked}
+          className="w-full py-3 rounded-full bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors shadow-sm"
+        >
+          {tr('Continue to the games', 'Continuar a los juegos')}
+        </button>
+        <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-3">
+          <a href="/legal/disclosure.html" target="_blank" rel="noopener" className="underline">
+            {tr('Read the full disclosure', 'Leer el aviso completo')}
+          </a>
+        </p>
+      </div>
     </div>
   );
 };
@@ -160,6 +227,7 @@ const Games: React.FC = () => {
   const cards = useLiveCatalog();
   return (
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <DisclaimerGate />
     <div className="text-center pt-6 pb-8">
       <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white">
         🎮 {tr('Our Games', 'Nuestros Juegos')}
