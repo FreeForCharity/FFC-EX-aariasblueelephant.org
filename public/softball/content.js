@@ -678,6 +678,37 @@
               'Ya sabes entrar y salir. Eso es ser un bateador de verdad.'),
     },
 
+    /* ────────────────── LEVEL 5c · BAT DOWN, THEN RUN
+       The moment right after a hit is its own hard transition — hands are
+       full, the crowd is loud, and running is the whole point. Practised on
+       its own, on repeat, without the swing set-up each time. */
+    drop: {
+      id: 'drop', coach: 'sam', emoji: '👇',
+      title: t('Bat Down, Then Run', 'Deja el bate y corre'),
+      intro: t('After you hit the ball, the bat goes down before your feet move.',
+               'Después de pegarle a la pelota, el bate se deja abajo antes de que tus pies se muevan.'),
+      steps: [
+        { id: 'hold',
+          show: t('Pick up the bat, like you just hit it.', 'Toma el bate, como si ya le hubieras pegado.'),
+          do: t('Hold the bat.', 'Sostén el bate.') },
+        { id: 'putdown',
+          show: t('Bat DOWN. Not thrown — just down.', 'Bate ABAJO. No lo avientes — solo déjalo.'),
+          do: t('Put the bat down.', 'Deja el bate en el suelo.') },
+        { id: 'run',
+          show: t('Now your hands are empty. Run to first base!',
+                  'Ahora tienes las manos vacías. ¡Corre a primera base!'),
+          do: t('Run to first!', '¡Corre a primera!') },
+      ],
+      praise: [
+        t('Bat down, then run. That is the safe way, every time.',
+          'Bate abajo, y luego corres. Así es seguro, siempre.'),
+        t('Empty hands, fast feet!', '¡Manos vacías, pies rápidos!'),
+      ],
+      again: t('Let\'s do that again.', 'Hagámoslo otra vez.'),
+      done: t('You always put the bat down safely before you run. Let\'s run every base now.',
+              'Siempre dejas el bate seguro antes de correr. Ahora corramos todas las bases.'),
+    },
+
     /* ────────────────────────────────────── LEVEL 6 · RUNNING THE BASES */
     run: {
       id: 'run', coach: 'aj', emoji: '🏃',
@@ -775,25 +806,55 @@
   /* ═══════════════════════════════════════════ 8. LEVEL 8 — GAME DAY */
 
   C.positions = [
-    { id: 'p',  emoji: '🌀', name: t('pitcher', 'pitcher'),
-      where: t('in the circle', 'en el círculo') },
-    { id: 'c',  emoji: '😷', name: t('catcher', 'cátcher'),
-      where: t('behind home plate', 'detrás del home') },
-    { id: '1b', emoji: '1️⃣', name: t('first base', 'primera base'),
-      where: t('next to first base', 'junto a la primera base') },
-    { id: '2b', emoji: '2️⃣', name: t('second base', 'segunda base'),
-      where: t('next to second base', 'junto a la segunda base') },
-    { id: '3b', emoji: '3️⃣', name: t('third base', 'tercera base'),
-      where: t('next to third base', 'junto a la tercera base') },
-    { id: 'ss', emoji: '🔷', name: t('shortstop', 'shortstop'),
-      where: t('between second and third', 'entre segunda y tercera') },
-    { id: 'lf', emoji: '🌿', name: t('left field', 'jardín izquierdo'),
-      where: t('out in the grass on the left', 'allá en el pasto, a la izquierda') },
-    { id: 'cf', emoji: '🌳', name: t('center field', 'jardín central'),
-      where: t('out in the grass in the middle', 'allá en el pasto, al centro') },
-    { id: 'rf', emoji: '🍀', name: t('right field', 'jardín derecho'),
-      where: t('out in the grass on the right', 'allá en el pasto, a la derecha') },
+    { id: 'p',  emoji: '🌀', name: t('pitcher', 'pitcher'), group: 'infield',
+      where: t('in the circle', 'en el círculo'),
+      does: t('Stands in the circle and fields the ball. In games, a coach throws the pitch — Coach AJ, Coach Scott and Coach Sam all take turns.',
+              'Se para en el círculo y fildea la pelota. En los juegos, un coach lanza el pitcheo — el Coach AJ, el Coach Scott y el Coach Sam se turnan.') },
+    { id: 'c',  emoji: '😷', name: t('catcher', 'cátcher'), group: 'infield',
+      where: t('behind home plate', 'detrás del home'),
+      does: t('Catches the ball behind home plate and wears the mask to stay safe.',
+              'Atrapa la pelota detrás del home y usa la máscara para estar seguro.') },
+    { id: '1b', emoji: '1️⃣', name: t('first base', 'primera base'), group: 'infield',
+      where: t('next to first base', 'junto a la primera base'),
+      does: t('Waits by first base to catch the ball and get runners out there.',
+              'Espera junto a la primera base para atrapar la pelota y sacar corredores ahí.') },
+    { id: '2b', emoji: '2️⃣', name: t('second base', 'segunda base'), group: 'infield',
+      where: t('next to second base', 'junto a la segunda base'),
+      does: t('Covers second base and fields balls hit up the middle.',
+              'Cubre la segunda base y fildea pelotas que van por el medio.') },
+    { id: '3b', emoji: '3️⃣', name: t('third base', 'tercera base'), group: 'infield',
+      where: t('next to third base', 'junto a la tercera base'),
+      does: t('Covers third base and fields balls hit down that side.',
+              'Cubre la tercera base y fildea pelotas que van por ese lado.') },
+    { id: 'ss', emoji: '🔷', name: t('shortstop', 'shortstop'), group: 'infield',
+      where: t('between second and third', 'entre segunda y tercera'),
+      does: t('Fields balls hit between second and third base — a busy spot!',
+              '¡Fildea pelotas que van entre la segunda y la tercera — un lugar ocupado!') },
+    { id: 'lf', emoji: '🌿', name: t('left field', 'jardín izquierdo'), group: 'outfield',
+      where: t('out in the grass on the left', 'allá en el pasto, a la izquierda'),
+      does: t('Catches fly balls and long hits out on the left side of the grass.',
+              'Atrapa elevados y batazos largos del lado izquierdo del pasto.') },
+    { id: 'cf', emoji: '🌳', name: t('center field', 'jardín central'), group: 'outfield',
+      where: t('out in the grass in the middle', 'allá en el pasto, al centro'),
+      does: t('Catches fly balls and long hits out in the middle of the grass.',
+              'Atrapa elevados y batazos largos en medio del pasto.') },
+    { id: 'rf', emoji: '🍀', name: t('right field', 'jardín derecho'), group: 'outfield',
+      where: t('out in the grass on the right', 'allá en el pasto, a la derecha'),
+      does: t('Catches fly balls and long hits out on the right side of the grass.',
+              'Atrapa elevados y batazos largos del lado derecho del pasto.') },
   ];
+
+  /* ═══════════════════════════════════════════ 8b. LEARN THE POSITIONS
+     A tap-to-learn field diagram, opened from the 🧭 Positions button any
+     time. Six infield spots always show; the three outfield spots only show
+     once a grown-up turns them on in Coach Mode → Set up — most beginners
+     only need the infield first. */
+  C.posLesson = {
+    title: t('Learn the Positions', 'Aprende las posiciones'),
+    intro: t('Everybody on the team has their own spot. Tap a spot to learn about it.',
+             'Todos en el equipo tienen su propio lugar. Toca un lugar para aprender sobre él.'),
+    hint: t('Tap a position to hear about it.', 'Toca una posición para escuchar sobre ella.'),
+  };
 
   C.gameDay = {
     intro: t('Today is game day, {name}. Your whole team is here.',
@@ -904,6 +965,12 @@
                   'SÍ hace el tiempo y la puntería por ellos, así que un lanzamiento o un batazo nunca se falla. Quítalo solo si el niño quiere un reto de verdad.'),
     handWhat:   t('Flips the glove hand, the batting box, the stance and every left/right word the coaches say.',
                   'Cambia la mano del guante, la caja de bateo, la postura y cada palabra de izquierda/derecha que dicen los coaches.'),
+
+    outfield:     t('Outfield positions', 'Posiciones del jardín'),
+    outfieldWhat: t('ON adds left field, center field and right field to the Positions lesson. Most beginners just need the infield — turn this on once they know those six spots.',
+                    'SÍ agrega jardín izquierdo, central y derecho a la lección de posiciones. La mayoría de los principiantes solo necesitan el cuadro interior — actívalo cuando ya conozcan esas seis posiciones.'),
+    outfieldOn:   t('ON — infield and outfield', 'SÍ — cuadro y jardín'),
+    outfieldOff:  t('off — infield only (recommended to start)', 'no — solo cuadro (para empezar)'),
     resetWhat:  t('Clears every level and sticker for this player. Their name, hand and your settings here are kept.',
                   'Borra todos los niveles y calcomanías de este jugador. Se conservan su nombre, su mano y estos ajustes.'),
     takeAway:   t('Take away', 'Para llevar'),
@@ -938,7 +1005,8 @@
       { id: 'field', emoji: '🧤', name: t('Glove Hero', 'Guante mágico'),
         how: t('You got in front of the ball and fielded it.', 'Te pusiste frente a la pelota y la fildeaste.') },
       { id: 'box', emoji: '🏏', name: t('Big Hitter', '¡Qué batazo!'),
-        how: t('You hit off the tee, and stepped in and out of the box.', 'Bateaste del tee, y entraste y saliste de la caja.') },
+        how: t('You hit off the tee, stepped in and out of the box, and put the bat down safely before you ran.',
+               'Bateaste del tee, entraste y saliste de la caja, y dejaste el bate seguro antes de correr.') },
       { id: 'run', emoji: '🏃', name: t('Base Runner', 'A correr las bases'),
         how: t('You ran all the way around the bases.', 'Corriste todas las bases.') },
       { id: 'lineup', emoji: '👣', name: t('Line-up Pro', 'En la fila'),

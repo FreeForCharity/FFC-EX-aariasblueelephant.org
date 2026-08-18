@@ -80,7 +80,7 @@
      Every control saves the moment it is tapped. There is no OK button, which
      is deliberate: a coach reading this on a phone mid-practice should never
      lose a change by closing the panel. */
-  const SKILLS = ['throw', 'pitch', 'field', 'bat', 'box', 'run'];
+  const SKILLS = ['throw', 'pitch', 'field', 'bat', 'box', 'drop', 'run'];
   let TAB = 'today';
 
   /* which station is on now, and what follows it */
@@ -189,6 +189,11 @@
       '<button class="kRow" id="sbCoachHand">🤚 ' + tr(M.resetHand) + ' — <b>' +
         tr(G.hand === 'L' ? M.handL : M.handR) + '</b></button>' +
 
+      '<h3 class="sbCoachH3">' + tr(M.outfield) + '</h3>' +
+      '<p class="sbSub sbRepsSub">' + tr(M.outfieldWhat) + '</p>' +
+      '<button class="kRow" id="sbCoachOutfield">' + tr(M.outfield) + ': <b>' +
+        tr(G.outfieldOn ? M.outfieldOn : M.outfieldOff) + '</b></button>' +
+
       '<h3 class="sbCoachH3">♻️ ' + tr({ en: 'Start practice over', es: 'Empezar la práctica de nuevo' }) + '</h3>' +
       '<p class="sbSub sbRepsSub">' + tr(M.resetWhat) + '</p>' +
       '<button class="kRow" id="sbCoachReset">♻️ ' +
@@ -281,6 +286,9 @@
         try { SWalk.setHand(h); } catch (e) {}
         sfx('yes'); redraw();
       });
+      document.getElementById('sbCoachOutfield').addEventListener('click', () => {
+        G.outfieldOn = G.outfieldOn ? 0 : 1; LV().save(); sfx('tap'); redraw();
+      });
       document.getElementById('sbCoachReset').addEventListener('click', () => { sfx('tap'); p._close(); confirmReset(); });
     }
 
@@ -340,7 +348,7 @@
     add('safety', '🛟', tr({ en: 'Safety', es: 'Seguridad' }),
       (C.safety || []).map((r) => line(r.emoji + ' ' + tr(r.rule), tr(r.why))).join(''));
 
-    for (const id of ['throw', 'pitch', 'field', 'bat', 'box', 'run']) {
+    for (const id of ['throw', 'pitch', 'field', 'bat', 'box', 'drop', 'run']) {
       const d = C.drills[id];
       if (!d) continue;
       const co = (C.coaches.find((c) => c.id === d.coach) || {}).name || '';

@@ -39,6 +39,7 @@
 <script src="../gamekit/festive.js"></script>
 <script src="../gamekit/kit.js"></script>
 <script src="content.js"></script>
+<script src="positions.js"></script>
 <script src="field.js"></script>
 <script src="walk.js"></script>
 <script src="levels.js"></script>
@@ -178,6 +179,10 @@
         title: 'Your sticker book — every one you have collected, and the ones still out there',
         titleEs: 'Tu álbum de calcomanías — las que ya tienes y las que faltan',
         onTap: () => { try { SBLevels.openAlbum(); } catch (e) {} } },
+      { emoji: '🧭', label: 'Positions', labelEs: 'Posiciones',
+        title: 'Learn the positions — tap a spot on the field to hear about it',
+        titleEs: 'Aprende las posiciones — toca un lugar del campo para escuchar sobre él',
+        onTap: () => { try { SBPositions.open(); } catch (e) {} } },
       { emoji: '🧢', label: 'Coach', labelEs: 'Coach',
         title: 'Coach Mode — for grown-ups: progress, the cue sheet, the practice card',
         titleEs: 'Modo Coach — para adultos: progreso, el guion y la tarjeta de práctica',
