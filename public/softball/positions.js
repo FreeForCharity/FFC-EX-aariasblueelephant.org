@@ -10,15 +10,19 @@
                      hear what happens there, move on.
      2 · THE AT-BAT  a coach — a different one can pitch every rep — pitches
                      to you for real, a few times, so it's not over before it
-                     starts. Swing whenever feels right; the window is huge
-                     and nothing can be missed.
+                     starts. The ball waits at the plate once it arrives, so
+                     the swing actually connects with something, rather than
+                     firing on its own unrelated schedule.
      3 · THE CALL    bat down, run to first, then watch the ball: sometimes
                      nobody's thrown it home yet, so you push for second, or
                      even score. Sometimes you're safe and done. Random each
                      time, so no two rounds play the same.
-     4 · THE REPLAY  right after, watch it back — batting and running, with
-                     broadcast-style labels ("FIRST BASE", "SWING!") popping
-                     up as each moment happens again.
+     4 · THE REPLAY  plays automatically right after — the same recorded
+                     path, ball flights and all, with broadcast-style labels
+                     ("SWING!", "FIRST BASE") popping up as each moment
+                     happens again, camera cutting between a tight plate shot
+                     and a wide following shot, with a slow-motion beat right
+                     on the swing.
 
    📷 the camera defaults to a wide "best field area" view and only tightens
    in for the pitch/swing itself, snapping back to wide right after — unless
@@ -155,23 +159,31 @@
     say(s.line, { pos: destName }, { emoji: s.emoji });
   }
 
-  /* ══════════════════════════════════════════════════════════ balls */
+  /* ══════════════════════════════════════════════════════════ balls
+     `park: true` keeps the ball sitting (gently spinning) at its
+     destination once it arrives, instead of vanishing — that's what lets
+     the pitched ball actually be there, waiting, for the swing to connect
+     with. discardBall() removes a parked ball explicitly, right at the
+     moment of contact. */
   function flyBall(from, to, opts) {
     opts = opts || {};
     const m = F.makeBall(0.16);
     m.position.set(from.x, from.y != null ? from.y : 1.0, from.z);
     scene.add(m);
-    balls.push({
+    const b = {
       m: m, t: 0, dur: Math.max(0.4, (opts.dur || 1.4) * speedMul()),
       a: { x: from.x, y: from.y != null ? from.y : 1.0, z: from.z },
       b: { x: to.x, y: to.y != null ? to.y : 0.2, z: to.z },
       h: opts.h != null ? opts.h : 3.0, done: opts.done || null,
-    });
-    return m;
+      park: !!opts.park, arrived: false,
+    };
+    balls.push(b);
+    return b;
   }
   function ballTick(dt) {
     for (let i = balls.length - 1; i >= 0; i--) {
       const f = balls[i];
+      if (f.park && f.arrived) { f.m.rotation.x += dt * 1.5; continue; } // waiting at the plate
       f.t += dt;
       const k = Math.min(1, f.t / f.dur);
       f.m.position.set(
@@ -180,10 +192,21 @@
         f.a.z + (f.b.z - f.a.z) * k);
       f.m.rotation.x += dt * 9;
       if (k >= 1) {
+        if (f.park) {
+          f.arrived = true;
+          if (f.done) { try { f.done(); } catch (e) {} }
+          continue; // stays around until discardBall() removes it
+        }
         F.discard(f.m); balls.splice(i, 1);
         if (f.done) { try { f.done(); } catch (e) {} }
       }
     }
+  }
+  function discardBall(handle) {
+    if (!handle) return;
+    const idx = balls.indexOf(handle);
+    if (idx >= 0) balls.splice(idx, 1);
+    try { F.discard(handle.m); } catch (e) {}
   }
   function clearBalls() {
     for (const f of balls) { try { F.discard(f.m); } catch (e) {} }
@@ -199,10 +222,12 @@
 
   /* ══════════════════════════════════ 🔁 recording, for the instant replay
      Only the batting + running portion — "how he batted and ran the bases" —
-     not the walking tour. A position sample every ~0.12s, plus a labelled
-     timestamp at each broadcast-style moment (PITCH!, FIRST BASE…). */
+     not the walking tour. A position sample every ~0.12s, a labelled
+     timestamp at each broadcast-style moment (PITCH!, FIRST BASE…), and
+     every ball flight, so the replay can show the actual pitch and hit
+     flying again, not just the runner. */
   let recording = false, recordClock = 0, lastSampleAt = -1;
-  let replayFrames = [], replayLabels = [];
+  let replayFrames = [], replayLabels = [], replayBalls = [];
 
   function recordTick(dt) {
     recordClock += dt;
@@ -211,6 +236,9 @@
     try { replayFrames.push({ t: recordClock, x: SWalk.pos.x, z: SWalk.pos.z, ry: SWalk.pos.ry }); } catch (e) {}
   }
   function replayLabel(text) { replayLabels.push({ t: recordClock, text: text }); }
+  function replayBall(from, to, dur, h) {
+    replayBalls.push({ t: recordClock, from: { x: from.x, y: from.y, z: from.z }, to: { x: to.x, y: to.y, z: to.z }, dur: dur, h: h });
+  }
 
   /* ══════════════════════════════════════════════════════ 1 · THE TOUR */
   const INFIELD_ORDER = ['1b', '2b', '3b', 'ss', 'p', 'c'];
@@ -284,9 +312,14 @@
      A single pitch was over before a child could get a feel for it — now
      there are a few practice swings first (a new coach can rotate in each
      time), and only the LAST one carries on into dropping the bat and
-     running the bases. */
+     running the bases. The pitched ball now PARKS at the plate once it
+     arrives — the swing button only appears then, and the ball itself
+     disappears at the exact instant the hit ball appears in its place, so
+     it reads as contact instead of two unrelated balls on two unrelated
+     schedules. */
   const BAT_REPS = 3;
   let batRep = 0;
+  let pendingPitchBall = null;
 
   function startBatting() {
     if (!running) return;
@@ -309,7 +342,7 @@
       SWalk.hold('bat');
       /* the replay starts here — right at the box, not the walk-up to it */
       recording = true; recordClock = 0; lastSampleAt = -1;
-      replayFrames = []; replayLabels = [];
+      replayFrames = []; replayLabels = []; replayBalls = [];
       replayLabel(tr(C.posLesson.replayBox));
       setTimeout(() => { if (running && !paused) doPitch(); }, 900 * speedMul());
     } });
@@ -354,25 +387,34 @@
     if (!running) return;
     if (co) pitchPose(co);
     const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
+    const to = { x: curBox.x, y: 1.0, z: curBox.z };
     /* the pitcher is "where we're looking toward" for camera purposes; this
        is the one moment the default view actually zooms in */
     setCamTarget({ x: from.x, z: from.z }, 'action');
     replayLabel(tr(C.posLesson.replayPitch));
-    flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
+    replayBall(from, to, 1.7, 1.3);
     setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
     pitchGen++;
     const myGen = pitchGen;
-    const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
-    try { SBDrills.ask('🏏', tr(swing.do), tr(swing.show), () => onSwing(myGen)); } catch (e) { onSwing(myGen); }
-    /* nothing can be missed — if the child doesn't tap, the swing happens anyway */
-    setTimeout(() => { if (running && !paused) onSwing(myGen); }, 3200 * speedMul());
+    /* the ball PARKS at the plate once it lands — the swing only becomes
+       available once there's actually something there to hit */
+    pendingPitchBall = flyBall(from, to, {
+      dur: 1.7, h: 1.3, park: true,
+      done: () => {
+        if (!running || myGen !== pitchGen) return;
+        const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
+        try { SBDrills.ask('🏏', tr(swing.do), tr(swing.show), () => onSwing(myGen)); } catch (e) { onSwing(myGen); }
+        /* nothing can be missed — if the child doesn't tap, the swing happens anyway */
+        setTimeout(() => { if (running && !paused) onSwing(myGen); }, 2200 * speedMul());
+      },
+    });
   }
 
   /* the highest pitch generation already swung at — NOT a plain boolean,
      because a boolean gets reset back to "not swung yet" as soon as the next
      rep is scheduled, which reopens a window (before that next rep's own
      launchPitch() has actually incremented pitchGen) where THIS pitch's own
-     stale 3200ms fallback can still sneak through and fire the swing twice. */
+     stale fallback can still sneak through and fire the swing twice. */
   let resolvedGen = 0;
   function onSwing(gen) {
     if (!running || gen !== pitchGen || gen <= resolvedGen) return;
@@ -397,12 +439,19 @@
     setTimeout(() => {
       if (!running) return;
       sfx('yes');
+      /* the moment of contact: the parked pitch vanishes exactly as the hit
+         ball appears in the same spot — THIS is what makes it read as a
+         real hit instead of two unrelated balls on two unrelated clocks */
+      discardBall(pendingPitchBall);
+      pendingPitchBall = null;
       batRep++;
       say(batRep < BAT_REPS ? C.posLesson.niceHitAgain : C.posLesson.niceHit, null, { emoji: '🎉' });
       const a = -0.55 + Math.random() * 1.1;
       const dist = 22 + Math.random() * 16;
       hitLanding = { x: Math.sin(a) * dist, z: -Math.cos(a) * dist };
-      flyBall({ x: box.x, y: 1.0, z: box.z }, { x: hitLanding.x, y: 0.2, z: hitLanding.z }, { h: 5.5, dur: 1.9 });
+      const hitTo = { x: hitLanding.x, y: 0.2, z: hitLanding.z };
+      replayBall({ x: box.x, y: 1.0, z: box.z }, hitTo, 1.9, 5.5);
+      flyBall({ x: box.x, y: 1.0, z: box.z }, hitTo, { h: 5.5, dur: 1.9 });
     }, 560 * speedMul());
     setTimeout(() => {
       if (!running) return;
@@ -546,46 +595,89 @@
     } catch (e) {}
     try { K.streakBump && K.streakBump(); } catch (e) {}
     say(C.aj.proud, null, { emoji: '🧢' });
+    /* the replay isn't an offer any more — it plays automatically, right
+       after the celebration card, every round */
     setTimeout(() => {
       if (!running) return;
-      try { SWalk.showCard('🎉', tr(title), tr(C.posLesson.playAgain), { sticky: true, btn: tr(C.ui.yay), onDone: offerReplay }); }
-      catch (e) { offerReplay(); }
+      try { SWalk.showCard('🎉', tr(title), tr(C.posLesson.playAgain), { sticky: true, btn: tr(C.ui.yay), onDone: startReplay }); }
+      catch (e) { startReplay(); }
     }, 1600 * speedMul());
   }
 
   /* ══════════════════════════════════════════════════ 4 · THE REPLAY
      A full instant replay of the batting + running just recorded — the
-     child's own path, played back with broadcast-style digital labels
-     popping up right as each base/moment comes around again. */
-  function offerReplay() {
-    if (!running || replayFrames.length < 2) { finish(); return; }
-    const p = LV().panel('sbPosReplay',
-      '<h2>🔁 ' + tr(C.posLesson.replayTitle) + '</h2>' +
-      '<p class="sbSub">' + tr(C.posLesson.replayIntro) + '</p>' +
-      '<button class="sbBig" id="sbReplayGo">' + tr(C.posLesson.replayWatch) + '</button>' +
-      '<button class="sbLink" id="sbReplaySkip">' + tr(C.ui.ok) + '</button>');
-    document.getElementById('sbReplayGo').addEventListener('click', () => { sfx('tap'); p._close(); startReplay(); });
-    document.getElementById('sbReplaySkip').addEventListener('click', () => { sfx('tap'); p._close(); finish(); });
-  }
-
-  let replaying = false, replayIdx = 0, replayElapsed = 0, replayLabelIdx = 0;
-  const REPLAY_SPEED = 1.8; // a snappier highlight-reel pace, not real-time
+     child's own path AND the actual ball flights, played back with an
+     animated run/swing (not just a sliding dot), broadcast-style digital
+     labels, camera cuts between a tight plate shot and a wide following
+     shot, and a slow-motion beat right on the swing. */
+  let replaying = false, replayIdx = 0, replayElapsed = 0, replayLabelIdx = 0, replayBallIdx = 0;
+  let replayPoseT = 0, replaySwingT = -1, replaySlowUntil = -1;
+  const REPLAY_SPEED = 1.5; // a snappier highlight-reel pace, not real-time
 
   function startReplay() {
-    if (!replayFrames.length) { finish(); return; }
-    replaying = true; replayIdx = 0; replayElapsed = 0; replayLabelIdx = 0;
+    if (!running || replayFrames.length < 2) { finish(); return; }
+    replaying = true; replayIdx = 0; replayElapsed = 0; replayLabelIdx = 0; replayBallIdx = 0;
+    replayPoseT = 0; replaySwingT = -1; replaySlowUntil = -1;
     clearMarks(); clearBalls();
     SWalk.freeze(true);
     SWalk.hold(null);
     SWalk.helmet(false);
     showReplayBanner();
-    try { SWalk.lockCam({ theta: 0.6, phi: 0.62, radius: 17 }); } catch (e) {}
+    try { SWalk.lockCam(replayCamFor(tr(C.posLesson.replayBox))); } catch (e) {}
+    SWalk.setPose(replayPoseFn);
     const f0 = replayFrames[0];
     try { SWalk.teleport(f0.x, f0.z, f0.ry); } catch (e) {}
   }
 
+  /* a tight plate shot for the pitch/swing/drop, a wide following shot for
+     the bases — a bit of a broadcast "camera cut" feel between the two */
+  function replayCamFor(text) {
+    if (text === tr(C.posLesson.replayBox) || text === tr(C.posLesson.replayPitch) || text === tr(C.posLesson.replaySwing)) {
+      return { theta: 0.45, phi: 1.02, radius: 9 };
+    }
+    if (text === tr(C.posLesson.replayDrop)) {
+      return { theta: 0.15, phi: 0.85, radius: 12 };
+    }
+    return { theta: 0.55, phi: 0.62, radius: 17 };
+  }
+
+  /* a simple synthetic gait while the recorded path is moving, and the same
+     swing motion the live at-bat used, timed to the SWING label — without
+     this the replay just slides a stiff character across the ground */
+  function replayPoseFn(me, dt) {
+    if (replaySwingT >= 0) {
+      replaySwingT += dt;
+      const k = Math.min(1, replaySwingT / 0.5);
+      const left = SWalk.hand() === 'L';
+      me.lean.rotation.y = (left ? -1 : 1) * k * 2.3;
+      me.lean.rotation.x = 0.1;
+      me.legL.rotation.x = 0; me.legR.rotation.x = 0;
+      me.armL.rotation.x = -1.15 + k * 0.5; me.armR.rotation.x = -1.15 + k * 0.5;
+      me.armL.rotation.z = 0; me.armR.rotation.z = 0;
+      if (replaySwingT > 0.95) replaySwingT = -1;
+      return;
+    }
+    replayPoseT += dt * 7;
+    const swing = Math.sin(replayPoseT) * 0.55;
+    me.legL.rotation.x = swing; me.legR.rotation.x = -swing;
+    me.armL.rotation.x = -swing * 0.7; me.armR.rotation.x = swing * 0.7;
+    me.armL.rotation.z = 0; me.armR.rotation.z = 0;
+    me.lean.rotation.x = 0.04; me.lean.rotation.y = 0;
+  }
+
+  function replaySpawnBall(rb) {
+    const m = F.makeBall(0.16);
+    m.position.set(rb.from.x, rb.from.y, rb.from.z);
+    scene.add(m);
+    balls.push({
+      m: m, t: 0, dur: Math.max(0.15, rb.dur / REPLAY_SPEED),
+      a: rb.from, b: rb.to, h: rb.h, done: null, park: false, arrived: false,
+    });
+  }
+
   function replayTick(dt) {
-    replayElapsed += dt * REPLAY_SPEED;
+    const slow = (replaySlowUntil > 0 && replayElapsed < replaySlowUntil) ? 0.35 : 1;
+    replayElapsed += dt * REPLAY_SPEED * slow;
     const n = replayFrames.length;
     while (replayIdx < n - 2 && replayFrames[replayIdx + 1].t <= replayElapsed) replayIdx++;
     const a = replayFrames[replayIdx];
@@ -599,8 +691,15 @@
     const ry = a.ry + dry * k;
     try { SWalk.teleport(x, z, ry); } catch (e) {}
     while (replayLabelIdx < replayLabels.length && replayLabels[replayLabelIdx].t <= replayElapsed) {
-      showReplayLabel(replayLabels[replayLabelIdx].text);
+      const text = replayLabels[replayLabelIdx].text;
+      showReplayLabel(text);
+      try { SWalk.lockCam(replayCamFor(text)); } catch (e) {}
+      if (text === tr(C.posLesson.replaySwing)) { replaySwingT = 0; replaySlowUntil = replayElapsed + 0.5; }
       replayLabelIdx++;
+    }
+    while (replayBallIdx < replayBalls.length && replayBalls[replayBallIdx].t <= replayElapsed) {
+      replaySpawnBall(replayBalls[replayBallIdx]);
+      replayBallIdx++;
     }
     const endAt = n ? replayFrames[n - 1].t : 0;
     if (replayElapsed >= endAt + 1.4) endReplay();
@@ -610,7 +709,8 @@
     replaying = false;
     hideReplayLabel();
     hideReplayBanner();
-    try { SWalk.freeze(false); SWalk.lockCam(null); } catch (e) {}
+    clearBalls();
+    try { SWalk.setPose(null); SWalk.freeze(false); SWalk.lockCam(null); } catch (e) {}
     finish();
   }
 
@@ -657,9 +757,9 @@
     try { window.SBGame && SBGame.leave && SBGame.leave(); } catch (e) {}
     try { SWalk.clearSpots(); } catch (e) {}
     running = true; paused = false; pitchGen = 0; resolvedGen = 0;
-    curBox = null; hitLanding = null; pitchCoachId = null;
+    curBox = null; hitLanding = null; pitchCoachId = null; pendingPitchBall = null;
     camIdx = 0; curTarget = null; curPhase = 'wide';
-    recording = false; replayFrames = []; replayLabels = [];
+    recording = false; replayFrames = []; replayLabels = []; replayBalls = [];
     clearMarks(); clearBalls();
     startTour();
   };
@@ -667,6 +767,7 @@
   function finish() {
     running = false;
     recording = false; replaying = false;
+    pendingPitchBall = null;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
@@ -686,6 +787,7 @@
   S.leave = function () {
     running = false;
     recording = false; replaying = false;
+    pendingPitchBall = null;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
@@ -715,7 +817,7 @@
     if (curTarget) { showCamBtn(); applyCamAngle(); }
   };
   S.tick = function (dt) {
-    if (replaying) { if (!paused) replayTick(dt); return; }
+    if (replaying) { if (!paused) replayTick(dt); ballTick(dt); return; }
     if (!running) return;
     ballTick(dt);
     if (recording) recordTick(dt);

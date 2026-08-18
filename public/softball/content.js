@@ -878,12 +878,9 @@
     camFacing: t('📷 Facing you', '📷 De frente a ti'),
     camOverhead: t('📷 Bird\'s-eye view', '📷 Vista de pájaro'),
 
-    /* 🔁 the post-round instant replay — broadcast-style graphics, the
-       child's own name for each labelled moment as it happens again */
-    replayTitle: t('Want to see your replay?', '¿Quieres ver tu repetición?'),
-    replayIntro: t('Watch how you batted and ran the bases, just like on TV!',
-                   '¡Mira cómo bateaste y corriste las bases, como en la tele!'),
-    replayWatch: t('🔁 Watch it!', '🔁 ¡Verla!'),
+    /* 🔁 the post-round instant replay — plays automatically, no asking
+       first. Broadcast-style graphics for each labelled moment as it
+       happens again. */
     replayBadge: t('🔁 REPLAY', '🔁 REPETICIÓN'),
     replayBox: t('BATTER\'S BOX', 'CAJA DE BATEO'),
     replayPitch: t('PITCH!', '¡PITCHEO!'),
