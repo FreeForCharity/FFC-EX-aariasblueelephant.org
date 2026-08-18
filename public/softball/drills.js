@@ -64,6 +64,8 @@
              out1: { kind: 'walk', at: () => boxOut(), r: 1.8 },
              wait: 'tap',
              in2: { kind: 'walk', at: () => batBox(), r: 1.6 } },
+    drop:  { hold: 'takeBat', putdown: 'dropBat',
+             run: { kind: 'walk', at: () => throughFirst(), r: 2.6 } },
     run:   { tofirst: { kind: 'walk', at: () => throughFirst(), r: 2.6 }, look: 'tap',
              tosecond: { kind: 'walk', at: () => L.second, r: 2.6 },
              tothird: { kind: 'walk', at: () => L.third, r: 2.6 },
@@ -97,7 +99,7 @@
       /* Coach Scott hits from beside home; the child works at shortstop */
       return { me: L.fieldPlayer, coach: L.fieldCoach, coachId: 'scott', faceCoach: true, cover: true };
     }
-    if (id === 'bat' || id === 'box') {
+    if (id === 'bat' || id === 'box' || id === 'drop') {
       return { me: batBox(), coach: L.batCoach, coachId: 'sam', faceCoach: false };
     }
     if (id === 'run') {
@@ -377,7 +379,7 @@
 
   const DEMO = {
     throw: demoThrow, pitch: demoPitch, field: demoReady,
-    bat: demoBatSwing, box: null, run: demoPoint,
+    bat: demoBatSwing, box: null, drop: null, run: demoPoint,
   };
 
   /* the child's own motions, driven by SWalk.setPose */
@@ -480,7 +482,7 @@
     SWalk.removeSpot('drillStand');
     const co = cur.coach;
     if (cur.st.faceCoach) SWalk.facing(cur.st.coach.x, cur.st.coach.z);
-    else if (cur.id === 'bat' || cur.id === 'box') SWalk.facing(L.circle.x, L.circle.z);
+    else if (cur.id === 'bat' || cur.id === 'box' || cur.id === 'drop') SWalk.facing(L.circle.x, L.circle.z);
     else if (cur.id === 'run') SWalk.facing(L.first.x, L.first.z);
 
     /* the coach says hello, then shows the whole motion once */
@@ -929,10 +931,14 @@
     }, 5200 * speedMul());
   }
 
-  /* the batting station teaches two things in a row, under one schedule card:
-     hitting off the tee, then stepping in and out of the box */
-  const CHAIN = { bat: 'box' };
-  const REPS = { throw: 3, pitch: 3, field: 3, bat: 3, box: 2, run: 2 };
+  /* the batting station teaches three things in a row, under one schedule
+     card: hitting off the tee, stepping in and out of the box, then dropping
+     the bat and running — each its own hard skill, none its own card */
+  const CHAIN = { bat: 'box', box: 'drop' };
+  const REPS = { throw: 3, pitch: 3, field: 3, bat: 3, box: 2, drop: 2, run: 2 };
+  /* the whole batting station still earns the one "Big Hitter" sticker,
+     whichever sub-drill happens to finish the chain last */
+  const STICKER_ID = { drop: 'box' };
   /* How many turns a station asks for. A coach can set this three ways, and
      the most specific one wins:
        1. this station's own number   (Coach Mode → Set up → the station's ± )
@@ -950,7 +956,7 @@
   }
   S.repTarget = repTarget;
   S.repDefault = (id) => REPS[id] || 3;   // what the drill was written with
-  const NEXT_LEVEL = { throw: 'pitch', pitch: 'field', field: 'bat', box: 'run', run: 'team', team: 'game' };
+  const NEXT_LEVEL = { throw: 'pitch', pitch: 'field', field: 'bat', drop: 'run', run: 'team', team: 'game' };
 
   function finishDrill() {
     if (!running || !cur) return;
@@ -978,7 +984,7 @@
       const p = SWalk.pos;
       SBField.confetti(p.x, 2.9, p.z, 46);
     } catch (e) {}
-    try { LV().sticker(id, LV().levelName(id)); } catch (e) {}
+    try { LV().sticker(STICKER_ID[id] || id, LV().levelName(id)); } catch (e) {}
     try { K.streakBump && K.streakBump(); } catch (e) {}
     say(cur.def.done, null, { emoji: '⭐' });
     const nxt = NEXT_LEVEL[id];

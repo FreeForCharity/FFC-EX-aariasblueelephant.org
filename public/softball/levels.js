@@ -106,6 +106,7 @@
     repTarget: 0,          // 0 = each drill's own default; 1..5 overrides every station
     repsBy: {},            // skill id → turns for THAT station only; beats repTarget
     finished: 0,          // 1 once Game Day and the medal are done
+    outfieldOn: 0,         // grown-up setting: teach outfield spots in the Positions lesson too
   };
 
   function loadState() {
@@ -122,12 +123,14 @@
     G.assist = load('assist', 1) ? 1 : 0;
     G.repTarget = Math.max(0, Math.min(5, +load('repTarget', 0) || 0));
     G.repsBy = load('repsBy', {}) || {};
+    G.outfieldOn = load('outfieldOn', 0) ? 1 : 0;
   }
   function saveState() {
     save('name', G.name); save('hand', G.hand); save('level', G.level);
     save('open', G.open); save('reps', G.reps); save('breaks', G.breaks); save('needs', G.needs);
     save('stickers', G.stickers); save('onboarded', G.onboarded); save('assist', G.assist);
     save('finished', G.finished); save('repTarget', G.repTarget); save('repsBy', G.repsBy);
+    save('outfieldOn', G.outfieldOn);
   }
   S.save = saveState;
 

@@ -407,6 +407,24 @@
 .sbCueChip.on { background: var(--k-accent); color: #fff; }
 .sbCueChip:active { transform: scale(.95); }
 
+/* 🧭 Learn the Positions — a tap-to-learn field diagram */
+.sbPosField {
+  width: 100%; max-width: 380px; height: auto; margin: 4px auto 2px; display: block;
+  filter: drop-shadow(0 4px 10px rgba(40, 40, 90, .16));
+}
+.sbPosMark { cursor: pointer; }
+.sbPosMark circle { transition: transform .15s ease; transform-box: fill-box; transform-origin: center; }
+.sbPosMark:active circle, .sbPosMark:focus circle { transform: scale(1.12); }
+.sbPosMark.on circle { stroke: var(--k-accent); stroke-width: 5; }
+.sbPosHint { margin-top: 4px !important; }
+.sbPosSay {
+  min-height: 44px; font-size: 14.5px; font-weight: 800; color: #2f6fb5;
+  text-align: center; line-height: 1.35; padding: 6px 4px; margin-bottom: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sbPosMark circle { transition: none; }
+}
+
 /* ══════════════════════════════ phones
    The kit HUD wraps to two rows under about 400px, which pushes Settings onto
    its own line and eats the top of the view. Tighten it just enough to fit,
