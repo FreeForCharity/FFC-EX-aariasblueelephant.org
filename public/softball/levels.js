@@ -439,6 +439,7 @@
     try { window.SBGear && SBGear.suspend && SBGear.suspend(); } catch (e) {}
     try { window.SBTeam && SBTeam.suspend && SBTeam.suspend(); } catch (e) {}
     try { window.SBGame && SBGame.suspend && SBGame.suspend(); } catch (e) {}
+    try { window.SBPositions && SBPositions.suspend && SBPositions.suspend(); } catch (e) {}
 
     voiceClear();                     // a raised hand takes the floor
     returnTo = { x: SWalk.pos.x, z: SWalk.pos.z, ry: SWalk.pos.ry };
@@ -641,6 +642,7 @@
     try { window.SBDrills && SBDrills.resume && SBDrills.resume(); } catch (e) {}
     try { window.SBTeam && SBTeam.resume && SBTeam.resume(); } catch (e) {}
     try { window.SBGame && SBGame.resume && SBGame.resume(); } catch (e) {}
+    try { window.SBPositions && SBPositions.resume && SBPositions.resume(); } catch (e) {}
   }
   S.endBreak = finishNeed;
   S.finishNeed = finishNeed;
@@ -881,6 +883,7 @@
     try { window.SBDrills && SBDrills.leave && SBDrills.leave(); } catch (e) {}
     try { window.SBTeam && SBTeam.leave && SBTeam.leave(); } catch (e) {}
     try { window.SBGame && SBGame.leave && SBGame.leave(); } catch (e) {}
+    try { window.SBPositions && SBPositions.leave && SBPositions.leave(); } catch (e) {}
     SWalk.clearSpots();
     startLevel(id);
     return true;

@@ -1,104 +1,438 @@
 /* © 2026 Aaria's Blue Elephant · aariasblueelephant.org
-   Aaria's Softball Stars — LEARN THE POSITIONS  (window.SBPositions)
+   Aaria's Softball Stars — LEARN THE POSITIONS, BY PLAYING  (window.SBPositions)
 
-   A tap-to-learn field diagram, opened any time from the 🧭 Positions button.
-   Six infield spots always show — pitcher, catcher, first, second, third,
-   shortstop. The three outfield spots (left, center, right field) only show
-   once a grown-up turns them on in Coach Mode → Set up: most beginners only
-   need the infield, and this way a child never sees a "locked" spot on the
-   field, they just don't see it yet.
+   Opened any time from the 🧭 Positions button. Not a lesson to read — a
+   short guided round:
 
-   Tapping a spot speaks its name and what it does, through the same one-voice
-   queue every other screen uses (SBLevels.speak), so it respects Sound,
-   Read-aloud and the language toggle exactly like the rest of the game.
+     1 · THE TOUR    Nilu walks you to home plate, then to every infield spot
+                     in turn (outfield too, once a grown-up turns it on in
+                     Coach Mode). Arrive, hear what happens there, move on.
+     2 · THE AT-BAT  a coach — a different one each time — pitches to you for
+                     real. Swing whenever feels right; the window is huge and
+                     nothing can be missed.
+     3 · THE CALL    bat down, run to first, then watch the ball: sometimes
+                     nobody's thrown it home yet, so you push for second, or
+                     even score. Sometimes you're safe and done. Random each
+                     time, so no two rounds play the same.
+
+   Reuses the same 3D world, walking and ball-flight the drills already use —
+   this file just directs it. Opening this stops whatever else was active
+   (same as switching levels): the child can always pick their drill back up
+   from the schedule strip.
    Built by Aaria and her Friends 💙 */
 (function () {
   "use strict";
 
   const S = {};
   let K = window.ABEKit || {};
-  let C = null;
+  let THREE = null, scene = null, C = null, L = null, F = null;
 
   const tr = (o) => { try { return (o && typeof o === 'object') ? K.tr(o.en, o.es) : (o || ''); } catch (e) { return (o && o.en) || ''; } };
   const sfx = (n) => { try { K.sfx && K.sfx[n] && K.sfx[n](); } catch (e) {} };
+  const speedMul = () => { try { const s = Number(K.speed()); return (s >= 0.4 && s <= 3) ? s : 1; } catch (e) { return 1; } };
+  const record = (kind) => { try { K.recordEvent && K.recordEvent(kind); } catch (e) {} };
   const LV = () => window.SBLevels;
-  const esc = (s) => String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const say = (line, vars, opts) => { try { return LV().speak(line, vars, opts); } catch (e) { return ''; } };
 
-  /* hand-placed x/y for each marker, on a 0..600 x 0..570 fan diagram —
-     home plate at the tip, foul lines diverging to a fence arc at the top */
-  const XY = {
-    p:  { x: 300, y: 410 }, c:  { x: 300, y: 548 },
-    '1b': { x: 406, y: 414 }, '2b': { x: 300, y: 308 }, '3b': { x: 194, y: 414 },
-    ss: { x: 250, y: 345 },
-    lf: { x: 140, y: 300 }, cf: { x: 300, y: 190 }, rf: { x: 460, y: 300 },
-  };
-  const COLOR = { infield: '#ffd43b', outfield: '#69db7c' };
+  let running = false, paused = false;
+  let marks = [], balls = [];
+  let tour = [], curBox = null, hitLanding = null, pitchCoachId = null;
 
-  function fieldSvg(positions) {
-    const markers = positions.map((pos) => {
-      const xy = XY[pos.id];
-      if (!xy) return '';
-      const fill = COLOR[pos.group] || '#ffd43b';
-      return '<g class="sbPosMark" data-pos="' + pos.id + '" tabindex="0" role="button" ' +
-        'aria-label="' + esc(tr(pos.name)) + '" transform="translate(' + xy.x + ',' + xy.y + ')">' +
-        '<circle r="30" fill="' + fill + '" stroke="#25324a" stroke-width="3"></circle>' +
-        '<text y="11" text-anchor="middle" font-size="30">' + pos.emoji + '</text>' +
-        '</g>';
-    }).join('');
+  function outfieldOn() { try { return !!LV().G.outfieldOn; } catch (e) { return false; } }
 
-    return '<svg viewBox="0 0 600 570" class="sbPosField" role="img" aria-label="' + esc(tr(C.posLesson.title)) + '">' +
-      '<path d="M300,520 L31,251 A380,380 0 0 1 569,251 Z" fill="#bfe6a8"></path>' +
-      '<path d="M300,520 L194,414 L300,308 L406,414 Z" fill="#d9b98a" stroke="#a9805a" stroke-width="3"></path>' +
-      '<circle cx="300" cy="410" r="26" fill="#d9b98a" stroke="#a9805a" stroke-width="2"></circle>' +
-      '<rect x="288" y="500" width="24" height="24" fill="#fff" stroke="#25324a" stroke-width="2" ' +
-        'transform="rotate(45 300 512)"></rect>' +
-      markers +
-      '</svg>';
+  /* the name to call a base by, reusing the position data already written
+     for the tour so this never drifts out of sync with it */
+  function posName(id) {
+    const p = (C.positions || []).find((x) => x.id === id);
+    return p ? tr(p.name) : '';
+  }
+  const HOME_NAME = () => tr({ en: 'home plate', es: 'el home' });
+
+  /* a random "how Nilu's getting there" line — flying, hopping, walking
+     diagonally… never the same plain "go to X" twice in a row */
+  function moveSay(destName) {
+    const styles = C.posLesson.moveStyles || [];
+    if (!styles.length) return;
+    const s = styles[Math.floor(Math.random() * styles.length)];
+    say(s.line, { pos: destName }, { emoji: s.emoji });
   }
 
-  function outfieldOn() {
-    try { return !!LV().G.outfieldOn; } catch (e) { return false; }
+  /* ══════════════════════════════════════════════════════════ balls */
+  function flyBall(from, to, opts) {
+    opts = opts || {};
+    const m = F.makeBall(0.16);
+    m.position.set(from.x, from.y != null ? from.y : 1.0, from.z);
+    scene.add(m);
+    balls.push({
+      m: m, t: 0, dur: Math.max(0.4, (opts.dur || 1.4) * speedMul()),
+      a: { x: from.x, y: from.y != null ? from.y : 1.0, z: from.z },
+      b: { x: to.x, y: to.y != null ? to.y : 0.2, z: to.z },
+      h: opts.h != null ? opts.h : 3.0, done: opts.done || null,
+    });
+    return m;
+  }
+  function ballTick(dt) {
+    for (let i = balls.length - 1; i >= 0; i--) {
+      const f = balls[i];
+      f.t += dt;
+      const k = Math.min(1, f.t / f.dur);
+      f.m.position.set(
+        f.a.x + (f.b.x - f.a.x) * k,
+        f.a.y + (f.b.y - f.a.y) * k + Math.sin(k * Math.PI) * f.h,
+        f.a.z + (f.b.z - f.a.z) * k);
+      f.m.rotation.x += dt * 9;
+      if (k >= 1) {
+        F.discard(f.m); balls.splice(i, 1);
+        if (f.done) { try { f.done(); } catch (e) {} }
+      }
+    }
+  }
+  function clearBalls() {
+    for (const f of balls) { try { F.discard(f.m); } catch (e) {} }
+    balls = [];
   }
 
-  function panelHTML() {
-    const all = C.positions || [];
-    const infield = all.filter((p) => p.group === 'infield');
-    const outfield = all.filter((p) => p.group === 'outfield');
-    const shown = outfieldOn() ? infield.concat(outfield) : infield;
+  /* ══════════════════════════════════════════════════════════ marks */
+  function clearMarks() {
+    for (const m of marks) { try { F.discard(m); } catch (e) {} }
+    marks = [];
+    try { F.guideOff(); } catch (e) {}
+  }
 
-    return '<h2>🧭 ' + tr(C.posLesson.title) + '</h2>' +
-      '<p class="sbSub">' + tr(C.posLesson.intro) + '</p>' +
-      fieldSvg(shown) +
-      '<p class="sbSub sbPosHint">' + tr(C.posLesson.hint) + '</p>' +
-      '<div class="sbPosSay" id="sbPosSay"></div>' +
-      '<button class="sbBig" id="sbPosDone">' + tr(C.coachMode.close) + '</button>';
+  /* ══════════════════════════════════════════════════════ 1 · THE TOUR */
+  const INFIELD_ORDER = ['1b', '2b', '3b', 'ss', 'p', 'c'];
+  const OUTFIELD_ORDER = ['lf', 'cf', 'rf'];
+
+  function tourList() {
+    const byId = {};
+    for (const p of (C.positions || [])) byId[p.id] = p;
+    const ids = outfieldOn() ? INFIELD_ORDER.concat(OUTFIELD_ORDER) : INFIELD_ORDER;
+    return ids.map((id) => byId[id]).filter(Boolean);
+  }
+
+  function startTour() {
+    tour = tourList();
+    say(C.posLesson.startHome, null, { emoji: '🏠' });
+    clearMarks();
+    marks.push(F.marker(L.home.x, L.home.z, 0xffd43b, 2.4));
+    try { F.guideTo(L.home.x, L.home.z, 2.6); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.addSpot({ id: 'posStop', x: L.home.x, z: L.home.z, r: 2.8, once: true, onEnter: () => {
+      if (!running || paused) return;
+      sfx('yes'); clearMarks();
+      say(C.posLesson.homeDoes, null, { emoji: '🏠' });
+      setTimeout(() => tourStep(0), 3200 * speedMul());
+    } });
+  }
+
+  function tourStep(i) {
+    if (!running) return;
+    if (i >= tour.length) { setTimeout(startBatting, 700 * speedMul()); return; }
+    const pos = tour[i];
+    const at = L.pos[pos.id];
+    if (!at) { tourStep(i + 1); return; }
+    clearMarks();
+    const color = pos.group === 'outfield' ? 0x69db7c : 0xffd43b;
+    marks.push(F.marker(at.x, at.z, color, 2.4));
+    const tag = F.nameTag(pos.emoji + ' ' + tr(pos.name), 'rgba(255,255,255,0.96)');
+    tag.position.set(at.x, 2.6, at.z);
+    tag.scale.set(3.0, 0.9, 1);
+    scene.add(tag); marks.push(tag);
+    moveSay(tr(pos.name));
+    try { F.guideTo(at.x, at.z, 2.6); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.addSpot({ id: 'posStop', x: at.x, z: at.z, r: 2.8, once: true, onEnter: () => {
+      if (!running || paused) return;
+      sfx('yes'); clearMarks();
+      say(pos.does, null, { emoji: pos.emoji });
+      setTimeout(() => tourStep(i + 1), 3200 * speedMul());
+    } });
+  }
+
+  /* ══════════════════════════════════════════════════════ 2 · THE AT-BAT */
+  function startBatting() {
+    if (!running) return;
+    clearMarks();
+    say(C.posLesson.batIntro, null, { emoji: '🏏' });
+    curBox = (SWalk.hand() === 'L') ? L.boxL : L.boxR;
+    marks.push(F.marker(curBox.x, curBox.z, 0xffd43b, 1.6));
+    marks.push(F.footprints(curBox.x, curBox.z, Math.PI));
+    try { F.guideTo(curBox.x, curBox.z, 1.7); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.addSpot({ id: 'posStop', x: curBox.x, z: curBox.z, r: 1.9, once: true, onEnter: () => {
+      if (!running || paused) return;
+      sfx('yes'); clearMarks();
+      SWalk.freeze(true);
+      SWalk.helmet(true);
+      SWalk.facing(L.circle.x, L.circle.z);
+      SWalk.hold('bat');
+      setTimeout(() => { if (running && !paused) doPitch(); }, 900 * speedMul());
+    } });
+  }
+
+  /* a coach pose: arm swings forward once, timed with the ball leaving their hand */
+  function pitchPose(co) {
+    let t = 0;
+    const arm = () => (co.hand === 'R' ? co.armR : co.armL);
+    const other = () => (co.hand === 'R' ? co.armL : co.armR);
+    co.pose = (P, dt) => {
+      t += dt / speedMul();
+      P.lean.rotation.x = 0; P.legL.rotation.x = 0; P.legR.rotation.x = 0;
+      if (t < 0.5) { other().rotation.x = -1.2; arm().rotation.x = 0.8; }
+      else { const k = Math.min(1, (t - 0.5) / 0.4); arm().rotation.x = 0.8 - k * 2.2; other().rotation.x = -1.2 + k * 1.3; }
+    };
+  }
+
+  /* a different coach pitches every round — Coach AJ, Scott and Sam all take turns */
+  function doPitch() {
+    if (!running) return;
+    const ids = ['aj', 'scott', 'sam'];
+    pitchCoachId = ids[Math.floor(Math.random() * ids.length)];
+    const co = F.coaches && F.coaches[pitchCoachId];
+    if (co) { co.pose = null; co.goTo(L.circle.x, L.circle.z, () => co.lookAt(curBox.x, curBox.z)); }
+    setTimeout(() => {
+      if (!running || paused) return;
+      say(C.posLesson.pitchReady, { coach: co ? co.info.name : '' }, { emoji: '🧢' });
+    }, 900 * speedMul());
+    setTimeout(() => { if (running && !paused) launchPitch(co); }, 2600 * speedMul());
+  }
+
+  function launchPitch(co) {
+    if (!running) return;
+    if (co) pitchPose(co);
+    const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
+    flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
+    setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
+    const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
+    try { SBDrills.ask('🏏', tr(swing.do), tr(swing.show), onSwing); } catch (e) { onSwing(); }
+    /* nothing can be missed — if the child doesn't tap, the swing happens anyway */
+    setTimeout(() => { if (running && !paused) onSwing(); }, 3200 * speedMul());
+  }
+
+  let swung = false;
+  function onSwing() {
+    if (!running || swung) return;
+    swung = true;
+    try { SBDrills.hide(); } catch (e) {}
+    sfx('star');
+    record('hit');
+    const box = curBox;
+    SWalk.freeze(true);
+    try { SBDrills.frameAction(box, L.circle, 3.6, () => { if (running) SWalk.freeze(false); }); } catch (e) {}
+    let t = 0;
+    const left = SWalk.hand() === 'L';
+    SWalk.setPose((me, dt) => {
+      t += dt / speedMul();
+      const k = Math.min(1, t / 0.55);
+      me.lean.rotation.y = (left ? -1 : 1) * k * 2.3;
+      me.lean.rotation.x = 0.1;
+      me.legL.rotation.x = 0; me.legR.rotation.x = 0;
+      me.armL.rotation.x = -1.15 + k * 0.5; me.armR.rotation.x = -1.15 + k * 0.5;
+      me.armL.rotation.z = 0; me.armR.rotation.z = 0;
+    });
+    setTimeout(() => {
+      if (!running) return;
+      sfx('yes');
+      say(C.posLesson.niceHit, null, { emoji: '🎉' });
+      const a = -0.55 + Math.random() * 1.1;
+      const dist = 22 + Math.random() * 16;
+      hitLanding = { x: Math.sin(a) * dist, z: -Math.cos(a) * dist };
+      flyBall({ x: box.x, y: 1.0, z: box.z }, { x: hitLanding.x, y: 0.2, z: hitLanding.z }, { h: 5.5, dur: 1.9 });
+    }, 560 * speedMul());
+    setTimeout(() => {
+      if (!running) return;
+      SWalk.setPose(null);
+      const rig = SWalk.rig(); if (rig) rig.lean.rotation.y = 0;
+      afterHit();
+    }, 2000 * speedMul());
+  }
+
+  /* ══════════════════════════════════════════════════════ 3 · THE CALL */
+  function afterHit() {
+    if (!running) return;
+    const drop = (C.drills.drop.steps.find((s) => s.id === 'putdown')) || {};
+    const go = () => {
+      SWalk.hold(null); sfx('pop');
+      setTimeout(runToFirst, 700 * speedMul());
+    };
+    try { SBDrills.ask('👇', tr(drop.do), tr(drop.show), go); } catch (e) { go(); }
+  }
+
+  function throughFirst() {
+    const d = Math.hypot(L.first.x, L.first.z) || 1;
+    return { x: L.first.x * (1 + 3.4 / d), z: L.first.z * (1 + 3.4 / d) };
+  }
+
+  function runToFirst() {
+    if (!running) return;
+    moveSay(posName('1b'));
+    const target = throughFirst();
+    clearMarks();
+    marks.push(F.marker(target.x, target.z, 0x69db7c, 2.4));
+    try { SBDrills.frameFollow(SWalk.pos, target, 8); } catch (e) {}
+    try { F.guideTo(target.x, target.z, 2.6); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.addSpot({ id: 'posStop', x: target.x, z: target.z, r: 2.8, once: true, onEnter: () => {
+      if (!running || paused) return;
+      sfx('yes'); clearMarks();
+      decideAtFirst();
+    } });
+  }
+
+  /* the moment the user asked for: watch the ball, then a real (random) call */
+  function decideAtFirst() {
+    if (!running) return;
+    say(C.posLesson.watchBall, null, { emoji: '👀' });
+    const mate = (F.mates || [])[0];
+    const landing = hitLanding || { x: 20, z: -20 };
+    if (mate) { mate.pose = null; mate.goTo(landing.x, landing.z, () => {}); }
+
+    const roll = Math.random();
+    const outcome = roll < 0.5 ? 'stay' : (roll < 0.85 ? 'second' : 'home');
+    setTimeout(() => {
+      if (!running) return;
+      if (outcome === 'stay') {
+        if (mate) {
+          mate.pose = (P) => { P.armL.rotation.x = -1.2; P.armR.rotation.x = -1.2; P.legL.rotation.x = 0; P.legR.rotation.x = 0; };
+          flyBall({ x: landing.x, y: 1.2, z: landing.z }, { x: L.home.x, y: 1.0, z: L.home.z },
+            { dur: 1.2, h: 2.2, done: () => { if (mate) mate.pose = null; } });
+        }
+        setTimeout(() => { if (running) { say(C.posLesson.stayFirst, null, { emoji: '✅' }); setTimeout(() => endRound('stay'), 1800 * speedMul()); } }, 1400 * speedMul());
+      } else if (outcome === 'second') {
+        setTimeout(() => { if (running) { say(C.posLesson.goSecond, null, { emoji: '⚡' }); runToSecond(); } }, 400 * speedMul());
+      } else {
+        setTimeout(() => { if (running) { say(C.posLesson.goHome, null, { emoji: '🏆' }); runAllTheWay(); } }, 400 * speedMul());
+      }
+    }, 1800 * speedMul());
+  }
+
+  function runToSecond() {
+    if (!running) return;
+    clearMarks();
+    moveSay(posName('2b'));
+    marks.push(F.marker(L.second.x, L.second.z, 0x69db7c, 2.4));
+    try { SBDrills.frameFollow(SWalk.pos, L.second, 8); } catch (e) {}
+    try { F.guideTo(L.second.x, L.second.z, 2.6); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.addSpot({ id: 'posStop', x: L.second.x, z: L.second.z, r: 2.8, once: true, onEnter: () => {
+      if (!running || paused) return;
+      sfx('yes'); clearMarks();
+      say(C.posLesson.safeSecond, null, { emoji: '✅' });
+      setTimeout(() => endRound('second'), 1800 * speedMul());
+    } });
+  }
+
+  function runAllTheWay() {
+    if (!running) return;
+    const route = [L.second, L.third, L.home];
+    const names = [posName('2b'), posName('3b'), HOME_NAME()];
+    let i = 0;
+    const hop = () => {
+      if (!running) return;
+      clearMarks();
+      if (i >= route.length) {
+        say(C.posLesson.scoredHome, null, { emoji: '🏆' });
+        setTimeout(() => endRound('home'), 1800 * speedMul());
+        return;
+      }
+      const p = route[i], name = names[i]; i++;
+      moveSay(name);
+      marks.push(F.marker(p.x, p.z, 0x69db7c, 2.4));
+      try { SBDrills.frameFollow(SWalk.pos, p, 8); } catch (e) {}
+      try { F.guideTo(p.x, p.z, 2.6); } catch (e) {}
+      SWalk.addSpot({ id: 'posStop', x: p.x, z: p.z, r: 2.8, once: true, onEnter: () => {
+        if (!running || paused) return;
+        sfx('yes'); hop();
+      } });
+    };
+    hop();
+  }
+
+  function endRound(outcome) {
+    if (!running) return;
+    clearMarks(); clearBalls();
+    SWalk.freeze(true);
+    try { F.confetti(SWalk.pos.x, 2.6, SWalk.pos.z, 36); } catch (e) {}
+    sfx('star');
+    const title = outcome === 'home' ? C.posLesson.scoredHome
+      : outcome === 'second' ? C.posLesson.safeSecond : C.posLesson.stayFirst;
+    try {
+      const item = (C.album.items || []).find((it) => it.id === 'posplay');
+      if (item) LV().sticker('posplay', tr(item.name));
+    } catch (e) {}
+    try { K.streakBump && K.streakBump(); } catch (e) {}
+    say(C.aj.proud, null, { emoji: '🧢' });
+    setTimeout(() => {
+      if (!running) return;
+      try { SWalk.showCard('🎉', tr(title), tr(C.posLesson.playAgain), { sticky: true, btn: tr(C.ui.yay), onDone: finish }); }
+      catch (e) { finish(); }
+    }, 1600 * speedMul());
+  }
+
+  /* ══════════════════════════════════════════════════════════════ lifecycle */
+  function ready() {
+    C = window.SBContent; F = window.SBField; L = F && F.L;
+    THREE = F && F.three(); scene = F && F.scene();
+    return !!(C && F && scene && window.SWalk && window.SBLevels);
   }
 
   S.open = function () {
-    C = window.SBContent;
-    if (!C || !C.posLesson) return;
+    if (running) return;
+    if (!ready() || !SWalk.started()) return;
     sfx('tap');
-    const p = LV().panel('sbPositions', panelHTML());
-    const card = p.querySelector('.sbPanelCard');
-    if (card) card.classList.add('wide');
-    const out = document.getElementById('sbPosSay');
+    /* treat this like switching to a temporary level: stop whatever else was
+       active, exactly like goToLevel() does — the child can always pick their
+       drill back up from the schedule strip afterward */
+    try { window.SBGear && SBGear.leave && SBGear.leave(); } catch (e) {}
+    try { window.SBDrills && SBDrills.leave && SBDrills.leave(); } catch (e) {}
+    try { window.SBTeam && SBTeam.leave && SBTeam.leave(); } catch (e) {}
+    try { window.SBGame && SBGame.leave && SBGame.leave(); } catch (e) {}
+    try { SWalk.clearSpots(); } catch (e) {}
+    running = true; paused = false; swung = false;
+    curBox = null; hitLanding = null; pitchCoachId = null;
+    clearMarks(); clearBalls();
+    startTour();
+  };
 
-    function onPick(id) {
-      const pos = (C.positions || []).find((x) => x.id === id);
-      if (!pos) return;
-      sfx('yes');
-      p.querySelectorAll('.sbPosMark').forEach((m) => m.classList.toggle('on', m.dataset.pos === id));
-      if (out) out.textContent = pos.emoji + ' ' + tr(pos.name) + ' — ' + tr(pos.does);
-      try { LV().speak(pos.does, null, { emoji: pos.emoji }); } catch (e) {}
+  function finish() {
+    running = false;
+    clearMarks(); clearBalls();
+    try { SBDrills.hide(); } catch (e) {}
+    SWalk.freeze(false);
+    SWalk.setPose(null);
+    SWalk.hold(null);
+    SWalk.helmet(false);
+    if (pitchCoachId) {
+      const co = F.coaches && F.coaches[pitchCoachId];
+      if (co) { co.pose = null; if (co.home) co.goTo(co.home.x, co.home.z); }
     }
-    p.querySelectorAll('.sbPosMark').forEach((m) => {
-      m.addEventListener('click', () => onPick(m.dataset.pos));
-      m.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(m.dataset.pos); }
-      });
-    });
-    document.getElementById('sbPosDone').addEventListener('click', () => { sfx('tap'); p._close(); });
+    pitchCoachId = null;
+  }
+
+  S.leave = function () {
+    running = false;
+    clearMarks(); clearBalls();
+    try { SBDrills.hide(); } catch (e) {}
+    try { SWalk.removeSpot('posStop'); } catch (e) {}
+    try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.helmet(false); SWalk.lockCam(null); } catch (e) {}
+    if (pitchCoachId) { const co = F.coaches && F.coaches[pitchCoachId]; if (co) co.pose = null; }
+    pitchCoachId = null;
+  };
+  S.suspend = function () {
+    if (!running) return;
+    paused = true;
+    try { SBDrills.hide(); } catch (e) {}
+    try { SWalk.lockCam(null); } catch (e) {}
+    for (const m of marks) m.visible = false;
+  };
+  S.resume = function () {
+    if (!running) return;
+    paused = false;
+    for (const m of marks) m.visible = true;
+  };
+  S.tick = function (dt) {
+    if (!running) return;
+    ballTick(dt);
   };
 
   window.SBPositions = S;

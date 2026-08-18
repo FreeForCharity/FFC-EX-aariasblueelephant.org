@@ -117,6 +117,7 @@
     try { window.SBDrills && SBDrills.tick && SBDrills.tick(dt); } catch (e) {}
     try { window.SBTeam && SBTeam.tick && SBTeam.tick(dt); } catch (e) {}
     try { window.SBGame && SBGame.tick && SBGame.tick(dt); } catch (e) {}
+    try { window.SBPositions && SBPositions.tick && SBPositions.tick(dt); } catch (e) {}
     if (renderer) renderer.render(scene, camera);
   }
 
@@ -180,8 +181,8 @@
         titleEs: 'Tu álbum de calcomanías — las que ya tienes y las que faltan',
         onTap: () => { try { SBLevels.openAlbum(); } catch (e) {} } },
       { emoji: '🧭', label: 'Positions', labelEs: 'Posiciones',
-        title: 'Learn the positions — tap a spot on the field to hear about it',
-        titleEs: 'Aprende las posiciones — toca un lugar del campo para escuchar sobre él',
+        title: 'Play a round: walk every position, bat off a coach\'s pitch, then run the bases',
+        titleEs: 'Juega una ronda: recorre cada posición, batea un lanzamiento del coach y corre las bases',
         onTap: () => { try { SBPositions.open(); } catch (e) {} } },
       { emoji: '🧢', label: 'Coach', labelEs: 'Coach',
         title: 'Coach Mode — for grown-ups: progress, the cue sheet, the practice card',
