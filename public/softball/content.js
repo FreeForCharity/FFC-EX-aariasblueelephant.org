@@ -872,10 +872,27 @@
     /* the 📷 button during the pitch/swing wait — tap it to see the play
        from a different angle. The label doubles as the button's own name,
        so it always says which view you're about to switch TO. */
+    camAuto: t('📷 Default view', '📷 Vista automática'),
     camSide: t('📷 Side view', '📷 Vista lateral'),
     camBehind: t('📷 Behind you', '📷 Detrás de ti'),
     camFacing: t('📷 Facing you', '📷 De frente a ti'),
     camOverhead: t('📷 Bird\'s-eye view', '📷 Vista de pájaro'),
+
+    /* 🔁 the post-round instant replay — broadcast-style graphics, the
+       child's own name for each labelled moment as it happens again */
+    replayTitle: t('Want to see your replay?', '¿Quieres ver tu repetición?'),
+    replayIntro: t('Watch how you batted and ran the bases, just like on TV!',
+                   '¡Mira cómo bateaste y corriste las bases, como en la tele!'),
+    replayWatch: t('🔁 Watch it!', '🔁 ¡Verla!'),
+    replayBadge: t('🔁 REPLAY', '🔁 REPETICIÓN'),
+    replayBox: t('BATTER\'S BOX', 'CAJA DE BATEO'),
+    replayPitch: t('PITCH!', '¡PITCHEO!'),
+    replaySwing: t('SWING!', '¡SWING!'),
+    replayDrop: t('BAT DOWN', 'BATE ABAJO'),
+    replayFirst: t('FIRST BASE', 'PRIMERA BASE'),
+    replaySecond: t('SECOND BASE', 'SEGUNDA BASE'),
+    replayThird: t('THIRD BASE', 'TERCERA BASE'),
+    replayHome: t('HOME PLATE', 'HOME'),
     pitchReady: t('Ready? Here it comes from {coach}!', '¿Listo? ¡Ahí viene de {coach}!'),
     niceHit: t('Great hit!', '¡Buen batazo!'),
     niceHitAgain: t('Great hit! Here comes another pitch.', '¡Buen batazo! Ahí viene otro lanzamiento.'),
