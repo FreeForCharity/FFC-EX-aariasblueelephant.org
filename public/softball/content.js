@@ -878,6 +878,7 @@
     camOverhead: t('📷 Bird\'s-eye view', '📷 Vista de pájaro'),
     pitchReady: t('Ready? Here it comes from {coach}!', '¿Listo? ¡Ahí viene de {coach}!'),
     niceHit: t('Great hit!', '¡Buen batazo!'),
+    niceHitAgain: t('Great hit! Here comes another pitch.', '¡Buen batazo! Ahí viene otro lanzamiento.'),
     watchBall: t('Watch the ball!', '¡Mira la pelota!'),
     stayFirst: t('Nice and safe — stay on first base.', 'Bien seguro — quédate en primera base.'),
     goSecond: t('Nobody\'s thrown it home yet — go for second!', '¡Nadie la ha lanzado al home todavía — ve por la segunda!'),
