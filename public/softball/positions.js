@@ -38,6 +38,61 @@
   let marks = [], balls = [];
   let tour = [], curBox = null, hitLanding = null, pitchCoachId = null;
 
+  /* ══════════════════════════════════════ 📷 pick your own camera angle
+     Not able to see the ball and the batter from the default view was the
+     whole complaint — so during the pitch/swing wait, a small button lets
+     the child cycle through four angles themselves. Resets to the side view
+     (the best default) at the start of every pitch. */
+  const CAM_MODES = ['side', 'batter', 'pitcher', 'overhead'];
+  const CAM_LABEL = { side: 'camSide', batter: 'camBatter', pitcher: 'camPitcher', overhead: 'camOverhead' };
+  let camIdx = 0, elCam = null;
+
+  function pitcherPoint() {
+    const co = pitchCoachId && F.coaches && F.coaches[pitchCoachId];
+    return co ? { x: co.x, z: co.z } : { x: L.circle.x, z: L.circle.z };
+  }
+
+  function applyCamAngle() {
+    if (!curBox) return;
+    const box = curBox, pit = pitcherPoint();
+    const mode = CAM_MODES[camIdx];
+    if (mode === 'side') {
+      try { SBDrills.frameAction({ x: box.x, z: box.z }, { x: pit.x, z: pit.z }, 0, null, true); } catch (e) {}
+    } else if (mode === 'batter') {
+      const theta = Math.atan2(box.x - pit.x, box.z - pit.z);
+      try { SWalk.lockCam({ x: box.x, y: 1.35, z: box.z, theta: theta, phi: 1.08, radius: 11 }); } catch (e) {}
+    } else if (mode === 'pitcher') {
+      const theta = Math.atan2(pit.x - box.x, pit.z - box.z);
+      try { SWalk.lockCam({ x: pit.x, y: 1.35, z: pit.z, theta: theta, phi: 1.08, radius: 11 }); } catch (e) {}
+    } else {
+      const mx = (box.x + pit.x) / 2, mz = (box.z + pit.z) / 2;
+      const len = Math.hypot(pit.x - box.x, pit.z - box.z) || 1;
+      try { SWalk.lockCam({ x: mx, y: 1.15, z: mz, theta: 0, phi: 0.3, radius: Math.max(8.5, Math.min(len * 1.15 + 4.5, 20)) }); } catch (e) {}
+    }
+    updateCamBtn();
+  }
+
+  function buildCamBtn() {
+    if (elCam || !document.body) return;
+    elCam = document.createElement('button');
+    elCam.id = 'sbPosCam';
+    elCam.addEventListener('click', () => {
+      sfx('tap');
+      camIdx = (camIdx + 1) % CAM_MODES.length;
+      applyCamAngle();
+    });
+    document.body.appendChild(elCam);
+  }
+  function updateCamBtn() {
+    if (!elCam) return;
+    const label = tr(C.posLesson[CAM_LABEL[CAM_MODES[camIdx]]]);
+    elCam.textContent = label;
+    elCam.title = label;
+    elCam.setAttribute('aria-label', label);
+  }
+  function showCamBtn() { buildCamBtn(); camIdx = 0; elCam.style.display = 'flex'; updateCamBtn(); }
+  function hideCamBtn() { if (elCam) elCam.style.display = 'none'; }
+
   function outfieldOn() { try { return !!LV().G.outfieldOn; } catch (e) { return false; } }
 
   /* the name to call a base by, reusing the position data already written
@@ -201,11 +256,13 @@
     if (!running) return;
     if (co) pitchPose(co);
     const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
-    /* side-on to the pitcher↔batter line, and held open (no auto-timer) —
-       a swing can come at any tap, so the shot stays until the swing itself
-       releases it, not until a clock guesses the wait is over. This is what
-       actually shows the pitch AND the batter together. */
-    try { SBDrills.frameAction({ x: from.x, z: from.z }, { x: curBox.x, z: curBox.z }, 0, null, true); } catch (e) {}
+    /* side-on to the pitcher↔batter line by default, held open (no auto-
+       timer) — a swing can come at any tap, so the shot stays until the
+       swing itself releases it. 📷 lets the child pick a different angle
+       for the whole wait if the default one doesn't show it well enough. */
+    camIdx = 0;
+    applyCamAngle();
+    showCamBtn();
     flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
     setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
     const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
@@ -250,6 +307,7 @@
       /* release the pitch/swing camera now, right as we hand off to the next
          phase — not on a timer that has no idea whether we're still there */
       try { SWalk.lockCam(null); } catch (e) {}
+      hideCamBtn();
       afterHit();
     }, 2000 * speedMul());
   }
@@ -405,6 +463,7 @@
     running = false;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
+    hideCamBtn();
     SWalk.freeze(false);
     SWalk.setPose(null);
     SWalk.hold(null);
@@ -420,6 +479,7 @@
     running = false;
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
+    hideCamBtn();
     try { SWalk.removeSpot('posStop'); } catch (e) {}
     try { SWalk.setPose(null); SWalk.hold(null); SWalk.freeze(false); SWalk.helmet(false); SWalk.lockCam(null); } catch (e) {}
     if (pitchCoachId) { const co = F.coaches && F.coaches[pitchCoachId]; if (co) co.pose = null; }
@@ -429,6 +489,7 @@
     if (!running) return;
     paused = true;
     try { SBDrills.hide(); } catch (e) {}
+    hideCamBtn();
     try { SWalk.lockCam(null); } catch (e) {}
     for (const m of marks) m.visible = false;
   };
