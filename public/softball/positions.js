@@ -39,38 +39,50 @@
   let tour = [], curBox = null, hitLanding = null, pitchCoachId = null;
 
   /* ══════════════════════════════════════ 📷 pick your own camera angle
-     Not able to see the ball and the batter from the default view was the
-     whole complaint — so during the pitch/swing wait, a small button lets
-     the child cycle through four angles themselves. Resets to the side view
-     (the best default) at the start of every pitch. */
-  const CAM_MODES = ['side', 'batter', 'pitcher', 'overhead'];
-  const CAM_LABEL = { side: 'camSide', batter: 'camBatter', pitcher: 'camPitcher', overhead: 'camOverhead' };
-  let camIdx = 0, elCam = null;
+     On for the WHOLE round, not just the pitch — Nilu's tour, the at-bat and
+     every run between bases all use whichever angle the child last picked.
+     None of the four locks a world point: the camera always keeps
+     re-centring on wherever the child actually IS, so the same angle works
+     whether they're standing still for a pitch or walking clear across the
+     outfield. Only the relative angle (theta/phi/radius) is fixed. */
+  const CAM_MODES = ['side', 'behind', 'facing', 'overhead'];
+  const CAM_LABEL = { side: 'camSide', behind: 'camBehind', facing: 'camFacing', overhead: 'camOverhead' };
+  let camIdx = 0, elCam = null, curTarget = null;
 
-  function pitcherPoint() {
-    const co = pitchCoachId && F.coaches && F.coaches[pitchCoachId];
-    return co ? { x: co.x, z: co.z } : { x: L.circle.x, z: L.circle.z };
+  /* whichever perpendicular side is closer to where the camera already is,
+     so the world never spins round underneath the child — same rule
+     drills.js's frameAction/frameFollow already use for this exact reason */
+  function perpTheta(me, target) {
+    const dx = target.x - me.x, dz = target.z - me.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const px = -dz / len, pz = dx / len;
+    const t1 = Math.atan2(px, pz), t2 = Math.atan2(-px, -pz);
+    let cur = 0;
+    try { cur = SWalk.camTheta(); } catch (e) {}
+    const off = (t) => { let d = t - cur; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return Math.abs(d); };
+    return off(t1) <= off(t2) ? t1 : t2;
   }
 
   function applyCamAngle() {
-    if (!curBox) return;
-    const box = curBox, pit = pitcherPoint();
+    if (!curTarget || !running) return;
+    const me = SWalk.pos, target = curTarget;
     const mode = CAM_MODES[camIdx];
     if (mode === 'side') {
-      try { SBDrills.frameAction({ x: box.x, z: box.z }, { x: pit.x, z: pit.z }, 0, null, true); } catch (e) {}
-    } else if (mode === 'batter') {
-      const theta = Math.atan2(box.x - pit.x, box.z - pit.z);
-      try { SWalk.lockCam({ x: box.x, y: 1.35, z: box.z, theta: theta, phi: 1.08, radius: 11 }); } catch (e) {}
-    } else if (mode === 'pitcher') {
-      const theta = Math.atan2(pit.x - box.x, pit.z - box.z);
-      try { SWalk.lockCam({ x: pit.x, y: 1.35, z: pit.z, theta: theta, phi: 1.08, radius: 11 }); } catch (e) {}
+      try { SWalk.lockCam({ theta: perpTheta(me, target), phi: 1.05, radius: 10 }); } catch (e) {}
+    } else if (mode === 'behind') {
+      const theta = Math.atan2(me.x - target.x, me.z - target.z);
+      try { SWalk.lockCam({ theta: theta, phi: 1.08, radius: 9 }); } catch (e) {}
+    } else if (mode === 'facing') {
+      const theta = Math.atan2(target.x - me.x, target.z - me.z);
+      try { SWalk.lockCam({ theta: theta, phi: 1.08, radius: 9 }); } catch (e) {}
     } else {
-      const mx = (box.x + pit.x) / 2, mz = (box.z + pit.z) / 2;
-      const len = Math.hypot(pit.x - box.x, pit.z - box.z) || 1;
-      try { SWalk.lockCam({ x: mx, y: 1.15, z: mz, theta: 0, phi: 0.3, radius: Math.max(8.5, Math.min(len * 1.15 + 4.5, 20)) }); } catch (e) {}
+      try { SWalk.lockCam({ theta: 0, phi: 0.3, radius: 13 }); } catch (e) {}
     }
     updateCamBtn();
   }
+  /* call whenever the destination changes (a new tour stop, the pitcher,
+     the next base) — re-applies whichever angle the child already picked */
+  function setCamTarget(t) { curTarget = t; applyCamAngle(); }
 
   function buildCamBtn() {
     if (elCam || !document.body) return;
@@ -90,10 +102,19 @@
     elCam.title = label;
     elCam.setAttribute('aria-label', label);
   }
-  function showCamBtn() { buildCamBtn(); camIdx = 0; elCam.style.display = 'flex'; updateCamBtn(); }
+  function showCamBtn() { buildCamBtn(); elCam.style.display = 'flex'; updateCamBtn(); }
   function hideCamBtn() { if (elCam) elCam.style.display = 'none'; }
 
   function outfieldOn() { try { return !!LV().G.outfieldOn; } catch (e) { return false; } }
+
+  /* Nilu visibly leads the way to wherever the ground trail (F.guideTo)
+     points — without this she just stands there while a line does the
+     talking, which is the "she isn't showing me where to go" complaint. */
+  function guideNilu(at) {
+    const N = F.nilu;
+    if (!N) return;
+    N.goTo(at.x + 2.0, at.z + 1.6, () => { try { N.lookAt(SWalk.pos.x, SWalk.pos.z); } catch (e) {} });
+  }
 
   /* the name to call a base by, reusing the position data already written
      for the tour so this never drifts out of sync with it */
@@ -167,9 +188,12 @@
 
   function startTour() {
     tour = tourList();
+    showCamBtn();
     say(C.posLesson.startHome, null, { emoji: '🏠' });
     clearMarks();
     marks.push(F.marker(L.home.x, L.home.z, 0xffd43b, 2.4));
+    guideNilu(L.home);
+    setCamTarget({ x: L.home.x, z: L.home.z });
     try { F.guideTo(L.home.x, L.home.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: L.home.x, z: L.home.z, r: 2.8, once: true, onEnter: () => {
@@ -194,6 +218,8 @@
     tag.scale.set(3.0, 0.9, 1);
     scene.add(tag); marks.push(tag);
     moveSay(tr(pos.name));
+    guideNilu(at);
+    setCamTarget({ x: at.x, z: at.z });
     try { F.guideTo(at.x, at.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: at.x, z: at.z, r: 2.8, once: true, onEnter: () => {
@@ -212,6 +238,8 @@
     curBox = (SWalk.hand() === 'L') ? L.boxL : L.boxR;
     marks.push(F.marker(curBox.x, curBox.z, 0xffd43b, 1.6));
     marks.push(F.footprints(curBox.x, curBox.z, Math.PI));
+    guideNilu(curBox);
+    setCamTarget({ x: curBox.x, z: curBox.z });
     try { F.guideTo(curBox.x, curBox.z, 1.7); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: curBox.x, z: curBox.z, r: 1.9, once: true, onEnter: () => {
@@ -256,13 +284,9 @@
     if (!running) return;
     if (co) pitchPose(co);
     const from = co ? { x: co.x, y: 0.9, z: co.z } : { x: L.circle.x, y: 0.9, z: L.circle.z };
-    /* side-on to the pitcher↔batter line by default, held open (no auto-
-       timer) — a swing can come at any tap, so the shot stays until the
-       swing itself releases it. 📷 lets the child pick a different angle
-       for the whole wait if the default one doesn't show it well enough. */
-    camIdx = 0;
-    applyCamAngle();
-    showCamBtn();
+    /* the pitcher is now "where we're looking toward" for camera purposes —
+       whichever angle the child already had picked keeps applying here */
+    setCamTarget({ x: from.x, z: from.z });
     flyBall(from, { x: curBox.x, y: 1.0, z: curBox.z }, { dur: 1.7, h: 1.3 });
     setTimeout(() => { if (co) co.pose = null; }, 1100 * speedMul());
     const swing = (C.drills.bat.steps.find((s) => s.id === 'swing')) || {};
@@ -304,10 +328,6 @@
       if (!running) return;
       SWalk.setPose(null);
       const rig = SWalk.rig(); if (rig) rig.lean.rotation.y = 0;
-      /* release the pitch/swing camera now, right as we hand off to the next
-         phase — not on a timer that has no idea whether we're still there */
-      try { SWalk.lockCam(null); } catch (e) {}
-      hideCamBtn();
       afterHit();
     }, 2000 * speedMul());
   }
@@ -334,7 +354,8 @@
     const target = throughFirst();
     clearMarks();
     marks.push(F.marker(target.x, target.z, 0x69db7c, 2.4));
-    try { SBDrills.frameFollow(SWalk.pos, target, 8); } catch (e) {}
+    guideNilu(target);
+    setCamTarget({ x: target.x, z: target.z });
     try { F.guideTo(target.x, target.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: target.x, z: target.z, r: 2.8, once: true, onEnter: () => {
@@ -375,8 +396,9 @@
     if (!running) return;
     clearMarks();
     moveSay(posName('2b'));
+    guideNilu(L.second);
+    setCamTarget({ x: L.second.x, z: L.second.z });
     marks.push(F.marker(L.second.x, L.second.z, 0x69db7c, 2.4));
-    try { SBDrills.frameFollow(SWalk.pos, L.second, 8); } catch (e) {}
     try { F.guideTo(L.second.x, L.second.z, 2.6); } catch (e) {}
     SWalk.freeze(false);
     SWalk.addSpot({ id: 'posStop', x: L.second.x, z: L.second.z, r: 2.8, once: true, onEnter: () => {
@@ -402,8 +424,9 @@
       }
       const p = route[i], name = names[i]; i++;
       moveSay(name);
+      guideNilu(p);
+      setCamTarget({ x: p.x, z: p.z });
       marks.push(F.marker(p.x, p.z, 0x69db7c, 2.4));
-      try { SBDrills.frameFollow(SWalk.pos, p, 8); } catch (e) {}
       try { F.guideTo(p.x, p.z, 2.6); } catch (e) {}
       SWalk.addSpot({ id: 'posStop', x: p.x, z: p.z, r: 2.8, once: true, onEnter: () => {
         if (!running || paused) return;
@@ -417,6 +440,8 @@
     if (!running) return;
     clearMarks(); clearBalls();
     SWalk.freeze(true);
+    try { SWalk.lockCam(null); } catch (e) {}
+    hideCamBtn();
     try { F.confetti(SWalk.pos.x, 2.6, SWalk.pos.z, 36); } catch (e) {}
     sfx('star');
     const title = outcome === 'home' ? C.posLesson.scoredHome
@@ -455,6 +480,7 @@
     try { SWalk.clearSpots(); } catch (e) {}
     running = true; paused = false; swung = false;
     curBox = null; hitLanding = null; pitchCoachId = null;
+    camIdx = 0; curTarget = null;
     clearMarks(); clearBalls();
     startTour();
   };
@@ -464,6 +490,7 @@
     clearMarks(); clearBalls();
     try { SBDrills.hide(); } catch (e) {}
     hideCamBtn();
+    try { SWalk.lockCam(null); } catch (e) {}
     SWalk.freeze(false);
     SWalk.setPose(null);
     SWalk.hold(null);
@@ -497,6 +524,10 @@
     if (!running) return;
     paused = false;
     for (const m of marks) m.visible = true;
+    /* bring the camera picker back and re-apply wherever it was pointed —
+       a raised hand shouldn't cost the child their chosen view for the rest
+       of the round */
+    if (curTarget) { showCamBtn(); applyCamAngle(); }
   };
   S.tick = function (dt) {
     if (!running) return;
