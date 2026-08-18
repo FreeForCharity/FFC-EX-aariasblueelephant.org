@@ -99,6 +99,19 @@
 }
 #swHome:active { transform: scale(.94); }
 
+/* 📷 the Positions round's pitch/swing camera-angle picker — stacked under
+   #swHome, same corner, same pill styling. Only shown during the pitch/swing
+   wait (positions.js), so it never competes with #sbDo (bottom-centre). */
+#sbPosCam {
+  position: fixed; left: var(--sb-left); top: calc(var(--sb-top) + 114px);
+  z-index: 45; display: none; align-items: center; justify-content: center;
+  min-height: 44px; padding: 7px 16px; border: 0; cursor: pointer;
+  border-radius: 999px; background: rgba(255, 255, 255, .92); color: var(--sb-ink);
+  font: inherit; font-size: 14px; font-weight: 900; white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(40, 40, 90, .18);
+}
+#sbPosCam:active { transform: scale(.94); }
+
 /* sits ABOVE #kToast (kit, bottom:18vh) so a festive greeting never lands on it */
 #swHint {
   position: fixed; left: 50%; bottom: calc(18vh + 72px); transform: translateX(-50%);

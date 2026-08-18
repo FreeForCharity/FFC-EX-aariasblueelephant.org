@@ -869,6 +869,13 @@
       { emoji: '🥁', line: t('I\'m marching to {pos}!', '¡Voy marchando a {pos}!') },
     ],
     batIntro: t('Now let\'s bat! A coach will pitch to you.', '¡Ahora vamos a batear! Un coach te va a pitchear.'),
+    /* the 📷 button during the pitch/swing wait — tap it to see the play
+       from a different angle. The label doubles as the button's own name,
+       so it always says which view you're about to switch TO. */
+    camSide: t('📷 Side view', '📷 Vista lateral'),
+    camBatter: t('📷 Behind you', '📷 Detrás de ti'),
+    camPitcher: t('📷 Behind the pitcher', '📷 Detrás del pitcher'),
+    camOverhead: t('📷 Bird\'s-eye view', '📷 Vista de pájaro'),
     pitchReady: t('Ready? Here it comes from {coach}!', '¿Listo? ¡Ahí viene de {coach}!'),
     niceHit: t('Great hit!', '¡Buen batazo!'),
     watchBall: t('Watch the ball!', '¡Mira la pelota!'),
