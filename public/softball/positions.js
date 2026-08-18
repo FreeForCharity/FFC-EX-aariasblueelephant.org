@@ -179,10 +179,23 @@
   const INFIELD_ORDER = ['1b', '2b', '3b', 'ss', 'p', 'c'];
   const OUTFIELD_ORDER = ['lf', 'cf', 'rf'];
 
+  /* a new shuffle every round, so the tour is never the same fixed sequence
+     twice — infield and outfield are shuffled separately (not fully mixed
+     together) so the walk still stays roughly infield-then-outfield rather
+     than zig-zagging the whole field back and forth */
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
   function tourList() {
     const byId = {};
     for (const p of (C.positions || [])) byId[p.id] = p;
-    const ids = outfieldOn() ? INFIELD_ORDER.concat(OUTFIELD_ORDER) : INFIELD_ORDER;
+    const ids = outfieldOn() ? shuffled(INFIELD_ORDER).concat(shuffled(OUTFIELD_ORDER)) : shuffled(INFIELD_ORDER);
     return ids.map((id) => byId[id]).filter(Boolean);
   }
 
@@ -230,10 +243,18 @@
     } });
   }
 
-  /* ══════════════════════════════════════════════════════ 2 · THE AT-BAT */
+  /* ══════════════════════════════════════════════════════ 2 · THE AT-BAT
+     A single pitch was over before a child could get a feel for it — now
+     there are a few practice swings first (a new coach can rotate in each
+     time), and only the LAST one carries on into dropping the bat and
+     running the bases. */
+  const BAT_REPS = 3;
+  let batRep = 0;
+
   function startBatting() {
     if (!running) return;
     clearMarks();
+    batRep = 0;
     say(C.posLesson.batIntro, null, { emoji: '🏏' });
     curBox = (SWalk.hand() === 'L') ? L.boxL : L.boxR;
     marks.push(F.marker(curBox.x, curBox.z, 0xffd43b, 1.6));
@@ -266,9 +287,10 @@
     };
   }
 
-  /* a different coach pitches every round — Coach AJ, Scott and Sam all take turns */
+  /* a different coach can pitch every rep — Coach AJ, Scott and Sam all take turns */
   function doPitch() {
     if (!running) return;
+    try { LV().cueStep(batRep + 1, BAT_REPS); } catch (e) {}
     const ids = ['aj', 'scott', 'sam'];
     pitchCoachId = ids[Math.floor(Math.random() * ids.length)];
     const co = F.coaches && F.coaches[pitchCoachId];
@@ -318,7 +340,8 @@
     setTimeout(() => {
       if (!running) return;
       sfx('yes');
-      say(C.posLesson.niceHit, null, { emoji: '🎉' });
+      batRep++;
+      say(batRep < BAT_REPS ? C.posLesson.niceHitAgain : C.posLesson.niceHit, null, { emoji: '🎉' });
       const a = -0.55 + Math.random() * 1.1;
       const dist = 22 + Math.random() * 16;
       hitLanding = { x: Math.sin(a) * dist, z: -Math.cos(a) * dist };
@@ -328,13 +351,19 @@
       if (!running) return;
       SWalk.setPose(null);
       const rig = SWalk.rig(); if (rig) rig.lean.rotation.y = 0;
-      afterHit();
+      if (batRep < BAT_REPS) {
+        swung = false;
+        setTimeout(() => { if (running && !paused) doPitch(); }, 1400 * speedMul());
+      } else {
+        afterHit();
+      }
     }, 2000 * speedMul());
   }
 
   /* ══════════════════════════════════════════════════════ 3 · THE CALL */
   function afterHit() {
     if (!running) return;
+    try { LV().cueStep(0, 0); } catch (e) {}
     const drop = (C.drills.drop.steps.find((s) => s.id === 'putdown')) || {};
     const go = () => {
       SWalk.hold(null); sfx('pop');
