@@ -845,15 +845,40 @@
   ];
 
   /* ═══════════════════════════════════════════ 8b. LEARN THE POSITIONS
-     A tap-to-learn field diagram, opened from the 🧭 Positions button any
-     time. Six infield spots always show; the three outfield spots only show
-     once a grown-up turns them on in Coach Mode → Set up — most beginners
-     only need the infield first. */
+     Opened from the 🧭 Positions button any time — a short guided round, not
+     a lesson to read: Nilu walks you to every spot, a coach pitches to you
+     for real, and the run to first ends in a random call (stay, push for
+     second, or run it all the way home). Outfield spots only join the tour
+     once a grown-up turns them on in Coach Mode → Set up. */
   C.posLesson = {
-    title: t('Learn the Positions', 'Aprende las posiciones'),
-    intro: t('Everybody on the team has their own spot. Tap a spot to learn about it.',
-             'Todos en el equipo tienen su propio lugar. Toca un lugar para aprender sobre él.'),
-    hint: t('Tap a position to hear about it.', 'Toca una posición para escuchar sobre ella.'),
+    startHome: t('Let\'s start at home plate!', '¡Empecemos en el home!'),
+    homeDoes: t('This is home plate. You start here to bat, and you run back here to score.',
+                'Este es el home. Aquí empiezas a batear, y aquí regresas para anotar.'),
+    /* every time Nilu leads the way — to a position on the tour, or a base
+       after a hit — she picks one of these at random, so it's never the same
+       plain "go to X" twice in a row and kids stay tuned in for how she's
+       getting there this time. */
+    moveStyles: [
+      { emoji: '🐦', line: t('I\'m flying to {pos}!', '¡Estoy volando a {pos}!') },
+      { emoji: '🦘', line: t('I\'m hopping to {pos}!', '¡Estoy saltando a {pos}!') },
+      { emoji: '↘️', line: t('I\'m walking diagonally to {pos}!', '¡Voy caminando en diagonal a {pos}!') },
+      { emoji: '🚀', line: t('I\'m zooming to {pos}!', '¡Voy volando rapidísimo a {pos}!') },
+      { emoji: '🤫', line: t('I\'m tiptoeing to {pos}!', '¡Voy de puntitas a {pos}!') },
+      { emoji: '🏃', line: t('I\'m racing you to {pos}!', '¡Te reto a una carrera hasta {pos}!') },
+      { emoji: '🕺', line: t('I\'m dancing over to {pos}!', '¡Voy bailando hacia {pos}!') },
+      { emoji: '🥁', line: t('I\'m marching to {pos}!', '¡Voy marchando a {pos}!') },
+    ],
+    batIntro: t('Now let\'s bat! A coach will pitch to you.', '¡Ahora vamos a batear! Un coach te va a pitchear.'),
+    pitchReady: t('Ready? Here it comes from {coach}!', '¿Listo? ¡Ahí viene de {coach}!'),
+    niceHit: t('Great hit!', '¡Buen batazo!'),
+    watchBall: t('Watch the ball!', '¡Mira la pelota!'),
+    stayFirst: t('Nice and safe — stay on first base.', 'Bien seguro — quédate en primera base.'),
+    goSecond: t('Nobody\'s thrown it home yet — go for second!', '¡Nadie la ha lanzado al home todavía — ve por la segunda!'),
+    safeSecond: t('Safe on second! Great base running.', '¡Quieto en segunda! Excelente carrera.'),
+    goHome: t('That one flew deep — run all the way home!', '¡Esa voló lejos — corre hasta el home!'),
+    scoredHome: t('You scored! Everybody is cheering!', '¡Anotaste! ¡Todos están gritando!'),
+    playAgain: t('Tap 🧭 Positions any time to play again — it\'s a little different every time.',
+                 'Toca 🧭 Posiciones cuando quieras para jugar otra vez — es un poco diferente cada vez.'),
   };
 
   C.gameDay = {
@@ -1018,6 +1043,9 @@
                'Levantaste la mano y pediste lo que necesitabas. Eso es ser muy valiente.') },
       { id: 'game', emoji: '🏆', name: t('Game Day Medal', 'Medalla del día de juego'),
         how: t('You played a real game and got your medal.', 'Jugaste un partido de verdad y ganaste tu medalla.') },
+      { id: 'posplay', emoji: '🧭', name: t('Position Pro', 'Experto en posiciones'),
+        how: t('You visited every position, batted off a coach\'s pitch, and made the call on the bases.',
+               'Visitaste cada posición, bateaste un lanzamiento de un coach, y decidiste qué hacer en las bases.') },
     ],
   };
 
