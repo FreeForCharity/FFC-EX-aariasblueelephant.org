@@ -873,8 +873,8 @@
        from a different angle. The label doubles as the button's own name,
        so it always says which view you're about to switch TO. */
     camSide: t('📷 Side view', '📷 Vista lateral'),
-    camBatter: t('📷 Behind you', '📷 Detrás de ti'),
-    camPitcher: t('📷 Behind the pitcher', '📷 Detrás del pitcher'),
+    camBehind: t('📷 Behind you', '📷 Detrás de ti'),
+    camFacing: t('📷 Facing you', '📷 De frente a ti'),
     camOverhead: t('📷 Bird\'s-eye view', '📷 Vista de pájaro'),
     pitchReady: t('Ready? Here it comes from {coach}!', '¿Listo? ¡Ahí viene de {coach}!'),
     niceHit: t('Great hit!', '¡Buen batazo!'),
