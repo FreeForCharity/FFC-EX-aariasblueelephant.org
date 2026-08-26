@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Aaria's Blue Elephant — Digital Card</title>
-  <meta name="description" content="Aaria's Blue Elephant — 501(c)(3) nonprofit. Play Without Barriers." />
+  <meta name="description" content="Aaria's Blue Elephant — 501(c)(3) nonprofit. Building a New Inclusive World." />
   <style>
     :root {
       --dark: #0F172A;
@@ -23,14 +23,14 @@
 
     html, body {
       margin: 0;
-      height: 100%;
+      min-height: 100%;
       background: var(--dark);
       color: var(--text);
       font-family: var(--font);
     }
 
     body {
-      padding: 14px 12px;
+      padding: 16px 12px;
       position: relative;
       overflow-x: hidden;
       display: flex;
@@ -61,7 +61,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      gap: 16px;
       z-index: 100;
       transition: opacity 0.35s ease;
     }
@@ -69,12 +69,17 @@
     #splash.fade-out { opacity: 0; }
 
     .splash-logo {
-      width: 84px;
-      height: 84px;
+      width: 104px;
+      height: 104px;
       border-radius: 50%;
       object-fit: cover;
       box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25);
-      animation: elephantShake 1.2s ease-in-out 1;
+      opacity: 0;
+      animation: logoPopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .splash-logo { animation: none; opacity: 1; }
     }
 
     .splash-label {
@@ -85,17 +90,10 @@
       animation: pulse 1.2s ease-in-out infinite;
     }
 
-    @keyframes elephantShake {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      10% { transform: translateY(-5px) rotate(-10deg); }
-      20% { transform: translateY(0) rotate(9deg); }
-      30% { transform: translateY(-6px) rotate(-7deg); }
-      40% { transform: translateY(0) rotate(7deg); }
-      50% { transform: translateY(-4px) rotate(-5deg); }
-      60% { transform: translateY(0) rotate(5deg); }
-      70% { transform: translateY(-2px) rotate(-2deg); }
-      80% { transform: translateY(0) rotate(2deg); }
-      90%, 100% { transform: translateY(0) rotate(0deg); }
+    @keyframes logoPopIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
 
     @keyframes pulse {
@@ -108,12 +106,12 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 400px;
+      max-width: 460px;
       margin: 0 auto;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 16px 16px 14px;
+      border-radius: 22px;
+      padding: 22px 22px 18px;
       text-align: center;
       box-shadow: 0 20px 60px rgba(0,0,0,0.35);
       opacity: 0;
@@ -123,18 +121,56 @@
 
     main.card.visible { opacity: 1; transform: translateY(0); }
 
-    /* Header row: avatar + name/tagline + mini QR, all in one compact line */
+    main.card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 22px 22px 0 0;
+      background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink), var(--amber));
+    }
+
+    /* Header banner: gradient hero band bleeding to the card's edges */
+    .header-banner {
+      position: relative;
+      margin: -22px -22px 14px;
+      padding: 20px 22px 16px;
+      border-radius: 22px 22px 0 0;
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(167, 139, 250, 0.14));
+    }
+
+    .donate-pill {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(244, 114, 182, 0.18);
+      border: 1px solid rgba(244, 114, 182, 0.45);
+      color: var(--pink);
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+    .donate-pill:hover { transform: translateY(-1px); border-color: var(--pink); }
+    .donate-pill svg { width: 11px; height: 11px; }
+
+    /* Header: avatar + name + tagline */
     .header-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 14px;
       text-align: left;
-      margin-bottom: 8px;
+      padding-right: 62px;
     }
 
     .avatar {
-      width: 60px;
-      height: 60px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid var(--cyan);
@@ -146,116 +182,176 @@
     .header-text { flex: 1 1 auto; min-width: 0; }
 
     h1 {
-      font-size: 1.05rem;
+      font-size: 1.25rem;
       margin: 0;
       letter-spacing: -0.01em;
       line-height: 1.25;
     }
 
-    .subtitle {
-      margin: 2px 0 0;
-      font-size: 0.72rem;
-      line-height: 1.35;
-      color: var(--muted);
-    }
-
-    .subtitle .badge-inline {
-      font-weight: 700;
-      color: var(--cyan);
-    }
-
-    .subtitle .tagline-inline {
-      font-weight: 700;
+    .tagline {
+      margin: 3px 0 0;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.3;
       background: linear-gradient(90deg, var(--cyan), var(--purple));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
 
-    .qr-mini {
-      flex-shrink: 0;
+    .badge-row {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .badge-row { flex-wrap: nowrap; justify-content: space-between; }
+
+    .badge {
+      display: inline-flex;
       align-items: center;
-      gap: 2px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      padding: 4px 7px;
+      border-radius: 999px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: border-color 0.12s ease, transform 0.12s ease;
     }
 
-    .qr-mini img {
-      width: 52px;
-      height: 52px;
-      border-radius: 6px;
-      background: #fff;
-      padding: 3px;
-      display: block;
+    .badge:hover { border-color: var(--cyan); transform: translateY(-1px); }
+
+    .badge.badge-amber {
+      color: var(--amber);
+      background: rgba(251, 191, 36, 0.12);
+      border-color: rgba(251, 191, 36, 0.3);
     }
 
-    .qr-mini span {
+    .badge.badge-amber:hover { border-color: var(--amber); }
+
+    .badge.badge-green {
+      color: #34D399;
+      background: rgba(52, 211, 153, 0.12);
+      border-color: rgba(52, 211, 153, 0.3);
+    }
+
+    .badge.badge-green:hover { border-color: #34D399; }
+
+    /* QR — centered, the visual anchor of the card */
+    .qr-section {
+      background: rgba(34, 211, 238, 0.05);
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--muted);
-      font-size: 0.55rem;
+      text-align: left;
+      margin: 0 0 8px;
+    }
+
+    .qr-section img {
+      width: 132px;
+      height: 132px;
+      border-radius: 10px;
+      background: #fff;
+      padding: 6px;
+      display: block;
+      margin: 0 auto 8px;
+    }
+
+    .qr-section span {
+      color: var(--muted);
+      font-size: 0.75rem;
       letter-spacing: 0.03em;
       text-transform: uppercase;
     }
 
     .bio {
       color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.4;
-      margin: 0 0 10px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
     }
 
     .btn-save {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       width: 100%;
-      padding: 9px 16px;
+      padding: 13px 18px;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       background: var(--cyan);
       color: var(--dark);
-      font-size: 0.88rem;
+      font-size: 0.95rem;
       font-weight: 800;
       cursor: pointer;
       transition: transform 0.12s ease, background 0.12s ease;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
 
     .btn-save:hover { background: #67e2f5; transform: translateY(-1px); }
     .btn-save:active { transform: translateY(0); }
-    .btn-save svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .btn-save svg { width: 19px; height: 19px; flex-shrink: 0; }
 
     .links {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
     .link-btn {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 10px;
-      border-radius: 10px;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,0.03);
       color: var(--text);
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.86rem;
       font-weight: 600;
       transition: border-color 0.12s ease, transform 0.12s ease;
     }
 
     .link-btn:hover { border-color: var(--cyan); transform: translateY(-1px); }
-    .link-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    .link-btn.tint-green { background: rgba(34, 197, 94, 0.07); border-color: rgba(34, 197, 94, 0.25); }
+    .link-btn.tint-blue { background: rgba(59, 130, 246, 0.07); border-color: rgba(59, 130, 246, 0.25); }
+    .link-btn.tint-cyan { background: rgba(34, 211, 238, 0.07); border-color: rgba(34, 211, 238, 0.25); }
+    .link-btn.tint-whatsapp { background: rgba(37, 211, 102, 0.07); border-color: rgba(37, 211, 102, 0.25); }
+
+    .icon-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-badge svg { width: 15px; height: 15px; }
 
     .link-btn.donate {
       grid-column: 1 / -1;
+      justify-content: center;
       background: linear-gradient(90deg, rgba(244,114,182,0.15), rgba(167,139,250,0.15));
       border-color: rgba(244,114,182,0.4);
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
     .link-btn.donate:hover { border-color: var(--pink); }
 
@@ -263,47 +359,38 @@
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 10px;
+      margin-bottom: 16px;
     }
 
     .social-btn {
-      width: 34px;
-      height: 34px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
       transition: border-color 0.12s ease, transform 0.12s ease;
     }
 
-    .social-btn:hover { border-color: var(--cyan); transform: translateY(-1px); }
-    .social-btn svg { width: 16px; height: 16px; }
-
-    .verified-line {
-      font-size: 0.68rem;
-      line-height: 1.4;
-      color: var(--muted);
-      margin: 0 0 6px;
-    }
-
-    .verified-line strong { color: var(--cyan); }
-    .verified-line a { color: var(--text); }
+    .social-btn:hover { transform: translateY(-2px); }
+    .social-btn svg { width: 19px; height: 19px; }
 
     .legal {
       color: var(--muted);
-      font-size: 0.65rem;
-      line-height: 1.35;
+      font-size: 0.68rem;
+      line-height: 1.4;
       margin: 0;
     }
 
     @media (max-width: 340px) {
-      .avatar { width: 50px; height: 50px; }
-      .qr-mini img { width: 44px; height: 44px; }
-      h1 { font-size: 0.95rem; }
+      .avatar { width: 58px; height: 58px; }
+      .qr-section img { width: 108px; height: 108px; }
+      h1 { font-size: 1.1rem; }
+      .links { grid-template-columns: 1fr; }
+      .badge-row { flex-wrap: wrap; justify-content: flex-start; }
+      .badge { white-space: normal; }
     }
   </style>
 </head>
@@ -311,79 +398,224 @@
 
   <div id="splash">
     <img class="splash-logo" src="assets/logo.png" alt="Aaria's Blue Elephant" />
-    <div class="splash-label">Loading…</div>
+    <div class="splash-label" data-en="Loading…" data-es="Cargando…">Loading…</div>
   </div>
 
   <main class="card" id="card" hidden>
-    <div class="header-row">
-      <img class="avatar" src="assets/logo.png" alt="Aaria's Blue Elephant logo" />
-      <div class="header-text">
-        <h1>Aaria's Blue Elephant</h1>
-        <p class="subtitle"><span class="badge-inline">501(c)(3)</span> · <span class="tagline-inline">Play Without Barriers</span></p>
-      </div>
-      <div class="qr-mini">
-        <img src="assets/qr.png" alt="QR code to this digital card" />
-        <span>Scan</span>
+    <div class="header-banner">
+      <a class="donate-pill" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-10.2-9.3C0 8.5 1.4 5 4.9 4.1 7.4 3.5 9.7 4.6 12 7.2c2.3-2.6 4.6-3.7 7.1-3.1 3.5.9 4.9 4.4 3.1 7.6C19.5 16.4 12 21 12 21z"/></svg>
+        <span data-en="Donate" data-es="Donar">Donate</span>
+      </a>
+      <div class="header-row">
+        <img class="avatar" src="assets/logo.png" alt="Aaria's Blue Elephant Logo" data-alt-en="Aaria's Blue Elephant Logo" data-alt-es="Logo de Aaria's Blue Elephant" />
+        <div class="header-text">
+          <h1>Aaria's Blue Elephant</h1>
+          <p class="tagline" data-en="Building a New Inclusive World" data-es="Construyendo un Nuevo Mundo Inclusivo">Building a New Inclusive World</p>
+        </div>
       </div>
     </div>
 
-    <p class="bio">Inclusive play for neurodivergent &amp; neurotypical kids — early intervention, community, joy.</p>
+    <div class="badge-row">
+      <a class="badge" href="https://aariasblueelephant.org/" target="_blank" rel="noopener">501(c)(3)</a>
+      <a class="badge badge-amber" href="https://aariasblueelephant.org/" target="_blank" rel="noopener" data-en="100% Free" data-es="100% Gratis">100% Free</a>
+      <a class="badge badge-green" href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener">✓ Candid Platinum</a>
+    </div>
+
+    <div class="qr-section">
+      <img src="assets/qr.png" alt="QR code to this digital card" data-alt-en="QR code to this digital card" data-alt-es="Código QR de esta tarjeta digital" />
+      <span data-en="Scan to connect" data-es="Escanea para conectar">Scan to connect</span>
+    </div>
+
+    <p class="bio" data-en="A safe haven where neurodivergent and neurotypical children grow together. We believe in early intervention, inclusive play, and building a compassionate community." data-es="Un refugio seguro donde niños neurodivergentes y neurotípicos crecen juntos. Creemos en la intervención temprana, el juego inclusivo y la construcción de una comunidad compasiva.">A safe haven where neurodivergent and neurotypical children grow together. We believe in early intervention, inclusive play, and building a compassionate community.</p>
 
     <button class="btn-save" id="save-contact" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
-      Save My Contact
+      <span data-en="Save My Contact" data-es="Guardar Mi Contacto">Save My Contact</span>
     </button>
 
+    <p class="section-label" data-en="Get in Touch" data-es="Ponte en Contacto">Get in Touch</p>
     <div class="links">
-      <a class="link-btn" href="tel:+14242548404">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Call
+      <a class="link-btn tint-green" href="tel:+14242548404">
+        <span class="icon-badge" style="background:#22C55E;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </span>
+        <span data-en="Call" data-es="Llamar">Call</span>
       </a>
-      <a class="link-btn" href="mailto:info@aariasblueelephant.org">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-        Email
+      <a class="link-btn tint-blue" href="mailto:info@aariasblueelephant.org">
+        <span class="icon-badge" style="background:#3B82F6;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        </span>
+        <span data-en="Email" data-es="Correo">Email</span>
       </a>
-      <a class="link-btn" href="https://aariasblueelephant.org/" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z"/></svg>
-        Website
+      <a class="link-btn tint-cyan" href="https://aariasblueelephant.org/" target="_blank" rel="noopener">
+        <span class="icon-badge" style="background:#22D3EE;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z"/></svg>
+        </span>
+        <span data-en="Website" data-es="Sitio Web">Website</span>
       </a>
-      <a class="link-btn" href="https://chat.whatsapp.com/FPEmQYA8TKd4wzRGB5PXtb" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <a class="link-btn tint-whatsapp" href="https://chat.whatsapp.com/FPEmQYA8TKd4wzRGB5PXtb" target="_blank" rel="noopener">
+        <span class="icon-badge" style="background:#25D366;">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </span>
         WhatsApp
       </a>
-      <a class="link-btn donate" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
-        Donate Now
-      </a>
     </div>
 
+    <p class="section-label" data-en="Follow Us" data-es="Síguenos">Follow Us</p>
     <div class="social-row">
-      <a class="social-btn" href="https://www.facebook.com/groups/1699307761026480" target="_blank" rel="noopener" aria-label="Facebook">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3.5l.5-4H14V7a1 1 0 0 1 1-1h3z"/></svg>
+      <a class="social-btn" href="https://www.facebook.com/groups/1699307761026480" target="_blank" rel="noopener" aria-label="Facebook" style="background:rgba(24,119,242,0.12); color:#1877F2;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
       </a>
-      <a class="social-btn" href="https://www.instagram.com/aariasblueelephant/" target="_blank" rel="noopener" aria-label="Instagram">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+      <a class="social-btn" href="https://www.instagram.com/aariasblueelephant/" target="_blank" rel="noopener" aria-label="Instagram" style="background:rgba(228,64,95,0.12); color:#E4405F;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.245 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.332 2.633-1.308 3.608-.975.975-2.242 1.245-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.332-3.608-1.308-.975-.975-1.245-2.242-1.308-3.608-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.332-2.633 1.308-3.608.975-.975 2.242-1.245 3.608-1.308 1.266-.058 1.646-.07 4.85-.07zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.351-.2 6.77-2.618 6.97-6.98.058-1.28.072-1.689.072-4.948s-.014-3.667-.072-4.947c-.2-4.352-2.618-6.77-6.98-6.97C15.667.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" /></svg>
       </a>
-      <a class="social-btn" href="https://www.linkedin.com/in/aariasblueelephant/" target="_blank" rel="noopener" aria-label="LinkedIn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="7.5" y1="10.5" x2="7.5" y2="16.5"/><circle cx="7.5" cy="7" r="0.6" fill="currentColor" stroke="none"/><path d="M11.5 16.5v-4a2.2 2.2 0 0 1 4.4 0v4"/><line x1="11.5" y1="10.5" x2="11.5" y2="16.5"/></svg>
+      <a class="social-btn" href="https://www.linkedin.com/in/aariasblueelephant/" target="_blank" rel="noopener" aria-label="LinkedIn" style="background:rgba(0,119,181,0.12); color:#0077B5;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" /></svg>
       </a>
-      <a class="social-btn" href="https://www.tiktok.com/@aariasblueelephant0" target="_blank" rel="noopener" aria-label="TikTok">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <a class="social-btn" href="https://www.tiktok.com/@aariasblueelephant0" target="_blank" rel="noopener" aria-label="TikTok" style="background:#fff; color:#000;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.03 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-1.13-.24-2.32-.2-3.35.35-1.01.55-1.74 1.6-1.9 2.73-.13.78-.04 1.58.26 2.3.43 1.05 1.34 1.86 2.39 2.22 1.01.35 2.14.33 3.13-.08 1.04-.49 1.82-1.45 2.1-2.54.12-.56.12-1.13.12-1.7 0-3.67-.01-7.33 0-11zm0 0" /></svg>
       </a>
-      <a class="social-btn" href="https://www.youtube.com/@AariasBlueElephant" target="_blank" rel="noopener" aria-label="YouTube">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l6 3-6 3z" fill="currentColor" stroke="none"/></svg>
+      <a class="social-btn" href="https://www.youtube.com/@AariasBlueElephant" target="_blank" rel="noopener" aria-label="YouTube" style="background:rgba(255,0,0,0.12); color:#FF0000;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
       </a>
     </div>
 
-    <p class="verified-line">✓ <strong>Candid Platinum Verified</strong> · EIN 39-4799956 · <a href="https://app.candid.org/profile/16447686/aarias-blue-elephant-39-4799956/?pkId=b8a47feb-927d-4adc-9e4e-794677415e6c" target="_blank" rel="noopener">View profile ↗</a></p>
+    <a class="link-btn donate" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener">
+      <span class="icon-badge" style="background:#F472B6;">
+        <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 21s-7.5-4.6-10.2-9.3C0 8.5 1.4 5 4.9 4.1 7.4 3.5 9.7 4.6 12 7.2c2.3-2.6 4.6-3.7 7.1-3.1 3.5.9 4.9 4.4 3.1 7.6C19.5 16.4 12 21 12 21z"/></svg>
+      </span>
+      <span data-en="Donate Now" data-es="Donar Ahora">Donate Now</span>
+    </a>
 
-    <p class="legal">Nonprofit Corp #B20250299015 · Tracy, CA 95391</p>
+    <p class="legal" data-en="EIN 39-4799956 · Nonprofit Corp #B20250299015 · Tracy, CA 95391" data-es="EIN 39-4799956 · Corporación sin Fines de Lucro #B20250299015 · Tracy, CA 95391">EIN 39-4799956 · Nonprofit Corp #B20250299015 · Tracy, CA 95391</p>
   </main>
 
   <script>
     (function () {
+      var isEs = false;
+      try { isEs = localStorage.getItem('abe.lang') === 'es'; } catch (e) {}
+      document.documentElement.lang = isEs ? 'es' : 'en';
+
+      if (isEs) {
+        document.title = "Aaria's Blue Elephant — Tarjeta Digital";
+        document.querySelectorAll('[data-en]').forEach(function (el) {
+          el.textContent = el.getAttribute('data-es');
+        });
+        document.querySelectorAll('[data-alt-en]').forEach(function (el) {
+          el.setAttribute('alt', el.getAttribute('data-alt-es'));
+        });
+      }
+
       var splash = document.getElementById('splash');
       var card = document.getElementById('card');
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function fireConfettiBurst(x, y) {
+        if (reducedMotion) return;
+        var canvas = document.createElement('canvas');
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '150';
+        document.body.appendChild(canvas);
+
+        var dpr = window.devicePixelRatio || 1;
+        var w = window.innerWidth, h = window.innerHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        var colors = ['#00BFFF', '#FFD700', '#FF1493', '#00FF7F', '#9370DB', '#FFA500', '#FF69B4'];
+        var particles = [];
+        var running = false;
+
+        function createParticle() {
+          var isElephant = Math.random() > 0.72;
+          return {
+            x: x, y: y,
+            vx: Math.random() * 8 - 4,
+            vy: Math.random() * -10 - 5,
+            size: Math.random() * 12 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            shape: isElephant ? 'elephant' : 'circle',
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.05,
+            life: 1,
+            decay: 0.012
+          };
+        }
+
+        function drawParticle(p) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(p.life, 0);
+          ctx.fillStyle = p.color;
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.beginPath();
+          if (p.shape === 'elephant') {
+            var shimmer = Math.sin(Date.now() / 150 + p.x) * 0.3 + 0.7;
+            if (shimmer > 0.8) {
+              ctx.shadowColor = '#00BFFF';
+              ctx.shadowBlur = 16;
+              ctx.fillStyle = '#fff';
+            }
+            ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-p.size * 0.8, 0, p.size * 0.6, Math.PI, Math.PI * 2.5);
+            ctx.lineWidth = p.size * 0.3;
+            ctx.strokeStyle = p.color;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(p.size * 0.5, -p.size * 0.2, p.size * 0.5, p.size * 0.7, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function tick() {
+          ctx.clearRect(0, 0, w, h);
+          for (var i = particles.length - 1; i >= 0; i--) {
+            var p = particles[i];
+            p.vy += 0.32;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rotation += p.rotationSpeed;
+            p.life -= p.decay;
+            if (p.y > h + p.size || p.life <= 0) particles.splice(i, 1);
+            else drawParticle(p);
+          }
+          if (particles.length) {
+            requestAnimationFrame(tick);
+          } else {
+            running = false;
+            canvas.remove();
+          }
+        }
+
+        function wave() {
+          for (var i = 0; i < 22; i++) particles.push(createParticle());
+          if (!running) { running = true; tick(); }
+        }
+
+        wave();
+        setTimeout(wave, 220);
+        setTimeout(wave, 440);
+      }
+
+      setTimeout(function () {
+        var logo = document.querySelector('.splash-logo');
+        var r = logo.getBoundingClientRect();
+        fireConfettiBurst(r.left + r.width * 0.5, r.top + r.height * 0.66);
+      }, 550);
 
       setTimeout(function () {
         splash.classList.add('fade-out');
@@ -392,7 +624,7 @@
           card.hidden = false;
           requestAnimationFrame(function () { card.classList.add('visible'); });
         }, 350);
-      }, 1200);
+      }, 1400);
 
       document.getElementById('save-contact').addEventListener('click', function () {
         var lines = [
@@ -406,7 +638,7 @@
           'EMAIL:info@aariasblueelephant.org',
           'URL:https://aariasblueelephant.org/',
           'ADR:;;;Tracy;CA;95391;USA',
-          'NOTE:Play Without Barriers — inclusive playgroups for neurodivergent and neurotypical kids in San Joaquin County. EIN 39-4799956, 501(c)(3) public charity.',
+          'NOTE:Building a New Inclusive World — inclusive playgroups for neurodivergent and neurotypical kids in San Joaquin County. EIN 39-4799956, 501(c)(3) public charity.',
           'END:VCARD'
         ];
         var blob = new Blob([lines.join('\r\n')], { type: 'text/vcard' });
