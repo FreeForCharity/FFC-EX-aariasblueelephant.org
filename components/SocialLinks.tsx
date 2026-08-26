@@ -72,7 +72,7 @@ const SocialLinks: React.FC<{ className?: string; showLabel?: boolean }> = ({ cl
         },
         {
             name: 'WhatsApp',
-            url: 'https://chat.whatsapp.com/Bv7SWvxcadBBN9KLHOIwaQ',
+            url: 'https://chat.whatsapp.com/FPEmQYA8TKd4wzRGB5PXtb',
             color: '#25D366',
             icon: (
                 <svg className="w-full h-full fill-current" viewBox="0 0 24 24">
