@@ -25,6 +25,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install Dependencies
+        # Data sync never launches a browser; skip puppeteer's download.
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Run Resilience Data Sync

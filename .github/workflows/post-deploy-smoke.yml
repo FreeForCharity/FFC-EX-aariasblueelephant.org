@@ -546,7 +546,9 @@ jobs:
             echo "::notice::No tests/smoke/*.spec.* in repo — skipping repo-local smoke specs"
             exit 0
           fi
-          pnpm install --frozen-lockfile
+          # This job tests with Playwright's chromium; skip puppeteer's
+          # own browser download during install.
+          PUPPETEER_SKIP_DOWNLOAD=true pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
           if [ -f playwright.smoke.config.ts ]; then
             pnpm exec playwright test --config playwright.smoke.config.ts --reporter=list
