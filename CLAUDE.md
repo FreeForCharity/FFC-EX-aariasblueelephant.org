@@ -1,6 +1,6 @@
 # Aaria's Blue Elephant — repo conventions
 
-React 19 + Vite 6 + TypeScript + Tailwind v4. Source lives at the repo root (`pages/`, `components/`, `lib/`, `data/`) — there is no `src/`. Games are static apps under `public/`. Typecheck/lint: `npm run lint` (= `tsc --noEmit`).
+React 19 + Vite 6 + TypeScript + Tailwind v4. Source lives at the repo root (`pages/`, `components/`, `lib/`, `data/`) — there is no `src/`. Games are static apps under `public/`. Typecheck/lint: `pnpm run lint` (= `tsc --noEmit`).
 
 ## Bilingual site (English/Spanish) — REQUIRED for all new content
 

@@ -21,7 +21,7 @@ A compassionate community platform for inclusive play and early intervention sup
 ### Installation
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### Environment Variables
@@ -36,20 +36,20 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ### Development
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### Production Build
 
 ```bash
-npm run build
-npm run preview
+pnpm run build
+pnpm run preview
 ```
 
 ### Type Check / Lint
 
 ```bash
-npm run lint
+pnpm run lint
 ```
 
 ## Deployment
