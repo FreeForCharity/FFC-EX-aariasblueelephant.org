@@ -23,9 +23,15 @@
          the same shape of over-claim that writing the signal list out is
          meant to prevent.
 
-         This comment is ASCII-only on purpose: it sits ahead of the page's
-         meta charset declaration, so bytes here are parsed before the
-         document states its encoding.
+         This comment is ASCII-only on purpose. It sits ahead of the
+         page's meta charset declaration, so its bytes are parsed before
+         the document states its encoding. That is a statement about this
+         comment and nothing else: the surrounding pre-charset region is
+         NOT clean -- neighbouring comments on these pages carry em dashes
+         and emoji, and the charset declaration itself sits past the
+         1024-byte window the spec allows it. Both predate this work and
+         are tracked separately. Keeping this block ASCII simply stops it
+         adding to the problem.
 
          MUST execute before any Google tag, which is why it sits at the
          top of head. -->
