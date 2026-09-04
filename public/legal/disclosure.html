@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- FFC Consent Mode v2 defaults — storage is DENIED for every visitor, worldwide,
-         until they opt in. MUST execute before any Google tag, which is why
-         it sits at the top of <head>. This site has no consent banner yet,
-         so nothing here can be granted: analytics runs cookieless. -->
+    <!-- FFC Consent Mode v2 defaults — analytics and advertising storage is
+         DENIED for every visitor, worldwide. functionality_storage and
+         security_storage stay granted below: neither carries measurement.
+         MUST execute before any Google tag, which is why it sits at the top
+         of <head>. This site has no consent banner, so nothing can lift the
+         denial — analytics runs cookieless until the site moves onto the FFC
+         template, which brings a banner with it. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
