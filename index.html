@@ -2,21 +2,33 @@
 <html lang="en" class="dark">
 
 <head>
-    <!-- FFC Consent Mode v2 defaults — every storage type that carries
-         measurement or personalisation is DENIED for every visitor,
-         worldwide: analytics_storage, ad_storage, ad_user_data,
-         ad_personalization and personalization_storage. The list is written
-         out rather than summarised as "analytics and advertising" because a
-         signal left unspecified defaults to GRANTED, and
-         personalization_storage is neither — a summary in those terms has a
-         hole in it exactly the size of that signal and still reads as
-         complete. functionality_storage and security_storage stay granted
-         below: neither carries measurement, and with no banner on this site
-         nothing ever changes either of them.
-         MUST execute before any Google tag, which is why it sits at the top
-         of <head>. This site has no consent banner, so nothing can lift the
-         denial — analytics runs cookieless until the site moves onto the FFC
-         template, which brings a banner with it. -->
+    <!-- FFC Consent Mode v2 defaults. Every storage type that carries
+         measurement or personalisation is DENIED by default:
+         analytics_storage, ad_storage, ad_user_data, ad_personalization
+         and personalization_storage. The list is written out rather than
+         summarised as "analytics and advertising" because a signal left
+         unspecified defaults to GRANTED, and personalization_storage is
+         neither: a summary in those terms has a hole in it exactly the
+         size of that signal and still reads as complete.
+         functionality_storage and security_storage stay granted: neither
+         carries measurement, and with no consent banner on this site
+         nothing ever changes either of them. Analytics runs cookieless
+         until the site moves onto the FFC template, which brings a banner
+         with it.
+
+         Scope, stated exactly. This governs visitors whose browser runs
+         this script. A visitor with JavaScript disabled never executes it,
+         and the GTM noscript iframe below still loads for them, so the
+         denial does not reach that path. Saying "every visitor" would be
+         the same shape of over-claim that writing the signal list out is
+         meant to prevent.
+
+         This comment is ASCII-only on purpose: it sits ahead of the page's
+         meta charset declaration, so bytes here are parsed before the
+         document states its encoding.
+
+         MUST execute before any Google tag, which is why it sits at the
+         top of head. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
