@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound, Heart, Link2 } from 'lucide-react';
-import Button from '../components/Button';
-import SpotMeter from '../components/festival/SpotMeter';
-import Dialog from '../components/festival/Dialog';
-import { festival, SETTINGS, slugify } from '../lib/festival/store';
+import Button from '../Button';
+import SpotMeter from './SpotMeter';
+import Dialog from './Dialog';
+import { festival, SETTINGS, slugify } from '../../lib/festival/store';
 import {
   ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI,
   FESTIVAL_ADMINS, isFestivalAdmin,
-} from '../lib/festival/types';
-import { festivalDb, Pledge } from '../lib/festival/db';
-import { useAuth } from '../context/AuthContext';
-import { tr, isEs } from '../lib/lang';
+} from '../../lib/festival/types';
+import { festivalDb, Pledge } from '../../lib/festival/db';
+import { useAuth } from '../../context/AuthContext';
+import { tr, isEs } from '../../lib/lang';
 
 /** the exact shape of a row in data/festival.json */
 interface Row {
@@ -36,7 +36,7 @@ const lbl = 'mb-1 block text-xs font-bold text-slate-600 dark:text-slate-300';
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as ShopCategory[];
 
-const FestivalAdmin: React.FC = () => {
+const FestivalAdminPanel: React.FC = () => {
   const { user } = useAuth();
   const canApprove = isFestivalAdmin(user?.email);
 
@@ -165,7 +165,7 @@ const FestivalAdmin: React.FC = () => {
 
   if (!canApprove) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center">
+      <div className="mx-auto max-w-xl py-16 text-center">
         <Lock className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
         <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">
           {tr('Only the festival admin can approve shops', 'Solo el administrador del festival puede aprobar tiendas')}
@@ -187,7 +187,7 @@ const FestivalAdmin: React.FC = () => {
   const missingLogos = rows.filter((r) => r.status === 'approved' && !r.logo);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-black text-slate-900 dark:text-white">
         {tr('Festival shop manager', 'Gestor de tiendas del festival')}
       </h1>
@@ -577,4 +577,4 @@ const FestivalAdmin: React.FC = () => {
   );
 };
 
-export default FestivalAdmin;
+export default FestivalAdminPanel;
