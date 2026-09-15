@@ -70,6 +70,8 @@ const FestivalPass: React.FC = () => {
   const [outcome, setOutcome] = useState<PunchOutcome | null>(null);
   const [now, setNow] = useState(Date.now());
   const [cheer, setCheer] = useState(false);
+  const [sale, setSale] = useState('');
+  const [saleDone, setSaleDone] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
 
   // one ticking clock drives every freshness countdown on the card
@@ -152,7 +154,7 @@ const FestivalPass: React.FC = () => {
   };
 
   const openTile = (shop: FestivalShop) => {
-    setOpen(shop); setCode(''); setOutcome(null);
+    setOpen(shop); setCode(''); setOutcome(null); setSale(''); setSaleDone(false);
     setTimeout(() => codeRef.current?.focus(), 250);
   };
 
@@ -399,15 +401,49 @@ const FestivalPass: React.FC = () => {
                 </p>
               )}
               {outcome?.ok && (
-                <div className="abe-stamp mt-5 rounded-2xl bg-green-50 p-5 text-center dark:bg-green-900/20">
-                  <p className="text-2xl font-black text-green-700 dark:text-green-400">
-                    {tr('Punched!', '¡Sellado!')}
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-                    <Clock className="h-4 w-4" />
-                    {tr('Show the green badge to the staff', 'Muestra la insignia verde al personal')}
-                  </p>
-                </div>
+                <>
+                  <div className="abe-stamp mt-5 rounded-2xl bg-green-50 p-5 text-center dark:bg-green-900/20">
+                    <p className="text-2xl font-black text-green-700 dark:text-green-400">
+                      {tr('Punched!', '¡Sellado!')}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                      <Clock className="h-4 w-4" />
+                      {tr('Show the green badge to the staff', 'Muestra la insignia verde al personal')}
+                    </p>
+                  </div>
+
+                  {/* Optional, and it stays optional. Shops that fill this in get
+                      a real pledge figure; shops that skip it lose nothing. */}
+                  {!preview && !saleDone && (
+                    <div className="mt-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                      <p className="text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                        {tr('Staff — sale amount? Optional.', 'Personal: ¿monto de la venta? Opcional.')}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-lg font-black text-slate-400">$</span>
+                        <input inputMode="decimal" value={sale}
+                               onChange={(e) => setSale(e.target.value.replace(/[^0-9.]/g, '').slice(0, 7))}
+                               placeholder="0.00"
+                               className="w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-lg font-bold text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                        <Button size="sm" disabled={!sale}
+                                onClick={async () => {
+                                  if (pass && outcome.ok) {
+                                    await festivalDb.setSale(pass.id, outcome.shopId, Number(sale));
+                                  }
+                                  setSaleDone(true);
+                                }}>
+                          {tr('Save', 'Guardar')}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setSaleDone(true)}>
+                          {tr('Skip', 'Omitir')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {saleDone && (
+                    <p className="mt-3 text-center text-xs text-slate-400">{tr('Thank you 💙', 'Gracias 💙')}</p>
+                  )}
+                </>
               )}
 
               <Button className="mt-6" fullWidth variant="secondary" onClick={() => setOpen(null)}>

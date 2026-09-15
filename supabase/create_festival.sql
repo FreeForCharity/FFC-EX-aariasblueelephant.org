@@ -215,3 +215,92 @@ with (security_invoker = on) as
   where s.status = 'approved'
   group by s.id, s.name, s.spot, s.pledge_pct;
 grant select on festival_shop_stats to authenticated;
+
+-- ============================================================================
+-- Phase 3 & 4 — the shop's own till screen, and the pledge figures
+-- ============================================================================
+
+-- A shop opens one link on the till phone and bookmarks it. The token is the
+-- only thing that identifies them, so it must not be guessable and must not be
+-- the shop id (which is public in data/festival.json).
+alter table festival_shops add column if not exists console_token text;
+update festival_shops
+   set console_token = encode(gen_random_bytes(12), 'hex')
+ where console_token is null;
+create unique index if not exists festival_shops_token_idx on festival_shops (console_token);
+
+-- What the till screen is allowed to see: its own name, offer, code and tally.
+-- Nothing about any other shop, and nothing about any attendee.
+create or replace function festival_shop_console(p_token text)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops%rowtype; v_today int; v_total int;
+begin
+  select * into v_shop from festival_shops
+   where console_token = p_token and status = 'approved' limit 1;
+  if v_shop.id is null then
+    return json_build_object('ok', false, 'error', 'bad_token');
+  end if;
+
+  select count(*) into v_today from festival_punches
+   where shop_id = v_shop.id and punched_at >= date_trunc('day', now());
+  select count(*) into v_total from festival_punches where shop_id = v_shop.id;
+
+  return json_build_object(
+    'ok', true,
+    'id', v_shop.id, 'name', v_shop.name, 'emoji', v_shop.emoji,
+    'logo_url', v_shop.logo_url,
+    'offer_en', v_shop.offer_en, 'offer_es', v_shop.offer_es,
+    'detail_en', v_shop.detail_en, 'detail_es', v_shop.detail_es,
+    'punch_code', v_shop.punch_code,
+    'redeem_from', v_shop.redeem_from, 'redeem_to', v_shop.redeem_to,
+    'today', v_today, 'total', v_total
+  );
+end $$;
+
+revoke all on function festival_shop_console(text) from public;
+grant execute on function festival_shop_console(text) to anon, authenticated;
+
+-- The optional sale amount, typed by staff straight after the stamp lands.
+-- Only the owner of the punch may set it, and only once — so a figure cannot
+-- be revised upward later to inflate what a shop appears to owe.
+create or replace function festival_set_sale(p_pass uuid, p_shop uuid, p_amount numeric)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_owner uuid;
+begin
+  select user_id into v_owner from festival_passes where id = p_pass and status = 'active';
+  if v_owner is null or v_owner <> auth.uid() then
+    return json_build_object('ok', false, 'error', 'not_your_pass');
+  end if;
+  if p_amount is null or p_amount < 0 or p_amount > 10000 then
+    return json_build_object('ok', false, 'error', 'bad_amount');
+  end if;
+
+  update festival_punches
+     set sale_amount = p_amount
+   where pass_id = p_pass and shop_id = p_shop and sale_amount is null;
+
+  if not found then
+    return json_build_object('ok', false, 'error', 'already_set');
+  end if;
+  return json_build_object('ok', true);
+end $$;
+
+revoke all on function festival_set_sale(uuid, uuid, numeric) from public;
+grant execute on function festival_set_sale(uuid, uuid, numeric) to authenticated;
+
+-- The pledge board: what each shop said they would give, against what was sold.
+-- Honour system, so this is an estimate to thank people with, never an invoice.
+create or replace view festival_pledges
+with (security_invoker = on) as
+  select s.id, s.name, s.pledge_pct,
+         count(p.id)                                             as punches,
+         coalesce(sum(p.sale_amount), 0)                          as sales_reported,
+         count(p.sale_amount)                                     as sales_entered,
+         round(coalesce(sum(p.sale_amount), 0) * coalesce(s.pledge_pct, 0) / 100.0, 2) as pledge_estimate
+  from festival_shops s
+  left join festival_punches p on p.shop_id = s.id
+  where s.status = 'approved'
+  group by s.id, s.name, s.pledge_pct;
+grant select on festival_pledges to authenticated;

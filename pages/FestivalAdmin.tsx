@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound } from 'lucide-react';
+import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound, Heart, Link2 } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter from '../components/festival/SpotMeter';
 import { festival, SETTINGS, slugify } from '../lib/festival/store';
@@ -7,7 +7,7 @@ import {
   ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI,
   FESTIVAL_ADMINS, isFestivalAdmin,
 } from '../lib/festival/types';
-import { festivalDb } from '../lib/festival/db';
+import { festivalDb, Pledge } from '../lib/festival/db';
 import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
 
@@ -17,6 +17,7 @@ interface Row {
   offerEn: string; offerEs?: string; detailEn?: string; detailEs?: string;
   address?: string; website?: string; logo?: string;
   pledgePct?: number; status: string;
+  contactName?: string; contactEmail?: string;
 }
 
 const README = [
@@ -46,6 +47,7 @@ const FestivalAdmin: React.FC = () => {
       address: s.address, website: s.website,
       logo: s.logoUrl ? s.logoUrl.split('/').pop() : undefined,
       pledgePct: s.pledgePct, status: s.status,
+      contactName: s.contactName || undefined, contactEmail: s.contactEmail || undefined,
     })),
   );
   const [settings, setSettings] = useState({ ...SETTINGS });
@@ -55,6 +57,9 @@ const FestivalAdmin: React.FC = () => {
   const [publishing, setPublishing] = useState(false);
   const [publishMsg, setPublishMsg] = useState('');
   const [metrics, setMetrics] = useState<{ passes: number; punches: number; perShop: { id: string; name: string; punches: number; sales: number }[] } | null>(null);
+  const [pledges, setPledges] = useState<Pledge[] | null>(null);
+  const [tokens, setTokens] = useState<Record<string, string>>({});
+  const [copiedLinks, setCopiedLinks] = useState(false);
 
   useEffect(() => {
     if (!canApprove) return;
@@ -64,6 +69,8 @@ const FestivalAdmin: React.FC = () => {
       if (!ready) return;
       setCodes((await festivalDb.shopCodes()) || {});
       setMetrics(await festivalDb.metrics());
+      setPledges(await festivalDb.pledges());
+      setTokens((await festivalDb.consoleTokens()) || {});
     })();
   }, [canApprove]);
 
@@ -79,6 +86,7 @@ const FestivalAdmin: React.FC = () => {
       setCodes(r.codes || {});
       setPublishMsg(tr('Published. Every shop now has a punch code.', 'Publicado. Cada tienda ya tiene su código.'));
       setMetrics(await festivalDb.metrics());
+      setTokens((await festivalDb.consoleTokens()) || {});
     }
     setPublishing(false);
   };
@@ -346,9 +354,31 @@ const FestivalAdmin: React.FC = () => {
               </div>
             </div>
 
+            {Object.keys(tokens).length > 0 && (
+              <div>
+                <p className={lbl}><Link2 className="mr-1 inline h-3 w-3" />{tr('Welcome emails, ready to send', 'Correos de bienvenida, listos para enviar')}</p>
+                <Button size="sm" variant="secondary" onClick={async () => {
+                  const origin = window.location.origin;
+                  const text = rows.filter((r) => tokens[r.id]).map((r) =>
+                    [`${r.name}`,
+                     `  Code:    ${codes[r.id] || '—'}`,
+                     `  Till screen: ${origin}/InclusionFestival/shop#${tokens[r.id]}`,
+                     `  Email:   ${r.contactEmail || '—'}`, ''].join('\n')).join('\n');
+                  try { await navigator.clipboard.writeText(text); setCopiedLinks(true); setTimeout(() => setCopiedLinks(false), 2500); } catch { /* ignore */ }
+                }}>
+                  {copiedLinks ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                  {copiedLinks ? tr('Copied', 'Copiado') : tr('Copy every code + till link', 'Copiar códigos y enlaces')}
+                </Button>
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  {tr('Each shop gets its own till-screen link. Send it only to them — it shows their punch code.',
+                      'Cada tienda recibe su propio enlace de caja. Envíaselo solo a ellos: muestra su código.')}
+                </p>
+              </div>
+            )}
+
             {Object.keys(codes).length > 0 && (
               <div>
-                <p className={lbl}><KeyRound className="mr-1 inline h-3 w-3" />{tr('Punch codes to email out', 'Códigos para enviar por correo')}</p>
+                <p className={lbl}><KeyRound className="mr-1 inline h-3 w-3" />{tr('Punch codes', 'Códigos')}</p>
                 <div className="grid gap-1 sm:grid-cols-2">
                   {rows.filter((r) => codes[r.id]).map((r) => (
                     <div key={r.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm dark:bg-slate-800">
@@ -430,6 +460,40 @@ const FestivalAdmin: React.FC = () => {
                 </p>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* ── pledges ───────────────────────────────────────────────────── */}
+      {pledges && pledges.some((p) => p.punches > 0) && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+            <Heart className="h-5 w-5 text-rose-500" />{tr('Pledges', 'Donaciones')}
+          </h2>
+          <div className={`mt-3 ${card}`}>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">
+              ${pledges.reduce((n, p) => n + p.pledgeEstimate, 0).toFixed(2)}
+            </p>
+            <p className="text-xs font-bold text-slate-500">
+              {tr('estimated, from the sales shops chose to enter', 'estimado, según las ventas que las tiendas quisieron registrar')}
+            </p>
+            <div className="mt-4 space-y-1.5">
+              {pledges.filter((p) => p.punches > 0).map((p) => (
+                <div key={p.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate text-slate-700 dark:text-slate-200">{p.name}</span>
+                  <span className="shrink-0 text-xs text-slate-400">
+                    {p.salesEntered}/{p.punches} {tr('entered', 'registradas')} · {p.pledgePct}%
+                  </span>
+                  <span className="w-20 shrink-0 text-right font-black text-slate-900 dark:text-white">
+                    ${p.pledgeEstimate.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              {tr('Honour system. This is an estimate to thank people with, never an invoice — most shops will not enter every sale, and that is fine.',
+                  'Sistema de honor. Esto es un estimado para agradecer, nunca una factura: la mayoría de las tiendas no registrará cada venta, y está bien.')}
+            </p>
           </div>
         </section>
       )}

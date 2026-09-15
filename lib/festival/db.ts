@@ -54,6 +54,20 @@ export interface PublicShop {
   redeem_to: string;
 }
 
+export interface ShopConsole {
+  ok: true;
+  id: string; name: string; emoji: string | null; logo_url: string | null;
+  offer_en: string; offer_es: string | null;
+  detail_en: string | null; detail_es: string | null;
+  punch_code: string; redeem_from: string; redeem_to: string;
+  today: number; total: number;
+}
+
+export interface Pledge {
+  id: string; name: string; pledgePct: number;
+  punches: number; salesReported: number; salesEntered: number; pledgeEstimate: number;
+}
+
 export type PunchOutcome =
   | { ok: true; shopId: string; shopName: string; punchedAt: string }
   | { ok: false; error: 'bad_code' | 'already_used' | 'outside_window' | 'not_live' | 'not_your_pass' | 'offline' | 'no_backend';
@@ -277,6 +291,52 @@ export const festivalDb = {
       punches: perShop.reduce((n, s) => n + s.punches, 0),
       perShop,
     };
+  },
+
+  /* ──────────────────────────────────────────── the shop's till screen ── */
+
+  /**
+   * One link, bookmarked once on the till phone. The token is the only thing
+   * that identifies the shop — deliberately not the shop id, which is public.
+   */
+  async shopConsole(token: string): Promise<ShopConsole | null> {
+    try {
+      const { data, error } = await supabase.rpc('festival_shop_console', { p_token: token });
+      if (error || !data || !(data as any).ok) return null;
+      return data as ShopConsole;
+    } catch { return null; }
+  },
+
+  /** the optional sale figure, typed by staff right after the stamp lands */
+  async setSale(passId: string, shopId: string, amount: number): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('festival_set_sale', {
+        p_pass: passId, p_shop: shopId, p_amount: amount,
+      });
+      return !error && !!(data as any)?.ok;
+    } catch { return false; }
+  },
+
+  /** what each shop said they would give, against what was actually rung up */
+  async pledges(): Promise<Pledge[] | null> {
+    const { data, error } = await supabase.from('festival_pledges').select('*');
+    if (error) return null;
+    return (data || []).map((r: any) => ({
+      id: r.id, name: r.name, pledgePct: r.pledge_pct || 0,
+      punches: Number(r.punches) || 0,
+      salesReported: Number(r.sales_reported) || 0,
+      salesEntered: Number(r.sales_entered) || 0,
+      pledgeEstimate: Number(r.pledge_estimate) || 0,
+    })).sort((a, b) => b.pledgeEstimate - a.pledgeEstimate);
+  },
+
+  /** the console links to email out, one per shop */
+  async consoleTokens(): Promise<Record<string, string> | null> {
+    const { data, error } = await supabase.from('festival_shops').select('id, console_token');
+    if (error) return null;
+    const out: Record<string, string> = {};
+    (data || []).forEach((r: any) => { if (r.console_token) out[r.id] = r.console_token; });
+    return out;
   },
 
   /** retry anything that was typed while the signal was gone */
