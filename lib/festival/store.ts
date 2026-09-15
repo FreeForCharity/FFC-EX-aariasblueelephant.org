@@ -18,7 +18,7 @@ interface RawShop {
   id: string; name: string; category: string; spot?: number;
   offerEn: string; offerEs?: string; detailEn?: string; detailEs?: string;
   address?: string; website?: string; logo?: string;
-  punchCode: string; pledgePct?: number; status?: string;
+  pledgePct?: number; status?: string;
   contactName?: string; contactEmail?: string;
 }
 
@@ -48,7 +48,7 @@ function hydrate(r: RawShop): FestivalShop {
     contactName: r.contactName || '',
     contactEmail: r.contactEmail || '',
     pledgePct: r.pledgePct,
-    punchCode: r.punchCode,
+    punchCode: '',   // codes live in Supabase only — see lib/festival/db.ts
     redeemFrom: SETTINGS.redeemFrom,
     redeemTo: SETTINGS.redeemTo,
     spot: r.spot,

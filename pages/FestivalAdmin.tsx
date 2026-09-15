@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter from '../components/festival/SpotMeter';
 import { festival, SETTINGS, slugify } from '../lib/festival/store';
@@ -7,6 +7,7 @@ import {
   ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI,
   FESTIVAL_ADMINS, isFestivalAdmin,
 } from '../lib/festival/types';
+import { festivalDb } from '../lib/festival/db';
 import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
 
@@ -15,7 +16,7 @@ interface Row {
   id: string; name: string; category: ShopCategory; spot?: number;
   offerEn: string; offerEs?: string; detailEn?: string; detailEs?: string;
   address?: string; website?: string; logo?: string;
-  punchCode: string; pledgePct?: number; status: string;
+  pledgePct?: number; status: string;
 }
 
 const README = [
@@ -44,11 +45,43 @@ const FestivalAdmin: React.FC = () => {
       detailEn: s.detailEn, detailEs: s.detailEs,
       address: s.address, website: s.website,
       logo: s.logoUrl ? s.logoUrl.split('/').pop() : undefined,
-      punchCode: s.punchCode, pledgePct: s.pledgePct, status: s.status,
+      pledgePct: s.pledgePct, status: s.status,
     })),
   );
   const [settings, setSettings] = useState({ ...SETTINGS });
   const [copied, setCopied] = useState(false);
+  const [codes, setCodes] = useState<Record<string, string>>({});
+  const [backend, setBackend] = useState<boolean | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState('');
+  const [metrics, setMetrics] = useState<{ passes: number; punches: number; perShop: { id: string; name: string; punches: number; sales: number }[] } | null>(null);
+
+  useEffect(() => {
+    if (!canApprove) return;
+    (async () => {
+      const ready = await festivalDb.ready();
+      setBackend(ready);
+      if (!ready) return;
+      setCodes((await festivalDb.shopCodes()) || {});
+      setMetrics(await festivalDb.metrics());
+    })();
+  }, [canApprove]);
+
+  const publish = async () => {
+    setPublishing(true); setPublishMsg('');
+    const r = await festivalDb.publishShops(rows, settings.redeemFrom, settings.redeemTo);
+    if (r.error) {
+      setPublishMsg(r.error === 'no_backend'
+        ? tr('The festival tables do not exist yet — run supabase/create_festival.sql first.',
+             'Las tablas del festival aún no existen: ejecuta supabase/create_festival.sql primero.')
+        : r.error);
+    } else {
+      setCodes(r.codes || {});
+      setPublishMsg(tr('Published. Every shop now has a punch code.', 'Publicado. Cada tienda ya tiene su código.'));
+      setMetrics(await festivalDb.metrics());
+    }
+    setPublishing(false);
+  };
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Row | null>(null);
 
@@ -71,19 +104,10 @@ const FestivalAdmin: React.FC = () => {
     for (let i = 1; i <= settings.spots; i++) if (!used.has(i)) return i;
     return settings.spots + 1;
   };
-  const nextCode = () => {
-    const used = new Set(rows.map((r) => r.punchCode));
-    for (let i = 0; i < 500; i++) {
-      const c = String(1000 + Math.floor(Math.random() * 9000));
-      if (!used.has(c)) return c;
-    }
-    return String(1000 + used.size);
-  };
-
   const startAdd = () => {
     setDraft({
       id: '', name: '', category: 'restaurant', spot: nextSpot(),
-      offerEn: '', offerEs: '', punchCode: nextCode(), pledgePct: 20, status: 'approved',
+      offerEn: '', offerEs: '', pledgePct: 20, status: 'approved',
     });
     setAdding(true);
   };
@@ -170,7 +194,9 @@ const FestivalAdmin: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-bold text-slate-900 dark:text-white">{r.name}</p>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">#{r.spot}</span>
-                  <span className="rounded-full bg-sky-100 px-2 py-0.5 font-mono text-[11px] font-bold text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">{r.punchCode}</span>
+                  {codes[r.id]
+                  ? <span className="rounded-full bg-sky-100 px-2 py-0.5 font-mono text-[11px] font-bold text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">{codes[r.id]}</span>
+                  : <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-400 dark:bg-slate-800">{tr('no code yet', 'sin código')}</span>}
                   {!r.logo && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{tr('no logo', 'sin logo')}</span>}
                 </div>
                 <p className="truncate text-sm text-slate-600 dark:text-slate-300">{isEs() ? (r.offerEs || r.offerEn) : r.offerEn}</p>
@@ -236,17 +262,14 @@ const FestivalAdmin: React.FC = () => {
                 <label className={lbl}>{tr('Address', 'Dirección')}</label>
                 <input className={field} value={draft.address || ''} onChange={(e) => setDraft({ ...draft, address: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={lbl}>{tr('Punch code', 'Código')}</label>
-                  <input className={`${field} font-mono`} value={draft.punchCode}
-                         onChange={(e) => setDraft({ ...draft, punchCode: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
-                </div>
-                <div>
-                  <label className={lbl}>{tr('Pledge %', 'Donación %')}</label>
-                  <input className={field} inputMode="numeric" value={draft.pledgePct ?? ''}
-                         onChange={(e) => setDraft({ ...draft, pledgePct: Number(e.target.value) || undefined })} />
-                </div>
+              <div>
+                <label className={lbl}>{tr('Pledge %', 'Donación %')}</label>
+                <input className={field} inputMode="numeric" value={draft.pledgePct ?? ''}
+                       onChange={(e) => setDraft({ ...draft, pledgePct: Number(e.target.value) || undefined })} />
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {tr('The punch code is minted when you publish, and never stored in the public file.',
+                      'El código se genera al publicar y nunca se guarda en el archivo público.')}
+                </p>
               </div>
             </div>
             <div className="mt-6 flex gap-2">
@@ -288,6 +311,128 @@ const FestivalAdmin: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* ── going live ────────────────────────────────────────────────── */}
+      <section className="mt-8">
+        <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+          <UploadCloud className="h-5 w-5 text-sky-600" />{tr('Punch cards', 'Tarjetas de sellos')}
+        </h2>
+
+        {backend === false && (
+          <div className={`mt-3 ${card} border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20`}>
+            <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+              {tr('Punch cards are not switched on yet.', 'Las tarjetas aún no están activadas.')}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+              {tr('Open the Supabase SQL editor, paste supabase/create_festival.sql and press Run. It only creates new festival_* tables and touches nothing that exists. Then come back and press Publish.',
+                  'Abre el editor SQL de Supabase, pega supabase/create_festival.sql y presiona Run. Solo crea tablas festival_* nuevas y no toca nada existente. Luego vuelve y presiona Publicar.')}
+            </p>
+          </div>
+        )}
+
+        {backend && (
+          <div className={`mt-3 ${card} space-y-4`}>
+            <div>
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {tr('Publishing copies the shops above into Supabase and mints a 4-digit punch code for each new one. Codes never go in the public file — email each shop its own.',
+                    'Publicar copia las tiendas de arriba a Supabase y genera un código de 4 dígitos para cada nueva. Los códigos nunca van en el archivo público: envía a cada tienda el suyo por correo.')}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" onClick={publish} disabled={publishing}>
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  {publishing ? tr('Publishing…', 'Publicando…') : tr('Publish shops', 'Publicar tiendas')}
+                </Button>
+                {publishMsg && <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{publishMsg}</span>}
+              </div>
+            </div>
+
+            {Object.keys(codes).length > 0 && (
+              <div>
+                <p className={lbl}><KeyRound className="mr-1 inline h-3 w-3" />{tr('Punch codes to email out', 'Códigos para enviar por correo')}</p>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {rows.filter((r) => codes[r.id]).map((r) => (
+                    <div key={r.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm dark:bg-slate-800">
+                      <span className="truncate text-slate-700 dark:text-slate-200">{r.name}</span>
+                      <span className="ml-2 font-mono font-black text-sky-700 dark:text-sky-400">{codes[r.id]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className={lbl}>{tr('Festival stage', 'Etapa del festival')}</p>
+              <div className="flex flex-wrap gap-2">
+                {(['recruiting', 'live', 'ended'] as const).map((st) => (
+                  <Button key={st} size="sm"
+                          variant={settings.state === st ? 'primary' : 'secondary'}
+                          disabled={st === 'live' && Object.keys(codes).length === 0}
+                          onClick={async () => {
+                            setSettings({ ...settings, state: st });
+                            await festivalDb.setSettings({ state: st });
+                          }}>
+                    {st === 'recruiting' ? tr('Recruiting', 'Reclutando')
+                      : st === 'live' ? tr('Live', 'En vivo')
+                      : tr('Ended', 'Terminado')}
+                  </Button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {Object.keys(codes).length === 0
+                  ? tr('Publish the shops before going live — without codes nobody can punch anything.',
+                       'Publica las tiendas antes de ir en vivo: sin códigos nadie puede sellar nada.')
+                  : tr('“Live” opens registration and turns punching on.',
+                       '«En vivo» abre la inscripción y activa los sellos.')}
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── how it is going ───────────────────────────────────────────── */}
+      {metrics && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+            <BarChart3 className="h-5 w-5 text-sky-600" />{tr('How it is going', 'Cómo va')}
+          </h2>
+          <div className={`mt-3 ${card}`}>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white">{metrics.passes}</p>
+                <p className="text-xs font-bold text-slate-500">{tr('Punch cards', 'Tarjetas')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white">{metrics.punches}</p>
+                <p className="text-xs font-bold text-slate-500">{tr('Offers redeemed', 'Ofertas canjeadas')}</p>
+              </div>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white">
+                  {metrics.passes ? Math.round((metrics.perShop.filter((s) => s.punches > 0).length / Math.max(1, rows.length)) * 100) : 0}%
+                </p>
+                <p className="text-xs font-bold text-slate-500">{tr('Shops used', 'Tiendas usadas')}</p>
+              </div>
+            </div>
+            {metrics.perShop.length > 0 && (
+              <div className="mt-5 space-y-1.5">
+                {metrics.perShop.map((s) => (
+                  <div key={s.id} className="flex items-center gap-3">
+                    <span className="w-40 shrink-0 truncate text-sm text-slate-700 dark:text-slate-200">{s.name}</span>
+                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-full rounded-full bg-sky-600"
+                           style={{ width: `${Math.round((s.punches / Math.max(1, metrics.perShop[0].punches)) * 100)}%` }} />
+                    </div>
+                    <span className="w-8 shrink-0 text-right text-sm font-black text-slate-700 dark:text-slate-200">{s.punches}</span>
+                  </div>
+                ))}
+                <p className="pt-2 text-xs text-slate-500 dark:text-slate-400">
+                  {tr('Shops with no punches are the ones to nudge people towards.',
+                      'Las tiendas sin sellos son a las que conviene dirigir a la gente.')}
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── the file ──────────────────────────────────────────────────── */}
       <section className="mt-8">

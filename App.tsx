@@ -105,6 +105,7 @@ const Playtest = lazy(() => import('./pages/Playtest'));
 const Festival = lazy(() => import('./pages/Festival'));
 const FestivalShopJoin = lazy(() => import('./pages/FestivalShopJoin'));
 const FestivalAdmin = lazy(() => import('./pages/FestivalAdmin'));
+const FestivalPass = lazy(() => import('./pages/FestivalPass'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -161,6 +162,7 @@ const App: React.FC = () => {
                 {/* Inclusion Festival & Resource Fair — November punch card */}
                 <Route path="/InclusionFestival" element={<Festival />} />
                 <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
+                <Route path="/InclusionFestival/pass" element={<FestivalPass />} />
                 <Route
                   path="/InclusionFestival/admin"
                   element={
