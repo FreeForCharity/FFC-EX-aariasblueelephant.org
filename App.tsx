@@ -102,6 +102,9 @@ const CircleOfFriends = lazy(() => import('./pages/CircleOfFriends'));
 const BelusWorld = lazy(() => import('./pages/BelusWorld'));
 const Games = lazy(() => import('./pages/Games'));
 const Playtest = lazy(() => import('./pages/Playtest'));
+const Festival = lazy(() => import('./pages/Festival'));
+const FestivalShopJoin = lazy(() => import('./pages/FestivalShopJoin'));
+const FestivalAdmin = lazy(() => import('./pages/FestivalAdmin'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -154,6 +157,25 @@ const App: React.FC = () => {
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
                 <Route path="/games" element={<Games />} />
+
+                {/* Inclusion Festival & Resource Fair — November punch card */}
+                <Route path="/InclusionFestival" element={<Festival />} />
+                <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
+                <Route
+                  path="/InclusionFestival/admin"
+                  element={
+                    <ProtectedRoute>
+                      <FestivalAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* aliases: a short link volunteers can read out loud, plus
+                    lower-case and older spellings so no printed link ever dies */}
+                <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
+                <Route path="/inclusionfestival" element={<Navigate to="/InclusionFestival" replace />} />
+                <Route path="/festival" element={<Navigate to="/InclusionFestival" replace />} />
+                <Route path="/festival/shops/join" element={<Navigate to="/InclusionFestival/join" replace />} />
+                <Route path="/festival/admin" element={<Navigate to="/InclusionFestival/admin" replace />} />
                 <Route path="/playtest" element={<Playtest />} />
                 <Route path="/nelus-world" element={<BelusWorld />} />
                 {/* aliases: old link + likely spelling both land on the game */}

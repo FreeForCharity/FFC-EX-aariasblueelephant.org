@@ -1,0 +1,178 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Store, Ticket, Calendar, MapPin, ArrowRight } from 'lucide-react';
+import Button from '../components/Button';
+import ShopTile from '../components/festival/ShopTile';
+import SpotMeter from '../components/festival/SpotMeter';
+import { festival, SETTINGS } from '../lib/festival/store';
+import { FestivalShop, CATEGORY_LABEL } from '../lib/festival/types';
+import { tr, isEs } from '../lib/lang';
+
+const fmtDate = (iso: string) =>
+  new Date(iso + 'T12:00:00').toLocaleDateString(isEs() ? 'es-US' : 'en-US',
+    { month: 'long', day: 'numeric', year: 'numeric' });
+
+const Festival: React.FC = () => {
+  // the shop list is a committed file, so there is nothing to wait for
+  const shops = festival.shops();
+  const settings = SETTINGS;
+  const counts = festival.counts();
+  const [open, setOpen] = useState<FestivalShop | null>(null);
+
+  // one square per spot: claimed shops first, then the places still to fill
+  const tiles: (FestivalShop | null)[] = [];
+  for (let i = 0; i < settings.spots; i++) tiles.push(shops[i] || null);
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      {/* ── hero ───────────────────────────────────────────────────────── */}
+      <div className="text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-4 py-1.5 text-sm font-bold text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
+          <Sparkles className="h-4 w-4" />
+          {tr('Mountain House', 'Mountain House')}
+        </span>
+        <h1 className="mt-5 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl">
+          {tr('Inclusion Festival', 'Festival de Inclusión')}
+          <span className="block text-sky-700 dark:text-sky-400">{tr('& Resource Fair', 'y Feria de Recursos')}</span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+          {tr('One day together, and one month of Mountain House businesses saying welcome. Every family who comes gets a digital punch card — a deal at every shop that joins in.',
+              'Un día juntos y un mes entero de negocios de Mountain House dando la bienvenida. Cada familia que venga recibe una tarjeta digital: una oferta en cada tienda que participe.')}
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+          <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" />{fmtDate(settings.festivalDate)}</span>
+          <span className="inline-flex items-center gap-1.5"><Ticket className="h-4 w-4" />
+            {tr('Offers valid', 'Ofertas válidas')} {fmtDate(settings.redeemFrom)} – {fmtDate(settings.redeemTo)}
+          </span>
+          <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />Mountain House, CA</span>
+        </div>
+
+        <div className="mt-8">
+          {settings.state === 'live' ? (
+            <Link to="/InclusionFestival/pass"><Button size="lg">{tr('Get my punch card', 'Obtener mi tarjeta')}</Button></Link>
+          ) : (
+            <div className="inline-flex flex-col items-center gap-2">
+              <Button size="lg" disabled>{tr('Registration opens soon', 'La inscripción abre pronto')}</Button>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {tr('We are signing up shops first — check back shortly.', 'Primero estamos inscribiendo tiendas, vuelve pronto.')}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── how it works ───────────────────────────────────────────────── */}
+      <div className="mt-16 grid gap-4 sm:grid-cols-3">
+        {[
+          { n: '1', en: 'Register — free', es: 'Regístrate, es gratis',
+            de: 'Sign in and your punch card appears, with every shop on it.',
+            ds: 'Inicia sesión y aparece tu tarjeta con todas las tiendas.' },
+          { n: '2', en: 'Visit a shop', es: 'Visita una tienda',
+            de: 'Show your card. Staff types their 4-digit code and the stamp lands.',
+            ds: 'Muestra tu tarjeta. El personal escribe su código de 4 dígitos y llega el sello.' },
+          { n: '3', en: 'Fill your card', es: 'Llena tu tarjeta',
+            de: 'Collect stamps all through November. Enough of them and you are in the raffle.',
+            ds: 'Junta sellos durante todo noviembre. Con suficientes, entras al sorteo.' },
+        ].map((s) => (
+          <div key={s.n} className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-sm font-black text-white">{s.n}</span>
+            <h3 className="mt-3 font-bold text-slate-900 dark:text-white">{tr(s.en, s.es)}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{tr(s.de, s.ds)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── the card ───────────────────────────────────────────────────── */}
+      <div className="mt-16">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+          {tr('The shops taking part', 'Las tiendas que participan')}
+        </h2>
+        <p className="mt-1 text-slate-600 dark:text-slate-400">
+          {shops.length
+            ? tr(`${shops.length} confirmed so far — this is your punch card.`, `${shops.length} confirmadas hasta ahora: esta es tu tarjeta.`)
+            : tr('The first shops are signing up now.', 'Las primeras tiendas se están inscribiendo ahora.')}
+        </p>
+
+        <div className="mt-6 rounded-3xl border-2 border-dashed border-sky-200 bg-sky-50/50 p-4 dark:border-slate-700 dark:bg-slate-900/40 sm:p-6">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3">
+            {tiles.map((shop, i) =>
+              shop
+                ? <ShopTile key={shop.id} shop={shop} onClick={() => setOpen(shop)} />
+                : (
+                  <div key={`empty-${i}`}
+                       className="flex aspect-square w-full items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 dark:border-slate-700 dark:text-slate-600">
+                    <span className="text-xl font-black">?</span>
+                  </div>
+                ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── businesses ─────────────────────────────────────────────────── */}
+      <div className="mt-16 rounded-3xl border border-sky-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-900 sm:p-8">
+        <div className="flex items-start gap-4">
+          <Store className="mt-1 h-7 w-7 shrink-0 text-sky-700 dark:text-sky-400" />
+          <div className="flex-1">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+              {tr('Run a shop in Mountain House?', '¿Tienes un negocio en Mountain House?')}
+            </h2>
+            <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
+              {tr('Free to join. You choose the offer — a free drink, two for one, a month of membership, whatever suits you. You get a month of new faces through the door, and your logo on every family’s card.',
+                  'Participar es gratis. Tú eliges la oferta: una bebida gratis, dos por uno, un mes de membresía, lo que mejor te funcione. Ganas un mes de caras nuevas en tu puerta y tu logo en la tarjeta de cada familia.')}
+            </p>
+            <div className="mt-5"><SpotMeter counts={counts} /></div>
+            <Link to="/InclusionFestival/join" className="mt-5 inline-block">
+              <Button>
+                {counts.full ? tr('Join the waiting list', 'Unirme a la lista de espera') : tr('Claim a spot', 'Reservar un lugar')}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── offer detail ───────────────────────────────────────────────── */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+             onClick={() => setOpen(null)}>
+          <div className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              {open.logoUrl
+                ? <img src={open.logoUrl} alt="" className="h-12 w-12 rounded-xl object-contain" />
+                : <span className="text-4xl" aria-hidden>{open.emoji}</span>}
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">{open.name}</h3>
+                <p className="text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400">
+                  {isEs() ? CATEGORY_LABEL[open.category].es : CATEGORY_LABEL[open.category].en}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+              {isEs() ? (open.offerEs || open.offerEn) : open.offerEn}
+            </p>
+            {(isEs() ? open.detailEs : open.detailEn) && (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                {isEs() ? open.detailEs : open.detailEn}
+              </p>
+            )}
+            {open.address && (
+              <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                <MapPin className="h-4 w-4" />{open.address}
+              </p>
+            )}
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+              {tr('Valid', 'Válido')} {fmtDate(open.redeemFrom)} – {fmtDate(open.redeemTo)}
+            </p>
+            <Button className="mt-6" fullWidth variant="secondary" onClick={() => setOpen(null)}>
+              {tr('Close', 'Cerrar')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Festival;
