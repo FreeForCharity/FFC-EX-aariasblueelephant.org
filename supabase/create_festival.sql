@@ -223,10 +223,15 @@ grant select on festival_shop_stats to authenticated;
 -- A shop opens one link on the till phone and bookmarks it. The token is the
 -- only thing that identifies them, so it must not be guessable and must not be
 -- the shop id (which is public in data/festival.json).
-alter table festival_shops add column if not exists console_token text;
+-- gen_random_uuid() is built into Postgres 13+, so this needs no extension.
+-- (gen_random_bytes would have dragged in pgcrypto and its search path.)
+alter table festival_shops
+  add column if not exists console_token text
+  default replace(gen_random_uuid()::text, '-', '');
 update festival_shops
-   set console_token = encode(gen_random_bytes(12), 'hex')
+   set console_token = replace(gen_random_uuid()::text, '-', '')
  where console_token is null;
+alter table festival_shops alter column console_token set not null;
 create unique index if not exists festival_shops_token_idx on festival_shops (console_token);
 
 -- What the till screen is allowed to see: its own name, offer, code and tally.
