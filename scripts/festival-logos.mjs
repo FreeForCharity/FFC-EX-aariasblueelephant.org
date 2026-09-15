@@ -24,7 +24,15 @@ const KEEP = path.join(DIR, '_originals');
 const SIZE = 256;
 const MAX_KB = 60;
 
-const inputs = fs.readdirSync(DIR).filter((f) => /\.(png|jpe?g|webp|gif|bmp)$/i.test(f));
+// A shop's original is moved into _originals/ and a .webp is written in its
+// place. On a second run that .webp must NOT be treated as a fresh input, or
+// the rename collides with the backup already sitting there.
+const backedUp = fs.existsSync(KEEP)
+  ? new Set(fs.readdirSync(KEEP).map((f) => path.basename(f, path.extname(f))))
+  : new Set();
+const inputs = fs.readdirSync(DIR)
+  .filter((f) => /\.(png|jpe?g|webp|gif|bmp)$/i.test(f))
+  .filter((f) => !backedUp.has(path.basename(f, path.extname(f))));
 if (!inputs.length) { console.log('No logos to process in ' + DIR); process.exit(0); }
 fs.mkdirSync(KEEP, { recursive: true });
 

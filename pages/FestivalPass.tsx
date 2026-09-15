@@ -4,7 +4,7 @@ import { Ticket, MapPin, WifiOff, PartyPopper, LogIn, Clock } from 'lucide-react
 import Button from '../components/Button';
 import ShopTile from '../components/festival/ShopTile';
 import { festival, SETTINGS } from '../lib/festival/store';
-import { festivalDb, Pass, Punch, PublicShop, PunchOutcome } from '../lib/festival/db';
+import { festivalDb, setCacheOwner, Pass, Punch, PublicShop, PunchOutcome } from '../lib/festival/db';
 import { FestivalShop, CATEGORY_EMOJI, CATEGORY_LABEL, ShopCategory } from '../lib/festival/types';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/database';
@@ -60,8 +60,11 @@ const FestivalPass: React.FC = () => {
   const [backendReady, setBackendReady] = useState<boolean | null>(null);
   const [state, setState] = useState(SETTINGS.state);
   const [shops, setShops] = useState<FestivalShop[]>(festival.shops());
-  const [pass, setPass] = useState<Pass | null>(festivalDb.cached().pass || null);
-  const [punches, setPunches] = useState<Punch[]>(festivalDb.cached().punches || []);
+  // deliberately NOT seeded from cache here: the cache is per-user and the user
+  // is not known until AuthContext resolves. Seeding early meant that on a
+  // shared phone the next person saw the previous person's card.
+  const [pass, setPass] = useState<Pass | null>(null);
+  const [punches, setPunches] = useState<Punch[]>([]);
   const [partySize, setPartySize] = useState(1);
   const [busy, setBusy] = useState(false);
 
@@ -105,11 +108,14 @@ const FestivalPass: React.FC = () => {
   const loadPass = useCallback(async () => {
     if (!user) return;
     setBusy(true);
+    setCacheOwner(user.id);
     const { pass: p } = await festivalDb.myPass(user.name || user.email, partySize);
     if (p) {
       setPass(p);
-      setPunches(await festivalDb.punches(p.id));
+      // flush BEFORE reading, or a punch that lands during the flush is
+      // missing from the card until the next reload
       await festivalDb.flushQueue(p.id);
+      setPunches(await festivalDb.punches(p.id));
     }
     setBusy(false);
   }, [user, partySize]);
@@ -241,8 +247,8 @@ const FestivalPass: React.FC = () => {
 
       {preview && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
-          <span>{tr('Preview — any 4 digits will stamp, and nothing is saved anywhere.',
-                    'Vista previa: cualquier código de 4 dígitos sella, y nada se guarda.')}</span>
+          <span>{tr('Preview — any 4 digits will stamp. Stamps stay in this browser only and never reach the festival.',
+                    'Vista previa: cualquier código de 4 dígitos sella. Los sellos se quedan solo en este navegador y nunca llegan al festival.')}</span>
           <button className="underline"
                   onClick={() => { try { localStorage.removeItem(PREVIEW_KEY); } catch { /* ignore */ } setPunches([]); }}>
             {tr('Clear', 'Limpiar')}
@@ -311,8 +317,10 @@ const FestivalPass: React.FC = () => {
         const err = outcome && outcome.ok === false ? outcome : null;
         return (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
-               onClick={() => setOpen(null)}>
-            <div className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
+               onClick={() => setOpen(null)}
+               onKeyDown={(e) => { if (e.key === 'Escape') setOpen(null); }}>
+            <div role="dialog" aria-modal="true" aria-label={open.name}
+                 className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
                  onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-3">
                 {open.logoUrl
@@ -391,6 +399,7 @@ const FestivalPass: React.FC = () => {
                   {err.error === 'not_live' && tr('The festival has not started yet.', 'El festival aún no comienza.')}
                   {err.error === 'not_your_pass' && tr('Something is off with this card. Please find a volunteer.', 'Algo pasa con esta tarjeta. Busca a un voluntario.')}
                   {err.error === 'no_backend' && tr('Punching is not switched on yet.', 'Los sellos aún no están activados.')}
+                  {err.error === 'too_many_tries' && tr('Too many wrong codes. Wait a few minutes and try again.', 'Demasiados códigos incorrectos. Espera unos minutos e inténtalo de nuevo.')}
                   {err.error === 'offline' && (
                     <span className="inline-flex items-center gap-1.5">
                       <WifiOff className="h-4 w-4" />

@@ -21,7 +21,9 @@ $$;
 
 -- ─────────────────────────────────────────────────────────────── shops ──
 create table if not exists festival_shops (
-  id            uuid primary key default gen_random_uuid(),
+  -- the slug from data/festival.json ("spice-route"), NOT a uuid: it is the
+  -- stable human-readable key the committed file and the logo filenames share
+  id            text primary key,
   name          text not null,
   category      text not null default 'other',
   emoji         text,
@@ -37,8 +39,10 @@ create table if not exists festival_shops (
   contact_phone text,
   pledge_pct    int check (pledge_pct is null or (pledge_pct >= 0 and pledge_pct <= 100)),
   punch_code    text not null,
-  redeem_from   date,
-  redeem_to     date,
+  -- never NULL: a NULL made the November window comparison evaluate to NULL,
+  -- which silently skipped the check and let an offer be punched on any date
+  redeem_from   date not null default '2026-11-01',
+  redeem_to     date not null default '2026-11-30',
   spot          int,
   status        text not null default 'held'
                 check (status in ('held','approved','waitlist','rejected','released')),
@@ -53,9 +57,12 @@ create index if not exists festival_shops_status_idx on festival_shops (status);
 
 alter table festival_shops enable row level security;
 
--- anyone may apply for a spot; nobody but the admin may read or change the table
+-- Only the admin may touch this table at all. There is deliberately no public
+-- insert policy: with one, an anonymous caller could insert a row with
+-- status='approved' and a punch code of their choosing, putting a fake shop on
+-- the card or squatting every spot. Sign-ups arrive by email and the admin
+-- enters them, so the client never needs to write here.
 drop policy if exists festival_shops_insert on festival_shops;
-create policy festival_shops_insert on festival_shops for insert to anon, authenticated with check (true);
 
 drop policy if exists festival_shops_admin_read on festival_shops;
 create policy festival_shops_admin_read on festival_shops for select to authenticated using (festival_is_admin());
@@ -134,7 +141,7 @@ create policy festival_passes_admin_write on festival_passes for update to authe
 create table if not exists festival_punches (
   id          uuid primary key default gen_random_uuid(),
   pass_id     uuid not null references festival_passes(id) on delete cascade,
-  shop_id     uuid not null references festival_shops(id) on delete cascade,
+  shop_id     text not null references festival_shops(id) on delete cascade,
   punched_at  timestamptz not null default now(),
   method      text not null default 'code' check (method in ('code','qr','shop','admin')),
   sale_amount numeric(10,2)
@@ -156,14 +163,28 @@ create policy festival_punches_admin_write on festival_punches for delete to aut
   using (festival_is_admin());
 
 -- ─────────────────────────────────────── the punch, validated server-side ──
+-- failed guesses, so a four-digit code cannot simply be enumerated
+create table if not exists festival_punch_tries (
+  id      bigserial primary key,
+  pass_id uuid not null references festival_passes(id) on delete cascade,
+  tried_at timestamptz not null default now()
+);
+create index if not exists festival_punch_tries_idx on festival_punch_tries (pass_id, tried_at);
+alter table festival_punch_tries enable row level security;
+
+-- p_sale is gone on purpose: it was caller-controlled and written straight into
+-- the pledge figures. Sale amounts now go through festival_set_sale(), which is
+-- write-once. p_method is clamped so nobody can label their own punch 'admin'.
 create or replace function festival_punch(
-  p_pass uuid, p_code text, p_method text default 'code', p_sale numeric default null
+  p_pass uuid, p_code text, p_method text default 'code'
 ) returns json
 language plpgsql security definer set search_path = public as $$
 declare
-  v_owner uuid;
-  v_shop  festival_shops%rowtype;
-  v_state text;
+  v_owner  uuid;
+  v_shop   festival_shops%rowtype;
+  v_state  text;
+  v_recent int;
+  v_method text := case when p_method in ('code','qr') then p_method else 'code' end;
 begin
   select user_id into v_owner from festival_passes where id = p_pass and status = 'active';
   if v_owner is null or v_owner <> auth.uid() then
@@ -175,11 +196,19 @@ begin
     return json_build_object('ok', false, 'error', 'not_live');
   end if;
 
+  -- 12 wrong guesses in ten minutes and this card stops guessing for a while
+  select count(*) into v_recent from festival_punch_tries
+   where pass_id = p_pass and tried_at > now() - interval '10 minutes';
+  if v_recent >= 12 then
+    return json_build_object('ok', false, 'error', 'too_many_tries');
+  end if;
+
   select * into v_shop from festival_shops
    where punch_code = regexp_replace(coalesce(p_code, ''), '\D', '', 'g')
      and status = 'approved'
    limit 1;
   if v_shop.id is null then
+    insert into festival_punch_tries (pass_id) values (p_pass);
     return json_build_object('ok', false, 'error', 'bad_code');
   end if;
 
@@ -189,8 +218,8 @@ begin
   end if;
 
   begin
-    insert into festival_punches (pass_id, shop_id, method, sale_amount)
-    values (p_pass, v_shop.id, coalesce(p_method, 'code'), p_sale);
+    insert into festival_punches (pass_id, shop_id, method)
+    values (p_pass, v_shop.id, v_method);
   exception when unique_violation then
     return json_build_object('ok', false, 'error', 'already_used',
                              'shop_id', v_shop.id, 'shop_name', v_shop.name);
@@ -200,8 +229,8 @@ begin
                            'punched_at', now());
 end $$;
 
-revoke all on function festival_punch(uuid, text, text, numeric) from public;
-grant execute on function festival_punch(uuid, text, text, numeric) to authenticated;
+revoke all on function festival_punch(uuid, text, text) from public;
+grant execute on function festival_punch(uuid, text, text) to authenticated;
 
 -- ────────────────────────────────────────────── metrics, for the admin ──
 create or replace view festival_shop_stats
@@ -269,7 +298,7 @@ grant execute on function festival_shop_console(text) to anon, authenticated;
 -- The optional sale amount, typed by staff straight after the stamp lands.
 -- Only the owner of the punch may set it, and only once — so a figure cannot
 -- be revised upward later to inflate what a shop appears to owe.
-create or replace function festival_set_sale(p_pass uuid, p_shop uuid, p_amount numeric)
+create or replace function festival_set_sale(p_pass uuid, p_shop text, p_amount numeric)
 returns json
 language plpgsql security definer set search_path = public as $$
 declare v_owner uuid;
@@ -292,8 +321,8 @@ begin
   return json_build_object('ok', true);
 end $$;
 
-revoke all on function festival_set_sale(uuid, uuid, numeric) from public;
-grant execute on function festival_set_sale(uuid, uuid, numeric) to authenticated;
+revoke all on function festival_set_sale(uuid, text, numeric) from public;
+grant execute on function festival_set_sale(uuid, text, numeric) to authenticated;
 
 -- The pledge board: what each shop said they would give, against what was sold.
 -- Honour system, so this is an estimate to thank people with, never an invoice.

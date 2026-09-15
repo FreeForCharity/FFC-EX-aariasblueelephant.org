@@ -19,9 +19,17 @@ const Festival: React.FC = () => {
   const counts = festival.counts();
   const [open, setOpen] = useState<FestivalShop | null>(null);
 
-  // one square per spot: claimed shops first, then the places still to fill
+  // one square per spot, looked up BY spot number — placing by array index
+  // meant a single released spot shifted every later shop into the wrong square
   const tiles: (FestivalShop | null)[] = [];
-  for (let i = 0; i < settings.spots; i++) tiles.push(shops[i] || null);
+  for (let i = 1; i <= settings.spots; i++) {
+    tiles.push(shops.find((s) => s.spot === i) || null);
+  }
+  // any shop without a spot number still deserves a tile
+  shops.filter((s) => !s.spot).forEach((s) => {
+    const gap = tiles.indexOf(null);
+    if (gap >= 0) tiles[gap] = s;
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -135,8 +143,10 @@ const Festival: React.FC = () => {
       {/* ── offer detail ───────────────────────────────────────────────── */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-             onClick={() => setOpen(null)}>
-          <div className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
+             onClick={() => setOpen(null)}
+             onKeyDown={(e) => { if (e.key === 'Escape') setOpen(null); }}>
+          <div role="dialog" aria-modal="true" aria-label={open.name}
+               className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
                onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               {open.logoUrl

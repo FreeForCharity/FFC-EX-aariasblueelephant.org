@@ -30,24 +30,26 @@ const FestivalShopJoin: React.FC = () => {
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const subject = `Inclusion Festival — ${form.name || 'shop sign-up'}`;
+  const subject = tr('Inclusion Festival', 'Festival de Inclusión') + ' — ' + (form.name || tr('shop sign-up', 'inscripción de tienda'));
   const buildBody = () => [
-    'We would like a spot at the Inclusion Festival.',
+    tr('We would like a spot at the Inclusion Festival.', 'Nos gustaría un lugar en el Festival de Inclusión.'),
     '',
-    `Business:  ${form.name}`,
-    `Type:      ${CATEGORY_LABEL[form.category].en}`,
-    `Offer:     ${form.offerEn}`,
-    form.offerEs ? `Offer (ES): ${form.offerEs}` : '',
-    form.detailEn ? `Conditions: ${form.detailEn}` : '',
-    form.address ? `Address:   ${form.address}` : '',
-    form.website ? `Website:   ${form.website}` : '',
+    `${tr('Business', 'Negocio')}:  ${form.name}`,
+    `${tr('Type', 'Tipo')}:  ${isEs() ? CATEGORY_LABEL[form.category].es : CATEGORY_LABEL[form.category].en}`,
+    `${tr('Offer', 'Oferta')}:  ${form.offerEn}`,
+    form.offerEs ? `${tr('Offer (Spanish)', 'Oferta (español)')}: ${form.offerEs}` : '',
+    form.detailEn ? `${tr('Conditions', 'Condiciones')}: ${form.detailEn}` : '',
+    form.address ? `${tr('Address', 'Dirección')}: ${form.address}` : '',
+    form.website ? `${tr('Website', 'Sitio web')}: ${form.website}` : '',
     '',
-    `Contact:   ${form.contactName}`,
-    `Email:     ${form.contactEmail}`,
-    form.contactPhone ? `Phone:     ${form.contactPhone}` : '',
-    form.pledgePct ? `Pledge:    ${form.pledgePct}% of these sales` : 'Pledge:    none this time',
+    `${tr('Contact', 'Contacto')}:  ${form.contactName}`,
+    `${tr('Email', 'Correo')}:  ${form.contactEmail}`,
+    form.contactPhone ? `${tr('Phone', 'Teléfono')}: ${form.contactPhone}` : '',
+    form.pledgePct
+      ? `${tr('Pledge', 'Donación')}:  ${form.pledgePct}% ${tr('of these sales', 'de estas ventas')}`
+      : `${tr('Pledge', 'Donación')}:  ${tr('none this time', 'esta vez no')}`,
     '',
-    'Our logo is attached (square image, please).',
+    tr('Our logo is attached (a square image works best).', 'Adjuntamos nuestro logo (una imagen cuadrada funciona mejor).'),
   ].filter(Boolean).join('\n');
 
   const submit = (e: React.FormEvent) => {
@@ -197,6 +199,12 @@ const FestivalShopJoin: React.FC = () => {
             <label className={label} htmlFor="address">{tr('Address', 'Dirección')}</label>
             <input id="address" className={field} value={form.address}
                    onChange={(e) => set('address', e.target.value)} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={label} htmlFor="website">{tr('Website', 'Sitio web')}</label>
+            <input id="website" className={field} value={form.website}
+                   onChange={(e) => set('website', e.target.value)}
+                   placeholder="https://" />
           </div>
         </div>
 

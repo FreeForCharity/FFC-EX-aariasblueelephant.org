@@ -1,6 +1,6 @@
 import React from 'react';
 import { FestivalShop } from '../../lib/festival/types';
-import { isEs } from '../../lib/lang';
+import { isEs, tr } from '../../lib/lang';
 
 interface Props {
   shop: FestivalShop;
@@ -49,7 +49,7 @@ const ShopTile: React.FC<Props> = ({ shop, punched, punchedAt, freshFor, onClick
         <span className="pointer-events-none absolute inset-0 flex -rotate-12 items-center justify-center">
           <span className={`rounded-lg border-4 px-2 py-1 text-[10px] font-black uppercase tracking-wider sm:text-xs
             ${freshFor ? 'border-green-600/80 text-green-700 dark:text-green-400' : 'border-sky-600/70 text-sky-600/70'}`}>
-            {punchedAt || 'Punched'}
+            {punchedAt || tr('Punched', 'Sellado')}
           </span>
         </span>
       )}

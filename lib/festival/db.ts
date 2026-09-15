@@ -70,23 +70,33 @@ export interface Pledge {
 
 export type PunchOutcome =
   | { ok: true; shopId: string; shopName: string; punchedAt: string }
-  | { ok: false; error: 'bad_code' | 'already_used' | 'outside_window' | 'not_live' | 'not_your_pass' | 'offline' | 'no_backend';
+  | { ok: false; error: 'bad_code' | 'already_used' | 'outside_window' | 'not_live' | 'not_your_pass' | 'offline' | 'no_backend' | 'too_many_tries';
       shopId?: string; shopName?: string; from?: string; to?: string };
 
-const CACHE = 'abe_festival_pass_v1';
+/**
+ * The cache is keyed by the signed-in user. A single shared key meant that on a
+ * family phone, the next person to sign in rendered the previous person's card
+ * and punch history — and that a punch queued while offline could be replayed
+ * onto whichever pass happened to be current.
+ */
+const CACHE_PREFIX = 'abe_festival_pass_v2:';
+let cacheOwner = '';
+export const setCacheOwner = (userId: string) => { cacheOwner = userId || ''; };
+const cacheKey = () => CACHE_PREFIX + (cacheOwner || 'anon');
 
 interface Cached {
   pass?: Pass;
   punches?: Punch[];
-  queued?: { code: string; at: number }[];
+  /** every queued attempt remembers the pass it was meant for */
+  queued?: { code: string; at: number; passId: string }[];
   savedAt?: number;
 }
 
 const readCache = (): Cached => {
-  try { return JSON.parse(localStorage.getItem(CACHE) || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(cacheKey()) || '{}'); } catch { return {}; }
 };
 const writeCache = (c: Cached) => {
-  try { localStorage.setItem(CACHE, JSON.stringify({ ...c, savedAt: Date.now() })); } catch { /* private mode */ }
+  try { localStorage.setItem(cacheKey(), JSON.stringify({ ...c, savedAt: Date.now() })); } catch { /* private mode */ }
 };
 
 /** a short human-readable code for the top of the card, e.g. 7K4M9P */
@@ -183,13 +193,13 @@ export const festivalDb = {
     const clean = (code || '').replace(/\D/g, '').slice(0, 4);
     try {
       const { data, error } = await supabase.rpc('festival_punch', {
-        p_pass: passId, p_code: clean, p_method: method, p_sale: null,
+        p_pass: passId, p_code: clean, p_method: method,
       });
       if (error) {
         if (noBackend(error)) return { ok: false, error: 'no_backend' };
         // network trouble: hold the attempt and let the card retry later
         const c = readCache();
-        writeCache({ ...c, queued: [...(c.queued || []), { code: clean, at: Date.now() }] });
+        writeCache({ ...c, queued: [...(c.queued || []), { code: clean, at: Date.now(), passId }] });
         return { ok: false, error: 'offline' };
       }
       const r = data as any;
@@ -200,7 +210,7 @@ export const festivalDb = {
                from: r?.from, to: r?.to };
     } catch {
       const c = readCache();
-      writeCache({ ...c, queued: [...(c.queued || []), { code: clean, at: Date.now() }] });
+      writeCache({ ...c, queued: [...(c.queued || []), { code: clean, at: Date.now(), passId }] });
       return { ok: false, error: 'offline' };
     }
   },
@@ -258,6 +268,14 @@ export const festivalDb = {
 
     const { error } = await supabase.from('festival_shops').upsert(payload, { onConflict: 'id' });
     if (error) return { error: error.message };
+
+    // a shop removed from the committed file must leave the card too, or it
+    // keeps coming back through festival_shops_public
+    const keep = payload.map((p) => p.id);
+    const stale = (current.data || []).map((r: any) => r.id).filter((id: string) => !keep.includes(id));
+    if (stale.length) {
+      await supabase.from('festival_shops').update({ status: 'released', spot: null }).in('id', stale);
+    }
 
     const codes: Record<string, string> = {};
     payload.forEach((p) => { codes[p.id] = p.punch_code; });
@@ -347,6 +365,8 @@ export const festivalDb = {
     let done = 0;
     const left: typeof queued = [];
     for (const q of queued) {
+      // never replay an attempt that belonged to a different card
+      if (q.passId && q.passId !== passId) continue;
       const r = await this.punch(passId, q.code);
       if (r.ok || (!r.ok && r.error !== 'offline')) done++;   // settled, either way
       else left.push(q);

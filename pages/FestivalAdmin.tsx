@@ -25,7 +25,7 @@ const README = [
   'This file IS the database. To add or change a shop, edit it here and commit;',
   'the site picks it up on the next deploy. The admin page at /InclusionFestival/admin',
   'will generate the whole file for you so you never have to hand-edit JSON.',
-  'Logos live in public/festival/logos/<id>.png — run scripts/festival-logos.mjs',
+  'Logos live in public/festival/logos/<id>.webp — run scripts/festival-logos.mjs',
   'after dropping new ones in, to keep them small and square.',
 ];
 
@@ -67,6 +67,10 @@ const FestivalAdmin: React.FC = () => {
       const ready = await festivalDb.ready();
       setBackend(ready);
       if (!ready) return;
+      // read the live settings, or a stage click would push stale local state
+      // over an already-live festival
+      const remote = await festivalDb.settings();
+      if (remote) setSettings((cur) => ({ ...cur, ...remote }));
       setCodes((await festivalDb.shopCodes()) || {});
       setMetrics(await festivalDb.metrics());
       setPledges(await festivalDb.pledges());
@@ -113,9 +117,15 @@ const FestivalAdmin: React.FC = () => {
     return settings.spots + 1;
   };
   const startAdd = () => {
+    const spot = nextSpot();
+    const full = spot > settings.spots;
     setDraft({
-      id: '', name: '', category: 'restaurant', spot: nextSpot(),
-      offerEn: '', offerEs: '', pledgePct: 20, status: 'approved',
+      // past capacity a shop goes on the waiting list — marking it approved
+      // created a tile number the 4x4 card has no square for
+      id: '', name: '', category: 'restaurant',
+      spot: full ? undefined : spot,
+      offerEn: '', offerEs: '', pledgePct: 20,
+      status: full ? 'waitlist' : 'approved',
     });
     setAdding(true);
   };
