@@ -45,8 +45,10 @@ function hydrate(r: RawShop): FestivalShop {
     detailEs: r.detailEs,
     address: r.address,
     website: r.website,
-    contactName: r.contactName || '',
-    contactEmail: r.contactEmail || '',
+    // never read from the committed file: contact details live in Supabase
+    // under admin-only RLS, because this JSON ships to every visitor
+    contactName: '',
+    contactEmail: '',
     pledgePct: r.pledgePct,
     punchCode: '',   // codes live in Supabase only — see lib/festival/db.ts
     redeemFrom: SETTINGS.redeemFrom,

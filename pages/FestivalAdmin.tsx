@@ -60,6 +60,7 @@ const FestivalAdmin: React.FC = () => {
   const [metrics, setMetrics] = useState<{ passes: number; punches: number; perShop: { id: string; name: string; punches: number; sales: number }[] } | null>(null);
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
   const [tokens, setTokens] = useState<Record<string, string>>({});
+  const [contacts, setContacts] = useState<Record<string, { name: string; email: string }>>({});
   const [copiedLinks, setCopiedLinks] = useState(false);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ const FestivalAdmin: React.FC = () => {
       setMetrics(await festivalDb.metrics());
       setPledges(await festivalDb.pledges());
       setTokens((await festivalDb.consoleTokens()) || {});
+      setContacts((await festivalDb.shopContacts()) || {});
     })();
   }, [canApprove]);
 
@@ -92,6 +94,7 @@ const FestivalAdmin: React.FC = () => {
       setPublishMsg(tr('Published. Every shop now has a punch code.', 'Publicado. Cada tienda ya tiene su código.'));
       setMetrics(await festivalDb.metrics());
       setTokens((await festivalDb.consoleTokens()) || {});
+      setContacts((await festivalDb.shopContacts()) || {});
     }
     setPublishing(false);
   };
@@ -107,10 +110,12 @@ const FestivalAdmin: React.FC = () => {
     };
   }, [rows, settings.spots]);
 
-  const fileText = useMemo(
-    () => JSON.stringify({ _readme: README, settings, shops: rows }, null, 2) + '\n',
-    [rows, settings],
-  );
+  const fileText = useMemo(() => {
+    // strip the contact details: this file is committed and served to every
+    // visitor, so an applicant's name and email would become public
+    const publicRows = rows.map(({ contactName, contactEmail, ...rest }) => rest);
+    return JSON.stringify({ _readme: README, settings, shops: publicRows }, null, 2) + '\n';
+  }, [rows, settings]);
 
   const nextSpot = () => {
     const used = new Set(rows.map((r) => r.spot).filter(Boolean));
@@ -131,9 +136,22 @@ const FestivalAdmin: React.FC = () => {
     setAdding(true);
   };
 
+  const [draftError, setDraftError] = useState('');
   const commitDraft = () => {
-    if (!draft || !draft.name.trim() || !draft.offerEn.trim()) return;
-    const id = draft.id || slugify(draft.name);
+    if (!draft) return;
+    const id = (draft.id || slugify(draft.name)).trim();
+    if (!draft.name.trim() || !draft.offerEn.trim()) {
+      setDraftError(tr('A name and an offer are required.', 'Se requiere un nombre y una oferta.')); return;
+    }
+    // two shops whose names slugify the same would silently overwrite each
+    // other in the file and collide on the logo filename
+    if (!id) { setDraftError(tr('That name does not make a usable id.', 'Ese nombre no genera un id utilizable.')); return; }
+    if (rows.some((r) => r.id === id)) {
+      setDraftError(tr(`There is already a shop with the id "${id}". Change the name slightly.`,
+                       `Ya existe una tienda con el id «${id}». Cambia un poco el nombre.`));
+      return;
+    }
+    setDraftError('');
     setRows((r) => [...r, { ...draft, id }].sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999)));
     setDraft(null); setAdding(false);
   };
@@ -281,6 +299,22 @@ const FestivalAdmin: React.FC = () => {
                 <label className={lbl}>{tr('Address', 'Dirección')}</label>
                 <input className={field} value={draft.address || ''} onChange={(e) => setDraft({ ...draft, address: e.target.value })} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={lbl}>{tr('Contact name', 'Nombre de contacto')}</label>
+                  <input className={field} value={draft.contactName || ''}
+                         onChange={(e) => setDraft({ ...draft, contactName: e.target.value })} />
+                </div>
+                <div>
+                  <label className={lbl}>{tr('Contact email', 'Correo de contacto')}</label>
+                  <input className={field} type="email" value={draft.contactEmail || ''}
+                         onChange={(e) => setDraft({ ...draft, contactEmail: e.target.value })} />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {tr('Contacts are stored in Supabase only — they are stripped from the public file.',
+                    'Los contactos se guardan solo en Supabase: se eliminan del archivo público.')}
+              </p>
               <div>
                 <label className={lbl}>{tr('Pledge %', 'Donación %')}</label>
                 <input className={field} inputMode="numeric" value={draft.pledgePct ?? ''}
@@ -291,6 +325,9 @@ const FestivalAdmin: React.FC = () => {
                 </p>
               </div>
             </div>
+            {draftError && (
+              <p className="mt-3 text-sm font-bold text-rose-600 dark:text-rose-400">{draftError}</p>
+            )}
             <div className="mt-6 flex gap-2">
               <Button fullWidth onClick={commitDraft}>{tr('Add', 'Agregar')}</Button>
               <Button fullWidth variant="secondary" onClick={() => { setAdding(false); setDraft(null); }}>
@@ -372,9 +409,11 @@ const FestivalAdmin: React.FC = () => {
                   const origin = window.location.origin;
                   const text = rows.filter((r) => tokens[r.id]).map((r) =>
                     [`${r.name}`,
-                     `  Code:    ${codes[r.id] || '—'}`,
-                     `  Till screen: ${origin}/InclusionFestival/shop#${tokens[r.id]}`,
-                     `  Email:   ${r.contactEmail || '—'}`, ''].join('\n')).join('\n');
+                     `  ${tr('Code', 'Código')}:    ${codes[r.id] || '—'}`,
+                     `  ${tr('Till screen', 'Pantalla de caja')}: ${origin}/InclusionFestival/shop#${tokens[r.id]}`,
+                     `  ${tr('Contact', 'Contacto')}: ${contacts[r.id]?.name || r.contactName || '—'}`,
+                     `  ${tr('Email', 'Correo')}:   ${contacts[r.id]?.email || r.contactEmail || '—'}`,
+                     ''].join('\n')).join('\n');
                   try { await navigator.clipboard.writeText(text); setCopiedLinks(true); setTimeout(() => setCopiedLinks(false), 2500); } catch { /* ignore */ }
                 }}>
                   {copiedLinks ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}

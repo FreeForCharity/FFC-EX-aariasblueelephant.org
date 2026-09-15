@@ -282,6 +282,15 @@ export const festivalDb = {
     return { codes };
   },
 
+  /** contact details, admin-only — deliberately never in data/festival.json */
+  async shopContacts(): Promise<Record<string, { name: string; email: string }> | null> {
+    const { data, error } = await supabase.from('festival_shops').select('id, contact_name, contact_email');
+    if (error) return null;
+    const out: Record<string, { name: string; email: string }> = {};
+    (data || []).forEach((r: any) => { out[r.id] = { name: r.contact_name, email: r.contact_email }; });
+    return out;
+  },
+
   /** the codes, for the emails you send to shops */
   async shopCodes(): Promise<Record<string, string> | null> {
     const { data, error } = await supabase.from('festival_shops').select('id, punch_code');

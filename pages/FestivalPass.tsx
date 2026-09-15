@@ -76,6 +76,7 @@ const FestivalPass: React.FC = () => {
   const [cheer, setCheer] = useState(false);
   const [sale, setSale] = useState('');
   const [saleDone, setSaleDone] = useState(false);
+  const [saleFailed, setSaleFailed] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
 
   // one ticking clock drives every freshness countdown on the card
@@ -161,7 +162,7 @@ const FestivalPass: React.FC = () => {
   };
 
   const openTile = (shop: FestivalShop) => {
-    setOpen(shop); setCode(''); setOutcome(null); setSale(''); setSaleDone(false);
+    setOpen(shop); setCode(''); setOutcome(null); setSale(''); setSaleDone(false); setSaleFailed(false);
     setTimeout(() => codeRef.current?.focus(), 250);
   };
 
@@ -434,10 +435,15 @@ const FestivalPass: React.FC = () => {
                                className="w-full rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-lg font-bold text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
                         <Button size="sm" disabled={!sale}
                                 onClick={async () => {
-                                  if (pass && outcome.ok) {
-                                    await festivalDb.setSale(pass.id, outcome.shopId, Number(sale));
+                                  const amount = Number(sale);
+                                  if (!pass || !outcome.ok || !isFinite(amount) || amount <= 0) {
+                                    setSaleFailed(true); return;
                                   }
-                                  setSaleDone(true);
+                                  // the server can still refuse it (already set, out of range),
+                                  // and saying "thank you" to a rejection is a lie
+                                  const ok = await festivalDb.setSale(pass.id, outcome.shopId, amount);
+                                  setSaleFailed(!ok);
+                                  setSaleDone(ok);
                                 }}>
                           {tr('Save', 'Guardar')}
                         </Button>
@@ -446,6 +452,12 @@ const FestivalPass: React.FC = () => {
                         </Button>
                       </div>
                     </div>
+                  )}
+                  {saleFailed && !saleDone && (
+                    <p className="mt-2 text-center text-xs font-bold text-rose-600 dark:text-rose-400">
+                      {tr('That amount was not accepted. Check it, or just skip.',
+                          'Ese monto no se aceptó. Revísalo, o simplemente omítelo.')}
+                    </p>
                   )}
                   {saleDone && (
                     <p className="mt-3 text-center text-xs text-slate-400">{tr('Thank you 💙', 'Gracias 💙')}</p>
