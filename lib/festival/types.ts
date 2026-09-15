@@ -61,8 +61,12 @@ export interface FestivalShop {
  * self-service; being ON the card is not.
  */
 export const FESTIVAL_ADMINS = ['admin@aariasblueelephant.org'];
-export const isFestivalAdmin = (email?: string | null) =>
-  !!email && FESTIVAL_ADMINS.includes(email.toLowerCase().trim());
+/** anyone on the organisation's own domain can run the festival */
+export const FESTIVAL_ADMIN_DOMAIN = '@aariasblueelephant.org';
+export const isFestivalAdmin = (email?: string | null) => {
+  const e = (email || '').toLowerCase().trim();
+  return !!e && (FESTIVAL_ADMINS.includes(e) || e.endsWith(FESTIVAL_ADMIN_DOMAIN));
+};
 
 export type FestivalState = 'recruiting' | 'live' | 'ended';
 

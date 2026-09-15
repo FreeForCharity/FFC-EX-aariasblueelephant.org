@@ -42,13 +42,15 @@ import {
     Magnet,
     RefreshCw,
     UserPlus,
-    Search
+    Search,
+    Ticket
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
@@ -75,6 +77,7 @@ type ViewState =
     | 'media-outreach'
     | 'game-plays'
     | 'signups'
+    | 'festival'
     | 'games'
     | 'wheel'
     | 'blockcraft'
@@ -160,7 +163,14 @@ const Dashboard: React.FC = () => {
     } = useData();
     
     const navigate = useNavigate();
-    const [activeView, setActiveView] = useState<ViewState>(isBoard ? 'events' : 'overview');
+    // ?view=festival lets a link (or an old bookmark) open a section directly
+    const [activeView, setActiveView] = useState<ViewState>(() => {
+        try {
+            const want = new URLSearchParams(window.location.search).get('view');
+            if (want) return want as ViewState;
+        } catch { /* ignore */ }
+        return isBoard ? 'events' : 'overview';
+    });
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<Partial<Event>>({});
     const [isAddingEvent, setIsAddingEvent] = useState(false);
@@ -507,6 +517,7 @@ const Dashboard: React.FC = () => {
         { id: 'volunteers', label: 'Review Volunteers', icon: Heart, role: 'board' },
         { id: 'manage-testimonials', label: 'Manage Stories', icon: MessageSquare, role: 'board' },
         { id: 'signups', label: 'Sign-ups', icon: UserPlus, role: 'board' },
+        { id: 'festival', label: 'Inclusion Festival', icon: Ticket, role: 'board' },
         { id: 'game-plays', label: 'Game Plays', icon: Gamepad2, role: 'board' },
         
         // User View (Standard)
@@ -2708,6 +2719,7 @@ const Dashboard: React.FC = () => {
             case 'manage-testimonials': return renderManageTestimonialsSection();
             case 'media-outreach': return renderMediaOutreachSection();
             case 'signups': return renderSignupsSection();
+            case 'festival': return <FestivalAdminPanel />;
             case 'game-plays': return renderGamePlaysSection();
             case 'games': return renderGamesGallerySection();
             case 'wheel': return renderWheelSection();

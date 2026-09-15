@@ -49,6 +49,21 @@ const VersionWatcher = () => {
 };
 
 // Internal component to handle post-login redirects cleanly through React Router
+/**
+ * A stray double slash — aariasblueelephant.org//InclusionFestival/admin — does
+ * not match any route, so the page renders as a bare header and footer with
+ * nothing in between. It looks exactly like a broken build. Collapse repeated
+ * slashes before the router ever sees the path.
+ */
+const SlashNormaliser = () => {
+  React.useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    const clean = pathname.replace(/\/{2,}/g, '/');
+    if (clean !== pathname) window.history.replaceState(null, '', clean + search + hash);
+  }, []);
+  return null;
+};
+
 const AuthRedirector = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -104,7 +119,6 @@ const Games = lazy(() => import('./pages/Games'));
 const Playtest = lazy(() => import('./pages/Playtest'));
 const Festival = lazy(() => import('./pages/Festival'));
 const FestivalShopJoin = lazy(() => import('./pages/FestivalShopJoin'));
-const FestivalAdmin = lazy(() => import('./pages/FestivalAdmin'));
 const FestivalPass = lazy(() => import('./pages/FestivalPass'));
 const FestivalShopConsole = lazy(() => import('./pages/FestivalShopConsole'));
 
@@ -130,6 +144,7 @@ const App: React.FC = () => {
         <Router>
           <VersionWatcher />
           <ScrollToTop />
+          <SlashNormaliser />
           <Layout>
             <Suspense fallback={<PageLoader />}>
               <AuthRedirector />
@@ -165,21 +180,15 @@ const App: React.FC = () => {
                 <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
                 <Route path="/InclusionFestival/pass" element={<FestivalPass />} />
                 <Route path="/InclusionFestival/shop" element={<FestivalShopConsole />} />
-                <Route
-                  path="/InclusionFestival/admin"
-                  element={
-                    <ProtectedRoute>
-                      <FestivalAdmin />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* the festival admin lives in the dashboard, not on its own page */}
+                <Route path="/InclusionFestival/admin" element={<Navigate to="/dashboard?view=festival" replace />} />
                 {/* aliases: a short link volunteers can read out loud, plus
                     lower-case and older spellings so no printed link ever dies */}
                 <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/inclusionfestival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival/shops/join" element={<Navigate to="/InclusionFestival/join" replace />} />
-                <Route path="/festival/admin" element={<Navigate to="/InclusionFestival/admin" replace />} />
+                <Route path="/festival/admin" element={<Navigate to="/dashboard?view=festival" replace />} />
                 <Route path="/playtest" element={<Playtest />} />
                 <Route path="/nelus-world" element={<BelusWorld />} />
                 {/* aliases: old link + likely spelling both land on the game */}
