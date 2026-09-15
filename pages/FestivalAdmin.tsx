@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound, Heart, Link2 } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter from '../components/festival/SpotMeter';
+import Dialog from '../components/festival/Dialog';
 import { festival, SETTINGS, slugify } from '../lib/festival/store';
 import {
   ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI,
@@ -235,10 +236,10 @@ const FestivalAdmin: React.FC = () => {
 
       {/* ── add ───────────────────────────────────────────────────────── */}
       {adding && draft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-             onClick={() => { setAdding(false); setDraft(null); }}>
-          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl bg-white p-6 dark:bg-slate-900"
-               onClick={(e) => e.stopPropagation()}>
+        <Dialog label={tr('Add a shop', 'Agregar tienda')}
+                onClose={() => { setAdding(false); setDraft(null); }}
+                className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl bg-white p-6 dark:bg-slate-900">
+          <div>
             <h3 className="text-xl font-black text-slate-900 dark:text-white">{tr('Add a shop', 'Agregar tienda')}</h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {tr('Copy the details straight out of their email.', 'Copia los datos directo de su correo.')}
@@ -297,7 +298,7 @@ const FestivalAdmin: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       {/* ── settings ──────────────────────────────────────────────────── */}

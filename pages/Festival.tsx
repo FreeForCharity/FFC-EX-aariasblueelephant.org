@@ -4,6 +4,7 @@ import { Sparkles, Store, Ticket, Calendar, MapPin, ArrowRight } from 'lucide-re
 import Button from '../components/Button';
 import ShopTile from '../components/festival/ShopTile';
 import SpotMeter from '../components/festival/SpotMeter';
+import Dialog from '../components/festival/Dialog';
 import { festival, SETTINGS } from '../lib/festival/store';
 import { FestivalShop, CATEGORY_LABEL } from '../lib/festival/types';
 import { tr, isEs } from '../lib/lang';
@@ -142,12 +143,9 @@ const Festival: React.FC = () => {
 
       {/* ── offer detail ───────────────────────────────────────────────── */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-             onClick={() => setOpen(null)}
-             onKeyDown={(e) => { if (e.key === 'Escape') setOpen(null); }}>
-          <div role="dialog" aria-modal="true" aria-label={open.name}
-               className="w-full max-w-md rounded-t-3xl bg-white p-6 dark:bg-slate-900 sm:rounded-3xl"
-               onClick={(e) => e.stopPropagation()}>
+        <Dialog sheet label={open.name} onClose={() => setOpen(null)}
+                className="bg-white p-6 dark:bg-slate-900">
+          <div>
             <div className="flex items-center gap-3">
               {open.logoUrl
                 ? <img src={open.logoUrl} alt="" className="h-12 w-12 rounded-xl object-contain" />
@@ -179,7 +177,7 @@ const Festival: React.FC = () => {
               {tr('Close', 'Cerrar')}
             </Button>
           </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );
