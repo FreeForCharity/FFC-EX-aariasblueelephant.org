@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Store, Ticket, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import ShopTile from '../components/festival/ShopTile';
 import SpotMeter from '../components/festival/SpotMeter';
 import Dialog from '../components/festival/Dialog';
-import { festival, SETTINGS } from '../lib/festival/store';
-import { FestivalShop, CATEGORY_LABEL } from '../lib/festival/types';
+import { SimBanner, SimNote } from '../components/festival/Simulated';
+import { festival, SETTINGS, fromPublic } from '../lib/festival/store';
+import { festivalDb } from '../lib/festival/db';
+import { FestivalShop, FestivalSettings, CATEGORY_LABEL } from '../lib/festival/types';
 import { tr, isEs } from '../lib/lang';
 
 const fmtDate = (iso: string) =>
@@ -14,11 +16,44 @@ const fmtDate = (iso: string) =>
     { month: 'long', day: 'numeric', year: 'numeric' });
 
 const Festival: React.FC = () => {
-  // the shop list is a committed file, so there is nothing to wait for
-  const shops = festival.shops();
-  const settings = SETTINGS;
-  const counts = festival.counts();
+  /**
+   * The committed file is a SNAPSHOT, not the source of truth.
+   *
+   * It paints the page instantly and works with no signal, which is worth
+   * having. But Supabase is what is actually true, so it replaces the snapshot
+   * the moment it answers — exactly as the punch card has always done.
+   *
+   * Before this, the landing page read the file and nothing else, so a shop you
+   * approved and published sat in festival_shops with a punch code, showed up
+   * on everyone's card, and was still invisible here until somebody pasted JSON
+   * into GitHub and waited for a rebuild. The stage was worse: the file could
+   * say "live" while the database said "recruiting", so the button invited you
+   * to a card that then told you it was closed.
+   */
+  const [shops, setShops] = useState<FestivalShop[]>(festival.shops());
+  const [settings, setSettings] = useState<FestivalSettings>(SETTINGS);
   const [open, setOpen] = useState<FestivalShop | null>(null);
+
+  useEffect(() => {
+    let gone = false;
+    (async () => {
+      const remote = await festivalDb.shops();
+      // an empty answer means the shops are not published yet, NOT that there
+      // are none — keep the snapshot rather than blanking the card
+      if (!gone && remote && remote.length) setShops(remote.map(fromPublic));
+      const live = await festivalDb.settings();
+      if (!gone && live) setSettings((cur) => ({ ...cur, ...live }));
+    })();
+    return () => { gone = true; };
+  }, []);
+
+  const counts = useMemo(() => ({
+    ...festival.counts(),
+    taken: shops.length,
+    spots: settings.spots,
+    free: Math.max(0, settings.spots - shops.length),
+    full: shops.length >= settings.spots,
+  }), [shops, settings.spots]);
 
   // one square per spot, looked up BY spot number — placing by array index
   // meant a single released spot shifted every later shop into the wrong square
@@ -103,6 +138,10 @@ const Festival: React.FC = () => {
             : tr('The first shops are signing up now.', 'Las primeras tiendas se están inscribiendo ahora.')}
         </p>
 
+        {shops.some((s) => s.simulated) && (
+          <div className="mt-6"><SimBanner count={shops.filter((s) => s.simulated).length} /></div>
+        )}
+
         <div className="mt-6 rounded-3xl border-2 border-dashed border-sky-200 bg-sky-50/50 p-4 dark:border-slate-700 dark:bg-slate-900/40 sm:p-6">
           <div className="grid grid-cols-4 gap-2 sm:gap-3">
             {tiles.map((shop, i) =>
@@ -173,6 +212,7 @@ const Festival: React.FC = () => {
             <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
               {tr('Valid', 'Válido')} {fmtDate(open.redeemFrom)} – {fmtDate(open.redeemTo)}
             </p>
+            {open.simulated && <SimNote />}
             <Button className="mt-6" fullWidth variant="secondary" onClick={() => setOpen(null)}>
               {tr('Close', 'Cerrar')}
             </Button>
