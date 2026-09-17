@@ -10,7 +10,18 @@
     "",
     "PUNCH CODES ARE DELIBERATELY NOT IN THIS FILE. It ships to every browser, and",
     "a readable code would let an attendee stamp their own card in front of staff.",
-    "Codes exist only in Supabase, minted when you press Publish on the admin page."
+    "Codes exist only in Supabase, minted when you press Publish on the admin page.",
+    "",
+    "\"simulated\": true marks a shop that is NOT a real business — a worked example",
+    "so the card can be tested end to end before the first Mountain House shops",
+    "sign up. Simulated shops are labelled in amber everywhere they appear, on the",
+    "tile, in the offer dialog and above the card. Delete the flag when a real",
+    "business takes that spot; that is the only edit needed.",
+    "",
+    "settings.state here is only what the page paints BEFORE the database answers.",
+    "The real switch is Supabase festival_settings.state, set from the Festival",
+    "stage buttons on the admin page. Keep this matching reality at deploy time so",
+    "the first paint never invites anyone to a door that is shut."
   ],
   "settings": {
     "spots": 16,
@@ -32,7 +43,8 @@
       "detailEs": "Solo para comer aquí. Uno por familia, por favor.",
       "address": "Main St, Mountain House",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "bean-and-bloom",
@@ -43,7 +55,8 @@
       "offerEs": "Bebida gratis con cualquier pan dulce",
       "address": "Central Pkwy, Mountain House",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "altamont-fitness",
@@ -56,7 +69,8 @@
       "detailEs": "Solo miembros nuevos. Canjea cuando quieras en noviembre.",
       "address": "Grant Line Rd, Mountain House",
       "pledgePct": 15,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "bright-smiles",
@@ -67,7 +81,8 @@
       "offerEs": "Primera limpieza gratis para pacientes nuevos",
       "address": "Mountain House Blvd",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "sunrise-tutoring",
@@ -78,7 +93,8 @@
       "offerEs": "Primer mes a mitad de precio",
       "address": "Wicklund Ave",
       "pledgePct": 10,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "sweet-tooth",
@@ -89,7 +105,8 @@
       "offerEs": "Galleta gratis con cualquier compra",
       "address": "Central Pkwy",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "golden-crust",
@@ -100,7 +117,8 @@
       "offerEs": "Pan de ajo gratis con cualquier pizza grande",
       "address": "Main St",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "wildflower",
@@ -111,7 +129,8 @@
       "offerEs": "20% de descuento en cualquier ramo",
       "address": "Mountain House Blvd",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     },
     {
       "id": "little-picassos",
@@ -124,7 +143,8 @@
       "detailEs": "De 4 a 12 años. Se requiere reserva.",
       "address": "Wicklund Ave",
       "pledgePct": 20,
-      "status": "approved"
+      "status": "approved",
+      "simulated": true
     }
   ]
 }

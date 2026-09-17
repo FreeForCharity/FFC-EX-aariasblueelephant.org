@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound, Heart, Link2 } from 'lucide-react';
+import { Copy, Check, Lock, Plus, Trash2, Store, ImageOff, FileJson, Github, UploadCloud, BarChart3, KeyRound, Heart, Link2, UserMinus } from 'lucide-react';
 import Button from '../Button';
 import SpotMeter from './SpotMeter';
 import Dialog from './Dialog';
@@ -8,7 +8,7 @@ import {
   ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI,
   FESTIVAL_ADMINS, isFestivalAdmin,
 } from '../../lib/festival/types';
-import { festivalDb, Pledge } from '../../lib/festival/db';
+import { festivalDb, Pledge, Registration } from '../../lib/festival/db';
 import { useAuth } from '../../context/AuthContext';
 import { tr, isEs } from '../../lib/lang';
 
@@ -62,6 +62,8 @@ const FestivalAdminPanel: React.FC = () => {
   const [tokens, setTokens] = useState<Record<string, string>>({});
   const [contacts, setContacts] = useState<Record<string, { name: string; email: string }>>({});
   const [copiedLinks, setCopiedLinks] = useState(false);
+  const [regs, setRegs] = useState<Registration[] | null>(null);
+  const [regMsg, setRegMsg] = useState('');
 
   useEffect(() => {
     if (!canApprove) return;
@@ -78,8 +80,59 @@ const FestivalAdminPanel: React.FC = () => {
       setPledges(await festivalDb.pledges());
       setTokens((await festivalDb.consoleTokens()) || {});
       setContacts((await festivalDb.shopContacts()) || {});
+      setRegs(await festivalDb.registrations());
     })();
   }, [canApprove]);
+
+  /**
+   * The bin used to drop the shop out of this list and nothing more — publish
+   * then marked it 'released', and its row, with the contact name and email on
+   * it, stayed in the table for good. A shop that was never published is still
+   * just a list edit; one that was gets deleted properly, once you confirm.
+   */
+  const removeShop = async (i: number) => {
+    const r = rows[i];
+    if (codes[r.id]) {
+      const ok = window.confirm(tr(
+        `Delete \u201C${r.name}\u201D permanently?\n\nThis removes the shop, its punch code, its contact details and every stamp made against it. It cannot be undone.`,
+        `\u00BFEliminar \u00AB${r.name}\u00BB definitivamente?\n\nSe borran la tienda, su c\u00F3digo, sus datos de contacto y todos los sellos hechos en ella. No se puede deshacer.`));
+      if (!ok) return;
+      const res = await festivalDb.deleteShop(r.id);
+      if (res.error) { setRegMsg(deleteErr(res.error)); return; }
+      setCodes((c) => { const n = { ...c }; delete n[r.id]; return n; });
+      setRegs(await festivalDb.registrations());
+      setMetrics(await festivalDb.metrics());
+    }
+    setRows((x) => x.filter((_, j) => j !== i));
+  };
+
+  /** RLS filters rows out rather than raising, so "nothing happened" needs saying */
+  const deleteErr = (e: string) => e === 'not_permitted'
+    ? tr('Nothing was deleted — run supabase/add_festival_delete.sql once, then try again.',
+         'No se elimin\u00F3 nada: ejecuta supabase/add_festival_delete.sql una vez y vuelve a intentar.')
+    : e;
+
+  const deleteReg = async (reg: Registration) => {
+    const who = reg.display_name || reg.short_code;
+    if (!window.confirm(tr(
+      `Delete ${who}'s registration?\n\nTheir punch card and all ${reg.punches} of their stamps go with it. It cannot be undone.`,
+      `\u00BFEliminar la inscripci\u00F3n de ${who}?\n\nSu tarjeta y sus ${reg.punches} sellos se van con ella. No se puede deshacer.`))) return;
+    const res = await festivalDb.deletePass(reg.id);
+    if (res.error) { setRegMsg(deleteErr(res.error)); return; }
+    setRegMsg('');
+    setRegs(await festivalDb.registrations());
+    setMetrics(await festivalDb.metrics());
+  };
+
+  const clearRegs = async () => {
+    if (!window.confirm(tr(
+      `Delete ALL ${regs?.length || 0} registrations?\n\nEvery punch card and every stamp on it goes. Shops, offers and punch codes are left alone. It cannot be undone.`,
+      `\u00BFEliminar TODAS las ${regs?.length || 0} inscripciones?\n\nSe van todas las tarjetas y sus sellos. Las tiendas, ofertas y c\u00F3digos no se tocan. No se puede deshacer.`))) return;
+    const res = await festivalDb.clearRegistrations();
+    setRegMsg(res.error ? deleteErr(res.error) : tr(`${res.deleted} deleted.`, `${res.deleted} eliminadas.`));
+    setRegs(await festivalDb.registrations());
+    setMetrics(await festivalDb.metrics());
+  };
 
   const publish = async () => {
     setPublishing(true); setPublishMsg('');
@@ -242,8 +295,8 @@ const FestivalAdminPanel: React.FC = () => {
                   {r.pledgePct ? ` · ${r.pledgePct}% ${tr('pledged', 'prometido')}` : ` · ${tr('no pledge', 'sin donación')}`}
                 </p>
               </div>
-              <button onClick={() => setRows((x) => x.filter((_, j) => j !== i))}
-                      title={tr('Remove', 'Quitar')}
+              <button onClick={() => removeShop(i)}
+                      title={codes[r.id] ? tr('Delete permanently', 'Eliminar definitivamente') : tr('Remove', 'Quitar')}
                       className="rounded-lg p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20">
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -390,8 +443,8 @@ const FestivalAdminPanel: React.FC = () => {
           <div className={`mt-3 ${card} space-y-4`}>
             <div>
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {tr('Publishing copies the shops above into Supabase and mints a 4-digit punch code for each new one. Codes never go in the public file — email each shop its own.',
-                    'Publicar copia las tiendas de arriba a Supabase y genera un código de 4 dígitos para cada nueva. Los códigos nunca van en el archivo público: envía a cada tienda el suyo por correo.')}
+                {tr('Publishing copies the shops above into Supabase and mints a 4-digit punch code for each new one. They appear on the site immediately — no commit, no rebuild. Codes never go in the public file; email each shop its own.',
+                    'Publicar copia las tiendas de arriba a Supabase y genera un código de 4 dígitos para cada nueva. Aparecen en el sitio de inmediato: sin commit ni reconstrucción. Los códigos nunca van en el archivo público: envía a cada tienda el suyo por correo.')}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Button size="sm" onClick={publish} disabled={publishing}>
@@ -548,16 +601,109 @@ const FestivalAdminPanel: React.FC = () => {
         </section>
       )}
 
-      {/* ── the file ──────────────────────────────────────────────────── */}
+      {/* ── registrations ─────────────────────────────────────────────── */}
+      {backend && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+            <UserMinus className="h-5 w-5 text-sky-600" />{tr('Registrations', 'Inscripciones')}
+          </h2>
+          <div className={`mt-3 ${card}`}>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              {tr('Every punch card issued. Deleting one takes its stamps with it — use this to clear a test run, or when somebody asks to be removed.',
+                  'Cada tarjeta emitida. Al eliminar una se van sus sellos: úsalo para limpiar una prueba, o cuando alguien pida que le borren sus datos.')}
+            </p>
+
+            {regs === null && (
+              <p className="mt-4 text-sm text-slate-400">{tr('Loading…', 'Cargando…')}</p>
+            )}
+
+            {regs && regs.length === 0 && (
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                {tr('No registrations yet.', 'Todavía no hay inscripciones.')}
+              </p>
+            )}
+
+            {regs && regs.length > 0 && (
+              <>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                    {regs.length === 1
+                      ? tr('1 registration', '1 inscripción')
+                      : tr(`${regs.length} registrations`, `${regs.length} inscripciones`)}
+                  </span>
+                  <Button size="sm" variant="secondary" onClick={clearRegs}>
+                    <Trash2 className="mr-2 h-4 w-4" />{tr('Delete all', 'Eliminar todas')}
+                  </Button>
+                </div>
+
+                <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
+                  {regs.map((r) => (
+                    <div key={r.id} className="flex items-center gap-3 py-2.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate font-bold text-slate-900 dark:text-white">
+                            {r.display_name || tr('(no name)', '(sin nombre)')}
+                          </p>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            {r.short_code}
+                          </span>
+                          {r.status !== 'active' && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              {tr('void', 'anulada')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          {r.punches === 1 ? tr('1 stamp', '1 sello') : tr(`${r.punches} stamps`, `${r.punches} sellos`)}
+                          {' · '}
+                          {r.party_size === 1
+                            ? tr('1 person', '1 persona')
+                            : tr(`${r.party_size} people`, `${r.party_size} personas`)}
+                          {' · '}
+                          {new Date(r.created_at).toLocaleDateString(isEs() ? 'es-US' : 'en-US',
+                            { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                      <button onClick={() => deleteReg(r)}
+                              title={tr('Delete this registration', 'Eliminar esta inscripción')}
+                              className="rounded-lg p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {regMsg && (
+              <p className="mt-3 text-xs font-bold text-rose-600 dark:text-rose-400">{regMsg}</p>
+            )}
+            <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              {tr('Bulk clean-ups live in supabase/clear_festival_test_data.sql — clear stamps only, clear one person by card code, or drop the simulated shops.',
+                  'Las limpiezas masivas están en supabase/clear_festival_test_data.sql: borrar solo los sellos, borrar a una persona por su código, o quitar las tiendas simuladas.')}
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ── the snapshot ──────────────────────────────────────────────── */}
       <section className="mt-8">
         <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
-          <FileJson className="h-5 w-5 text-sky-600" />{tr('Publish', 'Publicar')}
+          <FileJson className="h-5 w-5 text-sky-600" />{tr('Offline snapshot', 'Copia sin conexión')}
         </h2>
         <div className={`mt-3 ${card}`}>
-          <ol className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            {tr('You do not need this to put a shop on the site. Press Publish above and it is live straight away, here and on every card.',
+                'No necesitas esto para poner una tienda en el sitio. Presiona Publicar arriba y queda en vivo enseguida, aquí y en cada tarjeta.')}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            {tr('This file is the copy the site paints with before it has heard from the database — so the page opens instantly and still works in a car park with no signal. Refresh it whenever you like; a month out of date only means a heartbeat of older shops before the real list arrives.',
+                'Este archivo es la copia con la que el sitio se dibuja antes de oír a la base de datos: la página abre al instante y sigue funcionando en un estacionamiento sin señal. Actualízalo cuando quieras; si tiene un mes, solo verás la lista vieja un instante antes de que llegue la real.')}
+          </p>
+          <ol className="mt-3 space-y-1 text-sm text-slate-600 dark:text-slate-300">
             <li>{tr('1. Copy the file below.', '1. Copia el archivo de abajo.')}</li>
             <li>{tr('2. Open data/festival.json on GitHub, press the pencil, select all, paste.', '2. Abre data/festival.json en GitHub, presiona el lápiz, selecciona todo y pega.')}</li>
-            <li>{tr('3. Commit. The site rebuilds in about a minute and the shops are live.', '3. Haz commit. El sitio se reconstruye en un minuto y las tiendas quedan en vivo.')}</li>
+            <li>{tr('3. Commit.', '3. Haz commit.')}</li>
           </ol>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button size="sm" onClick={copyFile}>

@@ -46,6 +46,13 @@ export interface FestivalShop {
   /** 1..spots once they hold or own a place; undefined while waitlisted */
   spot?: number;
   status: ShopStatus;
+  /**
+   * Not a real business — a worked example so the card can be tested before
+   * the first Mountain House shops sign up. Labelled in amber wherever it
+   * appears. Set in data/festival.json; there is no column for it in Supabase,
+   * because the committed file is the list of which ids are pretend.
+   */
+  simulated?: boolean;
   /** ISO timestamp — an unconfirmed hold lapses and frees the spot */
   heldUntil?: string;
 

@@ -29,6 +29,17 @@ export interface Pass {
   created_at: string;
 }
 
+/** a row of the admin's registrations list */
+export interface Registration {
+  id: string;
+  short_code: string;
+  display_name: string | null;
+  party_size: number;
+  status: string;
+  created_at: string;
+  punches: number;
+}
+
 export interface Punch {
   id: string;
   pass_id: string;
@@ -303,6 +314,51 @@ export const festivalDb = {
   async setSettings(patch: Partial<{ spots: number; state: string; festival_date: string; redeem_from: string; redeem_to: string }>) {
     const { error } = await supabase.from('festival_settings').update(patch).eq('id', 1);
     return error ? { error: error.message } : {};
+  },
+
+  /* ── deleting ──────────────────────────────────────────────────────────
+     Needs supabase/add_festival_delete.sql to have been run once. Without
+     those policies every call here comes back having deleted nothing, quietly,
+     because RLS filters the rows out rather than raising — so each one checks
+     what actually went and says so. */
+
+  /** every registration, newest first, with its stamp count */
+  async registrations(): Promise<Registration[] | null> {
+    const passes = await supabase
+      .from('festival_passes')
+      .select('id, short_code, display_name, party_size, status, created_at')
+      .order('created_at', { ascending: false });
+    if (passes.error) return null;
+    const punches = await supabase.from('festival_punches').select('pass_id');
+    const tally = new Map<string, number>();
+    (punches.data || []).forEach((r: any) => tally.set(r.pass_id, (tally.get(r.pass_id) || 0) + 1));
+    return (passes.data || []).map((r: any) => ({ ...r, punches: tally.get(r.id) || 0 }));
+  },
+
+  /** one registration, and every stamp on it (they cascade) */
+  async deletePass(id: string): Promise<{ error?: string }> {
+    const { error, data } = await supabase
+      .from('festival_passes').delete().eq('id', id).select('id');
+    if (error) return { error: error.message };
+    if (!data || !data.length) return { error: 'not_permitted' };
+    return {};
+  },
+
+  /** every registration. Shops, offers and codes are left standing. */
+  async clearRegistrations(): Promise<{ error?: string; deleted?: number }> {
+    const { error, data } = await supabase
+      .from('festival_passes').delete().gte('created_at', '1970-01-01').select('id');
+    if (error) return { error: error.message };
+    return { deleted: (data || []).length };
+  },
+
+  /** a shop, for good — not the soft 'released' that Publish does */
+  async deleteShop(id: string): Promise<{ error?: string }> {
+    const { error, data } = await supabase
+      .from('festival_shops').delete().eq('id', id).select('id');
+    if (error) return { error: error.message };
+    if (!data || !data.length) return { error: 'not_permitted' };
+    return {};
   },
 
   /** how it is going: passes issued, and punches per shop */

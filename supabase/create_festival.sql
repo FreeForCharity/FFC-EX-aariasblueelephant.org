@@ -136,6 +136,15 @@ create policy festival_passes_create on festival_passes for insert to authentica
 drop policy if exists festival_passes_admin_write on festival_passes;
 create policy festival_passes_admin_write on festival_passes for update to authenticated
   using (festival_is_admin()) with check (festival_is_admin());
+-- Deleting matters as much as creating: a family who asks to be forgotten has
+-- to be forgettable, and a test run has to be clearable. Punches and failed
+-- code attempts both cascade off the pass, so one delete is enough.
+drop policy if exists festival_passes_delete_own on festival_passes;
+create policy festival_passes_delete_own on festival_passes for delete to authenticated
+  using (user_id = auth.uid());
+drop policy if exists festival_passes_delete_admin on festival_passes;
+create policy festival_passes_delete_admin on festival_passes for delete to authenticated
+  using (festival_is_admin());
 
 -- ─────────────────────────────────────────────────────────────── punches ──
 create table if not exists festival_punches (

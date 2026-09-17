@@ -1,8 +1,57 @@
 import React from 'react';
-import { Users, FileText, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  Users, FileText, CheckCircle, School, Palette, Trophy, Siren,
+  Sparkles, Store, MonitorPlay, Wind, HeartHandshake,
+} from 'lucide-react';
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 import Button from '../components/Button';
 import { tr } from '../lib/lang';
+
+/**
+ * What we actually do.
+ *
+ * The purpose statement above is the legal one, filed with the State — it says
+ * what the corporation exists for, not what a family would meet on a Saturday.
+ * This is the second half of that answer, and every entry is a program that
+ * has actually run or is scheduled. Adding one here is a single object below;
+ * link it if it has a page of its own.
+ */
+const PROGRAMS: {
+  icon: React.ComponentType<{ className?: string }>;
+  to?: string; en: string; es: string;
+}[] = [
+  { icon: Users,
+    en: 'Inclusive events where kids of all abilities play together',
+    es: 'Eventos inclusivos donde juegan juntos niños de todas las capacidades' },
+  { icon: Sparkles,
+    en: 'Sensory-friendly versions of much-loved community events',
+    es: 'Versiones amigables con los sentidos de eventos muy queridos' },
+  { icon: HeartHandshake, to: '/circle-of-friends',
+    en: 'Friendship and buddy programs in our local schools',
+    es: 'Programas de amistad y compañeros en nuestras escuelas' },
+  { icon: School,
+    en: 'Classroom awareness, and support for families navigating services',
+    es: 'Concientización en el aula y apoyo a las familias con los servicios' },
+  { icon: Palette,
+    en: 'Art, craft and creative workshops, including at the library',
+    es: 'Talleres de arte, manualidades y creatividad, incluso en la biblioteca' },
+  { icon: Trophy,
+    en: 'Sports and games, with Special Olympics Northern California',
+    es: 'Deportes y juegos, junto a Special Olympics Northern California' },
+  { icon: Siren,
+    en: 'Meet-ups with first responders and community services',
+    es: 'Encuentros con servicios de emergencia y comunitarios' },
+  { icon: Wind,
+    en: 'Community partnerships with the City of Mountain House',
+    es: 'Alianzas comunitarias con la Ciudad de Mountain House' },
+  { icon: MonitorPlay, to: '/events',
+    en: 'Awareness webinars and family learning sessions with specialists',
+    es: 'Seminarios de concientización y aprendizaje familiar con especialistas' },
+  { icon: Store, to: '/InclusionFestival',
+    en: 'Connecting families to local businesses, resources and support',
+    es: 'Conectamos a las familias con negocios, recursos y apoyo locales' },
+];
 
 const About: React.FC = () => {
   return (
@@ -36,6 +85,44 @@ const About: React.FC = () => {
                 )}
               </p>
             </div>
+
+            {/* The filed purpose says what we exist for; this says what we
+                actually run, so the two are never read apart. Adding a
+                category is one entry in PROGRAMS at the top of this file. */}
+            <div className="mt-7 border-t border-slate-200 dark:border-slate-700 pt-6">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                {tr('What that looks like in practice', 'Cómo se ve en la práctica')}
+              </p>
+              <ul className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                {PROGRAMS.map((prog) => {
+                  const Icon = prog.icon;
+                  const inner = (
+                    <>
+                      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-600 dark:text-sky-400" />
+                      <span className="text-sm leading-snug text-slate-700 dark:text-slate-300">
+                        {tr(prog.en, prog.es)}
+                      </span>
+                    </>
+                  );
+                  return (
+                    <li key={prog.en}>
+                      {prog.to ? (
+                        <Link to={prog.to} className="flex items-start gap-2.5 rounded-lg transition hover:opacity-70">
+                          {inner}
+                        </Link>
+                      ) : (
+                        <span className="flex items-start gap-2.5">{inner}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {tr('Nearly everything we run is free to families, and this list keeps growing. If your family needs something that isn’t here yet, tell us — that is usually how the next one starts.',
+                    'Casi todo lo que hacemos es gratuito para las familias, y esta lista sigue creciendo. Si tu familia necesita algo que todavía no está aquí, dínoslo: así suele empezar lo siguiente.')}
+              </p>
+            </div>
+
             <div className="mt-8 flex items-center gap-4">
               <div className="h-12 w-1 bg-sky-500 rounded-full"></div>
               <div>

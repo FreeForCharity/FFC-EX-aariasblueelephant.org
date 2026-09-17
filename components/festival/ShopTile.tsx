@@ -1,5 +1,6 @@
 import React from 'react';
 import { FestivalShop } from '../../lib/festival/types';
+import { SimBadge } from './Simulated';
 import { isEs, tr } from '../../lib/lang';
 
 interface Props {
@@ -33,6 +34,8 @@ const ShopTile: React.FC<Props> = ({ shop, punched, punchedAt, freshFor, onClick
           : 'border-sky-200 bg-white hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900'}
         ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
     >
+      {shop.simulated && <SimBadge />}
+
       <div className={`flex h-full flex-col items-center justify-center gap-1 ${punched ? 'opacity-40 grayscale' : ''}`}>
         {shop.logoUrl
           ? <img src={shop.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain sm:h-12 sm:w-12" />

@@ -4,7 +4,8 @@ import { Ticket, MapPin, WifiOff, PartyPopper, LogIn, Clock } from 'lucide-react
 import Button from '../components/Button';
 import ShopTile from '../components/festival/ShopTile';
 import Dialog from '../components/festival/Dialog';
-import { festival, SETTINGS } from '../lib/festival/store';
+import { SimBanner, SimNote } from '../components/festival/Simulated';
+import { festival, SETTINGS, fromPublic } from '../lib/festival/store';
 import { festivalDb, setCacheOwner, Pass, Punch, PublicShop, PunchOutcome } from '../lib/festival/db';
 import { FestivalShop, CATEGORY_EMOJI, CATEGORY_LABEL, ShopCategory } from '../lib/festival/types';
 import { useAuth } from '../context/AuthContext';
@@ -20,22 +21,6 @@ const fmtDate = (iso: string) =>
   new Date(iso + 'T12:00:00').toLocaleDateString(isEs() ? 'es-US' : 'en-US', { month: 'long', day: 'numeric' });
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString(isEs() ? 'es-US' : 'en-US', { hour: 'numeric', minute: '2-digit' });
-
-/** the Supabase view and the committed snapshot both become this */
-const toShop = (p: PublicShop): FestivalShop => {
-  const category = (p.category || 'other') as ShopCategory;
-  return {
-    id: p.id, name: p.name, category,
-    emoji: p.emoji || CATEGORY_EMOJI[category] || '🏪',
-    logoUrl: p.logo_url || undefined,
-    offerEn: p.offer_en, offerEs: p.offer_es || '',
-    detailEn: p.detail_en || undefined, detailEs: p.detail_es || undefined,
-    address: p.address || undefined, website: p.website || undefined,
-    contactName: '', contactEmail: '', punchCode: '',
-    redeemFrom: p.redeem_from, redeemTo: p.redeem_to,
-    spot: p.spot ?? undefined, status: 'approved', createdAt: '',
-  };
-};
 
 const STAMP_CSS = `
 @keyframes abeStamp {
@@ -103,7 +88,7 @@ const FestivalPass: React.FC = () => {
       const s = await festivalDb.settings();
       if (s) setState(s.state);
       const remote = await festivalDb.shops();
-      if (remote && remote.length) setShops(remote.map(toShop));
+      if (remote && remote.length) setShops(remote.map(fromPublic));
     })();
   }, [preview, user]);
 
@@ -283,6 +268,32 @@ const FestivalPass: React.FC = () => {
         </p>
       </div>
 
+      {!preview && (
+        <div className="mt-3 text-right">
+          <button
+            onClick={async () => {
+              if (!window.confirm(tr(
+                `Delete your punch card?\n\nYour card and all ${done} of your stamps are removed for good. You can sign up again any time.`,
+                `\u00BFEliminar tu tarjeta?\n\nTu tarjeta y tus ${done} sellos se borran para siempre. Puedes inscribirte de nuevo cuando quieras.`))) return;
+              const res = await festivalDb.deletePass(pass.id);
+              if (res.error) {
+                window.alert(tr('Could not delete the card. Please try again, or email us.',
+                                'No se pudo eliminar la tarjeta. Int\u00E9ntalo de nuevo o escr\u00EDbenos.'));
+                return;
+              }
+              setPass(null); setPunches([]);
+            }}
+            className="text-xs font-semibold text-slate-400 underline underline-offset-2 hover:text-rose-600 dark:hover:text-rose-400"
+          >
+            {tr('Delete my card', 'Eliminar mi tarjeta')}
+          </button>
+        </div>
+      )}
+
+      {shops.some((s) => s.simulated) && (
+        <div className="mt-6"><SimBanner count={shops.filter((s) => s.simulated).length} /></div>
+      )}
+
       <div className="mt-6 grid grid-cols-4 gap-2 sm:gap-3">
         {shops.map((shop) => {
           const p = punchedMap.get(shop.id);
@@ -344,6 +355,7 @@ const FestivalPass: React.FC = () => {
                   <MapPin className="h-4 w-4" />{open.address}
                 </p>
               )}
+              {open.simulated && <SimNote />}
 
               {/* already used */}
               {already && !outcome?.ok && (

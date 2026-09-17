@@ -13,6 +13,7 @@
 
 import RAW from '../../data/festival.json';
 import { FestivalShop, FestivalSettings, ShopCategory, CATEGORY_EMOJI } from './types';
+import type { PublicShop } from './db';
 
 interface RawShop {
   id: string; name: string; category: string; spot?: number;
@@ -20,6 +21,7 @@ interface RawShop {
   address?: string; website?: string; logo?: string;
   pledgePct?: number; status?: string;
   contactName?: string; contactEmail?: string;
+  simulated?: boolean;
 }
 
 export const SETTINGS: FestivalSettings = {
@@ -55,7 +57,46 @@ function hydrate(r: RawShop): FestivalShop {
     redeemTo: SETTINGS.redeemTo,
     spot: r.spot,
     status: (r.status as FestivalShop['status']) || 'approved',
+    simulated: r.simulated === true,
     createdAt: '',
+  };
+}
+
+/**
+ * Which shop ids are worked examples rather than real businesses.
+ *
+ * The pass page reads its shops from Supabase, and there is no "simulated"
+ * column there — adding one would mean a migration for something the committed
+ * file already knows. Both sides key on the same slug id, so the file stays the
+ * single place that says which shops are pretend.
+ */
+export const SIMULATED_IDS: ReadonlySet<string> = new Set(
+  (RAW.shops as RawShop[]).filter((r) => r.simulated === true).map((r) => r.id),
+);
+export const isSimulated = (id: string) => SIMULATED_IDS.has(id);
+
+/**
+ * A row out of festival_shops_public, as the UI draws it.
+ *
+ * Lives here rather than in a page because BOTH the landing page and the card
+ * need it: the committed file is a snapshot for instant first paint, and
+ * Supabase is the truth as soon as it answers.
+ */
+export function fromPublic(p: PublicShop): FestivalShop {
+  const category = (p.category || 'other') as ShopCategory;
+  return {
+    id: p.id, name: p.name, category,
+    emoji: p.emoji || CATEGORY_EMOJI[category] || '🏪',
+    logoUrl: p.logo_url || undefined,
+    offerEn: p.offer_en, offerEs: p.offer_es || '',
+    detailEn: p.detail_en || undefined, detailEs: p.detail_es || undefined,
+    address: p.address || undefined, website: p.website || undefined,
+    contactName: '', contactEmail: '', punchCode: '',
+    redeemFrom: p.redeem_from, redeemTo: p.redeem_to,
+    spot: p.spot ?? undefined, status: 'approved', createdAt: '',
+    // Supabase has no column for this; the committed file says which ids are
+    // worked examples, and the slug id is the same on both sides
+    simulated: SIMULATED_IDS.has(p.id),
   };
 }
 
