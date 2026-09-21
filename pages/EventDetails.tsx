@@ -178,8 +178,7 @@ export default function EventDetails() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50 dark:bg-brand-dark pt-20">
       {/* Hero Image with Overlay */}
-      <div className="relative h-[40vh] w-full overflow-hidden lg:h-[50vh]">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white dark:via-brand-dark/50 dark:to-brand-dark z-10" />
+      <div className="relative h-[40vh] w-full overflow-hidden lg:h-[50vh] bg-slate-900">
         <ResilientImage
           id={event.id}
           table="events"
@@ -188,7 +187,10 @@ export default function EventDetails() {
           className="h-full w-full"
           fallbackImage={DEFAULT_EVENT_IMAGE}
           onLoad={() => setImageLoaded(true)}
+          fit="contain"
         />
+        {/* Bottom fade so the flyer blends into the content card below, without washing out the whole image */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-white dark:to-brand-dark z-10 pointer-events-none" />
         <div className="absolute top-4 left-4 z-20">
           <Link to="/events"
             className="flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-md hover:bg-black/70 transition-colors"

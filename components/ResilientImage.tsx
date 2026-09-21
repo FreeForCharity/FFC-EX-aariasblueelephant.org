@@ -10,6 +10,13 @@ interface ResilientImageProps {
   className?: string;
   fallbackImage?: string;
   onLoad?: () => void;
+  /**
+   * 'cover' (default) fills the container, cropping edges as needed.
+   * 'contain' shows the full image un-cropped, letterboxed with a blurred
+   * copy of the same image behind it (avoids grey/empty bars for flyers
+   * and other images that don't match the container's aspect ratio).
+   */
+  fit?: 'cover' | 'contain';
 }
 
 /**
@@ -26,7 +33,8 @@ const ResilientImage: React.FC<ResilientImageProps> = ({
   alt = "",
   className = "",
   fallbackImage = "",
-  onLoad
+  onLoad,
+  fit = 'cover'
 }) => {
   const [dbSrc, setDbSrc] = useState<string | null>(null);
   const [isFetchingData, setIsFetchingData] = useState(false);
@@ -130,13 +138,25 @@ const ResilientImage: React.FC<ResilientImageProps> = ({
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
+      {currentSrc && fit === 'contain' && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 scale-110"
+          style={{
+            backgroundImage: `url(${currentSrc})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(18px) brightness(0.5)',
+          }}
+        />
+      )}
       {currentSrc && (
         <img
           src={currentSrc}
           alt={alt}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          className={`w-full h-full object-cover transition-opacity duration-700 ${isImageLoading ? 'opacity-30' : 'opacity-100'}`}
+          className={`relative w-full h-full ${fit === 'contain' ? 'object-contain' : 'object-cover'} transition-opacity duration-700 ${isImageLoading ? 'opacity-30' : 'opacity-100'}`}
           loading="lazy"
         />
       )}
