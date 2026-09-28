@@ -64,3 +64,8 @@ Thumbs.db
 restored_data.json
 android/keystore/
 android/keystore.properties
+
+# === Local scratch (not project content) ===
+/out/
+/scripts/tmp/
+.claude/

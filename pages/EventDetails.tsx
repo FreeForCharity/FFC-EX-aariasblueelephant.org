@@ -4,7 +4,7 @@ import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartHandshake } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartHandshake, ZoomIn, X } from 'lucide-react';
 import Button from '../components/Button';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import RichText from '../components/RichText';
@@ -27,6 +27,7 @@ export default function EventDetails() {
   const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [showFullFlyer, setShowFullFlyer] = useState(false);
 
   const { fetchEventDetails } = useData();
 
@@ -58,7 +59,58 @@ export default function EventDetails() {
 
   // Use fullEvent if available, fallback to context version
   const event = fullEvent || eventFromContext;
-  
+
+  // Hooks must run on every render, so these live above the early returns below.
+  const userRegistration = React.useMemo(() => {
+    if (!user || !eventRegistrations) return null;
+    return [...eventRegistrations].reverse().find(r =>
+      r.eventId === (event?.id || id) &&
+      (
+        r.userId === user.id ||
+        r.userEmail === user.email ||
+        (r.userId && user.email && r.userId.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+        (r.userEmail && user.email && r.userEmail.toLowerCase().trim() === user.email.toLowerCase().trim())
+      )
+    );
+  }, [user, eventRegistrations, event?.id, id]);
+
+  const isRegistered = !!userRegistration;
+  const registrationStatus = userRegistration?.status;
+
+  useEffect(() => {
+    const handleAutoRegister = async (pendingEventId: string, pendingAccommodation: string | null) => {
+      if (user && event && !isLoading && !isRegistered) {
+        if (pendingEventId === event.id && pendingAccommodation !== null) {
+          // Clear pending items
+          localStorage.removeItem('pendingEventId');
+          localStorage.removeItem('pendingAccommodation');
+
+          // Auto-register
+          const result = await registerForEvent({
+            eventId: event.id,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            specialNeeds: pendingAccommodation === 'true',
+          });
+
+          if (result.success) {
+            setRegistrationSubmitted(true);
+          } else {
+            console.error("Auto-registration failed:", result.error);
+            alert("Registration failed: " + result.error + "\n\nIf you see a permission error, please contact the administrator.");
+          }
+        }
+      }
+    };
+
+    const pendingEventId = localStorage.getItem('pendingEventId');
+    const pendingAccommodation = localStorage.getItem('pendingAccommodation');
+    if (pendingEventId) {
+      handleAutoRegister(pendingEventId, pendingAccommodation);
+    }
+  }, [user, event, isLoading, isRegistered, registerForEvent]);
+
   if (isLoading || (isFetchingDetails && !event)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-brand-dark">
@@ -80,22 +132,6 @@ export default function EventDetails() {
 
   const eventDate = new Date(event.date.replace(/-/g, '/'));
   const isPastEvent = eventDate < new Date(new Date().setHours(0, 0, 0, 0));
-  
-  const userRegistration = React.useMemo(() => {
-    if (!user || !eventRegistrations) return null;
-    return [...eventRegistrations].reverse().find(r => 
-      r.eventId === (event?.id || id) && 
-      (
-        r.userId === user.id || 
-        r.userEmail === user.email ||
-        (r.userId && user.email && r.userId.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
-        (r.userEmail && user.email && r.userEmail.toLowerCase().trim() === user.email.toLowerCase().trim())
-      )
-    );
-  }, [user, eventRegistrations, event?.id, id]);
-  
-  const isRegistered = !!userRegistration;
-  const registrationStatus = userRegistration?.status;
 
   const handleRegister = async (pref: boolean) => {
     if (!user) {
@@ -129,40 +165,6 @@ export default function EventDetails() {
 
   const showAccommodationQuestion = event.type === 'Event' || event.type === 'Class';
 
-  useEffect(() => {
-    const handleAutoRegister = async (pendingEventId: string, pendingAccommodation: string | null) => {
-      if (user && event && !isLoading && !isRegistered) {
-        if (pendingEventId === event.id && pendingAccommodation !== null) {
-          // Clear pending items
-          localStorage.removeItem('pendingEventId');
-          localStorage.removeItem('pendingAccommodation');
-          
-          // Auto-register
-          const result = await registerForEvent({
-            eventId: event.id,
-            userId: user.id,
-            userName: user.name,
-            userEmail: user.email,
-            specialNeeds: pendingAccommodation === 'true',
-          });
-          
-          if (result.success) {
-            setRegistrationSubmitted(true);
-          } else {
-            console.error("Auto-registration failed:", result.error);
-            alert("Registration failed: " + result.error + "\n\nIf you see a permission error, please contact the administrator.");
-          }
-        }
-      }
-    };
-
-    const pendingEventId = localStorage.getItem('pendingEventId');
-    const pendingAccommodation = localStorage.getItem('pendingAccommodation');
-    if (pendingEventId) {
-      handleAutoRegister(pendingEventId, pendingAccommodation);
-    }
-  }, [user, event, isLoading, isRegistered, registerForEvent]);
-
   const handleShare = async () => {
     if (typeof window === 'undefined') return;
     const shareUrl = window.location.href;
@@ -178,8 +180,12 @@ export default function EventDetails() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50 dark:bg-brand-dark pt-20">
       {/* Hero Image with Overlay */}
-      <div className="relative h-[40vh] w-full overflow-hidden lg:h-[50vh]">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white dark:via-brand-dark/50 dark:to-brand-dark z-10" />
+      <div
+        className="relative h-[65vh] w-full overflow-hidden lg:h-[85vh] bg-slate-900 cursor-zoom-in"
+        onClick={() => setShowFullFlyer(true)}
+        role="button"
+        aria-label={tr('View full flyer', 'Ver folleto completo')}
+      >
         <ResilientImage
           id={event.id}
           table="events"
@@ -188,15 +194,48 @@ export default function EventDetails() {
           className="h-full w-full"
           fallbackImage={DEFAULT_EVENT_IMAGE}
           onLoad={() => setImageLoaded(true)}
+          fit="contain"
         />
+        {/* Bottom fade so the flyer blends into the content card below, without washing out the whole image */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-white dark:to-brand-dark z-10 pointer-events-none" />
         <div className="absolute top-4 left-4 z-20">
           <Link to="/events"
+            onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-md hover:bg-black/70 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> {tr('Back', 'Volver')}
           </Link>
         </div>
+        <div className="absolute bottom-6 right-4 z-20 flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-medium text-white backdrop-blur-md">
+          <ZoomIn className="h-4 w-4" /> {tr('Tap to enlarge', 'Toca para ampliar')}
+        </div>
       </div>
+
+      {/* Full-size flyer lightbox */}
+      {showFullFlyer && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          onClick={() => setShowFullFlyer(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setShowFullFlyer(false)}
+            aria-label={tr('Close', 'Cerrar')}
+            className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <ResilientImage
+            id={event.id}
+            table="events"
+            column="image"
+            alt={event.title}
+            className="h-full w-full max-w-4xl"
+            fallbackImage={DEFAULT_EVENT_IMAGE}
+            fit="contain"
+          />
+        </div>
+      )}
 
       {/* Content Container */}
       <div className="relative z-20 mx-auto -mt-20 max-w-5xl px-4 sm:px-6 lg:px-8">

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Our First Year | Aaria's Blue Elephant</title>
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     OUR FIRST YEAR — an animated short for the first birthday of the NGO,
+     2 Nov 2025 → 2 Nov 2026. Thirteen chapters, all of them true, built on the
+     same canvas-and-vanilla-JS approach as the games so it runs anywhere and
+     needs nothing installed.
+
+     The cast is modelled in three dimensions: cast3d.js is a small software
+     renderer (perspective camera, depth-sorted shaded solids) so that people
+     can turn, walk into depth and be lit, while props.js builds the town
+     toward a vanishing point so it belongs in the same world. No WebGL — the
+     whole film still has to be a pure function of the clock for the export.
+
+     To turn it into a video:
+       · press ⏺ to record a .webm straight out of the browser, or
+       · run `node scripts/story-frames.mjs` for a frame-exact PNG → ffmpeg
+         export (renderAt() is deterministic, so every frame is repeatable).
+
+     Real photos go in public/story/photos/ — see the README in that folder.
+     Bilingual EN/ES; the Spanish is AI-translated (see the general disclosure).
+     Built by Aaria and her Friends 💙 -->
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="film.css">
+</head>
+<body>
+<div id="app">
+  <div id="screen"><canvas id="stage" aria-label="Aaria's Blue Elephant — Our First Year"></canvas></div>
+
+  <div id="controls">
+    <div id="track" role="slider" aria-label="Scrub the film"><div class="rail"><div id="bar"></div></div></div>
+
+    <div id="row">
+      <button id="play" title="Play">▶</button>
+      <button id="back" title="Back 10 seconds">⏪</button>
+      <button id="fwd" title="Forward 10 seconds">⏩</button>
+      <button id="restart" title="Start again">↺</button>
+      <button id="speed" title="Playback speed">1×</button>
+      <span id="chapterName"></span>
+      <button id="narrate" title="Read the captions out loud">🔊<span class="lbl">Narrate</span></button>
+      <button id="rec" title="Record this as a video file">⏺</button>
+      <button id="clean" title="Hide the controls (C)">🖥<span class="lbl">Clean</span></button>
+      <button id="full" title="Fullscreen (F)">⛶</button>
+      <button id="lang" title="Language">🌐</button>
+      <span id="time">0:00 / 0:00</span>
+    </div>
+
+    <div id="chapters"></div>
+
+    <div id="foot">
+      <span><img src="/abe-logo-badge.png" alt=""> Aaria's Blue Elephant</span>
+      <span>Built by Aaria and her Friends 💙</span>
+      <a href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure / Aviso general</a>
+      <a href="https://aariasblueelephant.org" target="_blank" rel="noopener">aariasblueelephant.org</a>
+    </div>
+  </div>
+</div>
+
+<script src="../gamekit/lang.js"></script>
+<script>
+  /* the chrome is bilingual too — one pass, before the film starts */
+  ABELang.register({
+    "Our First Year | Aaria's Blue Elephant": "Nuestro primer año | Aaria's Blue Elephant",
+    "Aaria's Blue Elephant — Our First Year": "Aaria's Blue Elephant — Nuestro primer año",
+    "Scrub the film": "Mueve la película",
+    "Play": "Reproducir",
+    "Back 10 seconds": "Retroceder 10 segundos",
+    "Forward 10 seconds": "Avanzar 10 segundos",
+    "Start again": "Empezar de nuevo",
+    "Playback speed": "Velocidad",
+    "Read the captions out loud": "Leer los subtítulos en voz alta",
+    "Narrate": "Narrar",
+    "Record this as a video file": "Grabar esto como video",
+    "Hide the controls (C)": "Ocultar los controles (C)",
+    "Clean": "Limpio",
+    "Fullscreen (F)": "Pantalla completa (F)",
+    "Language": "Idioma",
+    "Built by Aaria and her Friends 💙": "Hecho por Aaria y sus amigos 💙",
+    "General Disclosure / Aviso general": "Aviso general / General Disclosure",
+  });
+  document.title = ABELang.t("Our First Year | Aaria's Blue Elephant");
+  document.documentElement.lang = ABELang.lang;
+  addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[title]').forEach(function (el) { el.title = ABELang.t(el.title); });
+    document.querySelectorAll('[aria-label]').forEach(function (el) {
+      el.setAttribute('aria-label', ABELang.t(el.getAttribute('aria-label')));
+    });
+    document.querySelectorAll('.lbl, #foot span, #foot a').forEach(function (el) {
+      el.textContent = ABELang.t(el.textContent.trim());
+    });
+  });
+</script>
+<script src="art.js"></script>
+<script src="cast3d.js"></script>
+<script src="props.js"></script>
+<script src="scenes.js"></script>
+<script src="film.js"></script>
+</body>
+</html>

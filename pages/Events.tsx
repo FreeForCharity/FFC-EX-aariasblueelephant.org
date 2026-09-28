@@ -123,9 +123,9 @@ const EventCardShort: React.FC<{
       )}
 
       {/* Left: Image */}
-      <div 
+      <div
         onClick={() => onNavigate(`/events/${event.id}`)}
-        className="relative h-40 md:h-auto md:w-56 overflow-hidden shrink-0 cursor-pointer"
+        className="relative h-40 md:h-auto md:w-56 overflow-hidden shrink-0 cursor-pointer bg-slate-900"
       >
         <ResilientImage
           id={event.id}
@@ -134,6 +134,7 @@ const EventCardShort: React.FC<{
           alt={event.title}
           className="h-full w-full"
           fallbackImage={DEFAULT_EVENT_IMAGE}
+          fit="contain"
         />
         <div className="absolute top-3 left-3 z-10">
           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-md
@@ -310,7 +311,7 @@ const CardContent: React.FC<CardContentProps> = ({
   return (
     <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${!isPast ? 'hover:scale-[1.02] hover:border-sky-500/50 hover:shadow-sky-500/10 cursor-pointer' : ''}`}>
       <div className={`grid grid-cols-1 ${activeEvent.mediaLink ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
-        <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1 bg-slate-100 dark:bg-slate-800">
+        <div className="relative h-64 lg:h-auto overflow-hidden lg:col-span-1 bg-slate-900">
           <ResilientImage
             id={activeEvent.id}
             table="events"
@@ -318,6 +319,7 @@ const CardContent: React.FC<CardContentProps> = ({
             alt={activeEvent.title}
             className={`h-full w-full ${isPast ? 'grayscale-[50%]' : ''}`}
             fallbackImage={DEFAULT_EVENT_IMAGE}
+            fit="contain"
           />
           <div className="absolute top-4 left-4 z-20">
             <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md
