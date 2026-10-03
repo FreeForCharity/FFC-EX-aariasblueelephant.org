@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- FFC Consent Mode v2 defaults. DENIED by default: analytics_storage,
+         ad_storage, ad_user_data, ad_personalization, personalization_storage.
+         The list is written out rather than summarised as "analytics and
+         advertising" because an unlisted signal defaults to GRANTED, and
+         personalization_storage is neither: omitting it is what granted it.
+         functionality_storage and security_storage stay granted, and with no
+         consent banner on this site nothing ever changes any of them.
+         Governs visitors whose browser runs this script. With JavaScript off
+         it never executes, and the GTM noscript iframe below still loads, so
+         that path is ungoverned here.
+         MUST run before any Google tag. -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted'
+      });
+      gtag('set', 'url_passthrough', true);
+      gtag('set', 'ads_data_redaction', true);
+    </script>
+
     <!-- Google Tag Manager -->
     <script>
       ;(function (w, d, s, l, i) {
