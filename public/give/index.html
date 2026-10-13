@@ -4,47 +4,187 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <title>Donate — Aaria's Blue Elephant</title>
+  <meta name="theme-color" content="#0B1437" />
+  <title>Support Aaria's Blue Elephant</title>
   <!--
     SHORT DONATE LINK: aariasblueelephant.org/give  (for QR codes only — not in the nav)
+    A ~2.5 s calm "Every Star Shines" moment, then straight to the donation form.
 
     >>> TO SWITCH DONATION PLATFORMS, CHANGE THE URL IN THESE TWO PLACES IN THIS FILE: <<<
-      1. the <meta http-equiv="refresh"> tag just below
-      2. the <a id="go" href="..."> link in the body (the script reads its target from here)
+      1. the DONATE_URL constant in the <script> at the bottom
+      2. the href of <a id="go"> and the <noscript> meta refresh (the no-JavaScript failsafe)
 
-    GitHub Pages can't send a server-side 301, so this static page is the redirect:
-    meta refresh (works without JS) + JS replace() that also carries any ?query
-    (e.g. ?utm_source=banner) + a visible link if both fail.
+    Sensory-safe by design: no sound, no flashing, slow easing, nothing brighter than a
+    gentle fade. prefers-reduced-motion gets a fully static page and a 1 s redirect.
+    GitHub Pages can't send a server-side 301, which is why this is a static page.
     /give and /give/ both land here (Pages adds the trailing slash itself).
-    The /donate page (donation info for site visitors) is separate and untouched.
+    Logo: downsized copy of /card/assets/logo.png (kept small for mobile data).
   -->
-  <meta http-equiv="refresh" content="0; url=https://www.zeffy.com/en-US/donation-form/aariasblueelephant" />
+  <noscript><meta http-equiv="refresh" content="3; url=https://www.zeffy.com/en-US/donation-form/aariasblueelephant" /></noscript>
   <style>
-    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-           background: #0F172A; color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-           text-align: center; padding: 24px; }
-    a { color: #22D3EE; font-weight: 700; }
+    :root { --gold: #FBBF24; --night: #0B1437; --night2: #16245C; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: radial-gradient(ellipse at 50% 38%, var(--night2) 0%, var(--night) 70%);
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stage {
+      position: relative;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 72px 24px 40px;
+      text-align: center;
+    }
+
+    /* Stars: fade in one by one, then breathe slowly (no flashing) */
+    .star {
+      position: absolute;
+      width: var(--s);
+      height: var(--s);
+      background: var(--gold);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      opacity: 0;
+      animation: starIn 1s ease-out var(--d) forwards, breathe 4s ease-in-out calc(var(--d) + 1s) infinite;
+    }
+    @keyframes starIn { from { opacity: 0; } to { opacity: .75; } }
+    @keyframes breathe { 0%, 100% { opacity: .75; } 50% { opacity: .45; } }
+
+    .logo-wrap { position: relative; width: min(46vw, 170px); aspect-ratio: 1; margin-bottom: 22px; }
+    .logo {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(.88);
+      animation: logoIn 1s cubic-bezier(.22, .61, .36, 1) .15s forwards;
+    }
+    @keyframes logoIn { to { opacity: 1; transform: scale(1); } }
+
+    /* A few gold sparkles drifting gently outward — not confetti */
+    .spark {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 7px; height: 7px;
+      margin: -3.5px 0 0 -3.5px;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: 0;
+      animation: spark 1.1s ease-out var(--sd) forwards;
+    }
+    @keyframes spark {
+      0% { opacity: 0; transform: translate(0, 0) scale(.6); }
+      35% { opacity: .85; }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
+    }
+
+    .line { opacity: 0; transform: translateY(6px); animation: lineIn .7s ease-out var(--ld) forwards; margin: 0; }
+    @keyframes lineIn { to { opacity: 1; transform: none; } }
+    h1.line { font-size: clamp(2rem, 9vw, 3rem); font-weight: 800; color: var(--gold); letter-spacing: -.01em; line-height: 1.1; margin-bottom: 14px; }
+    p.line { font-size: clamp(1.02rem, 4.4vw, 1.3rem); line-height: 1.45; color: #E2E8F0; max-width: 22em; }
+    p.line + p.line { margin-top: 6px; }
+
+    /* Skip button: visible from the first moment */
+    .skip {
+      position: absolute;
+      top: 18px; right: 18px;
+      background: var(--gold);
+      color: #0B1437;
+      font: 800 .95rem -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 12px 20px;
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    }
+    .skip:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+    /* Reduced motion: fully static page, nothing animates */
+    @media (prefers-reduced-motion: reduce) {
+      .star { animation: none; opacity: .6; }
+      .logo { animation: none; opacity: 1; transform: none; }
+      .line { animation: none; opacity: 1; transform: none; }
+      .spark { display: none; }
+    }
   </style>
 </head>
 <body>
-  <p>
-    <span id="msg">Taking you to our donation page…</span><br /><br />
-    <a id="go" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant"><span id="cta">Click here to donate</span></a>
-  </p>
+  <main class="stage">
+    <a class="skip" id="go" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" aria-label="Donate now" data-aria-es="Donar ahora"><span id="btn">Donate Now →</span></a>
+
+    <div id="stars" aria-hidden="true"></div>
+
+    <div class="logo-wrap">
+      <img class="logo" src="logo.png" width="220" height="220" alt="Aaria's Blue Elephant" />
+      <div id="sparks" aria-hidden="true"></div>
+    </div>
+
+    <h1 class="line" id="l1" style="--ld:.6s">Every Star Shines.</h1>
+    <p class="line" id="l2" style="--ld:.95s">Every event is 100% free for every family.</p>
+    <p class="line" id="l3" style="--ld:1.3s">Your gift makes it possible. 💙</p>
+  </main>
+
   <script>
     (function () {
+      // ── DONATION FORM URL — change here (and in the two spots noted in the head comment) ──
+      var DONATE_URL = 'https://www.zeffy.com/en-US/donation-form/aariasblueelephant';
+      // ───────────────────────────────────────────────────────────────────────────────────────
+
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var isEs = false;
       try { isEs = localStorage.getItem('abe.lang') === 'es'; } catch (e) {}
+
+      var go = document.getElementById('go');
       if (isEs) {
         document.documentElement.lang = 'es';
-        document.getElementById('msg').textContent = 'Llevándote a nuestra página de donaciones…';
-        document.getElementById('cta').textContent = 'Haz clic aquí para donar';
+        document.title = "Apoya a Aaria's Blue Elephant";
+        document.getElementById('btn').textContent = 'Donar ahora →';
+        go.setAttribute('aria-label', go.getAttribute('data-aria-es'));
+        document.getElementById('l1').textContent = 'Cada estrella brilla.';
+        document.getElementById('l2').textContent = 'Cada evento es 100% gratis para cada familia.';
+        document.getElementById('l3').textContent = 'Tu donación lo hace posible. 💙';
       }
-      var link = document.getElementById('go');
-      var target = link.getAttribute('href');
-      // carry through ?utm_source=… etc.
-      link.setAttribute('href', target + (target.indexOf('?') < 0 ? location.search : location.search.replace(/^\?/, '&')));
-      window.location.replace(link.getAttribute('href'));
+
+      // keep ?utm_source=… etc. on the way to the donation form
+      var target = DONATE_URL + (location.search ? (DONATE_URL.indexOf('?') < 0 ? location.search : '&' + location.search.slice(1)) : '');
+      go.setAttribute('href', target);
+
+      var done = false, timer;
+      function leave() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        window.location.replace(target);   // replace: Back returns to where they came from, not here
+      }
+      go.addEventListener('click', function (e) { e.preventDefault(); leave(); });
+      document.addEventListener('click', leave);   // tap anywhere skips ahead
+
+      // [left %, top %, size px, fade-in delay s] — spread around, kept clear of the centre text
+      var pts = [[8,14,10,.1],[68,16,8,.3],[22,30,7,.5],[75,26,9,.7],[10,52,8,.9],[92,48,10,.4],
+                 [16,76,9,.6],[84,72,8,.8],[34,90,7,1.0],[66,88,10,1.1],[48,8,7,.2],[50,96,8,1.2]];
+      var html = '';
+      pts.forEach(function (p) {
+        html += '<i class="star" style="left:' + p[0] + '%;top:' + p[1] + '%;--s:' + p[2] + 'px;--d:' + p[3] + 's"></i>';
+      });
+      document.getElementById('stars').innerHTML = html;
+
+      if (!reduce) {   // sparkles only when motion is OK
+        var sh = '';
+        for (var i = 0; i < 8; i++) {
+          var a = (i / 8) * Math.PI * 2 + 0.4, r = 105;
+          sh += '<i class="spark" style="--dx:' + Math.round(Math.cos(a) * r) + 'px;--dy:' + Math.round(Math.sin(a) * r) +
+                'px;--sd:' + (1.2 + (i % 4) * 0.12).toFixed(2) + 's"></i>';
+        }
+        document.getElementById('sparks').innerHTML = sh;
+      }
+
+      timer = setTimeout(leave, reduce ? 1000 : 2500);
     })();
   </script>
 </body>
