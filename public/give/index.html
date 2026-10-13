@@ -6,24 +6,34 @@
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#0F172A" />
   <title>Support Aaria's Blue Elephant</title>
+  <!-- warm up the donation form's connection while the 2 s moment plays -->
+  <link rel="preconnect" href="https://www.zeffy.com" crossorigin />
+  <link rel="dns-prefetch" href="https://www.zeffy.com" />
+  <link rel="preload" as="image" href="/logo.webp" />
   <!--
     SHORT DONATE LINK: aariasblueelephant.org/give  (for QR codes only — not in the nav)
-    Same fun splash as the /card page (logo pop + confetti burst), ~1.6 s, then straight to the donation form.
+
+    One ~2 s frame that primes the gift right before the donor picks an amount on Zeffy:
+      • a child to care about  — the hug illustration (/logo.webp, no badge text)
+      • proof it's real         — "45+ children" counts up (same figure as the homepage)
+      • their role              — "Your gift keeps it free."
+    Hearts burst from the hug when the counter lands, then the page fades to white
+    (Zeffy's background) so the handoff feels seamless.
     A big "Donate with Zeffy" button is visible from the first moment; tapping anywhere skips.
 
-    >>> TO SWITCH DONATION PLATFORMS, CHANGE THE URL IN THESE THREE PLACES IN THIS FILE: <<<
+    >>> TO SWITCH DONATION PLATFORMS, CHANGE THE URL IN THESE PLACES IN THIS FILE: <<<
       1. the DONATE_URL constant in the <script> at the bottom
       2. the href of <a id="go"> (the big button)
       3. the <noscript> meta refresh (the no-JavaScript failsafe)
-    (The button label says "Zeffy" — update it in the HTML and the Spanish string too.)
+      4. the two zeffy.com <link> hints above
+    >>> TO UPDATE THE CHILDREN COUNT: change CHILDREN in the script (keep it in step with the homepage). <<<
 
-    prefers-reduced-motion: no confetti/pop, static logo, redirect after 1 s. No sound.
+    prefers-reduced-motion: static frame, no hearts/count-up, redirect after 1 s. No sound.
     GitHub Pages can't send a server-side 301, which is why this is a static page.
-    Logo: downsized copy of /card/assets/logo.png (kept small for mobile data).
   -->
   <noscript><meta http-equiv="refresh" content="3; url=https://www.zeffy.com/en-US/donation-form/aariasblueelephant" /></noscript>
   <style>
-    :root { --dark: #0F172A; --gold: #FBBF24; --muted: #94A3B8; }
+    :root { --dark: #0F172A; --gold: #FBBF24; --sky: #38BDF8; }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
     body {
@@ -36,44 +46,62 @@
     }
     /* soft brand glow blobs, same as /card */
     body::before, body::after {
-      content: ""; position: fixed; width: 320px; height: 320px; border-radius: 50%;
+      content: ""; position: fixed; width: 340px; height: 340px; border-radius: 50%;
       filter: blur(90px); pointer-events: none;
     }
-    body::before { top: -80px; left: -80px; background: rgba(34, 211, 238, 0.18); }
-    body::after { bottom: -80px; right: -80px; background: rgba(244, 114, 182, 0.14); }
+    body::before { top: -90px; left: -90px; background: rgba(34, 211, 238, 0.20); }
+    body::after { bottom: -90px; right: -90px; background: rgba(244, 114, 182, 0.16); }
 
     .stage {
       position: relative; z-index: 1;
       min-height: 100%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 18px; padding: 24px 24px 130px; text-align: center;
+      padding: 20px 24px 128px; text-align: center;
     }
-    .logo {
-      width: 140px; height: 140px;
-      border-radius: 50%; object-fit: cover;
-      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25);
+
+    /* The hug — the emotional anchor */
+    .hug {
+      width: min(58vw, 230px);
+      aspect-ratio: 782 / 839;
+      border-radius: 32px;
+      background: #F2F2F2 url(/logo.webp) center / cover no-repeat;
+      box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.22), 0 18px 50px rgba(0,0,0,.45);
       opacity: 0;
-      animation: logoPopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: pop .55s cubic-bezier(.34, 1.56, .64, 1) forwards;
     }
-    @keyframes logoPopIn {
-      0% { transform: scale(0.5); opacity: 0; }
-      60% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+    @keyframes pop { 0% { opacity: 0; transform: scale(.6); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+    .hug.beat { animation: pop .55s cubic-bezier(.34, 1.56, .64, 1) forwards, beat .45s ease-out forwards; }
+    @keyframes beat { 0% { transform: scale(1); } 40% { transform: scale(1.07); } 100% { transform: scale(1); } }
+
+    .count {
+      margin: 22px 0 0;
+      font-size: clamp(3.2rem, 16vw, 4.6rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.03em;
+      color: var(--sky);
+      font-variant-numeric: tabular-nums;
     }
-    h1 {
-      margin: 0; font-size: clamp(1.8rem, 8vw, 2.6rem); font-weight: 800; color: var(--gold);
-      letter-spacing: -.01em; line-height: 1.1;
-      opacity: 0; animation: fadeUp .5s ease-out .35s forwards;
+    .count-label {
+      margin: 6px 0 0;
+      font-size: clamp(1rem, 4.6vw, 1.2rem);
+      font-weight: 600;
+      color: #E2E8F0;
+      opacity: 0; animation: fadeUp .4s ease-out .3s forwards;
     }
-    .sub {
-      margin: 0; font-size: clamp(1rem, 4.4vw, 1.2rem); color: #E2E8F0;
-      opacity: 0; animation: fadeUp .5s ease-out .55s forwards;
+    .ask {
+      margin: 14px 0 0;
+      font-size: clamp(1.45rem, 6.8vw, 1.9rem);
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: -.01em;
+      opacity: 0; animation: fadeUp .45s ease-out .85s forwards;
     }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* Big, always-visible donate button */
     .give-btn {
-      position: fixed; z-index: 2;
+      position: fixed; z-index: 3;
       left: 20px; right: 20px;
       bottom: max(24px, env(safe-area-inset-bottom));
       max-width: 440px; margin: 0 auto;
@@ -86,24 +114,37 @@
     }
     .give-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 
+    /* Seamless handoff: fade to Zeffy's white just before leaving */
+    .veil {
+      position: fixed; inset: 0; z-index: 200;
+      background: #fff; opacity: 0; pointer-events: none;
+      transition: opacity .25s ease-in;
+    }
+    .veil.on { opacity: 1; }
+
     @media (prefers-reduced-motion: reduce) {
-      .logo, h1, .sub { animation: none; opacity: 1; transform: none; }
+      .hug, .hug.beat, .count-label, .ask { animation: none; opacity: 1; transform: none; }
+      .veil { transition: none; }
     }
   </style>
 </head>
 <body>
   <main class="stage">
-    <img class="logo" id="logo" src="logo.png" width="140" height="140" alt="Aaria's Blue Elephant" />
-    <h1 id="l1">Every Star Shines.</h1>
-    <p class="sub" id="l2">Your gift makes it possible. 💙</p>
+    <div class="hug" id="hug" role="img" aria-label="A child hugging Nilu the blue elephant"></div>
+    <p class="count"><span id="n">45</span>+</p>
+    <p class="count-label" id="lbl">children embraced — 100% free</p>
+    <p class="ask" id="ask">Your gift keeps it free. 💙</p>
     <a class="give-btn" id="go" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" aria-label="Donate now with Zeffy" data-aria-es="Donar ahora con Zeffy"><span id="btn">Donate with Zeffy →</span></a>
   </main>
+  <div class="veil" id="veil" aria-hidden="true"></div>
 
   <script>
     (function () {
-      // ── DONATION FORM URL — change here (and in the two other spots noted in the head comment) ──
+      // ── DONATION FORM URL — change here (and in the other spots noted in the head comment) ──
       var DONATE_URL = 'https://www.zeffy.com/en-US/donation-form/aariasblueelephant';
-      var PLAY_MS = 1600;        // how long the splash plays before auto-redirect
+      // ── CHILDREN COUNT — keep in step with the homepage ("45+ children embraced in 2025–2026") ──
+      var CHILDREN = 45;
+      var PLAY_MS = 1900;        // when the fade-to-white starts; redirect follows ~0.25 s later
       // ───────────────────────────────────────────────────────────────────────────────────────────
 
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -111,13 +152,17 @@
       try { isEs = localStorage.getItem('abe.lang') === 'es'; } catch (e) {}
 
       var go = document.getElementById('go');
+      var hug = document.getElementById('hug');
+      var n = document.getElementById('n');
+      n.textContent = CHILDREN;
       if (isEs) {
         document.documentElement.lang = 'es';
         document.title = "Apoya a Aaria's Blue Elephant";
         document.getElementById('btn').textContent = 'Donar con Zeffy →';
         go.setAttribute('aria-label', go.getAttribute('data-aria-es'));
-        document.getElementById('l1').textContent = 'Cada estrella brilla.';
-        document.getElementById('l2').textContent = 'Tu donación lo hace posible. 💙';
+        hug.setAttribute('aria-label', 'Una niña abrazando a Nilu, el elefante azul');
+        document.getElementById('lbl').textContent = 'niños acompañados — 100% gratis';
+        document.getElementById('ask').textContent = 'Tu donación lo mantiene gratis. 💙';
       }
 
       // keep ?utm_source=… etc. on the way to the donation form
@@ -125,54 +170,69 @@
       go.setAttribute('href', target);
 
       var done = false, timer;
-      function leave() {
+      function leave(fade) {
         if (done) return;
         done = true;
         clearTimeout(timer);
-        window.location.replace(target);   // replace: Back returns to where they came from, not here
+        if (fade && !reduce) {
+          document.getElementById('veil').classList.add('on');
+          setTimeout(function () { window.location.replace(target); }, 230);
+        } else {
+          window.location.replace(target);   // replace: Back returns to where they came from, not here
+        }
       }
-      go.addEventListener('click', function (e) { e.preventDefault(); leave(); });
-      document.addEventListener('click', leave);   // tap anywhere skips straight to the form
+      go.addEventListener('click', function (e) { e.preventDefault(); leave(false); });
+      document.addEventListener('click', function () { leave(false); });   // tap anywhere = straight to the form
 
-      // Confetti burst — same as the /card splash
-      function fireConfettiBurst(x, y) {
+      // Heart burst from the hug — the /card confetti, as hearts
+      function heartBurst(x, y) {
         var canvas = document.createElement('canvas');
-        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:150';
+        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2';
         document.body.appendChild(canvas);
         var dpr = window.devicePixelRatio || 1, w = window.innerWidth, h = window.innerHeight;
         canvas.width = w * dpr; canvas.height = h * dpr;
         var ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
-        var colors = ['#00BFFF', '#FFD700', '#FF1493', '#00FF7F', '#9370DB', '#FFA500', '#FF69B4'];
-        var particles = [], running = false;
-
-        function make() {
-          return { x: x, y: y, vx: Math.random() * 8 - 4, vy: Math.random() * -10 - 5,
-                   size: Math.random() * 12 + 4, color: colors[Math.floor(Math.random() * colors.length)],
-                   life: 1, decay: 0.014 };
+        var colors = ['#38BDF8', '#FBBF24', '#F472B6', '#A78BFA', '#34D399', '#FB923C'];
+        var parts = [];
+        for (var i = 0; i < 34; i++) {
+          var a = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 7;
+          parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 4,
+                       s: 7 + Math.random() * 9, c: colors[i % colors.length],
+                       r: (Math.random() - .5) * .8, life: 1 });
         }
-        function tick() {
+        function heart(p) {
+          ctx.save(); ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.c;
+          ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.scale(p.s / 16, p.s / 16);
+          ctx.beginPath(); ctx.moveTo(0, 5);
+          ctx.bezierCurveTo(-9, -2, -7, -11, 0, -6); ctx.bezierCurveTo(7, -11, 9, -2, 0, 5);
+          ctx.fill(); ctx.restore();
+        }
+        (function tick() {
           ctx.clearRect(0, 0, w, h);
-          for (var i = particles.length - 1; i >= 0; i--) {
-            var p = particles[i];
-            p.vy += 0.32; p.x += p.vx; p.y += p.vy; p.life -= p.decay;
-            if (p.y > h + p.size || p.life <= 0) { particles.splice(i, 1); continue; }
-            ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+          for (var i = parts.length - 1; i >= 0; i--) {
+            var p = parts[i];
+            p.vy += 0.28; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.life -= 0.018;
+            if (p.life <= 0) parts.splice(i, 1); else heart(p);
           }
-          if (particles.length) requestAnimationFrame(tick); else { running = false; canvas.remove(); }
-        }
-        function wave() { for (var i = 0; i < 22; i++) particles.push(make()); if (!running) { running = true; tick(); } }
-        wave(); setTimeout(wave, 200);
+          if (parts.length) requestAnimationFrame(tick); else canvas.remove();
+        })();
       }
 
       if (!reduce) {
-        setTimeout(function () {
-          var r = document.getElementById('logo').getBoundingClientRect();
-          fireConfettiBurst(r.left + r.width * 0.5, r.top + r.height * 0.66);
-        }, 350);
+        // count up 0 → CHILDREN, ease-out, landing at ~0.85 s
+        var t0 = performance.now(), DUR = 700, START = 150;
+        n.textContent = '0';
+        (function count(now) {
+          var k = Math.min(Math.max((now - t0 - START) / DUR, 0), 1);
+          n.textContent = Math.round(CHILDREN * (1 - Math.pow(1 - k, 3)));
+          if (k < 1) return requestAnimationFrame(count);
+          hug.classList.add('beat');
+          var r = hug.getBoundingClientRect();
+          heartBurst(r.left + r.width / 2, r.top + r.height * 0.55);
+        })(t0);
       }
 
-      timer = setTimeout(leave, reduce ? 1000 : PLAY_MS);
+      timer = setTimeout(function () { leave(true); }, reduce ? 1000 : PLAY_MS);
     })();
   </script>
 </body>
