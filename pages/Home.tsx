@@ -220,7 +220,7 @@ const Home: React.FC = () => {
 
                             <div className={`mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 w-full lg:w-fit text-center lg:text-left ${a("anim-bounce-left anim-delay-900")}`}>
                                 <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
-                                    <span className="text-sky-600 dark:text-sky-400 font-black text-lg">15+</span> {tr('events hosted', 'eventos realizados')} <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> {tr('children embraced in 2025–2026', 'niños acompañados en 2025–2026')}
+                                    <span className="text-sky-600 dark:text-sky-400 font-black text-lg">32+</span> {tr('events hosted', 'eventos realizados')} <span className="mx-2 text-slate-300 dark:text-slate-600">&bull;</span> <span className="text-sky-600 dark:text-sky-400 font-black text-lg">45+</span> {tr('children embraced in 2025–2026', 'niños acompañados en 2025–2026')}
                                 </div>
                             </div>
                         </div>
