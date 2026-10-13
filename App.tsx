@@ -104,6 +104,7 @@ const About = lazy(() => import('./pages/About'));
 const Events = lazy(() => import('./pages/Events'));
 const EventDetails = lazy(() => import('./pages/EventDetails'));
 const Login = lazy(() => import('./pages/Login'));
+const Join = lazy(() => import('./pages/Join'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Donate = lazy(() => import('./pages/Donate'));
 const Volunteer = lazy(() => import('./pages/Volunteer'));
@@ -154,6 +155,7 @@ const App: React.FC = () => {
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:id" element={<EventDetails />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/join" element={<Join />} />
                 <Route path="/signup" element={<Navigate to="/login" replace />} />
                 <Route
                   path="/dashboard"
