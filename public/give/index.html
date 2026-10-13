@@ -15,7 +15,7 @@
 
     One ~2.3 s frame that primes the gift right before the donor picks an amount on Zeffy:
       • a child to care about  — the hug illustration (/logo.webp, no badge text)
-      • proof it's real         — "100+ lives touched · 32 free events" counts up
+      • proof it's real         — "100+ lives touched · 32+ events" counts up
       • their role              — "Your gift keeps it free."
     Hearts burst from the hug when the counter lands, then the page fades to white
     (Zeffy's background) so the handoff feels seamless.
@@ -26,7 +26,7 @@
       2. the href of <a id="go"> (the big button)
       3. the <noscript> meta refresh (the no-JavaScript failsafe)
       4. the two zeffy.com <link> hints above
-    >>> TO UPDATE THE NUMBERS: CHILDREN in the script (100+), and "32 free events" in the HTML + Spanish string. <<<
+    >>> TO UPDATE THE NUMBERS: CHILDREN in the script (100+), and "32+ events" in the HTML + Spanish string. <<<
 
     prefers-reduced-motion: static frame, no hearts/count-up, redirect after 1 s. No sound.
     GitHub Pages can't send a server-side 301, which is why this is a static page.
@@ -132,7 +132,7 @@
   <main class="stage">
     <div class="hug" id="hug" role="img" aria-label="A child hugging Nilu the blue elephant"></div>
     <p class="count"><span id="n">100</span>+</p>
-    <p class="count-label" id="lbl">lives touched · 32 free events</p>
+    <p class="count-label" id="lbl">lives touched · 32+ events</p>
     <p class="ask" id="ask">Your gift keeps it free. 💙</p>
     <a class="give-btn" id="go" href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" aria-label="Donate now with Zeffy" data-aria-es="Donar ahora con Zeffy"><span id="btn">Donate with Zeffy →</span></a>
   </main>
@@ -142,7 +142,7 @@
     (function () {
       // ── DONATION FORM URL — change here (and in the other spots noted in the head comment) ──
       var DONATE_URL = 'https://www.zeffy.com/en-US/donation-form/aariasblueelephant';
-      // ── IMPACT COUNT — "100+ lives touched" (update as it grows; the "32 free events" text is in the HTML + Spanish string) ──
+      // ── IMPACT COUNT — "100+ lives touched" (update as it grows; the "32+ events" text is in the HTML + Spanish string) ──
       var CHILDREN = 100;
       var PLAY_MS = 2300;        // when the fade-to-white starts; redirect follows ~0.25 s later
       // ───────────────────────────────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@
         document.getElementById('btn').textContent = 'Donar con Zeffy →';
         go.setAttribute('aria-label', go.getAttribute('data-aria-es'));
         hug.setAttribute('aria-label', 'Una niña abrazando a Nilu, el elefante azul');
-        document.getElementById('lbl').textContent = 'vidas alcanzadas · 32 eventos gratis';
+        document.getElementById('lbl').textContent = 'vidas alcanzadas · 32+ eventos';
         document.getElementById('ask').textContent = 'Tu donación lo mantiene gratis. 💙';
       }
 
