@@ -80,7 +80,7 @@ const toSettings = (d: any): FestivalSettings => ({
 });
 
 /** ask the email function to send one email; it never blocks the caller */
-const notify = (type: 'SHOP_RECEIVED' | 'SHOP_APPROVED', id: string) => {
+const notify = (type: 'SHOP_CONFIRM' | 'SHOP_RECEIVED' | 'SHOP_APPROVED', id: string) => {
   supabase.functions.invoke('send-registration-email', { body: { type, id } })
     .catch((e) => console.warn('email not sent', type, e));
 };
@@ -162,19 +162,66 @@ export const festivalDb = {
 
   /* ─────────────────────────────────────────────────── shop owners ── */
 
+  /** the Google-account way in, for shops that signed up that way */
   async myShop(): Promise<MyShop | null> {
     const { data, error } = await supabase.rpc('festival_my_shop');
     if (error || !(data as any)?.ok) return null;
     return data as MyShop;
   },
 
-  /** sign up, or edit while still waiting. Sends the "we got it" emails once. */
-  async apply(form: ShopApplication): Promise<{ ok: boolean; id?: string; status?: string; error?: string }> {
-    const { data, error } = await supabase.rpc('festival_shop_apply', { p: form });
+  /** the private-link way in: anyone holding the link is the shop */
+  async shopByManage(token: string): Promise<MyShop | null> {
+    const { data, error } = await supabase.rpc('festival_shop_by_manage', { p_token: token });
+    if (error || !(data as any)?.ok) return null;
+    return data as MyShop;
+  },
+
+  /**
+   * Sign up with any email. Saves the shop as unconfirmed and emails the
+   * confirm link; nothing reaches the admin until that link is clicked.
+   */
+  async signup(form: ShopApplication): Promise<{ ok: boolean; id?: string; manage?: string; resent?: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc('festival_shop_signup', { p: form });
     if (error) return { ok: false, error: error.message };
     const r = data as any;
-    if (r?.ok && !r.updated) notify('SHOP_RECEIVED', r.id);
+    if (r?.ok && r.id) notify('SHOP_CONFIRM', r.id);
     return r;
+  },
+
+  /** the link in the email: confirms, then alerts the admin once */
+  async confirm(token: string): Promise<{ ok: boolean; manage?: string; justConfirmed?: boolean }> {
+    const { data, error } = await supabase.rpc('festival_shop_confirm', { p_token: token });
+    const r = data as any;
+    if (error || !r?.ok) return { ok: false };
+    if (r.just_confirmed) notify('SHOP_RECEIVED', r.id);
+    return { ok: true, manage: r.manage, justConfirmed: !!r.just_confirmed };
+  },
+
+  async resendConfirm(id: string) { notify('SHOP_CONFIRM', id); },
+
+  async updateByManage(token: string, form: ShopApplication): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc('festival_shop_update_by_manage', { p_token: token, p: form });
+    if (error) return { ok: false, error: error.message };
+    return data as any;
+  },
+
+  /** "email me my link" — always answers ok, whether or not the address is on file */
+  async emailMyLink(email: string): Promise<void> {
+    await supabase.functions.invoke('send-registration-email', { body: { type: 'SHOP_LINK', email } }).catch(() => {});
+  },
+
+  /** a logo for a shop with no account: shrunk here, saved by the festival-logo function */
+  async uploadLogoByManage(token: string, file: File): Promise<string | null> {
+    const blob = await squareImage(file, 256).catch(() => null);
+    if (!blob) return null;
+    const image = await new Promise<string>((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.readAsDataURL(blob);
+    });
+    const { data, error } = await supabase.functions.invoke('festival-logo', { body: { token, image } });
+    if (error || !(data as any)?.ok) return null;
+    return (data as any).url;
   },
 
   /**
@@ -209,22 +256,23 @@ export const festivalDb = {
   },
 
   /**
-   * Approve onto the card, in a numbered spot. A shop that signed up online is
-   * emailed a link to print its sign; one added by hand has no account to sign
-   * in with, so you print its sign yourself and no email goes out.
+   * Approve onto the card, in a numbered spot, and email the shop its private
+   * link to print the QR sign — if we have a real address for them.
    */
-  async approve(id: string, spot: number, by: string, hasOwner: boolean): Promise<string | null> {
+  async approve(id: string, spot: number, by: string, email: string): Promise<string | null> {
     const err = await festivalDb.updateShop(id, {
       status: 'approved', spot, approved_by: by, approved_at: new Date().toISOString(),
     });
-    if (!err && hasOwner) notify('SHOP_APPROVED', id);
+    if (!err && email.includes('@')) notify('SHOP_APPROVED', id);
     return err;
   },
 
-  /** a shop that will never sign up online — you add it, you print its sign */
+  /** a shop signed up in person — you add it; it gets its link by email if it has one */
   async addShop(row: Record<string, unknown>): Promise<string | null> {
     const { error } = await supabase.from('festival_shops').insert(row);
-    return error ? error.message : null;
+    if (error) return error.message;
+    if (row.status === 'approved' && String(row.contact_email || '').includes('@')) notify('SHOP_APPROVED', String(row.id));
+    return null;
   },
 
   async deleteShop(id: string): Promise<string | null> {

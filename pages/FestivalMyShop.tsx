@@ -1,105 +1,177 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Store, LogIn, Printer, Clock, Hourglass, XCircle, Pencil } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2 } from 'lucide-react';
 import Button from '../components/Button';
+import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
 import { QrSign, PrintTarget, printSign } from '../components/festival/QrSign';
 import { festivalDb, MyShop } from '../lib/festival/db';
-import { fmtShortDay } from '../lib/festival/store';
+import { fmtShortDay, SHOP_KEY } from '../lib/festival/store';
+import { isCategory } from '../lib/festival/types';
 import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
 
 /**
- * /InclusionFestival/myshop — the shop owner's own page, behind their Google
- * sign-in. Waiting: what they sent and how to change it. Approved: their QR
- * sign to print, and how many families have redeemed.
+ * /InclusionFestival/myshop?k=<manage token> — a shop's own page.
+ *
+ * No password: the link in their emails is the key, and this device remembers
+ * it. &confirm=<token> on the first visit is the "confirm your email" click.
+ * Shops that signed up with Google before this existed still get in by signing in.
  */
 const FestivalMyShop: React.FC = () => {
-  const { user, isLoading, loginWithGoogle } = useAuth();
+  const { user, isLoading } = useAuth();
   const es = isEs();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [key, setKey] = useState<string | null>(() => {
+    const k = params.get('k');
+    if (k) return k;
+    try { return localStorage.getItem(SHOP_KEY); } catch { return null; }
+  });
   const [shop, setShop] = useState<MyShop | null | undefined>(undefined);
+  const [justConfirmed, setJustConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [lostEmail, setLostEmail] = useState('');
+  const [lostSent, setLostSent] = useState(false);
+
+  const load = useCallback(async (k: string | null) => {
+    if (k) {
+      const s = await festivalDb.shopByManage(k);
+      if (s) { try { localStorage.setItem(SHOP_KEY, k); } catch { /* private mode */ } }
+      setShop(s);
+      return;
+    }
+    setShop(user ? await festivalDb.myShop() : null);
+  }, [user]);
 
   useEffect(() => {
     if (isLoading) return;
-    if (!user) { setShop(null); return; }
-    festivalDb.myShop().then(setShop);
-  }, [user, isLoading]);
+    (async () => {
+      const confirm = params.get('confirm');
+      if (confirm) {
+        const r = await festivalDb.confirm(confirm);
+        if (r.ok && r.manage) {
+          setJustConfirmed(!!r.justConfirmed);
+          setKey(r.manage);
+          // drop the confirm token from the address bar once it has done its job
+          navigate(`/InclusionFestival/myshop?k=${r.manage}`, { replace: true });
+          await load(r.manage);
+          return;
+        }
+      }
+      await load(key);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
-  const signIn = () => {
-    localStorage.setItem('authReturnTo', '/InclusionFestival/myshop');
-    loginWithGoogle();
+  const save = async (v: ShopFormValues, logo: File | null) => {
+    if (!key) return;
+    setBusy(true); setError(''); setSaved(false);
+    const r = await festivalDb.updateByManage(key, v);
+    if (r.ok && logo) {
+      const url = await festivalDb.uploadLogoByManage(key, logo);
+      if (!url) setError(tr('Your details saved, but the logo did not upload. Try a PNG or JPG.', 'Tus datos se guardaron, pero el logo no se subió. Prueba un PNG o JPG.'));
+    }
+    if (!r.ok) setError(r.error === 'already_approved'
+      ? tr('You are already on the card — changes go through us. Just reply to your email.', 'Ya estás en la tarjeta: los cambios los hacemos nosotros. Responde a tu correo.')
+      : tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.'));
+    else setSaved(true);
+    setBusy(false);
+    await load(key);
   };
 
   const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="mx-auto max-w-lg px-4 py-16 text-center">{children}</div>
+    <div className="mx-auto max-w-2xl px-4 py-12">{children}</div>
+  );
+
+  const LostLink = (
+    <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 text-left dark:border-slate-700 dark:bg-slate-900">
+      <p className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+        <KeyRound className="h-4 w-4 text-sky-600" />{tr('Email me my shop link', 'Envíame el enlace de mi tienda')}
+      </p>
+      {lostSent ? (
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{tr('If that email signed up a shop, the link is on its way.', 'Si ese correo inscribió una tienda, el enlace va en camino.')}</p>
+      ) : (
+        <form className="mt-3 flex flex-wrap gap-2" onSubmit={async (e) => { e.preventDefault(); await festivalDb.emailMyLink(lostEmail); setLostSent(true); }}>
+          <input type="email" required value={lostEmail} onChange={(e) => setLostEmail(e.target.value)} placeholder="you@yourshop.com"
+                 className="min-w-0 flex-1 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+          <Button type="submit" variant="secondary">{tr('Send', 'Enviar')}</Button>
+        </form>
+      )}
+    </div>
   );
 
   if (isLoading || shop === undefined) {
-    return <Shell><div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" /></Shell>;
-  }
-
-  if (!user) {
-    return (
-      <Shell>
-        <Store className="mx-auto h-12 w-12 text-sky-600" />
-        <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">{tr('Your festival shop', 'Tu tienda del festival')}</h1>
-        <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {tr('Sign in with the Google account you signed up with.', 'Inicia sesión con la cuenta de Google con la que te inscribiste.')}
-        </p>
-        <Button className="mt-8" size="lg" onClick={signIn}>
-          <LogIn className="mr-2 h-5 w-5" />{tr('Sign in with Google', 'Iniciar sesión con Google')}
-        </Button>
-      </Shell>
-    );
+    return <Shell><div className="mx-auto mt-10 h-8 w-8 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" /></Shell>;
   }
 
   if (!shop) {
     return (
       <Shell>
-        <Store className="mx-auto h-12 w-12 text-sky-300" />
-        <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">{tr('No shop on this account', 'No hay tienda en esta cuenta')}</h1>
-        <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {tr(`You are signed in as ${user.email}. Signed up with a different account? Sign out and back in with that one.`,
-              `Iniciaste sesión como ${user.email}. ¿Te inscribiste con otra cuenta? Cierra sesión y entra con esa.`)}
-        </p>
-        <Link to="/InclusionFestival/join" className="mt-8 inline-block">
-          <Button>{tr('Sign up my shop', 'Inscribir mi tienda')}</Button>
-        </Link>
+        <div className="text-center">
+          <Store className="mx-auto h-12 w-12 text-sky-300" />
+          <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">{tr('Your festival shop page', 'La página de tu tienda')}</h1>
+          <p className="mt-3 text-slate-600 dark:text-slate-400">
+            {key
+              ? tr('This link is not working any more. Ask for a fresh one below.', 'Este enlace ya no funciona. Pide uno nuevo abajo.')
+              : tr('Open the link from your sign-up email, or have it sent again.', 'Abre el enlace de tu correo de inscripción, o pide que te lo enviemos otra vez.')}
+          </p>
+          <Link to="/InclusionFestival/join" className="mt-6 inline-block"><Button variant="secondary">{tr('Sign up a shop', 'Inscribir una tienda')}</Button></Link>
+        </div>
+        {LostLink}
       </Shell>
     );
   }
 
-  /* ── waiting, waitlisted or declined ─────────────────────────────── */
+  const initial: Partial<ShopFormValues> = {
+    name: shop.name, category: isCategory(shop.category) ? shop.category : 'other',
+    offer_en: shop.offer_en, offer_es: shop.offer_es || '', detail_en: shop.detail_en || '',
+    address: shop.address || '', website: shop.website || '',
+    contact_name: shop.contact_name, contact_email: shop.contact_email, contact_phone: shop.contact_phone || '',
+  };
+
+  /* ── before approval ──────────────────────────────────────────────── */
   if (shop.status !== 'approved') {
-    const waiting = shop.status === 'pending';
-    const listed = shop.status === 'waitlist';
+    const st = shop.status;
     return (
       <Shell>
-        {waiting ? <Hourglass className="mx-auto h-12 w-12 text-sky-600" />
-          : listed ? <Clock className="mx-auto h-12 w-12 text-amber-500" />
-          : <XCircle className="mx-auto h-12 w-12 text-slate-400" />}
-        <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">
-          {waiting ? tr('Thanks — we are reviewing your offer', 'Gracias, estamos revisando tu oferta')
-            : listed ? tr('You are on the waiting list', 'Estás en la lista de espera')
-            : tr('Not on the card this time', 'Esta vez no está en la tarjeta')}
-        </h1>
-        <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {waiting ? tr('We will email you within 48 hours. Once approved, your QR sign appears right here to print.',
-                        'Te escribiremos en 48 horas. Al ser aprobado, tu letrero QR aparece aquí mismo para imprimir.')
-            : listed ? tr('Every spot is taken right now. We will email you the moment one opens.',
-                          'Todos los lugares están ocupados. Te escribiremos en cuanto se libere uno.')
-            : tr('Thank you for your interest. Reply to our email if you have questions.',
-                 'Gracias por tu interés. Responde a nuestro correo si tienes preguntas.')}
-        </p>
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 text-left dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-lg font-black text-slate-900 dark:text-white">{shop.name}</p>
-          <p className="mt-1 font-semibold text-sky-800 dark:text-sky-300">{shop.offer_en}</p>
-          {shop.detail_en && <p className="mt-1 text-sm text-slate-500">{shop.detail_en}</p>}
-          <p className="mt-3 text-xs text-slate-500">{shop.contact_name} · {shop.contact_email}{shop.contact_phone ? ` · ${shop.contact_phone}` : ''}</p>
+        <div className="text-center">
+          {st === 'unconfirmed' ? <MailWarning className="mx-auto h-12 w-12 text-amber-500" />
+            : st === 'pending' ? (justConfirmed ? <CheckCircle2 className="mx-auto h-12 w-12 text-green-600" /> : <Hourglass className="mx-auto h-12 w-12 text-sky-600" />)
+            : st === 'waitlist' ? <Clock className="mx-auto h-12 w-12 text-amber-500" />
+            : <XCircle className="mx-auto h-12 w-12 text-slate-400" />}
+          <h1 className="mt-5 text-2xl font-black text-slate-900 dark:text-white">
+            {st === 'unconfirmed' ? tr('One more step: confirm your email', 'Un paso más: confirma tu correo')
+              : st === 'pending' ? (justConfirmed ? tr('Email confirmed — thank you!', '¡Correo confirmado, gracias!') : tr('We are reviewing your offer', 'Estamos revisando tu oferta'))
+              : st === 'waitlist' ? tr('You are on the waiting list', 'Estás en la lista de espera')
+              : tr('Not on the card this time', 'Esta vez no está en la tarjeta')}
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-slate-600 dark:text-slate-400">
+            {st === 'unconfirmed'
+              ? tr(`We emailed a confirm link to ${shop.contact_email}. Click it to send your sign-up to us. Check spam if you do not see it.`,
+                   `Enviamos un enlace de confirmación a ${shop.contact_email}. Haz clic para enviarnos tu inscripción. Revisa el correo no deseado si no lo ves.`)
+              : st === 'pending' ? tr('We will email you within 48 hours. Once you are approved, your QR sign appears right here to print — keep this page’s link.',
+                                      'Te escribiremos en 48 horas. Al ser aprobado, tu letrero QR aparece aquí mismo para imprimir. Guarda el enlace de esta página.')
+              : st === 'waitlist' ? tr('Every spot is taken right now. We will email you the moment one opens.', 'Todos los lugares están ocupados. Te escribiremos en cuanto se libere uno.')
+              : tr('Thank you for your interest. Reply to our email if you have questions.', 'Gracias por tu interés. Responde a nuestro correo si tienes preguntas.')}
+          </p>
+          {st === 'unconfirmed' && (
+            <Button className="mt-5" variant="secondary" disabled={resent}
+                    onClick={() => { festivalDb.resendConfirm(shop.id); setResent(true); }}>
+              {resent ? tr('Sent — check your inbox', 'Enviado: revisa tu correo') : tr('Send the confirm email again', 'Enviar el correo de nuevo')}
+            </Button>
+          )}
         </div>
-        {(waiting || listed) && (
-          <Link to="/InclusionFestival/join" className="mt-5 inline-block">
-            <Button variant="secondary"><Pencil className="mr-2 h-4 w-4" />{tr('Edit my sign-up', 'Editar mi inscripción')}</Button>
-          </Link>
+
+        {key && st !== 'declined' && (
+          <div className="mt-10">
+            <h2 className="mb-4 text-lg font-black text-slate-900 dark:text-white">{tr('Your details', 'Tus datos')}</h2>
+            <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
+                      submitLabel={tr('Save changes', 'Guardar cambios')} onSubmit={save} />
+            {saved && <p className="mt-3 text-center text-sm font-bold text-green-600">{tr('Saved ✓', 'Guardado ✓')}</p>}
+          </div>
         )}
       </Shell>
     );
@@ -160,8 +232,8 @@ const FestivalMyShop: React.FC = () => {
             <Printer className="mr-2 h-4 w-4" />{tr('Print my sign', 'Imprimir mi letrero')}
           </Button>
           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            {tr('Keep the sign at the counter — the QR is yours alone, and every scan counts toward your numbers.',
-                'Mantén el letrero en el mostrador: el QR es solo tuyo y cada escaneo cuenta en tus números.')}
+            {tr('Keep this page’s link — it is your key, no password needed. Every scan of your sign counts toward your numbers here.',
+                'Guarda el enlace de esta página: es tu llave, sin contraseña. Cada escaneo de tu letrero cuenta en tus números aquí.')}
           </p>
         </div>
         <PrintTarget id="my-sign">
