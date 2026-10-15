@@ -26,6 +26,7 @@ drop function if exists festival_shop_by_token(text)              cascade;
 drop function if exists festival_my_shop()                        cascade;
 drop function if exists festival_shop_apply(jsonb)                cascade;
 drop function if exists festival_my_pass(text, int)               cascade;
+drop function if exists festival_set_optin(boolean)               cascade;
 drop function if exists festival_ensure_pass(text, int, text)     cascade;
 drop function if exists festival_short_code()                     cascade;
 

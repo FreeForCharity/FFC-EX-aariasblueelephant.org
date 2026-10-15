@@ -254,8 +254,8 @@ const FestivalAdminPanel: React.FC = () => {
     ...(report?.daily || []).map((d) => [d.local_date, shopName(d.shop_id), d.redemptions]),
   ]);
   const csvFamilies = () => downloadCsv('festival-cards.csv', [
-    ['Card', 'Name', 'Email', 'Party size', 'Joined via', 'Created', 'Offers used'],
-    ...(regs || []).map((r) => [r.short_code, r.display_name, r.email, r.party_size,
+    ['Card', 'Name', 'Email', 'Wants event emails', 'Party size', 'Joined via', 'Created', 'Offers used'],
+    ...(regs || []).map((r) => [r.short_code, r.display_name, r.email, r.email_optin ? 'yes' : 'no', r.party_size,
       r.source === 'card' ? 'card page' : `QR sign: ${shopName(r.source)}`, r.created_at.slice(0, 10), r.redemptions]),
   ]);
 
@@ -419,12 +419,13 @@ const FestivalAdminPanel: React.FC = () => {
             <Button size="sm" variant="secondary" onClick={csvDaily}><Download className="mr-1.5 h-4 w-4" />{tr('By day', 'Por día')}</Button>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
             { n: regs?.length || 0, l: tr('family cards', 'tarjetas de familias') },
             { n: totalRedemptions, l: tr('offers redeemed', 'ofertas canjeadas') },
             { n: report?.shops.filter((s) => s.redemptions > 0).length || 0, l: tr('shops with visits', 'tiendas con visitas') },
             { n: totalNew, l: tr('joined at a shop’s sign', 'se unieron en un letrero') },
+            { n: regs?.filter((r) => r.email_optin).length || 0, l: tr('want event emails', 'quieren correos de eventos') },
           ].map((x) => (
             <div key={x.l} className="rounded-xl bg-slate-50 p-3 text-center dark:bg-slate-800">
               <p className="text-2xl font-black text-slate-900 dark:text-white">{x.n}</p>
@@ -481,7 +482,7 @@ const FestivalAdminPanel: React.FC = () => {
               <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
                 <div className="min-w-0">
                   <span className="font-semibold text-slate-900 dark:text-white">{r.display_name || '—'}</span>
-                  <span className="ml-2 text-xs text-slate-500">{r.email} · {r.party_size}👤 · {r.redemptions} {tr('used', 'usadas')}
+                  <span className="ml-2 text-xs text-slate-500">{r.email}{r.email_optin ? ' ✉️' : ''} · {r.party_size}👤 · {r.redemptions} {tr('used', 'usadas')}
                     {r.source !== 'card' && ` · ${tr('via', 'vía')} ${shopName(r.source)}`}</span>
                 </div>
                 <button onClick={() => deleteReg(r)} className="shrink-0 text-slate-400 hover:text-rose-600" aria-label={tr('Delete card', 'Eliminar tarjeta')}>

@@ -146,6 +146,23 @@ drop policy if exists festival_passes_delete_admin on festival_passes;
 create policy festival_passes_delete_admin on festival_passes for delete to authenticated
   using (festival_is_admin());
 
+-- "Email me about future events" — unticked until the family ticks it
+alter table festival_passes add column if not exists email_optin boolean not null default false;
+alter table festival_passes add column if not exists optin_at timestamptz;
+
+create or replace function festival_set_optin(p_on boolean)
+returns json
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
+  update festival_passes set email_optin = coalesce(p_on, false),
+         optin_at = case when coalesce(p_on, false) then now() end
+   where user_id = auth.uid();
+  return json_build_object('ok', found);
+end $$;
+revoke all on function festival_set_optin(boolean) from public;
+grant execute on function festival_set_optin(boolean) to authenticated;
+
 -- a short human-readable code for the top of the card, e.g. 7K4M9P
 create or replace function festival_short_code() returns text
 language plpgsql volatile as $$

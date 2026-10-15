@@ -4,6 +4,7 @@ import { Ticket, MapPin, LogIn, QrCode } from 'lucide-react';
 import Button from '../components/Button';
 import ShopTile from '../components/festival/ShopTile';
 import Dialog from '../components/festival/Dialog';
+import StayInTouch from '../components/festival/StayInTouch';
 import { festivalDb, Pass, Redemption } from '../lib/festival/db';
 import { DEFAULT_SETTINGS, fmtDay, fmtShortDay, fmtTime } from '../lib/festival/store';
 import { FestivalShop, FestivalSettings, CATEGORY_LABEL } from '../lib/festival/types';
@@ -178,6 +179,8 @@ const FestivalPass: React.FC = () => {
           })}
         </div>
       )}
+
+      <div className="mt-8 flex justify-center"><StayInTouch optin={pass.email_optin} /></div>
 
       <div className="mt-8 text-center">
         <button

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, LogIn, MapPin, Ticket, CalendarClock } from 'lucide-react';
 import Button from '../components/Button';
+import StayInTouch from '../components/festival/StayInTouch';
 import { useAuth } from '../context/AuthContext';
 import { festivalDb, SignShop, RedeemOutcome } from '../lib/festival/db';
 import { fmtDay, fmtTime } from '../lib/festival/store';
@@ -85,6 +86,7 @@ const FestivalRedeem: React.FC = () => {
   const [outcome, setOutcome] = useState<RedeemOutcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [optin, setOptin] = useState(false);
   const fired = useRef(false);
 
   useEffect(() => { festivalDb.signShop(token).then(setShop); }, [token]);
@@ -109,7 +111,11 @@ const FestivalRedeem: React.FC = () => {
     setBusy(true);
     const r = await festivalDb.redeem(token);
     setOutcome(r);
-    if (r.ok) { fired.current = true; playStamp(); }
+    if (r.ok) {
+      fired.current = true;
+      playStamp();
+      festivalDb.existingPass().then((p) => setOptin(!!p?.email_optin));
+    }
     else if (r.error === 'already_used' && r.punched_at) setUsedAt(r.punched_at);
     setBusy(false);
   };
@@ -150,7 +156,7 @@ const FestivalRedeem: React.FC = () => {
   /* ── the green screen staff look at ─────────────────────────────── */
   if (outcome?.ok) {
     return (
-      <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-y-auto bg-green-600 px-6 py-10 text-white">
+      <div className="fixed inset-0 z-[70] flex flex-col items-center overflow-y-auto bg-green-600 px-6 pb-10 pt-[12vh] text-white">
         <style>{CSS}</style>
         <div className="relative flex items-center justify-center">
           <span className="abe-ring absolute h-40 w-40 rounded-full border-8 border-white/70" aria-hidden />
@@ -176,6 +182,8 @@ const FestivalRedeem: React.FC = () => {
             {tr('See my card', 'Ver mi tarjeta')}
           </span>
         </Link>
+        {/* below the fold: staff read the screen above, the family scrolls to this after */}
+        <div className="mt-10"><StayInTouch optin={optin} dark /></div>
       </div>
     );
   }

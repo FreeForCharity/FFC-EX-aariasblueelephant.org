@@ -16,6 +16,7 @@ export interface Pass {
   display_name: string | null;
   party_size: number;
   created_at: string;
+  email_optin?: boolean;
 }
 
 export interface Redemption {
@@ -63,7 +64,7 @@ export interface MyShop {
 
 export interface Registration {
   id: string; short_code: string; display_name: string | null; email: string | null;
-  party_size: number; source: string; created_at: string; redemptions: number;
+  party_size: number; source: string; created_at: string; redemptions: number; email_optin: boolean;
 }
 
 export interface ShopReport {
@@ -117,7 +118,7 @@ export const festivalDb = {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return null;
     const { data } = await supabase.from('festival_passes')
-      .select('id, short_code, display_name, party_size, created_at')
+      .select('id, short_code, display_name, party_size, created_at, email_optin')
       .eq('user_id', auth.user.id).maybeSingle();
     return (data as Pass) || null;
   },
@@ -130,6 +131,12 @@ export const festivalDb = {
       .select('id, shop_id, punched_at, local_date')
       .eq('user_id', auth.user.id).order('punched_at');
     return (data || []) as Redemption[];
+  },
+
+  /** "Email me about future events" — consent, so it starts unticked */
+  async setOptin(on: boolean): Promise<boolean> {
+    const { data, error } = await supabase.rpc('festival_set_optin', { p_on: on });
+    return !error && !!(data as any)?.ok;
   },
 
   async deleteMyPass(id: string): Promise<boolean> {
@@ -242,7 +249,7 @@ export const festivalDb = {
 
   async registrations(): Promise<Registration[] | null> {
     const passes = await supabase.from('festival_passes')
-      .select('id, short_code, display_name, email, party_size, source, created_at')
+      .select('id, short_code, display_name, email, party_size, source, created_at, email_optin')
       .order('created_at', { ascending: false });
     if (passes.error) return null;
     const used = await supabase.from('festival_punches').select('user_id, pass_id');
