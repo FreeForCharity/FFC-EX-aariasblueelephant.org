@@ -33,8 +33,7 @@ const Dialog: React.FC<Props> = ({ label, onClose, children, className = '', she
   useEffect(() => {
     returnTo.current = document.activeElement as HTMLElement;
 
-    // prefer a text field — at a busy till, staff should be able to type the
-    // code the moment the sheet opens without hunting for it
+    // prefer a text field, so a form dialog is ready to type into the moment it opens
     const focusables = () => Array.from(panel.current?.querySelectorAll<HTMLElement>(FOCUSABLE) || []);
     const first = focusables();
     (first.find((el) => el.tagName === 'INPUT') || first[0] || panel.current)?.focus();

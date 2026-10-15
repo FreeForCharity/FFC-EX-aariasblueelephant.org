@@ -240,8 +240,13 @@ export class SupabaseProvider implements IDatabaseProvider {
     delete payload.userEmail;
     delete payload.specialNeeds;
 
-    const { error } = await supabase.from('event_registrations').insert([payload]);
+    // Mint the id here so the confirmation email can be keyed on it. Asking
+    // the insert to return it would need SELECT rights the registrant might
+    // not have under RLS.
+    const id = (payload as any).id || crypto.randomUUID();
+    const { error } = await supabase.from('event_registrations').insert([{ ...payload, id }]);
     if (error) throw error;
+    return id as string;
   }
 
   async updateEventRegistration(id: string, data: Partial<EventRegistration>) {

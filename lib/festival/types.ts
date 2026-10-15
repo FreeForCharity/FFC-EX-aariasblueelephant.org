@@ -1,9 +1,10 @@
 /**
  * Inclusion Festival & Resource Fair — shared types.
  *
- * A Mountain House business claims one of a limited number of spots, offers a
- * deal, and gets a 4-digit punch code. Attendees carry a digital punch card for
- * the whole of November and each shop punches their own tile.
+ * A Mountain House business signs in with Google and applies with an offer. Once
+ * an admin approves it, the shop prints a QR sign for the counter. Families scan
+ * the sign with their own phone, sign in, and tap Redeem — one redemption per
+ * Google account per shop, all of November.
  */
 
 export type ShopCategory =
@@ -12,9 +13,9 @@ export type ShopCategory =
   | 'tutoring' | 'kids'
   | 'salon' | 'florist' | 'retail' | 'other';
 
-/** held = spot reserved while we wait on their details; released = hold expired */
-export type ShopStatus = 'held' | 'approved' | 'waitlist' | 'rejected' | 'released';
+export type ShopStatus = 'pending' | 'approved' | 'waitlist' | 'declined' | 'withdrawn';
 
+/** a shop as the public card draws it — no contacts, no QR token */
 export interface FestivalShop {
   id: string;
   name: string;
@@ -22,92 +23,67 @@ export interface FestivalShop {
   /** stands in for a logo until one is uploaded, so the grid is never broken */
   emoji: string;
   logoUrl?: string;
-
   offerEn: string;
   offerEs: string;
   detailEn?: string;
   detailEs?: string;
-
   address?: string;
   website?: string;
+  redeemFrom: string;
+  redeemTo: string;
+  spot?: number;
+}
 
+/** the full row, as an admin sees it */
+export interface AdminShop extends FestivalShop {
+  ownerId?: string | null;
   contactName: string;
   contactEmail: string;
   contactPhone?: string;
-  /** what they'd like to give back to ABE, as a % of the sale. Always optional. */
-  pledgePct?: number;
-
-  /** four digits the staff type on the attendee's phone */
-  punchCode: string;
-  /** some offers (a free drink) are for the day; others (a gym membership) run on */
-  redeemFrom: string;
-  redeemTo: string;
-
-  /** 1..spots once they hold or own a place; undefined while waitlisted */
-  spot?: number;
+  pledgePct?: number | null;
+  qrToken: string;
   status: ShopStatus;
-  /**
-   * Not a real business — a worked example so the card can be tested before
-   * the first Mountain House shops sign up. Labelled in amber wherever it
-   * appears. Set in data/festival.json; there is no column for it in Supabase,
-   * because the committed file is the list of which ids are pretend.
-   */
-  simulated?: boolean;
-  /** ISO timestamp — an unconfirmed hold lapses and frees the spot */
-  heldUntil?: string;
-
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  notes?: string | null;
   createdAt: string;
-  /** set when an admin approves — an audit trail for who let a shop on */
-  approvedBy?: string;
-  approvedAt?: string;
-  notes?: string;
 }
 
 /**
- * Only this account can approve a shop onto the card. Claiming a spot is
- * self-service; being ON the card is not.
+ * Anyone on the organisation's own Google Workspace domain runs the festival.
+ * The database enforces the same rule in festival_is_admin(); this copy only
+ * decides what to show.
  */
-export const FESTIVAL_ADMINS = ['admin@aariasblueelephant.org'];
-/** anyone on the organisation's own domain can run the festival */
 export const FESTIVAL_ADMIN_DOMAIN = '@aariasblueelephant.org';
-export const isFestivalAdmin = (email?: string | null) => {
-  const e = (email || '').toLowerCase().trim();
-  return !!e && (FESTIVAL_ADMINS.includes(e) || e.endsWith(FESTIVAL_ADMIN_DOMAIN));
-};
+export const isFestivalAdmin = (email?: string | null) =>
+  (email || '').toLowerCase().trim().endsWith(FESTIVAL_ADMIN_DOMAIN);
 
 export type FestivalState = 'recruiting' | 'live' | 'ended';
 
 export interface FestivalSettings {
-  /** 16 to start. Bumped to 32 if there's a queue worth opening for. */
+  /** how many shops fit on the card */
   spots: number;
   state: FestivalState;
   festivalDate: string;
+  eventTime: string;
+  venue: string;
   redeemFrom: string;
   redeemTo: string;
-  /** hours a provisional spot is held before it goes back in the pool */
-  holdHours: number;
 }
 
+/** what a shop owner fills in */
 export interface ShopApplication {
   name: string;
   category: ShopCategory;
-  offerEn: string;
-  offerEs: string;
-  detailEn?: string;
+  offer_en: string;
+  offer_es?: string;
+  detail_en?: string;
   address?: string;
   website?: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone?: string;
-  pledgePct?: number;
-  logoUrl?: string;
-}
-
-export interface ApplyResult {
-  shop: FestivalShop;
-  /** true when every spot was taken and they joined the queue instead */
-  waitlisted: boolean;
-  position?: number;
+  contact_name: string;
+  contact_phone?: string;
+  pledge_pct?: number | null;
+  logo_url?: string | null;
 }
 
 export const CATEGORY_EMOJI: Record<ShopCategory, string> = {
@@ -132,3 +108,5 @@ export const CATEGORY_LABEL: Record<ShopCategory, { en: string; es: string }> = 
   retail: { en: 'Retail', es: 'Tienda' },
   other: { en: 'Other', es: 'Otro' },
 };
+
+export const isCategory = (c: string): c is ShopCategory => c in CATEGORY_EMOJI;
