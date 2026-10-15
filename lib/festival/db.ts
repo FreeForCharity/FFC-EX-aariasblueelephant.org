@@ -92,7 +92,7 @@ const toSettings = (d: any): FestivalSettings => ({
 });
 
 /** ask the email function to send one email; it never blocks the caller */
-const notify = (type: 'SHOP_CONFIRM' | 'SHOP_RECEIVED' | 'SHOP_APPROVED', id: string) => {
+const notify = (type: 'SHOP_CONFIRM' | 'SHOP_RECEIVED' | 'SHOP_APPROVED' | 'SHOP_UPDATED', id: string) => {
   supabase.functions.invoke('send-registration-email', { body: { type, id } })
     .catch((e) => console.warn('email not sent', type, e));
 };
@@ -231,7 +231,10 @@ export const festivalDb = {
   async updateByManage(token: string, form: ShopApplication): Promise<{ ok: boolean; error?: string }> {
     const { data, error } = await supabase.rpc('festival_shop_update_by_manage', { p_token: token, p: form });
     if (error) return { ok: false, error: error.message };
-    return data as any;
+    const r = data as any;
+    // every change reaches the admin, so a live offer is never edited unseen
+    if (r?.ok && r.id) notify('SHOP_UPDATED', r.id);
+    return r;
   },
 
   /** "email me my link" — always answers ok, whether or not the address is on file */

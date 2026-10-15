@@ -565,7 +565,9 @@ end $$;
 revoke all on function festival_shop_by_manage(text) from public;
 grant execute on function festival_shop_by_manage(text) to anon, authenticated;
 
--- edit while waiting; once on the card, the offer is what families were promised
+-- a business can change its offer whenever it likes, before or after approval.
+-- An approved change goes live at once; the admin is emailed every time
+-- (SHOP_UPDATED), and families who already redeemed are unaffected.
 create or replace function festival_shop_update_by_manage(p_token text, p jsonb)
 returns json
 language plpgsql security definer set search_path = public as $$
@@ -573,8 +575,8 @@ declare f jsonb := festival_shop_fields(p); v_shop festival_shops;
 begin
   select * into v_shop from festival_shops where manage_token = p_token and coalesce(p_token, '') <> '';
   if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
-  if v_shop.status not in ('unconfirmed','pending','waitlist') then
-    return json_build_object('ok', false, 'error', 'already_approved');
+  if v_shop.status not in ('unconfirmed','pending','waitlist','approved') then
+    return json_build_object('ok', false, 'error', 'closed');
   end if;
   if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
   update festival_shops set
@@ -585,7 +587,7 @@ begin
     online_link = f ->> 'online_link', online_note = f ->> 'online_note',
     updated_at = now()
   where id = v_shop.id;
-  return json_build_object('ok', true);
+  return json_build_object('ok', true, 'id', v_shop.id, 'live', v_shop.status = 'approved');
 end $$;
 revoke all on function festival_shop_update_by_manage(text, jsonb) from public;
 grant execute on function festival_shop_update_by_manage(text, jsonb) to anon, authenticated;

@@ -75,9 +75,7 @@ const FestivalMyShop: React.FC = () => {
       const url = await festivalDb.uploadLogoByManage(key, logo);
       if (!url) setError(tr('Your details saved, but the logo did not upload. Try a PNG or JPG.', 'Tus datos se guardaron, pero el logo no se subió. Prueba un PNG o JPG.'));
     }
-    if (!r.ok) setError(r.error === 'already_approved'
-      ? tr('You are already on the card — changes go through us. Just reply to your email.', 'Ya estás en la tarjeta: los cambios los hacemos nosotros. Responde a tu correo.')
-      : tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.'));
+    if (!r.ok) setError(tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.'));
     else setSaved(true);
     setBusy(false);
     await load(key);
@@ -279,6 +277,23 @@ const FestivalMyShop: React.FC = () => {
           )}
         </PrintTarget>
       </div>
+      )}
+
+      {key && (
+        <details className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <summary className="cursor-pointer text-lg font-black text-slate-900 dark:text-white">
+            {tr('Change your offer or logo', 'Cambia tu oferta o tu logo')}
+          </summary>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            {tr('Changes go live on our website straight away. If you change the offer, print your sign again — the QR code stays the same.',
+                'Los cambios aparecen en nuestro sitio de inmediato. Si cambias la oferta, vuelve a imprimir tu letrero: el código QR es el mismo.')}
+          </p>
+          <div className="mt-5">
+            <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
+                      submitLabel={tr('Save changes', 'Guardar cambios')} onSubmit={save} />
+            {saved && <p className="mt-3 text-center text-sm font-bold text-green-600">{tr('Saved ✓ — live on the website now', 'Guardado ✓: ya está en el sitio')}</p>}
+          </div>
+        </details>
       )}
     </div>
   );

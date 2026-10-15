@@ -61,7 +61,7 @@ const Festival: React.FC = () => {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white">
-              {tr('Offers from local businesses', 'Ofertas de negocios locales')}
+              {tr('Offers from participating businesses', 'Ofertas de los negocios participantes')}
             </h2>
             <p className="mt-1 text-slate-600 dark:text-slate-400">
               {shops.length
@@ -117,7 +117,7 @@ const Festival: React.FC = () => {
           <Store className="mt-1 h-7 w-7 shrink-0 text-sky-700 dark:text-sky-400" />
           <div className="flex-1">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-              {tr('Own a local business?', '¿Tienes un negocio local?')}
+              {tr('Own a business?', '¿Tienes un negocio?')}
             </h2>
             <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
               {tr('Free to join. You choose the offer — a free drink, two for one, a month of membership, whatever suits you. You get a month of new families through the door, your logo on every card, and a count at the end of how many came.',
