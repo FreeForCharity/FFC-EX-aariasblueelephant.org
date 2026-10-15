@@ -41,7 +41,8 @@ serve(async (req) => {
     if (!['unconfirmed', 'pending', 'waitlist', 'approved'].includes(shop.status)) return json({ error: 'closed' }, 409);
 
     const path = `shops/${shop.id}/${Date.now()}.${TYPES[m[1]]}`;
-    const up = await sb.storage.from('festival-logos').upload(path, bytes, { contentType: m[1], upsert: false });
+    // unique name per upload → safe to cache for a year; repeat views cost no egress
+    const up = await sb.storage.from('festival-logos').upload(path, bytes, { contentType: m[1], upsert: false, cacheControl: '31536000' });
     if (up.error) return json({ error: up.error.message }, 500);
     const url = sb.storage.from('festival-logos').getPublicUrl(path).data.publicUrl;
     const now = new Date().toISOString();
