@@ -23,8 +23,8 @@ const FeaturedMessage: React.FC = () => {
                 </h2>
                 <p className="text-base sm:text-lg text-sky-100 max-w-3xl mx-auto leading-relaxed mb-8">
                     {tr(
-                        'Member of Parliament for Thiruvananthapuram, India, and Chairman of the Parliamentary Standing Committee on External Affairs. A former United Nations Under-Secretary-General and award-winning author of more than twenty books, he shares why inclusion and community support matter for special needs families.',
-                        'Miembro del Parlamento de la India por Thiruvananthapuram y presidente del Comité Permanente de Asuntos Exteriores del Parlamento. Exsubsecretario general de las Naciones Unidas y autor galardonado de más de veinte libros, nos comparte por qué la inclusión y el apoyo comunitario son importantes para las familias con necesidades especiales.'
+                        'Former United Nations Under-Secretary-General and award-winning author of more than twenty books. He shares why inclusion and community support matter for special needs families.',
+                        'Exsubsecretario general de las Naciones Unidas y autor galardonado de más de veinte libros. Nos comparte por qué la inclusión y el apoyo comunitario son importantes para las familias con necesidades especiales.'
                     )}
                 </p>
 
