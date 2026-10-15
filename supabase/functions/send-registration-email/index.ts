@@ -62,15 +62,36 @@ const button = (href: string, label: string, color = '#00AEEF') =>
   `<div style="text-align: center; margin: 24px 0;"><a href="${href}" style="background-color: ${color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">${label}</a></div>`;
 
 /**
- * The ask. It sits right under the event details, where people are still
- * reading — at the bottom of the email it went unseen. A warm box with a
- * button as big as the main one; the query string rides through /give to Zeffy.
+ * The ask, twice, in two looks — so it is seen whether someone reads the top
+ * of the email or scrolls to the end.
+ *   donateTop     warm amber, one line and a button, right under the headline
+ *   donateBottom  deep blue, why a gift matters, at the end
+ * Every figure here is ours and public: keep them true when they change.
+ * The query string rides through /give to Zeffy, so each email is countable.
  */
-const donate = (campaign: string) => `
-  <div style="background-color: #FFFBEB; border: 2px solid #FCD34D; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
-    <p style="font-size: 18px; color: #92400E; margin: 0 0 6px;"><strong>💙 Help keep it free for every family</strong></p>
-    <p style="font-size: 15px; color: #78350F; margin: 0 0 16px;">Every program we run is free. A gift of any size keeps it that way.</p>
-    <a href="${SITE}/give?utm_source=email&utm_campaign=${campaign}" style="display: inline-block; background-color: #F59E0B; color: white; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 17px;">Donate to the cause</a>
+const giveUrl = (campaign: string, spot: string) =>
+  `${SITE}/give?utm_source=email&utm_campaign=${campaign}&utm_content=${spot}`;
+
+const donateTop = (campaign: string) => `
+  <div style="background-color: #FFFBEB; border: 2px solid #FCD34D; border-radius: 12px; padding: 16px 20px; margin: 8px 0 24px; text-align: center;">
+    <p style="font-size: 16px; color: #92400E; margin: 0 0 12px;"><strong>💛 This is free for your family because neighbors give.</strong></p>
+    <a href="${giveUrl(campaign, 'top')}" style="display: inline-block; background-color: #F59E0B; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Donate to the cause</a>
+  </div>`;
+
+const donateBottom = (campaign: string) => `
+  <div style="background-color: #0C4A6E; border-radius: 14px; padding: 26px 24px; margin: 32px 0 8px; text-align: center; color: #ffffff;">
+    <p style="font-size: 20px; margin: 0 0 8px; color: #ffffff;"><strong>💙 Help keep it free for every family</strong></p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #E0F2FE;">
+      Aaria's Blue Elephant is run by families who know what it's like to look for a place where every child belongs.
+      Every playgroup, festival and resource fair we host is free — so no family ever has to ask whether they can afford to come.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 18px; text-align: left;">
+      <tr><td style="padding: 4px 8px; font-size: 15px; color: #ffffff;">✨ <strong>100+</strong> lives touched</td></tr>
+      <tr><td style="padding: 4px 8px; font-size: 15px; color: #ffffff;">🎉 <strong>32+</strong> free events, and more on the way</td></tr>
+      <tr><td style="padding: 4px 8px; font-size: 15px; color: #ffffff;">🧾 <strong>Tax-deductible</strong> — we are a 501(c)(3), EIN 39-4799956</td></tr>
+    </table>
+    <p style="font-size: 15px; margin: 0 0 18px; color: #E0F2FE;">A gift of any size goes straight into the next event a family like yours walks into.</p>
+    <a href="${giveUrl(campaign, 'bottom')}" style="display: inline-block; background-color: #ffffff; color: #0C4A6E; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 17px;">Give today</a>
   </div>`;
 
 /** a shop's private page: no password, the link is the key */
@@ -131,22 +152,25 @@ async function registration(id: string, approved: boolean) {
   if (approved) {
     const r = await sendOnce('reg_approved', id, reg.user_email, `You're confirmed: ${evt?.title || 'your registration'} 🎉`, shell(`
       <h1 style="color: #48BB78; text-align: center;">You're confirmed!</h1>
+      ${donateTop('registration_approved')}
       <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
       <p style="font-size: 16px; color: #4a5568;">Great news — your registration for <strong>${title}</strong> is approved. Your spot is confirmed.</p>
       ${details}
-      ${donate('registration_approved')}
       <p style="font-size: 16px; color: #4a5568;">We can't wait to see you there! Reply to this email if anything changes or if there is anything we can do to make the day easier for your family.</p>
-      ${button(`${SITE}/dashboard`, 'See my events')}`));
+      ${button(`${SITE}/dashboard`, 'See my events')}
+      ${donateBottom('registration_approved')}`));
     return json(r, r.ok ? 200 : 502);
   }
 
   const r = await sendOnce('reg_received', id, reg.user_email, `Registration received: ${evt?.title || 'your event'}`, shell(`
     <h1 style="color: #00AEEF; text-align: center;">Registration received!</h1>
+    ${donateTop('registration_received')}
     <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
     <p style="font-size: 16px; color: #4a5568;">Thank you for registering for <strong>${title}</strong>. We've got your request and our team is making sure everything is ready for your family.</p>
     ${details}
-    ${donate('registration_received')}
-    <p style="font-size: 16px; color: #4a5568;">You'll get another email as soon as your registration is approved.</p>`));
+    <p style="font-size: 16px; color: #4a5568;">You'll get another email as soon as your registration is approved.</p>
+    ${button(`${SITE}/dashboard`, 'See my events')}
+    ${donateBottom('registration_received')}`));
   await sendOnce('reg_received_admin', id, ADMIN_EMAIL, `New registration: ${reg.user_name || reg.user_email} – ${evt?.title || 'event'}`, shell(`
     <h1 style="color: #00AEEF; font-size: 20px;">New event registration</h1>
     <p><strong>Who:</strong> ${name} (${esc(reg.user_email)})</p>
@@ -236,14 +260,14 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
     <h2 style="font-size: 18px; color: #2d3748;">One thing to do: print your QR sign</h2>
     <p style="font-size: 15px; color: #4a5568;">Open your shop page, print your sign and put it by the register. That's it.</p>
     ${button(shopLink(shop.manage_token), 'Print my QR sign')}
-    ${donate('shop_approved')}
     <h2 style="font-size: 18px; color: #2d3748;">How a family redeems</h2>
     <ol style="font-size: 15px; color: #4a5568; line-height: 1.6;">
       <li>They scan your sign with their phone camera and tap <strong>Redeem</strong>.</li>
       <li>Their phone shows a big green <strong>REDEEMED</strong> screen with your shop name and a live clock.</li>
       <li>You give the offer. A grey "Already used" screen means it was used before.</li>
     </ol>
-    <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>`));
+    <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>
+    ${donateBottom('shop_approved')}`));
   return json(r, r.ok ? 200 : 502);
 }
 
