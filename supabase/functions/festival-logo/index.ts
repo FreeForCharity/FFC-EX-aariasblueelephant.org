@@ -9,8 +9,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
  * image, already shrunk to a small square in the browser; this checks the
  * token, stores the file and points the shop at it.
  *
- * Only while the shop is not yet on the card: once approved, the logo is what
- * families see, and changes go through an admin.
+ * Allowed before and after approval — a business can refresh its logo any
+ * time; the admin hears about every change through SHOP_UPDATED.
  */
 
 const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -38,7 +38,7 @@ serve(async (req) => {
     const { data: shop } = await sb.from('festival_shops').select('id, status')
       .eq('manage_token', token).maybeSingle();
     if (!shop) return json({ error: 'bad_token' }, 403);
-    if (!['unconfirmed', 'pending', 'waitlist'].includes(shop.status)) return json({ error: 'already_approved' }, 409);
+    if (!['unconfirmed', 'pending', 'waitlist', 'approved'].includes(shop.status)) return json({ error: 'closed' }, 409);
 
     const path = `shops/${shop.id}/${Date.now()}.${TYPES[m[1]]}`;
     const up = await sb.storage.from('festival-logos').upload(path, bytes, { contentType: m[1], upsert: false });

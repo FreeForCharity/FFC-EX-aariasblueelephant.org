@@ -275,8 +275,22 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
       <li>Find the code on your shop page and tick <strong>Used</strong>. Each code works once.</li>
     </ol>
     ${shop.instore === false ? button(shopLink(shop.manage_token), 'Open my shop page') : ''}` : ''}
-    <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>
-    ${donateBottom('shop_approved')}`));
+    <p style="font-size: 15px; color: #4a5568;">You can change your offer or logo any time from your shop page, and it also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>`));
+  return json(r, r.ok ? 200 : 502);
+}
+
+/** a business changed its details — the admin hears about it, at most every ten minutes per shop */
+async function festivalShopUpdated(id: string) {
+  const { data: shop } = await sb.from('festival_shops').select('*').eq('id', id).maybeSingle();
+  if (!shop) return json({ error: 'not_found' }, 404);
+  const r = await sendOnce('shop_updated', `${id}:${tenMinuteSlot()}`, ADMIN_EMAIL, `Festival shop updated: ${shop.name}`, shell(`
+    <h1 style="color: #00AEEF; font-size: 20px;">A festival shop changed its details</h1>
+    <p><strong>Shop:</strong> ${esc(shop.name)} (${esc(shop.status)})</p>
+    <p><strong>Offer now:</strong> ${esc(shop.offer_en)}</p>
+    ${shop.offer_es ? `<p><strong>Spanish:</strong> ${esc(shop.offer_es)}</p>` : ''}
+    ${shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(shop.detail_en)}</p>` : ''}
+    <p style="color: #718096;">${shop.status === 'approved' ? 'This is already live on the festival page. ' : ''}If anything looks wrong, edit or take it off the card in the dashboard.</p>
+    ${button(`${SITE}/dashboard?view=festival`, 'Open the dashboard')}`));
   return json(r, r.ok ? 200 : 502);
 }
 
@@ -318,6 +332,7 @@ serve(async (req) => {
       case 'SHOP_CONFIRM':          return await festivalShop(id, 'confirm');
       case 'SHOP_RECEIVED':         return await festivalShop(id, 'received');
       case 'SHOP_APPROVED':         return await festivalShop(id, 'approved');
+      case 'SHOP_UPDATED':          return await festivalShopUpdated(id);
       default:                      return json({ error: 'unsupported_type' }, 400);
     }
   } catch (error: any) {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, ImagePlus, Send, Store, Laptop, Check } from 'lucide-react';
+import { ImagePlus, Send, Store, Laptop, Check, Eye } from 'lucide-react';
+import ShopCard from './ShopCard';
 import Button from '../Button';
-import { ShopApplication, ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from '../../lib/festival/types';
+import { ShopApplication, ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI, isCategory } from '../../lib/festival/types';
 import { tr, isEs } from '../../lib/lang';
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as ShopCategory[];
@@ -194,11 +195,26 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
         </div>
       </div>
 
-      <div className="flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-4 dark:border-slate-700 dark:bg-slate-800/40">
-        <Heart className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
-        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          {tr('Joining is free — there is nothing to pay, now or later. If the festival brings you new customers and you would like to support our work, you are always welcome to donate. No obligation.',
-              'Participar es gratis: no hay nada que pagar, ni ahora ni después. Si el festival te trae clientes nuevos y quieres apoyar nuestro trabajo, siempre puedes donar. Sin ninguna obligación.')}
+      {/* what they get, before they press the button: their card, as families will see it */}
+      <div className="rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50/40 p-5 dark:border-slate-700 dark:bg-slate-800/40">
+        <p className="flex items-center justify-center gap-2 text-sm font-black text-sky-800 dark:text-sky-300">
+          <Eye className="h-4 w-4" />{tr('How your business will look on our website', 'Así se verá tu negocio en nuestro sitio')}
+        </p>
+        <div className="mx-auto mt-4 max-w-[17rem]">
+          <ShopCard shop={{
+            id: 'preview', name: v.name || tr('Your business', 'Tu negocio'),
+            category: isCategory(v.category) ? v.category : 'other',
+            emoji: CATEGORY_EMOJI[isCategory(v.category) ? v.category : 'other'],
+            logoUrl: preview || undefined,
+            offerEn: v.offer_en || tr('Your offer for festival families', 'Tu oferta para las familias del festival'),
+            offerEs: v.offer_es || '', detailEn: v.detail_en || undefined, detailEs: undefined,
+            address: v.address || undefined, redeemFrom: '', redeemTo: '',
+            instore: v.instore !== false, online: !!v.online,
+          }} />
+        </div>
+        <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
+          {tr('Shown on our festival page and shared with our community. Free — nothing to pay, now or later.',
+              'Se muestra en la página del festival y se comparte con nuestra comunidad. Gratis: nada que pagar, ni ahora ni después.')}
         </p>
       </div>
 
