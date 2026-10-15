@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 /**
  * Every email the site sends: event registrations, volunteer applications and
- * Inclusion Festival shops.
+ * Inclusion Festival shops. (SHOP_LINK is the one exception to "only an id":
+ * it takes an email address, and only ever writes to that address's own shop.)
  *
  * WHY THE CALLER ONLY SENDS AN ID
  * This function is reachable with the public anon key. The first version took
@@ -60,6 +61,21 @@ const shell = (inner: string) => `
 const button = (href: string, label: string, color = '#00AEEF') =>
   `<div style="text-align: center; margin: 24px 0;"><a href="${href}" style="background-color: ${color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">${label}</a></div>`;
 
+/** a few warm words and the /give link — the query string rides through to Zeffy */
+const donate = (campaign: string) => `
+  <div style="border-top: 1px solid #e2e8f0; margin-top: 28px; padding-top: 20px; text-align: center;">
+    <p style="font-size: 15px; color: #4a5568; margin: 0 0 4px;"><strong>Help keep it free for every family 💙</strong></p>
+    <p style="font-size: 14px; color: #718096; margin: 0;">Every program we run is free. A gift of any size keeps it that way.</p>
+    <div style="margin: 16px 0 0;"><a href="${SITE}/give?utm_source=email&utm_campaign=${campaign}" style="background-color: #F59E0B; color: white; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold;">Donate to the cause</a></div>
+  </div>`;
+
+/** a shop's private page: no password, the link is the key */
+const shopLink = (manage: string, confirm?: string) =>
+  `${SITE}/InclusionFestival/myshop?k=${encodeURIComponent(manage)}${confirm ? `&confirm=${encodeURIComponent(confirm)}` : ''}`;
+
+/** "at most one of these every ten minutes" — for emails a person may ask for again */
+const tenMinuteSlot = () => String(Math.floor(Date.now() / 600_000));
+
 async function send(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -115,7 +131,8 @@ async function registration(id: string, approved: boolean) {
       <p style="font-size: 16px; color: #4a5568;">Great news — your registration for <strong>${title}</strong> is approved. Your spot is confirmed.</p>
       ${details}
       <p style="font-size: 16px; color: #4a5568;">We can't wait to see you there! Reply to this email if anything changes or if there is anything we can do to make the day easier for your family.</p>
-      ${button(`${SITE}/dashboard`, 'See my events')}`));
+      ${button(`${SITE}/dashboard`, 'See my events')}
+      ${donate('registration_approved')}`));
     return json(r, r.ok ? 200 : 502);
   }
 
@@ -124,7 +141,8 @@ async function registration(id: string, approved: boolean) {
     <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
     <p style="font-size: 16px; color: #4a5568;">Thank you for registering for <strong>${title}</strong>. We've got your request and our team is making sure everything is ready for your family.</p>
     ${details}
-    <p style="font-size: 16px; color: #4a5568;">You'll get another email as soon as your registration is approved.</p>`));
+    <p style="font-size: 16px; color: #4a5568;">You'll get another email as soon as your registration is approved.</p>
+    ${donate('registration_received')}`));
   await sendOnce('reg_received_admin', id, ADMIN_EMAIL, `New registration: ${reg.user_name || reg.user_email} – ${evt?.title || 'event'}`, shell(`
     <h1 style="color: #00AEEF; font-size: 20px;">New event registration</h1>
     <p><strong>Who:</strong> ${name} (${esc(reg.user_email)})</p>
@@ -164,7 +182,7 @@ async function volunteer(id: string, approved: boolean) {
 
 /* ────────────────────────────────────────────── Inclusion Festival shops ── */
 
-async function festivalShop(id: string, approved: boolean) {
+async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved') {
   const { data: shop } = await sb.from('festival_shops').select('*').eq('id', id).maybeSingle();
   if (!shop || !shop.contact_email || !shop.contact_email.includes('@')) return json({ error: 'not_found' }, 404);
   const { data: fs } = await sb.from('festival_settings').select('*').eq('id', 1).maybeSingle();
@@ -173,50 +191,76 @@ async function festivalShop(id: string, approved: boolean) {
   const offer = esc(shop.offer_en);
   const runs = `${fmtDate(shop.redeem_from)} – ${fmtDate(shop.redeem_to)}`;
 
-  if (approved) {
-    if (shop.status !== 'approved') return json({ error: 'not_approved' }, 409);
-    // added by hand in the dashboard: no Google account to sign in with, so a
-    // "print your sign" email would point at a page they cannot open
-    if (!shop.owner_id) return json({ error: 'no_owner' }, 409);
-    const r = await sendOnce('shop_approved', id, shop.contact_email, `${shop.name} is on the Inclusion Festival card! 🎉`, shell(`
-      <h1 style="color: #48BB78; text-align: center;">You're on the card!</h1>
+  // 1 · "confirm your sign-up" — the only way a sign-up reaches the admin
+  if (kind === 'confirm') {
+    if (shop.status !== 'unconfirmed' || !shop.confirm_token) return json({ error: 'not_unconfirmed' }, 409);
+    const r = await sendOnce('shop_confirm', `${id}:${tenMinuteSlot()}`, shop.contact_email, `Confirm your Inclusion Festival sign-up: ${shop.name}`, shell(`
+      <h1 style="color: #00AEEF; text-align: center;">One click to confirm</h1>
       <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
-      <p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>
-      <div style="background-color: #f0fff4; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f6d5;">
-        <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
-        <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Runs:</strong> ${esc(runs)}</p>
-      </div>
-      <h2 style="font-size: 18px; color: #2d3748;">One thing to do: print your QR sign</h2>
-      <p style="font-size: 15px; color: #4a5568;">Sign in with this Google account, print your sign and put it by the register. That's it.</p>
-      ${button(`${SITE}/InclusionFestival/myshop`, 'Print my QR sign')}
-      <h2 style="font-size: 18px; color: #2d3748;">How a family redeems</h2>
-      <ol style="font-size: 15px; color: #4a5568; line-height: 1.6;">
-        <li>They scan your sign with their phone camera and tap <strong>Redeem</strong>.</li>
-        <li>Their phone shows a big green <strong>REDEEMED</strong> screen with your shop name and a live clock.</li>
-        <li>You give the offer. A grey "Already used" screen means it was used before.</li>
-      </ol>
-      <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Questions? Just reply to this email.</p>`));
+      <p style="font-size: 16px; color: #4a5568;">Thanks for signing up <strong>${shopName}</strong> for the Inclusion Festival${fs?.festival_date ? ` (${esc(fmtDate(fs.festival_date))})` : ''}. Please confirm this is your email:</p>
+      ${button(shopLink(shop.manage_token, shop.confirm_token), 'Confirm my sign-up')}
+      <p style="font-size: 14px; color: #718096;">That button also opens your shop page — keep this email. No password needed: the link is your key. If you didn't sign up, just ignore this email.</p>`));
     return json(r, r.ok ? 200 : 502);
   }
 
-  if (shop.status !== 'pending' && shop.status !== 'waitlist') return json({ error: 'not_pending' }, 409);
-  const waitlisted = shop.status === 'waitlist';
-  const r = await sendOnce('shop_received', id, shop.contact_email, `We got your sign-up: ${shop.name}`, shell(`
-    <h1 style="color: #00AEEF; text-align: center;">Thanks for signing up!</h1>
+  // 2 · confirmed — tell the admin there is one to review
+  if (kind === 'received') {
+    if ((shop.status !== 'pending' && shop.status !== 'waitlist') || !shop.email_confirmed_at) return json({ error: 'not_pending' }, 409);
+    const waitlisted = shop.status === 'waitlist';
+    const r = await sendOnce('shop_received_admin', id, ADMIN_EMAIL, `New festival shop: ${shop.name}${waitlisted ? ' (waiting list)' : ''}`, shell(`
+      <h1 style="color: #00AEEF; font-size: 20px;">New Inclusion Festival shop</h1>
+      <p><strong>Shop:</strong> ${shopName}</p>
+      <p><strong>Offer:</strong> ${offer}</p>
+      ${shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(shop.detail_en)}</p>` : ''}
+      ${shop.address ? `<p><strong>Address:</strong> ${esc(shop.address)}</p>` : ''}
+      <p><strong>Contact:</strong> ${name} · ${esc(shop.contact_email)}${shop.contact_phone ? ' · ' + esc(shop.contact_phone) : ''}</p>
+      <p>Email confirmed ✓${waitlisted ? ' · every spot was taken, so they are on the waiting list' : ''}</p>
+      ${button(`${SITE}/dashboard?view=festival`, 'Approve in dashboard')}`));
+    return json(r, r.ok ? 200 : 502);
+  }
+
+  // 3 · approved — their sign is ready
+  if (shop.status !== 'approved') return json({ error: 'not_approved' }, 409);
+  const r = await sendOnce('shop_approved', id, shop.contact_email, `${shop.name} is on the Inclusion Festival card! 🎉`, shell(`
+    <h1 style="color: #48BB78; text-align: center;">You're on the card!</h1>
     <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
-    <p style="font-size: 16px; color: #4a5568;">We've received <strong>${shopName}</strong>'s sign-up for the Inclusion Festival${fs?.festival_date ? ` (${esc(fmtDate(fs.festival_date))})` : ''}.</p>
-    <p style="font-size: 16px; color: #4a5568;">${waitlisted
-      ? "Every spot is taken right now, so you're on the waiting list. We'll email you the moment one opens up."
-      : "We'll review your offer and email you within 48 hours. Once you're approved, you'll print your QR sign from your shop page."}</p>
-    ${button(`${SITE}/InclusionFestival/myshop`, 'My shop page')}`));
-  await sendOnce('shop_received_admin', id, ADMIN_EMAIL, `New festival shop: ${shop.name}${waitlisted ? ' (waiting list)' : ''}`, shell(`
-    <h1 style="color: #00AEEF; font-size: 20px;">New Inclusion Festival shop</h1>
-    <p><strong>Shop:</strong> ${shopName}</p>
-    <p><strong>Offer:</strong> ${offer}</p>
-    <p><strong>Contact:</strong> ${name} · ${esc(shop.contact_email)}${shop.contact_phone ? ' · ' + esc(shop.contact_phone) : ''}</p>
-    <p><strong>Pledge:</strong> ${shop.pledge_pct ? esc(shop.pledge_pct) + '%' : 'none'}</p>
-    ${button(`${SITE}/dashboard?view=festival`, 'Approve in dashboard')}`));
+    <p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>
+    <div style="background-color: #f0fff4; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f6d5;">
+      <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
+      <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Runs:</strong> ${esc(runs)}</p>
+    </div>
+    <h2 style="font-size: 18px; color: #2d3748;">One thing to do: print your QR sign</h2>
+    <p style="font-size: 15px; color: #4a5568;">Open your shop page, print your sign and put it by the register. That's it.</p>
+    ${button(shopLink(shop.manage_token), 'Print my QR sign')}
+    <h2 style="font-size: 18px; color: #2d3748;">How a family redeems</h2>
+    <ol style="font-size: 15px; color: #4a5568; line-height: 1.6;">
+      <li>They scan your sign with their phone camera and tap <strong>Redeem</strong>.</li>
+      <li>Their phone shows a big green <strong>REDEEMED</strong> screen with your shop name and a live clock.</li>
+      <li>You give the offer. A grey "Already used" screen means it was used before.</li>
+    </ol>
+    <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>
+    ${donate('shop_approved')}`));
   return json(r, r.ok ? 200 : 502);
+}
+
+/** "email me my link" — sent only to the address on file, at most every ten minutes */
+async function festivalShopLink(email: string) {
+  const addr = email.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) return json({ ok: true });
+  const { data: shops } = await sb.from('festival_shops').select('*')
+    // case-insensitive, but literal: % and _ would otherwise be wildcards
+    .ilike('contact_email', addr.replace(/[%_\\]/g, '\\$&')).in('status', ['unconfirmed', 'pending', 'approved', 'waitlist']);
+  for (const shop of shops || []) {
+    if (shop.status === 'unconfirmed') { await festivalShop(shop.id, 'confirm'); continue; }
+    await sendOnce('shop_link', `${shop.id}:${tenMinuteSlot()}`, shop.contact_email, `Your Inclusion Festival shop page: ${shop.name}`, shell(`
+      <h1 style="color: #00AEEF; text-align: center;">Your shop page</h1>
+      <p style="font-size: 16px; color: #4a5568;">Hi ${esc(shop.contact_name || 'there')},</p>
+      <p style="font-size: 16px; color: #4a5568;">Here is the link to <strong>${esc(shop.name)}</strong>'s Inclusion Festival page${shop.status === 'approved' ? ', where you can print your QR sign and see how many families have redeemed' : ''}.</p>
+      ${button(shopLink(shop.manage_token), 'Open my shop page')}
+      <p style="font-size: 14px; color: #718096;">Didn't ask for this? You can ignore it — the link only works for whoever has this email.</p>`));
+  }
+  // the same answer whether or not the address is on file
+  return json({ ok: true });
 }
 
 serve(async (req) => {
@@ -224,6 +268,7 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const type = String(body?.type || '');
+    if (type === 'SHOP_LINK') return await festivalShopLink(String(body?.email || ''));
     const id = String(body?.id || body?.record?.id || '');
     if (!id) return json({ error: 'missing_id' }, 400);
 
@@ -233,8 +278,9 @@ serve(async (req) => {
       case 'REGISTRATION_APPROVED': return await registration(id, true);
       case 'VOLUNTEER_RECEIVED':    return await volunteer(id, false);
       case 'VOLUNTEER_APPROVED':    return await volunteer(id, true);
-      case 'SHOP_RECEIVED':         return await festivalShop(id, false);
-      case 'SHOP_APPROVED':         return await festivalShop(id, true);
+      case 'SHOP_CONFIRM':          return await festivalShop(id, 'confirm');
+      case 'SHOP_RECEIVED':         return await festivalShop(id, 'received');
+      case 'SHOP_APPROVED':         return await festivalShop(id, 'approved');
       default:                      return json({ error: 'unsupported_type' }, 400);
     }
   } catch (error: any) {

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Check, X, Clock, Printer, Pencil, Trash2, Plus, Download, Copy, Users, Store, BarChart3, Settings2, ImagePlus,
+  Check, X, Clock, Printer, Pencil, Trash2, Plus, Download, Copy, Users, Store, BarChart3, Settings2, ImagePlus, Link2,
 } from 'lucide-react';
 import Button from '../Button';
 import Dialog from './Dialog';
 import { QrSign, PrintTarget, printSign } from './QrSign';
 import { festivalDb, Registration, ShopReport } from '../../lib/festival/db';
-import { DEFAULT_SETTINGS, fmtShortDay, fmtDay } from '../../lib/festival/store';
+import { DEFAULT_SETTINGS, fmtShortDay, fmtDay, shopPageUrl } from '../../lib/festival/store';
 import {
   AdminShop, FestivalSettings, ShopCategory, ShopStatus, CATEGORY_LABEL, CATEGORY_EMOJI, isFestivalAdmin,
 } from '../../lib/festival/types';
@@ -18,6 +18,7 @@ const label = 'mb-1 block text-xs font-bold text-slate-600 dark:text-slate-300';
 const card = 'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900';
 
 const STATUS_STYLE: Record<ShopStatus, string> = {
+  unconfirmed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
   pending: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   approved: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
   waitlist: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
@@ -25,6 +26,7 @@ const STATUS_STYLE: Record<ShopStatus, string> = {
   withdrawn: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
 const STATUS_LABEL: Record<ShopStatus, [string, string]> = {
+  unconfirmed: ['Email not confirmed yet', 'Correo sin confirmar'],
   pending: ['Waiting for approval', 'Esperando aprobación'],
   approved: ['On the card', 'En la tarjeta'],
   waitlist: ['Waiting list', 'Lista de espera'],
@@ -82,7 +84,7 @@ const FestivalAdminPanel: React.FC = () => {
   const [report, setReport] = useState<Awaited<ReturnType<typeof festivalDb.report>>>(null);
   const [regs, setRegs] = useState<Registration[] | null>(null);
   const [msg, setMsg] = useState('');
-  const [filter, setFilter] = useState<'open' | 'approved' | 'all'>('open');
+  const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'all'>('open');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [signFor, setSignFor] = useState<AdminShop | null>(null);
@@ -123,9 +125,9 @@ const FestivalAdminPanel: React.FC = () => {
 
   /* ── actions ───────────────────────────────────────────────────────── */
   const approve = async (s: AdminShop) => {
-    const err = await festivalDb.approve(s.id, s.spot && !approvedSpots.has(s.spot) ? s.spot : nextSpot(), user?.email || '', !!s.ownerId);
+    const err = await festivalDb.approve(s.id, s.spot && !approvedSpots.has(s.spot) ? s.spot : nextSpot(), user?.email || '', s.contactEmail || '');
     fail(err);
-    if (!err) setMsg(s.ownerId
+    if (!err) setMsg((s.contactEmail || '').includes('@')
       ? tr(`${s.name} is on the card. We emailed ${s.contactEmail} a link to print their sign.`,
            `${s.name} está en la tarjeta. Enviamos a ${s.contactEmail} un enlace para imprimir su letrero.`)
       : tr(`${s.name} is on the card. Print their sign with the Sign button.`,
@@ -233,6 +235,13 @@ const FestivalAdminPanel: React.FC = () => {
       `Aaria's Blue Elephant`,
     ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
   };
+  /** the shop's private page — hand it to a shop that signed up in person */
+  const copyLink = async (s: AdminShop) => {
+    const url = shopPageUrl(s.manageToken);
+    try { await navigator.clipboard.writeText(url); setCopied('link:' + s.id); setTimeout(() => setCopied(''), 2000); }
+    catch { window.prompt(tr('Copy this:', 'Copia esto:'), url); }
+  };
+
   const copyThanks = async (s: ShopReport) => {
     try { await navigator.clipboard.writeText(thankYou(s)); setCopied(s.id); setTimeout(() => setCopied(''), 2000); }
     catch { window.prompt(tr('Copy this:', 'Copia esto:'), thankYou(s)); }
@@ -263,10 +272,11 @@ const FestivalAdminPanel: React.FC = () => {
   const counts = {
     open: (shops || []).filter((s) => s.status === 'pending' || s.status === 'waitlist').length,
     approved: (shops || []).filter((s) => s.status === 'approved').length,
+    unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
     all: (shops || []).length,
   };
   const visible = (shops || [])
-    .filter((s) => filter === 'all' || (filter === 'approved' ? s.status === 'approved' : s.status === 'pending' || s.status === 'waitlist'))
+    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -343,7 +353,8 @@ const FestivalAdminPanel: React.FC = () => {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          {([['open', tr('To review', 'Por revisar')], ['approved', tr('On the card', 'En la tarjeta')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
+          {([['open', tr('To review', 'Por revisar')], ['approved', tr('On the card', 'En la tarjeta')],
+             ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)}
               className={`rounded-full px-3 py-1 text-xs font-bold ${filter === k ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {l} ({counts[k]})
@@ -370,7 +381,7 @@ const FestivalAdminPanel: React.FC = () => {
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${STATUS_STYLE[s.status]}`}>
                         {tr(...STATUS_LABEL[s.status])}
                       </span>
-                      {!s.ownerId && <span className="text-[10px] font-bold uppercase text-slate-400">{tr('added by hand', 'agregada a mano')}</span>}
+                      {!s.ownerId && !s.emailConfirmedAt && s.status !== 'unconfirmed' && <span className="text-[10px] font-bold uppercase text-slate-400">{tr('added by hand', 'agregada a mano')}</span>}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-sky-800 dark:text-sky-300">{s.offerEn}</p>
                     {s.offerEs && <p className="text-xs italic text-slate-500">{s.offerEs}</p>}
@@ -394,6 +405,9 @@ const FestivalAdminPanel: React.FC = () => {
                     <Button size="sm" onClick={() => setSignFor(s)}><Printer className="mr-1 h-4 w-4" />{tr('Sign', 'Letrero')}</Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setDraft(draftFrom(s))}><Pencil className="mr-1 h-4 w-4" />{tr('Edit', 'Editar')}</Button>
+                  <Button size="sm" variant="secondary" onClick={() => copyLink(s)}>
+                    <Link2 className="mr-1 h-4 w-4" />{copied === 'link:' + s.id ? tr('Copied', 'Copiado') : tr('Shop link', 'Enlace de la tienda')}
+                  </Button>
                   {s.status !== 'waitlist' && s.status !== 'approved' && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'waitlist')}><Clock className="mr-1 h-4 w-4" />{tr('Waiting list', 'Lista de espera')}</Button>
                   )}
@@ -505,8 +519,8 @@ const FestivalAdminPanel: React.FC = () => {
           </h3>
           {!draft.id && (
             <p className="mt-1 text-sm text-slate-500">
-              {tr('For a shop that signed up in person. It goes straight onto the card; print its sign with the Sign button. No email is sent.',
-                  'Para una tienda que se inscribió en persona. Va directo a la tarjeta; imprime su letrero con el botón Letrero. No se envía correo.')}
+              {tr('For a shop that signed up in person. It goes straight onto the card. With their email, they get the approval email and their shop link; without one, print their sign with the Sign button.',
+                  'Para una tienda que se inscribió en persona. Va directo a la tarjeta. Con su correo, reciben el correo de aprobación y el enlace de su tienda; sin él, imprime su letrero con el botón Letrero.')}
             </p>
           )}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">

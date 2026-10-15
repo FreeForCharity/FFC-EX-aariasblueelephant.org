@@ -13,7 +13,8 @@ export type ShopCategory =
   | 'tutoring' | 'kids'
   | 'salon' | 'florist' | 'retail' | 'other';
 
-export type ShopStatus = 'pending' | 'approved' | 'waitlist' | 'declined' | 'withdrawn';
+/** unconfirmed = signed up, email link not clicked yet; nothing reaches the admin until it is */
+export type ShopStatus = 'unconfirmed' | 'pending' | 'approved' | 'waitlist' | 'declined' | 'withdrawn';
 
 /** a shop as the public card draws it — no contacts, no QR token */
 export interface FestivalShop {
@@ -42,6 +43,9 @@ export interface AdminShop extends FestivalShop {
   contactPhone?: string;
   pledgePct?: number | null;
   qrToken: string;
+  /** the shop's private page link — the key in every email we send them */
+  manageToken: string;
+  emailConfirmedAt?: string | null;
   status: ShopStatus;
   approvedBy?: string | null;
   approvedAt?: string | null;
@@ -73,6 +77,7 @@ export interface FestivalSettings {
 
 /** what a shop owner fills in */
 export interface ShopApplication {
+  contact_email?: string;
   name: string;
   category: ShopCategory;
   offer_en: string;

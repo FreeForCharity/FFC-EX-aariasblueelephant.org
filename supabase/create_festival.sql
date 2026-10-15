@@ -341,24 +341,64 @@ end $$;
 revoke all on function festival_shop_apply(jsonb) from public;
 grant execute on function festival_shop_apply(jsonb) to authenticated;
 
--- the owner's own shop, its QR token once approved, and its numbers
-create or replace function festival_my_shop()
-returns json
-language plpgsql security definer set search_path = public as $$
-declare v_shop festival_shops; v_days json; v_total int; v_today int; v_new int;
-begin
-  if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
-  select * into v_shop from festival_shops
-   where owner_id = auth.uid() and status <> 'withdrawn'
-   order by (status = 'approved') desc, created_at desc limit 1;
-  if not found then return json_build_object('ok', false, 'error', 'no_shop'); end if;
+-- ═══════════════════════════════════════ shop sign-up with ANY email ══
+-- Shops are not all on Google (shop@pizza.com, Outlook, Yahoo…), so a shop
+-- signs up with just an email address and no password:
+--   1. festival_shop_signup()  saves the shop as 'unconfirmed' and hands back
+--      its private manage_token (the shop's own page) — nothing reaches the
+--      admin yet.
+--   2. The email function sends a link carrying confirm_token. Only that
+--      link, i.e. only someone who can read the inbox, can confirm.
+--   3. festival_shop_confirm() moves it to 'pending' (or 'waitlist') and the
+--      admin is alerted.
+--   4. manage_token is the shop's key from then on: edit while waiting,
+--      print the QR sign once approved. It is in every email we send them.
+alter table festival_shops add column if not exists manage_token text;
+update festival_shops set manage_token = replace(gen_random_uuid()::text, '-', '') where manage_token is null;
+alter table festival_shops alter column manage_token set default replace(gen_random_uuid()::text, '-', '');
+alter table festival_shops alter column manage_token set not null;
+create unique index if not exists festival_shops_manage_idx on festival_shops (manage_token);
+alter table festival_shops add column if not exists confirm_token text;
+alter table festival_shops add column if not exists email_confirmed_at timestamptz;
+-- Google sign-ups proved their email when they signed in
+update festival_shops set email_confirmed_at = created_at where email_confirmed_at is null and owner_id is not null;
+alter table festival_shops drop constraint if exists festival_shops_status_check;
+alter table festival_shops add constraint festival_shops_status_check
+  check (status in ('unconfirmed','pending','approved','waitlist','declined','withdrawn'));
 
+-- the form, cleaned: trimmed, length-capped, category checked. null = missing a required field
+create or replace function festival_shop_fields(p jsonb) returns jsonb
+language plpgsql immutable as $$
+declare
+  n   text := left(btrim(coalesce(p ->> 'name', '')), 80);
+  o   text := left(btrim(coalesce(p ->> 'offer_en', '')), 140);
+  c   text := left(btrim(coalesce(p ->> 'contact_name', '')), 80);
+  cat text := coalesce(p ->> 'category', 'other');
+  web text := left(btrim(coalesce(p ->> 'website', '')), 200);
+begin
+  if length(n) < 2 or length(o) < 3 or length(c) < 2 then return null; end if;
+  if cat not in ('restaurant','cafe','bakery','grocery','gym','dental','health',
+                 'tutoring','kids','salon','florist','retail','other') then cat := 'other'; end if;
+  if web <> '' and web !~* '^https?://' then web := 'https://' || web; end if;
+  return jsonb_build_object(
+    'name', n, 'offer_en', o, 'contact_name', c, 'category', cat,
+    'offer_es',      nullif(left(btrim(coalesce(p ->> 'offer_es', '')), 140), ''),
+    'detail_en',     nullif(left(btrim(coalesce(p ->> 'detail_en', '')), 200), ''),
+    'address',       nullif(left(btrim(coalesce(p ->> 'address', '')), 140), ''),
+    'website',       nullif(web, ''),
+    'contact_phone', nullif(left(btrim(coalesce(p ->> 'contact_phone', '')), 30), ''));
+end $$;
+
+-- what a shop's own page shows: its details, its QR once approved, its numbers
+create or replace function festival_shop_view(v_shop festival_shops) returns json
+language plpgsql stable security definer set search_path = public as $$
+declare v_days json; v_total int; v_today int; v_new int;
+begin
   select count(*), count(*) filter (where local_date = festival_today()), count(*) filter (where new_card)
     into v_total, v_today, v_new
     from festival_punches where shop_id = v_shop.id;
   select coalesce(json_agg(json_build_object('date', d, 'count', c) order by d), '[]'::json) into v_days
     from (select local_date d, count(*) c from festival_punches where shop_id = v_shop.id group by 1) x;
-
   return json_build_object(
     'ok', true, 'id', v_shop.id, 'name', v_shop.name, 'category', v_shop.category,
     'logo_url', v_shop.logo_url, 'offer_en', v_shop.offer_en, 'offer_es', v_shop.offer_es,
@@ -369,8 +409,150 @@ begin
     'qr_token', case when v_shop.status = 'approved' then v_shop.qr_token end,
     'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days);
 end $$;
+revoke all on function festival_shop_view(festival_shops) from public, anon, authenticated;
+
+-- the Google-account way in, for shops that signed up that way before
+create or replace function festival_my_shop()
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops;
+begin
+  if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
+  select * into v_shop from festival_shops
+   where owner_id = auth.uid() and status <> 'withdrawn'
+   order by (status = 'approved') desc, created_at desc limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'no_shop'); end if;
+  return festival_shop_view(v_shop);
+end $$;
 revoke all on function festival_my_shop() from public;
 grant execute on function festival_my_shop() to authenticated;
+
+create or replace function festival_shop_signup(p jsonb)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  f       jsonb := festival_shop_fields(p);
+  v_email text  := lower(btrim(coalesce(p ->> 'contact_email', '')));
+  v_state text;
+  v_shop  festival_shops;
+  v_recent int;
+  v_base  text;
+  v_id    text;
+  v_n     int := 1;
+begin
+  -- a hidden field people never see; bots fill in everything
+  if coalesce(p ->> 'company_fax', '') <> '' then return json_build_object('ok', true); end if;
+  if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
+  if v_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' or length(v_email) > 120 then
+    return json_build_object('ok', false, 'error', 'bad_email');
+  end if;
+  select state into v_state from festival_settings where id = 1;
+  if v_state = 'ended' then return json_build_object('ok', false, 'error', 'closed'); end if;
+
+  select * into v_shop from festival_shops
+   where lower(contact_email) = v_email and status in ('unconfirmed','pending','approved','waitlist')
+   order by created_at desc limit 1;
+  if found then
+    if v_shop.status <> 'unconfirmed' then
+      return json_build_object('ok', false, 'error', 'already_signed_up');
+    end if;
+    -- signed up but never confirmed: take the new details and send the link again.
+    -- No manage token back: whoever typed this address may not own it.
+    update festival_shops set
+      name = f ->> 'name', category = f ->> 'category', offer_en = f ->> 'offer_en',
+      offer_es = f ->> 'offer_es', detail_en = f ->> 'detail_en', address = f ->> 'address',
+      website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
+      updated_at = now()
+    where id = v_shop.id;
+    return json_build_object('ok', true, 'id', v_shop.id, 'resent', true);
+  end if;
+
+  -- a flood of unconfirmed sign-ups is someone abusing the form
+  select count(*) into v_recent from festival_shops
+   where status = 'unconfirmed' and created_at > now() - interval '1 hour';
+  if v_recent >= 40 then return json_build_object('ok', false, 'error', 'busy'); end if;
+
+  v_base := left(coalesce(nullif(trim(both '-' from regexp_replace(lower(f ->> 'name'), '[^a-z0-9]+', '-', 'g')), ''), 'shop'), 28);
+  v_id := v_base;
+  while exists (select 1 from festival_shops where id = v_id) loop
+    v_n := v_n + 1;
+    v_id := v_base || '-' || v_n;
+  end loop;
+
+  insert into festival_shops (id, name, category, offer_en, offer_es, detail_en, address, website,
+                              contact_name, contact_email, contact_phone, status, confirm_token,
+                              redeem_from, redeem_to)
+  values (v_id, f ->> 'name', f ->> 'category', f ->> 'offer_en', f ->> 'offer_es', f ->> 'detail_en',
+          f ->> 'address', f ->> 'website', f ->> 'contact_name', v_email, f ->> 'contact_phone',
+          'unconfirmed', replace(gen_random_uuid()::text, '-', ''),
+          (select redeem_from from festival_settings where id = 1),
+          (select redeem_to from festival_settings where id = 1))
+  returning * into v_shop;
+
+  return json_build_object('ok', true, 'id', v_shop.id, 'manage', v_shop.manage_token);
+end $$;
+revoke all on function festival_shop_signup(jsonb) from public;
+grant execute on function festival_shop_signup(jsonb) to anon, authenticated;
+
+create or replace function festival_shop_confirm(p_token text)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops; v_taken int; v_spots int;
+begin
+  select * into v_shop from festival_shops where confirm_token = p_token and coalesce(p_token, '') <> '';
+  if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  if v_shop.status <> 'unconfirmed' then
+    return json_build_object('ok', true, 'id', v_shop.id, 'manage', v_shop.manage_token, 'just_confirmed', false);
+  end if;
+  perform pg_advisory_xact_lock(hashtext('festival_shop_apply'));
+  select spots into v_spots from festival_settings where id = 1;
+  select count(*) into v_taken from festival_shops where status in ('pending','approved');
+  update festival_shops
+     set status = case when v_taken < v_spots then 'pending' else 'waitlist' end,
+         email_confirmed_at = now(), updated_at = now()
+   where id = v_shop.id
+  returning * into v_shop;
+  return json_build_object('ok', true, 'id', v_shop.id, 'manage', v_shop.manage_token,
+                           'just_confirmed', true, 'status', v_shop.status);
+end $$;
+revoke all on function festival_shop_confirm(text) from public;
+grant execute on function festival_shop_confirm(text) to anon, authenticated;
+
+create or replace function festival_shop_by_manage(p_token text)
+returns json
+language plpgsql stable security definer set search_path = public as $$
+declare v_shop festival_shops;
+begin
+  select * into v_shop from festival_shops
+   where manage_token = p_token and coalesce(p_token, '') <> '' and status <> 'withdrawn';
+  if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  return festival_shop_view(v_shop);
+end $$;
+revoke all on function festival_shop_by_manage(text) from public;
+grant execute on function festival_shop_by_manage(text) to anon, authenticated;
+
+-- edit while waiting; once on the card, the offer is what families were promised
+create or replace function festival_shop_update_by_manage(p_token text, p jsonb)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare f jsonb := festival_shop_fields(p); v_shop festival_shops;
+begin
+  select * into v_shop from festival_shops where manage_token = p_token and coalesce(p_token, '') <> '';
+  if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  if v_shop.status not in ('unconfirmed','pending','waitlist') then
+    return json_build_object('ok', false, 'error', 'already_approved');
+  end if;
+  if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
+  update festival_shops set
+    name = f ->> 'name', category = f ->> 'category', offer_en = f ->> 'offer_en',
+    offer_es = f ->> 'offer_es', detail_en = f ->> 'detail_en', address = f ->> 'address',
+    website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
+    updated_at = now()
+  where id = v_shop.id;
+  return json_build_object('ok', true);
+end $$;
+revoke all on function festival_shop_update_by_manage(text, jsonb) from public;
+grant execute on function festival_shop_update_by_manage(text, jsonb) to anon, authenticated;
 
 -- ──────────────────────────────────────────────── redeeming, by QR sign ──
 -- What a scanned sign shows before anyone signs in. Public: name and offer only.

@@ -48,6 +48,8 @@ export function toAdminShop(p: any): AdminShop {
     contactPhone: p.contact_phone || undefined,
     pledgePct: p.pledge_pct,
     qrToken: p.qr_token,
+    manageToken: p.manage_token,
+    emailConfirmedAt: p.email_confirmed_at,
     status: p.status,
     approvedBy: p.approved_by,
     approvedAt: p.approved_at,
@@ -55,6 +57,12 @@ export function toAdminShop(p: any): AdminShop {
     createdAt: p.created_at,
   };
 }
+
+/** a shop's private page — no password, the link is the key */
+export const shopPageUrl = (manage: string) => `https://aariasblueelephant.org/InclusionFestival/myshop?k=${manage}`;
+
+/** this device remembers the shop it signed up, so the page opens without the email */
+export const SHOP_KEY = 'abe.festival.shop';
 
 /** the link a shop's QR sign opens */
 export const redeemUrl = (token: string) => `https://aariasblueelephant.org/r/${token}`;
