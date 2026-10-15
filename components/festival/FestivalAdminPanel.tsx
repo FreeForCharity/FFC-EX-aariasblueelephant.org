@@ -324,8 +324,8 @@ const FestivalAdminPanel: React.FC = () => {
           <div className="mt-3 flex items-center gap-3">
             <Button size="sm" onClick={saveSettings}>{tr('Save settings', 'Guardar ajustes')}</Button>
             <p className="text-xs text-slate-500">
-              {tr('New offer dates apply to shops approved from now on; edit a shop to change its own dates.',
-                  'Las nuevas fechas aplican a tiendas aprobadas desde ahora; edita una tienda para cambiar sus fechas.')}
+              {tr('Offer dates apply to every shop, including ones already on the card.',
+                  'Las fechas de oferta aplican a todas las tiendas, incluidas las que ya están en la tarjeta.')}
             </p>
           </div>
         )}

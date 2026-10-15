@@ -320,9 +320,10 @@ begin
     v_id := v_base || '-' || v_n;
   end loop;
 
+  -- a new shop runs on the festival's own dates, not the column defaults
   insert into festival_shops (id, owner_id, name, category, logo_url, offer_en, offer_es, detail_en,
                               address, website, contact_name, contact_email, contact_phone,
-                              pledge_pct, status)
+                              pledge_pct, status, redeem_from, redeem_to)
   values (v_id, v_uid, v_name, v_cat, v_logo, v_offer,
           nullif(left(btrim(coalesce(p ->> 'offer_es', '')), 140), ''),
           nullif(left(btrim(coalesce(p ->> 'detail_en', '')), 200), ''),
@@ -330,7 +331,9 @@ begin
           nullif(v_web, ''), v_contact, v_email,
           nullif(left(btrim(coalesce(p ->> 'contact_phone', '')), 30), ''),
           v_pledge,
-          case when v_taken < v_spots then 'pending' else 'waitlist' end)
+          case when v_taken < v_spots then 'pending' else 'waitlist' end,
+          (select redeem_from from festival_settings where id = 1),
+          (select redeem_to from festival_settings where id = 1))
   returning * into v_shop;
 
   return json_build_object('ok', true, 'id', v_shop.id, 'status', v_shop.status, 'updated', false);

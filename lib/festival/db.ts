@@ -244,7 +244,18 @@ export const festivalDb = {
     if (s.redeemTo !== undefined) patch.redeem_to = s.redeemTo;
     const { data, error } = await supabase.from('festival_settings').update(patch).eq('id', 1).select('id');
     if (error) return error.message;
-    return data?.length ? null : 'not_permitted';
+    if (!data?.length) return 'not_permitted';
+    // Every shop runs on the festival's dates. Without this, a shop that had
+    // already signed up kept the old window and its sign still said "Offers
+    // start November 1" after the dates were moved.
+    const dates: Record<string, unknown> = {};
+    if (patch.redeem_from) dates.redeem_from = patch.redeem_from;
+    if (patch.redeem_to) dates.redeem_to = patch.redeem_to;
+    if (Object.keys(dates).length) {
+      const shops = await supabase.from('festival_shops').update(dates).neq('id', '');
+      if (shops.error) return shops.error.message;
+    }
+    return null;
   },
 
   async registrations(): Promise<Registration[] | null> {
