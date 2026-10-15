@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2, Laptop, Check } from 'lucide-react';
 import Button from '../components/Button';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
 import { QrSign, PrintTarget, printSign } from '../components/festival/QrSign';
@@ -35,6 +35,7 @@ const FestivalMyShop: React.FC = () => {
   const [resent, setResent] = useState(false);
   const [lostEmail, setLostEmail] = useState('');
   const [lostSent, setLostSent] = useState(false);
+  const [codeQuery, setCodeQuery] = useState('');
 
   const load = useCallback(async (k: string | null) => {
     if (k) {
@@ -130,6 +131,8 @@ const FestivalMyShop: React.FC = () => {
     offer_en: shop.offer_en, offer_es: shop.offer_es || '', detail_en: shop.detail_en || '',
     address: shop.address || '', website: shop.website || '',
     contact_name: shop.contact_name, contact_email: shop.contact_email, contact_phone: shop.contact_phone || '',
+    instore: shop.instore !== false, online: !!shop.online,
+    online_link: shop.online_link || '', online_note: shop.online_note || '',
   };
 
   /* ── before approval ──────────────────────────────────────────────── */
@@ -191,7 +194,7 @@ const FestivalMyShop: React.FC = () => {
         {[
           { n: shop.total, en: 'families redeemed', es: 'familias canjearon' },
           { n: shop.today, en: 'today', es: 'hoy' },
-          { n: shop.new_cards, en: 'joined at your counter', es: 'se unieron en tu mostrador' },
+          { n: shop.new_cards, en: 'new families through you', es: 'familias nuevas gracias a ti' },
         ].map((s) => (
           <div key={s.en} className="rounded-2xl bg-slate-50 p-4 text-center dark:bg-slate-800">
             <p className="text-3xl font-black text-slate-900 dark:text-white">{s.n}</p>
@@ -217,6 +220,39 @@ const FestivalMyShop: React.FC = () => {
         </div>
       )}
 
+      {shop.online && (
+        <div className="mt-8 rounded-2xl border-2 border-violet-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white">
+            <Laptop className="h-5 w-5 text-violet-600" />{tr('Online codes', 'Códigos en línea')}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            {tr('Families get a personal code (like ABE-7K4M) on our site and quote it when they book. When someone books with one, find it here and tick Used. Each code works once.',
+                'Las familias reciben un código personal (como ABE-7K4M) en nuestro sitio y lo mencionan al reservar. Cuando alguien reserve con uno, búscalo aquí y marca Usado. Cada código sirve una vez.')}
+          </p>
+          <input value={codeQuery} onChange={(e) => setCodeQuery(e.target.value.toUpperCase())}
+                 placeholder={tr('Find a code, e.g. ABE-7K4M', 'Busca un código, ej. ABE-7K4M')}
+                 className="mt-4 w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-2 font-mono text-slate-900 outline-none focus:border-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+          {shop.codes.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-500">{tr('No codes yet.', 'Todavía no hay códigos.')}</p>
+          ) : (
+            <ul className="mt-3 max-h-80 space-y-1 overflow-y-auto">
+              {shop.codes.filter((c) => !codeQuery || c.code.includes(codeQuery)).map((c) => (
+                <li key={c.code} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <span className="font-mono font-black tracking-wider text-slate-900 dark:text-white">{c.code}</span>
+                  <span className="flex-1 text-xs text-slate-500">{fmtShortDay(c.at, es)}</span>
+                  <button disabled={!key} onClick={async () => { if (key && await festivalDb.markCode(key, c.code, !c.used_at)) await load(key); }}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${c.used_at
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                    {c.used_at && <Check className="h-3 w-3" />}{c.used_at ? tr('Used', 'Usado') : tr('Mark used', 'Marcar usado')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {shop.instore !== false && (
       <div className="mt-8 grid gap-6 md:grid-cols-[1fr_1fr] md:items-start">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white">{tr('Your QR sign', 'Tu letrero QR')}</h2>
@@ -243,6 +279,7 @@ const FestivalMyShop: React.FC = () => {
           )}
         </PrintTarget>
       </div>
+      )}
     </div>
   );
 };

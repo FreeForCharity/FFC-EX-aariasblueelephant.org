@@ -36,6 +36,10 @@ export function toShop(p: any): FestivalShop {
     redeemFrom: p.redeem_from,
     redeemTo: p.redeem_to,
     spot: p.spot ?? undefined,
+    instore: p.instore !== false,
+    online: p.online === true,
+    onlineLink: p.online_link || undefined,
+    onlineNote: p.online_note || undefined,
   };
 }
 

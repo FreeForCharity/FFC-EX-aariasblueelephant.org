@@ -35,6 +35,9 @@ drop function if exists festival_my_pass(text, int)               cascade;
 drop function if exists festival_set_optin(boolean)               cascade;
 drop function if exists festival_ensure_pass(text, int, text)     cascade;
 drop function if exists festival_short_code()                     cascade;
+drop function if exists festival_online_code(text)                cascade;
+drop function if exists festival_mark_code(text, text, boolean)   cascade;
+drop function if exists festival_code_text()                      cascade;
 
 drop table if exists festival_punch_tries cascade;
 drop table if exists festival_punches     cascade;

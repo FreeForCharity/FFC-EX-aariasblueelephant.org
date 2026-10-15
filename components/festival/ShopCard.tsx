@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Laptop, Store } from 'lucide-react';
 import { FestivalShop, CATEGORY_LABEL } from '../../lib/festival/types';
 import { tr, isEs } from '../../lib/lang';
 
@@ -24,14 +24,26 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
           : <span className="text-4xl sm:text-5xl" aria-hidden>{shop.emoji}</span>}
       </div>
       <p className="mt-3 break-words text-sm font-black leading-tight text-slate-900 dark:text-white sm:mt-4 sm:text-lg">{shop.name}</p>
-      <span className="mt-1.5 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] sm:px-2.5 sm:text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
-        {es ? CATEGORY_LABEL[shop.category].es : CATEGORY_LABEL[shop.category].en}
-      </span>
+      <div className="mt-1.5 flex flex-wrap justify-center gap-1">
+        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] sm:px-2.5 sm:text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+          {es ? CATEGORY_LABEL[shop.category].es : CATEGORY_LABEL[shop.category].en}
+        </span>
+        {shop.online && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 sm:text-[11px]">
+            <Laptop className="h-3 w-3" />{tr('Online', 'En línea')}
+          </span>
+        )}
+        {shop.online && shop.instore && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700 dark:bg-green-900/40 dark:text-green-300 sm:text-[11px]">
+            <Store className="h-3 w-3" />{tr('In store', 'En tienda')}
+          </span>
+        )}
+      </div>
       <div className="mt-3 w-full flex-1 rounded-2xl bg-amber-50 px-2 py-2 sm:mt-4 sm:px-3 sm:py-3 dark:bg-amber-900/20">
         <p className="text-sm font-bold leading-snug text-amber-900 sm:text-base dark:text-amber-200">🎁 {offer}</p>
         {detail && <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-300/80">{detail}</p>}
       </div>
-      {shop.address && (
+      {shop.address && shop.instore && (
         <p className="mt-2 inline-flex items-start gap-1 text-[11px] text-slate-500 sm:mt-3 sm:text-xs dark:text-slate-400">
           <MapPin className="mt-px h-3.5 w-3.5 shrink-0" />{shop.address}
         </p>

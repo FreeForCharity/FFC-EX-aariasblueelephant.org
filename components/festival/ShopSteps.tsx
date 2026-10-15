@@ -95,6 +95,10 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemF
             </li>
           ))}
         </ol>
+        <p className="mt-5 rounded-2xl bg-violet-50 p-3 text-center text-sm text-violet-900 dark:bg-violet-900/20 dark:text-violet-200">
+          💻 {tr('Offer classes or services online? Tick “Online” when you sign up: families get a personal code to use when they book, and you tick codes off on your shop page.',
+                 '¿Ofreces clases o servicios en línea? Marca “En línea” al inscribirte: las familias reciben un código personal para usar al reservar, y tú los marcas en la página de tu tienda.')}
+        </p>
       </div>
 
       <div className="rounded-3xl border-2 border-[#F5C542] bg-[#FFFBEB] p-5 dark:border-amber-700 dark:bg-amber-900/20 sm:p-6">

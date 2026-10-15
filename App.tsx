@@ -123,6 +123,7 @@ const FestivalShopJoin = lazy(() => import('./pages/FestivalShopJoin'));
 const FestivalPass = lazy(() => import('./pages/FestivalPass'));
 const FestivalMyShop = lazy(() => import('./pages/FestivalMyShop'));
 const FestivalRedeem = lazy(() => import('./pages/FestivalRedeem'));
+const FestivalOnlineCode = lazy(() => import('./pages/FestivalOnlineCode'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -183,6 +184,8 @@ const App: React.FC = () => {
                 <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
                 <Route path="/InclusionFestival/pass" element={<FestivalPass />} />
                 <Route path="/InclusionFestival/myshop" element={<FestivalMyShop />} />
+                {/* online offers: no counter to scan, so a personal code instead */}
+                <Route path="/InclusionFestival/code/:shopId" element={<FestivalOnlineCode />} />
                 {/* the QR on a shop's counter sign — kept short so the code stays easy to scan */}
                 <Route path="/r/:token" element={<FestivalRedeem />} />
                 {/* the old till-screen link now lives on the shop owner's own page */}

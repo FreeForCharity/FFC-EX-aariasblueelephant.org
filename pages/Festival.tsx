@@ -164,8 +164,18 @@ const Festival: React.FC = () => {
               </p>
             )}
             <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-              {tr('Valid', 'Válido')} {fmtDay(open.redeemFrom, es)} – {fmtDay(open.redeemTo, es)}
+              {tr(`Valid through ${fmtDay(open.redeemTo, false)}`, `Válida hasta el ${fmtDay(open.redeemTo, true)}`)}
             </p>
+            {open.online && (
+              <Link to={`/InclusionFestival/code/${open.id}`} className="mt-5 block">
+                <Button fullWidth>{tr('Get my code for this online offer', 'Obtener mi código para esta oferta en línea')}</Button>
+              </Link>
+            )}
+            {open.instore && (
+              <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
+                {tr('In store: scan the festival QR sign at their counter.', 'En tienda: escanea el letrero QR del festival en su mostrador.')}
+              </p>
+            )}
             <Button className="mt-6" fullWidth variant="secondary" onClick={close}>{tr('Close', 'Cerrar')}</Button>
           </div>
         </Dialog>
