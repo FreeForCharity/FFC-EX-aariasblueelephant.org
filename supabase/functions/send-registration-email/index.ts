@@ -53,7 +53,7 @@ const shell = (inner: string) => `
     </div>
     ${inner}
     <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 32px;">
-      Aaria's Blue Elephant · Mountain House, CA · <a href="${SITE}" style="color: #a0aec0;">aariasblueelephant.org</a>
+      Aaria's Blue Elephant · <a href="${SITE}" style="color: #a0aec0;">aariasblueelephant.org</a>
     </p>
   </div>`;
 
@@ -181,7 +181,7 @@ async function festivalShop(id: string, approved: boolean) {
     const r = await sendOnce('shop_approved', id, shop.contact_email, `${shop.name} is on the Inclusion Festival card! 🎉`, shell(`
       <h1 style="color: #48BB78; text-align: center;">You're on the card!</h1>
       <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
-      <p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming Mountain House families!</p>
+      <p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>
       <div style="background-color: #f0fff4; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f6d5;">
         <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
         <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Runs:</strong> ${esc(runs)}</p>
