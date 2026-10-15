@@ -285,8 +285,8 @@ const FestivalMyShop: React.FC = () => {
             {tr('Change your offer or logo', 'Cambia tu oferta o tu logo')}
           </summary>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            {tr('Changes go live on our website straight away. If you change the offer, print your sign again — the QR code stays the same.',
-                'Los cambios aparecen en nuestro sitio de inmediato. Si cambias la oferta, vuelve a imprimir tu letrero: el código QR es el mismo.')}
+            {tr('Changes go live on our website straight away. Your QR sign keeps working — no need to print a new one.',
+                'Los cambios aparecen en nuestro sitio de inmediato. Tu letrero QR sigue funcionando: no hace falta imprimir uno nuevo.')}
           </p>
           <div className="mt-5">
             <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}

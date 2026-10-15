@@ -275,7 +275,8 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
       <li>Find the code on your shop page and tick <strong>Used</strong>. Each code works once.</li>
     </ol>
     ${shop.instore === false ? button(shopLink(shop.manage_token), 'Open my shop page') : ''}` : ''}
-    <p style="font-size: 15px; color: #4a5568;">You can change your offer or logo any time from your shop page, and it also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>`));
+    <p style="font-size: 15px; color: #4a5568;">You can change your offer or logo any time from your shop page, and it also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>
+    ${donateBottom('shop_approved')}`));
   return json(r, r.ok ? 200 : 502);
 }
 
