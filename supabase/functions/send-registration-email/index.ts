@@ -284,14 +284,20 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
 async function festivalShopUpdated(id: string) {
   const { data: shop } = await sb.from('festival_shops').select('*').eq('id', id).maybeSingle();
   if (!shop) return json({ error: 'not_found' }, 404);
-  const r = await sendOnce('shop_updated', `${id}:${tenMinuteSlot()}`, ADMIN_EMAIL, `Festival shop updated: ${shop.name}`, shell(`
-    <h1 style="color: #00AEEF; font-size: 20px;">A festival shop changed its details</h1>
-    <p><strong>Shop:</strong> ${esc(shop.name)} (${esc(shop.status)})</p>
-    <p><strong>Offer now:</strong> ${esc(shop.offer_en)}</p>
-    ${shop.offer_es ? `<p><strong>Spanish:</strong> ${esc(shop.offer_es)}</p>` : ''}
-    ${shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(shop.detail_en)}</p>` : ''}
-    <p style="color: #718096;">${shop.status === 'approved' ? 'This is already live on the festival page. ' : ''}If anything looks wrong, edit or take it off the card in the dashboard.</p>
-    ${button(`${SITE}/dashboard?view=festival`, 'Open the dashboard')}`));
+  const c = shop.pending_changes || null;
+  const waiting = shop.status === 'approved' && !!c;
+  const r = await sendOnce('shop_updated', `${id}:${tenMinuteSlot()}`, ADMIN_EMAIL,
+    waiting ? `Festival shop change to approve: ${shop.name}` : `Festival shop updated: ${shop.name}`, shell(`
+    <h1 style="color: #00AEEF; font-size: 20px;">${waiting ? 'A shop on the card asked for a change' : 'A festival shop changed its details'}</h1>
+    <p><strong>Shop:</strong> ${esc(shop.name)}</p>
+    ${waiting ? `
+      <p><strong>Offer now:</strong> ${esc(shop.offer_en)}</p>
+      <p><strong>Asking for:</strong> ${esc(c.offer_en || shop.offer_en)}</p>
+      ${c.detail_en !== undefined && c.detail_en !== shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(c.detail_en || '—')}</p>` : ''}
+      ${c.logo_url ? '<p><strong>New logo</strong> uploaded.</p>' : ''}
+      <p style="color: #718096;">The card keeps the current offer until you approve.</p>`
+    : `<p><strong>Offer:</strong> ${esc(shop.offer_en)}</p>`}
+    ${button(`${SITE}/dashboard?view=festival`, waiting ? 'Review the change' : 'Open the dashboard')}`));
   return json(r, r.ok ? 200 : 502);
 }
 

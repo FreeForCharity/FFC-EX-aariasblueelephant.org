@@ -51,12 +51,14 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
+import MyGiving from '../components/MyGiving';
+import { tr } from '../lib/lang';
 import { isFestivalAdmin } from '../lib/festival/types';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
 import WheelOfFun from '../components/WheelOfFun';
-import { MOCK_DONATIONS, DEFAULT_EVENT_IMAGE } from '../constants';
+import { DEFAULT_EVENT_IMAGE } from '../constants';
 import { GAME_CARDS } from '../data/games';
 import { SUMMER_BUDDY_UP_ENABLED } from '../lib/features';
 import ResilientImage from '../components/ResilientImage';
@@ -87,6 +89,7 @@ type ViewState =
     | 'magnetblocks'
     | 'helpinghands'
     | 'elly-tubbies'
+    | 'giving'
     | 'history'
     | 'receipts' 
     | 'my-events' 
@@ -128,6 +131,9 @@ interface SignupRow {
     full_name: string;
     avatar_url: string;
     created_at: string;
+    /** what they have told us they gave, from Dashboard → My Giving (honour system) */
+    given: number;
+    gifts: number;
 }
 
 // "3h 24m" / "18m" style label for aggregate seconds
@@ -209,12 +215,21 @@ const Dashboard: React.FC = () => {
                 .select('id, email, full_name, avatar_url, created_at')
                 .order('created_at', { ascending: false });
             if (error) throw error;
+            // self-reported gifts (supabase/create_donation_reports.sql); staff read all
+            const gifts = await supabase.from('donation_reports').select('user_id, amount');
+            const given = new Map<string, { sum: number; n: number }>();
+            (gifts.data || []).forEach((g: any) => {
+                const cur = given.get(String(g.user_id)) || { sum: 0, n: 0 };
+                given.set(String(g.user_id), { sum: cur.sum + Number(g.amount || 0), n: cur.n + 1 });
+            });
             setSignupRows((data || []).map((r: any) => ({
                 id: String(r.id),
                 email: String(r.email || ''),
                 full_name: String(r.full_name || ''),
                 avatar_url: String(r.avatar_url || ''),
                 created_at: String(r.created_at || ''),
+                given: given.get(String(r.id))?.sum || 0,
+                gifts: given.get(String(r.id))?.n || 0,
             })));
         } catch (err: any) {
             setSignupsError(err?.message || 'Failed to load sign-ups');
@@ -372,10 +387,6 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleDownloadTaxReceipt = (id: string) => {
-        alert(`Generating PDF receipt for donation ${id}... In a production environment, this would generate and download a formal 501(c)(3) tax-compliant receipt.`);
-    };
-
     const handleEditTestimonial = (testimonial: TestimonialType) => {
         setEditingTestimonialId(testimonial.id);
         setTestimonialEditForm(testimonial);
@@ -525,8 +536,7 @@ const Dashboard: React.FC = () => {
         { id: 'my-events', label: 'My Events', icon: Calendar, role: 'user' },
         { id: 'my-volunteering', label: 'Volunteering', icon: Heart, role: 'user' },
         { id: 'testimonial', label: 'Share Story', icon: MessageSquare, role: 'user' },
-        { id: 'history', label: 'Donations', icon: TrendingUp, role: 'donor' },
-        { id: 'receipts', label: 'Tax Receipts', icon: FileText, role: 'donor' }, 
+        { id: 'giving', label: tr('My Giving', 'Mis donaciones'), icon: Heart, role: 'all' },
         
         // Always Visible (at the end)
         { id: 'buddy-up', label: SUMMER_BUDDY_UP_ENABLED ? 'Summer Buddy Up' : 'Summer Buddy Up (Ended)', icon: Users, role: 'all', path: '/circle-of-friends?tab=summer-buddy-up' },
@@ -1522,55 +1532,6 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderHistorySection = () => (
-        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Donation History</h2>
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-                <table className="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-slate-50 dark:bg-slate-800/50">
-                        <tr className="text-slate-500 dark:text-slate-400">
-                            <th className="py-3 px-4 font-medium">Campaign</th>
-                            <th className="py-3 px-4 font-medium">Date</th>
-                            <th className="py-3 px-4 font-medium text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800/20">
-                        {MOCK_DONATIONS.map((donation) => (
-                            <tr key={donation.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                <td className="py-3 px-4 text-slate-900 dark:text-white font-medium">{donation.campaign}</td>
-                                <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{donation.date}</td>
-                                <td className="py-3 px-4 text-right text-brand-cyan font-bold">${donation.amount}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-
-    const renderReceiptsSection = () => (
-        <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Tax Receipts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MOCK_DONATIONS.map(donation => (
-                    <div key={donation.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors group">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-lg bg-brand-purple/10 flex items-center justify-center text-brand-purple">
-                                <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-slate-900 dark:text-white text-sm font-bold">Receipt #{donation.id.toUpperCase()}</p>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs">{donation.date} • ${donation.amount}</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleDownloadTaxReceipt(donation.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                            <Download className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
 
     const renderMyEventsSection = () => {
         const myRegistrations = eventRegistrations.filter(r => r.userId === user.email);
@@ -2310,8 +2271,8 @@ const Dashboard: React.FC = () => {
            take out of this screen */
         const downloadCsv = () => {
             const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
-            const csv = ['Name,Email,Joined']
-                .concat(rows.map(r => [esc(r.full_name), esc(r.email), esc(r.created_at)].join(',')))
+            const csv = ['Name,Email,Joined,Reported gifts (USD)']
+                .concat(rows.map(r => [esc(r.full_name), esc(r.email), esc(r.created_at), esc(r.given ? r.given.toFixed(2) : '')].join(',')))
                 .join('\n');
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -2359,12 +2320,18 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                     <Stat label="Total sign-ups" value={rows.length} />
                     <Stat label="Last 24 hours" value={n24} />
                     <Stat label="Last 7 days" value={n7} />
                     <Stat label="Last 30 days" value={n30} />
+                    <Stat label={tr('Reported gifts', 'Donaciones reportadas')}
+                          value={`$${rows.reduce((n, r) => n + r.given, 0).toLocaleString()} · ${rows.filter(r => r.given > 0).length} 💙`} />
                 </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {tr('Reported gifts are what people noted themselves in My Giving — a thank-you list, not your books. Zeffy has the real figures.',
+                        'Las donaciones reportadas son las que cada persona anotó en Mis donaciones: una lista para agradecer, no la contabilidad. Zeffy tiene las cifras reales.')}
+                </p>
 
                 <div className="relative">
                     <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -2406,6 +2373,12 @@ const Dashboard: React.FC = () => {
                                         <p className="font-bold text-slate-900 dark:text-white truncate">{r.full_name || '—'}</p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.email}</p>
                                     </div>
+                                    {r.given > 0 && (
+                                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                              title={tr(`${r.gifts} gift(s) reported`, `${r.gifts} donación(es) reportada(s)`)}>
+                                            💙 ${r.given.toLocaleString()}
+                                        </span>
+                                    )}
                                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">{fmt(r.created_at)}</span>
                                 </div>
                             ))}
@@ -2733,8 +2706,9 @@ const Dashboard: React.FC = () => {
             case 'magnetblocks': return renderMagnetBlocksSection();
             case 'helpinghands': return renderHelpingHandsSection();
 
-            case 'history': return renderHistorySection();
-            case 'receipts': return renderReceiptsSection();
+            case 'giving': return <MyGiving />;
+            // the old donor tabs showed sample data; My Giving replaced them
+            case 'history': case 'receipts': return <MyGiving />;
             case 'my-events': return renderMyEventsSection();
             case 'my-volunteering': return renderMyVolunteeringSection();
             case 'testimonial': return renderTestimonialSection();

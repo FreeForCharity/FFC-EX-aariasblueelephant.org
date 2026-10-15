@@ -52,6 +52,8 @@ export interface AdminShop extends FestivalShop {
   /** the shop's private page link — the key in every email we send them */
   manageToken: string;
   emailConfirmedAt?: string | null;
+  /** a change the shop asked for after approval, waiting for an admin */
+  pendingChanges?: Record<string, any> | null;
   status: ShopStatus;
   approvedBy?: string | null;
   approvedAt?: string | null;

@@ -71,6 +71,9 @@ export interface MyShop {
   days: { date: string; count: number }[];
   instore: boolean; online: boolean; online_link: string | null; online_note: string | null;
   codes: { code: string; at: string; used_at: string | null }[];
+  /** a change waiting for an admin, once the shop is on the card */
+  pending_changes: Record<string, any> | null;
+  pending_at: string | null;
 }
 
 export interface Registration {
@@ -228,7 +231,7 @@ export const festivalDb = {
 
   async resendConfirm(id: string) { notify('SHOP_CONFIRM', id); },
 
-  async updateByManage(token: string, form: ShopApplication): Promise<{ ok: boolean; error?: string }> {
+  async updateByManage(token: string, form: ShopApplication): Promise<{ ok: boolean; pending?: boolean; error?: string }> {
     const { data, error } = await supabase.rpc('festival_shop_update_by_manage', { p_token: token, p: form });
     if (error) return { ok: false, error: error.message };
     const r = data as any;
@@ -243,6 +246,13 @@ export const festivalDb = {
   },
 
   /** a logo for a shop with no account: shrunk here, saved by the festival-logo function */
+  /** an admin approves (or turns down) a change a shop on the card asked for */
+  async reviewChange(id: string, accept: boolean): Promise<string | null> {
+    const { data, error } = await supabase.rpc('festival_review_change', { p_shop: id, p_accept: accept });
+    if (error) return error.message;
+    return (data as any)?.ok ? null : (data as any)?.error || 'failed';
+  },
+
   async uploadLogoByManage(token: string, file: File): Promise<string | null> {
     const blob = await squareImage(file, 256).catch(() => null);
     if (!blob) return null;

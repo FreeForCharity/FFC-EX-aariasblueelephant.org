@@ -94,6 +94,10 @@ alter table festival_shops add column if not exists instore boolean not null def
 alter table festival_shops add column if not exists online boolean not null default false;
 alter table festival_shops add column if not exists online_link text;   -- where to book
 alter table festival_shops add column if not exists online_note text;   -- how to use the code
+-- a change an approved shop asked for, waiting for an admin; the card keeps
+-- showing what families were promised until it is approved
+alter table festival_shops add column if not exists pending_changes jsonb;
+alter table festival_shops add column if not exists pending_at timestamptz;
 
 alter table festival_shops enable row level security;
 -- Only admins touch the table directly. Owners go through festival_shop_apply()
@@ -437,7 +441,8 @@ begin
     'qr_token', case when v_shop.status = 'approved' then v_shop.qr_token end,
     'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days,
     'instore', v_shop.instore, 'online', v_shop.online,
-    'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes);
+    'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes,
+    'pending_changes', v_shop.pending_changes, 'pending_at', v_shop.pending_at);
 end $$;
 revoke all on function festival_shop_view(festival_shops) from public, anon, authenticated;
 
@@ -565,9 +570,10 @@ end $$;
 revoke all on function festival_shop_by_manage(text) from public;
 grant execute on function festival_shop_by_manage(text) to anon, authenticated;
 
--- a business can change its offer whenever it likes, before or after approval.
--- An approved change goes live at once; the admin is emailed every time
--- (SHOP_UPDATED), and families who already redeemed are unaffected.
+-- A business can change its offer whenever it likes. Before approval the edit
+-- simply replaces what is under review. Once on the card, the edit waits in
+-- pending_changes for an admin (festival_review_change) and the card keeps
+-- the current offer meanwhile. The admin is emailed either way (SHOP_UPDATED).
 create or replace function festival_shop_update_by_manage(p_token text, p jsonb)
 returns json
 language plpgsql security definer set search_path = public as $$
@@ -579,6 +585,16 @@ begin
     return json_build_object('ok', false, 'error', 'closed');
   end if;
   if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
+  if v_shop.status = 'approved' then
+    -- keep any logo already waiting; the rest is replaced by this edit
+    update festival_shops
+       set pending_changes = f || case when pending_changes ? 'logo_url'
+                                      then jsonb_build_object('logo_url', pending_changes -> 'logo_url')
+                                      else '{}'::jsonb end,
+           pending_at = now(), updated_at = now()
+     where id = v_shop.id;
+    return json_build_object('ok', true, 'id', v_shop.id, 'pending', true);
+  end if;
   update festival_shops set
     name = f ->> 'name', category = f ->> 'category', offer_en = f ->> 'offer_en',
     offer_es = f ->> 'offer_es', detail_en = f ->> 'detail_en', address = f ->> 'address',
@@ -587,7 +603,7 @@ begin
     online_link = f ->> 'online_link', online_note = f ->> 'online_note',
     updated_at = now()
   where id = v_shop.id;
-  return json_build_object('ok', true, 'id', v_shop.id, 'live', v_shop.status = 'approved');
+  return json_build_object('ok', true, 'id', v_shop.id, 'pending', false);
 end $$;
 revoke all on function festival_shop_update_by_manage(text, jsonb) from public;
 grant execute on function festival_shop_update_by_manage(text, jsonb) to anon, authenticated;
@@ -658,6 +674,42 @@ begin
 end $$;
 revoke all on function festival_redeem(text) from public;
 grant execute on function festival_redeem(text) to authenticated;
+
+-- an admin approves or turns down a waiting change
+create or replace function festival_review_change(p_shop text, p_accept boolean)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops; c jsonb;
+begin
+  if not festival_is_admin() then return json_build_object('ok', false, 'error', 'not_admin'); end if;
+  select * into v_shop from festival_shops where id = p_shop;
+  if not found or v_shop.pending_changes is null then return json_build_object('ok', false, 'error', 'nothing_pending'); end if;
+  c := v_shop.pending_changes;
+  if p_accept then
+    update festival_shops set
+      name          = coalesce(c ->> 'name', name),
+      category      = coalesce(c ->> 'category', category),
+      offer_en      = coalesce(c ->> 'offer_en', offer_en),
+      offer_es      = case when c ? 'offer_es' then c ->> 'offer_es' else offer_es end,
+      detail_en     = case when c ? 'detail_en' then c ->> 'detail_en' else detail_en end,
+      address       = case when c ? 'address' then c ->> 'address' else address end,
+      website       = case when c ? 'website' then c ->> 'website' else website end,
+      contact_name  = coalesce(c ->> 'contact_name', contact_name),
+      contact_phone = case when c ? 'contact_phone' then c ->> 'contact_phone' else contact_phone end,
+      instore       = coalesce((c ->> 'instore')::boolean, instore),
+      online        = coalesce((c ->> 'online')::boolean, online),
+      online_link   = case when c ? 'online_link' then c ->> 'online_link' else online_link end,
+      online_note   = case when c ? 'online_note' then c ->> 'online_note' else online_note end,
+      logo_url      = coalesce(c ->> 'logo_url', logo_url),
+      pending_changes = null, pending_at = null, updated_at = now()
+    where id = p_shop;
+  else
+    update festival_shops set pending_changes = null, pending_at = null, updated_at = now() where id = p_shop;
+  end if;
+  return json_build_object('ok', true);
+end $$;
+revoke all on function festival_review_change(text, boolean) from public;
+grant execute on function festival_review_change(text, boolean) to authenticated;
 
 -- ──────────────────────────────────────────── online offers, by code ──
 create or replace function festival_code_text() returns text
