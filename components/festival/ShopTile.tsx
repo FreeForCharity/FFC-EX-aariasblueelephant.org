@@ -28,8 +28,8 @@ const ShopTile: React.FC<Props> = ({ shop, usedOn, onClick }) => {
     >
       <div className={`flex h-full flex-col items-center justify-center gap-1 ${usedOn ? 'opacity-40 grayscale' : ''}`}>
         {shop.logoUrl
-          ? <img src={shop.logoUrl} alt="" className="h-9 w-9 rounded-lg object-contain sm:h-12 sm:w-12" />
-          : <span className="text-2xl sm:text-3xl" aria-hidden>{shop.emoji}</span>}
+          ? <img src={shop.logoUrl} alt="" className="h-12 w-12 rounded-xl bg-white object-contain p-0.5 shadow-sm sm:h-16 sm:w-16" />
+          : <span className="text-3xl sm:text-4xl" aria-hidden>{shop.emoji}</span>}
         {/* wraps rather than truncating: "Spice Ro…" helps nobody */}
         <span className="line-clamp-2 break-words text-[10px] font-bold leading-tight text-slate-700 dark:text-slate-200 sm:text-xs">
           {shop.name}

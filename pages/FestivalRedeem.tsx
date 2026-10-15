@@ -195,8 +195,8 @@ const FestivalRedeem: React.FC = () => {
       </p>
       <div className="mt-4 flex items-center justify-center gap-3">
         {shop.logo_url
-          ? <img src={shop.logo_url} alt="" className="h-14 w-14 rounded-xl object-contain" />
-          : <span className="text-5xl" aria-hidden>{emoji}</span>}
+          ? <img src={shop.logo_url} alt="" className="h-24 w-24 rounded-2xl bg-white object-contain p-1.5 shadow-md ring-1 ring-slate-100" />
+          : <span className="text-6xl" aria-hidden>{emoji}</span>}
       </div>
       <h1 className="mt-3 text-2xl font-black text-slate-900 dark:text-white">{shop.name}</h1>
       <p className="mt-2 text-lg font-bold text-slate-800 dark:text-slate-100">{offer}</p>
