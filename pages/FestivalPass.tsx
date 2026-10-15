@@ -86,8 +86,8 @@ const FestivalPass: React.FC = () => {
           {tr('Get your festival card', 'Obtén tu tarjeta del festival')}
         </h1>
         <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {tr('Sign in and your card appears, with every Mountain House shop on it. Free, and it lasts all November.',
-              'Inicia sesión y aparece tu tarjeta con todas las tiendas de Mountain House. Gratis, y dura todo noviembre.')}
+          {tr('Sign in and your card appears, with every participating business on it. Free, and it lasts all November.',
+              'Inicia sesión y aparece tu tarjeta con todos los negocios participantes. Gratis, y dura todo noviembre.')}
         </p>
         <Button className="mt-8" size="lg" onClick={signIn}>
           <LogIn className="mr-2 h-5 w-5" />{tr('Sign in with Google', 'Iniciar sesión con Google')}

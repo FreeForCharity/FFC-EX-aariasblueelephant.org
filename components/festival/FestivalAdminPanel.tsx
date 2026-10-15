@@ -227,7 +227,7 @@ const FestivalAdminPanel: React.FC = () => {
       '',
       `Families who visited without scanning are not in that count, so the real number is likely higher.`,
       '',
-      `Thank you for welcoming them. If you would like to support inclusive programs for Mountain House kids, you can give here: https://aariasblueelephant.org/give`,
+      `Thank you for welcoming them. If you would like to support inclusive programs for kids in our community, you can give here: https://aariasblueelephant.org/give`,
       '',
       `With gratitude,`,
       `Aaria's Blue Elephant`,
@@ -302,7 +302,7 @@ const FestivalAdminPanel: React.FC = () => {
           {savedSettings.state === 'recruiting'
             ? tr('Shops can sign up. Families cannot make cards yet, and signs do not redeem.', 'Las tiendas se inscriben. Las familias aún no crean tarjetas y los letreros no canjean.')
             : savedSettings.state === 'live'
-              ? tr('Families make cards. Signs redeem between the offer dates (Mountain House time).', 'Las familias crean tarjetas. Los letreros canjean entre las fechas de oferta (hora de Mountain House).')
+              ? tr('Families make cards. Signs redeem between the offer dates (Pacific time).', 'Las familias crean tarjetas. Los letreros canjean entre las fechas de oferta (hora del Pacífico).')
               : tr('Nothing redeems. Reports stay available.', 'Nada se canjea. Los informes siguen disponibles.')}
         </p>
 

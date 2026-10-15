@@ -1,7 +1,7 @@
 /**
  * Inclusion Festival & Resource Fair — shared types.
  *
- * A Mountain House business signs in with Google and applies with an offer. Once
+ * A local business signs in with Google and applies with an offer. Once
  * an admin approves it, the shop prints a QR sign for the counter. Families scan
  * the sign with their own phone, sign in, and tap Redeem — one redemption per
  * Google account per shop, all of November.

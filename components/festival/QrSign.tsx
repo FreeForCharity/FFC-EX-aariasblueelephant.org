@@ -55,7 +55,7 @@ export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, log
         <img src="/logo.webp" alt="" className="h-[2.2em] w-auto" />
         <div className="text-left leading-tight">
           <p className="text-[0.95em] font-black text-sky-700">Inclusion Festival</p>
-          <p className="text-[0.7em] font-bold text-slate-500">Aaria's Blue Elephant · Mountain House</p>
+          <p className="text-[0.7em] font-bold text-slate-500">Aaria's Blue Elephant · aariasblueelephant.org</p>
         </div>
       </div>
 
