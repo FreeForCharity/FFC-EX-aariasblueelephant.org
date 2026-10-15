@@ -277,13 +277,13 @@ const FestivalAdminPanel: React.FC = () => {
 
   /* ── render ────────────────────────────────────────────────────────── */
   const counts = {
-    open: (shops || []).filter((s) => s.status === 'pending' || s.status === 'waitlist').length,
+    open: (shops || []).filter((s) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges).length,
     approved: (shops || []).filter((s) => s.status === 'approved').length,
     unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
     all: (shops || []).length,
   };
   const visible = (shops || [])
-    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' : s.status === filter))
+    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -404,6 +404,30 @@ const FestivalAdminPanel: React.FC = () => {
                       {s.pledgePct ? ` · ${tr('pledge', 'donación')} ${s.pledgePct}%` : ''}
                       {' · '}{tr('signed up', 'inscrita')} {fmtShortDay(s.createdAt, es)}
                     </p>
+                    {s.pendingChanges && (
+                      <div className="mt-2 rounded-lg border-2 border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+                        <p className="font-black uppercase">{tr('Change requested', 'Cambio solicitado')}</p>
+                        {(['offer_en', 'offer_es', 'detail_en', 'name', 'address', 'online_link', 'online_note'] as const).map((k) => {
+                          const now = ({ offer_en: s.offerEn, offer_es: s.offerEs, detail_en: s.detailEn, name: s.name, address: s.address, online_link: s.onlineLink, online_note: s.onlineNote } as any)[k] || '';
+                          const next = s.pendingChanges![k] ?? '';
+                          return next !== now ? (
+                            <p key={k} className="mt-1"><span className="font-bold">{k.replace('_en', '').replace('_', ' ')}:</span> <s className="opacity-60">{now || '—'}</s> → <strong>{next || '—'}</strong></p>
+                          ) : null;
+                        })}
+                        {s.pendingChanges.logo_url && (
+                          <p className="mt-1 flex items-center gap-2"><span className="font-bold">{tr('logo', 'logo')}:</span>
+                            <img src={s.pendingChanges.logo_url} alt="" className="h-8 w-8 rounded bg-white object-contain" /></p>
+                        )}
+                        <div className="mt-2 flex gap-2">
+                          <Button size="sm" onClick={async () => { fail(await festivalDb.reviewChange(s.id, true)); load(); }}>
+                            <Check className="mr-1 h-4 w-4" />{tr('Approve change', 'Aprobar cambio')}
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={async () => { fail(await festivalDb.reviewChange(s.id, false)); load(); }}>
+                            {tr('Turn down', 'Rechazar')}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     {!s.offerEs && s.status !== 'declined' && (
                       <p className="mt-1 text-xs font-bold text-amber-600">{tr('No Spanish offer yet — add one with Edit.', 'Aún sin oferta en español: agrégala con Editar.')}</p>
                     )}

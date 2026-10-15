@@ -31,7 +31,7 @@ const FestivalMyShop: React.FC = () => {
   const [justConfirmed, setJustConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<'' | 'saved' | 'pending'>('');
   const [resent, setResent] = useState(false);
   const [lostEmail, setLostEmail] = useState('');
   const [lostSent, setLostSent] = useState(false);
@@ -69,14 +69,14 @@ const FestivalMyShop: React.FC = () => {
 
   const save = async (v: ShopFormValues, logo: File | null) => {
     if (!key) return;
-    setBusy(true); setError(''); setSaved(false);
+    setBusy(true); setError(''); setSaved('');
     const r = await festivalDb.updateByManage(key, v);
     if (r.ok && logo) {
       const url = await festivalDb.uploadLogoByManage(key, logo);
       if (!url) setError(tr('Your details saved, but the logo did not upload. Try a PNG or JPG.', 'Tus datos se guardaron, pero el logo no se subió. Prueba un PNG o JPG.'));
     }
     if (!r.ok) setError(tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.'));
-    else setSaved(true);
+    else setSaved(r.pending ? 'pending' : 'saved');
     setBusy(false);
     await load(key);
   };
@@ -187,6 +187,16 @@ const FestivalMyShop: React.FC = () => {
       </p>
       <h1 className="mt-1 text-3xl font-black text-slate-900 dark:text-white">{shop.name}</h1>
       <p className="mt-1 font-semibold text-sky-800 dark:text-sky-300">{es ? (shop.offer_es || shop.offer_en) : shop.offer_en}</p>
+      {shop.pending_changes && (
+        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+          <p className="font-black">{tr('Your change is waiting for approval', 'Tu cambio está esperando aprobación')}</p>
+          {shop.pending_changes.offer_en && shop.pending_changes.offer_en !== shop.offer_en && (
+            <p className="mt-1">{tr('New offer:', 'Oferta nueva:')} <strong>{shop.pending_changes.offer_en}</strong></p>
+          )}
+          {shop.pending_changes.logo_url && <p className="mt-1">{tr('New logo uploaded.', 'Logo nuevo subido.')}</p>}
+          <p className="mt-1 text-xs">{tr('Your current offer stays live until we approve it.', 'Tu oferta actual sigue publicada hasta que la aprobemos.')}</p>
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         {[
@@ -285,13 +295,13 @@ const FestivalMyShop: React.FC = () => {
             {tr('Change your offer or logo', 'Cambia tu oferta o tu logo')}
           </summary>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            {tr('Changes go live on our website straight away. Your QR sign keeps working — no need to print a new one.',
-                'Los cambios aparecen en nuestro sitio de inmediato. Tu letrero QR sigue funcionando: no hace falta imprimir uno nuevo.')}
+            {tr('Our team reviews changes before they go live, usually within a day. Until then your current offer stays on the website. Your QR sign keeps working — no need to print a new one.',
+                'Nuestro equipo revisa los cambios antes de publicarlos, normalmente en un día. Mientras tanto tu oferta actual sigue en el sitio. Tu letrero QR sigue funcionando: no hace falta imprimir uno nuevo.')}
           </p>
           <div className="mt-5">
             <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
                       submitLabel={tr('Save changes', 'Guardar cambios')} onSubmit={save} />
-            {saved && <p className="mt-3 text-center text-sm font-bold text-green-600">{tr('Saved ✓ — live on the website now', 'Guardado ✓: ya está en el sitio')}</p>}
+            {saved === 'pending' && <p className="mt-3 text-center text-sm font-bold text-amber-700">{tr('Sent for approval ✓ — we will review it shortly.', 'Enviado para aprobación ✓: lo revisaremos pronto.')}</p>}
           </div>
         </details>
       )}

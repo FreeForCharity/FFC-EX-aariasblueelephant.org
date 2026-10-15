@@ -54,6 +54,7 @@ export function toAdminShop(p: any): AdminShop {
     qrToken: p.qr_token,
     manageToken: p.manage_token,
     emailConfirmedAt: p.email_confirmed_at,
+    pendingChanges: p.pending_changes || null,
     status: p.status,
     approvedBy: p.approved_by,
     approvedAt: p.approved_at,

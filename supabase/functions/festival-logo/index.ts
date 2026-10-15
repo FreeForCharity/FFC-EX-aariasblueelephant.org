@@ -9,8 +9,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
  * image, already shrunk to a small square in the browser; this checks the
  * token, stores the file and points the shop at it.
  *
- * Allowed before and after approval — a business can refresh its logo any
- * time; the admin hears about every change through SHOP_UPDATED.
+ * Allowed before and after approval. Once a shop is on the card, the new logo
+ * waits in pending_changes for an admin, like every other change.
  */
 
 const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -35,7 +35,7 @@ serve(async (req) => {
     const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
     if (bytes.length > 400_000) return json({ error: 'too_big' }, 413);
 
-    const { data: shop } = await sb.from('festival_shops').select('id, status')
+    const { data: shop } = await sb.from('festival_shops').select('id, status, pending_changes')
       .eq('manage_token', token).maybeSingle();
     if (!shop) return json({ error: 'bad_token' }, 403);
     if (!['unconfirmed', 'pending', 'waitlist', 'approved'].includes(shop.status)) return json({ error: 'closed' }, 409);
@@ -44,7 +44,15 @@ serve(async (req) => {
     const up = await sb.storage.from('festival-logos').upload(path, bytes, { contentType: m[1], upsert: false });
     if (up.error) return json({ error: up.error.message }, 500);
     const url = sb.storage.from('festival-logos').getPublicUrl(path).data.publicUrl;
-    await sb.from('festival_shops').update({ logo_url: url, updated_at: new Date().toISOString() }).eq('id', shop.id);
+    const now = new Date().toISOString();
+    if (shop.status === 'approved') {
+      // on the card already: the new logo waits for an admin like any other change
+      await sb.from('festival_shops').update({
+        pending_changes: { ...(shop.pending_changes || {}), logo_url: url }, pending_at: now, updated_at: now,
+      }).eq('id', shop.id);
+      return json({ ok: true, url, pending: true });
+    }
+    await sb.from('festival_shops').update({ logo_url: url, updated_at: now }).eq('id', shop.id);
     return json({ ok: true, url });
   } catch (e: any) {
     return json({ error: e.message }, 500);
