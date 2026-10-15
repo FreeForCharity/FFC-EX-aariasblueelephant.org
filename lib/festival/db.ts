@@ -337,13 +337,14 @@ export const festivalDb = {
 
   async registrations(): Promise<Registration[] | null> {
     const passes = await supabase.from('festival_passes')
-      .select('id, short_code, display_name, email, party_size, source, created_at, email_optin')
+      .select('id, user_id, short_code, display_name, email, party_size, source, created_at, email_optin')
       .order('created_at', { ascending: false });
     if (passes.error) return null;
-    const used = await supabase.from('festival_punches').select('user_id, pass_id');
+    // count by person, not by card: redemptions outlive a deleted card
+    const used = await supabase.from('festival_punches').select('user_id');
     const tally = new Map<string, number>();
-    (used.data || []).forEach((r: any) => { if (r.pass_id) tally.set(r.pass_id, (tally.get(r.pass_id) || 0) + 1); });
-    return (passes.data || []).map((r: any) => ({ ...r, redemptions: tally.get(r.id) || 0 }));
+    (used.data || []).forEach((r: any) => tally.set(r.user_id, (tally.get(r.user_id) || 0) + 1));
+    return (passes.data || []).map((r: any) => ({ ...r, redemptions: tally.get(r.user_id) || 0 }));
   },
 
   async deletePass(id: string): Promise<string | null> {

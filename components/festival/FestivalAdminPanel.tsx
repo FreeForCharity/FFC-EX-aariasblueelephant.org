@@ -261,7 +261,7 @@ const FestivalAdminPanel: React.FC = () => {
       s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy]),
   ]);
   const csvReport = () => downloadCsv('festival-redemptions-by-shop.csv', [
-    ['Shop', 'Redemptions', 'Joined at their counter', 'Online codes', 'Online codes used', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
+    ['Shop', 'Redemptions', 'New families via them', 'Online codes', 'Online codes used', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
     ...(report?.shops || []).map((s) => [s.name, s.redemptions, s.new_cards, s.online_codes, s.codes_used,
       s.first_at?.slice(0, 10), s.last_at?.slice(0, 10), s.pledge_pct, s.contact_name, s.contact_email, s.contact_phone]),
   ]);
@@ -450,7 +450,7 @@ const FestivalAdminPanel: React.FC = () => {
             { n: regs?.length || 0, l: tr('family cards', 'tarjetas de familias') },
             { n: totalRedemptions, l: tr('offers redeemed', 'ofertas canjeadas') },
             { n: report?.shops.filter((s) => s.redemptions > 0).length || 0, l: tr('shops with visits', 'tiendas con visitas') },
-            { n: totalNew, l: tr('joined at a shop’s sign', 'se unieron en un letrero') },
+            { n: totalNew, l: tr('new families via shops', 'familias nuevas por tiendas') },
             { n: regs?.filter((r) => r.email_optin).length || 0, l: tr('want event emails', 'quieren correos de eventos') },
           ].map((x) => (
             <div key={x.l} className="rounded-xl bg-slate-50 p-3 text-center dark:bg-slate-800">
@@ -467,7 +467,7 @@ const FestivalAdminPanel: React.FC = () => {
                 <tr>
                   <th className="py-2 pr-3">{tr('Shop', 'Tienda')}</th>
                   <th className="py-2 pr-3 text-right">{tr('Redeemed', 'Canjes')}</th>
-                  <th className="py-2 pr-3 text-right">{tr('At their sign', 'En su letrero')}</th>
+                  <th className="py-2 pr-3 text-right">{tr('New families via them', 'Familias nuevas por ellos')}</th>
                   <th className="py-2 pr-3 text-right">{tr('Online codes (used)', 'Códigos en línea (usados)')}</th>
                   <th className="py-2 pr-3">{tr('Last', 'Último')}</th>
                   <th className="py-2" />
@@ -491,8 +491,8 @@ const FestivalAdminPanel: React.FC = () => {
               </tbody>
             </table>
             <p className="mt-2 text-xs text-slate-500">
-              {tr('“At their sign” = families who made their card by scanning that shop’s sign — people the shop brought in. Shops only ever get counts, never names.',
-                  '“En su letrero” = familias que crearon su tarjeta al escanear el letrero de esa tienda. Las tiendas solo reciben números, nunca nombres.')}
+              {tr('“New families via them” = families whose first festival card came from that shop’s sign or code — people the shop brought in. Shops only ever get counts and codes, never names.',
+                  '“Familias nuevas por ellos” = familias cuya primera tarjeta vino del letrero o código de esa tienda. Las tiendas solo reciben números y códigos, nunca nombres.')}
             </p>
           </div>
         )}

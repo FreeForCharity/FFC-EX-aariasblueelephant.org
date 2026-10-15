@@ -35,7 +35,10 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     // Check if we should show the dashboard prompt
     // User requested to show it on every refresh, not just first sign-in
-    if (user && location.pathname !== '/dashboard') {
+    // not on the festival screens: a family is standing at a shop counter with
+    // the redeem button or their code on screen, and the toast would sit on it
+    const atCounter = location.pathname.startsWith('/r/') || location.pathname.startsWith('/InclusionFestival');
+    if (user && location.pathname !== '/dashboard' && !atCounter) {
       const timer = setTimeout(() => setShowDashboardPrompt(true), 1500); // Wait 1.5s for page to settle
       
       const hideTimer = setTimeout(() => {
