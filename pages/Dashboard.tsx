@@ -51,6 +51,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
+import { isFestivalAdmin } from '../lib/festival/types';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
@@ -534,6 +535,8 @@ const Dashboard: React.FC = () => {
         // Games gallery always shows; Buddy Up is board-only once the summer cohort has ended
         if (item.id === 'games') return true;
         if (item.id === 'buddy-up') return SUMMER_BUDDY_UP_ENABLED || isBoard;
+        // anyone on the organisation's domain runs the festival, board role or not
+        if (item.id === 'festival') return isBoard || isFestivalAdmin(user?.email);
 
         // For Board members: only show management tools and designated donor paths
         // For Board members: show management tools AND global views (Overview, Wheel, etc.)

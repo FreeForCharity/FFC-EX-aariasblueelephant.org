@@ -1,6 +1,17 @@
 import React from 'react';
-import { SpotCount } from '../../lib/festival/store';
 import { tr } from '../../lib/lang';
+
+export interface SpotCount {
+  taken: number;
+  spots: number;
+  free: number;
+  waitlist: number;
+  full: boolean;
+}
+
+export const toSpotCount = (taken: number, waitlist: number, spots: number): SpotCount => ({
+  taken, waitlist, spots, free: Math.max(0, spots - taken), full: taken >= spots,
+});
 
 /**
  * The scarcity counter. Shown to businesses on the sign-up page — urgency that
@@ -38,8 +49,8 @@ const SpotMeter: React.FC<{ counts: SpotCount; compact?: boolean }> = ({ counts,
           {counts.full
             ? tr('Every spot is claimed. Join the waiting list and we will be in touch if one opens up — or if we open a second round.',
                  'Todos los lugares están tomados. Únete a la lista de espera y te avisamos si se libera uno, o si abrimos una segunda ronda.')
-            : tr('Spots are first come, first served. Your place is held for 48 hours while we confirm your offer.',
-                 'Los lugares se asignan por orden de llegada. Tu lugar se aparta por 48 horas mientras confirmamos tu oferta.')}
+            : tr('Spots are first come, first served. We review every offer and confirm within 48 hours.',
+                 'Los lugares se asignan por orden de llegada. Revisamos cada oferta y confirmamos en 48 horas.')}
           {counts.waitlist > 0 && ' ' + tr(`${counts.waitlist} on the waiting list.`, `${counts.waitlist} en lista de espera.`)}
         </p>
       )}

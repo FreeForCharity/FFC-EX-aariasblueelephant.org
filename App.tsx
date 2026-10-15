@@ -121,7 +121,8 @@ const Playtest = lazy(() => import('./pages/Playtest'));
 const Festival = lazy(() => import('./pages/Festival'));
 const FestivalShopJoin = lazy(() => import('./pages/FestivalShopJoin'));
 const FestivalPass = lazy(() => import('./pages/FestivalPass'));
-const FestivalShopConsole = lazy(() => import('./pages/FestivalShopConsole'));
+const FestivalMyShop = lazy(() => import('./pages/FestivalMyShop'));
+const FestivalRedeem = lazy(() => import('./pages/FestivalRedeem'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -177,11 +178,15 @@ const App: React.FC = () => {
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
                 <Route path="/games" element={<Games />} />
 
-                {/* Inclusion Festival & Resource Fair — November punch card */}
+                {/* Inclusion Festival & Resource Fair — November offers, redeemed by QR */}
                 <Route path="/InclusionFestival" element={<Festival />} />
                 <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
                 <Route path="/InclusionFestival/pass" element={<FestivalPass />} />
-                <Route path="/InclusionFestival/shop" element={<FestivalShopConsole />} />
+                <Route path="/InclusionFestival/myshop" element={<FestivalMyShop />} />
+                {/* the QR on a shop's counter sign — kept short so the code stays easy to scan */}
+                <Route path="/r/:token" element={<FestivalRedeem />} />
+                {/* the old till-screen link now lives on the shop owner's own page */}
+                <Route path="/InclusionFestival/shop" element={<Navigate to="/InclusionFestival/myshop" replace />} />
                 {/* the festival admin lives in the dashboard, not on its own page */}
                 <Route path="/InclusionFestival/admin" element={<Navigate to="/dashboard?view=festival" replace />} />
                 {/* aliases: a short link volunteers can read out loud, plus

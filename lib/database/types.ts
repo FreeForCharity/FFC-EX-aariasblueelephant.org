@@ -49,7 +49,7 @@ export interface IDatabaseProvider {
 
   // Registrations
   getEventRegistrations(userId?: string): Promise<EventRegistration[]>;
-  createEventRegistration(reg: Partial<EventRegistration>): Promise<void>;
+  createEventRegistration(reg: Partial<EventRegistration>): Promise<string | void>;
   updateEventRegistration(id: string, data: Partial<EventRegistration>): Promise<void>;
   deleteEventRegistration(id: string): Promise<void>;
 

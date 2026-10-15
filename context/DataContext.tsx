@@ -1,6 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { db } from '../lib/database';
+import { supabase } from '../lib/supabase';
+
+/**
+ * Ask the email function to send the email for one record. Fire and forget:
+ * an email that fails must never undo a registration or an approval. The
+ * function looks the record up itself and sends each email at most once.
+ */
+const notify = (type: string, id?: string | void) => {
+  if (!id) return;
+  supabase.functions.invoke('send-registration-email', { body: { type, id } })
+    .catch((e) => console.warn('email not sent', type, e));
+};
 
 interface MutationResult {
   success: boolean;
@@ -291,7 +303,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>): Promise<MutationResult> => {
     try {
-      await db.createEventRegistration({ ...data, date: new Date().toISOString().split('T')[0], status: 'Pending' });
+      const newId = await db.createEventRegistration({ ...data, date: new Date().toISOString().split('T')[0], status: 'Pending' });
+      notify('REGISTRATION_RECEIVED', newId);
       const session = await db.getSession();
       const regs = await db.getEventRegistrations(session?.user?.id || session?.$id);
       setEventRegistrations(regs);
@@ -304,6 +317,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const approveRegistration = async (id: string): Promise<MutationResult> => {
     try {
       await db.updateEventRegistration(id, { status: 'Approved' });
+      notify('REGISTRATION_APPROVED', id);
       setEventRegistrations(eventRegistrations.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
       return { success: true };
     } catch (error: any) {
