@@ -221,7 +221,6 @@ const FestivalRedeem: React.FC = () => {
           <p className="mt-2 text-slate-600 dark:text-slate-400">
             {tr('This offer was used on', 'Esta oferta se usó el')} {fmtDay(usedAt.slice(0, 10), es)}, {fmtTime(usedAt, es)}.
           </p>
-          <p className="mt-1 text-sm text-slate-500">{tr('Each offer is once per family.', 'Cada oferta es una vez por familia.')}</p>
         </div>
         <Link to="/InclusionFestival/pass" className="mt-6 block">
           <Button fullWidth variant="secondary">{tr('See my card', 'Ver mi tarjeta')}</Button>

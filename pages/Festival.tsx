@@ -39,14 +39,14 @@ const Festival: React.FC = () => {
         <div className="min-w-0">
           <h1 className="text-2xl font-black leading-tight text-slate-900 dark:text-white sm:text-3xl">
             {tr('Inclusion Festival', 'Festival de Inclusión')}{' '}
-            <span className="text-sky-700 dark:text-sky-400">{tr('& Resource Fair', 'y Feria de Recursos')}</span>
+            <span className="text-sky-700 dark:text-sky-400">{tr('& Special Needs Resource Fair', 'y Feria de Recursos para Necesidades Especiales')}</span>
           </h1>
           <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm font-semibold text-slate-600 dark:text-slate-300 md:justify-start">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-sky-600" />{fmtDay(settings.festivalDate, es, true)}</span>
             {settings.eventTime && <span className="inline-flex items-center gap-1.5"><Clock className="h-4 w-4 text-sky-600" />{settings.eventTime}</span>}
             {settings.venue && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-sky-600" />{settings.venue}</span>}
             <span className="inline-flex items-center gap-1.5"><Ticket className="h-4 w-4 text-sky-600" />
-              {tr('Offers', 'Ofertas')} {fmtDay(settings.redeemFrom, es)} – {fmtDay(settings.redeemTo, es)}</span>
+              {tr(`Offers through ${fmtDay(settings.redeemTo, false)}`, `Ofertas hasta el ${fmtDay(settings.redeemTo, true)}`)}</span>
           </p>
         </div>
         <div className="shrink-0">

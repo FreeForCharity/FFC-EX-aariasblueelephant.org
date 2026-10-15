@@ -4,8 +4,10 @@ import { Store, MailCheck, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter, { SpotCount, toSpotCount } from '../components/festival/SpotMeter';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
+import ShopSteps from '../components/festival/ShopSteps';
 import { festivalDb } from '../lib/festival/db';
-import { SHOP_KEY } from '../lib/festival/store';
+import { SHOP_KEY, DEFAULT_SETTINGS } from '../lib/festival/store';
+import { FestivalSettings } from '../lib/festival/types';
 import { tr } from '../lib/lang';
 
 /**
@@ -18,6 +20,7 @@ import { tr } from '../lib/lang';
 const FestivalShopJoin: React.FC = () => {
   const navigate = useNavigate();
   const [counts, setCounts] = useState<SpotCount | null>(null);
+  const [settings, setSettings] = useState<FestivalSettings>(DEFAULT_SETTINGS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -27,7 +30,7 @@ const FestivalShopJoin: React.FC = () => {
 
   useEffect(() => {
     Promise.all([festivalDb.spotCounts(), festivalDb.settings()])
-      .then(([c, s]) => setCounts(toSpotCount(c.taken, c.waitlist, s.spots)));
+      .then(([c, s]) => { setCounts(toSpotCount(c.taken, c.waitlist, s.spots)); setSettings(s); });
     try { setKnown(localStorage.getItem(SHOP_KEY)); } catch { /* private mode */ }
   }, []);
 
@@ -70,7 +73,7 @@ const FestivalShopJoin: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex items-center gap-3">
         <Store className="h-8 w-8 text-sky-700 dark:text-sky-400" />
         <h1 className="text-3xl font-black text-slate-900 dark:text-white">{tr('Join the Inclusion Festival', 'Únete al Festival de Inclusión')}</h1>
@@ -89,7 +92,11 @@ const FestivalShopJoin: React.FC = () => {
         </div>
       )}
 
-      {counts && <div className="mt-6"><SpotMeter counts={counts} /></div>}
+      <div className="mt-8"><ShopSteps redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo} /></div>
+
+      <div className="mx-auto mt-12 max-w-2xl" id="signup">
+      <h2 className="text-2xl font-black text-slate-900 dark:text-white">{tr('Sign up your shop', 'Inscribe tu negocio')}</h2>
+      {counts && <div className="mt-4"><SpotMeter counts={counts} /></div>}
 
       <div className="mt-8">
         <ShopForm askEmail busy={busy} error={error} onSubmit={submit}
@@ -120,6 +127,7 @@ const FestivalShopJoin: React.FC = () => {
             <Button type="submit" variant="secondary">{tr('Email me my link', 'Envíame mi enlace')}</Button>
           </form>
         )}
+      </div>
       </div>
     </div>
   );
