@@ -87,6 +87,14 @@ create index if not exists festival_shops_status_idx on festival_shops (status);
 create unique index if not exists festival_shops_one_per_owner
   on festival_shops (owner_id) where status in ('pending','approved','waitlist');
 
+-- Where the offer can be used. In store: a QR sign at the counter. Online
+-- (classes, tutoring, anything booked on the web): the family gets a personal
+-- code on our site and quotes it when they book. A shop can do both.
+alter table festival_shops add column if not exists instore boolean not null default true;
+alter table festival_shops add column if not exists online boolean not null default false;
+alter table festival_shops add column if not exists online_link text;   -- where to book
+alter table festival_shops add column if not exists online_note text;   -- how to use the code
+
 alter table festival_shops enable row level security;
 -- Only admins touch the table directly. Owners go through festival_shop_apply()
 -- and festival_my_shop(), which never let them approve themselves.
@@ -105,7 +113,8 @@ create or replace view festival_shops_public
 with (security_invoker = off) as
   select id, name, category, logo_url,
          offer_en, offer_es, detail_en, detail_es,
-         address, website, spot, redeem_from, redeem_to
+         address, website, spot, redeem_from, redeem_to,
+         instore, online, online_link, online_note
   from festival_shops
   where status = 'approved';
 grant select on festival_shops_public to anon, authenticated;
@@ -232,6 +241,12 @@ create table if not exists festival_punches (
 );
 -- THE rule: one offer per Google account per shop, card or no card
 create unique index if not exists festival_punches_once on festival_punches (user_id, shop_id);
+-- online redemptions carry a personal code the family quotes when booking;
+-- the business ticks it off on its shop page
+alter table festival_punches add column if not exists method text not null default 'qr';
+alter table festival_punches add column if not exists code text;
+alter table festival_punches add column if not exists used_at timestamptz;
+create unique index if not exists festival_punches_code_idx on festival_punches (code) where code is not null;
 create index if not exists festival_punches_shop_idx on festival_punches (shop_id, local_date);
 
 alter table festival_punches enable row level security;
@@ -386,14 +401,27 @@ begin
     'detail_en',     nullif(left(btrim(coalesce(p ->> 'detail_en', '')), 200), ''),
     'address',       nullif(left(btrim(coalesce(p ->> 'address', '')), 140), ''),
     'website',       nullif(web, ''),
-    'contact_phone', nullif(left(btrim(coalesce(p ->> 'contact_phone', '')), 30), ''));
+    'contact_phone', nullif(left(btrim(coalesce(p ->> 'contact_phone', '')), 30), ''),
+    -- at least one of the two; an offer nobody can use is no offer
+    'instore', case when coalesce((p ->> 'online')::boolean, false) then coalesce((p ->> 'instore')::boolean, false) else true end,
+    'online', coalesce((p ->> 'online')::boolean, false),
+    'online_link', case when coalesce((p ->> 'online')::boolean, false) then
+                     nullif(case when btrim(coalesce(p ->> 'online_link', '')) ~* '^https?://' or btrim(coalesce(p ->> 'online_link', '')) = ''
+                                 then left(btrim(coalesce(p ->> 'online_link', '')), 300)
+                                 else 'https://' || left(btrim(p ->> 'online_link'), 290) end, '') end,
+    'online_note', case when coalesce((p ->> 'online')::boolean, false) then
+                     nullif(left(btrim(coalesce(p ->> 'online_note', '')), 200), '') end);
 end $$;
 
 -- what a shop's own page shows: its details, its QR once approved, its numbers
 create or replace function festival_shop_view(v_shop festival_shops) returns json
 language plpgsql stable security definer set search_path = public as $$
-declare v_days json; v_total int; v_today int; v_new int;
+declare v_days json; v_total int; v_today int; v_new int; v_codes json;
 begin
+  -- codes only, never names: shops get numbers and codes, nothing about who
+  select coalesce(json_agg(json_build_object('code', code, 'at', punched_at, 'used_at', used_at) order by punched_at desc), '[]'::json)
+    into v_codes
+    from festival_punches where shop_id = v_shop.id and code is not null;
   select count(*), count(*) filter (where local_date = festival_today()), count(*) filter (where new_card)
     into v_total, v_today, v_new
     from festival_punches where shop_id = v_shop.id;
@@ -407,7 +435,9 @@ begin
     'contact_phone', v_shop.contact_phone, 'pledge_pct', v_shop.pledge_pct,
     'status', v_shop.status, 'redeem_from', v_shop.redeem_from, 'redeem_to', v_shop.redeem_to,
     'qr_token', case when v_shop.status = 'approved' then v_shop.qr_token end,
-    'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days);
+    'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days,
+    'instore', v_shop.instore, 'online', v_shop.online,
+    'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes);
 end $$;
 revoke all on function festival_shop_view(festival_shops) from public, anon, authenticated;
 
@@ -462,6 +492,8 @@ begin
       name = f ->> 'name', category = f ->> 'category', offer_en = f ->> 'offer_en',
       offer_es = f ->> 'offer_es', detail_en = f ->> 'detail_en', address = f ->> 'address',
       website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
+      instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
+      online_link = f ->> 'online_link', online_note = f ->> 'online_note',
       updated_at = now()
     where id = v_shop.id;
     return json_build_object('ok', true, 'id', v_shop.id, 'resent', true);
@@ -481,10 +513,12 @@ begin
 
   insert into festival_shops (id, name, category, offer_en, offer_es, detail_en, address, website,
                               contact_name, contact_email, contact_phone, status, confirm_token,
+                              instore, online, online_link, online_note,
                               redeem_from, redeem_to)
   values (v_id, f ->> 'name', f ->> 'category', f ->> 'offer_en', f ->> 'offer_es', f ->> 'detail_en',
           f ->> 'address', f ->> 'website', f ->> 'contact_name', v_email, f ->> 'contact_phone',
           'unconfirmed', replace(gen_random_uuid()::text, '-', ''),
+          (f ->> 'instore')::boolean, (f ->> 'online')::boolean, f ->> 'online_link', f ->> 'online_note',
           (select redeem_from from festival_settings where id = 1),
           (select redeem_to from festival_settings where id = 1))
   returning * into v_shop;
@@ -547,6 +581,8 @@ begin
     name = f ->> 'name', category = f ->> 'category', offer_en = f ->> 'offer_en',
     offer_es = f ->> 'offer_es', detail_en = f ->> 'detail_en', address = f ->> 'address',
     website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
+    instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
+    online_link = f ->> 'online_link', online_note = f ->> 'online_note',
     updated_at = now()
   where id = v_shop.id;
   return json_build_object('ok', true);
@@ -621,6 +657,90 @@ end $$;
 revoke all on function festival_redeem(text) from public;
 grant execute on function festival_redeem(text) to authenticated;
 
+-- ──────────────────────────────────────────── online offers, by code ──
+create or replace function festival_code_text() returns text
+language plpgsql volatile as $$
+declare a text := 'ACDEFGHJKLMNPQRTUVWXY34679'; v text := 'ABE-'; i int;
+begin
+  for i in 1..4 loop v := v || substr(a, 1 + floor(random() * length(a))::int, 1); end loop;
+  return v;
+end $$;
+
+-- the family's personal code for an online offer — one per Google account per
+-- business, the same rule as the counter (a counter redemption counts too)
+create or replace function festival_online_code(p_shop text)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  v_shop  festival_shops;
+  v_state text;
+  v_pass  festival_passes;
+  v_new   boolean := false;
+  v_row   festival_punches;
+  v_try   int := 0;
+  v_today date := festival_today();
+begin
+  if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
+  select * into v_shop from festival_shops where id = p_shop and status = 'approved' and online;
+  if not found then return json_build_object('ok', false, 'error', 'not_online'); end if;
+
+  select * into v_row from festival_punches where user_id = auth.uid() and shop_id = v_shop.id;
+  if found then
+    return json_build_object('ok', v_row.code is not null, 'error', case when v_row.code is null then 'already_used' end,
+                             'code', v_row.code, 'punched_at', v_row.punched_at, 'used_at', v_row.used_at, 'again', true);
+  end if;
+
+  select state into v_state from festival_settings where id = 1;
+  if v_state = 'ended' or v_today > v_shop.redeem_to then
+    return json_build_object('ok', false, 'error', 'ended', 'to', v_shop.redeem_to);
+  end if;
+  if v_state <> 'live' or v_today < v_shop.redeem_from then
+    return json_build_object('ok', false, 'error', 'not_started', 'from', v_shop.redeem_from);
+  end if;
+
+  select * into v_pass from festival_passes where user_id = auth.uid();
+  if not found then
+    v_pass := festival_ensure_pass(null, 1, v_shop.id);
+    v_new := true;
+  end if;
+
+  loop
+    v_try := v_try + 1;
+    begin
+      insert into festival_punches (user_id, pass_id, shop_id, new_card, method, code)
+      values (auth.uid(), v_pass.id, v_shop.id, v_new, 'online', festival_code_text())
+      returning * into v_row;
+      exit;
+    exception when unique_violation then
+      -- a second tab got there first: hand back what it made
+      select * into v_row from festival_punches where user_id = auth.uid() and shop_id = v_shop.id;
+      if found then exit; end if;
+      if v_try >= 8 then raise; end if;   -- otherwise a code clash: try another
+    end;
+  end loop;
+
+  return json_build_object('ok', true, 'code', v_row.code, 'punched_at', v_row.punched_at,
+                           'new_card', v_new, 'again', false);
+end $$;
+revoke all on function festival_online_code(text) from public;
+grant execute on function festival_online_code(text) to authenticated;
+
+-- the business ticks a code off when someone books with it (or unticks a slip)
+create or replace function festival_mark_code(p_manage text, p_code text, p_used boolean)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops;
+begin
+  select * into v_shop from festival_shops where manage_token = p_manage and coalesce(p_manage, '') <> '';
+  if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  update festival_punches set used_at = case when p_used then now() end
+   where shop_id = v_shop.id and code = upper(btrim(p_code));
+  if not found then return json_build_object('ok', false, 'error', 'no_code'); end if;
+  return json_build_object('ok', true);
+end $$;
+revoke all on function festival_mark_code(text, text, boolean) from public;
+grant execute on function festival_mark_code(text, text, boolean) to anon, authenticated;
+
 -- ──────────────────────────────────────────────────── reports (admins) ──
 -- security_invoker: these read through the RLS above, so only admins see rows
 create or replace view festival_report_shops
@@ -630,7 +750,9 @@ with (security_invoker = on) as
          count(p.id)                              as redemptions,
          count(p.id) filter (where p.new_card)    as new_cards,
          min(p.punched_at)                        as first_at,
-         max(p.punched_at)                        as last_at
+         max(p.punched_at)                        as last_at,
+         count(p.id) filter (where p.method = 'online')   as online_codes,
+         count(p.id) filter (where p.used_at is not null) as codes_used
   from festival_shops s
   left join festival_punches p on p.shop_id = s.id
   where s.status = 'approved'

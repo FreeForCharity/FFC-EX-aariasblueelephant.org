@@ -33,6 +33,12 @@ export interface FestivalShop {
   redeemFrom: string;
   redeemTo: string;
   spot?: number;
+  /** a QR sign at the counter */
+  instore: boolean;
+  /** booked on the web: families get a personal code instead */
+  online: boolean;
+  onlineLink?: string;
+  onlineNote?: string;
 }
 
 /** the full row, as an admin sees it */
@@ -89,6 +95,10 @@ export interface ShopApplication {
   contact_phone?: string;
   pledge_pct?: number | null;
   logo_url?: string | null;
+  instore?: boolean;
+  online?: boolean;
+  online_link?: string;
+  online_note?: string;
 }
 
 export const CATEGORY_EMOJI: Record<ShopCategory, string> = {

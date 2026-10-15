@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, ImagePlus, Send } from 'lucide-react';
+import { Heart, ImagePlus, Send, Store, Laptop, Check } from 'lucide-react';
 import Button from '../Button';
 import { ShopApplication, ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from '../../lib/festival/types';
 import { tr, isEs } from '../../lib/lang';
@@ -36,7 +36,14 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
   const [v, setV] = useState<ShopFormValues>({
     name: '', category: 'restaurant', offer_en: '', offer_es: '', detail_en: '',
     address: '', website: '', contact_name: '', contact_email: '', contact_phone: '', company_fax: '',
+    instore: true, online: false, online_link: '', online_note: '',
     ...initial,
+  });
+  const setFlag = (k: 'instore' | 'online', on: boolean) => setV((f) => {
+    const next = { ...f, [k]: on };
+    // one of the two must stay on — an offer nobody can use is no offer
+    if (!next.instore && !next.online) next[k === 'instore' ? 'online' : 'instore'] = true;
+    return next;
   });
   const [logo, setLogo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(logoUrl || null);
@@ -108,6 +115,49 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
                onChange={(e) => set('detail_en', e.target.value)}
                placeholder={tr('e.g. Dine-in only. One per family.', 'ej. Solo para comer aquí. Uno por familia.')} />
       </div>
+
+
+      <div>
+        <span className={label}>{tr('Where can families use your offer?', '¿Dónde pueden usar tu oferta las familias?')}<Req /></span>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            ['instore', Store, tr('In store', 'En tienda'), tr('Families scan a QR sign at your counter.', 'Las familias escanean un letrero QR en tu mostrador.')],
+            ['online', Laptop, tr('Online', 'En línea'), tr('Classes or services booked online — families get a personal code to use when they book.', 'Clases o servicios reservados en línea: las familias reciben un código personal para usar al reservar.')],
+          ] as const).map(([k, Icon, title, desc]) => {
+            const on = !!v[k];
+            return (
+              <button key={k} type="button" role="checkbox" aria-checked={on} onClick={() => setFlag(k, !on)}
+                className={`flex items-start gap-3 rounded-xl border-2 p-3 text-left transition ${on
+                  ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800'}`}>
+                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${on ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-300'}`}>
+                  {on && <Check className="h-3.5 w-3.5" />}
+                </span>
+                <span>
+                  <span className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white"><Icon className="h-4 w-4 text-sky-600" />{title}</span>
+                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{desc}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{tr('Tick both if you do both.', 'Marca ambas si haces las dos.')}</p>
+      </div>
+
+      {v.online && (
+        <div className="grid gap-5 rounded-2xl border-2 border-sky-100 bg-sky-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40 sm:grid-cols-2">
+          <div>
+            <label className={label} htmlFor="online_link">{tr('Where do families book?', '¿Dónde reservan las familias?')}<Opt /></label>
+            <input id="online_link" maxLength={300} className={field} value={v.online_link || ''}
+                   onChange={(e) => set('online_link', e.target.value)} placeholder="https://yoursite.com/book" />
+          </div>
+          <div>
+            <label className={label} htmlFor="online_note">{tr('How should they use the code?', '¿Cómo deben usar el código?')}<Opt /></label>
+            <input id="online_note" maxLength={200} className={field} value={v.online_note || ''}
+                   onChange={(e) => set('online_note', e.target.value)}
+                   placeholder={tr('e.g. Enter it at checkout, or email it to us', 'ej. Escríbelo al pagar, o envíanoslo por correo')} />
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>

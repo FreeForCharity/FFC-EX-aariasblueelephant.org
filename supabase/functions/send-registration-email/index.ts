@@ -241,6 +241,7 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
       <p><strong>Offer:</strong> ${offer}</p>
       ${shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(shop.detail_en)}</p>` : ''}
       ${shop.address ? `<p><strong>Address:</strong> ${esc(shop.address)}</p>` : ''}
+      <p><strong>Where:</strong> ${[shop.instore !== false ? 'In store' : '', shop.online ? 'Online' + (shop.online_link ? ` (${esc(shop.online_link)})` : '') : ''].filter(Boolean).join(' + ')}</p>
       <p><strong>Contact:</strong> ${name} · ${esc(shop.contact_email)}${shop.contact_phone ? ' · ' + esc(shop.contact_phone) : ''}</p>
       <p>Email confirmed ✓${waitlisted ? ' · every spot was taken, so they are on the waiting list' : ''}</p>
       ${button(`${SITE}/dashboard?view=festival`, 'Approve in dashboard')}`));
@@ -257,15 +258,23 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
       <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
       <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Runs:</strong> ${esc(runs)}</p>
     </div>
-    <h2 style="font-size: 18px; color: #2d3748;">One thing to do: print your QR sign</h2>
+    ${shop.instore !== false ? `
+    <h2 style="font-size: 18px; color: #2d3748;">In store: print your QR sign</h2>
     <p style="font-size: 15px; color: #4a5568;">Open your shop page, print your sign and put it by the register. That's it.</p>
     ${button(shopLink(shop.manage_token), 'Print my QR sign')}
-    <h2 style="font-size: 18px; color: #2d3748;">How a family redeems</h2>
     <ol style="font-size: 15px; color: #4a5568; line-height: 1.6;">
-      <li>They scan your sign with their phone camera and tap <strong>Redeem</strong>.</li>
+      <li>A family scans your sign with their phone camera and taps <strong>Redeem</strong>.</li>
       <li>Their phone shows a big green <strong>REDEEMED</strong> screen with your shop name and a live clock.</li>
       <li>You give the offer. A grey "Already used" screen means it was used before.</li>
+    </ol>` : ''}
+    ${shop.online ? `
+    <h2 style="font-size: 18px; color: #2d3748;">Online: families bring a code</h2>
+    <ol style="font-size: 15px; color: #4a5568; line-height: 1.6;">
+      <li>A family gets a personal code (like <strong>ABE-7K4M</strong>) for your offer on our festival page.</li>
+      <li>They quote it when they book${shop.online_link ? ` at <a href="${esc(shop.online_link)}">${esc(shop.online_link)}</a>` : ''}.</li>
+      <li>Find the code on your shop page and tick <strong>Used</strong>. Each code works once.</li>
     </ol>
+    ${shop.instore === false ? button(shopLink(shop.manage_token), 'Open my shop page') : ''}` : ''}
     <p style="font-size: 15px; color: #4a5568;">Your shop page also shows how many families have redeemed so far. Keep this email — the button above is your key to it. Questions? Just reply.</p>
     ${donateBottom('shop_approved')}`));
   return json(r, r.ok ? 200 : 502);

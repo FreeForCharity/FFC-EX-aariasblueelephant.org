@@ -222,14 +222,31 @@ const FestivalPass: React.FC = () => {
               </p>
             )}
             <div className={`mt-5 rounded-2xl p-4 text-center ${openUsed ? 'bg-slate-100 dark:bg-slate-800' : 'bg-sky-50 dark:bg-sky-900/20'}`}>
-              {openUsed ? (
+              {openUsed?.code ? (
+                <>
+                  <p className="text-sm font-bold text-slate-600 dark:text-slate-300">{tr('Your code', 'Tu código')}</p>
+                  <p className="font-mono text-2xl font-black tracking-widest text-[#0C4A6E] dark:text-sky-300">{openUsed.code}</p>
+                  <Link to={`/InclusionFestival/code/${open.id}`} className="mt-1 inline-block text-xs font-bold text-sky-700 underline">
+                    {tr('How to use it', 'Cómo usarlo')}
+                  </Link>
+                </>
+              ) : openUsed ? (
                 <p className="font-bold text-slate-600 dark:text-slate-300">
                   {tr('Used on', 'Usada el')} {fmtDay(openUsed.local_date, es)}, {fmtTime(openUsed.punched_at, es)}
                 </p>
               ) : (
-                <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
-                  {tr('To use it, scan the festival QR sign at their counter.', 'Para usarla, escanea el letrero QR del festival en su mostrador.')}
-                </p>
+                <>
+                  {open.instore && (
+                    <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
+                      {tr('In store: scan the festival QR sign at their counter.', 'En tienda: escanea el letrero QR del festival en su mostrador.')}
+                    </p>
+                  )}
+                  {open.online && (
+                    <Link to={`/InclusionFestival/code/${open.id}`} className="mt-2 block">
+                      <Button fullWidth size="sm">{tr('Online: get my code', 'En línea: obtener mi código')}</Button>
+                    </Link>
+                  )}
+                </>
               )}
             </div>
             <Button className="mt-6" fullWidth variant="secondary" onClick={close}>{tr('Close', 'Cerrar')}</Button>

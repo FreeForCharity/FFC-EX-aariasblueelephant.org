@@ -24,6 +24,15 @@ export interface Redemption {
   shop_id: string;
   punched_at: string;
   local_date: string;
+  /** set for online offers: what the family quotes when booking */
+  code?: string | null;
+}
+
+export interface OnlineCode {
+  ok: boolean;
+  error?: 'signed_out' | 'not_online' | 'already_used' | 'not_started' | 'ended' | 'network';
+  code?: string; punched_at?: string; used_at?: string | null; new_card?: boolean; again?: boolean;
+  from?: string; to?: string;
 }
 
 /** what a scanned sign shows before anyone signs in */
@@ -60,6 +69,8 @@ export interface MyShop {
   qr_token: string | null;
   total: number; today: number; new_cards: number;
   days: { date: string; count: number }[];
+  instore: boolean; online: boolean; online_link: string | null; online_note: string | null;
+  codes: { code: string; at: string; used_at: string | null }[];
 }
 
 export interface Registration {
@@ -71,6 +82,7 @@ export interface ShopReport {
   id: string; name: string; spot: number | null; category: string; pledge_pct: number | null;
   contact_name: string; contact_email: string; contact_phone: string | null;
   redemptions: number; new_cards: number; first_at: string | null; last_at: string | null;
+  online_codes: number; codes_used: number;
 }
 
 const toSettings = (d: any): FestivalSettings => ({
@@ -128,7 +140,7 @@ export const festivalDb = {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return [];
     const { data } = await supabase.from('festival_punches')
-      .select('id, shop_id, punched_at, local_date')
+      .select('id, shop_id, punched_at, local_date, code')
       .eq('user_id', auth.user.id).order('punched_at');
     return (data || []) as Redemption[];
   },
@@ -142,6 +154,23 @@ export const festivalDb = {
   async deleteMyPass(id: string): Promise<boolean> {
     const { data, error } = await supabase.from('festival_passes').delete().eq('id', id).select('id');
     return !error && !!data?.length;
+  },
+
+  /** a family's personal code for an online offer — the same one every time they ask */
+  async onlineCode(shopId: string): Promise<OnlineCode> {
+    try {
+      const { data, error } = await supabase.rpc('festival_online_code', { p_shop: shopId });
+      if (error || !data) return { ok: false, error: 'network' };
+      return data as OnlineCode;
+    } catch {
+      return { ok: false, error: 'network' };
+    }
+  },
+
+  /** the business ticks a code off when someone books with it */
+  async markCode(manage: string, code: string, used: boolean): Promise<boolean> {
+    const { data, error } = await supabase.rpc('festival_mark_code', { p_manage: manage, p_code: code, p_used: used });
+    return !error && !!(data as any)?.ok;
   },
 
   async signShop(token: string): Promise<SignShop | null> {
@@ -332,6 +361,7 @@ export const festivalDb = {
     return {
       shops: (shops.data || []).map((r: any) => ({
         ...r, redemptions: Number(r.redemptions) || 0, new_cards: Number(r.new_cards) || 0,
+        online_codes: Number(r.online_codes) || 0, codes_used: Number(r.codes_used) || 0,
       })).sort((a: ShopReport, b: ShopReport) => b.redemptions - a.redemptions),
       daily: (daily.data || []).map((r: any) => ({ ...r, redemptions: Number(r.redemptions) || 0 })),
     };

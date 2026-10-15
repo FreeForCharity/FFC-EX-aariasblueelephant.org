@@ -52,17 +52,20 @@ type Draft = {
   detail_en: string; detail_es: string; address: string; website: string;
   contact_name: string; contact_email: string; contact_phone: string;
   pledge_pct: string; spot: string; logo_url: string | null;
+  instore: boolean; online: boolean; online_link: string; online_note: string;
 };
 const emptyDraft = (): Draft => ({
   name: '', category: 'restaurant', offer_en: '', offer_es: '', detail_en: '', detail_es: '',
   address: '', website: '', contact_name: '', contact_email: '', contact_phone: '',
   pledge_pct: '', spot: '', logo_url: null,
+  instore: true, online: false, online_link: '', online_note: '',
 });
 const draftFrom = (s: AdminShop): Draft => ({
   id: s.id, name: s.name, category: s.category, offer_en: s.offerEn, offer_es: s.offerEs || '',
   detail_en: s.detailEn || '', detail_es: s.detailEs || '', address: s.address || '', website: s.website || '',
   contact_name: s.contactName || '', contact_email: s.contactEmail || '', contact_phone: s.contactPhone || '',
   pledge_pct: s.pledgePct != null ? String(s.pledgePct) : '', spot: s.spot ? String(s.spot) : '', logo_url: s.logoUrl || null,
+  instore: s.instore, online: s.online, online_link: s.onlineLink || '', online_note: s.onlineNote || '',
 });
 
 const slug = (s: string) =>
@@ -163,6 +166,10 @@ const FestivalAdminPanel: React.FC = () => {
       pledge_pct: draft.pledge_pct ? Math.min(100, Math.max(0, Number(draft.pledge_pct))) : null,
       spot: draft.spot ? Number(draft.spot) : null,
       logo_url: draft.logo_url,
+      instore: draft.instore || !draft.online,
+      online: draft.online,
+      online_link: draft.online ? (draft.online_link.trim() ? (/^https?:\/\//i.test(draft.online_link.trim()) ? draft.online_link.trim() : 'https://' + draft.online_link.trim()) : null) : null,
+      online_note: draft.online ? (draft.online_note.trim() || null) : null,
       redeem_from: settings.redeemFrom, redeem_to: settings.redeemTo,
     };
     let err: string | null;
@@ -248,14 +255,14 @@ const FestivalAdminPanel: React.FC = () => {
   };
 
   const csvShops = () => downloadCsv('festival-shops.csv', [
-    ['Status', 'Spot', 'Shop', 'Category', 'Offer', 'Offer (ES)', 'Conditions', 'Address', 'Website',
+    ['Status', 'Spot', 'Shop', 'Category', 'In store', 'Online', 'Online booking', 'Offer', 'Offer (ES)', 'Conditions', 'Address', 'Website',
      'Contact', 'Email', 'Phone', 'Pledge %', 'Signed up', 'Approved by'],
-    ...(shops || []).map((s) => [s.status, s.spot, s.name, s.category, s.offerEn, s.offerEs, s.detailEn, s.address, s.website,
+    ...(shops || []).map((s) => [s.status, s.spot, s.name, s.category, s.instore ? 'yes' : 'no', s.online ? 'yes' : 'no', s.onlineLink, s.offerEn, s.offerEs, s.detailEn, s.address, s.website,
       s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy]),
   ]);
   const csvReport = () => downloadCsv('festival-redemptions-by-shop.csv', [
-    ['Shop', 'Redemptions', 'Joined at their counter', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
-    ...(report?.shops || []).map((s) => [s.name, s.redemptions, s.new_cards,
+    ['Shop', 'Redemptions', 'Joined at their counter', 'Online codes', 'Online codes used', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
+    ...(report?.shops || []).map((s) => [s.name, s.redemptions, s.new_cards, s.online_codes, s.codes_used,
       s.first_at?.slice(0, 10), s.last_at?.slice(0, 10), s.pledge_pct, s.contact_name, s.contact_email, s.contact_phone]),
   ]);
   const csvDaily = () => downloadCsv('festival-redemptions-by-day.csv', [
@@ -381,11 +388,16 @@ const FestivalAdminPanel: React.FC = () => {
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${STATUS_STYLE[s.status]}`}>
                         {tr(...STATUS_LABEL[s.status])}
                       </span>
+                      {s.online && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">{tr('Online', 'En línea')}</span>}
+                      {s.online && s.instore && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black uppercase text-green-700 dark:bg-green-900/40 dark:text-green-300">{tr('In store', 'En tienda')}</span>}
                       {!s.ownerId && !s.emailConfirmedAt && s.status !== 'unconfirmed' && <span className="text-[10px] font-bold uppercase text-slate-400">{tr('added by hand', 'agregada a mano')}</span>}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-sky-800 dark:text-sky-300">{s.offerEn}</p>
                     {s.offerEs && <p className="text-xs italic text-slate-500">{s.offerEs}</p>}
                     {s.detailEn && <p className="text-xs text-slate-500">{s.detailEn}</p>}
+                    {s.online && (s.onlineLink || s.onlineNote) && (
+                      <p className="text-xs text-violet-700 dark:text-violet-300">💻 {[s.onlineLink, s.onlineNote].filter(Boolean).join(' · ')}</p>
+                    )}
                     <p className="mt-1 text-xs text-slate-500">
                       {es ? CATEGORY_LABEL[s.category].es : CATEGORY_LABEL[s.category].en}
                       {' · '}{s.contactName} · {s.contactEmail}{s.contactPhone ? ` · ${s.contactPhone}` : ''}
@@ -401,7 +413,7 @@ const FestivalAdminPanel: React.FC = () => {
                   {s.status !== 'approved' && (
                     <Button size="sm" onClick={() => approve(s)}><Check className="mr-1 h-4 w-4" />{tr('Approve', 'Aprobar')}</Button>
                   )}
-                  {s.status === 'approved' && (
+                  {s.status === 'approved' && s.instore && (
                     <Button size="sm" onClick={() => setSignFor(s)}><Printer className="mr-1 h-4 w-4" />{tr('Sign', 'Letrero')}</Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setDraft(draftFrom(s))}><Pencil className="mr-1 h-4 w-4" />{tr('Edit', 'Editar')}</Button>
@@ -456,6 +468,7 @@ const FestivalAdminPanel: React.FC = () => {
                   <th className="py-2 pr-3">{tr('Shop', 'Tienda')}</th>
                   <th className="py-2 pr-3 text-right">{tr('Redeemed', 'Canjes')}</th>
                   <th className="py-2 pr-3 text-right">{tr('At their sign', 'En su letrero')}</th>
+                  <th className="py-2 pr-3 text-right">{tr('Online codes (used)', 'Códigos en línea (usados)')}</th>
                   <th className="py-2 pr-3">{tr('Last', 'Último')}</th>
                   <th className="py-2" />
                 </tr>
@@ -466,6 +479,7 @@ const FestivalAdminPanel: React.FC = () => {
                     <td className="py-2 pr-3 font-semibold text-slate-900 dark:text-white">{s.name}</td>
                     <td className="py-2 pr-3 text-right font-black">{s.redemptions}</td>
                     <td className="py-2 pr-3 text-right">{s.new_cards}</td>
+                    <td className="py-2 pr-3 text-right">{s.online_codes ? `${s.online_codes} (${s.codes_used})` : '—'}</td>
                     <td className="py-2 pr-3 text-slate-500">{s.last_at ? fmtShortDay(s.last_at, es) : '—'}</td>
                     <td className="py-2 text-right">
                       <button onClick={() => copyThanks(s)} className="inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:underline dark:text-sky-400">
@@ -556,6 +570,24 @@ const FestivalAdminPanel: React.FC = () => {
               <div><label className={label}>{tr('Spot #', 'Lugar #')}</label>
                 <input type="number" min={1} className={field} value={draft.spot} onChange={(e) => setDraft({ ...draft, spot: e.target.value })} /></div>
             </div>
+            <div className="flex flex-wrap gap-4 sm:col-span-2">
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <input type="checkbox" checked={draft.instore} onChange={(e) => setDraft({ ...draft, instore: e.target.checked || !draft.online })} />
+                {tr('In store (QR sign)', 'En tienda (letrero QR)')}
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <input type="checkbox" checked={draft.online} onChange={(e) => setDraft({ ...draft, online: e.target.checked, instore: draft.instore || !e.target.checked })} />
+                {tr('Online (personal codes)', 'En línea (códigos personales)')}
+              </label>
+            </div>
+            {draft.online && (
+              <>
+                <div><label className={label}>{tr('Where families book', 'Dónde reservan')}</label>
+                  <input className={field} value={draft.online_link} onChange={(e) => setDraft({ ...draft, online_link: e.target.value })} placeholder="https://" /></div>
+                <div><label className={label}>{tr('How to use the code', 'Cómo usar el código')}</label>
+                  <input className={field} value={draft.online_note} onChange={(e) => setDraft({ ...draft, online_note: e.target.value })} /></div>
+              </>
+            )}
             <div className="sm:col-span-2">
               <label className={label}>{tr('Logo', 'Logo')}</label>
               <label className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-slate-300 p-2 text-sm font-semibold text-slate-600 dark:border-slate-600 dark:text-slate-300">
