@@ -1,5 +1,5 @@
 /**
- * Inclusion Festival & Resource Fair — shared types.
+ * Inclusion Festival & Special Needs Resource Fair — shared types.
  *
  * A local business signs in with Google and applies with an offer. Once
  * an admin approves it, the shop prints a QR sign for the counter. Families scan
