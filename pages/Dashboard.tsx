@@ -54,6 +54,7 @@ import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
 import MyGiving from '../components/MyGiving';
 import { tr } from '../lib/lang';
 import { isFestivalAdmin } from '../lib/festival/types';
+import { festivalDb } from '../lib/festival/db';
 import { useData } from '../context/DataContext';
 import Button from '../components/Button';
 import RichText, { extractMedia } from '../components/RichText';
@@ -202,6 +203,14 @@ const Dashboard: React.FC = () => {
     const [gamePlaysLoading, setGamePlaysLoading] = useState(false);
     const [gamePlaysError, setGamePlaysError] = useState<string | null>(null);
     const [signupRows, setSignupRows] = useState<SignupRow[] | null>(null);
+    // festival shops waiting on the team: new sign-ups, waiting list, and changes asked for
+    const [festivalPending, setFestivalPending] = useState<number | null>(null);
+    useEffect(() => {
+        if (!isFestivalAdmin(user?.email)) return;
+        festivalDb.allShops().then((shops) => setFestivalPending(shops
+            ? shops.filter((s) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges).length
+            : null));
+    }, [user?.email]);
     const [signupsLoading, setSignupsLoading] = useState(false);
     const [signupsError, setSignupsError] = useState<string | null>(null);
     const [signupSearch, setSignupSearch] = useState('');
@@ -584,7 +593,7 @@ const Dashboard: React.FC = () => {
             const pendingRegistrations = eventRegistrations.filter(r => r.status === 'Pending').length;
 
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${festivalPending !== null ? 'lg:grid-cols-3 2xl:grid-cols-5' : 'lg:grid-cols-4'}`}>
                     <div className="bg-white dark:bg-brand-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="h-12 w-12 rounded-xl bg-brand-cyan/10 flex items-center justify-center text-brand-cyan group-hover:scale-110 transition-transform">
@@ -660,6 +669,23 @@ const Dashboard: React.FC = () => {
                             Verify Stories <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
                     </div>
+
+                    {festivalPending !== null && (
+                        <div className={`bg-white dark:bg-brand-card p-6 rounded-2xl border shadow-sm hover:shadow-md transition-all group ${festivalPending > 0 ? 'border-amber-300 dark:border-amber-700' : 'border-slate-200 dark:border-slate-800'}`}>
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="h-12 w-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
+                                    <Ticket className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight">{tr('Pending Festival', 'Festival')}<br/>{tr('Shops', 'Tiendas pendientes')}</p>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{festivalPending} {tr('Pending', 'Pendientes')}</h3>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="w-full justify-between group/btn text-slate-500 hover:text-sky-600 hover:bg-sky-500/5" onClick={() => setActiveView('festival')}>
+                                {tr('Approve Shops', 'Aprobar tiendas')} <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             );
         }

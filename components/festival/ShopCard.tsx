@@ -20,7 +20,7 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
     >
       <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-100 sm:h-28 sm:w-28">
         {shop.logoUrl
-          ? <img src={shop.logoUrl} alt="" className="h-full w-full object-contain p-1.5" />
+          ? <img src={shop.logoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain p-1.5" />
           : <span className="text-4xl sm:text-5xl" aria-hidden>{shop.emoji}</span>}
       </div>
       <p className="mt-3 break-words text-sm font-black leading-tight text-slate-900 dark:text-white sm:mt-4 sm:text-lg">{shop.name}</p>

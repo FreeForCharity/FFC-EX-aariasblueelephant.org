@@ -277,7 +277,9 @@ export const festivalDb = {
     const ext = blob.type === 'image/webp' ? 'webp' : 'png';
     const path = `${folder}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('festival-logos')
-      .upload(path, blob, { contentType: blob.type || 'image/png', upsert: false });
+      // a unique name per upload, so browsers and Supabase's CDN can keep it a
+      // year: repeat views cost no Supabase egress
+      .upload(path, blob, { contentType: blob.type || 'image/png', upsert: false, cacheControl: '31536000' });
     if (error) return null;
     return supabase.storage.from('festival-logos').getPublicUrl(path).data.publicUrl;
   },
