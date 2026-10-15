@@ -70,7 +70,7 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemF
     { icon: Gift, en: 'You choose the offer — a free item, a discount, a free class…', es: 'Tú eliges la oferta: un producto gratis, un descuento, una clase gratis…' },
     { icon: CalendarRange, en: `Your offer runs from the day you are approved through ${fmtDay(redeemTo, false)}.`,
       es: `Tu oferta va desde el día de tu aprobación hasta el ${fmtDay(redeemTo, true)}.` },
-    { icon: Store, en: 'Your logo and offer on our festival page, shared with every family.', es: 'Tu logo y tu oferta en la página del festival, para todas las familias.' },
+    { icon: Store, en: 'Your logo displayed on our website and shared with our community.', es: 'Tu logo en nuestro sitio web y compartido con nuestra comunidad.' },
     { icon: BarChart3, en: 'Your own page shows how many families came, day by day.', es: 'Tu página muestra cuántas familias vinieron, día por día.' },
     { icon: HeartHandshake, en: 'Your staff need nothing: the family’s phone does the work.', es: 'Tu personal no necesita nada: el teléfono de la familia hace todo.' },
   ];
