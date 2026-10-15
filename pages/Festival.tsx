@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Store, Ticket, Calendar, MapPin, ArrowRight, Clock } from 'lucide-react';
 import Button from '../components/Button';
-import ShopTile from '../components/festival/ShopTile';
+import ShopCard from '../components/festival/ShopCard';
 import SpotMeter, { toSpotCount } from '../components/festival/SpotMeter';
 import Dialog from '../components/festival/Dialog';
 import { festivalDb } from '../lib/festival/db';
@@ -29,13 +29,7 @@ const Festival: React.FC = () => {
 
   const counts = useMemo(() => toSpotCount(taken.taken, taken.waitlist, settings.spots), [taken, settings.spots]);
 
-  // one square per spot, looked up by spot number; unnumbered shops fill gaps
-  const tiles: (FestivalShop | null)[] = [];
-  for (let i = 1; i <= Math.max(settings.spots, shops.length); i++) tiles.push(shops.find((s) => s.spot === i) || null);
-  shops.filter((s) => !s.spot || s.spot > tiles.length).forEach((s) => {
-    const gap = tiles.indexOf(null);
-    if (gap >= 0) tiles[gap] = s; else tiles.push(s);
-  });
+  const ordered = [...shops].sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.name.localeCompare(b.name));
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -77,6 +71,40 @@ const Festival: React.FC = () => {
         </div>
       </div>
 
+      {/* ── the shops: first thing after the hero, it is why families come ── */}
+      <div className="mt-14" id="shops">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white">
+              {tr('Offers from Mountain House shops', 'Ofertas de tiendas de Mountain House')}
+            </h2>
+            <p className="mt-1 text-slate-600 dark:text-slate-400">
+              {shops.length
+                ? tr(`${shops.length} ${shops.length === 1 ? 'shop is' : 'shops are'} welcoming festival families — tap one for details.`,
+                     `${shops.length} ${shops.length === 1 ? 'tienda da' : 'tiendas dan'} la bienvenida a las familias del festival: toca una para ver detalles.`)
+                : tr('The first shops are signing up now — check back soon.', 'Las primeras tiendas se están inscribiendo ahora, vuelve pronto.')}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {ordered.map((shop) => <ShopCard key={shop.id} shop={shop} onClick={() => setOpen(shop)} />)}
+          {!counts.full && settings.state !== 'ended' && (
+            <Link to="/InclusionFestival/join"
+                  className="flex min-h-[14rem] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-sky-300 bg-sky-50/50 p-4 text-center sm:p-6 transition hover:border-sky-500 hover:bg-sky-50 dark:border-sky-800 dark:bg-slate-900/40 dark:hover:border-sky-600">
+              <Store className="h-10 w-10 text-sky-600 dark:text-sky-400" />
+              <p className="mt-3 text-lg font-black text-slate-900 dark:text-white">{tr('Your shop here?', '¿Tu tienda aquí?')}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                {tr(`Free to join · ${counts.free} ${counts.free === 1 ? 'spot' : 'spots'} left`, `Gratis · ${counts.free === 1 ? 'queda 1 lugar' : `quedan ${counts.free} lugares`}`)}
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-sky-700 dark:text-sky-400">
+                {tr('Claim a spot', 'Reservar un lugar')} <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+          )}
+        </div>
+      </div>
+
       {/* ── how it works ───────────────────────────────────────────────── */}
       <div className="mt-16 grid gap-4 sm:grid-cols-3">
         {[
@@ -96,29 +124,6 @@ const Festival: React.FC = () => {
             <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{tr(s.de, s.ds)}</p>
           </div>
         ))}
-      </div>
-
-      {/* ── the card ───────────────────────────────────────────────────── */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">{tr('The shops taking part', 'Las tiendas que participan')}</h2>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
-          {shops.length
-            ? tr(`${shops.length} confirmed so far.`, `${shops.length} confirmadas hasta ahora.`)
-            : tr('The first shops are signing up now.', 'Las primeras tiendas se están inscribiendo ahora.')}
-        </p>
-        <div className="mt-6 rounded-3xl border-2 border-dashed border-sky-200 bg-sky-50/50 p-4 dark:border-slate-700 dark:bg-slate-900/40 sm:p-6">
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
-            {tiles.map((shop, i) =>
-              shop
-                ? <ShopTile key={shop.id} shop={shop} onClick={() => setOpen(shop)} />
-                : (
-                  <div key={`empty-${i}`}
-                       className="flex aspect-square w-full items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 dark:border-slate-700 dark:text-slate-600">
-                    <span className="text-xl font-black">?</span>
-                  </div>
-                ))}
-          </div>
-        </div>
       </div>
 
       {/* ── businesses ─────────────────────────────────────────────────── */}
@@ -155,8 +160,8 @@ const Festival: React.FC = () => {
           <div>
             <div className="flex items-center gap-3">
               {open.logoUrl
-                ? <img src={open.logoUrl} alt="" className="h-12 w-12 rounded-xl object-contain" />
-                : <span className="text-4xl" aria-hidden>{open.emoji}</span>}
+                ? <img src={open.logoUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-md ring-1 ring-slate-100" />
+                : <span className="text-5xl" aria-hidden>{open.emoji}</span>}
               <div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">{open.name}</h3>
                 <p className="text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400">

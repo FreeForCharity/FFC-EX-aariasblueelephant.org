@@ -203,8 +203,8 @@ const FestivalPass: React.FC = () => {
           <div>
             <div className="flex items-center gap-3">
               {open.logoUrl
-                ? <img src={open.logoUrl} alt="" className="h-12 w-12 rounded-xl object-contain" />
-                : <span className="text-4xl" aria-hidden>{open.emoji}</span>}
+                ? <img src={open.logoUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-md ring-1 ring-slate-100" />
+                : <span className="text-5xl" aria-hidden>{open.emoji}</span>}
               <div className="min-w-0">
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">{open.name}</h3>
                 <p className="text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400">
