@@ -14,6 +14,7 @@ import TestimonialSection from '../components/TestimonialSection';
 import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
 import MediaLightbox from '../components/MediaLightbox';
 import { tr } from '../lib/lang';
+import FeaturedMessage from '../components/FeaturedMessage';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -144,6 +145,9 @@ const Home: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen pt-0 bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
+
+            {/* Featured message — first thing visitors see */}
+            <FeaturedMessage />
 
             {/* Combined Hero & Track Record Section */}
             <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-8 lg:py-12 transition-colors">
