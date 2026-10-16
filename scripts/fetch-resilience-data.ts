@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Get the active provider from env, defaulting to 'appwrite'
-const PROVIDER = (process.env.DATABASE_PROVIDER || 'appwrite').toLowerCase();
+// Supabase is the live database; Appwrite is retired and only reachable on purpose
+const PROVIDER = (process.env.DATABASE_PROVIDER || 'supabase').toLowerCase();
 
 /*
  * PRIVACY: this snapshot is bundled into the public site and committed to a
@@ -30,7 +31,7 @@ const CONFIG = {
   },
   supabase: {
     URL: process.env.SUPABASE_URL || 'https://joclqxgedhdgslxnovxz.supabase.co',
-    KEY: process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    KEY: process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   }
 };
 
@@ -85,16 +86,26 @@ async function fetchFromSupabase() {
 
   const [events, tests] = await Promise.all([
     supabase.from('events').select('*').order('date', { ascending: true }),
-    supabase.from('testimonials').select('*').order('date', { ascending: false }),
+    // the email-free public view: the table itself is private
+    supabase.from('testimonials_public').select('*').order('date', { ascending: false }),
   ]);
 
   if (events.error) throw events.error;
   if (tests.error) throw tests.error;
 
+  // the same shapes the site's Supabase provider produces (camelCase, no extras)
   return {
-    events: events.data || [],
-    // public stories only need the story: no email, no account id
-    testimonials: (tests.data || []).map(({ author_email, authorEmail, user_id, userId, ...t }: any) => t),
+    events: (events.data || []).map((e: any) => ({
+      id: e.id, title: e.title, date: e.date, time: e.time, location: e.location,
+      description: e.description, type: e.type, capacity: e.capacity,
+      registered: e.registered || 0, initialLikes: e.initial_likes || 0,
+      image: e.image, mediaLink: e.media_link, hours: Number(e.duration || e.hours || 0),
+    })),
+    // published stories only, and only the story: no email, no account id
+    testimonials: (tests.data || []).map((t: any) => ({
+      id: t.id, author: t.author, role: t.role, title: t.title, content: t.content,
+      date: t.date, avatar: t.avatar, status: t.status, rating: t.rating, rank: t.rank, media: t.media,
+    })),
   };
 }
 
