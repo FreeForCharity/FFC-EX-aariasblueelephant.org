@@ -65,11 +65,11 @@ const FestivalPass: React.FC = () => {
       <Shell>
         <Ticket className="mx-auto h-12 w-12 text-sky-300" />
         <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">
-          {tr('Cards open soon', 'Las tarjetas abren pronto')}
+          {tr('Offers open soon', 'Las ofertas abren pronto')}
         </h1>
         <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {tr('We are still signing up shops. Your card will be ready at the festival.',
-              'Todavía estamos inscribiendo tiendas. Tu tarjeta estará lista en el festival.')}
+          {tr('We are still signing up shops. Your offers will be ready at the festival.',
+              'Todavía estamos inscribiendo tiendas. Tus ofertas estarán listas en el festival.')}
         </p>
         <Link to="/InclusionFestival" className="mt-8 inline-block">
           <Button variant="secondary">{tr('See the shops', 'Ver las tiendas')}</Button>
@@ -83,11 +83,11 @@ const FestivalPass: React.FC = () => {
       <Shell>
         <Ticket className="mx-auto h-12 w-12 text-sky-600" />
         <h1 className="mt-6 text-2xl font-black text-slate-900 dark:text-white">
-          {tr('Get your festival card', 'Obtén tu tarjeta del festival')}
+          {tr('My Festival Offers', 'Mis ofertas del festival')}
         </h1>
         <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {tr('Sign in and your card appears, with every participating business on it. Free, and it lasts all November.',
-              'Inicia sesión y aparece tu tarjeta con todos los negocios participantes. Gratis, y dura todo noviembre.')}
+          {tr('Sign in to see every participating business and its offer, and keep track of the ones you have used. Free, all November.',
+              'Inicia sesión para ver todos los negocios participantes y sus ofertas, y llevar la cuenta de las que ya usaste. Gratis, todo noviembre.')}
         </p>
         <Button className="mt-8" size="lg" onClick={signIn}>
           <LogIn className="mr-2 h-5 w-5" />{tr('Sign in with Google', 'Iniciar sesión con Google')}
@@ -117,7 +117,7 @@ const FestivalPass: React.FC = () => {
           ))}
         </div>
         <Button className="mt-8" size="lg" disabled={busy} onClick={makeCard}>
-          {busy ? tr('Making your card…', 'Creando tu tarjeta…') : tr('Make my card', 'Crear mi tarjeta')}
+          {busy ? tr('Getting your offers…', 'Preparando tus ofertas…') : tr('Show my offers', 'Ver mis ofertas')}
         </Button>
         <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
           {tr('We count visits to thank our partner shops. We never share your name or email with them.',
@@ -139,7 +139,7 @@ const FestivalPass: React.FC = () => {
       <div className="rounded-3xl border-2 border-sky-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-xs font-black uppercase tracking-widest text-sky-700 dark:text-sky-400">
-            🐘 {tr('Inclusion Festival card', 'Tarjeta del Festival de Inclusión')}
+            🐘 {tr('My Festival Offers', 'Mis ofertas del festival')}
           </p>
           <p className="font-mono text-xs font-bold text-slate-400">{pass.short_code}</p>
         </div>
@@ -186,15 +186,15 @@ const FestivalPass: React.FC = () => {
         <button
           onClick={async () => {
             if (!window.confirm(tr(
-              'Delete your festival card?\n\nYour card is removed. Offers you already used stay used, so they cannot be claimed twice.',
-              '¿Eliminar tu tarjeta del festival?\n\nTu tarjeta se elimina. Las ofertas que ya usaste siguen usadas, así no se pueden reclamar dos veces.'))) return;
+              'Remove your festival sign-up?\n\nYour name comes off the festival list. Offers you already used stay used, so they cannot be claimed twice.',
+              '¿Quitar tu inscripción al festival?\n\nTu nombre sale de la lista del festival. Las ofertas que ya usaste siguen usadas, así no se pueden reclamar dos veces.'))) return;
             if (await festivalDb.deleteMyPass(pass.id)) setPass(null);
-            else window.alert(tr('Could not delete the card. Please try again, or email us.',
-                                 'No se pudo eliminar la tarjeta. Inténtalo de nuevo o escríbenos.'));
+            else window.alert(tr('That did not work. Please try again, or email us.',
+                                 'No funcionó. Inténtalo de nuevo o escríbenos.'));
           }}
           className="text-xs font-semibold text-slate-400 underline underline-offset-2 hover:text-rose-600 dark:hover:text-rose-400"
         >
-          {tr('Delete my card', 'Eliminar mi tarjeta')}
+          {tr('Remove me from the festival list', 'Quitarme de la lista del festival')}
         </button>
       </div>
 

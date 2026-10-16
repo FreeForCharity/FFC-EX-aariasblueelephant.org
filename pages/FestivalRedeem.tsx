@@ -173,13 +173,13 @@ const FestivalRedeem: React.FC = () => {
         </p>
         {outcome.new_card && (
           <p className="mt-4 max-w-xs text-center text-sm opacity-90">
-            {tr('Your festival card is ready too — every shop on it has an offer for you.',
-                'Tu tarjeta del festival también está lista: cada tienda tiene una oferta para ti.')}
+            {tr('Every other participating business has an offer for you too — see them in My Festival Offers.',
+                'Todos los demás negocios participantes también tienen una oferta para ti: velas en Mis ofertas del festival.')}
           </p>
         )}
         <Link to="/InclusionFestival/pass" className="mt-8">
           <span className="rounded-xl bg-white px-5 py-3 font-bold text-green-700 shadow">
-            {tr('See my card', 'Ver mi tarjeta')}
+            {tr('My Festival Offers', 'Mis ofertas del festival')}
           </span>
         </Link>
         {/* below the fold: staff read the screen above, the family scrolls to this after */}
@@ -223,7 +223,7 @@ const FestivalRedeem: React.FC = () => {
           </p>
         </div>
         <Link to="/InclusionFestival/pass" className="mt-6 block">
-          <Button fullWidth variant="secondary">{tr('See my card', 'Ver mi tarjeta')}</Button>
+          <Button fullWidth variant="secondary">{tr('My Festival Offers', 'Mis ofertas del festival')}</Button>
         </Link>
       </Shell>
     );
@@ -264,8 +264,8 @@ const FestivalRedeem: React.FC = () => {
             <LogIn className="mr-2 h-5 w-5" />{tr('Sign in with Google to redeem', 'Inicia sesión con Google para canjear')}
           </Button>
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-            {tr('Use the same Google account as your festival card. No card yet? Signing in makes one — it’s free.',
-                'Usa la misma cuenta de Google de tu tarjeta del festival. ¿Aún no tienes tarjeta? Al iniciar sesión se crea una, es gratis.')}
+            {tr('Use the same Google account every time, so your offers stay in one place. First time? Just sign in — it’s free.',
+                'Usa siempre la misma cuenta de Google, así tus ofertas quedan en un solo lugar. ¿Primera vez? Solo inicia sesión, es gratis.')}
           </p>
         </div>
       </Shell>

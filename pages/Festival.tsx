@@ -51,8 +51,8 @@ const Festival: React.FC = () => {
         </div>
         <div className="shrink-0">
           {settings.state === 'recruiting'
-            ? <Button disabled>{tr('Cards open soon', 'Las tarjetas abren pronto')}</Button>
-            : <Link to="/InclusionFestival/pass"><Button>{tr('Get my festival card', 'Obtener mi tarjeta')}</Button></Link>}
+            ? <Button disabled>{tr('Offers open soon', 'Las ofertas abren pronto')}</Button>
+            : <Link to="/InclusionFestival/pass"><Button>{tr('My Festival Offers', 'Mis ofertas del festival')}</Button></Link>}
         </div>
       </div>
 
@@ -93,9 +93,9 @@ const Festival: React.FC = () => {
       {/* ── how it works ───────────────────────────────────────────────── */}
       <div className="mt-16 grid gap-4 sm:grid-cols-3">
         {[
-          { n: '1', en: 'Get your card — free', es: 'Obtén tu tarjeta, es gratis',
-            de: 'Sign in with Google and your card appears, with every shop on it.',
-            ds: 'Inicia sesión con Google y aparece tu tarjeta con todas las tiendas.' },
+          { n: '1', en: 'Sign in — free', es: 'Inicia sesión, es gratis',
+            de: 'Sign in with Google once. My Festival Offers keeps every offer, and which ones you have used, in one place.',
+            ds: 'Inicia sesión con Google una vez. Mis ofertas del festival guarda todas las ofertas, y las que ya usaste, en un solo lugar.' },
           { n: '2', en: 'Scan at the shop', es: 'Escanea en la tienda',
             de: 'Scan the festival QR sign by the register, tap Redeem and show the green screen.',
             ds: 'Escanea el letrero QR del festival junto a la caja, toca Canjear y muestra la pantalla verde.' },
@@ -120,8 +120,8 @@ const Festival: React.FC = () => {
               {tr('Own a business?', '¿Tienes un negocio?')}
             </h2>
             <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
-              {tr('Free to join. You choose the offer — a free drink, two for one, a month of membership, whatever suits you. You get a month of new families through the door, your logo on every card, and a count at the end of how many came.',
-                  'Participar es gratis. Tú eliges la oferta: una bebida gratis, dos por uno, un mes de membresía, lo que mejor te funcione. Recibes un mes de familias nuevas, tu logo en cada tarjeta y, al final, cuántas vinieron.')}
+              {tr('Free to join. You choose the offer — a free drink, two for one, a month of membership, whatever suits you. You get a month of new families through the door, your logo on our website shared with our community, and a count at the end of how many came.',
+                  'Participar es gratis. Tú eliges la oferta: una bebida gratis, dos por uno, un mes de membresía, lo que mejor te funcione. Recibes un mes de familias nuevas, tu logo en nuestro sitio compartido con nuestra comunidad y, al final, cuántas vinieron.')}
             </p>
             <div className="mt-5"><SpotMeter counts={counts} /></div>
             <div className="mt-5 flex flex-wrap items-center gap-4">
