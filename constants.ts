@@ -1,5 +1,5 @@
 import { User, Event, Donation, Testimonial, EventRegistration } from './types';
-import { RESILIENCE_EVENTS, RESILIENCE_REGISTRATIONS, RESILIENCE_TESTIMONIALS } from './data/resilience_data';
+import { RESILIENCE_EVENTS, RESILIENCE_TESTIMONIALS } from './data/resilience_data';
 import { tr } from './lib/lang';
 
 export const MOCK_USERS: User[] = [
@@ -49,7 +49,9 @@ export const MOCK_DONATIONS: Donation[] = [
 
 export const MOCK_TESTIMONIALS: Testimonial[] = RESILIENCE_TESTIMONIALS;
 
-export const STATIC_REGISTRATIONS: EventRegistration[] = RESILIENCE_REGISTRATIONS;
+// Registrations are private (names, emails, accommodations). They are never
+// bundled into the site, so there is deliberately no offline copy of them.
+export const STATIC_REGISTRATIONS: EventRegistration[] = [];
 
 export const BYLAWS_HIGHLIGHTS = [
   tr("Organized exclusively for charitable purposes under Section 501(c)(3).", "Organizada exclusivamente con fines caritativos bajo la Sección 501(c)(3)."),
