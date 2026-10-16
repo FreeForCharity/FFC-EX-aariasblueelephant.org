@@ -295,7 +295,12 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async getFriendEntries() {
-    const { data, error } = await supabase.from('circle_of_friends')
+    // Children are published as "First L." with school and grade — no
+    // teacher — through circle_of_friends_public. Staff read the full table
+    // (it is staff-only) so the edit form has the real details.
+    const { data: session } = await supabase.auth.getSession();
+    const staff = (session?.session?.user?.email || '').toLowerCase().endsWith('@aariasblueelephant.org');
+    const { data, error } = await supabase.from(staff ? 'circle_of_friends' : 'circle_of_friends_public')
       .select('*')
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false });
