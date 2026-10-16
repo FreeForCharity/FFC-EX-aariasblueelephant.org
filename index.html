@@ -2,13 +2,17 @@
 <html lang="en" class="dark">
 
 <head>
+    <!-- full URLs (and any key in them) are never sent to other sites -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <!-- Analytics is skipped entirely on child-directed routes (Aaria's Floating Islands) — COPPA.
          Landing on a game route also sets the GA opt-out flag so analytics stays
          off for the whole session even if the visitor later navigates elsewhere. -->
     <script>
       ;(function () {
         var kidRoute = /^\/(nelus-world|nilus-world|belus-world)\/?$/.test(location.pathname)
-        if (kidRoute) { window['ga-disable-G-66RGGXFPWC'] = true; return }
+        // a shop's private page: its key must never reach an analytics account
+        var privateRoute = /^\/inclusionfestival\/myshop/i.test(location.pathname)
+        if (kidRoute || privateRoute) { window['ga-disable-G-66RGGXFPWC'] = true; return }
         ;(function (w, d, s, l, i) {
           w[l] = w[l] || []
           w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })

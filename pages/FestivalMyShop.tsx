@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2, Laptop, Check } from 'lucide-react';
 import Button from '../components/Button';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
 
 /**
- * /InclusionFestival/myshop?k=<manage token> — a shop's own page.
+ * /InclusionFestival/myshop#k=<manage token> — a shop's own page.
  *
  * No password: the link in their emails is the key, and this device remembers
  * it. &confirm=<token> on the first visit is the "confirm your email" click.
@@ -20,13 +20,21 @@ import { tr, isEs } from '../lib/lang';
 const FestivalMyShop: React.FC = () => {
   const { user, isLoading } = useAuth();
   const es = isEs();
-  const navigate = useNavigate();
   const [params] = useSearchParams();
+  // the key arrives after '#' (new links) or as ?k= (links sent before that);
+  // either way it is wiped from the address bar straight away, so it never
+  // sits in history, a screenshot or a shared URL
+  const [linkKeys] = useState(() => {
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    return { k: h.get('k') || params.get('k'), confirm: h.get('confirm') || params.get('confirm') };
+  });
   const [key, setKey] = useState<string | null>(() => {
-    const k = params.get('k');
-    if (k) return k;
+    if (linkKeys.k) return linkKeys.k;
     try { return localStorage.getItem(SHOP_KEY); } catch { return null; }
   });
+  useEffect(() => {
+    if (linkKeys.k || linkKeys.confirm) window.history.replaceState(null, '', '/InclusionFestival/myshop');
+  }, [linkKeys]);
   const [shop, setShop] = useState<MyShop | null | undefined>(undefined);
   const [justConfirmed, setJustConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,14 +58,13 @@ const FestivalMyShop: React.FC = () => {
   useEffect(() => {
     if (isLoading) return;
     (async () => {
-      const confirm = params.get('confirm');
+      const confirm = linkKeys.confirm;
       if (confirm) {
         const r = await festivalDb.confirm(confirm);
         if (r.ok && r.manage) {
           setJustConfirmed(!!r.justConfirmed);
           setKey(r.manage);
-          // drop the confirm token from the address bar once it has done its job
-          navigate(`/InclusionFestival/myshop?k=${r.manage}`, { replace: true });
+          try { localStorage.setItem(SHOP_KEY, r.manage); } catch { /* private mode */ }
           await load(r.manage);
           return;
         }

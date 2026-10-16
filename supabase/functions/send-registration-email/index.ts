@@ -95,8 +95,9 @@ const donateBottom = (campaign: string) => `
   </div>`;
 
 /** a shop's private page: no password, the link is the key */
+// the key sits after '#', which is never sent to a server, analytics or another site
 const shopLink = (manage: string, confirm?: string) =>
-  `${SITE}/InclusionFestival/myshop?k=${encodeURIComponent(manage)}${confirm ? `&confirm=${encodeURIComponent(confirm)}` : ''}`;
+  `${SITE}/InclusionFestival/myshop#k=${encodeURIComponent(manage)}${confirm ? `&confirm=${encodeURIComponent(confirm)}` : ''}`;
 
 /** "at most one of these every ten minutes" — for emails a person may ask for again */
 const tenMinuteSlot = () => String(Math.floor(Date.now() / 600_000));
