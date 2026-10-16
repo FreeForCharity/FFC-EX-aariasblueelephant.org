@@ -129,8 +129,8 @@ const FestivalOnlineCode: React.FC = () => {
             <LogIn className="mr-2 h-5 w-5" />{tr('Sign in with Google to get my code', 'Inicia sesión con Google para obtener mi código')}
           </Button>
           <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-            {tr('Use the same Google account as your festival card. No card yet? Signing in makes one — it’s free.',
-                'Usa la misma cuenta de Google de tu tarjeta del festival. ¿Aún no tienes tarjeta? Al iniciar sesión se crea una, es gratis.')}
+            {tr('Use the same Google account every time, so your offers stay in one place. First time? Just sign in — it’s free.',
+                'Usa siempre la misma cuenta de Google, así tus ofertas quedan en un solo lugar. ¿Primera vez? Solo inicia sesión, es gratis.')}
           </p>
         </div>
       ) : (
