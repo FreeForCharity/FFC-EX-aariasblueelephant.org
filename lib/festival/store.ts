@@ -64,7 +64,9 @@ export function toAdminShop(p: any): AdminShop {
 }
 
 /** a shop's private page — no password, the link is the key */
-export const shopPageUrl = (manage: string) => `https://aariasblueelephant.org/InclusionFestival/myshop?k=${manage}`;
+// the key sits after '#': the part of a URL that is never sent to a server,
+// an analytics tag or another site
+export const shopPageUrl = (manage: string) => `https://aariasblueelephant.org/InclusionFestival/myshop#k=${manage}`;
 
 /** this device remembers the shop it signed up, so the page opens without the email */
 export const SHOP_KEY = 'abe.festival.shop';

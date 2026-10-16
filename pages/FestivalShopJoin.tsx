@@ -40,7 +40,8 @@ const FestivalShopJoin: React.FC = () => {
     if (r.ok && r.manage) {
       if (logo) await festivalDb.uploadLogoByManage(r.manage, logo);
       try { localStorage.setItem(SHOP_KEY, r.manage); } catch { /* private mode */ }
-      navigate(`/InclusionFestival/myshop?k=${r.manage}`);
+      // the key stays on this device; the address never carries it
+      navigate('/InclusionFestival/myshop');
       return;
     }
     setBusy(false);
@@ -88,7 +89,7 @@ const FestivalShopJoin: React.FC = () => {
           <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
             {tr('You already signed up a shop on this device.', 'Ya inscribiste una tienda en este dispositivo.')}
           </p>
-          <Link to={`/InclusionFestival/myshop?k=${known}`}><Button size="sm">{tr('Open my shop page', 'Abrir mi tienda')}</Button></Link>
+          <Link to="/InclusionFestival/myshop"><Button size="sm">{tr('Open my shop page', 'Abrir mi tienda')}</Button></Link>
         </div>
       )}
 
