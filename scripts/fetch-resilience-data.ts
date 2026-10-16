@@ -10,11 +10,17 @@ const __dirname = path.dirname(__filename);
 // Get the active provider from env, defaulting to 'appwrite'
 const PROVIDER = (process.env.DATABASE_PROVIDER || 'appwrite').toLowerCase();
 
+/*
+ * PRIVACY: this snapshot is bundled into the public site and committed to a
+ * public repo. Only public content goes in — events and published stories.
+ * Never registrations, emails, account ids or accommodation details.
+ */
 const CONFIG = {
   appwrite: {
     ENDPOINT: 'https://sfo.cloud.appwrite.io/v1',
     PROJECT_ID: '69db08fb001174cd0d39',
-    API_KEY: process.env.APPWRITE_API_KEY || 'standard_19197f3504070eb4262276278d895c46b408cd5e7cf7d5e439070c34963ccca216107ec872f383c6f90ab97ace851a612feb31b1b9d5fc6c5999d940b307162a9c81ad41ea4e50e134f089bd5261c1d35242b77e2b31472514a84bc065d9e7ae059f43b5c7cc784173917892d69d64bf2621d365d98bd3c2fb77ec696eaf573c',
+    // never a literal: this repo is public. Set it as the APPWRITE_API_KEY secret.
+    API_KEY: process.env.APPWRITE_API_KEY || '',
     DATABASE_ID: '69db1c34003bd1ff00a2',
     COLLECTIONS: {
       EVENTS: 'events',
@@ -29,6 +35,7 @@ const CONFIG = {
 };
 
 async function fetchFromAppwrite() {
+  if (!CONFIG.appwrite.API_KEY) throw new Error('APPWRITE_API_KEY is not set');
   const client = new AppwriteClient()
     .setEndpoint(CONFIG.appwrite.ENDPOINT)
     .setProject(CONFIG.appwrite.PROJECT_ID)
@@ -36,10 +43,9 @@ async function fetchFromAppwrite() {
     
   const databases = new AppwriteDatabases(client);
 
-  const [events, tests, regs] = await Promise.all([
+  const [events, tests] = await Promise.all([
     databases.listDocuments(CONFIG.appwrite.DATABASE_ID, CONFIG.appwrite.COLLECTIONS.EVENTS, [AppwriteQuery.limit(100)]),
     databases.listDocuments(CONFIG.appwrite.DATABASE_ID, CONFIG.appwrite.COLLECTIONS.TESTIMONIALS, [AppwriteQuery.limit(100)]),
-    databases.listDocuments(CONFIG.appwrite.DATABASE_ID, CONFIG.appwrite.COLLECTIONS.REGISTRATIONS, [AppwriteQuery.limit(100)])
   ]);
 
   return {
@@ -61,7 +67,6 @@ async function fetchFromAppwrite() {
     testimonials: tests.documents.map((doc: any) => ({
       id: doc.$id,
       author: doc.author,
-      authorEmail: doc.authorEmail,
       role: doc.role,
       title: doc.title,
       content: doc.content,
@@ -71,38 +76,25 @@ async function fetchFromAppwrite() {
       rating: doc.rating,
       rank: doc.rank,
       media: doc.media,
-      userId: doc.userId
     })),
-    registrations: regs.documents.map((doc: any) => ({
-      id: doc.$id,
-      eventId: doc.eventId,
-      userId: doc.userId,
-      userName: doc.userName,
-      userEmail: doc.userEmail,
-      status: doc.status,
-      date: doc.date,
-      specialNeeds: doc.specialNeeds
-    }))
   };
 }
 
 async function fetchFromSupabase() {
   const supabase = createSupabaseClient(CONFIG.supabase.URL, CONFIG.supabase.KEY);
 
-  const [events, tests, regs] = await Promise.all([
+  const [events, tests] = await Promise.all([
     supabase.from('events').select('*').order('date', { ascending: true }),
     supabase.from('testimonials').select('*').order('date', { ascending: false }),
-    supabase.from('event_registrations').select('*').order('created_at', { ascending: false })
   ]);
 
   if (events.error) throw events.error;
   if (tests.error) throw tests.error;
-  if (regs.error) throw regs.error;
 
   return {
     events: events.data || [],
-    testimonials: tests.data || [],
-    registrations: regs.data || []
+    // public stories only need the story: no email, no account id
+    testimonials: (tests.data || []).map(({ author_email, authorEmail, user_id, userId, ...t }: any) => t),
   };
 }
 
@@ -118,18 +110,17 @@ async function runSync() {
  * a local offline fallback if the primary database is unreachable.
  * Source Provider: ${PROVIDER.toUpperCase()}
  */
-import { Event, Testimonial, EventRegistration } from '../types';
+import { Event, Testimonial } from '../types';
 
 export const RESILIENCE_EVENTS: Event[] = ${JSON.stringify(data.events, null, 2)};
 export const RESILIENCE_TESTIMONIALS: Testimonial[] = ${JSON.stringify(data.testimonials, null, 2)};
-export const RESILIENCE_REGISTRATIONS: EventRegistration[] = ${JSON.stringify(data.registrations, null, 2)};
 `;
 
     const outputPath = path.resolve(__dirname, '../data/resilience_data.ts');
     fs.writeFileSync(outputPath, fileContent);
     
     console.log(`✅ [${PROVIDER.toUpperCase()}] Resilience snapshot updated successfully.`);
-    console.log(`📊 Stats: ${data.events.length} events, ${data.testimonials.length} testimonials, ${data.registrations.length} registrations.`);
+    console.log(`📊 Stats: ${data.events.length} events, ${data.testimonials.length} testimonials.`);
   } catch (error: any) {
     console.error(`❌ [${PROVIDER.toUpperCase()}] Backup failed:`, error.message || error);
     console.warn(`⚠️ Warning: Could not generate resilience data. The pipeline will continue using default fallbacks, but your active connection to ${PROVIDER.toUpperCase()} may be degraded or quota-exceeded!`);
