@@ -38,8 +38,9 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async getUserCount() {
-    const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    return count || 0;
+    // just the number: the sign-up list itself is staff-only
+    const { data } = await supabase.rpc('abe_member_count');
+    return Number(data) || 0;
   }
 
   getUserAvatar(name: string) {
@@ -111,11 +112,23 @@ export class SupabaseProvider implements IDatabaseProvider {
   }
 
   async getTestimonials() {
-    const { data, error } = await supabase.from('testimonials')
+    // Published stories come from a view with no author email or account id.
+    // Signed in, the table adds the person's own stories (pending ones too) —
+    // and everything, for staff — with the private columns intact.
+    const pub = await supabase.from('testimonials_public')
       .select('*')
       .order('rank', { ascending: true, nullsFirst: false })
       .order('date', { ascending: false });
-    if (error) throw error;
+    if (pub.error) throw pub.error;
+    const { data: session } = await supabase.auth.getSession();
+    const mine = session?.session
+      ? (await supabase.from('testimonials').select('*')).data || []
+      : [];
+    const byId = new Map<string, any>();
+    (pub.data || []).forEach((t: any) => byId.set(String(t.id), t));
+    mine.forEach((t: any) => byId.set(String(t.id), t));
+    const data = [...byId.values()].sort((a, b) =>
+      (a.rank ?? 1e9) - (b.rank ?? 1e9) || String(b.date || '').localeCompare(String(a.date || '')));
     return (data || []).map((t: any) => ({
       id: t.id,
       author: t.author,
