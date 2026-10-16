@@ -211,7 +211,10 @@ const EntryCardItem = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-slate-800 dark:text-white font-bold truncate text-sm">{entry.name}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">{tr('Teacher', 'Maestro/a')}: {entry.teacher}</p>
+              {/* the teacher is staff-only: it pinpoints a child's classroom */}
+              {entry.teacher && (
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">{tr('Teacher', 'Maestro/a')}: {entry.teacher}</p>
+              )}
             </div>
             {isAdmin && (
               <>
