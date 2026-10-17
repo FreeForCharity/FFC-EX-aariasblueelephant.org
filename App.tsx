@@ -124,6 +124,7 @@ const FestivalPass = lazy(() => import('./pages/FestivalPass'));
 const FestivalMyShop = lazy(() => import('./pages/FestivalMyShop'));
 const FestivalRedeem = lazy(() => import('./pages/FestivalRedeem'));
 const FestivalOnlineCode = lazy(() => import('./pages/FestivalOnlineCode'));
+const FestivalPrintStory = lazy(() => import('./pages/FestivalPrintStory'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -188,6 +189,8 @@ const App: React.FC = () => {
                 <Route path="/InclusionFestival/code/:shopId" element={<FestivalOnlineCode />} />
                 {/* the QR on a shop's counter sign — kept short so the code stays easy to scan */}
                 <Route path="/r/:token" element={<FestivalRedeem />} />
+                {/* unlisted story post (4over4 promotion) — not linked from the navbar */}
+                <Route path="/InclusionFestival/printing" element={<FestivalPrintStory />} />
                 {/* the old till-screen link now lives on the shop owner's own page */}
                 <Route path="/InclusionFestival/shop" element={<Navigate to="/InclusionFestival/myshop" replace />} />
                 {/* the festival admin lives in the dashboard, not on its own page */}
