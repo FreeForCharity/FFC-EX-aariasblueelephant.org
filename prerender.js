@@ -21,7 +21,8 @@ const routesToPrerender = [
     '/resources',
     '/resources/understanding',
     '/resources/interventions',
-    '/resources/screening'
+    '/resources/screening',
+    '/InclusionFestival/printing'
 ];
 
 async function prerender() {
