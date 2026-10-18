@@ -108,6 +108,9 @@ alter table festival_shops add column if not exists guardian_consent_at timestam
 -- link, so nothing but a YouTube embed can ever come out of it
 alter table festival_shops add column if not exists video_id text
   check (video_id is null or video_id ~ '^[A-Za-z0-9_-]{11}$');
+-- how families can reach them, in their own words (a shop email, a phone,
+-- @instagram…) — public, on purpose, unlike contact_email which never is
+alter table festival_shops add column if not exists public_contact text;
 
 -- the video id out of any YouTube link people paste (watch, youtu.be, shorts,
 -- embed, live); null when it is not one
@@ -137,7 +140,7 @@ with (security_invoker = off) as
          offer_en, offer_es, detail_en, detail_es,
          address, website, spot, redeem_from, redeem_to,
          instore, online, online_link, online_note,
-         young_founder, video_id
+         young_founder, video_id, public_contact
   from festival_shops
   where status = 'approved';
 grant select on festival_shops_public to anon, authenticated;
@@ -439,7 +442,8 @@ begin
                      nullif(left(btrim(coalesce(p ->> 'online_note', '')), 200), '') end,
     'young_founder', yf,
     -- optional for every business; an admin watches it before approval
-    'video_id', festival_youtube_id(p ->> 'video_url'));
+    'video_id', festival_youtube_id(p ->> 'video_url'),
+    'public_contact', nullif(left(btrim(coalesce(p ->> 'public_contact', '')), 120), ''));
 end $$;
 
 -- a video link that is not a YouTube link gets told so, not silently dropped
@@ -475,7 +479,8 @@ begin
     'instore', v_shop.instore, 'online', v_shop.online,
     'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes,
     'pending_changes', v_shop.pending_changes, 'pending_at', v_shop.pending_at,
-    'young_founder', v_shop.young_founder, 'video_id', v_shop.video_id);
+    'young_founder', v_shop.young_founder, 'video_id', v_shop.video_id,
+    'public_contact', v_shop.public_contact);
 end $$;
 revoke all on function festival_shop_view(festival_shops) from public, anon, authenticated;
 
@@ -534,6 +539,7 @@ begin
       instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
       online_link = f ->> 'online_link', online_note = f ->> 'online_note',
       young_founder = (f ->> 'young_founder')::boolean, video_id = f ->> 'video_id',
+      public_contact = f ->> 'public_contact',
       guardian_consent_at = case when (f ->> 'young_founder')::boolean then now() end,
       updated_at = now()
     where id = v_shop.id;
@@ -555,7 +561,7 @@ begin
   insert into festival_shops (id, name, category, offer_en, offer_es, detail_en, address, website,
                               contact_name, contact_email, contact_phone, status, confirm_token,
                               instore, online, online_link, online_note,
-                              young_founder, video_id, guardian_consent_at,
+                              young_founder, video_id, guardian_consent_at, public_contact,
                               redeem_from, redeem_to)
   values (v_id, f ->> 'name', f ->> 'category', f ->> 'offer_en', f ->> 'offer_es', f ->> 'detail_en',
           f ->> 'address', f ->> 'website', f ->> 'contact_name', v_email, f ->> 'contact_phone',
@@ -563,6 +569,7 @@ begin
           (f ->> 'instore')::boolean, (f ->> 'online')::boolean, f ->> 'online_link', f ->> 'online_note',
           (f ->> 'young_founder')::boolean, f ->> 'video_id',
           case when (f ->> 'young_founder')::boolean then now() end,
+          f ->> 'public_contact',
           (select redeem_from from festival_settings where id = 1),
           (select redeem_to from festival_settings where id = 1))
   returning * into v_shop;
@@ -642,6 +649,7 @@ begin
     instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
     online_link = f ->> 'online_link', online_note = f ->> 'online_note',
     young_founder = (f ->> 'young_founder')::boolean, video_id = f ->> 'video_id',
+    public_contact = f ->> 'public_contact',
     guardian_consent_at = case when (f ->> 'young_founder')::boolean then coalesce(guardian_consent_at, now()) end,
     updated_at = now()
   where id = v_shop.id;
@@ -745,6 +753,7 @@ begin
       logo_url      = coalesce(c ->> 'logo_url', logo_url),
       young_founder = coalesce((c ->> 'young_founder')::boolean, young_founder),
       video_id      = case when c ? 'video_id' then c ->> 'video_id' else video_id end,
+      public_contact = case when c ? 'public_contact' then c ->> 'public_contact' else public_contact end,
       guardian_consent_at = case when coalesce((c ->> 'young_founder')::boolean, young_founder)
                                  then coalesce(guardian_consent_at, v_shop.pending_at, now()) end,
       pending_changes = null, pending_at = null, updated_at = now()

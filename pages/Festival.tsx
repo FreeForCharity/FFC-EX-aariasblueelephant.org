@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Store, Ticket, Calendar, MapPin, ArrowRight, Clock } from 'lucide-react';
+import { Store, Ticket, Calendar, MapPin, ArrowRight, Clock, Globe, ShoppingBag, MessageCircle } from 'lucide-react';
 import Button from '../components/Button';
 import ShopCard from '../components/festival/ShopCard';
 import SpotMeter, { toSpotCount } from '../components/festival/SpotMeter';
 import Dialog from '../components/festival/Dialog';
 import VideoFacade from '../components/festival/VideoFacade';
 import { festivalDb } from '../lib/festival/db';
-import { DEFAULT_SETTINGS, fmtDay } from '../lib/festival/store';
+import { DEFAULT_SETTINGS, fmtDay, contactHref } from '../lib/festival/store';
 import { FestivalShop, FestivalSettings, CATEGORY_LABEL } from '../lib/festival/types';
 import { tr, isEs } from '../lib/lang';
 
@@ -236,19 +236,36 @@ const Festival: React.FC = () => {
               </div>
             </div>
             <p className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{es ? (open.offerEs || open.offerEn) : open.offerEn}</p>
+            {(es ? open.detailEs || open.detailEn : open.detailEn) && (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{es ? open.detailEs || open.detailEn : open.detailEn}</p>
+            )}
             {/* the business's own video, for any business — nothing loads until play */}
             {open.videoId && (
               <div className="mt-4">
                 <VideoFacade id={open.videoId} title={tr(`Video from ${open.name}`, `Video de ${open.name}`)} />
               </div>
             )}
-            {(es ? open.detailEs || open.detailEn : open.detailEn) && (
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{es ? open.detailEs || open.detailEn : open.detailEn}</p>
-            )}
-            {open.address && (
-              <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-                <MapPin className="h-4 w-4" />{open.address}
-              </p>
+            {/* every way to reach them that they chose to share — never the sign-up email */}
+            {(open.address || open.website || open.onlineLink || open.publicContact) && (
+              <ul className="mt-4 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                {open.address && <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-sky-600" />{open.address}</li>}
+                {open.website && (
+                  <li><a href={open.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline dark:text-sky-400">
+                    <Globe className="h-4 w-4 shrink-0" />{tr('Visit website', 'Visitar sitio web')}</a></li>
+                )}
+                {open.onlineLink && open.onlineLink !== open.website && (
+                  <li><a href={open.onlineLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline dark:text-sky-400">
+                    <ShoppingBag className="h-4 w-4 shrink-0" />{tr('Order or book online', 'Pedir o reservar en línea')}</a></li>
+                )}
+                {open.publicContact && (
+                  <li className="flex items-center gap-2"><MessageCircle className="h-4 w-4 shrink-0 text-sky-600" />
+                    {contactHref(open.publicContact)
+                      ? <a href={contactHref(open.publicContact)!} target={contactHref(open.publicContact)!.startsWith('http') ? '_blank' : undefined}
+                           rel="noopener noreferrer" className="break-all font-semibold text-sky-700 hover:underline dark:text-sky-400">{open.publicContact}</a>
+                      : <span className="break-all">{open.publicContact}</span>}
+                  </li>
+                )}
+              </ul>
             )}
             <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
               {tr(`Valid through ${fmtDay(open.redeemTo, false)}`, `Válida hasta el ${fmtDay(open.redeemTo, true)}`)}
