@@ -25,6 +25,11 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
       </div>
       <p className="mt-3 break-words text-sm font-black leading-tight text-slate-900 dark:text-white sm:mt-4 sm:text-lg">{shop.name}</p>
       <div className="mt-1.5 flex flex-wrap justify-center gap-1">
+        {shop.youngFounder && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 sm:text-[11px]">
+            🌟 {tr('Young Founder', 'Joven Emprendedor')}
+          </span>
+        )}
         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] sm:px-2.5 sm:text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
           {es ? CATEGORY_LABEL[shop.category].es : CATEGORY_LABEL[shop.category].en}
         </span>
@@ -47,6 +52,9 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
         <p className="mt-2 inline-flex items-start gap-1 text-[11px] text-slate-500 sm:mt-3 sm:text-xs dark:text-slate-400">
           <MapPin className="mt-px h-3.5 w-3.5 shrink-0" />{shop.address}
         </p>
+      )}
+      {shop.videoId && (
+        <p className="mt-2 text-[11px] font-bold text-sky-700 dark:text-sky-400 sm:text-xs">▶ {tr('Video', 'Video')}</p>
       )}
       <span className="sr-only">{tr('More about this offer', 'Más sobre esta oferta')}</span>
     </button>

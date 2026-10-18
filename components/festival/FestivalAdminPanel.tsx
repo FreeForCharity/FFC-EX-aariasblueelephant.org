@@ -6,7 +6,7 @@ import Button from '../Button';
 import Dialog from './Dialog';
 import { QrSign, PrintTarget, printSign } from './QrSign';
 import { festivalDb, Registration, ShopReport } from '../../lib/festival/db';
-import { DEFAULT_SETTINGS, fmtShortDay, fmtDay, shopPageUrl } from '../../lib/festival/store';
+import { DEFAULT_SETTINGS, fmtShortDay, fmtDay, shopPageUrl, youtubeId, youtubeLink } from '../../lib/festival/store';
 import {
   AdminShop, FestivalSettings, ShopCategory, ShopStatus, CATEGORY_LABEL, CATEGORY_EMOJI, isFestivalAdmin,
 } from '../../lib/festival/types';
@@ -53,12 +53,14 @@ type Draft = {
   contact_name: string; contact_email: string; contact_phone: string;
   pledge_pct: string; spot: string; logo_url: string | null;
   instore: boolean; online: boolean; online_link: string; online_note: string;
+  young_founder: boolean; video_url: string;
 };
 const emptyDraft = (): Draft => ({
   name: '', category: 'restaurant', offer_en: '', offer_es: '', detail_en: '', detail_es: '',
   address: '', website: '', contact_name: '', contact_email: '', contact_phone: '',
   pledge_pct: '', spot: '', logo_url: null,
   instore: true, online: false, online_link: '', online_note: '',
+  young_founder: false, video_url: '',
 });
 const draftFrom = (s: AdminShop): Draft => ({
   id: s.id, name: s.name, category: s.category, offer_en: s.offerEn, offer_es: s.offerEs || '',
@@ -66,6 +68,7 @@ const draftFrom = (s: AdminShop): Draft => ({
   contact_name: s.contactName || '', contact_email: s.contactEmail || '', contact_phone: s.contactPhone || '',
   pledge_pct: s.pledgePct != null ? String(s.pledgePct) : '', spot: s.spot ? String(s.spot) : '', logo_url: s.logoUrl || null,
   instore: s.instore, online: s.online, online_link: s.onlineLink || '', online_note: s.onlineNote || '',
+  young_founder: !!s.youngFounder, video_url: s.videoId ? youtubeLink(s.videoId) : '',
 });
 
 const slug = (s: string) =>
@@ -87,7 +90,7 @@ const FestivalAdminPanel: React.FC = () => {
   const [report, setReport] = useState<Awaited<ReturnType<typeof festivalDb.report>>>(null);
   const [regs, setRegs] = useState<Registration[] | null>(null);
   const [msg, setMsg] = useState('');
-  const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'all'>('open');
+  const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'young' | 'all'>('open');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [signFor, setSignFor] = useState<AdminShop | null>(null);
@@ -123,12 +126,12 @@ const FestivalAdminPanel: React.FC = () => {
       : e || '');
   };
 
-  const approvedSpots = new Set((shops || []).filter((s) => s.status === 'approved' && s.spot).map((s) => s.spot));
+  const approvedSpots = new Set((shops || []).filter((s) => s.status === 'approved' && s.spot && !s.youngFounder).map((s) => s.spot));
   const nextSpot = () => { for (let i = 1; i <= 999; i++) if (!approvedSpots.has(i)) return i; return 1; };
 
   /* ── actions ───────────────────────────────────────────────────────── */
   const approve = async (s: AdminShop) => {
-    const err = await festivalDb.approve(s.id, s.spot && !approvedSpots.has(s.spot) ? s.spot : nextSpot(), user?.email || '', s.contactEmail || '');
+    const err = await festivalDb.approve(s.id, s.youngFounder ? null : s.spot && !approvedSpots.has(s.spot) ? s.spot : nextSpot(), user?.email || '', s.contactEmail || '');
     fail(err);
     if (!err) setMsg((s.contactEmail || '').includes('@')
       ? tr(`${s.name} is on the card. We emailed ${s.contactEmail} a link to print their sign.`,
@@ -155,7 +158,12 @@ const FestivalAdminPanel: React.FC = () => {
       setMsg(tr('A shop needs at least a name and an offer.', 'Una tienda necesita al menos nombre y oferta.'));
       return;
     }
+    if (draft.young_founder && draft.video_url.trim() && !youtubeId(draft.video_url)) {
+      setMsg(tr('That does not look like a YouTube link.', 'Eso no parece un enlace de YouTube.'));
+      return;
+    }
     setSaving(true);
+    const wasYoung = !!(shops || []).find((x) => x.id === draft.id)?.youngFounder;
     const row = {
       name: draft.name.trim(), category: draft.category,
       offer_en: draft.offer_en.trim(), offer_es: draft.offer_es.trim() || null,
@@ -164,7 +172,12 @@ const FestivalAdminPanel: React.FC = () => {
       contact_name: draft.contact_name.trim() || '—', contact_email: draft.contact_email.trim() || '—',
       contact_phone: draft.contact_phone.trim() || null,
       pledge_pct: draft.pledge_pct ? Math.min(100, Math.max(0, Number(draft.pledge_pct))) : null,
-      spot: draft.spot ? Number(draft.spot) : null,
+      // a young founder never holds one of the limited spots
+      spot: draft.young_founder ? null : draft.spot ? Number(draft.spot) : null,
+      young_founder: draft.young_founder,
+      video_id: draft.young_founder ? youtubeId(draft.video_url) : null,
+      // entered in person with the parent; keep the first date if there already is one
+      ...(draft.young_founder && !wasYoung ? { guardian_consent_at: new Date().toISOString() } : {}),
       logo_url: draft.logo_url,
       instore: draft.instore || !draft.online,
       online: draft.online,
@@ -181,7 +194,7 @@ const FestivalAdminPanel: React.FC = () => {
       const taken = new Set((shops || []).map((s) => s.id));
       while (taken.has(id)) id = `${slug(draft.name)}-${++n}`;
       err = await festivalDb.addShop({
-        ...row, id, status: 'approved', spot: row.spot || nextSpot(),
+        ...row, id, status: 'approved', spot: row.young_founder ? null : row.spot || nextSpot(),
         approved_by: user?.email, approved_at: new Date().toISOString(),
       });
     }
@@ -256,9 +269,9 @@ const FestivalAdminPanel: React.FC = () => {
 
   const csvShops = () => downloadCsv('festival-shops.csv', [
     ['Status', 'Spot', 'Shop', 'Category', 'In store', 'Online', 'Online booking', 'Offer', 'Offer (ES)', 'Conditions', 'Address', 'Website',
-     'Contact', 'Email', 'Phone', 'Pledge %', 'Signed up', 'Approved by'],
+     'Contact', 'Email', 'Phone', 'Pledge %', 'Signed up', 'Approved by', 'Young founder', 'Video'],
     ...(shops || []).map((s) => [s.status, s.spot, s.name, s.category, s.instore ? 'yes' : 'no', s.online ? 'yes' : 'no', s.onlineLink, s.offerEn, s.offerEs, s.detailEn, s.address, s.website,
-      s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy]),
+      s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy, s.youngFounder ? 'yes' : 'no', s.videoId ? youtubeLink(s.videoId) : '']),
   ]);
   const csvReport = () => downloadCsv('festival-redemptions-by-shop.csv', [
     ['Shop', 'Redemptions', 'New families via them', 'Online codes', 'Online codes used', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
@@ -280,10 +293,11 @@ const FestivalAdminPanel: React.FC = () => {
     open: (shops || []).filter((s) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges).length,
     approved: (shops || []).filter((s) => s.status === 'approved').length,
     unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
+    young: (shops || []).filter((s) => s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
     all: (shops || []).length,
   };
   const visible = (shops || [])
-    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges : s.status === filter))
+    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges : filter === 'young' ? !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -361,7 +375,7 @@ const FestivalAdminPanel: React.FC = () => {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {([['open', tr('To review', 'Por revisar')], ['approved', tr('On the card', 'En la tarjeta')],
-             ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
+             ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['young', tr('Young Founders', 'Jóvenes Emprendedores')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)}
               className={`rounded-full px-3 py-1 text-xs font-bold ${filter === k ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {l} ({counts[k]})
@@ -385,6 +399,7 @@ const FestivalAdminPanel: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       {s.spot && s.status === 'approved' && <span className="text-xs font-black text-slate-400">#{s.spot}</span>}
                       <p className="font-black text-slate-900 dark:text-white">{s.name}</p>
+                      {s.youngFounder && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">🌟 {tr('Young Founder', 'Joven Emprendedor')}</span>}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${STATUS_STYLE[s.status]}`}>
                         {tr(...STATUS_LABEL[s.status])}
                       </span>
@@ -397,6 +412,11 @@ const FestivalAdminPanel: React.FC = () => {
                     {s.detailEn && <p className="text-xs text-slate-500">{s.detailEn}</p>}
                     {s.online && (s.onlineLink || s.onlineNote) && (
                       <p className="text-xs text-violet-700 dark:text-violet-300">💻 {[s.onlineLink, s.onlineNote].filter(Boolean).join(' · ')}</p>
+                    )}
+                    {s.videoId && (
+                      <a href={youtubeLink(s.videoId)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-bold text-sky-700 underline dark:text-sky-400">
+                        ▶ {s.status === 'approved' ? tr('Watch video', 'Ver video') : tr('Watch video before approving', 'Ver el video antes de aprobar')}
+                      </a>
                     )}
                     <p className="mt-1 text-xs text-slate-500">
                       {es ? CATEGORY_LABEL[s.category].es : CATEGORY_LABEL[s.category].en}
@@ -414,6 +434,10 @@ const FestivalAdminPanel: React.FC = () => {
                             <p key={k} className="mt-1"><span className="font-bold">{k.replace('_en', '').replace('_', ' ')}:</span> <s className="opacity-60">{now || '—'}</s> → <strong>{next || '—'}</strong></p>
                           ) : null;
                         })}
+                        {s.pendingChanges.video_id && s.pendingChanges.video_id !== s.videoId && (
+                          <p className="mt-1"><span className="font-bold">{tr('video', 'video')}:</span>{' '}
+                            <a href={youtubeLink(s.pendingChanges.video_id)} target="_blank" rel="noopener noreferrer" className="font-bold underline">▶ {tr('Watch new video', 'Ver video nuevo')}</a></p>
+                        )}
                         {s.pendingChanges.logo_url && (
                           <p className="mt-1 flex items-center gap-2"><span className="font-bold">{tr('logo', 'logo')}:</span>
                             <img src={s.pendingChanges.logo_url} alt="" className="h-8 w-8 rounded bg-white object-contain" /></p>
@@ -596,6 +620,10 @@ const FestivalAdminPanel: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-4 sm:col-span-2">
               <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <input type="checkbox" checked={draft.young_founder} onChange={(e) => setDraft({ ...draft, young_founder: e.target.checked })} />
+                🌟 {tr('Young Founder', 'Joven Emprendedor')}
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 <input type="checkbox" checked={draft.instore} onChange={(e) => setDraft({ ...draft, instore: e.target.checked || !draft.online })} />
                 {tr('In store (QR sign)', 'En tienda (letrero QR)')}
               </label>
@@ -604,6 +632,10 @@ const FestivalAdminPanel: React.FC = () => {
                 {tr('Online (personal codes)', 'En línea (códigos personales)')}
               </label>
             </div>
+            {draft.young_founder && (
+              <div className="sm:col-span-2"><label className={label}>{tr('YouTube link', 'Enlace de YouTube')}</label>
+                <input className={field} value={draft.video_url} onChange={(e) => setDraft({ ...draft, video_url: e.target.value })} placeholder="https://youtu.be/…" /></div>
+            )}
             {draft.online && (
               <>
                 <div><label className={label}>{tr('Where families book', 'Dónde reservan')}</label>

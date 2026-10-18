@@ -197,6 +197,10 @@ const App: React.FC = () => {
                 <Route path="/InclusionFestival/admin" element={<Navigate to="/dashboard?view=festival" replace />} />
                 {/* aliases: a short link volunteers can read out loud, plus
                     lower-case and older spellings so no printed link ever dies */}
+                {/* Young Founders live on the festival page; these land on that section */}
+                <Route path="/youngfounders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
+                <Route path="/young-founders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
+                <Route path="/InclusionFestival/young-founders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
                 <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/inclusionfestival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival" element={<Navigate to="/InclusionFestival" replace />} />

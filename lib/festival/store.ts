@@ -40,6 +40,8 @@ export function toShop(p: any): FestivalShop {
     online: p.online === true,
     onlineLink: p.online_link || undefined,
     onlineNote: p.online_note || undefined,
+    youngFounder: p.young_founder === true,
+    videoId: p.video_id || undefined,
   };
 }
 
@@ -62,6 +64,14 @@ export function toAdminShop(p: any): AdminShop {
     createdAt: p.created_at,
   };
 }
+
+/** the video id out of a YouTube link — the same rule as festival_youtube_id() in the database */
+export const youtubeId = (url: string): string | null =>
+  (url || '').match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)?.[1] || null;
+
+/** privacy-enhanced embed: no YouTube cookies until someone presses play */
+export const youtubeEmbed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+export const youtubeLink = (id: string) => `https://youtu.be/${id}`;
 
 /** a shop's private page — no password, the link is the key */
 // the key sits after '#': the part of a URL that is never sent to a server,

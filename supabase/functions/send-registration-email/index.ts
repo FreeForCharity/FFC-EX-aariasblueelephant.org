@@ -219,6 +219,9 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
   const shopName = esc(shop.name);
   const offer = esc(shop.offer_en);
   const runs = `${fmtDate(shop.redeem_from)} – ${fmtDate(shop.redeem_to)}`;
+  // a kid's business, signed up by a parent: featured in its own section, no spot
+  const young = shop.young_founder === true;
+  const video = shop.video_id ? `https://youtu.be/${esc(shop.video_id)}` : '';
 
   // 1 · "confirm your sign-up" — the only way a sign-up reaches the admin
   if (kind === 'confirm') {
@@ -236,14 +239,16 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
   if (kind === 'received') {
     if ((shop.status !== 'pending' && shop.status !== 'waitlist') || !shop.email_confirmed_at) return json({ error: 'not_pending' }, 409);
     const waitlisted = shop.status === 'waitlist';
-    const r = await sendOnce('shop_received_admin', id, ADMIN_EMAIL, `New festival shop: ${shop.name}${waitlisted ? ' (waiting list)' : ''}`, shell(`
-      <h1 style="color: #00AEEF; font-size: 20px;">New Inclusion Festival shop</h1>
-      <p><strong>Shop:</strong> ${shopName}</p>
+    const r = await sendOnce('shop_received_admin', id, ADMIN_EMAIL, `New festival ${young ? 'Young Founder' : 'shop'}: ${shop.name}${waitlisted ? ' (waiting list)' : ''}`, shell(`
+      <h1 style="color: #00AEEF; font-size: 20px;">New Inclusion Festival ${young ? 'Young Founder 🌟' : 'shop'}</h1>
+      <p><strong>${young ? 'Business' : 'Shop'}:</strong> ${shopName}</p>
+      ${young ? `<p><strong>Young Founder</strong> — run by a kid, signed up by a parent or guardian (consent given). No spot used.</p>` : ''}
+      ${video ? `<p><strong>Video:</strong> <a href="${video}">${video}</a> — please watch it before approving.</p>` : ''}
       <p><strong>Offer:</strong> ${offer}</p>
       ${shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(shop.detail_en)}</p>` : ''}
       ${shop.address ? `<p><strong>Address:</strong> ${esc(shop.address)}</p>` : ''}
       <p><strong>Where:</strong> ${[shop.instore !== false ? 'In store' : '', shop.online ? 'Online' + (shop.online_link ? ` (${esc(shop.online_link)})` : '') : ''].filter(Boolean).join(' + ')}</p>
-      <p><strong>Contact:</strong> ${name} · ${esc(shop.contact_email)}${shop.contact_phone ? ' · ' + esc(shop.contact_phone) : ''}</p>
+      <p><strong>${young ? 'Parent / guardian' : 'Contact'}:</strong> ${name} · ${esc(shop.contact_email)}${shop.contact_phone ? ' · ' + esc(shop.contact_phone) : ''}</p>
       <p>Email confirmed ✓${waitlisted ? ' · every spot was taken, so they are on the waiting list' : ''}</p>
       ${button(`${SITE}/dashboard?view=festival`, 'Approve in dashboard')}`));
     return json(r, r.ok ? 200 : 502);
@@ -251,10 +256,13 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
 
   // 3 · approved — their sign is ready
   if (shop.status !== 'approved') return json({ error: 'not_approved' }, 409);
-  const r = await sendOnce('shop_approved', id, shop.contact_email, `${shop.name} is on the Inclusion Festival card! 🎉`, shell(`
-    <h1 style="color: #48BB78; text-align: center;">You're on the card!</h1>
+  const r = await sendOnce('shop_approved', id, shop.contact_email, young ? `${shop.name} is featured on our Inclusion Festival page! 🌟` : `${shop.name} is on the Inclusion Festival card! 🎉`, shell(`
+    <h1 style="color: #48BB78; text-align: center;">${young ? "You're featured!" : "You're on the card!"}</h1>
     <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
-    <p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>
+    ${young
+      ? `<p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is now featured in the Young Founders section of our Inclusion Festival page${video ? ', video and all' : ''}. Please tell your young founder we're proud of them!</p>
+    ${button(`${SITE}/InclusionFestival#young-founders`, 'See it on our website')}`
+      : `<p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>`}
     <div style="background-color: #f0fff4; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f6d5;">
       <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
       <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Runs:</strong> ${esc(runs)}</p>
@@ -296,6 +304,7 @@ async function festivalShopUpdated(id: string) {
       <p><strong>Asking for:</strong> ${esc(c.offer_en || shop.offer_en)}</p>
       ${c.detail_en !== undefined && c.detail_en !== shop.detail_en ? `<p><strong>Conditions:</strong> ${esc(c.detail_en || '—')}</p>` : ''}
       ${c.logo_url ? '<p><strong>New logo</strong> uploaded.</p>' : ''}
+      ${c.video_id && c.video_id !== shop.video_id ? `<p><strong>New video:</strong> <a href="https://youtu.be/${esc(c.video_id)}">https://youtu.be/${esc(c.video_id)}</a> — please watch it before approving.</p>` : ''}
       <p style="color: #718096;">The card keeps the current offer until you approve.</p>`
     : `<p><strong>Offer:</strong> ${esc(shop.offer_en)}</p>`}
     ${button(`${SITE}/dashboard?view=festival`, waiting ? 'Review the change' : 'Open the dashboard')}`));
