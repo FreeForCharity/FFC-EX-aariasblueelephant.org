@@ -210,7 +210,7 @@ const FestivalMyShop: React.FC = () => {
         </div>
       )}
 
-      {shop.young_founder && shop.video_id && (
+      {shop.video_id && (
         <div className="mt-6 max-w-xl">
           <VideoFacade id={shop.video_id} title={tr(`Video from ${shop.name}`, `Video de ${shop.name}`)} />
         </div>

@@ -158,7 +158,7 @@ const FestivalAdminPanel: React.FC = () => {
       setMsg(tr('A shop needs at least a name and an offer.', 'Una tienda necesita al menos nombre y oferta.'));
       return;
     }
-    if (draft.young_founder && draft.video_url.trim() && !youtubeId(draft.video_url)) {
+    if (draft.video_url.trim() && !youtubeId(draft.video_url)) {
       setMsg(tr('That does not look like a YouTube link.', 'Eso no parece un enlace de YouTube.'));
       return;
     }
@@ -175,7 +175,7 @@ const FestivalAdminPanel: React.FC = () => {
       // a young founder never holds one of the limited spots
       spot: draft.young_founder ? null : draft.spot ? Number(draft.spot) : null,
       young_founder: draft.young_founder,
-      video_id: draft.young_founder ? youtubeId(draft.video_url) : null,
+      video_id: youtubeId(draft.video_url),
       // entered in person with the parent; keep the first date if there already is one
       ...(draft.young_founder && !wasYoung ? { guardian_consent_at: new Date().toISOString() } : {}),
       logo_url: draft.logo_url,
@@ -638,10 +638,8 @@ const FestivalAdminPanel: React.FC = () => {
                 {tr('Online (personal codes)', 'En línea (códigos personales)')}
               </label>
             </div>
-            {draft.young_founder && (
-              <div className="sm:col-span-2"><label className={label}>{tr('YouTube link', 'Enlace de YouTube')}</label>
-                <input className={field} value={draft.video_url} onChange={(e) => setDraft({ ...draft, video_url: e.target.value })} placeholder="https://youtu.be/…" /></div>
-            )}
+            <div className="sm:col-span-2"><label className={label}>{tr('YouTube link', 'Enlace de YouTube')}</label>
+              <input className={field} value={draft.video_url} onChange={(e) => setDraft({ ...draft, video_url: e.target.value })} placeholder="https://youtu.be/…" /></div>
             {draft.online && (
               <>
                 <div><label className={label}>{tr('Where families book', 'Dónde reservan')}</label>

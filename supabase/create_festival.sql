@@ -104,7 +104,7 @@ alter table festival_shops add column if not exists pending_at timestamptz;
 alter table festival_shops add column if not exists young_founder boolean not null default false;
 -- when the parent or guardian ticked the consent box
 alter table festival_shops add column if not exists guardian_consent_at timestamptz;
--- a YouTube video about what they make: the 11-character id only, never a raw
+-- a YouTube video about the business (any business, kids or not): the 11-character id only, never a raw
 -- link, so nothing but a YouTube embed can ever come out of it
 alter table festival_shops add column if not exists video_id text
   check (video_id is null or video_id ~ '^[A-Za-z0-9_-]{11}$');
@@ -438,15 +438,14 @@ begin
     'online_note', case when coalesce((p ->> 'online')::boolean, false) then
                      nullif(left(btrim(coalesce(p ->> 'online_note', '')), 200), '') end,
     'young_founder', yf,
-    -- videos are a Young Founders thing
-    'video_id', case when yf then festival_youtube_id(p ->> 'video_url') end);
+    -- optional for every business; an admin watches it before approval
+    'video_id', festival_youtube_id(p ->> 'video_url'));
 end $$;
 
 -- a video link that is not a YouTube link gets told so, not silently dropped
 create or replace function festival_bad_video(p jsonb) returns boolean
 language sql immutable as $$
-  select coalesce((p ->> 'young_founder')::boolean, false)
-     and btrim(coalesce(p ->> 'video_url', '')) <> ''
+  select btrim(coalesce(p ->> 'video_url', '')) <> ''
      and festival_youtube_id(p ->> 'video_url') is null
 $$;
 
