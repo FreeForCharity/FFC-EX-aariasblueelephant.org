@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Store, Ticket, Calendar, MapPin, ArrowRight, Clock } from 'lucide-react';
 import Button from '../components/Button';
 import ShopCard from '../components/festival/ShopCard';
@@ -19,19 +19,14 @@ const Festival: React.FC = () => {
   const [open, setOpen] = useState<FestivalShop | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const [loaded, setLoaded] = useState(false);
-  // two tabs: local businesses, and kid-run Young Founders. #young-founders opens the second,
-  // so /youngfounders and shared links land straight on it
-  const [tab, setTab] = useState<'shops' | 'young'>(() => (window.location.hash === '#young-founders' ? 'young' : 'shops'));
-  useEffect(() => {
-    const onHash = () => setTab(window.location.hash === '#young-founders' ? 'young' : 'shops');
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  const pick = (t: 'shops' | 'young') => {
-    setTab(t);
-    // keep the address shareable without adding a history step per click
-    window.history.replaceState(window.history.state, '', t === 'young' ? '#young-founders' : window.location.pathname);
-  };
+  // two tabs: local businesses, and kid-run Young Founders. The address is the tab —
+  // /InclusionFestival/youngfounders (or the older #young-founders) opens the second
+  const { pathname, hash } = useLocation();
+  const navigate = useNavigate();
+  const tab: 'shops' | 'young' = /\/youngfounders\/?$/i.test(pathname) || hash === '#young-founders' ? 'young' : 'shops';
+  // replace, not push: a tab click is not a page to go back to
+  const pick = (t: 'shops' | 'young') =>
+    navigate(t === 'young' ? '/InclusionFestival/youngfounders' : '/InclusionFestival', { replace: true, state: { keepScroll: true } });
 
   useEffect(() => {
     let gone = false;
@@ -42,10 +37,12 @@ const Festival: React.FC = () => {
     return () => { gone = true; };
   }, []);
 
-  // a link to #young-founders lands on the tabs once the page has its content — the router does not scroll to hashes
+  // a link straight to the kids' tab lands on the tabs once the page has its content
   useEffect(() => {
-    if (!loaded || window.location.hash !== '#young-founders') return;
+    if (!loaded || tab !== 'young') return;
     document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // only on arrival; tab clicks stay put
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
   const counts = useMemo(() => toSpotCount(taken.taken, taken.waitlist, settings.spots), [taken, settings.spots]);
@@ -165,7 +162,7 @@ const Festival: React.FC = () => {
             <p className="font-semibold text-slate-700 dark:text-slate-200">
               {tr('Run a business and you’re under 18? Get featured here — free.', '¿Tienes un negocio y eres menor de 18? Aparece aquí, es gratis.')}
             </p>
-            <Link to="/InclusionFestival/join?young=1">
+            <Link to="/InclusionFestival/youngfounders/join">
               <Button>{tr('Get featured', 'Quiero aparecer')}<ArrowRight className="ml-2 h-4 w-4" /></Button>
             </Link>
           </div>
