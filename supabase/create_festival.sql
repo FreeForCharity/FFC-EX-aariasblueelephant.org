@@ -98,6 +98,24 @@ alter table festival_shops add column if not exists online_note text;   -- how t
 -- showing what families were promised until it is approved
 alter table festival_shops add column if not exists pending_changes jsonb;
 alter table festival_shops add column if not exists pending_at timestamptz;
+-- Young Founders: a business run by a kid (under 18), signed up by a parent or
+-- guardian, whose contact details are the ones on file. Shown in its own
+-- section and never counted against the shop spots.
+alter table festival_shops add column if not exists young_founder boolean not null default false;
+-- when the parent or guardian ticked the consent box
+alter table festival_shops add column if not exists guardian_consent_at timestamptz;
+-- a YouTube video about what they make: the 11-character id only, never a raw
+-- link, so nothing but a YouTube embed can ever come out of it
+alter table festival_shops add column if not exists video_id text
+  check (video_id is null or video_id ~ '^[A-Za-z0-9_-]{11}$');
+
+-- the video id out of any YouTube link people paste (watch, youtu.be, shorts,
+-- embed, live); null when it is not one
+create or replace function festival_youtube_id(u text) returns text
+language sql immutable as $$
+  select (regexp_match(coalesce(u, ''),
+    '(?:youtube\.com/(?:watch\?(?:[^#]*&)?v=|shorts/|embed/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])'))[1]
+$$;
 
 alter table festival_shops enable row level security;
 -- Only admins touch the table directly. Owners go through festival_shop_apply()
@@ -118,7 +136,8 @@ with (security_invoker = off) as
   select id, name, category, logo_url,
          offer_en, offer_es, detail_en, detail_es,
          address, website, spot, redeem_from, redeem_to,
-         instore, online, online_link, online_note
+         instore, online, online_link, online_note,
+         young_founder, video_id
   from festival_shops
   where status = 'approved';
 grant select on festival_shops_public to anon, authenticated;
@@ -127,8 +146,8 @@ grant select on festival_shops_public to anon, authenticated;
 create or replace view festival_spot_counts
 with (security_invoker = off) as
   select
-    count(*) filter (where status in ('pending','approved')) as taken,
-    count(*) filter (where status = 'waitlist')              as waitlist
+    count(*) filter (where status in ('pending','approved') and not young_founder) as taken,
+    count(*) filter (where status = 'waitlist' and not young_founder)              as waitlist
   from festival_shops;
 grant select on festival_spot_counts to anon, authenticated;
 
@@ -330,7 +349,7 @@ begin
 
   -- two shops applying at the same instant must not both take the last spot
   perform pg_advisory_xact_lock(hashtext('festival_shop_apply'));
-  select count(*) into v_taken from festival_shops where status in ('pending','approved');
+  select count(*) into v_taken from festival_shops where status in ('pending','approved') and not young_founder;
 
   v_base := left(coalesce(nullif(trim(both '-' from regexp_replace(lower(v_name), '[^a-z0-9]+', '-', 'g')), ''), 'shop'), 28);
   v_id := v_base;
@@ -394,8 +413,11 @@ declare
   c   text := left(btrim(coalesce(p ->> 'contact_name', '')), 80);
   cat text := coalesce(p ->> 'category', 'other');
   web text := left(btrim(coalesce(p ->> 'website', '')), 200);
+  yf  boolean := coalesce((p ->> 'young_founder')::boolean, false);
 begin
   if length(n) < 2 or length(o) < 3 or length(c) < 2 then return null; end if;
+  -- a kid's business only with a parent or guardian saying yes
+  if yf and not coalesce((p ->> 'guardian_consent')::boolean, false) then return null; end if;
   if cat not in ('restaurant','cafe','bakery','grocery','gym','dental','health',
                  'tutoring','kids','salon','florist','retail','other') then cat := 'other'; end if;
   if web <> '' and web !~* '^https?://' then web := 'https://' || web; end if;
@@ -414,8 +436,19 @@ begin
                                  then left(btrim(coalesce(p ->> 'online_link', '')), 300)
                                  else 'https://' || left(btrim(p ->> 'online_link'), 290) end, '') end,
     'online_note', case when coalesce((p ->> 'online')::boolean, false) then
-                     nullif(left(btrim(coalesce(p ->> 'online_note', '')), 200), '') end);
+                     nullif(left(btrim(coalesce(p ->> 'online_note', '')), 200), '') end,
+    'young_founder', yf,
+    -- videos are a Young Founders thing
+    'video_id', case when yf then festival_youtube_id(p ->> 'video_url') end);
 end $$;
+
+-- a video link that is not a YouTube link gets told so, not silently dropped
+create or replace function festival_bad_video(p jsonb) returns boolean
+language sql immutable as $$
+  select coalesce((p ->> 'young_founder')::boolean, false)
+     and btrim(coalesce(p ->> 'video_url', '')) <> ''
+     and festival_youtube_id(p ->> 'video_url') is null
+$$;
 
 -- what a shop's own page shows: its details, its QR once approved, its numbers
 create or replace function festival_shop_view(v_shop festival_shops) returns json
@@ -442,7 +475,8 @@ begin
     'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days,
     'instore', v_shop.instore, 'online', v_shop.online,
     'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes,
-    'pending_changes', v_shop.pending_changes, 'pending_at', v_shop.pending_at);
+    'pending_changes', v_shop.pending_changes, 'pending_at', v_shop.pending_at,
+    'young_founder', v_shop.young_founder, 'video_id', v_shop.video_id);
 end $$;
 revoke all on function festival_shop_view(festival_shops) from public, anon, authenticated;
 
@@ -477,6 +511,7 @@ declare
 begin
   -- a hidden field people never see; bots fill in everything
   if coalesce(p ->> 'company_fax', '') <> '' then return json_build_object('ok', true); end if;
+  if festival_bad_video(p) then return json_build_object('ok', false, 'error', 'bad_video'); end if;
   if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
   if v_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' or length(v_email) > 120 then
     return json_build_object('ok', false, 'error', 'bad_email');
@@ -499,6 +534,8 @@ begin
       website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
       instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
       online_link = f ->> 'online_link', online_note = f ->> 'online_note',
+      young_founder = (f ->> 'young_founder')::boolean, video_id = f ->> 'video_id',
+      guardian_consent_at = case when (f ->> 'young_founder')::boolean then now() end,
       updated_at = now()
     where id = v_shop.id;
     return json_build_object('ok', true, 'id', v_shop.id, 'resent', true);
@@ -519,11 +556,14 @@ begin
   insert into festival_shops (id, name, category, offer_en, offer_es, detail_en, address, website,
                               contact_name, contact_email, contact_phone, status, confirm_token,
                               instore, online, online_link, online_note,
+                              young_founder, video_id, guardian_consent_at,
                               redeem_from, redeem_to)
   values (v_id, f ->> 'name', f ->> 'category', f ->> 'offer_en', f ->> 'offer_es', f ->> 'detail_en',
           f ->> 'address', f ->> 'website', f ->> 'contact_name', v_email, f ->> 'contact_phone',
           'unconfirmed', replace(gen_random_uuid()::text, '-', ''),
           (f ->> 'instore')::boolean, (f ->> 'online')::boolean, f ->> 'online_link', f ->> 'online_note',
+          (f ->> 'young_founder')::boolean, f ->> 'video_id',
+          case when (f ->> 'young_founder')::boolean then now() end,
           (select redeem_from from festival_settings where id = 1),
           (select redeem_to from festival_settings where id = 1))
   returning * into v_shop;
@@ -545,9 +585,9 @@ begin
   end if;
   perform pg_advisory_xact_lock(hashtext('festival_shop_apply'));
   select spots into v_spots from festival_settings where id = 1;
-  select count(*) into v_taken from festival_shops where status in ('pending','approved');
+  select count(*) into v_taken from festival_shops where status in ('pending','approved') and not young_founder;
   update festival_shops
-     set status = case when v_taken < v_spots then 'pending' else 'waitlist' end,
+     set status = case when v_shop.young_founder or v_taken < v_spots then 'pending' else 'waitlist' end,
          email_confirmed_at = now(), updated_at = now()
    where id = v_shop.id
   returning * into v_shop;
@@ -584,6 +624,7 @@ begin
   if v_shop.status not in ('unconfirmed','pending','waitlist','approved') then
     return json_build_object('ok', false, 'error', 'closed');
   end if;
+  if festival_bad_video(p) then return json_build_object('ok', false, 'error', 'bad_video'); end if;
   if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
   if v_shop.status = 'approved' then
     -- keep any logo already waiting; the rest is replaced by this edit
@@ -601,6 +642,8 @@ begin
     website = f ->> 'website', contact_name = f ->> 'contact_name', contact_phone = f ->> 'contact_phone',
     instore = (f ->> 'instore')::boolean, online = (f ->> 'online')::boolean,
     online_link = f ->> 'online_link', online_note = f ->> 'online_note',
+    young_founder = (f ->> 'young_founder')::boolean, video_id = f ->> 'video_id',
+    guardian_consent_at = case when (f ->> 'young_founder')::boolean then coalesce(guardian_consent_at, now()) end,
     updated_at = now()
   where id = v_shop.id;
   return json_build_object('ok', true, 'id', v_shop.id, 'pending', false);
@@ -701,6 +744,10 @@ begin
       online_link   = case when c ? 'online_link' then c ->> 'online_link' else online_link end,
       online_note   = case when c ? 'online_note' then c ->> 'online_note' else online_note end,
       logo_url      = coalesce(c ->> 'logo_url', logo_url),
+      young_founder = coalesce((c ->> 'young_founder')::boolean, young_founder),
+      video_id      = case when c ? 'video_id' then c ->> 'video_id' else video_id end,
+      guardian_consent_at = case when coalesce((c ->> 'young_founder')::boolean, young_founder)
+                                 then coalesce(guardian_consent_at, v_shop.pending_at, now()) end,
       pending_changes = null, pending_at = null, updated_at = now()
     where id = p_shop;
   else
@@ -806,7 +853,8 @@ with (security_invoker = on) as
          min(p.punched_at)                        as first_at,
          max(p.punched_at)                        as last_at,
          count(p.id) filter (where p.method = 'online')   as online_codes,
-         count(p.id) filter (where p.used_at is not null) as codes_used
+         count(p.id) filter (where p.used_at is not null) as codes_used,
+         s.young_founder
   from festival_shops s
   left join festival_punches p on p.shop_id = s.id
   where s.status = 'approved'

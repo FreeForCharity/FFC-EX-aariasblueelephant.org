@@ -3,6 +3,7 @@ import { ImagePlus, Send, Store, Laptop, Check, Eye } from 'lucide-react';
 import ShopCard from './ShopCard';
 import Button from '../Button';
 import { ShopApplication, ShopCategory, CATEGORY_LABEL, CATEGORY_EMOJI, isCategory } from '../../lib/festival/types';
+import { youtubeId } from '../../lib/festival/store';
 import { tr, isEs } from '../../lib/lang';
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as ShopCategory[];
@@ -10,6 +11,8 @@ const label = 'block text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5
 /** a red star you cannot miss, and a quiet word for everything that can be skipped */
 const Req = () => <span className="ml-0.5 text-rose-600" aria-hidden>*</span>;
 const Opt = () => <span className="ml-1 text-xs font-medium text-slate-400">({tr('optional', 'opcional')})</span>;
+
+const ParentNote = () => <span className="ml-1 text-xs font-medium text-slate-400">({tr('parent or guardian', 'padre, madre o tutor')})</span>;
 
 const field = 'w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white';
 
@@ -35,9 +38,11 @@ interface Props {
  */
 const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, busy, error, onSubmit }) => {
   const [v, setV] = useState<ShopFormValues>({
-    name: '', category: 'restaurant', offer_en: '', offer_es: '', detail_en: '',
+    // a kid's business starts on Kids & Art, not Restaurant
+    name: '', category: initial?.young_founder ? 'kids' : 'restaurant', offer_en: '', offer_es: '', detail_en: '',
     address: '', website: '', contact_name: '', contact_email: '', contact_phone: '', company_fax: '',
     instore: true, online: false, online_link: '', online_note: '',
+    young_founder: false, guardian_consent: false, video_url: '',
     ...initial,
   });
   const setFlag = (k: 'instore' | 'online', on: boolean) => setV((f) => {
@@ -46,6 +51,9 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     if (!next.instore && !next.online) next[k === 'instore' ? 'online' : 'instore'] = true;
     return next;
   });
+  const young = !!v.young_founder;
+  const videoBad = young && !!(v.video_url || '').trim() && !youtubeId(v.video_url || '');
+  const [localError, setLocalError] = useState('');
   const [logo, setLogo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(logoUrl || null);
   const set = (k: keyof ShopFormValues, val: string) => setV((f) => ({ ...f, [k]: val }));
@@ -59,7 +67,21 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
   }, [logo]);
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(v, logo); }} className="space-y-5">
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      if (young && !v.guardian_consent) {
+        setLocalError(tr('A parent or guardian needs to tick the permission box.', 'Un padre, madre o tutor debe marcar la casilla de permiso.'));
+        return;
+      }
+      if (videoBad) {
+        setLocalError(tr('That doesn’t look like a YouTube link.', 'Eso no parece un enlace de YouTube.'));
+        return;
+      }
+      setLocalError('');
+      // the kid-only fields never travel with a regular shop
+      const out = young ? v : { ...v, young_founder: false, guardian_consent: undefined, video_url: undefined };
+      onSubmit(out, logo);
+    }} className="space-y-5">
       {/* hidden from people, irresistible to bots */}
       <input type="text" name="company_fax" tabIndex={-1} autoComplete="off" aria-hidden="true"
              value={v.company_fax} onChange={(e) => set('company_fax', e.target.value)}
@@ -69,11 +91,30 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
         <span className="text-rose-600">*</span> {tr('Required', 'Obligatorio')}
       </p>
 
+      <button type="button" role="checkbox" aria-checked={young}
+        onClick={() => setV((f) => ({ ...f, young_founder: !f.young_founder }))}
+        className={`flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left transition ${young
+          ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800'}`}>
+        <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${young ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-300'}`}>
+          {young && <Check className="h-3.5 w-3.5" />}
+        </span>
+        <span>
+          <span className="block font-bold text-slate-900 dark:text-white">🌟 {tr('This is a kid’s business (Young Founder)', 'Este es el negocio de un niño o niña (Joven Emprendedor)')}</span>
+          <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{tr('Run by someone under 18. A parent or guardian fills this in.', 'Dirigido por alguien menor de 18 años. Un padre, madre o tutor lo llena.')}</span>
+        </span>
+      </button>
+
       <div>
         <label className={label} htmlFor="name">{tr('Business name', 'Nombre del negocio')}<Req /></label>
         <input id="name" required maxLength={80} className={field} value={v.name}
                onChange={(e) => set('name', e.target.value)}
                placeholder={tr('e.g. Golden Crust Pizza', 'ej. Golden Crust Pizza')} />
+        {young && (
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {tr('Use the business name only — please leave out your child’s full name, age and school.',
+                'Usa solo el nombre del negocio: por favor no incluyas el nombre completo, la edad ni la escuela de tu hijo o hija.')}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-5 sm:grid-cols-[1fr_auto]">
@@ -162,24 +203,24 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className={label} htmlFor="contact_name">{tr('Your name', 'Tu nombre')}<Req /></label>
+          <label className={label} htmlFor="contact_name">{young ? tr('Parent or guardian’s name', 'Nombre del padre, madre o tutor') : tr('Your name', 'Tu nombre')}<Req /></label>
           <input id="contact_name" required maxLength={80} className={field} value={v.contact_name}
                  onChange={(e) => set('contact_name', e.target.value)} />
         </div>
         {askEmail ? (
           <div>
-            <label className={label} htmlFor="contact_email">{tr('Email', 'Correo')}<Req /></label>
+            <label className={label} htmlFor="contact_email">{tr('Email', 'Correo')}{young && <ParentNote />}<Req /></label>
             <input id="contact_email" required type="email" maxLength={120} className={field} value={v.contact_email || ''}
                    onChange={(e) => set('contact_email', e.target.value)} placeholder="you@yourshop.com" />
           </div>
         ) : (
           <div>
-            <span className={label}>{tr('Email', 'Correo')}</span>
+            <span className={label}>{tr('Email', 'Correo')}{young && <ParentNote />}</span>
             <p className={`${field} truncate bg-slate-50 text-slate-500 dark:bg-slate-900`}>{v.contact_email}</p>
           </div>
         )}
         <div>
-          <label className={label} htmlFor="contact_phone">{tr('Phone', 'Teléfono')}<Opt /></label>
+          <label className={label} htmlFor="contact_phone">{tr('Phone', 'Teléfono')}{young && <ParentNote />}<Opt /></label>
           <input id="contact_phone" type="tel" maxLength={30} className={field} value={v.contact_phone || ''}
                  onChange={(e) => set('contact_phone', e.target.value)} />
         </div>
@@ -194,6 +235,33 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
                  onChange={(e) => set('website', e.target.value)} placeholder="https://" />
         </div>
       </div>
+
+      {young && (
+        <div className="space-y-4 rounded-2xl border-2 border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/50 dark:bg-slate-800/40">
+          <div>
+            <label className={label} htmlFor="video_url">{tr('Video about your product', 'Video sobre tu producto')}<Opt /></label>
+            <input id="video_url" maxLength={300} className={field} value={v.video_url || ''}
+                   onChange={(e) => set('video_url', e.target.value)} placeholder="https://youtu.be/…" />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {tr('A YouTube link — Public or Unlisted, on a parent’s account. We watch every video before it goes on our website.',
+                  'Un enlace de YouTube, Público o No listado, en la cuenta de un padre o madre. Vemos cada video antes de publicarlo en nuestro sitio.')}
+            </p>
+            {videoBad && <p className="mt-1 text-xs font-bold text-rose-600 dark:text-rose-400">{tr('That doesn’t look like a YouTube link.', 'Eso no parece un enlace de YouTube.')}</p>}
+          </div>
+          <button type="button" role="checkbox" aria-checked={!!v.guardian_consent}
+            onClick={() => setV((f) => ({ ...f, guardian_consent: !f.guardian_consent }))}
+            className={`flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left transition ${v.guardian_consent
+              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800'}`}>
+            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${v.guardian_consent ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-300'}`}>
+              {v.guardian_consent && <Check className="h-3.5 w-3.5" />}
+            </span>
+            <span className="text-sm text-slate-700 dark:text-slate-200">
+              {tr('I’m this young founder’s parent or legal guardian. I agree to have their business — and their video, if added — featured on Aaria’s Blue Elephant’s website, and I’m the contact for it.',
+                  'Soy el padre, madre o tutor legal de este joven emprendedor. Acepto que su negocio, y su video si lo agrega, aparezca en el sitio web de Aaria’s Blue Elephant, y soy la persona de contacto.')}<Req />
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* what they get, before they press the button: their card, as families will see it */}
       <div className="rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50/40 p-5 dark:border-slate-700 dark:bg-slate-800/40">
@@ -210,6 +278,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
             offerEs: v.offer_es || '', detailEn: v.detail_en || undefined, detailEs: undefined,
             address: v.address || undefined, redeemFrom: '', redeemTo: '',
             instore: v.instore !== false, online: !!v.online,
+            youngFounder: young, videoId: young ? youtubeId(v.video_url || '') || undefined : undefined,
           }} />
         </div>
         <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
@@ -218,7 +287,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
         </p>
       </div>
 
-      {error && <p className="text-center text-sm font-bold text-rose-600 dark:text-rose-400">{error}</p>}
+      {(localError || error) && <p className="text-center text-sm font-bold text-rose-600 dark:text-rose-400">{localError || error}</p>}
 
       <Button type="submit" size="lg" fullWidth disabled={busy}>
         <Send className="mr-2 h-5 w-5" />{busy ? tr('Sending…', 'Enviando…') : submitLabel}

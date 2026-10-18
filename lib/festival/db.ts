@@ -74,6 +74,8 @@ export interface MyShop {
   /** a change waiting for an admin, once the shop is on the card */
   pending_changes: Record<string, any> | null;
   pending_at: string | null;
+  young_founder: boolean;
+  video_id: string | null;
 }
 
 export interface Registration {
@@ -86,6 +88,7 @@ export interface ShopReport {
   contact_name: string; contact_email: string; contact_phone: string | null;
   redemptions: number; new_cards: number; first_at: string | null; last_at: string | null;
   online_codes: number; codes_used: number;
+  young_founder: boolean;
 }
 
 const toSettings = (d: any): FestivalSettings => ({
@@ -300,10 +303,10 @@ export const festivalDb = {
   },
 
   /**
-   * Approve onto the card, in a numbered spot, and email the shop its private
+   * Approve onto the card, in a numbered spot (Young Founders take none), and email the shop its private
    * link to print the QR sign — if we have a real address for them.
    */
-  async approve(id: string, spot: number, by: string, email: string): Promise<string | null> {
+  async approve(id: string, spot: number | null, by: string, email: string): Promise<string | null> {
     const err = await festivalDb.updateShop(id, {
       status: 'approved', spot, approved_by: by, approved_at: new Date().toISOString(),
     });

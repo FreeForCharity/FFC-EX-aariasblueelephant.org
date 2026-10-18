@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import ShopCard from '../components/festival/ShopCard';
 import SpotMeter, { toSpotCount } from '../components/festival/SpotMeter';
 import Dialog from '../components/festival/Dialog';
+import VideoFacade from '../components/festival/VideoFacade';
 import { festivalDb } from '../lib/festival/db';
 import { DEFAULT_SETTINGS, fmtDay } from '../lib/festival/store';
 import { FestivalShop, FestivalSettings, CATEGORY_LABEL } from '../lib/festival/types';
@@ -17,19 +18,29 @@ const Festival: React.FC = () => {
   const [taken, setTaken] = useState({ taken: 0, waitlist: 0 });
   const [open, setOpen] = useState<FestivalShop | null>(null);
   const close = useCallback(() => setOpen(null), []);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let gone = false;
     Promise.all([festivalDb.shops(), festivalDb.settings(), festivalDb.spotCounts()]).then(([s, st, c]) => {
       if (gone) return;
-      setShops(s); setSettings(st); setTaken(c);
+      setShops(s); setSettings(st); setTaken(c); setLoaded(true);
     });
     return () => { gone = true; };
   }, []);
 
+  // jump to #young-founders once the page has its content — the router does not scroll to hashes
+  useEffect(() => {
+    if (!loaded || !window.location.hash) return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [loaded]);
+
   const counts = useMemo(() => toSpotCount(taken.taken, taken.waitlist, settings.spots), [taken, settings.spots]);
 
-  const ordered = [...shops].sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.name.localeCompare(b.name));
+  const byName = (a: FestivalShop, b: FestivalShop) => (a.spot ?? 999) - (b.spot ?? 999) || a.name.localeCompare(b.name);
+  const regular = shops.filter((s) => !s.youngFounder);
+  const ordered = regular.sort(byName);
+  const founders = shops.filter((s) => s.youngFounder).sort(byName);
 
   return (
     // -mt-16 eats most of Layout's pt-24, which is only empty space under the sticky navbar
@@ -53,6 +64,9 @@ const Festival: React.FC = () => {
           {settings.state === 'recruiting'
             ? <Button disabled>{tr('Offers open soon', 'Las ofertas abren pronto')}</Button>
             : <Link to="/InclusionFestival/pass"><Button>{tr('My Festival Offers', 'Mis ofertas del festival')}</Button></Link>}
+          <a href="#young-founders" className="mt-2 block text-sm font-bold text-amber-700 hover:underline dark:text-amber-400">
+            🌟 {tr('Young Founders', 'Jóvenes Emprendedores')}
+          </a>
         </div>
       </div>
 
@@ -64,9 +78,9 @@ const Festival: React.FC = () => {
               {tr('Offers from participating businesses', 'Ofertas de los negocios participantes')}
             </h2>
             <p className="mt-1 text-slate-600 dark:text-slate-400">
-              {shops.length
-                ? tr(`${shops.length} ${shops.length === 1 ? 'business is' : 'businesses are'} welcoming festival families. One offer each for your family, all month — tap one for details.`,
-                     `${shops.length} ${shops.length === 1 ? 'negocio da' : 'negocios dan'} la bienvenida a las familias del festival. Una oferta de cada uno para tu familia, todo el mes: toca uno para ver detalles.`)
+              {regular.length
+                ? tr(`${regular.length} ${regular.length === 1 ? 'business is' : 'businesses are'} welcoming festival families. One offer each for your family, all month — tap one for details.`,
+                     `${regular.length} ${regular.length === 1 ? 'negocio da' : 'negocios dan'} la bienvenida a las familias del festival. Una oferta de cada uno para tu familia, todo el mes: toca uno para ver detalles.`)
                 : tr('The first shops are signing up now — check back soon.', 'Las primeras tiendas se están inscribiendo ahora, vuelve pronto.')}
             </p>
           </div>
@@ -88,6 +102,41 @@ const Festival: React.FC = () => {
             </Link>
           )}
         </div>
+      </div>
+
+      {/* ── young founders: kid-run businesses, their own section, never counted against the shop spots ── */}
+      <div className="mt-12 scroll-mt-24 rounded-3xl border-2 border-amber-200 bg-amber-50/60 p-5 dark:border-amber-900/50 dark:bg-slate-900/60 sm:p-8" id="young-founders">
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white">🌟 {tr('Young Founders', 'Jóvenes Emprendedores')}</h2>
+        <p className="mt-1 text-slate-600 dark:text-slate-300">
+          {tr('Businesses run by kids in our community. Their offers work just like the shops’ — and every purchase builds a young entrepreneur’s confidence.',
+              'Negocios dirigidos por niños y jóvenes de nuestra comunidad. Sus ofertas funcionan igual que las de las tiendas, y cada compra le da confianza a un joven emprendedor.')}
+        </p>
+
+        {founders.length > 0 ? (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {founders.map((shop) => (
+              <div key={shop.id} className="flex flex-col gap-3">
+                <ShopCard shop={shop} onClick={() => setOpen(shop)} />
+                {shop.videoId && <VideoFacade id={shop.videoId} title={tr(`Video from ${shop.name}`, `Video de ${shop.name}`)} />}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-2xl bg-white p-5 text-center font-bold text-amber-900 dark:bg-slate-800 dark:text-amber-200">
+            {tr('Be the first young founder featured here!', '¡Sé el primer joven emprendedor que aparezca aquí!')}
+          </p>
+        )}
+
+        {settings.state !== 'ended' && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-center">
+            <p className="font-semibold text-slate-700 dark:text-slate-200">
+              {tr('Run a business and you’re under 18? Get featured here — free.', '¿Tienes un negocio y eres menor de 18? Aparece aquí, es gratis.')}
+            </p>
+            <Link to="/InclusionFestival/join?young=1">
+              <Button>{tr('Get featured', 'Quiero aparecer')}<ArrowRight className="ml-2 h-4 w-4" /></Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── how it works ───────────────────────────────────────────────── */}
@@ -149,6 +198,7 @@ const Festival: React.FC = () => {
                 : <span className="text-5xl" aria-hidden>{open.emoji}</span>}
               <div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">{open.name}</h3>
+                {open.youngFounder && <p className="text-xs font-bold text-amber-700 dark:text-amber-400">🌟 {tr('Young Founder', 'Joven Emprendedor')}</p>}
                 <p className="text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400">
                   {es ? CATEGORY_LABEL[open.category].es : CATEGORY_LABEL[open.category].en}
                 </p>

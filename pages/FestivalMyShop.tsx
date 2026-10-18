@@ -2,10 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2, Laptop, Check } from 'lucide-react';
 import Button from '../components/Button';
+import VideoFacade from '../components/festival/VideoFacade';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
 import { QrSign, PrintTarget, printSign } from '../components/festival/QrSign';
 import { festivalDb, MyShop } from '../lib/festival/db';
-import { fmtShortDay, SHOP_KEY } from '../lib/festival/store';
+import { fmtShortDay, SHOP_KEY, youtubeLink } from '../lib/festival/store';
 import { isCategory } from '../lib/festival/types';
 import { useAuth } from '../context/AuthContext';
 import { tr, isEs } from '../lib/lang';
@@ -82,7 +83,9 @@ const FestivalMyShop: React.FC = () => {
       const url = await festivalDb.uploadLogoByManage(key, logo);
       if (!url) setError(tr('Your details saved, but the logo did not upload. Try a PNG or JPG.', 'Tus datos se guardaron, pero el logo no se subió. Prueba un PNG o JPG.'));
     }
-    if (!r.ok) setError(tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.'));
+    if (!r.ok) setError(r.error === 'bad_video'
+      ? tr('That video link does not look like a YouTube link. Check it, or leave it blank.', 'Ese enlace de video no parece de YouTube. Revísalo o déjalo en blanco.')
+      : tr('Please fill in the business name, the offer and your name — and for a Young Founder, tick the parent or guardian permission box.', 'Completa el nombre del negocio, la oferta y tu nombre. Si es un Joven Emprendedor, marca también la casilla de permiso del padre, madre o tutor.'));
     else setSaved(r.pending ? 'pending' : 'saved');
     setBusy(false);
     await load(key);
@@ -138,6 +141,8 @@ const FestivalMyShop: React.FC = () => {
     contact_name: shop.contact_name, contact_email: shop.contact_email, contact_phone: shop.contact_phone || '',
     instore: shop.instore !== false, online: !!shop.online,
     online_link: shop.online_link || '', online_note: shop.online_note || '',
+    young_founder: shop.young_founder, guardian_consent: shop.young_founder,
+    video_url: shop.video_id ? youtubeLink(shop.video_id) : '',
   };
 
   /* ── before approval ──────────────────────────────────────────────── */
@@ -202,6 +207,12 @@ const FestivalMyShop: React.FC = () => {
           )}
           {shop.pending_changes.logo_url && <p className="mt-1">{tr('New logo uploaded.', 'Logo nuevo subido.')}</p>}
           <p className="mt-1 text-xs">{tr('Your current offer stays live until we approve it.', 'Tu oferta actual sigue publicada hasta que la aprobemos.')}</p>
+        </div>
+      )}
+
+      {shop.young_founder && shop.video_id && (
+        <div className="mt-6 max-w-xl">
+          <VideoFacade id={shop.video_id} title={tr(`Video from ${shop.name}`, `Video de ${shop.name}`)} />
         </div>
       )}
 

@@ -39,6 +39,10 @@ export interface FestivalShop {
   online: boolean;
   onlineLink?: string;
   onlineNote?: string;
+  /** a kid's business (under 18), signed up by a parent — its own section, no spot */
+  youngFounder?: boolean;
+  /** YouTube video id (Young Founders only), shown once an admin approves the card */
+  videoId?: string;
 }
 
 /** the full row, as an admin sees it */
@@ -101,6 +105,11 @@ export interface ShopApplication {
   online?: boolean;
   online_link?: string;
   online_note?: string;
+  young_founder?: boolean;
+  /** the parent or guardian said yes — required when young_founder */
+  guardian_consent?: boolean;
+  /** any YouTube link; the database keeps only the video id */
+  video_url?: string;
 }
 
 export const CATEGORY_EMOJI: Record<ShopCategory, string> = {

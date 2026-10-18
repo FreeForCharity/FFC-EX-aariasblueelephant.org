@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, MailCheck, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter, { SpotCount, toSpotCount } from '../components/festival/SpotMeter';
@@ -19,6 +19,8 @@ import { tr } from '../lib/lang';
  */
 const FestivalShopJoin: React.FC = () => {
   const navigate = useNavigate();
+  // ?young=1 — the Young Founders form: a parent signs up a kid's business
+  const young = useSearchParams()[0].get('young') === '1';
   const [counts, setCounts] = useState<SpotCount | null>(null);
   const [settings, setSettings] = useState<FestivalSettings>(DEFAULT_SETTINGS);
   const [busy, setBusy] = useState(false);
@@ -53,7 +55,8 @@ const FestivalShopJoin: React.FC = () => {
       return;
     }
     setError(
-      r.error === 'missing_fields' ? tr('Please fill in the business name, the offer and your name.', 'Completa el nombre del negocio, la oferta y tu nombre.')
+      r.error === 'missing_fields' ? tr('Please fill in the business name, the offer and your name — and for a Young Founder, tick the parent or guardian permission box.', 'Completa el nombre del negocio, la oferta y tu nombre. Si es un Joven Emprendedor, marca también la casilla de permiso del padre, madre o tutor.')
+      : r.error === 'bad_video' ? tr('That video link does not look like a YouTube link. Check it, or leave it blank.', 'Ese enlace de video no parece de YouTube. Revísalo o déjalo en blanco.')
       : r.error === 'bad_email' ? tr('That email address does not look right.', 'Ese correo no parece correcto.')
       : r.error === 'closed' ? tr('Sign-ups for this festival have closed.', 'Las inscripciones para este festival ya cerraron.')
       : r.error === 'busy' ? tr('We are getting a lot of sign-ups right now. Please try again in a few minutes.', 'Estamos recibiendo muchas inscripciones. Inténtalo en unos minutos.')
@@ -77,12 +80,21 @@ const FestivalShopJoin: React.FC = () => {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex items-center gap-3">
         <Store className="h-8 w-8 text-sky-700 dark:text-sky-400" />
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{tr('Join the Inclusion Festival', 'Únete al Festival de Inclusión')}</h1>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{young ? tr('Young Founders: get featured on our website', 'Jóvenes Emprendedores: aparece en nuestro sitio web') : tr('Join the Inclusion Festival', 'Únete al Festival de Inclusión')}</h1>
       </div>
       <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
-        {tr('Offer festival families something special for a month — you choose what. Free to join, two minutes, no account needed. Once approved you print a QR sign for your counter: families scan it to redeem, so there is nothing for your staff to set up.',
+        {young ? tr('Get your business featured. A parent or guardian signs up for you — it’s free, takes two minutes, and needs no account. Your offer runs through November, and a video about your product is optional. We only show your business name.',
+                    'Haz que tu negocio aparezca en nuestro sitio. Un padre, madre o tutor te inscribe: es gratis, toma dos minutos y no necesita cuenta. Tu oferta dura todo noviembre y el video sobre tu producto es opcional. Solo mostramos el nombre de tu negocio.')
+        : tr('Offer festival families something special for a month — you choose what. Free to join, two minutes, no account needed. Once approved you print a QR sign for your counter: families scan it to redeem, so there is nothing for your staff to set up.',
             'Ofrece algo especial a las familias del festival durante un mes: tú eliges qué. Gratis, dos minutos y sin crear cuenta. Al ser aprobado imprimes un letrero QR para tu mostrador: las familias lo escanean para canjear, así que tu personal no tiene nada que configurar.')}
       </p>
+      {!young && (
+        <p className="mt-2 text-sm">
+          <Link to="/InclusionFestival/join?young=1" className="font-semibold text-amber-700 underline dark:text-amber-400">
+            {tr('Signing up a kid’s business? Use the Young Founders form →', '¿Inscribes el negocio de un niño o niña? Usa el formulario de Jóvenes Emprendedores →')}
+          </Link>
+        </p>
+      )}
 
       {known && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sky-50 p-4 dark:bg-sky-900/20">
@@ -96,12 +108,12 @@ const FestivalShopJoin: React.FC = () => {
       <div className="mt-8"><ShopSteps redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo} /></div>
 
       <div className="mx-auto mt-12 max-w-2xl" id="signup">
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white">{tr('Sign up your shop', 'Inscribe tu negocio')}</h2>
-      {counts && <div className="mt-4"><SpotMeter counts={counts} /></div>}
+      <h2 className="text-2xl font-black text-slate-900 dark:text-white">{young ? tr('Sign up your business', 'Inscribe tu negocio') : tr('Sign up your shop', 'Inscribe tu negocio')}</h2>
+      {counts && !young && <div className="mt-4"><SpotMeter counts={counts} /></div>}
 
       <div className="mt-8">
-        <ShopForm askEmail busy={busy} error={error} onSubmit={submit}
-                  submitLabel={counts?.full ? tr('Join the waiting list', 'Unirme a la lista de espera') : tr('Sign up my shop', 'Inscribir mi tienda')} />
+        <ShopForm key={young ? 'young' : 'shop'} askEmail initial={young ? { young_founder: true } : undefined} busy={busy} error={error} onSubmit={submit}
+                  submitLabel={young ? tr('Sign up my business', 'Inscribir mi negocio') : counts?.full ? tr('Join the waiting list', 'Unirme a la lista de espera') : tr('Sign up my shop', 'Inscribir mi tienda')} />
         <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
           {tr('We email you a link to confirm. Then we review your offer and get back to you within 48 hours.',
               'Te enviamos un enlace para confirmar. Luego revisamos tu oferta y te respondemos en 48 horas.')}
