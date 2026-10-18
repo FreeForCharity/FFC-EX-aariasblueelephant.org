@@ -77,9 +77,10 @@ const PreviewPanel: React.FC<{ v: ShopFormValues; logoUrl: string | null; redeem
 
 /**
  * The shop's details — the same form for signing up and for changing them
- * while waiting for approval. Up front only what we need; everything optional
- * waits behind "Add more details". A kid's business (initial.young_founder)
- * also asks for the parent's consent and shows its video field up front.
+ * while waiting for approval. Up front only what we need, plus the two extras
+ * most people have (logo, website); everything else waits behind "Add more
+ * details". A kid's business (initial.young_founder) also asks for the
+ * parent's consent and shows its video field up front.
  */
 const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, busy, error, onSubmit, redeemFrom = '2026-10-15', redeemTo = '2026-11-30', wide = true }) => {
   const [v, setV] = useState<ShopFormValues>({
@@ -165,6 +166,28 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
           </select>
         </div>
 
+        {/* the two extras most people have — up front, still optional */}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <span className={label}>{tr('Logo', 'Logo')}<Opt /></span>
+            <label className="flex h-[52px] cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 px-3 text-sm font-semibold text-slate-600 hover:border-sky-400 dark:border-slate-600 dark:text-slate-300">
+              {preview ? <img src={preview} alt="" className="h-9 w-9 rounded bg-white object-contain" /> : <ImagePlus className="h-5 w-5" />}
+              {preview ? tr('Change', 'Cambiar') : tr('Upload', 'Subir')}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                     onChange={(e) => setLogo(e.target.files?.[0] || null)} />
+            </label>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {tr('No logo? Your card shows the icon for your type of business.', '¿Sin logo? Tu tarjeta muestra el ícono de tu tipo de negocio.')}
+            </p>
+          </div>
+          <div>
+            <label className={label} htmlFor="website">{tr('Website', 'Sitio web')}<Opt /></label>
+            <input id="website" maxLength={200} className={field} value={v.website || ''}
+                   onChange={(e) => set('website', e.target.value)}
+                   placeholder={young ? tr('Your shop page, Etsy or Instagram', 'Tu tienda en línea, Etsy o Instagram') : 'https://'} />
+          </div>
+        </div>
+
         <div className="rounded-2xl border-2 border-sky-100 bg-sky-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40">
           <label className={label} htmlFor="offer_en">{tr('Your offer', 'Tu oferta')}<Req /></label>
           <input id="offer_en" required maxLength={140} className={field} value={v.offer_en}
@@ -239,28 +262,16 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
               <span className="block font-bold text-slate-900 dark:text-white">{tr('Add more details', 'Agregar más detalles')}<Opt /></span>
               <span className="block text-xs text-slate-500 dark:text-slate-400">
                 {young
-                  ? tr('Logo, how families reach you, offer in Spanish, conditions, address, website, where to order online',
-                       'Logo, cómo te contactan las familias, oferta en español, condiciones, dirección, sitio web, dónde pedir en línea')
-                  : tr('Logo, a YouTube video, how families reach you, offer in Spanish, conditions, address, website, where to order online',
-                       'Logo, un video de YouTube, cómo te contactan las familias, oferta en español, condiciones, dirección, sitio web, dónde pedir en línea')}
+                  ? tr('How families reach you, offer in Spanish, conditions, phone, address, where to order online',
+                       'Cómo te contactan las familias, oferta en español, condiciones, teléfono, dirección, dónde pedir en línea')
+                  : tr('A YouTube video, how families reach you, offer in Spanish, conditions, phone, address, where to order online',
+                       'Un video de YouTube, cómo te contactan las familias, oferta en español, condiciones, teléfono, dirección, dónde pedir en línea')}
               </span>
             </span>
             <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition ${more ? 'rotate-180' : ''}`} />
           </button>
           {more && (
             <div className="grid gap-5 border-t-2 border-slate-100 px-5 pb-5 pt-4 dark:border-slate-800 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <span className={label}>{tr('Logo', 'Logo')}<Opt /></span>
-                <label className="flex h-[52px] cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 px-3 text-sm font-semibold text-slate-600 hover:border-sky-400 dark:border-slate-600 dark:text-slate-300">
-                  {preview ? <img src={preview} alt="" className="h-9 w-9 rounded bg-white object-contain" /> : <ImagePlus className="h-5 w-5" />}
-                  {preview ? tr('Change', 'Cambiar') : tr('Upload', 'Subir')}
-                  <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
-                         onChange={(e) => setLogo(e.target.files?.[0] || null)} />
-                </label>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {tr('No logo? Your card shows the icon for your type of business.', '¿Sin logo? Tu tarjeta muestra el ícono de tu tipo de negocio.')}
-                </p>
-              </div>
               {!young && (
                 <div className="sm:col-span-2">
                   <label className={label} htmlFor="video_url">{tr('Video about your business', 'Video sobre tu negocio')}<Opt /></label>
@@ -307,11 +318,6 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
                 <label className={label} htmlFor="address">{tr('Address', 'Dirección')}<Opt /></label>
                 <input id="address" maxLength={140} className={field} value={v.address || ''}
                        onChange={(e) => set('address', e.target.value)} placeholder={tr('Street, city', 'Calle, ciudad')} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label} htmlFor="website">{tr('Website', 'Sitio web')}<Opt /></label>
-                <input id="website" maxLength={200} className={field} value={v.website || ''}
-                       onChange={(e) => set('website', e.target.value)} placeholder="https://" />
               </div>
               <div>
                 <label className={label} htmlFor="online_link">{tr('Where do families order or book online?', '¿Dónde piden o reservan en línea las familias?')}<Opt /></label>
