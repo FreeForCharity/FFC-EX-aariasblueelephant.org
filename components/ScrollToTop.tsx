@@ -2,9 +2,12 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const ScrollToTop = () => {
-    const { pathname } = useLocation();
+    const { pathname, state } = useLocation();
 
     useEffect(() => {
+        // switching tabs changes the address but not the page — stay where you are
+        if ((state as { keepScroll?: boolean } | null)?.keepScroll) return;
+
         // Force immediate scroll to top
         window.scrollTo(0, 0);
 

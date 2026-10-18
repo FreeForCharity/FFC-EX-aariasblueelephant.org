@@ -183,6 +183,9 @@ const App: React.FC = () => {
                 {/* Inclusion Festival & Resource Fair — November offers, redeemed by QR */}
                 <Route path="/InclusionFestival" element={<Festival />} />
                 <Route path="/InclusionFestival/join" element={<FestivalShopJoin />} />
+                {/* Young Founders: the festival page on its kids' tab, and the kids' sign-up form */}
+                <Route path="/InclusionFestival/youngfounders" element={<Festival />} />
+                <Route path="/InclusionFestival/youngfounders/join" element={<FestivalShopJoin />} />
                 <Route path="/InclusionFestival/pass" element={<FestivalPass />} />
                 <Route path="/InclusionFestival/myshop" element={<FestivalMyShop />} />
                 {/* online offers: no counter to scan, so a personal code instead */}
@@ -197,10 +200,10 @@ const App: React.FC = () => {
                 <Route path="/InclusionFestival/admin" element={<Navigate to="/dashboard?view=festival" replace />} />
                 {/* aliases: a short link volunteers can read out loud, plus
                     lower-case and older spellings so no printed link ever dies */}
-                {/* Young Founders live on the festival page; these land on that section */}
-                <Route path="/youngfounders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
-                <Route path="/young-founders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
-                <Route path="/InclusionFestival/young-founders" element={<Navigate to="/InclusionFestival#young-founders" replace />} />
+                {/* older Young Founders links land on the kids' tab */}
+                <Route path="/youngfounders" element={<Navigate to="/InclusionFestival/youngfounders" replace />} />
+                <Route path="/young-founders" element={<Navigate to="/InclusionFestival/youngfounders" replace />} />
+                <Route path="/InclusionFestival/young-founders" element={<Navigate to="/InclusionFestival/youngfounders" replace />} />
                 <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/inclusionfestival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival" element={<Navigate to="/InclusionFestival" replace />} />

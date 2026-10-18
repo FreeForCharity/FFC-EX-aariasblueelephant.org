@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Store, MailCheck, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter, { SpotCount, toSpotCount } from '../components/festival/SpotMeter';
@@ -19,8 +19,11 @@ import { tr } from '../lib/lang';
  */
 const FestivalShopJoin: React.FC = () => {
   const navigate = useNavigate();
-  // ?young=1 — the Young Founders form: a parent signs up a kid's business
-  const young = useSearchParams()[0].get('young') === '1';
+  // /InclusionFestival/youngfounders/join (or the older ?young=1) — the Young Founders form:
+  // a parent signs up a kid's business
+  const { pathname } = useLocation();
+  const [params] = useSearchParams();
+  const young = /\/youngfounders\/join\/?$/i.test(pathname) || params.get('young') === '1';
   const [counts, setCounts] = useState<SpotCount | null>(null);
   const [settings, setSettings] = useState<FestivalSettings>(DEFAULT_SETTINGS);
   const [busy, setBusy] = useState(false);
@@ -90,7 +93,7 @@ const FestivalShopJoin: React.FC = () => {
       </p>
       {!young && (
         <p className="mt-2 text-sm">
-          <Link to="/InclusionFestival/join?young=1" className="font-semibold text-amber-700 underline dark:text-amber-400">
+          <Link to="/InclusionFestival/youngfounders/join" className="font-semibold text-amber-700 underline dark:text-amber-400">
             {tr('Signing up a kid’s business? Use the Young Founders form →', '¿Inscribes el negocio de un niño o niña? Usa el formulario de Jóvenes Emprendedores →')}
           </Link>
         </p>
