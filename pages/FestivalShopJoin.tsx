@@ -4,6 +4,7 @@ import { Store, MailCheck, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter, { SpotCount, toSpotCount } from '../components/festival/SpotMeter';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
+import JoinBenefits from '../components/festival/JoinBenefits';
 import ShopSteps from '../components/festival/ShopSteps';
 import { festivalDb } from '../lib/festival/db';
 import { SHOP_KEY, DEFAULT_SETTINGS } from '../lib/festival/store';
@@ -99,6 +100,8 @@ const FestivalShopJoin: React.FC = () => {
         </p>
       )}
 
+      <JoinBenefits young={young} />
+
       {known && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-sky-50 p-4 dark:bg-sky-900/20">
           <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">
@@ -108,14 +111,15 @@ const FestivalShopJoin: React.FC = () => {
         </div>
       )}
 
-      <div className="mt-8"><ShopSteps redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo} /></div>
+      <div className="mt-8"><ShopSteps redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo} young={young} /></div>
 
-      <div className="mx-auto mt-12 max-w-2xl" id="signup">
+      <div className="mx-auto mt-12 max-w-2xl lg:max-w-5xl" id="signup">
       <h2 className="text-2xl font-black text-slate-900 dark:text-white">{young ? tr('Sign up your business', 'Inscribe tu negocio') : tr('Sign up your shop', 'Inscribe tu negocio')}</h2>
       {counts && !young && <div className="mt-4"><SpotMeter counts={counts} /></div>}
 
       <div className="mt-8">
         <ShopForm key={young ? 'young' : 'shop'} askEmail initial={young ? { young_founder: true } : undefined} busy={busy} error={error} onSubmit={submit}
+                  redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo}
                   submitLabel={young ? tr('Sign up my business', 'Inscribir mi negocio') : counts?.full ? tr('Join the waiting list', 'Unirme a la lista de espera') : tr('Sign up my shop', 'Inscribir mi tienda')} />
         <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
           {tr('We email you a link to confirm. Then we review your offer and get back to you within 48 hours.',
