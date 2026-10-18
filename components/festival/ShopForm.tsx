@@ -128,8 +128,11 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     }} className={wide ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-8 lg:items-start' : ''}>
       {/* the form */}
       <div className="space-y-5">
-        {/* hidden from people, irresistible to bots */}
-        <input type="text" name="company_fax" tabIndex={-1} autoComplete="off" aria-hidden="true"
+        {/* hidden from people, irresistible to bots. Its name must mean nothing:
+            called "company_fax", Chrome autofill took it for a phone field and
+            filled it, and real sign-ups were silently dropped as bots */}
+        <input type="text" name="abe_q7_check" id="abe_q7_check" tabIndex={-1} autoComplete="off" aria-hidden="true"
+               data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
                value={v.company_fax} onChange={(e) => set('company_fax', e.target.value)}
                className="absolute -left-[9999px] h-0 w-0 opacity-0" />
 
