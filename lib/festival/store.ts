@@ -42,6 +42,7 @@ export function toShop(p: any): FestivalShop {
     onlineNote: p.online_note || undefined,
     youngFounder: p.young_founder === true,
     videoId: p.video_id || undefined,
+    publicContact: p.public_contact || undefined,
   };
 }
 
@@ -72,6 +73,21 @@ export const youtubeId = (url: string): string | null =>
 /** privacy-enhanced embed: no YouTube cookies until someone presses play */
 export const youtubeEmbed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
 export const youtubeLink = (id: string) => `https://youtu.be/${id}`;
+
+/**
+ * A link for whatever a business typed as its public contact — an email, a
+ * phone, a web address — or null for anything else (an @handle stays text).
+ * We pick the scheme ourselves, so nothing typed can become a script link.
+ */
+export const contactHref = (text: string): string | null => {
+  const t = (text || '').trim();
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t)) return `mailto:${t}`;
+  if (/^https?:\/\/[^\s]+$/i.test(t)) return t;
+  if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s]*)?$/i.test(t)) return `https://${t}`;
+  const digits = t.replace(/[^\d+]/g, '');
+  if (/^[\d\s()+.-]+$/.test(t) && digits.replace('+', '').length >= 7) return `tel:${digits}`;
+  return null;
+};
 
 /** a shop's private page — no password, the link is the key */
 // the key sits after '#': the part of a URL that is never sent to a server,

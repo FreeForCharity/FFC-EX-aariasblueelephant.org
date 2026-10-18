@@ -46,7 +46,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     // every offer works both ways — a QR sign in person, a personal code online —
     // so nobody has to choose
     instore: true, online: true, online_link: '', online_note: '',
-    young_founder: false, guardian_consent: false, video_url: '',
+    young_founder: false, guardian_consent: false, video_url: '', public_contact: '',
     ...initial,
   });
   const young = !!v.young_founder;
@@ -189,10 +189,10 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
             <span className="block font-bold text-slate-900 dark:text-white">{tr('Add more details', 'Agregar más detalles')}<Opt /></span>
             <span className="block text-xs text-slate-500 dark:text-slate-400">
               {young
-                ? tr('Logo, offer in Spanish, conditions, phone, address, website, where to order online',
-                     'Logo, oferta en español, condiciones, teléfono, dirección, sitio web, dónde pedir en línea')
-                : tr('Logo, a YouTube video, offer in Spanish, conditions, phone, address, website, where to order online',
-                     'Logo, un video de YouTube, oferta en español, condiciones, teléfono, dirección, sitio web, dónde pedir en línea')}
+                ? tr('Logo, how families reach you, offer in Spanish, conditions, address, website, where to order online',
+                     'Logo, cómo te contactan las familias, oferta en español, condiciones, dirección, sitio web, dónde pedir en línea')
+                : tr('Logo, a YouTube video, how families reach you, offer in Spanish, conditions, address, website, where to order online',
+                     'Logo, un video de YouTube, cómo te contactan las familias, oferta en español, condiciones, dirección, sitio web, dónde pedir en línea')}
             </span>
           </span>
           <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition ${more ? 'rotate-180' : ''}`} />
@@ -223,6 +223,19 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
                 {videoBad && <p className="mt-1 text-xs font-bold text-rose-600 dark:text-rose-400">{tr('That doesn’t look like a YouTube link.', 'Eso no parece un enlace de YouTube.')}</p>}
               </div>
             )}
+            <div className="sm:col-span-2">
+              <label className={label} htmlFor="public_contact">{tr('How can families reach you?', '¿Cómo pueden contactarte las familias?')}<Opt /></label>
+              <input id="public_contact" maxLength={120} className={field} value={v.public_contact || ''}
+                     onChange={(e) => set('public_contact', e.target.value)}
+                     placeholder={tr('e.g. hello@yourshop.com, (209) 555-0100 or @yourshop', 'ej. hola@tunegocio.com, (209) 555-0100 o @tunegocio')} />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {young
+                  ? tr('Shown publicly on your card — use a business contact, never a child’s personal email or phone. The email above stays private.',
+                       'Se muestra públicamente en tu tarjeta: usa un contacto del negocio, nunca el correo o teléfono personal de un niño. El correo de arriba sigue siendo privado.')
+                  : tr('Shown on your card for families. The email above stays private — we only use it to reach you.',
+                       'Se muestra en tu tarjeta para las familias. El correo de arriba sigue siendo privado: solo lo usamos para contactarte.')}
+              </p>
+            </div>
             <div>
               <label className={label} htmlFor="offer_es">{tr('Your offer in Spanish', 'Tu oferta en español')}<Opt /></label>
               <input id="offer_es" maxLength={140} className={field} value={v.offer_es || ''}

@@ -76,6 +76,7 @@ export interface MyShop {
   pending_at: string | null;
   young_founder: boolean;
   video_id: string | null;
+  public_contact: string | null;
 }
 
 export interface Registration {

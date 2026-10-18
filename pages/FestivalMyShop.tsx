@@ -143,6 +143,7 @@ const FestivalMyShop: React.FC = () => {
     online_link: shop.online_link || '', online_note: shop.online_note || '',
     young_founder: shop.young_founder, guardian_consent: shop.young_founder,
     video_url: shop.video_id ? youtubeLink(shop.video_id) : '',
+    public_contact: shop.public_contact || '',
   };
 
   /* ── before approval ──────────────────────────────────────────────── */

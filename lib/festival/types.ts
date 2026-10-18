@@ -43,6 +43,8 @@ export interface FestivalShop {
   youngFounder?: boolean;
   /** YouTube video id, optional for any business, shown once an admin approves the card */
   videoId?: string;
+  /** how families can reach them — public by choice, unlike the sign-up email */
+  publicContact?: string;
 }
 
 /** the full row, as an admin sees it */
@@ -110,6 +112,7 @@ export interface ShopApplication {
   guardian_consent?: boolean;
   /** any YouTube link; the database keeps only the video id */
   video_url?: string;
+  public_contact?: string;
 }
 
 export const CATEGORY_EMOJI: Record<ShopCategory, string> = {

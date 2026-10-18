@@ -53,14 +53,14 @@ type Draft = {
   contact_name: string; contact_email: string; contact_phone: string;
   pledge_pct: string; spot: string; logo_url: string | null;
   instore: boolean; online: boolean; online_link: string; online_note: string;
-  young_founder: boolean; video_url: string;
+  young_founder: boolean; video_url: string; public_contact: string;
 };
 const emptyDraft = (): Draft => ({
   name: '', category: 'restaurant', offer_en: '', offer_es: '', detail_en: '', detail_es: '',
   address: '', website: '', contact_name: '', contact_email: '', contact_phone: '',
   pledge_pct: '', spot: '', logo_url: null,
   instore: true, online: false, online_link: '', online_note: '',
-  young_founder: false, video_url: '',
+  young_founder: false, video_url: '', public_contact: '',
 });
 const draftFrom = (s: AdminShop): Draft => ({
   id: s.id, name: s.name, category: s.category, offer_en: s.offerEn, offer_es: s.offerEs || '',
@@ -68,7 +68,7 @@ const draftFrom = (s: AdminShop): Draft => ({
   contact_name: s.contactName || '', contact_email: s.contactEmail || '', contact_phone: s.contactPhone || '',
   pledge_pct: s.pledgePct != null ? String(s.pledgePct) : '', spot: s.spot ? String(s.spot) : '', logo_url: s.logoUrl || null,
   instore: s.instore, online: s.online, online_link: s.onlineLink || '', online_note: s.onlineNote || '',
-  young_founder: !!s.youngFounder, video_url: s.videoId ? youtubeLink(s.videoId) : '',
+  young_founder: !!s.youngFounder, video_url: s.videoId ? youtubeLink(s.videoId) : '', public_contact: s.publicContact || '',
 });
 
 const slug = (s: string) =>
@@ -176,6 +176,7 @@ const FestivalAdminPanel: React.FC = () => {
       spot: draft.young_founder ? null : draft.spot ? Number(draft.spot) : null,
       young_founder: draft.young_founder,
       video_id: youtubeId(draft.video_url),
+      public_contact: draft.public_contact.trim().slice(0, 120) || null,
       // entered in person with the parent; keep the first date if there already is one
       ...(draft.young_founder && !wasYoung ? { guardian_consent_at: new Date().toISOString() } : {}),
       logo_url: draft.logo_url,
@@ -269,9 +270,9 @@ const FestivalAdminPanel: React.FC = () => {
 
   const csvShops = () => downloadCsv('festival-shops.csv', [
     ['Status', 'Spot', 'Shop', 'Category', 'In store', 'Online', 'Online booking', 'Offer', 'Offer (ES)', 'Conditions', 'Address', 'Website',
-     'Contact', 'Email', 'Phone', 'Pledge %', 'Signed up', 'Approved by', 'Young founder', 'Video'],
+     'Contact', 'Email', 'Phone', 'Pledge %', 'Signed up', 'Approved by', 'Young founder', 'Video', 'Public contact'],
     ...(shops || []).map((s) => [s.status, s.spot, s.name, s.category, s.instore ? 'yes' : 'no', s.online ? 'yes' : 'no', s.onlineLink, s.offerEn, s.offerEs, s.detailEn, s.address, s.website,
-      s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy, s.youngFounder ? 'yes' : 'no', s.videoId ? youtubeLink(s.videoId) : '']),
+      s.contactName, s.contactEmail, s.contactPhone, s.pledgePct, s.createdAt?.slice(0, 10), s.approvedBy, s.youngFounder ? 'yes' : 'no', s.videoId ? youtubeLink(s.videoId) : '', s.publicContact]),
   ]);
   const csvReport = () => downloadCsv('festival-redemptions-by-shop.csv', [
     ['Shop', 'Redemptions', 'New families via them', 'Online codes', 'Online codes used', 'First', 'Last', 'Pledge %', 'Contact', 'Email', 'Phone'],
@@ -413,6 +414,8 @@ const FestivalAdminPanel: React.FC = () => {
                     {s.online && (s.onlineLink || s.onlineNote) && (
                       <p className="text-xs text-violet-700 dark:text-violet-300">💻 {[s.onlineLink, s.onlineNote].filter(Boolean).join(' · ')}</p>
                     )}
+                    {/* public on the card — check it before approving, especially for a kid's business */}
+                    {s.publicContact && <p className="text-xs text-slate-600 dark:text-slate-300">💬 {tr('Shown to families:', 'Visible para las familias:')} {s.publicContact}</p>}
                     {s.videoId && (
                       <a href={youtubeLink(s.videoId)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-bold text-sky-700 underline dark:text-sky-400">
                         ▶ {s.status === 'approved' ? tr('Watch video', 'Ver video') : tr('Watch video before approving', 'Ver el video antes de aprobar')}
@@ -427,7 +430,7 @@ const FestivalAdminPanel: React.FC = () => {
                     {s.pendingChanges && (
                       <div className="mt-2 rounded-lg border-2 border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
                         <p className="font-black uppercase">{tr('Change requested', 'Cambio solicitado')}</p>
-                        {(['offer_en', 'offer_es', 'detail_en', 'name', 'address', 'online_link', 'online_note'] as const).map((k) => {
+                        {(['offer_en', 'offer_es', 'detail_en', 'name', 'address', 'online_link', 'online_note', 'public_contact'] as const).map((k) => {
                           const now = ({ offer_en: s.offerEn, offer_es: s.offerEs, detail_en: s.detailEn, name: s.name, address: s.address, online_link: s.onlineLink, online_note: s.onlineNote } as any)[k] || '';
                           const next = s.pendingChanges![k] ?? '';
                           return next !== now ? (
@@ -638,6 +641,8 @@ const FestivalAdminPanel: React.FC = () => {
                 {tr('Online (personal codes)', 'En línea (códigos personales)')}
               </label>
             </div>
+            <div className="sm:col-span-2"><label className={label}>{tr('Public contact for families', 'Contacto público para las familias')}</label>
+              <input className={field} value={draft.public_contact} onChange={(e) => setDraft({ ...draft, public_contact: e.target.value })} placeholder={tr('shop email, phone or @handle', 'correo, teléfono o @usuario del negocio')} /></div>
             <div className="sm:col-span-2"><label className={label}>{tr('YouTube link', 'Enlace de YouTube')}</label>
               <input className={field} value={draft.video_url} onChange={(e) => setDraft({ ...draft, video_url: e.target.value })} placeholder="https://youtu.be/…" /></div>
             {draft.online && (
