@@ -93,7 +93,7 @@ const FestivalAdminPanel: React.FC = () => {
   const [report, setReport] = useState<Awaited<ReturnType<typeof festivalDb.report>>>(null);
   const [regs, setRegs] = useState<Registration[] | null>(null);
   const [msg, setMsg] = useState('');
-  const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'young' | 'all'>('open');
+  const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'local' | 'young' | 'all'>('open');
   // until someone picks a filter: "To review" when there is something to review, otherwise everything
   const picked = useRef(false);
   const pickFilter = (f: typeof filter) => { picked.current = true; setFilter(f); };
@@ -303,11 +303,13 @@ const FestivalAdminPanel: React.FC = () => {
     open: (shops || []).filter(needsReview).length,
     approved: (shops || []).filter((s) => s.status === 'approved').length,
     unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
+    local: (shops || []).filter((s) => !s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
     young: (shops || []).filter((s) => s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
     all: (shops || []).length,
   };
   const visible = (shops || [])
-    .filter((s) => filter === 'all' || (filter === 'open' ? needsReview(s) : filter === 'young' ? !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
+    .filter((s) => filter === 'all' || (filter === 'open' ? needsReview(s) : filter === 'young' || filter === 'local'
+      ? (filter === 'young') === !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -385,7 +387,8 @@ const FestivalAdminPanel: React.FC = () => {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {([['open', tr('To review', 'Por revisar')], ['approved', tr('On the card', 'En la tarjeta')],
-             ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['young', tr('Young Founders', 'Jóvenes Emprendedores')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
+             ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['local', tr('Local businesses', 'Negocios locales')], ['young', tr('Young Founders', 'Jóvenes Emprendedores')],
+             ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
             <button key={k} onClick={() => pickFilter(k)}
               className={`rounded-full px-3 py-1 text-xs font-bold ${filter === k ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {l} ({counts[k]})
@@ -421,8 +424,21 @@ const FestivalAdminPanel: React.FC = () => {
                   <th className="py-2" />
                 </tr>
               </thead>
-              <tbody>
-                {visible.map((s) => (
+              {/* two groups, like the public page: local businesses, then the kids */}
+              {([['local', `🏪 ${tr('Local businesses', 'Negocios locales')}`, visible.filter((s) => !s.youngFounder)],
+                 ['young', `🌟 ${tr('Young Founders', 'Jóvenes Emprendedores')}`, visible.filter((s) => s.youngFounder)]] as const)
+                .filter(([, , rows]) => rows.length > 0 || filter === 'all')
+                .map(([g, heading, rows]) => (
+              <tbody key={g}>
+                <tr>
+                  <td colSpan={8} className="pb-1 pt-4 text-sm font-black text-slate-900 dark:text-white">
+                    {heading} <span className="font-semibold text-slate-400">({rows.length})</span>
+                  </td>
+                </tr>
+                {rows.length === 0 && (
+                  <tr><td colSpan={8} className="border-b border-slate-100 pb-3 text-sm text-slate-400 dark:border-slate-800">{tr('None yet.', 'Ninguno todavía.')}</td></tr>
+                )}
+                {rows.map((s) => (
                   <tr key={s.id} className="border-b border-slate-100 align-top dark:border-slate-800">
                     <td className="py-2.5 pr-3">
                       <p className="font-bold text-slate-900 dark:text-white">
@@ -438,7 +454,7 @@ const FestivalAdminPanel: React.FC = () => {
                     <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-200">{s.contactName}</td>
                     <td className="py-2.5 pr-3">
                       {s.contactEmail?.includes('@')
-                        ? <a href={`mailto:${s.contactEmail}`} className="break-all text-sky-700 hover:underline dark:text-sky-400">{s.contactEmail}</a>
+                        ? <a href={`mailto:${s.contactEmail}`} className="whitespace-nowrap text-sky-700 hover:underline dark:text-sky-400">{s.contactEmail}</a>
                         : <span className="text-slate-400">—</span>}
                     </td>
                     <td className="py-2.5 pr-3 whitespace-nowrap">
@@ -457,6 +473,7 @@ const FestivalAdminPanel: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
+                ))}
             </table>
           </div>
         ) : (
