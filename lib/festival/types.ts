@@ -41,7 +41,7 @@ export interface FestivalShop {
   onlineNote?: string;
   /** a kid's business (under 18), signed up by a parent — its own section, no spot */
   youngFounder?: boolean;
-  /** YouTube video id (Young Founders only), shown once an admin approves the card */
+  /** YouTube video id, optional for any business, shown once an admin approves the card */
   videoId?: string;
 }
 

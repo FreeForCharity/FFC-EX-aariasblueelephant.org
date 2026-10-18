@@ -36,7 +36,7 @@ interface Props {
  * The shop's details — the same form for signing up and for changing them
  * while waiting for approval. Up front only what we need; everything optional
  * waits behind "Add more details". A kid's business (initial.young_founder)
- * also asks for the parent's consent and, optionally, a video.
+ * also asks for the parent's consent and shows its video field up front.
  */
 const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, busy, error, onSubmit }) => {
   const [v, setV] = useState<ShopFormValues>({
@@ -50,7 +50,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     ...initial,
   });
   const young = !!v.young_founder;
-  const videoBad = young && !!(v.video_url || '').trim() && !youtubeId(v.video_url || '');
+  const videoBad = !!(v.video_url || '').trim() && !youtubeId(v.video_url || '');
   const [localError, setLocalError] = useState('');
   // editing opens with everything showing; signing up starts short
   const [more, setMore] = useState(!askEmail);
@@ -79,7 +79,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
       }
       setLocalError('');
       // the kid-only fields never travel with a regular shop
-      const out = young ? v : { ...v, young_founder: false, guardian_consent: undefined, video_url: undefined };
+      const out = young ? v : { ...v, young_founder: false, guardian_consent: undefined };
       onSubmit(out, logo);
     }} className="space-y-5">
       {/* hidden from people, irresistible to bots */}
@@ -188,8 +188,11 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
           <span>
             <span className="block font-bold text-slate-900 dark:text-white">{tr('Add more details', 'Agregar más detalles')}<Opt /></span>
             <span className="block text-xs text-slate-500 dark:text-slate-400">
-              {tr('Logo, offer in Spanish, conditions, phone, address, website, where to order online',
-                  'Logo, oferta en español, condiciones, teléfono, dirección, sitio web, dónde pedir en línea')}
+              {young
+                ? tr('Logo, offer in Spanish, conditions, phone, address, website, where to order online',
+                     'Logo, oferta en español, condiciones, teléfono, dirección, sitio web, dónde pedir en línea')
+                : tr('Logo, a YouTube video, offer in Spanish, conditions, phone, address, website, where to order online',
+                     'Logo, un video de YouTube, oferta en español, condiciones, teléfono, dirección, sitio web, dónde pedir en línea')}
             </span>
           </span>
           <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition ${more ? 'rotate-180' : ''}`} />
@@ -208,6 +211,18 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
                 {tr('No logo? Your card shows the icon for your type of business.', '¿Sin logo? Tu tarjeta muestra el ícono de tu tipo de negocio.')}
               </p>
             </div>
+            {!young && (
+              <div className="sm:col-span-2">
+                <label className={label} htmlFor="video_url">{tr('Video about your business', 'Video sobre tu negocio')}<Opt /></label>
+                <input id="video_url" maxLength={300} className={field} value={v.video_url || ''}
+                       onChange={(e) => set('video_url', e.target.value)} placeholder="https://youtu.be/…" />
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {tr('A YouTube link, Public or Unlisted. Families can play it on your card. We watch every video before it goes on our website.',
+                      'Un enlace de YouTube, Público o No listado. Las familias pueden verlo en tu tarjeta. Vemos cada video antes de publicarlo en nuestro sitio.')}
+                </p>
+                {videoBad && <p className="mt-1 text-xs font-bold text-rose-600 dark:text-rose-400">{tr('That doesn’t look like a YouTube link.', 'Eso no parece un enlace de YouTube.')}</p>}
+              </div>
+            )}
             <div>
               <label className={label} htmlFor="offer_es">{tr('Your offer in Spanish', 'Tu oferta en español')}<Opt /></label>
               <input id="offer_es" maxLength={140} className={field} value={v.offer_es || ''}
@@ -265,7 +280,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
             offerEs: v.offer_es || '', detailEn: v.detail_en || undefined, detailEs: undefined,
             address: v.address || undefined, redeemFrom: '', redeemTo: '',
             instore: v.instore !== false, online: !!v.online,
-            youngFounder: young, videoId: young ? youtubeId(v.video_url || '') || undefined : undefined,
+            youngFounder: young, videoId: youtubeId(v.video_url || '') || undefined,
           }} />
         </div>
         <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">

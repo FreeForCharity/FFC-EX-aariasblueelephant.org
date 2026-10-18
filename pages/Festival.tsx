@@ -236,6 +236,12 @@ const Festival: React.FC = () => {
               </div>
             </div>
             <p className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{es ? (open.offerEs || open.offerEn) : open.offerEn}</p>
+            {/* the business's own video, for any business — nothing loads until play */}
+            {open.videoId && (
+              <div className="mt-4">
+                <VideoFacade id={open.videoId} title={tr(`Video from ${open.name}`, `Video de ${open.name}`)} />
+              </div>
+            )}
             {(es ? open.detailEs || open.detailEn : open.detailEn) && (
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{es ? open.detailEs || open.detailEn : open.detailEn}</p>
             )}
