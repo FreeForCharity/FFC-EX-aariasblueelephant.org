@@ -261,7 +261,8 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
     <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
     ${young
       ? `<p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is now featured in the Young Founders section of our Inclusion Festival page${video ? ', video and all' : ''}. Please tell your young founder we're proud of them!</p>
-    ${button(`${SITE}/InclusionFestival#young-founders`, 'See it on our website')}`
+    ${button(`${SITE}/InclusionFestival#young-founders`, 'See it on our website')}
+    <p style="font-size: 15px; color: #4a5568;">${shop.instore !== false ? 'Selling at the farmers market? Print your QR sign (below) for your stall. After that, your' : 'Your'} offer keeps running on our website until ${esc(fmtDate(shop.redeem_to))}, and if you want to stop sooner, just reply to this email and we'll take it down.</p>`
       : `<p style="font-size: 16px; color: #4a5568;"><strong>${shopName}</strong> is approved for the Inclusion Festival. Thank you for welcoming festival families!</p>`}
     <div style="background-color: #f0fff4; padding: 16px 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f6d5;">
       <p style="margin: 4px 0; font-size: 15px; color: #276749;"><strong>Your offer:</strong> ${offer}</p>
