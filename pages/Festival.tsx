@@ -19,6 +19,19 @@ const Festival: React.FC = () => {
   const [open, setOpen] = useState<FestivalShop | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const [loaded, setLoaded] = useState(false);
+  // two tabs: local businesses, and kid-run Young Founders. #young-founders opens the second,
+  // so /youngfounders and shared links land straight on it
+  const [tab, setTab] = useState<'shops' | 'young'>(() => (window.location.hash === '#young-founders' ? 'young' : 'shops'));
+  useEffect(() => {
+    const onHash = () => setTab(window.location.hash === '#young-founders' ? 'young' : 'shops');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const pick = (t: 'shops' | 'young') => {
+    setTab(t);
+    // keep the address shareable without adding a history step per click
+    window.history.replaceState(window.history.state, '', t === 'young' ? '#young-founders' : window.location.pathname);
+  };
 
   useEffect(() => {
     let gone = false;
@@ -29,10 +42,10 @@ const Festival: React.FC = () => {
     return () => { gone = true; };
   }, []);
 
-  // jump to #young-founders once the page has its content — the router does not scroll to hashes
+  // a link to #young-founders lands on the tabs once the page has its content — the router does not scroll to hashes
   useEffect(() => {
-    if (!loaded || !window.location.hash) return;
-    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!loaded || window.location.hash !== '#young-founders') return;
+    document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [loaded]);
 
   const counts = useMemo(() => toSpotCount(taken.taken, taken.waitlist, settings.spots), [taken, settings.spots]);
@@ -64,14 +77,32 @@ const Festival: React.FC = () => {
           {settings.state === 'recruiting'
             ? <Button disabled>{tr('Offers open soon', 'Las ofertas abren pronto')}</Button>
             : <Link to="/InclusionFestival/pass"><Button>{tr('My Festival Offers', 'Mis ofertas del festival')}</Button></Link>}
-          <a href="#young-founders" className="mt-2 block text-sm font-bold text-amber-700 hover:underline dark:text-amber-400">
+          <button type="button" onClick={() => { pick('young'); document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                  className="mx-auto mt-2 block text-sm font-bold text-amber-700 hover:underline dark:text-amber-400 md:mx-0">
             🌟 {tr('Young Founders', 'Jóvenes Emprendedores')}
-          </a>
+          </button>
         </div>
       </div>
 
-      {/* ── the shops: first thing after the hero, it is why families come ── */}
-      <div className="mt-8" id="shops">
+      {/* ── the tabs: local businesses first, it is why families come; then the kids ── */}
+      <div id="offers" role="tablist" aria-label={tr('Festival offers', 'Ofertas del festival')}
+           className="mt-8 flex scroll-mt-24 gap-2 border-b-2 border-slate-200 dark:border-slate-700">
+        {([
+          ['shops', <><Store className="h-5 w-5" />{tr('Local businesses', 'Negocios locales')}</>, regular.length, 'border-sky-600 text-sky-800 dark:text-sky-300'],
+          ['young', <>🌟 {tr('Young Founders', 'Jóvenes Emprendedores')}</>, founders.length, 'border-amber-500 text-amber-800 dark:text-amber-300'],
+        ] as const).map(([k, label, n, on]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} aria-controls={k === 'young' ? 'young-founders' : 'shops'}
+                  onClick={() => pick(k)}
+                  className={`-mb-0.5 inline-flex flex-1 items-center justify-center gap-2 rounded-t-xl border-b-4 px-2 py-2.5 text-sm font-black leading-tight transition sm:flex-none sm:px-5 sm:text-lg ${tab === k
+                    ? `${on} bg-white dark:bg-slate-900` : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}>
+            {label}
+            <span className={`rounded-full px-2 py-0.5 text-xs ${tab === k ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-100/70 dark:bg-slate-800/70'}`}>{n}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'shops' && (
+      <div className="mt-6" id="shops" role="tabpanel">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white">
@@ -103,9 +134,11 @@ const Festival: React.FC = () => {
           )}
         </div>
       </div>
+      )}
 
-      {/* ── young founders: kid-run businesses, their own section, never counted against the shop spots ── */}
-      <div className="mt-12 scroll-mt-24 rounded-3xl border-2 border-amber-200 bg-amber-50/60 p-5 dark:border-amber-900/50 dark:bg-slate-900/60 sm:p-8" id="young-founders">
+      {/* ── young founders: kid-run businesses, their own tab, never counted against the shop spots ── */}
+      {tab === 'young' && (
+      <div className="mt-6 rounded-3xl border-2 border-amber-200 bg-amber-50/60 p-5 dark:border-amber-900/50 dark:bg-slate-900/60 sm:p-8" id="young-founders" role="tabpanel">
         <h2 className="text-3xl font-black text-slate-900 dark:text-white">🌟 {tr('Young Founders', 'Jóvenes Emprendedores')}</h2>
         <p className="mt-1 text-slate-600 dark:text-slate-300">
           {tr('Businesses run by kids in our community. Their offers work just like the shops’ — and every purchase builds a young entrepreneur’s confidence.',
@@ -138,6 +171,7 @@ const Festival: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* ── how it works ───────────────────────────────────────────────── */}
       <div className="mt-16 grid gap-4 sm:grid-cols-3">
