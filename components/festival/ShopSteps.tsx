@@ -1,12 +1,10 @@
 import React from 'react';
-import { PencilLine, MailCheck, BadgeCheck, Gift, CalendarRange, Store, BarChart3, HeartHandshake, Sparkles, LucideIcon } from 'lucide-react';
-import { fmtDay } from '../../lib/festival/store';
-import { tr, isEs } from '../../lib/lang';
+import { PencilLine, MailCheck, BadgeCheck, LucideIcon } from 'lucide-react';
+import { tr } from '../../lib/lang';
 
 /**
- * The top of the shop sign-up page: what a business is agreeing to and what
- * happens after they press the button, as five pictures a busy owner can take
- * in at a glance. Steps 4 and 5 draw the actual sign and the actual green
+ * What happens after a business presses the button, as five pictures a busy
+ * owner can take in at a glance. Steps 4 and 5 draw the actual sign and the actual green
  * screen, so nothing about the day surprises them.
  */
 
@@ -40,8 +38,7 @@ const IconDisc: React.FC<{ icon: LucideIcon; color: string }> = ({ icon: Icon, c
 );
 
 /** young: the same steps in a kid's words — a stall, not a register */
-const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string; young?: boolean }> = ({ redeemFrom, redeemTo, young }) => {
-  const es = isEs();
+const ShopSteps: React.FC<{ young?: boolean }> = ({ young }) => {
 
   const steps = [
     { art: <IconDisc icon={PencilLine} color="bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" />,
@@ -66,25 +63,12 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string; young?: boolea
       ds: 'Escanean, tocan Canjear y muestran una pantalla verde. Tú das la oferta.' },
   ];
 
-  const facts = [
-    { icon: Sparkles, en: 'Free to join. No fees, ever.', es: 'Participar es gratis. Sin costos, nunca.' },
-    { icon: Gift, en: 'You choose the offer — a free item, a discount, a free class…', es: 'Tú eliges la oferta: un producto gratis, un descuento, una clase gratis…' },
-    { icon: CalendarRange, en: `Your offer runs from the day you are approved through ${fmtDay(redeemTo, false)}.`,
-      es: `Tu oferta va desde el día de tu aprobación hasta el ${fmtDay(redeemTo, true)}.` },
-    young
-      ? { icon: Store, en: 'Featured on our Young Founders page and shared with our community.', es: 'Apareces en nuestra página de Jóvenes Emprendedores y la compartimos con nuestra comunidad.' }
-      : { icon: Store, en: 'Your logo displayed on our website and shared with our community.', es: 'Tu logo en nuestro sitio web y compartido con nuestra comunidad.' },
-    { icon: BarChart3, en: 'Your own page shows how many families came, day by day.', es: 'Tu página muestra cuántas familias vinieron, día por día.' },
-    young
-      ? { icon: HeartHandshake, en: 'Nothing to set up: the family’s phone does the work.', es: 'Nada que configurar: el teléfono de la familia hace todo.' }
-      : { icon: HeartHandshake, en: 'Your staff need nothing: the family’s phone does the work.', es: 'Tu personal no necesita nada: el teléfono de la familia hace todo.' },
-  ];
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border-2 border-sky-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-6">
         <h2 className="text-center text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
-          {young ? tr('How it works for Young Founders', 'Cómo funciona para Jóvenes Emprendedores') : tr('How it works for your shop', 'Cómo funciona para tu negocio')}
+          {tr('What happens next', 'Qué pasa después')}
         </h2>
         <ol className="mt-6 grid gap-4 sm:grid-cols-5 sm:gap-3">
           {steps.map((st, i) => (
@@ -100,25 +84,6 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string; young?: boolea
             </li>
           ))}
         </ol>
-        <p className="mt-5 rounded-2xl bg-violet-50 p-3 text-center text-sm text-violet-900 dark:bg-violet-900/20 dark:text-violet-200">
-          {/* every offer works online too now — no box to tick */}
-          💻 {tr('Every offer works online too: families get a personal code to use when they order or book, and you tick codes off on your own page.',
-                 'Cada oferta también funciona en línea: las familias reciben un código personal para usar al pedir o reservar, y tú los marcas en tu propia página.')}
-        </p>
-      </div>
-
-      <div className="rounded-3xl border-2 border-[#F5C542] bg-[#FFFBEB] p-5 dark:border-amber-700 dark:bg-amber-900/20 sm:p-6">
-        <h2 className="text-lg font-black text-[#92400E] dark:text-amber-200">
-          {tr('What you are signing up for', 'A qué te inscribes')}
-        </h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {facts.map((f) => (
-            <li key={f.en} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-200">
-              <f.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#B45309] dark:text-amber-300" />
-              <span>{tr(f.en, f.es)}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

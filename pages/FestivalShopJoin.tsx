@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Store, MailCheck, KeyRound } from 'lucide-react';
+import { MailCheck, KeyRound } from 'lucide-react';
 import Button from '../components/Button';
 import SpotMeter, { SpotCount, toSpotCount } from '../components/festival/SpotMeter';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
 import JoinBenefits from '../components/festival/JoinBenefits';
+import JoinHero from '../components/festival/JoinHero';
+import JoinPromote from '../components/festival/JoinPromote';
 import ShopSteps from '../components/festival/ShopSteps';
 import { festivalDb } from '../lib/festival/db';
 import { SHOP_KEY, DEFAULT_SETTINGS } from '../lib/festival/store';
@@ -81,24 +83,10 @@ const FestivalShopJoin: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <div className="flex items-center gap-3">
-        <Store className="h-8 w-8 text-sky-700 dark:text-sky-400" />
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{young ? tr('Young Founders: get featured on our website', 'Jóvenes Emprendedores: aparece en nuestro sitio web') : tr('Join the Inclusion Festival', 'Únete al Festival de Inclusión')}</h1>
-      </div>
-      <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
-        {young ? tr('Get your business featured. A parent or guardian signs up for you — it’s free, takes two minutes, and needs no account. Print a QR sign for your market stall, and your offer keeps running on our website through November 30 — or stop sooner whenever you like: just ask and we take it down. A video about your product is optional. We only show your business name.',
-                    'Haz que tu negocio aparezca en nuestro sitio. Un padre, madre o tutor te inscribe: es gratis, toma dos minutos y no necesita cuenta. Imprime un letrero QR para tu puesto en el mercado, y tu oferta sigue en nuestro sitio hasta el 30 de noviembre, o termínala antes cuando quieras: solo pídelo y la quitamos. El video sobre tu producto es opcional. Solo mostramos el nombre de tu negocio.')
-        : tr('Offer festival families something special for a month — you choose what. Free to join, two minutes, no account needed. Once approved you print a QR sign for your counter: families scan it to redeem, so there is nothing for your staff to set up.',
-            'Ofrece algo especial a las familias del festival durante un mes: tú eliges qué. Gratis, dos minutos y sin crear cuenta. Al ser aprobado imprimes un letrero QR para tu mostrador: las familias lo escanean para canjear, así que tu personal no tiene nada que configurar.')}
-      </p>
-      {!young && (
-        <p className="mt-2 text-sm">
-          <Link to="/InclusionFestival/youngfounders/join" className="font-semibold text-amber-700 underline dark:text-amber-400">
-            {tr('Signing up a kid’s business? Use the Young Founders form →', '¿Inscribes el negocio de un niño o niña? Usa el formulario de Jóvenes Emprendedores →')}
-          </Link>
-        </p>
-      )}
+    // -mt-16 eats most of Layout's pt-24, which is only empty space under the sticky navbar
+    <div className="mx-auto -mt-16 max-w-5xl px-4 pb-12">
+      {/* the post that brought them here, on the page: who, what they get, why it matters */}
+      <JoinHero young={young} settings={settings} />
 
       <JoinBenefits young={young} />
 
@@ -111,9 +99,9 @@ const FestivalShopJoin: React.FC = () => {
         </div>
       )}
 
-      <div className="mt-8"><ShopSteps redeemFrom={settings.redeemFrom} redeemTo={settings.redeemTo} young={young} /></div>
+      <JoinPromote young={young} />
 
-      <div className="mx-auto mt-12 max-w-2xl lg:max-w-5xl" id="signup">
+      <div className="mx-auto mt-12 max-w-2xl scroll-mt-40 lg:max-w-5xl" id="signup">
       <h2 className="text-2xl font-black text-slate-900 dark:text-white">{young ? tr('Sign up your business', 'Inscribe tu negocio') : tr('Sign up your shop', 'Inscribe tu negocio')}</h2>
       {counts && !young && <div className="mt-4"><SpotMeter counts={counts} /></div>}
 
@@ -126,6 +114,9 @@ const FestivalShopJoin: React.FC = () => {
               'Te enviamos un enlace para confirmar. Luego revisamos tu oferta y te respondemos en 48 horas.')}
         </p>
       </div>
+
+      {/* after the form: it is what happens once they press the button */}
+      <div className="mt-10"><ShopSteps young={young} /></div>
 
       <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <p className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
