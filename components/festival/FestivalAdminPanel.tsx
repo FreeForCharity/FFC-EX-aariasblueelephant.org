@@ -471,7 +471,13 @@ const FestivalAdminPanel: React.FC = () => {
                   {s.status !== 'waitlist' && s.status !== 'approved' && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'waitlist')}><Clock className="mr-1 h-4 w-4" />{tr('Waiting list', 'Lista de espera')}</Button>
                   )}
-                  {s.status !== 'declined' && (
+                  {/* a young founder ending early chose to stop — withdrawn, not declined */}
+                  {s.youngFounder && s.status === 'approved' && (
+                    <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'withdrawn')}>
+                      <X className="mr-1 h-4 w-4" />{tr('End offer (they asked)', 'Terminar oferta (lo pidieron)')}
+                    </Button>
+                  )}
+                  {s.status !== 'declined' && !(s.youngFounder && s.status === 'approved') && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'declined')}>
                       <X className="mr-1 h-4 w-4" />{s.status === 'approved' ? tr('Take off the card', 'Quitar de la tarjeta') : tr('Decline', 'Rechazar')}
                     </Button>
@@ -666,7 +672,7 @@ const FestivalAdminPanel: React.FC = () => {
                 className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 dark:bg-slate-900">
           <PrintTarget id="admin-sign">
             <QrSign token={signFor.qrToken} name={signFor.name} offerEn={signFor.offerEn} offerEs={signFor.offerEs}
-                    logoUrl={signFor.logoUrl} redeemFrom={signFor.redeemFrom} redeemTo={signFor.redeemTo} />
+                    logoUrl={signFor.logoUrl} redeemFrom={signFor.redeemFrom} redeemTo={signFor.redeemTo} youngFounder={signFor.youngFounder} />
           </PrintTarget>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeSign}>{tr('Close', 'Cerrar')}</Button>

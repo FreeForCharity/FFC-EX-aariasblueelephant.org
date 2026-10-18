@@ -216,6 +216,16 @@ const FestivalMyShop: React.FC = () => {
         </div>
       )}
 
+      {/* a kid's offer runs as long as they like, up to the festival's last day */}
+      {shop.young_founder && (
+        <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+          {tr(`Your offer runs on our website through ${fmtShortDay(shop.redeem_to, false)}. Want to stop sooner? Write to us at `,
+              `Tu oferta sigue en nuestro sitio hasta el ${fmtShortDay(shop.redeem_to, true)}. ¿Quieres terminarla antes? Escríbenos a `)}
+          <a href="mailto:info@aariasblueelephant.org" className="font-semibold text-sky-700 underline dark:text-sky-400">info@aariasblueelephant.org</a>
+          {tr(' and we take it down.', ' y la quitamos.')}
+        </p>
+      )}
+
       <div className="mt-6 grid grid-cols-3 gap-3">
         {[
           { n: shop.total, en: 'families redeemed', es: 'familias canjearon' },
@@ -283,7 +293,9 @@ const FestivalMyShop: React.FC = () => {
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white">{tr('Your QR sign', 'Tu letrero QR')}</h2>
           <ol className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            <li>{tr('1. Print it and put it by the register.', '1. Imprímelo y ponlo junto a la caja.')}</li>
+            <li>{shop.young_founder
+              ? tr('1. Print it and put it on your stall or table.', '1. Imprímelo y ponlo en tu puesto o mesa.')
+              : tr('1. Print it and put it by the register.', '1. Imprímelo y ponlo junto a la caja.')}</li>
             <li>{tr('2. A family scans it with their phone and taps Redeem.', '2. Una familia lo escanea con su teléfono y toca Canjear.')}</li>
             <li><strong>{tr('3. Give the offer when you see the big green REDEEMED screen with a ticking clock.',
                              '3. Da la oferta cuando veas la gran pantalla verde de CANJEADA con un reloj en marcha.')}</strong></li>
@@ -301,7 +313,7 @@ const FestivalMyShop: React.FC = () => {
         <PrintTarget id="my-sign">
           {shop.qr_token && (
             <QrSign token={shop.qr_token} name={shop.name} offerEn={shop.offer_en} offerEs={shop.offer_es}
-                    logoUrl={shop.logo_url} redeemFrom={shop.redeem_from} redeemTo={shop.redeem_to} />
+                    logoUrl={shop.logo_url} redeemFrom={shop.redeem_from} redeemTo={shop.redeem_to} youngFounder={shop.young_founder} />
           )}
         </PrintTarget>
       </div>

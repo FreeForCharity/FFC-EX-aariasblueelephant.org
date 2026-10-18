@@ -50,6 +50,8 @@ interface SignProps {
   logoUrl?: string | null;
   redeemFrom: string;
   redeemTo: string;
+  /** a kid's business — the sign says so, and says it proudly */
+  youngFounder?: boolean;
 }
 
 /**
@@ -64,7 +66,7 @@ interface SignProps {
  * It renders on screen as a preview, and printSign() prints only the sign —
  * one US Letter page.
  */
-export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, logoUrl, redeemFrom, redeemTo }) => {
+export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, logoUrl, redeemFrom, redeemTo, youngFounder }) => {
   const allNovember = redeemFrom.slice(5, 10) === '11-01' && redeemTo.slice(5, 10) === '11-30';
   // offers start when a shop is approved, so the end date is the one that matters
   const when = allNovember
@@ -89,8 +91,9 @@ export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, log
       {/* ── the scan ── */}
       <div className="flex min-h-0 flex-1 flex-col items-center justify-evenly gap-[0.3em] px-[1.2em] py-[0.4em]">
         <div>
-          <p className="text-[1.45em] font-black leading-tight">🎁 A special offer for festival families</p>
-          <p className="text-[0.85em] font-semibold italic text-slate-500">Una oferta especial para las familias del festival</p>
+          {/* the headline carries it — a line of its own pushes the offer off the page */}
+          <p className="text-[1.45em] font-black leading-tight">{youngFounder ? '🌟 A Young Founder’s festival offer' : '🎁 A special offer for festival families'}</p>
+          <p className="text-[0.85em] font-semibold italic text-slate-500">{youngFounder ? 'La oferta de un joven emprendedor para el festival' : 'Una oferta especial para las familias del festival'}</p>
         </div>
 
         {/* a framed code with a tab on top — the thing your eye lands on across a busy counter */}
@@ -108,6 +111,7 @@ export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, log
             {logoUrl && <img src={logoUrl} alt="" className="h-[1.9em] w-[1.9em] rounded object-contain" />}
             <p className="text-[1.25em] font-black leading-tight">{name}</p>
           </div>
+
           <div className="mx-auto mt-[0.35em] max-w-[92%] rounded-[0.6em] border-[0.12em] border-[#F5C542] bg-[#FFF7DB] px-[0.8em] py-[0.35em]">
             <p className="text-[1em] font-black text-[#92400E]">🎁 {offerEn}</p>
             {offerEs && offerEs !== offerEn && <p className="text-[0.8em] font-semibold italic text-[#B45309]">{offerEs}</p>}
@@ -118,8 +122,17 @@ export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, log
 
       {/* ── the advert ── */}
       <div className="shrink-0 bg-sky-50 px-[1.2em] py-[0.6em]">
-        <p className="text-[0.9em] font-black leading-snug text-[#0C4A6E]">💙 This business proudly welcomes children of all abilities.</p>
-        <p className="text-[0.72em] font-semibold italic text-slate-500">Este negocio da la bienvenida a niños de todas las capacidades.</p>
+        {youngFounder ? (
+          <>
+            <p className="text-[0.9em] font-black leading-snug text-[#0C4A6E]">💙 This young founder proudly supports inclusive communities.</p>
+            <p className="text-[0.72em] font-semibold italic text-slate-500">Este joven emprendedor apoya con orgullo a las comunidades inclusivas.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-[0.9em] font-black leading-snug text-[#0C4A6E]">💙 This business proudly welcomes children of all abilities.</p>
+            <p className="text-[0.72em] font-semibold italic text-slate-500">Este negocio da la bienvenida a niños de todas las capacidades.</p>
+          </>
+        )}
         <p className="mt-[0.3em] text-[0.72em] font-bold text-slate-600">
           Free inclusive events for every family · <span className="text-[#0C4A6E]">aariasblueelephant.org</span>
         </p>

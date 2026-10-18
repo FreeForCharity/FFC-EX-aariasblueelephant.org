@@ -41,7 +41,8 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     // a kid's business starts on Kids & Art, not Restaurant
     name: '', category: initial?.young_founder ? 'kids' : 'restaurant', offer_en: '', offer_es: '', detail_en: '',
     address: '', website: '', contact_name: '', contact_email: '', contact_phone: '', company_fax: '',
-    instore: true, online: false, online_link: '', online_note: '',
+    // kids sell at a stall and then online, so a Young Founder starts with both
+    instore: true, online: !!initial?.young_founder, online_link: '', online_note: '',
     young_founder: false, guardian_consent: false, video_url: '',
     ...initial,
   });
@@ -163,7 +164,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
         <span className={label}>{tr('Where can families use your offer?', '¿Dónde pueden usar tu oferta las familias?')}<Req /></span>
         <div className="grid gap-3 sm:grid-cols-2">
           {([
-            ['instore', Store, tr('In store', 'En tienda'), tr('Families scan a QR sign at your counter.', 'Las familias escanean un letrero QR en tu mostrador.')],
+            ['instore', Store, young ? tr('In person', 'En persona') : tr('In store', 'En tienda'), young ? tr('Families scan a QR sign at your stall or table — great for the farmers market.', 'Las familias escanean un letrero QR en tu puesto o mesa: ideal para el mercado de agricultores.') : tr('Families scan a QR sign at your counter.', 'Las familias escanean un letrero QR en tu mostrador.')],
             ['online', Laptop, tr('Online', 'En línea'), tr('Classes or services booked online — families get a personal code to use when they book.', 'Clases o servicios reservados en línea: las familias reciben un código personal para usar al reservar.')],
           ] as const).map(([k, Icon, title, desc]) => {
             const on = !!v[k];
@@ -196,7 +197,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
             <label className={label} htmlFor="online_note">{tr('How should they use the code?', '¿Cómo deben usar el código?')}<Opt /></label>
             <input id="online_note" maxLength={200} className={field} value={v.online_note || ''}
                    onChange={(e) => set('online_note', e.target.value)}
-                   placeholder={tr('e.g. Enter it at checkout, or email it to us', 'ej. Escríbelo al pagar, o envíanoslo por correo')} />
+                   placeholder={young ? tr('e.g. Send us the code when you order', 'ej. Envíanos el código cuando hagas tu pedido') : tr('e.g. Enter it at checkout, or email it to us', 'ej. Escríbelo al pagar, o envíanoslo por correo')} />
           </div>
         </div>
       )}
