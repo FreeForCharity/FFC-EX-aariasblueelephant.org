@@ -39,7 +39,8 @@ const IconDisc: React.FC<{ icon: LucideIcon; color: string }> = ({ icon: Icon, c
   </div>
 );
 
-const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemFrom, redeemTo }) => {
+/** young: the same steps in a kid's words — a stall, not a register */
+const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string; young?: boolean }> = ({ redeemFrom, redeemTo, young }) => {
   const es = isEs();
 
   const steps = [
@@ -49,16 +50,16 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemF
       ds: 'Dos minutos: tu oferta, tu logo y tu correo. Sin cuenta ni contraseña.' },
     { art: <IconDisc icon={MailCheck} color="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" />,
       en: 'Confirm your email', es: 'Confirma tu correo',
-      de: 'Click the link we email you. It is also your shop page from then on.',
-      ds: 'Haz clic en el enlace que te enviamos. Desde entonces es también la página de tu tienda.' },
+      de: young ? 'A parent clicks the link we email. It is also your business page from then on.' : 'Click the link we email you. It is also your shop page from then on.',
+      ds: young ? 'Un padre o madre hace clic en el enlace que enviamos. Desde entonces es también la página de tu negocio.' : 'Haz clic en el enlace que te enviamos. Desde entonces es también la página de tu tienda.' },
     { art: <IconDisc icon={BadgeCheck} color="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" />,
       en: 'We approve', es: 'Te aprobamos',
-      de: 'Within 48 hours. Your logo and offer go up on our festival page.',
-      ds: 'En 48 horas. Tu logo y tu oferta aparecen en la página del festival.' },
+      de: young ? 'Within 48 hours. You are featured on our Young Founders page.' : 'Within 48 hours. Your logo and offer go up on our festival page.',
+      ds: young ? 'En 48 horas. Apareces en nuestra página de Jóvenes Emprendedores.' : 'En 48 horas. Tu logo y tu oferta aparecen en la página del festival.' },
     { art: <MiniSign />,
       en: 'Print your QR sign', es: 'Imprime tu letrero QR',
-      de: 'One page from your shop page. Put it by the register.',
-      ds: 'Una hoja desde la página de tu tienda. Ponla junto a la caja.' },
+      de: young ? 'One page from your business page. Put it on your stall or table.' : 'One page from your shop page. Put it by the register.',
+      ds: young ? 'Una hoja desde la página de tu negocio. Ponla en tu puesto o mesa.' : 'Una hoja desde la página de tu tienda. Ponla junto a la caja.' },
     { art: <MiniPhone />,
       en: 'Families redeem', es: 'Las familias canjean',
       de: 'They scan, tap Redeem and show a green screen. You give the offer.',
@@ -70,16 +71,20 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemF
     { icon: Gift, en: 'You choose the offer — a free item, a discount, a free class…', es: 'Tú eliges la oferta: un producto gratis, un descuento, una clase gratis…' },
     { icon: CalendarRange, en: `Your offer runs from the day you are approved through ${fmtDay(redeemTo, false)}.`,
       es: `Tu oferta va desde el día de tu aprobación hasta el ${fmtDay(redeemTo, true)}.` },
-    { icon: Store, en: 'Your logo displayed on our website and shared with our community.', es: 'Tu logo en nuestro sitio web y compartido con nuestra comunidad.' },
+    young
+      ? { icon: Store, en: 'Featured on our Young Founders page and shared with our community.', es: 'Apareces en nuestra página de Jóvenes Emprendedores y la compartimos con nuestra comunidad.' }
+      : { icon: Store, en: 'Your logo displayed on our website and shared with our community.', es: 'Tu logo en nuestro sitio web y compartido con nuestra comunidad.' },
     { icon: BarChart3, en: 'Your own page shows how many families came, day by day.', es: 'Tu página muestra cuántas familias vinieron, día por día.' },
-    { icon: HeartHandshake, en: 'Your staff need nothing: the family’s phone does the work.', es: 'Tu personal no necesita nada: el teléfono de la familia hace todo.' },
+    young
+      ? { icon: HeartHandshake, en: 'Nothing to set up: the family’s phone does the work.', es: 'Nada que configurar: el teléfono de la familia hace todo.' }
+      : { icon: HeartHandshake, en: 'Your staff need nothing: the family’s phone does the work.', es: 'Tu personal no necesita nada: el teléfono de la familia hace todo.' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border-2 border-sky-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-6">
         <h2 className="text-center text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
-          {tr('How it works for your shop', 'Cómo funciona para tu negocio')}
+          {young ? tr('How it works for Young Founders', 'Cómo funciona para Jóvenes Emprendedores') : tr('How it works for your shop', 'Cómo funciona para tu negocio')}
         </h2>
         <ol className="mt-6 grid gap-4 sm:grid-cols-5 sm:gap-3">
           {steps.map((st, i) => (
@@ -96,8 +101,9 @@ const ShopSteps: React.FC<{ redeemFrom: string; redeemTo: string }> = ({ redeemF
           ))}
         </ol>
         <p className="mt-5 rounded-2xl bg-violet-50 p-3 text-center text-sm text-violet-900 dark:bg-violet-900/20 dark:text-violet-200">
-          💻 {tr('Offer classes or services online? Tick “Online” when you sign up: families get a personal code to use when they book, and you tick codes off on your shop page.',
-                 '¿Ofreces clases o servicios en línea? Marca “En línea” al inscribirte: las familias reciben un código personal para usar al reservar, y tú los marcas en la página de tu tienda.')}
+          {/* every offer works online too now — no box to tick */}
+          💻 {tr('Every offer works online too: families get a personal code to use when they order or book, and you tick codes off on your own page.',
+                 'Cada oferta también funciona en línea: las familias reciben un código personal para usar al pedir o reservar, y tú los marcas en tu propia página.')}
         </p>
       </div>
 

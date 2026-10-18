@@ -182,7 +182,7 @@ const FestivalMyShop: React.FC = () => {
         {key && st !== 'declined' && (
           <div className="mt-10">
             <h2 className="mb-4 text-lg font-black text-slate-900 dark:text-white">{tr('Your details', 'Tus datos')}</h2>
-            <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
+            <ShopForm askEmail={false} wide={false} redeemFrom={shop.redeem_from} redeemTo={shop.redeem_to} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
                       submitLabel={tr('Save changes', 'Guardar cambios')} onSubmit={save} />
             {saved && <p className="mt-3 text-center text-sm font-bold text-green-600">{tr('Saved ✓', 'Guardado ✓')}</p>}
           </div>
@@ -330,7 +330,7 @@ const FestivalMyShop: React.FC = () => {
                 'Nuestro equipo revisa los cambios antes de publicarlos, normalmente en un día. Mientras tanto tu oferta actual sigue en el sitio. Tu letrero QR sigue funcionando: no hace falta imprimir uno nuevo.')}
           </p>
           <div className="mt-5">
-            <ShopForm askEmail={false} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
+            <ShopForm askEmail={false} wide={false} redeemFrom={shop.redeem_from} redeemTo={shop.redeem_to} initial={initial} logoUrl={shop.logo_url} busy={busy} error={error}
                       submitLabel={tr('Save changes', 'Guardar cambios')} onSubmit={save} />
             {saved === 'pending' && <p className="mt-3 text-center text-sm font-bold text-amber-700">{tr('Sent for approval ✓ — we will review it shortly.', 'Enviado para aprobación ✓: lo revisaremos pronto.')}</p>}
           </div>

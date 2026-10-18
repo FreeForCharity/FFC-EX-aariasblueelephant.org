@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import qrcode from 'qrcode-generator';
 import { redeemUrl, fmtDay } from '../../lib/festival/store';
+import { tr } from '../../lib/lang';
 
 /**
  * A QR code as crisp SVG — prints sharp at any size, no image to load.
@@ -52,6 +53,8 @@ interface SignProps {
   redeemTo: string;
   /** a kid's business — the sign says so, and says it proudly */
   youngFounder?: boolean;
+  /** screen-only preview: the code is faded and says the real one comes after approval */
+  sample?: boolean;
 }
 
 /**
@@ -66,7 +69,7 @@ interface SignProps {
  * It renders on screen as a preview, and printSign() prints only the sign —
  * one US Letter page.
  */
-export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, logoUrl, redeemFrom, redeemTo, youngFounder }) => {
+export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, logoUrl, redeemFrom, redeemTo, youngFounder, sample }) => {
   const allNovember = redeemFrom.slice(5, 10) === '11-01' && redeemTo.slice(5, 10) === '11-30';
   // offers start when a shop is approved, so the end date is the one that matters
   const when = allNovember
@@ -101,8 +104,15 @@ export const QrSign: React.FC<SignProps> = ({ token, name, offerEn, offerEs, log
           <span className="absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#F5C542] px-[0.9em] py-[0.15em] text-[0.8em] font-black uppercase tracking-[0.15em] text-[#0C4A6E] shadow">
             📱 Scan me · Escanéame
           </span>
-          <div className="rounded-[1.1em] border-[0.45em] border-[#0C4A6E] bg-white p-[0.35em]">
-            <QrCode text={redeemUrl(token)} className="block w-full" title={`Redeem at ${name}`} logo="/abe-logo.png" />
+          <div className="relative">
+            <div className="rounded-[1.1em] border-[0.45em] border-[#0C4A6E] bg-white p-[0.35em]">
+              <QrCode text={redeemUrl(token)} className={`block w-full${sample ? ' opacity-25' : ''}`} title={`Redeem at ${name}`} logo="/abe-logo.png" />
+            </div>
+            {sample && (
+              <span className="absolute left-1/2 top-1/2 w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white px-[0.8em] py-[0.4em] text-[0.7em] font-black leading-tight text-[#0C4A6E] shadow">
+                {tr('Your real code appears after approval', 'Tu código real aparece al ser aprobado')}
+              </span>
+            )}
           </div>
         </div>
 
