@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Check, X, Clock, Printer, Pencil, Trash2, Plus, Download, Copy, Users, Store, BarChart3, Settings2, ImagePlus, Link2,
+  Check, X, Clock, Printer, Pencil, Trash2, Plus, Download, Copy, Users, Store, BarChart3, Settings2, ImagePlus, Link2, Table, List,
 } from 'lucide-react';
 import Button from '../Button';
 import Dialog from './Dialog';
@@ -25,6 +25,9 @@ const STATUS_STYLE: Record<ShopStatus, string> = {
   declined: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
   withdrawn: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
+/** waiting on an admin: a new sign-up, the waiting list, or a change to a live card */
+const needsReview = (s: AdminShop) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges;
+
 const STATUS_LABEL: Record<ShopStatus, [string, string]> = {
   unconfirmed: ['Email not confirmed yet', 'Correo sin confirmar'],
   pending: ['Waiting for approval', 'Esperando aprobación'],
@@ -91,6 +94,11 @@ const FestivalAdminPanel: React.FC = () => {
   const [regs, setRegs] = useState<Registration[] | null>(null);
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState<'open' | 'approved' | 'unconfirmed' | 'young' | 'all'>('open');
+  // until someone picks a filter: "To review" when there is something to review, otherwise everything
+  const picked = useRef(false);
+  const pickFilter = (f: typeof filter) => { picked.current = true; setFilter(f); };
+  // quick view: one row per shop, contacts at a glance; details: the full cards with every action
+  const [view, setView] = useState<'quick' | 'details'>('quick');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [signFor, setSignFor] = useState<AdminShop | null>(null);
@@ -103,6 +111,7 @@ const FestivalAdminPanel: React.FC = () => {
       festivalDb.settings(), festivalDb.allShops(), festivalDb.report(), festivalDb.registrations(),
     ]);
     setSettings(s); setSavedSettings(s); setShops(sh); setReport(rp); setRegs(rg);
+    if (!picked.current) setFilter((sh || []).some(needsReview) ? 'open' : 'all');
   }, []);
 
   useEffect(() => { if (allowed) load(); }, [allowed, load]);
@@ -291,14 +300,14 @@ const FestivalAdminPanel: React.FC = () => {
 
   /* ── render ────────────────────────────────────────────────────────── */
   const counts = {
-    open: (shops || []).filter((s) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges).length,
+    open: (shops || []).filter(needsReview).length,
     approved: (shops || []).filter((s) => s.status === 'approved').length,
     unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
     young: (shops || []).filter((s) => s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
     all: (shops || []).length,
   };
   const visible = (shops || [])
-    .filter((s) => filter === 'all' || (filter === 'open' ? s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges : filter === 'young' ? !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
+    .filter((s) => filter === 'all' || (filter === 'open' ? needsReview(s) : filter === 'young' ? !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -377,21 +386,83 @@ const FestivalAdminPanel: React.FC = () => {
         <div className="mt-4 flex flex-wrap gap-2">
           {([['open', tr('To review', 'Por revisar')], ['approved', tr('On the card', 'En la tarjeta')],
              ['unconfirmed', tr('Email not confirmed', 'Sin confirmar')], ['young', tr('Young Founders', 'Jóvenes Emprendedores')], ['all', tr('All', 'Todas')]] as const).map(([k, l]) => (
-            <button key={k} onClick={() => setFilter(k)}
+            <button key={k} onClick={() => pickFilter(k)}
               className={`rounded-full px-3 py-1 text-xs font-bold ${filter === k ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {l} ({counts[k]})
             </button>
           ))}
+          <div className="ml-auto flex overflow-hidden rounded-full border border-slate-200 text-xs font-bold dark:border-slate-700">
+            {([['quick', Table, tr('Quick view', 'Vista rápida')], ['details', List, tr('Details', 'Detalles')]] as const).map(([k, Icon, l]) => (
+              <button key={k} onClick={() => setView(k)} aria-pressed={view === k}
+                className={`inline-flex items-center gap-1 px-3 py-1 ${view === k ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-600 dark:text-slate-300'}`}>
+                <Icon className="h-3.5 w-3.5" />{l}
+              </button>
+            ))}
+          </div>
         </div>
 
         {shops === null ? (
           <p className="mt-4 text-sm text-rose-600">{tr('Could not load shops. Has supabase/create_festival.sql been run?', 'No se pudieron cargar las tiendas. ¿Se ejecutó supabase/create_festival.sql?')}</p>
         ) : visible.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">{filter === 'open' ? tr('Nothing waiting for review.', 'Nada pendiente de revisión.') : tr('No shops yet.', 'Todavía no hay tiendas.')}</p>
+        ) : view === 'quick' ? (
+          /* every shop on one line — who, how to reach them, where they stand */
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[56rem] text-left text-sm">
+              <thead className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-2 pr-3">{tr('Shop', 'Tienda')}</th>
+                  <th className="py-2 pr-3">{tr('Status', 'Estado')}</th>
+                  <th className="py-2 pr-3">{tr('Contact', 'Contacto')}</th>
+                  <th className="py-2 pr-3">{tr('Email', 'Correo')}</th>
+                  <th className="py-2 pr-3">{tr('Phone', 'Teléfono')}</th>
+                  <th className="py-2 pr-3">{tr('Shown to families', 'Visible para familias')}</th>
+                  <th className="py-2 pr-3">{tr('Video', 'Video')}</th>
+                  <th className="py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((s) => (
+                  <tr key={s.id} className="border-b border-slate-100 align-top dark:border-slate-800">
+                    <td className="py-2.5 pr-3">
+                      <p className="font-bold text-slate-900 dark:text-white">
+                        {s.spot && s.status === 'approved' && <span className="mr-1 text-xs text-slate-400">#{s.spot}</span>}
+                        {s.youngFounder && <span title={tr('Young Founder', 'Joven Emprendedor')}>🌟 </span>}{s.name}
+                      </p>
+                      <p className="text-xs text-slate-500">{es ? CATEGORY_LABEL[s.category].es : CATEGORY_LABEL[s.category].en}</p>
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${STATUS_STYLE[s.status]}`}>{tr(...STATUS_LABEL[s.status])}</span>
+                      {s.pendingChanges && <p className="mt-1 text-[11px] font-bold text-amber-600">{tr('Change to review', 'Cambio por revisar')}</p>}
+                    </td>
+                    <td className="py-2.5 pr-3 text-slate-700 dark:text-slate-200">{s.contactName}</td>
+                    <td className="py-2.5 pr-3">
+                      {s.contactEmail?.includes('@')
+                        ? <a href={`mailto:${s.contactEmail}`} className="break-all text-sky-700 hover:underline dark:text-sky-400">{s.contactEmail}</a>
+                        : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
+                      {s.contactPhone ? <a href={`tel:${s.contactPhone.replace(/[^\d+]/g, '')}`} className="text-sky-700 hover:underline dark:text-sky-400">{s.contactPhone}</a> : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="py-2.5 pr-3 break-all text-slate-600 dark:text-slate-300">{s.publicContact || <span className="text-slate-400">—</span>}</td>
+                    <td className="py-2.5 pr-3">
+                      {s.videoId ? <a href={youtubeLink(s.videoId)} target="_blank" rel="noopener noreferrer" className="font-bold text-sky-700 hover:underline dark:text-sky-400">▶</a> : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <button onClick={() => { setView('details'); setTimeout(() => document.getElementById(`shop-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }}
+                              className="whitespace-nowrap text-xs font-bold text-sky-700 hover:underline dark:text-sky-400">
+                        {needsReview(s) ? tr('Review →', 'Revisar →') : tr('Open →', 'Abrir →')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="mt-4 space-y-3">
             {visible.map((s) => (
-              <div key={s.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <div key={s.id} id={`shop-${s.id}`} className="scroll-mt-24 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                 <div className="flex items-start gap-3">
                   {s.logoUrl
                     ? <img src={s.logoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 object-contain" />
