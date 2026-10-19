@@ -7,7 +7,7 @@ import SpotMeter, { toSpotCount } from '../components/festival/SpotMeter';
 import Dialog from '../components/festival/Dialog';
 import VideoFacade from '../components/festival/VideoFacade';
 import { festivalDb } from '../lib/festival/db';
-import { DEFAULT_SETTINGS, fmtDay, contactHref } from '../lib/festival/store';
+import { DEFAULT_SETTINGS, fmtDay, contactHref, FESTIVAL_EVENT_PATH } from '../lib/festival/store';
 import { FestivalShop, FestivalSettings, CATEGORY_LABEL } from '../lib/festival/types';
 import { tr, isEs } from '../lib/lang';
 
@@ -69,6 +69,9 @@ const Festival: React.FC = () => {
             {settings.venue && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-sky-600" />{settings.venue}</span>}
             <span className="inline-flex items-center gap-1.5"><Ticket className="h-4 w-4 text-sky-600" />
               {tr(`Offers through ${fmtDay(settings.redeemTo, false)}`, `Ofertas hasta el ${fmtDay(settings.redeemTo, true)}`)}</span>
+            <Link to={FESTIVAL_EVENT_PATH} className="inline-flex items-center gap-1 font-bold text-sky-700 underline dark:text-sky-400">
+              {tr('About the festival day →', 'Sobre el día del festival →')}
+            </Link>
           </p>
         </div>
         <div className="shrink-0">

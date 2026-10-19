@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowDown, Calendar, Clock, MapPin, Ticket } from 'lucide-react';
 import Button from '../Button';
 import SignPreview from './SignPreview';
-import { fmtDay } from '../../lib/festival/store';
+import { fmtDay, FESTIVAL_EVENT_PATH } from '../../lib/festival/store';
 import { FestivalSettings } from '../../lib/festival/types';
 import { tr, isEs } from '../../lib/lang';
 
@@ -70,6 +70,10 @@ const JoinHero: React.FC<{ young: boolean; settings: FestivalSettings }> = ({ yo
         {settings.venue && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-sky-600" />{settings.venue}</span>}
         <span className="inline-flex items-center gap-1.5"><Ticket className="h-4 w-4 text-sky-600" />
           {tr(`Offers through ${fmtDay(settings.redeemTo, false)}`, `Ofertas hasta el ${fmtDay(settings.redeemTo, true)}`)}</span>
+        {/* the day itself: workshop, panel, resource booths */}
+        <Link to={FESTIVAL_EVENT_PATH} className="inline-flex items-center gap-1 font-bold text-sky-700 underline dark:text-sky-400">
+          {tr('About the festival day →', 'Sobre el día del festival →')}
+        </Link>
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-4">

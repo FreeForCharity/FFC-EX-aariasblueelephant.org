@@ -67,6 +67,9 @@ export function toAdminShop(p: any): AdminShop {
   };
 }
 
+/** the festival day's own event page — workshop, panel, resource booths, registration */
+export const FESTIVAL_EVENT_PATH = '/events/53be9e64-d8dc-4c13-bbd0-e4d7d8e196e8';
+
 /** the video id out of a YouTube link — the same rule as festival_youtube_id() in the database */
 export const youtubeId = (url: string): string | null =>
   (url || '').match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/)?.[1] || null;
