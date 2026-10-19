@@ -50,7 +50,8 @@ const fmtDate = (iso?: string | null) => {
 const shell = (inner: string) => `
   <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
     <div style="text-align: center; margin-bottom: 24px;">
-      <img src="${SITE}/logo.webp" alt="Aaria's Blue Elephant" style="width: 120px; height: auto;" />
+      <!-- the round badge, as PNG: some mail apps (Outlook) cannot show WebP -->
+      <img src="${SITE}/email-logo.png" alt="Aaria's Blue Elephant — Building a New Inclusive World" width="140" style="width: 140px; height: auto;" />
     </div>
     ${inner}
     <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 32px;">
