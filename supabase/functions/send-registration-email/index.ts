@@ -290,6 +290,23 @@ async function festivalShop(id: string, kind: 'confirm' | 'received' | 'approved
   return json(r, r.ok ? 200 : 502);
 }
 
+/** a business paused or resumed its own offer — the admin hears which, from the row itself */
+async function festivalShopPaused(id: string) {
+  const { data: shop } = await sb.from('festival_shops').select('*').eq('id', id).maybeSingle();
+  if (!shop || (shop.status !== 'paused' && shop.status !== 'approved')) return json({ error: 'not_found' }, 404);
+  const paused = shop.status === 'paused';
+  const r = await sendOnce('shop_paused', `${id}:${shop.status}:${tenMinuteSlot()}`, ADMIN_EMAIL,
+    `Festival ${shop.young_founder ? 'Young Founder' : 'shop'} ${paused ? 'paused' : 'resumed'}: ${shop.name}`, shell(`
+    <h1 style="color: #00AEEF; font-size: 20px;">${paused ? '⏸️ A business paused its offer' : '▶️ A business resumed its offer'}</h1>
+    <p><strong>${shop.young_founder ? 'Young Founder' : 'Shop'}:</strong> ${esc(shop.name)}</p>
+    <p><strong>Offer:</strong> ${esc(shop.offer_en)}</p>
+    <p style="color: #718096;">${paused
+      ? 'Their card shows as paused on the festival page, their sign says so, and no new online codes are given out. Codes families already have still work. They can resume anytime.'
+      : 'Their offer is live again on the festival page and their sign works.'}</p>
+    ${button(`${SITE}/dashboard?view=festival`, 'Open the dashboard')}`));
+  return json(r, r.ok ? 200 : 502);
+}
+
 /** a business changed its details — the admin hears about it, at most every ten minutes per shop */
 async function festivalShopUpdated(id: string) {
   const { data: shop } = await sb.from('festival_shops').select('*').eq('id', id).maybeSingle();
@@ -351,6 +368,7 @@ serve(async (req) => {
       case 'SHOP_RECEIVED':         return await festivalShop(id, 'received');
       case 'SHOP_APPROVED':         return await festivalShop(id, 'approved');
       case 'SHOP_UPDATED':          return await festivalShopUpdated(id);
+      case 'SHOP_PAUSED':           return await festivalShopPaused(id);
       default:                      return json({ error: 'unsupported_type' }, 400);
     }
   } catch (error: any) {

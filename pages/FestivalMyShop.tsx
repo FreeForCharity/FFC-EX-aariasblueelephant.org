@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2, Laptop, Check } from 'lucide-react';
+import { Store, Printer, Clock, Hourglass, XCircle, MailWarning, KeyRound, CheckCircle2, Laptop, Check, Pause, Play } from 'lucide-react';
 import Button from '../components/Button';
 import VideoFacade from '../components/festival/VideoFacade';
+import Dialog from '../components/festival/Dialog';
 import ShopForm, { ShopFormValues } from '../components/festival/ShopForm';
 import { QrSign, PrintTarget, printSign } from '../components/festival/QrSign';
 import { festivalDb, MyShop } from '../lib/festival/db';
@@ -45,6 +46,9 @@ const FestivalMyShop: React.FC = () => {
   const [lostEmail, setLostEmail] = useState('');
   const [lostSent, setLostSent] = useState(false);
   const [codeQuery, setCodeQuery] = useState('');
+  const [confirmPause, setConfirmPause] = useState(false);
+  // stable, so the dialog does not re-grab focus on every render
+  const closePause = useCallback(() => setConfirmPause(false), []);
 
   const load = useCallback(async (k: string | null) => {
     if (k) {
@@ -87,6 +91,16 @@ const FestivalMyShop: React.FC = () => {
       ? tr('That video link does not look like a YouTube link. Check it, or leave it blank.', 'Ese enlace de video no parece de YouTube. Revísalo o déjalo en blanco.')
       : tr('Please fill in the business name, the offer and your name — and for a Young Founder, tick the parent or guardian permission box.', 'Completa el nombre del negocio, la oferta y tu nombre. Si es un Joven Emprendedor, marca también la casilla de permiso del padre, madre o tutor.'));
     else setSaved(r.pending ? 'pending' : 'saved');
+    setBusy(false);
+    await load(key);
+  };
+
+  const setPaused = async (pause: boolean) => {
+    if (!key) return;
+    setBusy(true); setError('');
+    const r = await festivalDb.pauseByManage(key, pause);
+    setConfirmPause(false);
+    if (!r.ok) setError(tr('Sorry, that did not work. Please try again in a moment.', 'Lo sentimos, no funcionó. Inténtalo de nuevo en un momento.'));
     setBusy(false);
     await load(key);
   };
@@ -147,7 +161,7 @@ const FestivalMyShop: React.FC = () => {
   };
 
   /* ── before approval ──────────────────────────────────────────────── */
-  if (shop.status !== 'approved') {
+  if (shop.status !== 'approved' && shop.status !== 'paused') {
     const st = shop.status;
     return (
       <Shell>
@@ -192,14 +206,47 @@ const FestivalMyShop: React.FC = () => {
   }
 
   /* ── approved ─────────────────────────────────────────────────────── */
+  const paused = shop.status === 'paused';
   const maxDay = Math.max(1, ...shop.days.map((d) => d.count));
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <p className="text-xs font-black uppercase tracking-widest text-green-700 dark:text-green-400">
-        ✓ {tr('On the festival card', 'En la tarjeta del festival')}
+      <p className={`text-xs font-black uppercase tracking-widest ${paused ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}>
+        {paused ? `⏸️ ${tr('Paused — still on the festival card', 'En pausa, sigue en la tarjeta del festival')}` : `✓ ${tr('On the festival card', 'En la tarjeta del festival')}`}
       </p>
       <h1 className="mt-1 text-3xl font-black text-slate-900 dark:text-white">{shop.name}</h1>
       <p className="mt-1 font-semibold text-sky-800 dark:text-sky-300">{es ? (shop.offer_es || shop.offer_en) : shop.offer_en}</p>
+      {key && (paused ? (
+        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+          <p className="font-black text-amber-900 dark:text-amber-200">{tr('⏸️ Your offer is paused', '⏸️ Tu oferta está en pausa')}</p>
+          <p className="mt-1 text-sm text-amber-900 dark:text-amber-200">{tr('Families see it as paused. Resume anytime.', 'Las familias la ven en pausa. Reanúdala cuando quieras.')}</p>
+          <Button className="mt-3" disabled={busy} onClick={() => setPaused(false)}>
+            <Play className="mr-2 h-4 w-4" />{tr('Resume my offer', 'Reanudar mi oferta')}
+          </Button>
+          {error && <p className="mt-2 text-sm font-bold text-red-600">{error}</p>}
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border-2 border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+          <p className="font-black text-green-900 dark:text-green-200">{tr('Your offer is live', 'Tu oferta está activa')}</p>
+          <Button className="mt-3" variant="secondary" disabled={busy} onClick={() => setConfirmPause(true)}>
+            <Pause className="mr-2 h-4 w-4" />{tr('Pause my offer', 'Pausar mi oferta')}
+          </Button>
+          {error && <p className="mt-2 text-sm font-bold text-red-600">{error}</p>}
+        </div>
+      ))}
+      {confirmPause && (
+        <Dialog label={tr('Pause your offer?', '¿Pausar tu oferta?')} onClose={closePause} className="max-w-md rounded-3xl bg-white p-6 dark:bg-slate-900">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">{tr('Pause your offer?', '¿Pausar tu oferta?')}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            {tr('Families will see it as paused on our festival page, your QR sign will say it’s paused, and no new online codes are given out. Codes families already have still work. You can resume anytime — no approval needed.',
+                'Las familias la verán en pausa en nuestra página del festival, tu letrero QR dirá que está en pausa y no se darán códigos en línea nuevos. Los códigos que las familias ya tienen siguen funcionando. Puedes reanudarla cuando quieras, sin necesitar aprobación.')}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button disabled={busy} onClick={() => setPaused(true)}>{tr('Pause my offer', 'Pausar mi oferta')}</Button>
+            <Button variant="secondary" onClick={closePause}>{tr('Keep it live', 'Mantenerla activa')}</Button>
+          </div>
+        </Dialog>
+      )}
+
       {shop.pending_changes && (
         <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
           <p className="font-black">{tr('Your change is waiting for approval', 'Tu cambio está esperando aprobación')}</p>
@@ -220,10 +267,9 @@ const FestivalMyShop: React.FC = () => {
       {/* a kid's offer runs as long as they like, up to the festival's last day */}
       {shop.young_founder && (
         <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-          {tr(`Your offer runs on our website through ${fmtShortDay(shop.redeem_to, false)}. Want to stop sooner? Write to us at `,
-              `Tu oferta sigue en nuestro sitio hasta el ${fmtShortDay(shop.redeem_to, true)}. ¿Quieres terminarla antes? Escríbenos a `)}
+          {tr(`Your offer runs on our website through ${fmtShortDay(shop.redeem_to, false)}. Want to stop for a while? Pause your offer above, or write to us to end it for good: `,
+              `Tu oferta sigue en nuestro sitio hasta el ${fmtShortDay(shop.redeem_to, true)}. ¿Quieres parar por un tiempo? Pausa tu oferta arriba, o escríbenos para terminarla definitivamente: `)}
           <a href="mailto:info@aariasblueelephant.org" className="font-semibold text-sky-700 underline dark:text-sky-400">info@aariasblueelephant.org</a>
-          {tr(' and we take it down.', ' y la quitamos.')}
         </p>
       )}
 

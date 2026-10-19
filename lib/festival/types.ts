@@ -14,7 +14,8 @@ export type ShopCategory =
   | 'salon' | 'florist' | 'retail' | 'other';
 
 /** unconfirmed = signed up, email link not clicked yet; nothing reaches the admin until it is */
-export type ShopStatus = 'unconfirmed' | 'pending' | 'approved' | 'waitlist' | 'declined' | 'withdrawn';
+/** paused = the business took its offer down for now; it can resume in one click */
+export type ShopStatus = 'unconfirmed' | 'pending' | 'approved' | 'paused' | 'waitlist' | 'declined' | 'withdrawn';
 
 /** a shop as the public card draws it — no contacts, no QR token */
 export interface FestivalShop {
@@ -45,6 +46,8 @@ export interface FestivalShop {
   videoId?: string;
   /** how families can reach them — public by choice, unlike the sign-up email */
   publicContact?: string;
+  /** the business paused its offer for now — still shown, marked paused, nothing to redeem */
+  paused?: boolean;
 }
 
 /** the full row, as an admin sees it */

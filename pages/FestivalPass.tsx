@@ -234,6 +234,10 @@ const FestivalPass: React.FC = () => {
                 <p className="font-bold text-slate-600 dark:text-slate-300">
                   {tr('Used on', 'Usada el')} {fmtDay(openUsed.local_date, es)}, {fmtTime(openUsed.punched_at, es)}
                 </p>
+              ) : open.paused ? (
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                  ⏸️ {tr('This business has paused its offer for now — check back soon.', 'Este negocio pausó su oferta por ahora: vuelve pronto.')}
+                </p>
               ) : (
                 <>
                   {open.instore && (

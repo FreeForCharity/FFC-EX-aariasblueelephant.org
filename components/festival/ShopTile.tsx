@@ -26,7 +26,7 @@ const ShopTile: React.FC<Props> = ({ shop, usedOn, onClick }) => {
           : 'border-sky-200 bg-white hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900'}
         ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
     >
-      <div className={`flex h-full flex-col items-center justify-center gap-1 ${usedOn ? 'opacity-40 grayscale' : ''}`}>
+      <div className={`flex h-full flex-col items-center justify-center gap-1 ${usedOn ? 'opacity-40 grayscale' : shop.paused ? 'opacity-60 grayscale' : ''}`}>
         {shop.logoUrl
           ? <img src={shop.logoUrl} alt="" loading="lazy" decoding="async" className="h-12 w-12 rounded-xl bg-white object-contain p-0.5 shadow-sm sm:h-16 sm:w-16" />
           : <span className="text-3xl sm:text-4xl" aria-hidden>{shop.emoji}</span>}
@@ -38,6 +38,12 @@ const ShopTile: React.FC<Props> = ({ shop, usedOn, onClick }) => {
           {offer}
         </span>
       </div>
+
+      {shop.paused && !usedOn && (
+        <span className="pointer-events-none absolute left-1 top-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+          {tr('⏸️ Paused', '⏸️ En pausa')}
+        </span>
+      )}
 
       {usedOn && (
         <span className="pointer-events-none absolute inset-0 flex -rotate-12 items-center justify-center">

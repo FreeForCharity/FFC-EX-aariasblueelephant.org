@@ -229,6 +229,26 @@ const FestivalRedeem: React.FC = () => {
     );
   }
 
+  /* ── paused by the business ─────────────────────────────────────── */
+  if (shop.paused || (outcome && !outcome.ok && outcome.error === 'paused')) {
+    return (
+      <Shell>
+        <div className="text-center">
+          <p className="text-7xl" aria-hidden>⏸️</p>
+          <h1 className="mt-5 text-2xl font-black text-slate-900 dark:text-white">
+            {tr(`${shop.name} has paused this offer for now`, `${shop.name} pausó esta oferta por ahora`)}
+          </h1>
+          <p className="mt-3 text-slate-600 dark:text-slate-400">
+            {tr('Check back soon — or see the other festival offers.', 'Vuelve pronto, o mira las otras ofertas del festival.')}
+          </p>
+          <Link to="/InclusionFestival" className="mt-8 inline-block">
+            <Button variant="secondary">{tr('See the festival offers', 'Ver las ofertas del festival')}</Button>
+          </Link>
+        </div>
+      </Shell>
+    );
+  }
+
   /* ── not running today ──────────────────────────────────────────── */
   const notYet = shop.state !== 'live' || shop.today < shop.redeem_from;
   const over = shop.state === 'ended' || shop.today > shop.redeem_to;

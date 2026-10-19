@@ -43,6 +43,7 @@ export function toShop(p: any): FestivalShop {
     youngFounder: p.young_founder === true,
     videoId: p.video_id || undefined,
     publicContact: p.public_contact || undefined,
+    paused: p.paused === true || p.status === 'paused',
   };
 }
 
