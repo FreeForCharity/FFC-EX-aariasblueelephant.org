@@ -56,8 +56,9 @@ const FestivalShopJoin: React.FC = () => {
     if (r.ok) { setSentTo(v.contact_email || ''); return; }   // resent, or quietly dropped
     if (r.error === 'already_signed_up') {
       await festivalDb.emailMyLink(v.contact_email || '');
-      setError(tr('This email has already signed up a shop — we just emailed you the link to your shop page.',
-                  'Este correo ya inscribió una tienda: te acabamos de enviar el enlace a tu página.'));
+      // one business per email: point them at the one they already have
+      setError(tr('This email has already signed up a business, so we just emailed you the link to its page. To sign up another business, use a different email.',
+                  'Este correo ya inscribió un negocio, así que te enviamos el enlace a su página. Para inscribir otro negocio, usa un correo distinto.'));
       return;
     }
     setError(

@@ -17,10 +17,7 @@ const ParentNote = () => <span className="ml-1 text-xs font-medium text-slate-40
 
 const field = 'w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white';
 
-export interface ShopFormValues extends ShopApplication {
-  /** a field people never see; bots fill in everything */
-  company_fax?: string;
-}
+export type ShopFormValues = ShopApplication;
 
 interface Props {
   initial?: Partial<ShopFormValues>;
@@ -86,7 +83,7 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
   const [v, setV] = useState<ShopFormValues>({
     // a kid's business starts on Kids & Art, not Restaurant
     name: '', category: initial?.young_founder ? 'kids' : 'restaurant', offer_en: '', offer_es: '', detail_en: '',
-    address: '', website: '', contact_name: '', contact_email: '', contact_phone: '', company_fax: '',
+    address: '', website: '', contact_name: '', contact_email: '', contact_phone: '',
     // every offer works both ways — a QR sign in person, a personal code online —
     // so nobody has to choose
     instore: true, online: true, online_link: '', online_note: '',
@@ -128,13 +125,10 @@ const ShopForm: React.FC<Props> = ({ initial, logoUrl, askEmail, submitLabel, bu
     }} className={wide ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-8 lg:items-start' : ''}>
       {/* the form */}
       <div className="space-y-5">
-        {/* hidden from people, irresistible to bots. Its name must mean nothing:
-            called "company_fax", Chrome autofill took it for a phone field and
-            filled it, and real sign-ups were silently dropped as bots */}
-        <input type="text" name="abe_q7_check" id="abe_q7_check" tabIndex={-1} autoComplete="off" aria-hidden="true"
-               data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
-               value={v.company_fax} onChange={(e) => set('company_fax', e.target.value)}
-               className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+        {/* No hidden bot-trap field: browser autofill and password managers kept
+            filling it, and real sign-ups were silently dropped as bots. A
+            sign-up does nothing until its email link is clicked, and the
+            database caps unconfirmed sign-ups per hour, which is protection enough. */}
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
           <span className="text-rose-600">*</span> {tr('Required', 'Obligatorio')}
