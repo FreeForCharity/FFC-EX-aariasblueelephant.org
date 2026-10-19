@@ -140,16 +140,18 @@ with (security_invoker = off) as
          offer_en, offer_es, detail_en, detail_es,
          address, website, spot, redeem_from, redeem_to,
          instore, online, online_link, online_note,
-         young_founder, video_id, public_contact
+         young_founder, video_id, public_contact,
+         -- a paused business stays on the page, marked paused, so families know it is coming back
+         status = 'paused' as paused
   from festival_shops
-  where status = 'approved';
+  where status in ('approved','paused');
 grant select on festival_shops_public to anon, authenticated;
 
 -- how many spots are gone, without revealing who has them
 create or replace view festival_spot_counts
 with (security_invoker = off) as
   select
-    count(*) filter (where status in ('pending','approved') and not young_founder) as taken,
+    count(*) filter (where status in ('pending','approved','paused') and not young_founder) as taken,
     count(*) filter (where status = 'waitlist' and not young_founder)              as waitlist
   from festival_shops;
 grant select on festival_spot_counts to anon, authenticated;
@@ -327,11 +329,11 @@ begin
   if v_web <> '' and v_web !~* '^https?://' then v_web := 'https://' || v_web; end if;
 
   select * into v_shop from festival_shops
-   where owner_id = v_uid and status in ('pending','waitlist','approved');
+   where owner_id = v_uid and status in ('pending','waitlist','approved','paused');
   if found then
     -- once a shop is on the card, its offer is what families were promised;
     -- changes go through us
-    if v_shop.status = 'approved' then
+    if v_shop.status in ('approved','paused') then
       return json_build_object('ok', false, 'error', 'already_approved', 'id', v_shop.id);
     end if;
     update festival_shops set
@@ -352,7 +354,7 @@ begin
 
   -- two shops applying at the same instant must not both take the last spot
   perform pg_advisory_xact_lock(hashtext('festival_shop_apply'));
-  select count(*) into v_taken from festival_shops where status in ('pending','approved') and not young_founder;
+  select count(*) into v_taken from festival_shops where status in ('pending','approved','paused') and not young_founder;
 
   v_base := left(coalesce(nullif(trim(both '-' from regexp_replace(lower(v_name), '[^a-z0-9]+', '-', 'g')), ''), 'shop'), 28);
   v_id := v_base;
@@ -405,7 +407,12 @@ alter table festival_shops add column if not exists email_confirmed_at timestamp
 update festival_shops set email_confirmed_at = created_at where email_confirmed_at is null and owner_id is not null;
 alter table festival_shops drop constraint if exists festival_shops_status_check;
 alter table festival_shops add constraint festival_shops_status_check
-  check (status in ('unconfirmed','pending','approved','waitlist','declined','withdrawn'));
+  check (status in ('unconfirmed','pending','approved','paused','waitlist','declined','withdrawn'));
+-- paused = the business took its offer down for now (festival_shop_pause_by_manage);
+-- it keeps its spot, its sign and its page, and can resume in one click
+drop index if exists festival_shops_one_per_owner;
+create unique index festival_shops_one_per_owner
+  on festival_shops (owner_id) where status in ('pending','approved','paused','waitlist');
 
 -- the form, cleaned: trimmed, length-capped, category checked. null = missing a required field
 create or replace function festival_shop_fields(p jsonb) returns jsonb
@@ -474,7 +481,7 @@ begin
     'contact_name', v_shop.contact_name, 'contact_email', v_shop.contact_email,
     'contact_phone', v_shop.contact_phone, 'pledge_pct', v_shop.pledge_pct,
     'status', v_shop.status, 'redeem_from', v_shop.redeem_from, 'redeem_to', v_shop.redeem_to,
-    'qr_token', case when v_shop.status = 'approved' then v_shop.qr_token end,
+    'qr_token', case when v_shop.status in ('approved','paused') then v_shop.qr_token end,
     'total', v_total, 'today', v_today, 'new_cards', v_new, 'days', v_days,
     'instore', v_shop.instore, 'online', v_shop.online,
     'online_link', v_shop.online_link, 'online_note', v_shop.online_note, 'codes', v_codes,
@@ -524,7 +531,7 @@ begin
   if v_state = 'ended' then return json_build_object('ok', false, 'error', 'closed'); end if;
 
   select * into v_shop from festival_shops
-   where lower(contact_email) = v_email and status in ('unconfirmed','pending','approved','waitlist')
+   where lower(contact_email) = v_email and status in ('unconfirmed','pending','approved','paused','waitlist')
    order by created_at desc limit 1;
   if found then
     if v_shop.status <> 'unconfirmed' then
@@ -591,7 +598,7 @@ begin
   end if;
   perform pg_advisory_xact_lock(hashtext('festival_shop_apply'));
   select spots into v_spots from festival_settings where id = 1;
-  select count(*) into v_taken from festival_shops where status in ('pending','approved') and not young_founder;
+  select count(*) into v_taken from festival_shops where status in ('pending','approved','paused') and not young_founder;
   update festival_shops
      set status = case when v_shop.young_founder or v_taken < v_spots then 'pending' else 'waitlist' end,
          email_confirmed_at = now(), updated_at = now()
@@ -627,12 +634,12 @@ declare f jsonb := festival_shop_fields(p); v_shop festival_shops;
 begin
   select * into v_shop from festival_shops where manage_token = p_token and coalesce(p_token, '') <> '';
   if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
-  if v_shop.status not in ('unconfirmed','pending','waitlist','approved') then
+  if v_shop.status not in ('unconfirmed','pending','waitlist','approved','paused') then
     return json_build_object('ok', false, 'error', 'closed');
   end if;
   if festival_bad_video(p) then return json_build_object('ok', false, 'error', 'bad_video'); end if;
   if f is null then return json_build_object('ok', false, 'error', 'missing_fields'); end if;
-  if v_shop.status = 'approved' then
+  if v_shop.status in ('approved','paused') then
     -- keep any logo already waiting; the rest is replaced by this edit
     update festival_shops
        set pending_changes = f || case when pending_changes ? 'logo_url'
@@ -658,6 +665,29 @@ end $$;
 revoke all on function festival_shop_update_by_manage(text, jsonb) from public;
 grant execute on function festival_shop_update_by_manage(text, jsonb) to anon, authenticated;
 
+-- A business pauses or resumes its own offer, instantly — no review: the offer
+-- itself is the one an admin already approved. Pausing takes the card off the
+-- page and stops the sign and new online codes; codes families already have
+-- stay valid. Only approved <-> paused; ending for good stays an admin action.
+create or replace function festival_shop_pause_by_manage(p_token text, p_pause boolean)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare v_shop festival_shops;
+begin
+  select * into v_shop from festival_shops where manage_token = p_token and coalesce(p_token, '') <> '';
+  if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  if v_shop.status not in ('approved','paused') then
+    return json_build_object('ok', false, 'error', 'not_live', 'status', v_shop.status);
+  end if;
+  update festival_shops
+     set status = case when p_pause then 'paused' else 'approved' end, updated_at = now()
+   where id = v_shop.id
+  returning * into v_shop;
+  return json_build_object('ok', true, 'id', v_shop.id, 'status', v_shop.status);
+end $$;
+revoke all on function festival_shop_pause_by_manage(text, boolean) from public;
+grant execute on function festival_shop_pause_by_manage(text, boolean) to anon, authenticated;
+
 -- ──────────────────────────────────────────────── redeeming, by QR sign ──
 -- What a scanned sign shows before anyone signs in. Public: name and offer only.
 create or replace function festival_shop_by_token(p_token text)
@@ -665,10 +695,10 @@ returns json
 language plpgsql stable security definer set search_path = public as $$
 declare v_shop festival_shops; v_state text;
 begin
-  select * into v_shop from festival_shops where qr_token = p_token and status = 'approved';
+  select * into v_shop from festival_shops where qr_token = p_token and status in ('approved','paused');
   if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
   select state into v_state from festival_settings where id = 1;
-  return json_build_object(
+  return json_build_object('paused', v_shop.status = 'paused',
     'ok', true, 'id', v_shop.id, 'name', v_shop.name, 'category', v_shop.category,
     'logo_url', v_shop.logo_url, 'offer_en', v_shop.offer_en, 'offer_es', v_shop.offer_es,
     'detail_en', v_shop.detail_en, 'detail_es', v_shop.detail_es, 'address', v_shop.address,
@@ -691,8 +721,11 @@ declare
 begin
   if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
 
-  select * into v_shop from festival_shops where qr_token = p_token and status = 'approved';
+  select * into v_shop from festival_shops where qr_token = p_token and status in ('approved','paused');
   if not found then return json_build_object('ok', false, 'error', 'bad_token'); end if;
+  if v_shop.status = 'paused' then
+    return json_build_object('ok', false, 'error', 'paused', 'shop_id', v_shop.id, 'shop_name', v_shop.name);
+  end if;
 
   select state into v_state from festival_settings where id = 1;
   if v_state = 'ended' or v_today > v_shop.redeem_to then
@@ -790,7 +823,7 @@ declare
   v_today date := festival_today();
 begin
   if auth.uid() is null then return json_build_object('ok', false, 'error', 'signed_out'); end if;
-  select * into v_shop from festival_shops where id = p_shop and status = 'approved' and online;
+  select * into v_shop from festival_shops where id = p_shop and status in ('approved','paused') and online;
   if not found then return json_build_object('ok', false, 'error', 'not_online'); end if;
 
   select * into v_row from festival_punches where user_id = auth.uid() and shop_id = v_shop.id;
@@ -798,6 +831,7 @@ begin
     return json_build_object('ok', v_row.code is not null, 'error', case when v_row.code is null then 'already_used' end,
                              'code', v_row.code, 'punched_at', v_row.punched_at, 'used_at', v_row.used_at, 'again', true);
   end if;
+  if v_shop.status = 'paused' then return json_build_object('ok', false, 'error', 'paused'); end if;
 
   select state into v_state from festival_settings where id = 1;
   if v_state = 'ended' or v_today > v_shop.redeem_to then
@@ -865,7 +899,7 @@ with (security_invoker = on) as
          s.young_founder
   from festival_shops s
   left join festival_punches p on p.shop_id = s.id
-  where s.status = 'approved'
+  where s.status in ('approved','paused')
   group by s.id;
 grant select on festival_report_shops to authenticated;
 

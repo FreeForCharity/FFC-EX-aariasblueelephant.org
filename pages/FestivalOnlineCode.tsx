@@ -123,6 +123,13 @@ const FestivalOnlineCode: React.FC = () => {
             {result.error === 'ended' ? tr('This offer has ended', 'Esta oferta terminó') : tr('This offer has not started yet', 'Esta oferta aún no empieza')}
           </p>
         </div>
+      ) : shop.paused || (result && !result.ok && result.error === 'paused') ? (
+        <div className="mt-5 rounded-3xl bg-slate-100 p-6 text-center dark:bg-slate-800">
+          <p className="text-4xl" aria-hidden>⏸️</p>
+          <p className="mt-2 text-lg font-black text-slate-700 dark:text-slate-200">
+            {tr('This business has paused its offer for now — check back soon.', 'Este negocio pausó su oferta por ahora: vuelve pronto.')}
+          </p>
+        </div>
       ) : !user ? (
         <div className="mt-5 text-center">
           <Button size="lg" fullWidth onClick={() => { localStorage.setItem('authReturnTo', `/InclusionFestival/code/${shop.id}`); loginWithGoogle(); }}>

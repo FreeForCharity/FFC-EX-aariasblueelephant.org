@@ -30,7 +30,7 @@ export interface Redemption {
 
 export interface OnlineCode {
   ok: boolean;
-  error?: 'signed_out' | 'not_online' | 'already_used' | 'not_started' | 'ended' | 'network';
+  error?: 'signed_out' | 'not_online' | 'already_used' | 'not_started' | 'ended' | 'paused' | 'network';
   code?: string; punched_at?: string; used_at?: string | null; new_card?: boolean; again?: boolean;
   from?: string; to?: string;
 }
@@ -42,13 +42,15 @@ export interface SignShop {
   offer_en: string; offer_es: string | null; detail_en: string | null; detail_es: string | null;
   address: string | null; redeem_from: string; redeem_to: string;
   state: string; today: string;
+  /** the business paused its offer for now */
+  paused?: boolean;
 }
 
 /** one flat shape: this repo builds without strictNullChecks, which stops a
  *  { ok: true } | { ok: false } union from narrowing */
 export interface RedeemOutcome {
   ok: boolean;
-  error?: 'signed_out' | 'bad_token' | 'not_started' | 'ended' | 'already_used' | 'network';
+  error?: 'signed_out' | 'bad_token' | 'not_started' | 'ended' | 'already_used' | 'paused' | 'network';
   shop_id?: string;
   shop_name?: string;
   punched_at?: string;
@@ -99,7 +101,7 @@ const toSettings = (d: any): FestivalSettings => ({
 });
 
 /** ask the email function to send one email; it never blocks the caller */
-const notify = (type: 'SHOP_CONFIRM' | 'SHOP_RECEIVED' | 'SHOP_APPROVED' | 'SHOP_UPDATED', id: string) => {
+const notify = (type: 'SHOP_CONFIRM' | 'SHOP_RECEIVED' | 'SHOP_APPROVED' | 'SHOP_UPDATED' | 'SHOP_PAUSED', id: string) => {
   supabase.functions.invoke('send-registration-email', { body: { type, id } })
     .catch((e) => console.warn('email not sent', type, e));
 };
@@ -241,6 +243,15 @@ export const festivalDb = {
     const r = data as any;
     // every change reaches the admin, so a live offer is never edited unseen
     if (r?.ok && r.id) notify('SHOP_UPDATED', r.id);
+    return r;
+  },
+
+  /** pause or resume their own offer — instant, no review; the admin gets an email */
+  async pauseByManage(token: string, pause: boolean): Promise<{ ok: boolean; status?: string; error?: string }> {
+    const { data, error } = await supabase.rpc('festival_shop_pause_by_manage', { p_token: token, p_pause: pause });
+    if (error) return { ok: false, error: error.message };
+    const r = data as any;
+    if (r?.ok && r.id) notify('SHOP_PAUSED', r.id);
     return r;
   },
 

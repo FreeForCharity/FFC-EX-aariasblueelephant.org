@@ -47,7 +47,8 @@ const Festival: React.FC = () => {
 
   const counts = useMemo(() => toSpotCount(taken.taken, taken.waitlist, settings.spots), [taken, settings.spots]);
 
-  const byName = (a: FestivalShop, b: FestivalShop) => (a.spot ?? 999) - (b.spot ?? 999) || a.name.localeCompare(b.name);
+  // paused businesses sink below the live ones
+  const byName = (a: FestivalShop, b: FestivalShop) => Number(!!a.paused) - Number(!!b.paused) || (a.spot ?? 999) - (b.spot ?? 999) || a.name.localeCompare(b.name);
   const regular = shops.filter((s) => !s.youngFounder);
   const ordered = regular.sort(byName);
   const founders = shops.filter((s) => s.youngFounder).sort(byName);
@@ -270,12 +271,17 @@ const Festival: React.FC = () => {
             <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
               {tr(`Valid through ${fmtDay(open.redeemTo, false)}`, `Válida hasta el ${fmtDay(open.redeemTo, true)}`)}
             </p>
-            {open.online && (
+            {open.paused && (
+              <p className="mt-4 rounded-xl border-2 border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+                ⏸️ {tr('This business has paused its offer for now — check back soon.', 'Este negocio pausó su oferta por ahora: vuelve pronto.')}
+              </p>
+            )}
+            {open.online && !open.paused && (
               <Link to={`/InclusionFestival/code/${open.id}`} className="mt-5 block">
                 <Button fullWidth>{tr('Get my code for this online offer', 'Obtener mi código para esta oferta en línea')}</Button>
               </Link>
             )}
-            {open.instore && (
+            {open.instore && !open.paused && (
               <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
                 {tr('In store: scan the festival QR sign at their counter.', 'En tienda: escanea el letrero QR del festival en su mostrador.')}
               </p>

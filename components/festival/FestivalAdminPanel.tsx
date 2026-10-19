@@ -21,17 +21,21 @@ const STATUS_STYLE: Record<ShopStatus, string> = {
   unconfirmed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
   pending: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   approved: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+  paused: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
   waitlist: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
   declined: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
   withdrawn: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
 /** waiting on an admin: a new sign-up, the waiting list, or a change to a live card */
+/** on the card: live, or paused by the business (still holds its spot) */
+const onCard = (s: AdminShop) => s.status === 'approved' || s.status === 'paused';
 const needsReview = (s: AdminShop) => s.status === 'pending' || s.status === 'waitlist' || !!s.pendingChanges;
 
 const STATUS_LABEL: Record<ShopStatus, [string, string]> = {
   unconfirmed: ['Email not confirmed yet', 'Correo sin confirmar'],
   pending: ['Waiting for approval', 'Esperando aprobación'],
   approved: ['On the card', 'En la tarjeta'],
+  paused: ['Paused by them', 'Pausada por ellos'],
   waitlist: ['Waiting list', 'Lista de espera'],
   declined: ['Declined', 'Rechazada'],
   withdrawn: ['Withdrawn', 'Retirada'],
@@ -135,7 +139,7 @@ const FestivalAdminPanel: React.FC = () => {
       : e || '');
   };
 
-  const approvedSpots = new Set((shops || []).filter((s) => s.status === 'approved' && s.spot && !s.youngFounder).map((s) => s.spot));
+  const approvedSpots = new Set((shops || []).filter((s) => (s.status === 'approved' || s.status === 'paused') && s.spot && !s.youngFounder).map((s) => s.spot));
   const nextSpot = () => { for (let i = 1; i <= 999; i++) if (!approvedSpots.has(i)) return i; return 1; };
 
   /* ── actions ───────────────────────────────────────────────────────── */
@@ -301,7 +305,7 @@ const FestivalAdminPanel: React.FC = () => {
   /* ── render ────────────────────────────────────────────────────────── */
   const counts = {
     open: (shops || []).filter(needsReview).length,
-    approved: (shops || []).filter((s) => s.status === 'approved').length,
+    approved: (shops || []).filter(onCard).length,
     unconfirmed: (shops || []).filter((s) => s.status === 'unconfirmed').length,
     local: (shops || []).filter((s) => !s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
     young: (shops || []).filter((s) => s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined').length,
@@ -309,7 +313,7 @@ const FestivalAdminPanel: React.FC = () => {
   };
   const visible = (shops || [])
     .filter((s) => filter === 'all' || (filter === 'open' ? needsReview(s) : filter === 'young' || filter === 'local'
-      ? (filter === 'young') === !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : s.status === filter))
+      ? (filter === 'young') === !!s.youngFounder && s.status !== 'withdrawn' && s.status !== 'declined' : filter === 'approved' ? onCard(s) : s.status === filter))
     .sort((a, b) => (a.spot ?? 999) - (b.spot ?? 999) || a.createdAt.localeCompare(b.createdAt));
   const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
@@ -442,7 +446,7 @@ const FestivalAdminPanel: React.FC = () => {
                   <tr key={s.id} className="border-b border-slate-100 align-top dark:border-slate-800">
                     <td className="py-2.5 pr-3">
                       <p className="font-bold text-slate-900 dark:text-white">
-                        {s.spot && s.status === 'approved' && <span className="mr-1 text-xs text-slate-400">#{s.spot}</span>}
+                        {s.spot && onCard(s) && <span className="mr-1 text-xs text-slate-400">#{s.spot}</span>}
                         {s.youngFounder && <span title={tr('Young Founder', 'Joven Emprendedor')}>🌟 </span>}{s.name}
                       </p>
                       <p className="text-xs text-slate-500">{es ? CATEGORY_LABEL[s.category].es : CATEGORY_LABEL[s.category].en}</p>
@@ -486,7 +490,7 @@ const FestivalAdminPanel: React.FC = () => {
                     : <span className="flex h-12 w-12 shrink-0 items-center justify-center text-3xl">{s.emoji}</span>}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      {s.spot && s.status === 'approved' && <span className="text-xs font-black text-slate-400">#{s.spot}</span>}
+                      {s.spot && onCard(s) && <span className="text-xs font-black text-slate-400">#{s.spot}</span>}
                       <p className="font-black text-slate-900 dark:text-white">{s.name}</p>
                       {s.youngFounder && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">🌟 {tr('Young Founder', 'Joven Emprendedor')}</span>}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${STATUS_STYLE[s.status]}`}>
@@ -506,7 +510,7 @@ const FestivalAdminPanel: React.FC = () => {
                     {s.publicContact && <p className="text-xs text-slate-600 dark:text-slate-300">💬 {tr('Shown to families:', 'Visible para las familias:')} {s.publicContact}</p>}
                     {s.videoId && (
                       <a href={youtubeLink(s.videoId)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-bold text-sky-700 underline dark:text-sky-400">
-                        ▶ {s.status === 'approved' ? tr('Watch video', 'Ver video') : tr('Watch video before approving', 'Ver el video antes de aprobar')}
+                        ▶ {onCard(s) ? tr('Watch video', 'Ver video') : tr('Watch video before approving', 'Ver el video antes de aprobar')}
                       </a>
                     )}
                     <p className="mt-1 text-xs text-slate-500">
@@ -549,28 +553,31 @@ const FestivalAdminPanel: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {s.status !== 'approved' && (
+                  {s.status === 'paused' && (
+                    <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'approved')}><Check className="mr-1 h-4 w-4" />{tr('Resume', 'Reanudar')}</Button>
+                  )}
+                  {s.status !== 'approved' && s.status !== 'paused' && (
                     <Button size="sm" onClick={() => approve(s)}><Check className="mr-1 h-4 w-4" />{tr('Approve', 'Aprobar')}</Button>
                   )}
-                  {s.status === 'approved' && s.instore && (
+                  {onCard(s) && s.instore && (
                     <Button size="sm" onClick={() => setSignFor(s)}><Printer className="mr-1 h-4 w-4" />{tr('Sign', 'Letrero')}</Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setDraft(draftFrom(s))}><Pencil className="mr-1 h-4 w-4" />{tr('Edit', 'Editar')}</Button>
                   <Button size="sm" variant="secondary" onClick={() => copyLink(s)}>
                     <Link2 className="mr-1 h-4 w-4" />{copied === 'link:' + s.id ? tr('Copied', 'Copiado') : tr('Shop link', 'Enlace de la tienda')}
                   </Button>
-                  {s.status !== 'waitlist' && s.status !== 'approved' && (
+                  {s.status !== 'waitlist' && !onCard(s) && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'waitlist')}><Clock className="mr-1 h-4 w-4" />{tr('Waiting list', 'Lista de espera')}</Button>
                   )}
                   {/* a young founder ending early chose to stop — withdrawn, not declined */}
-                  {s.youngFounder && s.status === 'approved' && (
+                  {s.youngFounder && onCard(s) && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'withdrawn')}>
                       <X className="mr-1 h-4 w-4" />{tr('End offer (they asked)', 'Terminar oferta (lo pidieron)')}
                     </Button>
                   )}
-                  {s.status !== 'declined' && !(s.youngFounder && s.status === 'approved') && (
+                  {s.status !== 'declined' && !(s.youngFounder && onCard(s)) && (
                     <Button size="sm" variant="secondary" onClick={() => setStatus(s, 'declined')}>
-                      <X className="mr-1 h-4 w-4" />{s.status === 'approved' ? tr('Take off the card', 'Quitar de la tarjeta') : tr('Decline', 'Rechazar')}
+                      <X className="mr-1 h-4 w-4" />{onCard(s) ? tr('Take off the card', 'Quitar de la tarjeta') : tr('Decline', 'Rechazar')}
                     </Button>
                   )}
                   <Button size="sm" variant="ghost" onClick={() => remove(s)} aria-label={tr('Delete', 'Eliminar')}><Trash2 className="h-4 w-4" /></Button>

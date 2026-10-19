@@ -18,13 +18,18 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
       onClick={onClick}
       className="group flex h-full w-full flex-col items-center rounded-3xl border border-slate-200 bg-white p-3 text-center sm:p-5 shadow-sm transition hover:-translate-y-1 hover:border-sky-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:hover:border-sky-700"
     >
-      <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-100 sm:h-28 sm:w-28">
+      <div className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-100 sm:h-28 sm:w-28 ${shop.paused ? 'grayscale opacity-60' : ''}`}>
         {shop.logoUrl
           ? <img src={shop.logoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain p-1.5" />
           : <span className="text-4xl sm:text-5xl" aria-hidden>{shop.emoji}</span>}
       </div>
       <p className="mt-3 break-words text-sm font-black leading-tight text-slate-900 dark:text-white sm:mt-4 sm:text-lg">{shop.name}</p>
       <div className="mt-1.5 flex flex-wrap justify-center gap-1">
+        {shop.paused && (
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:bg-slate-700 dark:text-slate-200 sm:text-[11px]">
+            {tr('⏸️ Paused for now', '⏸️ En pausa por ahora')}
+          </span>
+        )}
         {shop.youngFounder && (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 sm:text-[11px]">
             🌟 {tr('Young Founder', 'Joven Emprendedor')}
@@ -44,7 +49,7 @@ const ShopCard: React.FC<{ shop: FestivalShop; onClick?: () => void }> = ({ shop
           </span>
         )}
       </div>
-      <div className="mt-3 w-full flex-1 rounded-2xl bg-amber-50 px-2 py-2 sm:mt-4 sm:px-3 sm:py-3 dark:bg-amber-900/20">
+      <div className={`mt-3 w-full flex-1 rounded-2xl bg-amber-50 px-2 py-2 sm:mt-4 sm:px-3 sm:py-3 dark:bg-amber-900/20 ${shop.paused ? 'opacity-60' : ''}`}>
         <p className="text-sm font-bold leading-snug text-amber-900 sm:text-base dark:text-amber-200">🎁 {offer}</p>
         {detail && <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-300/80">{detail}</p>}
       </div>
