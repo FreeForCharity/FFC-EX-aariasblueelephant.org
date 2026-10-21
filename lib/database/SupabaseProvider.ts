@@ -61,6 +61,7 @@ export class SupabaseProvider implements IDatabaseProvider {
       type: e.type,
       capacity: e.capacity,
       registered: e.registered || 0,
+      offlineCount: e.offline_count || 0,
       initialLikes: e.initial_likes || 0,
       image: e.image,
       mediaLink: e.media_link,
@@ -73,8 +74,12 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...event,
       initial_likes: event.initialLikes,
       media_link: event.mediaLink,
-      duration: event.hours
+      duration: event.hours,
+      offline_count: event.offlineCount || 0
     };
+    // the database works out registered from online sign-ups + offline_count
+    delete (payload as any).registered;
+    delete (payload as any).offlineCount;
     delete (payload as any).initialLikes;
     delete (payload as any).mediaLink;
     delete (payload as any).hours;
@@ -89,8 +94,11 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...data,
       ...(data.initialLikes !== undefined && { initial_likes: data.initialLikes }),
       ...(data.mediaLink !== undefined && { media_link: data.mediaLink }),
-      ...(data.hours !== undefined && { duration: data.hours })
+      ...(data.hours !== undefined && { duration: data.hours }),
+      ...(data.offlineCount !== undefined && { offline_count: data.offlineCount })
     };
+    delete (payload as any).registered;
+    delete (payload as any).offlineCount;
     delete (payload as any).initialLikes;
     delete (payload as any).mediaLink;
     delete (payload as any).hours;

@@ -852,14 +852,16 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Already Registered</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">{tr('Walk-ins / offline', 'Sin registro en línea')}</label>
+                                    {/* online sign-ups count themselves; only people counted by hand go here */}
                                     <input 
-                                        type="number"
+                                        type="number" min={0}
                                         className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
                                         placeholder="0"
-                                        value={editFormData.registered || 0}
-                                        onChange={e => setEditFormData({...editFormData, registered: parseInt(e.target.value) || 0})}
+                                        value={editFormData.offlineCount || 0}
+                                        onChange={e => setEditFormData({...editFormData, offlineCount: Math.max(0, parseInt(e.target.value) || 0)})}
                                     />
+                                    <p className="mt-1 ml-1 text-[10px] text-slate-500">{tr('Online registrations are counted automatically.', 'Los registros en línea se cuentan solos.')}</p>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Capacity</label>
@@ -987,13 +989,17 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Registered</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">{tr('Walk-ins / offline', 'Sin registro en línea')}</label>
+                                                {/* online sign-ups count themselves; only people counted by hand go here */}
                                                 <input 
-                                                    type="number"
+                                                    type="number" min={0}
                                                     className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
-                                                    value={editFormData.registered || 0}
-                                                    onChange={e => setEditFormData({...editFormData, registered: parseInt(e.target.value) || 0})}
+                                                    value={editFormData.offlineCount || 0}
+                                                    onChange={e => setEditFormData({...editFormData, offlineCount: Math.max(0, parseInt(e.target.value) || 0)})}
                                                 />
+                                                <p className="mt-1 ml-1 text-[10px] text-slate-500">
+                                                    {tr(`Online: ${Math.max(0, (editFormData.registered || 0) - (editFormData.offlineCount || 0))} (counted automatically)`, `En línea: ${Math.max(0, (editFormData.registered || 0) - (editFormData.offlineCount || 0))} (se cuentan solos)`)}
+                                                </p>
                                             </div>
                                             <div>
                                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Capacity</label>

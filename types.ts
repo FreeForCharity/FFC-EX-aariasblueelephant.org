@@ -19,7 +19,10 @@ export interface Event {
   location: string;
   description: string;
   capacity: number;
+  /** online registrations (approved + pending) plus offlineCount — kept by the database */
   registered: number;
+  /** walk-ins and outreach tallies, typed by hand; added on top of online registrations */
+  offlineCount?: number;
   type: 'Class' | 'Event' | 'Fundraiser' | 'Outreach' | 'Advocacy';
   image?: string;
   initialLikes: number;
