@@ -127,6 +127,11 @@ export default function EventDetails() {
         </div>
       );
     }
+    // A link cut short or with stray punctuation when it was pasted (WhatsApp,
+    // a post) still names one event: open that event, not the list.
+    const partial = (id || '').toLowerCase().replace(/[^0-9a-f-]/g, '');
+    const matches = partial.length >= 8 ? events.filter(e => String(e.id).toLowerCase().startsWith(partial)) : [];
+    if (matches.length === 1) return <Navigate to={`/events/${matches[0].id}`} replace />;
     return <Navigate to="/events" replace />;
   }
 

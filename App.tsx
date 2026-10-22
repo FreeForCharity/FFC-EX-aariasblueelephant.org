@@ -12,6 +12,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { tr } from './lib/lang';
+import { FESTIVAL_EVENT_PATH } from './lib/festival/store';
 
 // Simple cache-buster to ensure mobile users get the latest scrolling fixes
 const VersionWatcher = () => {
@@ -205,6 +206,8 @@ const App: React.FC = () => {
                 <Route path="/young-founders" element={<Navigate to="/InclusionFestival/youngfounders" replace />} />
                 <Route path="/InclusionFestival/young-founders" element={<Navigate to="/InclusionFestival/youngfounders" replace />} />
                 <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
+                {/* the festival day's event page: a short link that survives being pasted anywhere */}
+                <Route path="/festivalday" element={<Navigate to={FESTIVAL_EVENT_PATH} replace />} />
                 <Route path="/inclusionfestival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival" element={<Navigate to="/InclusionFestival" replace />} />
                 <Route path="/festival/shops/join" element={<Navigate to="/InclusionFestival/join" replace />} />
