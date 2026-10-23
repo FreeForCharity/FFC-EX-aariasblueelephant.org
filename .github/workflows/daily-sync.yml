@@ -9,7 +9,7 @@ jobs:
   sync_and_backup:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allow the action to commit and push changes
+      contents: read # the snapshot is kept as a dated artifact, not pushed to main
 
     steps:
       - name: Checkout Repository
@@ -39,9 +39,13 @@ jobs:
           SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: pnpm run fetch-data
 
-      - name: Commit and Push Changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add data/resilience_data.ts
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-sync: Daily Resilience Data Backup [skip ci]" && git push)
+      # main only takes changes through the merge queue, so a direct push is
+      # refused (GH013). Keep each night's snapshot as a dated download instead:
+      # 90 days of history, and every deploy refetches it for the live site anyway.
+      - name: Save snapshot as a backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: resilience-backup-${{ github.run_number }}
+          path: data/resilience_data.ts
+          retention-days: 90
+          if-no-files-found: error
