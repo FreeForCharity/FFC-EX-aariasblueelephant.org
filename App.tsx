@@ -208,6 +208,11 @@ const App: React.FC = () => {
                 <Route path="/f" element={<Navigate to="/InclusionFestival" replace />} />
                 {/* the festival day's event page: a short link that survives being pasted anywhere */}
                 <Route path="/festivalday" element={<Navigate to={FESTIVAL_EVENT_PATH} replace />} />
+                {/* families signing up for the festival day itself (the event page);
+                    /InclusionFestival/join is for businesses */}
+                <Route path="/InclusionFestival/signup" element={<Navigate to={FESTIVAL_EVENT_PATH} replace />} />
+                <Route path="/InclusionFestival/signup.html" element={<Navigate to={FESTIVAL_EVENT_PATH} replace />} />
+                <Route path="/InclusionFestival/register" element={<Navigate to={FESTIVAL_EVENT_PATH} replace />} />
                 {/* the WhatsApp community, by a short address printed on business cards —
                     change the group link here and every card already out still works */}
                 <Route path="/whatsapp" element={<ExternalRedirect url="https://chat.whatsapp.com/FPEmQYA8TKd4wzRGB5PXtb" message={tr('Opening our WhatsApp community… 💬', 'Abriendo nuestra comunidad de WhatsApp… 💬')} />} />
