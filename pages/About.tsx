@@ -164,7 +164,7 @@ const About: React.FC = () => {
               />
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ajith Chandran</h3>
-                <p className="text-sky-600 dark:text-sky-400 text-sm font-medium">{tr('Secretary & CTO', 'Secretario y director de tecnología')}</p>
+                <p className="text-sky-600 dark:text-sky-400 text-sm font-medium">{tr('Co-Founder, Secretary & CTO', 'Cofundador, secretario y director de tecnología')}</p>
                 <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">{tr('Dedicated to operational excellence and community outreach.', 'Dedicado a la excelencia operativa y al acercamiento comunitario.')}</p>
               </div>
             </div>
