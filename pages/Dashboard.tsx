@@ -52,7 +52,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
 import MyGiving from '../components/MyGiving';
-import { tr } from '../lib/lang';
+import { tr, isEs } from '../lib/lang';
 import { isFestivalAdmin } from '../lib/festival/types';
 import { festivalDb } from '../lib/festival/db';
 import { useData } from '../context/DataContext';
@@ -1589,7 +1589,8 @@ const Dashboard: React.FC = () => {
                                 <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
                                     <div className="flex items-center">
                                         <div className="h-14 w-14 rounded-xl bg-brand-cyan/10 dark:bg-brand-cyan/20 flex flex-col items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20 flex-shrink-0">
-                                            <span className="text-xs uppercase">{new Date(evt.date).toLocaleString('default', { month: 'short' })}</span>
+                                            {/* a calendar date: read at local noon, so "2026-11-01" is never turned into Oct 31 by the UTC offset */}
+                                            <span className="text-xs uppercase">{new Date(evt.date.slice(0, 10) + 'T12:00:00').toLocaleString(isEs() ? 'es-US' : 'en-US', { month: 'short' })}</span>
                                             <span className="text-xl leading-none">{evt.date.split('-')[2]}</span>
                                         </div>
                                         <div className="ml-4">
