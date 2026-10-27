@@ -1586,7 +1586,7 @@ const Dashboard: React.FC = () => {
                             const evt = events.find((e: Event) => e.id === reg.eventId);
                             if (!evt) return null;
                             return (
-                                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                                <Link key={reg.id} to={`/events/${evt.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
                                     <div className="flex items-center">
                                         <div className="h-14 w-14 rounded-xl bg-brand-cyan/10 dark:bg-brand-cyan/20 flex flex-col items-center justify-center text-brand-cyan font-bold border border-brand-cyan/20 flex-shrink-0">
                                             {/* a calendar date: read at local noon, so "2026-11-01" is never turned into Oct 31 by the UTC offset */}
@@ -1609,7 +1609,7 @@ const Dashboard: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })
                     )}
@@ -2671,7 +2671,8 @@ const Dashboard: React.FC = () => {
                             {userRegs.slice(0, 3).map((reg: any) => {
                                 const event = events.find(e => e.id === reg.eventId);
                                 return (
-                                    <div key={reg.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                    // opens the event's own page, so the details are one tap away
+                                    <Link key={reg.id} to={`/events/${reg.eventId}`} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 transition hover:border-brand-purple/40 hover:bg-white dark:hover:bg-slate-800">
                                         <div className="h-10 w-10 rounded-lg bg-brand-purple/10 flex items-center justify-center text-brand-purple">
                                             <Calendar className="h-5 w-5" />
                                         </div>
@@ -2680,7 +2681,7 @@ const Dashboard: React.FC = () => {
                                             <p className="text-[10px] text-slate-500 mt-0.5">{event?.date} at {event?.time}</p>
                                         </div>
                                         <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />
-                                    </div>
+                                    </Link>
                                 );
                             })}
                         </div>

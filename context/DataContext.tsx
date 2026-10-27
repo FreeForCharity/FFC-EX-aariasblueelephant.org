@@ -310,6 +310,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setEventRegistrations(regs);
       return { success: true };
     } catch (error: any) {
+      // one registration per person per event (unique index): a second try —
+      // a double click, or the sign-in round trip — means they are already in.
+      // Show them their registration; no second email.
+      if (error?.code === '23505') {
+        const session = await db.getSession();
+        setEventRegistrations(await db.getEventRegistrations(session?.user?.id || session?.$id));
+        return { success: true };
+      }
       return { success: false, error: error.message };
     }
   };
