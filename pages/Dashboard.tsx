@@ -1566,22 +1566,23 @@ const Dashboard: React.FC = () => {
 
 
     const renderMyEventsSection = () => {
-        const myRegistrations = eventRegistrations.filter(r => r.userId === user.email);
+        // same rule as the Overview card: your account id, or your email for older registrations
+        const myRegistrations = userRegs;
 
         return (
             <div className="bg-white dark:bg-brand-card rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm dark:shadow-lg">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">My Registered Events</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{tr('My Registered Events', 'Mis eventos registrados')}</h2>
                 <div className="space-y-4">
                     {myRegistrations.length === 0 ? (
                         <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700/50">
                             <Calendar className="h-10 w-10 text-slate-400 dark:text-slate-500 mx-auto mb-3 opacity-50" />
-                            <p className="text-slate-500 dark:text-slate-400">You haven't registered for any events yet.</p>
+                            <p className="text-slate-500 dark:text-slate-400">{tr("You haven't registered for any events yet.", 'Todavía no te has registrado en ningún evento.')}</p>
                             <Link to="/events" className="mt-4 inline-block text-brand-cyan hover:underline text-sm">
-                                Explore Events
+                                {tr('Explore Events', 'Explorar eventos')}
                             </Link>
                         </div>
                     ) : (
-                        userRegs.map((reg: EventRegistration) => {
+                        myRegistrations.map((reg: EventRegistration) => {
                             const evt = events.find((e: Event) => e.id === reg.eventId);
                             if (!evt) return null;
                             return (
