@@ -196,8 +196,13 @@ async function registration(id: string, approved: boolean) {
   const { data: reg } = await sb.from('event_registrations').select('*').eq('id', id).maybeSingle();
   if (!reg || !reg.user_email) return json({ error: 'not_found' }, 404);
   if (reg.event_id === FESTIVAL_EVENT_ID) {
-    // no approval gate here — but the row must still say Approved, as ever
-    if (reg.status !== 'Approved') return json({ error: 'not_approved' }, 409);
+    // no approval gate here: a festival registration is approved the moment it exists.
+    // The site already saves it as Approved; doing it here too means a stale page
+    // (or an older copy of the site) can never leave someone waiting with no email.
+    if (reg.status !== 'Approved') {
+      const { error } = await sb.from('event_registrations').update({ status: 'Approved' }).eq('id', id);
+      if (error) return json({ error: 'approve_failed' }, 500);
+    }
     const { data: fe } = await sb.from('events').select('title').eq('id', reg.event_id).maybeSingle();
     return festivalRegistration(reg, id, fe);
   }
