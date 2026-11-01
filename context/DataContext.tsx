@@ -169,7 +169,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setEvents(evts);
         setTestimonials(tests);
         setVolunteerApplications(apps);
-        setEventRegistrations(regs);
+        // merge, don't replace: a registration made while this slower first load was
+        // still running (sign in -> auto-register) is newer than what `regs` saw
+        setEventRegistrations(prev => [...regs, ...prev.filter(p => !regs.some(r => r.id === p.id))]);
         setMediaAlbumUrl(albumUrl);
         setCarouselMode(mode);
 
