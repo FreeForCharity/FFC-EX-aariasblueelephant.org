@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Event, Testimonial, VolunteerApplication, EventRegistration } from '../types';
 import { db } from '../lib/database';
 import { supabase } from '../lib/supabase';
+import { FESTIVAL_EVENT_ID } from '../lib/festival/store';
 
 /**
  * Ask the email function to send the email for one record. Fire and forget:
@@ -303,8 +304,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerForEvent = async (data: Omit<EventRegistration, 'id' | 'date' | 'status'>): Promise<MutationResult> => {
     try {
-      const newId = await db.createEventRegistration({ ...data, date: new Date().toISOString().split('T')[0], status: 'Pending' });
-      notify('REGISTRATION_RECEIVED', newId);
+      // the Inclusion Festival has no approval gate: they are in, and the perks email goes out at once
+      const festival = data.eventId === FESTIVAL_EVENT_ID;
+      const newId = await db.createEventRegistration({ ...data, date: new Date().toISOString().split('T')[0], status: festival ? 'Approved' : 'Pending' });
+      notify(festival ? 'REGISTRATION_APPROVED' : 'REGISTRATION_RECEIVED', newId);
       const session = await db.getSession();
       const regs = await db.getEventRegistrations(session?.user?.id || session?.$id);
       setEventRegistrations(regs);

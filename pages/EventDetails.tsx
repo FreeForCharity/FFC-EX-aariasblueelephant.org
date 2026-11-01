@@ -12,6 +12,18 @@ import { formatDateLocal } from '../lib/utils';
 import { Event } from '../types';
 import ResilientImage from '../components/ResilientImage';
 import { tr } from '../lib/lang';
+import { FESTIVAL_EVENT_ID } from '../lib/festival/store';
+
+/** the festival's "show this to redeem" card — registered participants only */
+const PerksCard: React.FC<{ name?: string }> = ({ name }) => (
+  <div className="rounded-2xl border-4 border-[#F5C542] bg-[#0C4A6E] p-5 text-center text-white">
+    {name && <p className="text-sm font-semibold text-sky-200">{name}</p>}
+    <p className="mt-1 text-base font-black uppercase tracking-wide text-[#F5C542]">🎁 {tr('Show this screen to redeem your perks', 'Muestra esta pantalla para recibir tus beneficios')}</p>
+    <p className="mt-3 text-xl font-black">🍕 {tr('Free Pizza & Drinks', 'Pizza y bebidas gratis')}</p>
+    <p className="mt-1 text-xl font-black">👜 {tr('Patriot Tote Bag', 'Bolsa tote Patriot')} <span className="text-sm font-semibold text-sky-200">· {tr('limited edition', 'edición limitada')}</span></p>
+    <p className="mt-3 text-xs text-sky-200">{tr('Perks for registered participants only', 'Beneficios solo para participantes registrados')}</p>
+  </div>
+);
 
 
 export default function EventDetails() {
@@ -253,8 +265,11 @@ export default function EventDetails() {
               {tr('Registration Successful!', '¡Registro Exitoso!')}
             </h2>
             <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-8">
-              {tr('Thank you for registering for', 'Gracias por registrarte para')} <span className="font-bold text-brand-cyan">{event.title}</span>. {tr('Your registration is currently', 'Tu registro está actualmente')} <span className="font-bold text-amber-500">{tr('Pending Approval', 'Pendiente de Aprobación')}</span>. {tr('You will receive an update once our team reviews your request.', 'Recibirás una actualización en cuanto nuestro equipo revise tu solicitud.')}
+              {tr('Thank you for registering for', 'Gracias por registrarte para')} <span className="font-bold text-brand-cyan">{event.title}</span>. {event?.id === FESTIVAL_EVENT_ID
+                ? tr('You\'re all set! We also emailed you this confirmation.', '¡Todo listo! También te enviamos esta confirmación por correo.')
+                : <>{tr('Your registration is currently', 'Tu registro está actualmente')} <span className="font-bold text-amber-500">{tr('Pending Approval', 'Pendiente de Aprobación')}</span>. {tr('You will receive an update once our team reviews your request.', 'Recibirás una actualización en cuanto nuestro equipo revise tu solicitud.')}</>}
             </p>
+            {event?.id === FESTIVAL_EVENT_ID && <div className="mb-8"><PerksCard name={user?.name} /></div>}
             <div className="bg-sky-50 dark:bg-sky-900/20 rounded-xl p-6 mb-8 border border-sky-100 dark:border-sky-800/50">
               <p className="text-sky-800 dark:text-sky-300 font-medium mb-3">{tr('Want to amplify your impact right now?', '¿Quieres amplificar tu impacto ahora mismo?')}</p>
               <p className="text-sky-600 dark:text-sky-400 text-sm mb-4">
@@ -355,11 +370,14 @@ export default function EventDetails() {
                           </div>
                         </Button>
                       ) : (
+                        <>
                         <Button fullWidth size="lg" variant="primary" className="bg-green-600 hover:bg-green-700 text-white border-none shadow-lg shadow-green-500/20" disabled>
                           <div className="flex items-center gap-2 justify-center">
                             <Check className="h-5 w-5" /> {tr('JOINED', 'CONFIRMADO')}
                           </div>
                         </Button>
+                        {event?.id === FESTIVAL_EVENT_ID && <div className="mt-4"><PerksCard name={userRegistration?.userName} /></div>}
+                        </>
                       )
                     ) : isPastEvent ? (
                       <div className="space-y-4">
