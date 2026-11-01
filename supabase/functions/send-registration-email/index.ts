@@ -135,9 +135,72 @@ async function sendOnce(kind: string, ref: string, to: string, subject: string, 
 
 /* ───────────────────────────────────────────────── event registrations ── */
 
+/**
+ * The Inclusion Festival day. Its registrations are approved on sign-up (no
+ * admin gate) and get one "show this to redeem your perks" email — English
+ * then Spanish — instead of the received/approved pair. Keep these in step
+ * with FESTIVAL_EVENT_PATH and DEFAULT_SETTINGS in lib/festival/store.ts.
+ */
+const FESTIVAL_EVENT_ID = '53be9e64-d8dc-4c13-bbd0-e4d7d8e196e8';
+
+/** the donate block, in Spanish — the shared one above is English-only */
+const donateBottomEs = (campaign: string) => `
+  <p style="font-size: 14px; color: #4a5568; text-align: center; margin: 0 0 8px;">
+    <strong>💙 Ayúdanos a mantenerlo gratis para cada familia.</strong> Una donación de cualquier monto va directo al próximo evento al que llegue una familia como la tuya.
+    <a href="${giveUrl(campaign, 'bottom_es')}" style="color: #0C4A6E; font-weight: bold;">Dona hoy</a>
+  </p>`;
+
+async function festivalRegistration(reg: any, id: string, evt: any) {
+  const name = esc(reg.user_name || 'Friend');
+  const perks = (es: boolean) => `
+    <div style="background-color: #0C4A6E; border: 3px solid #F5C542; border-radius: 14px; padding: 18px 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0 0 10px; font-size: 17px; font-weight: bold; color: #F5C542;">🎁 ${es ? 'Muestra este correo en el festival para recibir tus beneficios' : 'Show this email at the festival to redeem your perks'}</p>
+      <p style="margin: 6px 0; font-size: 18px; font-weight: bold; color: #ffffff;">🍕 ${es ? 'Pizza y bebidas gratis' : 'Free Pizza &amp; Drinks'}</p>
+      <p style="margin: 6px 0; font-size: 18px; font-weight: bold; color: #ffffff;">👜 ${es ? 'Bolsa tote Patriot <span style="font-size: 14px; font-weight: normal; color: #E0F2FE;">· edición limitada</span>' : 'Patriot Tote Bag <span style="font-size: 14px; font-weight: normal; color: #E0F2FE;">· limited edition</span>'}</p>
+      <p style="margin: 12px 0 0; font-size: 13px; color: #BAE6FD;">${es ? 'Beneficios solo para participantes registrados.' : 'Perks for registered participants only.'}</p>
+    </div>`;
+  const details = (es: boolean) => `
+    <div style="background-color: #f7fafc; padding: 16px 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 4px 0; font-size: 15px; color: #2d3748;"><strong>${es ? 'Cuándo' : 'When'}:</strong> ${es ? 'Domingo 1 de noviembre · 10 AM – 2 PM' : 'Sunday, November 1 · 10 AM – 2 PM'}</p>
+      <p style="margin: 4px 0; font-size: 15px; color: #2d3748;"><strong>${es ? 'Dónde' : 'Where'}:</strong> Mountain House Town Hall</p>
+    </div>`;
+
+  const r = await sendOnce('reg_perks', id, reg.user_email,
+    "You're registered! Show this email to redeem your perks 🎉 · ¡Estás registrado! Muestra este correo para recibir tus beneficios", shell(`
+    <h1 style="color: #48BB78; text-align: center;">Registration successful!</h1>
+    <p style="font-size: 16px; color: #4a5568;">Hi ${name},</p>
+    <p style="font-size: 16px; color: #4a5568;">You're all set for the <strong>Inclusion Festival &amp; Special Needs Resource Fair</strong>. We can't wait to see you there!</p>
+    ${perks(false)}
+    ${details(false)}
+    ${button(`${SITE}/dashboard`, 'See my registration')}
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
+    <h1 style="color: #48BB78; text-align: center;">¡Registro exitoso!</h1>
+    <p style="font-size: 16px; color: #4a5568;">Hola ${name},</p>
+    <p style="font-size: 16px; color: #4a5568;">Ya estás inscrito en el <strong>Inclusion Festival &amp; Special Needs Resource Fair</strong>. ¡Te esperamos!</p>
+    ${perks(true)}
+    ${details(true)}
+    ${button(`${SITE}/dashboard`, 'Ver mi registro')}
+    ${donateBottom('registration_perks')}
+    ${donateBottomEs('registration_perks')}`));
+  await sendOnce('reg_received_admin', id, ADMIN_EMAIL, `New registration: ${reg.user_name || reg.user_email} – ${evt?.title || 'event'}`, shell(`
+    <h1 style="color: #00AEEF; font-size: 20px;">New event registration</h1>
+    <p><strong>Who:</strong> ${name} (${esc(reg.user_email)})</p>
+    <p><strong>Event:</strong> ${esc(evt?.title || 'Inclusion Festival')}</p>
+    <p><strong>Accommodations:</strong> ${reg.special_needs ? 'Yes' : 'No'}</p>
+    <p style="color: #718096;">Auto-approved — perks email sent.</p>
+    ${button(`${SITE}/dashboard?view=manage-registrations`, 'Open the dashboard')}`));
+  return json(r, r.ok ? 200 : 502);
+}
+
 async function registration(id: string, approved: boolean) {
   const { data: reg } = await sb.from('event_registrations').select('*').eq('id', id).maybeSingle();
   if (!reg || !reg.user_email) return json({ error: 'not_found' }, 404);
+  if (reg.event_id === FESTIVAL_EVENT_ID) {
+    // no approval gate here — but the row must still say Approved, as ever
+    if (reg.status !== 'Approved') return json({ error: 'not_approved' }, 409);
+    const { data: fe } = await sb.from('events').select('title').eq('id', reg.event_id).maybeSingle();
+    return festivalRegistration(reg, id, fe);
+  }
   if (approved && reg.status !== 'Approved') return json({ error: 'not_approved' }, 409);
 
   const { data: evt } = await sb.from('events').select('title, date, time, location').eq('id', reg.event_id).maybeSingle();
