@@ -182,13 +182,7 @@ async function festivalRegistration(reg: any, id: string, evt: any) {
     ${button(`${SITE}/dashboard`, 'Ver mi registro')}
     ${donateBottom('registration_perks')}
     ${donateBottomEs('registration_perks')}`));
-  await sendOnce('reg_received_admin', id, ADMIN_EMAIL, `New registration: ${reg.user_name || reg.user_email} – ${evt?.title || 'event'}`, shell(`
-    <h1 style="color: #00AEEF; font-size: 20px;">New event registration</h1>
-    <p><strong>Who:</strong> ${name} (${esc(reg.user_email)})</p>
-    <p><strong>Event:</strong> ${esc(evt?.title || 'Inclusion Festival')}</p>
-    <p><strong>Accommodations:</strong> ${reg.special_needs ? 'Yes' : 'No'}</p>
-    <p style="color: #718096;">Auto-approved — perks email sent.</p>
-    ${button(`${SITE}/dashboard?view=manage-registrations`, 'Open the dashboard')}`));
+  // no per-sign-up note to the admin: the daily digest (admin-digest) covers it
   return json(r, r.ok ? 200 : 502);
 }
 
@@ -241,12 +235,7 @@ async function registration(id: string, approved: boolean) {
     <p style="font-size: 16px; color: #4a5568;">You'll get another email as soon as your registration is approved.</p>
     ${button(`${SITE}/dashboard`, 'See my events')}
     ${donateBottom('registration_received')}`));
-  await sendOnce('reg_received_admin', id, ADMIN_EMAIL, `New registration: ${reg.user_name || reg.user_email} – ${evt?.title || 'event'}`, shell(`
-    <h1 style="color: #00AEEF; font-size: 20px;">New event registration</h1>
-    <p><strong>Who:</strong> ${name} (${esc(reg.user_email)})</p>
-    <p><strong>Event:</strong> ${title}</p>
-    <p><strong>Accommodations:</strong> ${reg.special_needs ? 'Yes' : 'No'}</p>
-    ${button(`${SITE}/dashboard?view=manage-registrations`, 'Review in dashboard')}`));
+  // no per-sign-up note to the admin: the daily digest (admin-digest) covers it
   return json(r, r.ok ? 200 : 502);
 }
 
