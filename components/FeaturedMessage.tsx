@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Play } from 'lucide-react';
 import { tr, isEs } from '../lib/lang';
 
-// Featured video at the top of the landing page. To feature a different video,
+// Featured video on the landing page (below the testimonials). To feature a different video,
 // change VIDEO_ID (the part after "watch?v=") and the copy below.
 const VIDEO_ID = '95Acjx-ZdCo';
 
@@ -12,8 +12,7 @@ const FeaturedMessage: React.FC = () => {
     const [playing, setPlaying] = useState(false);
 
     return (
-        // -mt-24 cancels Layout's pt-24 (the navbar is sticky, so that padding is just empty space)
-        <section className="relative -mt-24 overflow-hidden bg-gradient-to-b from-sky-900 via-sky-800 to-indigo-900 py-10 sm:py-14 px-4">
+        <section className="relative overflow-hidden bg-gradient-to-b from-sky-900 via-sky-800 to-indigo-900 py-10 sm:py-14 px-4">
             <div className="max-w-5xl mx-auto text-center">
                 <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-sky-300 mb-3">
                     {tr('A special message for our herd', 'Un mensaje especial para nuestra manada')}
