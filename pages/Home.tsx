@@ -313,11 +313,11 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+            {/* Featured message — just above the testimonials */}
+            <FeaturedMessage />
+
             {/* Voices of our Community - Testimonials */}
             <TestimonialSection />
-
-            {/* Featured message — lower on the page now that the festival is over */}
-            <FeaturedMessage />
 
             {/* Intro Text */}
             <section className="py-16 bg-white dark:bg-slate-900 transition-colors border-t border-slate-200 dark:border-slate-800">
