@@ -27,3 +27,6 @@ export const WEBINAR_VIDEOS: VideoItem[] = [
     { id: '1vR4evQTHcg', title: 'Dr. Kate Roche', caption: tr('Autism Acceptance Month webinar series', 'Serie de seminarios web del Mes de la Aceptación del Autismo') },
     { id: 'O7KFzASkmaA', title: 'Dr. Luke Beardon', caption: tr('Webinar Series', 'Serie de seminarios web') },
 ];
+
+// Every video, in the order shown on /videos. The Home teaser rotates through all of them.
+export const ALL_VIDEOS: VideoItem[] = [FEATURED_VIDEO, ...MESSAGE_VIDEOS, ...WEBINAR_VIDEOS];
