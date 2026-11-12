@@ -63,6 +63,7 @@ const Footer: React.FC = () => {
                             <li><Link to="/" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Home', 'Inicio')}</Link></li>
                             <li><Link to="/about" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('About Us', 'Sobre nosotros')}</Link></li>
                             <li><Link to="/events" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Events', 'Eventos')}</Link></li>
+                            <li><Link to="/videos" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Videos', 'Videos')}</Link></li>
                             <li><Link to="/volunteer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Get Involved', 'Participa')}</Link></li>
                             <li><a href="https://www.zeffy.com/en-US/donation-form/aariasblueelephant" target="_blank" rel="noopener noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center gap-3">{tr('Donate', 'Dona')}</a></li>
                             <li className="pt-4 border-t border-slate-200 dark:border-slate-800/50">

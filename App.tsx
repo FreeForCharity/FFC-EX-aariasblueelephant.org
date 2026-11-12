@@ -112,6 +112,7 @@ const Volunteer = lazy(() => import('./pages/Volunteer'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const WheelPage = lazy(() => import('./pages/WheelPage'));
 const Resources = lazy(() => import('./pages/Resources'));
+const Videos = lazy(() => import('./pages/Videos'));
 const UnderstandingAutism = lazy(() => import('./pages/UnderstandingAutism'));
 const Interventions = lazy(() => import('./pages/Interventions'));
 const Screening = lazy(() => import('./pages/Screening'));
@@ -179,6 +180,7 @@ const App: React.FC = () => {
                 <Route path="/resources/interventions" element={<Interventions />} />
                 <Route path="/resources/screening" element={<Screening />} />
                 <Route path="/circle-of-friends" element={<CircleOfFriends />} />
+                <Route path="/videos" element={<Videos />} />
                 <Route path="/games" element={<Games />} />
 
                 {/* Inclusion Festival & Resource Fair — November offers, redeemed by QR */}
