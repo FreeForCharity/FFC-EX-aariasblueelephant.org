@@ -11,7 +11,7 @@ import DonationQR from '../components/DonationQR';
 import StickerIcon from '../components/StickerIcon';
 import CardStack from '../components/ui/card-stack';
 import TestimonialSection from '../components/TestimonialSection';
-import { formatShortDateLocal, parseDateLocal } from '../lib/utils';
+import { formatShortDateLocal, parseDateLocal, formatEventDate, isEventPast, isEventOngoing, isMultiDayEvent } from '../lib/utils';
 import MediaLightbox from '../components/MediaLightbox';
 import { tr } from '../lib/lang';
 import FeaturedMessage from '../components/FeaturedMessage';
@@ -83,6 +83,8 @@ const Home: React.FC = () => {
     const upcomingEvents = dbEvents
         .filter((e) => {
             const evDate = parseDateLocal(e.date);
+            // A season (start + end date) shows until its last day has passed
+            if (isMultiDayEvent(e)) return !isEventPast(e);
             // Hide events happened today or in the past (only show from tomorrow onwards)
             const tomorrow = new Date();
             tomorrow.setHours(23, 59, 59, 999);
@@ -96,7 +98,8 @@ const Home: React.FC = () => {
         .map(e => ({
             id: e.id,
             title: e.title,
-            date: formatShortDateLocal(e.date),
+            date: formatEventDate(e, 'short'),
+            ongoing: isEventOngoing(e),
             image: e.image || DEFAULT_EVENT_IMAGE,
             description: e.description,
             isRealEvent: true
@@ -251,12 +254,12 @@ const Home: React.FC = () => {
                                             src: evt.image || DEFAULT_EVENT_IMAGE,
                                             alt: evt.title || tr('Event', 'Evento'),
                                             title: evt.title,
-                                            description: `${(evt as any).isRealEvent ? tr('Upcoming: ', 'Próximo: ') : ''}${formatShortDateLocal(evt.date)}`,
+                                            description: `${(evt as any).isRealEvent ? ((evt as any).ongoing ? tr('Ongoing: ', 'En curso: ') : tr('Upcoming: ', 'Próximo: ')) : ''}${(evt as any).isRealEvent ? evt.date : formatShortDateLocal(evt.date)}`,
                                             isRealEvent: (evt as any).isRealEvent,
                                             dbCoords: (evt as any).isRealEvent ? {
                                                 id: String(evt.id),
-                                                table: 'events',
-                                                column: 'image'
+                                                table: 'events' as const,
+                                                column: 'image' as const
                                             } : undefined
                                         }))
                                     } 

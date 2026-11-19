@@ -15,6 +15,9 @@ export interface Event {
   id: string;
   title: string;
   date: string;
+  /** optional last day (YYYY-MM-DD) for programs that run over a season, e.g. Jan–Dec.
+   *  The event stays upcoming/ongoing until this day has passed. */
+  endDate?: string;
   time: string;
   location: string;
   description: string;

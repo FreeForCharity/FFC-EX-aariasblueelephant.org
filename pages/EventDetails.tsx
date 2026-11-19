@@ -8,7 +8,7 @@ import { Calendar, Clock, MapPin, Users, ArrowLeft, Share2, Heart, Check, HeartH
 import Button from '../components/Button';
 import { DEFAULT_EVENT_IMAGE, DEFAULT_LOCAL_FALLBACK } from '../constants';
 import RichText from '../components/RichText';
-import { formatDateLocal } from '../lib/utils';
+import { formatEventDate, isEventPast } from '../lib/utils';
 import { Event } from '../types';
 import ResilientImage from '../components/ResilientImage';
 import { tr } from '../lib/lang';
@@ -147,8 +147,8 @@ export default function EventDetails() {
     return <Navigate to="/events" replace />;
   }
 
-  const eventDate = new Date(event.date.replace(/-/g, '/'));
-  const isPastEvent = eventDate < new Date(new Date().setHours(0, 0, 0, 0));
+  // a season (start + end date) stays open for sign-ups until its last day has passed
+  const isPastEvent = isEventPast(event);
 
   const handleRegister = async (pref: boolean) => {
     if (!user) {
@@ -455,7 +455,7 @@ export default function EventDetails() {
                     <div>
                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tr('Date', 'Fecha')}</p>
                       <div className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {formatDateLocal(event.date)}
+                        {formatEventDate(event)}
                       </div>
                     </div>
                   </div>
