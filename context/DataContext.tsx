@@ -45,6 +45,7 @@ interface DataContextType {
   mediaAlbumUrl: string;
   updateMediaAlbumUrl: (url: string) => Promise<MutationResult>;
   carouselMode: 'events' | 'media';
+  carouselSettingsReady: boolean;
   updateCarouselMode: (mode: 'events' | 'media') => Promise<MutationResult>;
   isLoading: boolean;
   hasInitialFetch: boolean;
@@ -58,8 +59,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [volunteerApplications, setVolunteerApplications] = useState<VolunteerApplication[]>([]);
   const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
-  const [mediaAlbumUrl, setMediaAlbumUrl] = useState<string>('');
-  const [carouselMode, setCarouselMode] = useState<'events' | 'media'>('events');
+  // Home carousel settings are cached so a returning visitor's first paint already
+  // shows the right carousel (no events -> media swap on load).
+  const readCache = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
+  const [mediaAlbumUrl, setMediaAlbumUrl] = useState<string>(() => readCache('abe_cache_media_album') ?? '');
+  const [carouselMode, setCarouselMode] = useState<'events' | 'media'>(() => readCache('abe_cache_carousel_mode') === 'media' ? 'media' : 'events');
+  const [carouselSettingsReady, setCarouselSettingsReady] = useState<boolean>(() => readCache('abe_cache_carousel_mode') !== null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
   const [isNetworkBlocked, setIsNetworkBlocked] = useState(false);
@@ -104,6 +109,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Fetch initial data
   useEffect(() => {
+    // Carousel settings are tiny and drive the first thing on Home, so fetch them
+    // right away in parallel instead of after the session/events/registrations chain.
+    (async () => {
+      try {
+        const [albumUrl, mode] = await Promise.all([db.getMediaAlbumUrl(), db.getCarouselMode()]);
+        setMediaAlbumUrl(albumUrl);
+        setCarouselMode(mode);
+        try {
+          localStorage.setItem('abe_cache_media_album', albumUrl);
+          localStorage.setItem('abe_cache_carousel_mode', mode);
+        } catch (e) {}
+      } catch (error) {
+        console.error("Fetch carousel settings error:", error);
+      } finally {
+        setCarouselSettingsReady(true);
+      }
+    })();
+
     const fetchData = async () => {
       // Local cache management
       const cachedEvents = localStorage.getItem('abe_cache_events');
@@ -163,8 +186,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const [apps, regs] = await Promise.all([userAppsPromise, userRegsPromise]);
 
-        const albumUrl = await db.getMediaAlbumUrl();
-        const mode = await db.getCarouselMode();
 
         setEvents(evts);
         setTestimonials(tests);
@@ -172,8 +193,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // merge, don't replace: a registration made while this slower first load was
         // still running (sign in -> auto-register) is newer than what `regs` saw
         setEventRegistrations(prev => [...regs, ...prev.filter(p => !regs.some(r => r.id === p.id))]);
-        setMediaAlbumUrl(albumUrl);
-        setCarouselMode(mode);
 
       } catch (error) {
         console.error("Fetch data error. Falling back to static offline resilience data:", error);
@@ -377,6 +396,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await db.setMediaAlbumUrl(url);
       setMediaAlbumUrl(url);
+      try { localStorage.setItem('abe_cache_media_album', url); } catch (e) {}
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -387,6 +407,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await db.setCarouselMode(mode);
       setCarouselMode(mode);
+      try { localStorage.setItem('abe_cache_carousel_mode', mode); } catch (e) {}
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -419,6 +440,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mediaAlbumUrl,
       updateMediaAlbumUrl,
       carouselMode,
+      carouselSettingsReady,
       updateCarouselMode,
       isLoading,
       hasInitialFetch,

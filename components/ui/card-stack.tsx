@@ -39,12 +39,19 @@ export default function CardStack({
   const dragY = useMotionValue(0);
   const rotateX = useTransform(dragY, [-200, 0, 200], [8, 0, -8]);
 
-  useEffect(() => {
-    if (propCards && propCards.length > 0) {
+  // Re-sync when the card *content* changes (e.g. Media Outreach photos arrive).
+  // Done during render rather than in an effect so the stale set is never painted,
+  // and keyed on content rather than array identity so a parent re-render doesn't
+  // snap the stack back to the first card.
+  const cardsKey = propCards.map(c => `${c.id}|${c.src}|${c.title}`).join('\n');
+  const [syncedKey, setSyncedKey] = useState(cardsKey);
+  if (cardsKey !== syncedKey) {
+    setSyncedKey(cardsKey);
+    if (propCards.length > 0) {
       setCards(propCards);
       setCurrentIndex(0);
     }
-  }, [propCards]);
+  }
 
   // Auto-rotate every 5 seconds
   useEffect(() => {
