@@ -21,7 +21,7 @@ const StayInTouch: React.FC<{ optin?: boolean; dark?: boolean }> = ({ optin, dar
   const today = new Date();
   const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const upcoming = (events || [])
-    .filter((e) => e.date && e.date.slice(0, 10) >= todayIso)
+    .filter((e) => e.date && (e.endDate || e.date).slice(0, 10) >= todayIso)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 3);
 
@@ -45,7 +45,7 @@ const StayInTouch: React.FC<{ optin?: boolean; dark?: boolean }> = ({ optin, dar
               <Link to={`/events/${e.id}`} className="block rounded-xl bg-sky-50 px-3 py-2 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700">
                 <span className="block text-sm font-bold text-slate-900 dark:text-white">{e.title}</span>
                 <span className="block text-xs text-slate-500 dark:text-slate-400">
-                  {fmtDay(e.date, es)}{e.time ? ` · ${e.time}` : ''}{e.location ? ` · ${e.location}` : ''}
+                  {fmtDay(e.date, es)}{e.endDate && e.endDate.slice(0, 10) > e.date.slice(0, 10) ? ` – ${fmtDay(e.endDate, es)}` : ''}{e.time ? ` · ${e.time}` : ''}{e.location ? ` · ${e.location}` : ''}
                 </span>
               </Link>
             </li>

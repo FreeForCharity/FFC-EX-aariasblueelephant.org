@@ -12,7 +12,7 @@ import StagedFadeIn from '../components/StagedFadeIn';
 import StickerIcon from '../components/StickerIcon';
 import EventCalendarModal from '../components/EventCalendarModal';
 import RichText from '../components/RichText';
-import { parseDateLocal, formatDateLocal } from '../lib/utils';
+import { parseDateLocal, formatEventDate, isEventPast } from '../lib/utils';
 import { Event } from '../types';
 import ResilientImage from '../components/ResilientImage';
 import { tr } from '../lib/lang';
@@ -152,7 +152,7 @@ const EventCardShort: React.FC<{
       <div className="p-6 flex flex-col flex-grow md:justify-center">
         <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-[9px] mb-2 uppercase tracking-widest opacity-80">
           <Calendar className="w-3 h-3" />
-          <span>{event.date ? formatDateLocal(event.date) : tr('Date TBD', 'Fecha por confirmar')}</span>
+          <span>{event.date ? formatEventDate(event) : tr('Date TBD', 'Fecha por confirmar')}</span>
           <span className="text-slate-200 dark:text-slate-700 mx-1">•</span>
           <Clock className="w-3 h-3" />
           <span>{event.time || tr('Time TBD', 'Hora por confirmar')}</span>
@@ -354,7 +354,7 @@ const CardContent: React.FC<CardContentProps> = ({
               <div className="space-y-6 mb-8">
                 <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
                   <StickerIcon icon={Calendar} size={18} color="#00AEEF" className="mr-4" />
-                  <span>{formatDateLocal(activeEvent.date)}</span>
+                  <span>{formatEventDate(activeEvent)}</span>
                 </div>
                 <div className="flex items-center text-slate-700 dark:text-slate-300 font-bold">
                   <StickerIcon icon={Clock} size={18} color="#00AEEF" className="mr-4" />
@@ -497,13 +497,10 @@ export default function Events() {
   // Filter and sort events based on active tab - memoized to prevent lag during carousel transitions
   const filteredEvents = React.useMemo(() => {
     return events.filter(event => {
-      const eventDate = parseDateLocal(event.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (!eventDate) return activeTab === 'all';
-      if (activeTab === 'upcoming') return eventDate >= today;
-      if (activeTab === 'past') return eventDate < today;
+      // a season (start + end date) stays upcoming until its last day has passed
+      if (!parseDateLocal(event.date)) return activeTab === 'all';
+      if (activeTab === 'upcoming') return !isEventPast(event);
+      if (activeTab === 'past') return isEventPast(event);
       return true;
     }).sort((a, b) => {
       const dateA = parseDateLocal(a.date)?.getTime() || 0;
@@ -659,8 +656,7 @@ export default function Events() {
               onMouseLeave={() => setIsPaused(false)}
             >
               {(() => {
-                const evDate = activeEvent ? parseDateLocal(activeEvent.date) : null;
-                const isPastEvent = evDate && evDate < new Date(new Date().setHours(0, 0, 0, 0));
+                const isPastEvent = activeEvent ? isEventPast(activeEvent) : false;
                 
                 return (
                   <Link to={`/events/${activeEvent.id}`} className="block group cursor-pointer">

@@ -53,6 +53,7 @@ import { useAuth } from '../context/AuthContext';
 import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
 import MyGiving from '../components/MyGiving';
 import { tr, isEs } from '../lib/lang';
+import { formatEventDate } from '../lib/utils';
 import { isFestivalAdmin } from '../lib/festival/types';
 import { festivalDb } from '../lib/festival/db';
 import { useData } from '../context/DataContext';
@@ -841,6 +842,17 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                             <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">{tr('End date (optional)', 'Fecha de fin (opcional)')}</label>
+                                <input
+                                    type="date"
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                    min={editFormData.date || undefined}
+                                    value={editFormData.endDate || ''}
+                                    onChange={e => setEditFormData({...editFormData, endDate: e.target.value})}
+                                />
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 ml-1">{tr('For programs that run over a season (e.g. Jan – Dec). The event stays under Upcoming until this day.', 'Para programas que duran una temporada (p. ej., ene – dic). El evento sigue en Próximos hasta este día.')}</p>
+                            </div>
+                            <div>
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 ml-1">Location</label>
                                 <input 
                                     placeholder="e.g. Central Park"
@@ -980,6 +992,17 @@ const Dashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">{tr('End date (optional)', 'Fecha de fin (opcional)')}</label>
+                                            <input
+                                                type="date"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
+                                                min={editFormData.date || undefined}
+                                                value={editFormData.endDate || ''}
+                                                onChange={e => setEditFormData({...editFormData, endDate: e.target.value})}
+                                            />
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 ml-1">{tr('For programs that run over a season (e.g. Jan – Dec). The event stays under Upcoming until this day.', 'Para programas que duran una temporada (p. ej., ene – dic). El evento sigue en Próximos hasta este día.')}</p>
+                                        </div>
+                                        <div>
                                             <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Location</label>
                                             <input 
                                                 className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 outline-none"
@@ -1100,7 +1123,7 @@ const Dashboard: React.FC = () => {
                                     <div className="space-y-1">
                                         <h4 className="text-slate-900 dark:text-white font-black text-lg leading-tight">{event.title}</h4>
                                         <div className="flex items-center gap-3 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                                            <span>{event.date}</span>
+                                            <span>{formatEventDate(event, 'short')}</span>
                                             <span className="h-1 w-1 rounded-full bg-slate-300"></span>
                                             <span className="text-brand-purple">{event.time}</span>
                                             <span className="h-1 w-1 rounded-full bg-slate-300"></span>

@@ -55,6 +55,7 @@ export class SupabaseProvider implements IDatabaseProvider {
       id: e.id,
       title: e.title,
       date: e.date,
+      endDate: e.end_date || undefined,
       time: e.time,
       location: e.location,
       description: e.description,
@@ -75,8 +76,11 @@ export class SupabaseProvider implements IDatabaseProvider {
       initial_likes: event.initialLikes,
       media_link: event.mediaLink,
       duration: event.hours,
-      offline_count: event.offlineCount || 0
+      offline_count: event.offlineCount || 0,
+      // only sent when set, so saving still works before the end_date column exists
+      ...(event.endDate ? { end_date: event.endDate } : {})
     };
+    delete (payload as any).endDate;
     // the database works out registered from online sign-ups + offline_count
     delete (payload as any).registered;
     delete (payload as any).offlineCount;
@@ -95,8 +99,10 @@ export class SupabaseProvider implements IDatabaseProvider {
       ...(data.initialLikes !== undefined && { initial_likes: data.initialLikes }),
       ...(data.mediaLink !== undefined && { media_link: data.mediaLink }),
       ...(data.hours !== undefined && { duration: data.hours }),
-      ...(data.offlineCount !== undefined && { offline_count: data.offlineCount })
+      ...(data.offlineCount !== undefined && { offline_count: data.offlineCount }),
+      ...(data.endDate !== undefined && { end_date: data.endDate || null })
     };
+    delete (payload as any).endDate;
     delete (payload as any).registered;
     delete (payload as any).offlineCount;
     delete (payload as any).initialLikes;
