@@ -7,6 +7,7 @@ import {
 import { BYLAWS_HIGHLIGHTS } from '../constants';
 import Button from '../components/Button';
 import { tr } from '../lib/lang';
+import Recognition from '../components/Recognition';
 
 /**
  * What we actually do.
@@ -170,6 +171,8 @@ const About: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <Recognition className="mb-20" />
 
         {/* Board Members Section */}
         <div className="mb-20">
