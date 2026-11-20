@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Video } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { GraduationCap, ArrowRight, BookOpen } from 'lucide-react';
 import StagedFadeIn from '../components/StagedFadeIn';
 import VideoPlayer from '../components/VideoPlayer';
 import { tr, isEs } from '../lib/lang';
@@ -28,8 +29,9 @@ const Videos: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <StagedFadeIn>
             <div className="inline-flex items-center justify-center p-3 bg-[#00AEEF]/20 rounded-full mb-6">
-              <Video className="h-8 w-8 text-[#00AEEF]" />
+              <GraduationCap className="h-8 w-8 text-[#00AEEF]" />
             </div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#00AEEF] mb-3">{tr('Learning Center', 'Centro de Aprendizaje')}</p>
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">
               {tr('Watch &', 'Mira y')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00AEEF] to-[#8b5cf6]">{tr('Learn', 'Aprende')}</span>
             </h1>
@@ -45,6 +47,33 @@ const Videos: React.FC = () => {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+        {/* Resources live in the Learning Center now (no longer their own tab) */}
+        <section aria-labelledby="lc-resources">
+          <div className="flex items-end justify-between gap-4 mb-4">
+            <h2 id="lc-resources" className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{tr('Resources & guides', 'Recursos y guías')}</h2>
+            <Link to="/resources" className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 hover:gap-2.5 transition-all">
+              {tr('All resources', 'Todos los recursos')} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { to: '/resources/understanding', img: '/images/understanding_autism.webp', title: tr('Understanding & Coping', 'Comprensión y Afrontamiento') },
+              { to: '/resources/interventions', img: '/images/autism_intervention.webp', title: tr('Interventions & Therapies', 'Intervenciones y Terapias') },
+              { to: '/resources/screening', img: '/images/autism_screening.webp', title: tr('Screening & Diagnosis', 'Evaluación y Diagnóstico') },
+            ].map(r => (
+              <Link key={r.to} to={r.to} className="group flex items-center gap-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <img src={r.img} alt="" loading="lazy" className="h-16 w-16 rounded-xl object-cover shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-black text-slate-900 dark:text-white leading-tight">{r.title}</p>
+                  <p className="text-xs font-bold text-sky-700 dark:text-sky-400 mt-1 inline-flex items-center gap-1">
+                    <BookOpen className="h-3.5 w-3.5" /> {tr('Read guide', 'Leer guía')}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <section>
           <div className="rounded-3xl bg-gradient-to-b from-sky-900 via-sky-800 to-indigo-900 p-5 sm:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-sky-300 mb-2 text-center">
