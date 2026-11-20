@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogIn, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, HandHelping, BookOpen, ChevronRight, Gamepad2, Video } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogIn, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, ChevronRight, Gamepad2, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
@@ -96,20 +96,22 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const navLinks = [
+  // Five tabs. Pages that used to be tabs of their own now live under one, and
+  // light it up: Circle of Friends + Get Involved under Events; Resources (and
+  // its guides) under the Learning Center, which opens on the videos.
+  const navLinks: { name: string; path: string; icon: any; color: string; also?: string[] }[] = [
     { name: tr('Home', 'Inicio'), path: '/', icon: Home, color: '#0ea5e9' },
     { name: tr('Our Story', 'Nuestra Historia'), path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: tr('Events', 'Eventos'), path: '/events', icon: Stars, color: '#8b5cf6' },
-    { name: tr('Get Involved', 'Participa'), path: '/volunteer', icon: HandHelping, color: '#10b981' },
-    { name: tr('Resources', 'Recursos'), path: '/resources', icon: BookOpen, color: '#00AEEF' },
+    { name: tr('Events', 'Eventos'), path: '/events', icon: Stars, color: '#8b5cf6', also: ['/events/', '/circle-of-friends', '/volunteer'] },
     { name: tr('Games', 'Juegos'), path: '/games', icon: Gamepad2, color: '#ec4899' },
-    { name: tr('Videos', 'Videos'), path: '/videos', icon: Video, color: '#14b8a6' },
+    { name: tr('Learning Center', 'Centro de Aprendizaje'), path: '/videos', icon: GraduationCap, color: '#14b8a6', also: ['/resources'] },
   ];
 
-  // Circle of Friends lives under Events now (it grew out of one of our events),
-  // so the Events tab stays lit while you're on it.
-  const isActive = (path: string) =>
-    location.pathname === path || (path === '/events' && location.pathname.startsWith('/circle-of-friends'));
+  const isActive = (path: string) => {
+    if (location.pathname === path) return true;
+    const link = navLinks.find(l => l.path === path);
+    return !!link?.also?.some(prefix => location.pathname.startsWith(prefix));
+  };
 
   return (
     <header className="sticky top-0 w-full z-50 transition-all duration-300">
@@ -185,17 +187,17 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 1 */}
-            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
+            <div className="hidden min-[1440px]:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 2: Navigation Links */}
             <div className="hidden lg:flex flex-none justify-center shrink-0 min-w-0 mx-auto">
-              <div className="flex items-center space-x-1 xl:space-x-0 min-[1900px]:space-x-6 px-2">
+              <div className="flex items-center gap-2 xl:gap-3 min-[1440px]:gap-5 min-[1900px]:gap-8 px-0 min-[1440px]:px-2">
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
                     to={link.path}
                     onClick={(e) => handleNavClick(link.path, e)}
-                    className={`group/nav rounded-2xl px-1.5 xl:px-0.5 min-[1900px]:px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
+                    className={`group/nav rounded-2xl px-2 min-[1440px]:px-3 min-[1900px]:px-5 py-2 transition-all flex flex-col items-center gap-2 hover:bg-sky-50/50 dark:hover:bg-slate-800/50 ${isActive(link.path)
                       ? 'text-sky-600 dark:text-sky-400'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
@@ -213,10 +215,10 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Vertical Divider 2 */}
-            <div className="hidden xl:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
+            <div className="hidden min-[1440px]:block w-px h-8 bg-slate-200 dark:bg-white/10 mx-4"></div>
 
             {/* Zone 3: Utilities & Donate Tagline */}
-            <div className="hidden lg:flex flex-1 justify-end items-center gap-2 xl:gap-3">
+            <div className="hidden lg:flex flex-1 justify-end items-center gap-2 min-[1440px]:gap-3">
               {/* Auth Section - Only visible when signed in */}
               <div className="flex items-center gap-3 mr-2">
                 {user && (

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight, HandHelping } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
@@ -619,29 +619,52 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Circle of Friends grew out of one of our events, so it lives here
-            rather than as its own tab in the navbar. */}
-        <Link
-          to="/circle-of-friends"
-          className="group mb-8 flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 to-sky-50 dark:from-amber-900/20 dark:to-sky-900/20 p-5 shadow-sm hover:shadow-md transition-all"
-        >
-          <div className="shrink-0">
-            <StickerIcon icon={HeartHandshake} size={28} color="#f59e0b" />
-          </div>
-          <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-300">{tr('Featured from our events', 'Destacado de nuestros eventos')}</p>
-            <p className="text-lg font-black text-slate-900 dark:text-white leading-tight mt-0.5">{tr('Circle of Friends', 'Círculo de Amigos')}</p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              {tr(
+        {/* Circle of Friends and Get Involved used to be navbar tabs; they live
+            under Events now. */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {
+              to: '/circle-of-friends', icon: HeartHandshake, color: '#f59e0b',
+              tint: 'border-amber-200 dark:border-amber-800/60 from-amber-50 to-sky-50 dark:from-amber-900/20 dark:to-sky-900/20',
+              eyebrow: tr('Featured from our events', 'Destacado de nuestros eventos'),
+              title: tr('Circle of Friends', 'Círculo de Amigos'),
+              body: tr(
                 'Student awards and stories from our Circle of Friends Inclusion Project, recognized by the Mountain House City Council.',
                 'Premios e historias de estudiantes de nuestro Proyecto de Inclusión Círculo de Amigos, reconocido por el Concejo Municipal de Mountain House.'
-              )}
-            </p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all">
-            {tr('Explore', 'Explorar')} <ArrowRight className="h-4 w-4" />
-          </span>
-        </Link>
+              ),
+              cta: tr('Explore', 'Explorar'),
+            },
+            {
+              to: '/volunteer', icon: HandHelping, color: '#10b981',
+              tint: 'border-emerald-200 dark:border-emerald-800/60 from-emerald-50 to-sky-50 dark:from-emerald-900/20 dark:to-sky-900/20',
+              eyebrow: tr('Help at our events', 'Ayuda en nuestros eventos'),
+              title: tr('Get Involved', 'Participa'),
+              body: tr(
+                'Volunteer at an event, lend a skill, or partner with us so every child feels welcome.',
+                'Sé voluntario en un evento, comparte una habilidad o colabora con nosotros para que cada niño se sienta bienvenido.'
+              ),
+              cta: tr('Volunteer', 'Ser voluntario'),
+            },
+          ].map(card => (
+            <Link
+              key={card.to}
+              to={card.to}
+              className={`group flex items-center gap-4 rounded-2xl border bg-gradient-to-r ${card.tint} p-5 shadow-sm hover:shadow-md transition-all`}
+            >
+              <div className="shrink-0">
+                <StickerIcon icon={card.icon} size={28} color={card.color} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{card.eyebrow}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white leading-tight mt-0.5">{card.title}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{card.body}</p>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all shrink-0">
+                {card.cta} <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+          ))}
+        </div>
       </StagedFadeIn>
 
       {isLoading && events.length === 0 ? (
