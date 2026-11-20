@@ -618,6 +618,30 @@ export default function Events() {
             </button>
           </div>
         </div>
+
+        {/* Circle of Friends grew out of one of our events, so it lives here
+            rather than as its own tab in the navbar. */}
+        <Link
+          to="/circle-of-friends"
+          className="group mb-8 flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 to-sky-50 dark:from-amber-900/20 dark:to-sky-900/20 p-5 shadow-sm hover:shadow-md transition-all"
+        >
+          <div className="shrink-0">
+            <StickerIcon icon={HeartHandshake} size={28} color="#f59e0b" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-300">{tr('Featured from our events', 'Destacado de nuestros eventos')}</p>
+            <p className="text-lg font-black text-slate-900 dark:text-white leading-tight mt-0.5">{tr('Circle of Friends', 'Círculo de Amigos')}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              {tr(
+                'Student awards and stories from our Circle of Friends Inclusion Project, recognized by the Mountain House City Council.',
+                'Premios e historias de estudiantes de nuestro Proyecto de Inclusión Círculo de Amigos, reconocido por el Concejo Municipal de Mountain House.'
+              )}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all">
+            {tr('Explore', 'Explorar')} <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
       </StagedFadeIn>
 
       {isLoading && events.length === 0 ? (

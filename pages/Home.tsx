@@ -15,6 +15,7 @@ import { formatShortDateLocal, parseDateLocal, formatEventDate, isEventPast, isE
 import MediaLightbox from '../components/MediaLightbox';
 import { tr } from '../lib/lang';
 import FeaturedMessage from '../components/FeaturedMessage';
+import Recognition from '../components/Recognition';
 
 // Move static data outside to allow random initialization
 const pastEvents = [
@@ -270,6 +271,11 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Recognition from elected officials — always shown, whatever the carousel mode */}
+            <div className="bg-white dark:bg-slate-900 transition-colors pt-16 pb-16">
+                <Recognition className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" />
+            </div>
 
             {/* Games — one card, and it leads with signing in.
                 This used to be two straight-to-play banners ("Keep playing…",

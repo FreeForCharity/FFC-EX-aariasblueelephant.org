@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogIn, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, Users, HandHelping, BookOpen, ChevronRight, Gamepad2, Video } from 'lucide-react';
+import { Menu, X, ExternalLink, Phone, Mail, Sun, Moon, HeartPulse, UserCircle, LogIn, LogOut, LayoutDashboard, Stars, Mountain, Home, Heart, HandHelping, BookOpen, ChevronRight, Gamepad2, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StickerIcon from './StickerIcon';
 import Button from './Button';
@@ -89,7 +89,7 @@ const Navbar: React.FC = () => {
       navigate('/login', { state: { returnTo: '/games' } });
       return;
     }
-    if (isActive(path)) {
+    if (location.pathname === path) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setIsOpen(false);
@@ -99,7 +99,6 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: tr('Home', 'Inicio'), path: '/', icon: Home, color: '#0ea5e9' },
     { name: tr('Our Story', 'Nuestra Historia'), path: '/about', icon: Heart, color: '#f43f5e' },
-    { name: tr('Circle of Friends', 'Círculo de Amigos'), path: '/circle-of-friends', icon: Users, color: '#f59e0b' },
     { name: tr('Events', 'Eventos'), path: '/events', icon: Stars, color: '#8b5cf6' },
     { name: tr('Get Involved', 'Participa'), path: '/volunteer', icon: HandHelping, color: '#10b981' },
     { name: tr('Resources', 'Recursos'), path: '/resources', icon: BookOpen, color: '#00AEEF' },
@@ -107,7 +106,10 @@ const Navbar: React.FC = () => {
     { name: tr('Videos', 'Videos'), path: '/videos', icon: Video, color: '#14b8a6' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  // Circle of Friends lives under Events now (it grew out of one of our events),
+  // so the Events tab stays lit while you're on it.
+  const isActive = (path: string) =>
+    location.pathname === path || (path === '/events' && location.pathname.startsWith('/circle-of-friends'));
 
   return (
     <header className="sticky top-0 w-full z-50 transition-all duration-300">
