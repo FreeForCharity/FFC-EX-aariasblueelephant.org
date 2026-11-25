@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight, HandHelping } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, Share2, Check, HeartHandshake, ArrowRight, HandHelping, Sparkles } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
@@ -620,9 +620,20 @@ export default function Events() {
         </div>
 
         {/* Circle of Friends and Get Involved used to be navbar tabs; they live
-            under Events now. */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            under Events now, beside the tentative plan for next year. */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[
+            {
+              to: '/events/2027', icon: Sparkles, color: '#00AEEF',
+              tint: 'border-sky-200 dark:border-sky-800/60 from-sky-50 to-violet-50 dark:from-sky-900/20 dark:to-violet-900/20',
+              eyebrow: tr('Coming in 2027 · tentative', 'Próximamente en 2027 · tentativo'),
+              title: tr('Our 2027 Plan', 'Nuestro plan 2027'),
+              body: tr(
+                'Special Olympics, hikes, beach days, camping and more: what each program needs and how you can help fund it.',
+                'Olimpiadas Especiales, caminatas, días de playa, campamento y más: lo que necesita cada programa y cómo puedes ayudar a financiarlo.'
+              ),
+              cta: tr('See the plan', 'Ver el plan'),
+            },
             {
               to: '/circle-of-friends', icon: HeartHandshake, color: '#f59e0b',
               tint: 'border-amber-200 dark:border-amber-800/60 from-amber-50 to-sky-50 dark:from-amber-900/20 dark:to-sky-900/20',
@@ -658,8 +669,11 @@ export default function Events() {
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{card.eyebrow}</p>
                 <p className="text-lg font-black text-slate-900 dark:text-white leading-tight mt-0.5">{card.title}</p>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{card.body}</p>
+                <span className="hidden xl:inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all mt-2">
+                  {card.cta} <ArrowRight className="h-4 w-4" />
+                </span>
               </div>
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all shrink-0">
+              <span className="hidden sm:inline-flex xl:hidden items-center gap-1.5 text-sm font-bold text-sky-700 dark:text-sky-400 group-hover:gap-2.5 transition-all shrink-0">
                 {card.cta} <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
