@@ -15,6 +15,7 @@ const routesToPrerender = [
     '/',
     '/about',
     '/volunteer',
+    '/events/2027',
     '/privacy-policy',
     '/donate',
     '/wheel',
