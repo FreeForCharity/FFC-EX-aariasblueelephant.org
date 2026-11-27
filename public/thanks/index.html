@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Happy Thanksgiving from Aaria's Blue Elephant</title>
+<meta name="description" content="Everyone gets a seat. Even the turkey. A Thanksgiving card from Aaria's Blue Elephant.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aariasblueelephant.org/thanks/">
+<meta property="og:title" content="Happy Thanksgiving from Aaria's Blue Elephant 🦃💙">
+<meta property="og:description" content="Everyone gets a seat. Even the turkey. Tap to open your card.">
+<meta property="og:image" content="https://aariasblueelephant.org/thanks/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aariasblueelephant.org/thanks/og.png">
+<meta name="theme-color" content="#fff4e3">
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     A Thanksgiving card: five tap-through panels drawn in SVG in the badge's
+     style (navy line art, one blue elephant). Sensory-friendly: no sound,
+     nothing flashes, and with "reduce motion" on every panel is a still.
+     Bilingual EN/ES via localStorage 'abe.lang' (shared with the site); the
+     Spanish is AI-translated (see the general disclosure).
+     Built by Aaria and her Friends 💙 -->
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="thanks.css">
+</head>
+<body>
+<main id="card" aria-live="polite">
+  <div id="stage"></div>
+  <nav id="nav" aria-label="Card pages">
+    <button id="prev" type="button" aria-label="Back">‹</button>
+    <div id="dots"></div>
+    <button id="next" type="button" aria-label="Next">›</button>
+  </nav>
+  <p id="hint"></p>
+</main>
+<footer id="foot">
+  <a href="/" class="brand"><img src="/abe-logo-badge.png" alt=""> Aaria's Blue Elephant</a>
+  <span>Built by Aaria and her Friends 💙</span>
+  <button id="lang" type="button"></button>
+  <a href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure / Aviso general</a>
+</footer>
+<script src="thanks.js"></script>
+</body>
+</html>
