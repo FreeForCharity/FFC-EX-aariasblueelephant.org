@@ -169,3 +169,24 @@ body.og { width: 1200px; height: 630px; min-height: 0; overflow: hidden; display
 #og .ogtxt p { font-size: 40px; line-height: 1.2; margin: 0 0 26px; color: var(--ink2); }
 #og .ogtxt p b { color: var(--pumpkin); }
 #og .ogtxt span { font-size: 24px; font-weight: 800; color: var(--muted); }
+
+/* wider screens: the picture fills the height, words and controls sit beside it */
+@media (min-width: 900px) and (min-height: 560px) {
+  #card {
+    max-width: 1180px; padding: 20px 32px 0;
+    display: grid; column-gap: 44px; align-items: center;
+    grid-template-columns: auto minmax(300px, 420px); justify-content: center;
+    grid-template-areas: "top top" "frame ." "frame cap" "frame bar" "frame .";
+    grid-template-rows: auto 1fr auto auto 1fr;
+  }
+  #top { grid-area: top; margin-bottom: 16px; }
+  #frame { grid-area: frame; width: min(720px, calc((100dvh - 120px) * 400 / 440)); }
+  #cap { grid-area: cap; text-align: left; min-height: 0; padding: 0 0 18px; }
+  #bar { grid-area: bar; align-self: start; padding-top: 0; }
+  #cap h1 { font-size: 2.6rem; }
+  #cap h2 { font-size: 1.6rem; }
+  #cap p { font-size: 1.15rem; }
+  #cap .big { font-size: 2.4rem; }
+  .ctas { margin-left: 0; }
+  #cover .to { font-size: 1.4rem; }
+}
