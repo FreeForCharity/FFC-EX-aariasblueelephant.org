@@ -44,7 +44,8 @@ import {
     UserPlus,
     Search,
     Ticket,
-    ClipboardList
+    ClipboardList,
+    MailX
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
@@ -54,6 +55,7 @@ import { useAuth } from '../context/AuthContext';
 import FestivalAdminPanel from '../components/festival/FestivalAdminPanel';
 import MyGiving from '../components/MyGiving';
 import BoardPlan from '../components/BoardPlan';
+import EmailOptouts from '../components/EmailOptouts';
 import { tr, isEs } from '../lib/lang';
 import { formatEventDate } from '../lib/utils';
 import { isFestivalAdmin } from '../lib/festival/types';
@@ -84,6 +86,7 @@ type ViewState =
     | 'media-outreach'
     | 'game-plays'
     | 'plan-2027'
+    | 'email-optouts'
     | 'signups'
     | 'festival'
     | 'games'
@@ -548,6 +551,7 @@ const Dashboard: React.FC = () => {
         { id: 'festival', label: 'Inclusion Festival', icon: Ticket, role: 'board' },
         { id: 'game-plays', label: 'Game Plays', icon: Gamepad2, role: 'board' },
         { id: 'plan-2027', label: tr('2027 Plan', 'Plan 2027'), icon: ClipboardList, role: 'board' },
+        { id: 'email-optouts', label: tr('Email opt-outs', 'Bajas de correo'), icon: MailX, role: 'board' },
         
         // User View (Standard)
         { id: 'my-events', label: 'My Events', icon: Calendar, role: 'user' },
@@ -2763,6 +2767,7 @@ const Dashboard: React.FC = () => {
             case 'festival': return <FestivalAdminPanel />;
             case 'game-plays': return renderGamePlaysSection();
             case 'plan-2027': return <BoardPlan />;
+            case 'email-optouts': return <EmailOptouts />;
             case 'games': return renderGamesGallerySection();
             case 'wheel': return renderWheelSection();
             case 'blockcraft': return renderBlockCraftSection();
