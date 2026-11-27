@@ -16,6 +16,7 @@
     en: {
       eyebrow: "Happy Thanksgiving · 2026",
       to: 'A Thanksgiving card for you', sub: 'About 20 seconds · no sound', open: '▶  Open the card',
+      lh: 'Happy Thanksgiving', lp: 'Thank you for standing with us and believing in us.', lsig: 'With gratitude,',
       h1: 'Happy Thanksgiving!', h1sub: "With love from all of us at Aaria's Blue Elephant.",
       p2: 'The Wampanoag shared what they knew: plant corn, beans and squash together, and each one helps the others grow.',
       p2note: 'The Three Sisters, a tradition of many Native nations.',
@@ -41,6 +42,7 @@
     es: {
       eyebrow: "Feliz Acción de Gracias · 2026",
       to: 'Una tarjeta de Acción de Gracias para ti', sub: 'Unos 20 segundos · sin sonido', open: '▶  Abrir la tarjeta',
+      lh: 'Feliz Día de Acción de Gracias', lp: 'Gracias por estar a nuestro lado y por creer en nosotros.', lsig: 'Con gratitud,',
       h1: '¡Feliz Día de Acción de Gracias!', h1sub: "Con cariño de todos en Aaria's Blue Elephant.",
       p2: 'Los wampanoag compartieron lo que sabían: siembra maíz, frijol y calabaza juntos, y cada uno ayuda a crecer a los demás.',
       p2note: 'Las Tres Hermanas, una tradición de muchas naciones indígenas.',
@@ -69,7 +71,6 @@
 
   /* ── palette (from the badge) ────────────────────────────────────────── */
   const INK = '#16255c', LINE = '#1d5fa3', BODY = '#4aa8e0', RUST = '#b4532a';
-  const ZEFFY = 'https://www.zeffy.com/en-US/donation-form/aariasblueelephant';
   const FONT = 'ui-rounded, Nunito, system-ui, sans-serif';
 
   /* ── artwork (Gemini-made stickers in art/, sizes in art/sizes.js) ───── */
@@ -237,7 +238,6 @@
       cap: () => `<h2 class="line">${t('p5')}</h2><p class="line">${t('p5b')}</p>
         <div class="ctas line">
           <a class="btn primary" href="/events/2027">${t('plan')}</a>
-          <a class="btn soft" href="${ZEFFY}" target="_blank" rel="noopener">${t('give')}</a>
         </div>
         <p class="save line">${t('save')}</p>
         ${connect()}`,
@@ -259,17 +259,29 @@
       `<div class="scene" data-i="${i}"><svg viewBox="0 0 400 440" aria-hidden="true">${s.art()}</svg></div>`).join('');
     prog.innerHTML = Array.from({ length: TIMED }, () => '<i><b></b></i>').join('');
     again.textContent = t('again');
+    // quiet links under the card for anyone who doesn't open it; hidden on the last screen, which has the full block
+    $('footlinks').innerHTML = `
+      <div class="fl-row">
+        <a class="web" href="/">🌐 aariasblueelephant.org</a>
+        <a href="/games">🎮 ${t('games')}</a><a href="/videos">🎓 ${t('learn')}</a><a href="/events">🗓️ ${t('events')}</a>
+      </div>
+      <div class="fl-row fl-soc">${SOCIAL.map(([n, u, c, d]) =>
+        `<a href="${u}" target="_blank" rel="noopener" aria-label="${n}" title="${n}" style="--c:${c}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg></a>`).join('')}</div>`;
     langBtn.textContent = '🌐 ' + t('langBtn');
+    const leafImg = (n, l, tp, w, d) => `<img class="lf" src="art/${n}.webp" alt="" style="left:${l}%;top:${tp}%;width:${w}%;animation-delay:${d}s">`;
     cover.innerHTML = `
-      <svg class="coverart" viewBox="0 0 300 230" aria-hidden="true">
-        <circle cx="150" cy="128" r="96" fill="#a9dcf5" opacity=".45"/>
-        ${spr('leaf_maple_red', 58, 66, 30, 'twinkle')}${spr('leaf_oak_gold', 250, 52, 26, 'twinkle', 'animation-delay:.8s')}${spr('leaf_maple_orange', 262, 196, 28, 'twinkle', 'animation-delay:1.4s')}
-        ${spr('mini_pumpkin', 66, 222, 52)}
-        <g class="bob">${spr('nilu_welcome', 156, 222, 210)}</g>
-      </svg>
-      <p class="to">${esc(t('to'))}</p>
-      <p class="sub">${esc(t('sub'))}</p>
-      <button type="button">${esc(t('open'))}</button>`;
+      ${leafImg('leaf_maple_red', 5, 8, 9, 0)}${leafImg('leaf_oak_gold', 86, 5, 8, .9)}${leafImg('leaf_maple_orange', 3, 50, 8, 1.6)}${leafImg('leaf_brown', 88, 44, 7, .5)}
+      <div class="env" aria-hidden="true"><div class="env-back"></div><div class="env-flap"></div></div>
+      <div class="letter">
+        <img src="badge.webp" alt="">
+        <h1>${esc(t('lh'))}</h1>
+        <p>${esc(t('lp'))}</p>
+        <p class="sig">${esc(t('lsig'))}<br>Aaria's Blue Elephant</p>
+      </div>
+      <div class="env" style="z-index:1" aria-hidden="true"><div class="env-front"></div></div>
+      <img class="peek-nilu" src="art/nilu_welcome.webp" alt="">
+      <button class="env-btn" type="button"><span>${esc(t('open'))}</span></button>
+      <p class="env-sub">${esc(t('sub'))}</p>`;
     $('scenes').setAttribute('aria-label', t('alt')[Math.max(cur, 0)]);
   }
 
@@ -294,6 +306,7 @@
       } else el.classList.remove('on');
     });
     cap.innerHTML = SCENES[i].cap();
+    document.body.classList.toggle('atend', i === SCENES.length - 1);
     scenesEl.setAttribute('aria-label', t('alt')[i]);
     drawProgress();
     setPP();
@@ -330,8 +343,7 @@
     if (opened) return;
     opened = true;
     cover.classList.add('open');
-    go(0);
-    setTimeout(play, 650);
+    setTimeout(() => { go(0); setTimeout(play, 500); }, 900);
   }
 
   cover.addEventListener('click', open);
