@@ -25,6 +25,7 @@
       p4a: 'Everyone gets a seat.', p4b: 'Even the turkey.',
       p5: 'Thank you for walking with 150+ families in 2026.',
       p5b: 'We can’t wait to see what we grow together next year.',
+      shine: 'Every Star Shines',
       plan: '🗓️  See our 2027 plan', give: '💙  Give thanks with a gift',
       save: 'Save the date: GivingTuesday is Tuesday, Dec. 1',
       pause: 'Pause', play: 'Play', again: '↺ Replay', langBtn: 'Español',
@@ -32,7 +33,7 @@
             'Corn, beans and squash growing together',
             'Aaria and friends at a Thanksgiving table that Nilu keeps stretching longer',
             'A nervous turkey is welcomed to the table as a guest',
-            'Aaria hugging Nilu'],
+            "The Aaria's Blue Elephant badge, Building a New Inclusive World, with the words Every Star Shines"],
       og1: 'Happy Thanksgiving!', og2: 'Everyone gets a seat.', og3: 'Even the turkey.',
     },
     es: {
@@ -47,6 +48,7 @@
       p4a: 'Todos tienen un lugar.', p4b: 'Hasta el pavo.',
       p5: 'Gracias por acompañar a más de 150 familias en 2026.',
       p5b: 'Ya queremos ver lo que creceremos juntos el próximo año.',
+      shine: 'Cada estrella brilla',
       plan: '🗓️  Ver nuestro plan 2027', give: '💙  Da gracias con un donativo',
       save: 'Aparta la fecha: GivingTuesday es el martes 1 de dic.',
       pause: 'Pausa', play: 'Reproducir', again: '↺ Repetir', langBtn: 'English',
@@ -54,7 +56,7 @@
             'Maíz, frijol y calabaza crecen juntos',
             'Aaria y sus amigos en una mesa que Nilu sigue alargando',
             'Un pavo nervioso es recibido en la mesa como invitado',
-            'Aaria abraza a Nilu'],
+            "El escudo de Aaria's Blue Elephant, Building a New Inclusive World, con las palabras Cada estrella brilla"],
       og1: '¡Feliz Día de Acción de Gracias!', og2: 'Todos tienen un lugar.', og3: 'Hasta el pavo.',
     },
   };
@@ -321,17 +323,25 @@
   }
 
   function s5() {
-    const heart = (x, d) => `<g transform="translate(${x},330)"><g class="heart" style="animation-delay:${d}s"><path d="M0,6 C-14,-6 -8,-18 0,-10 C8,-18 14,-6 0,6Z" fill="${BODY}" stroke="${LINE}" stroke-width="1.5"/></g></g>`;
+    const heart = (x, d) => `<g transform="translate(${x},350)"><g class="heart" style="animation-delay:${d}s"><path d="M0,6 C-14,-6 -8,-18 0,-10 C8,-18 14,-6 0,6Z" fill="${BODY}" stroke="${LINE}" stroke-width="1.5"/></g></g>`;
+    const star = (x, y, sc, d) => `<g transform="translate(${x},${y}) scale(${sc})"><g class="twinkle" style="animation-delay:${d}s">
+      <path d="M0,-12 C1.5,-3 3,-1.5 12,0 C3,1.5 1.5,3 0,12 C-1.5,3 -3,1.5 -12,0 C-3,-1.5 -1.5,-3 0,-12 Z" fill="#ffd43b" stroke="${RUST}" stroke-width="1.2" stroke-linejoin="round"/></g></g>`;
+    const shine = t('shine');
+    const rw = Math.max(210, shine.length * 13 + 60);
     return `
-      <defs><radialGradient id="glow5" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#fde4c2"/></radialGradient></defs>
+      <defs><radialGradient id="glow5" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="#fffdf7"/><stop offset="1" stop-color="#fde4c2"/></radialGradient></defs>
       <rect width="400" height="440" fill="url(#glow5)"/>
       ${bunting(26)}
-      ${leaves(6, 11)}
-      <circle cx="200" cy="236" r="150" fill="#a9dcf5" opacity=".45"/>
-      <image href="pair.webp" x="72" y="88" width="256" height="273"/>
-      ${pie(110, 392)}${squash(290, 394, 1.2)}${corncob(205, 396)}
-      ${restingLeaf(60, 410, 30, RUST)}${restingLeaf(340, 414, -40, GOLD)}
-      ${heart(80, 0)}${heart(320, 1.1)}${heart(140, 2.2)}${heart(262, .6)}`;
+      ${leaves(5, 11)}
+      <circle cx="200" cy="196" r="134" fill="#a9dcf5" opacity=".35"/>
+      <g class="pop" style="animation-delay:.2s"><image href="badge.webp" x="76" y="70" width="248" height="252"/></g>
+      ${star(64, 118, 1.1, 0)}${star(338, 104, 1.3, .7)}${star(48, 250, .8, 1.4)}${star(356, 236, .9, .4)}${star(112, 70, .7, 1.1)}${star(300, 318, .75, 1.8)}
+      <g class="pop" style="animation-delay:.9s"><g transform="translate(200,352)">
+        <path d="M${-rw / 2 - 22},4 l18,-14 v28 z M${rw / 2 + 22},4 l-18,-14 v28 z" fill="#c25a2c" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="${-rw / 2}" y="-18" width="${rw}" height="38" rx="10" fill="${INK}"/>
+        <text y="8" text-anchor="middle" font-size="21" font-weight="900" fill="#ffd43b" font-family="${FONT}" letter-spacing=".5">✦ ${esc(shine)} ✦</text></g></g>
+      ${pie(92, 410)}${squash(310, 412, 1.1)}${corncob(205, 414)}
+      ${heart(70, 0)}${heart(330, 1.1)}${heart(150, 2.2)}${heart(252, .6)}`;
   }
 
   /* ── the film ────────────────────────────────────────────────────────── */
