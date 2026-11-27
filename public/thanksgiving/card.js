@@ -15,7 +15,7 @@
   const T = {
     en: {
       eyebrow: "Happy Thanksgiving · 2026",
-      to: 'A Thanksgiving card for you', sub: 'About 30 seconds · no sound', open: '▶  Open the card',
+      to: 'A Thanksgiving card for you', sub: 'About 20 seconds · no sound', open: '▶  Open the card',
       h1: 'Happy Thanksgiving!', h1sub: "With love from all of us at Aaria's Blue Elephant.",
       p2: 'The Wampanoag shared what they knew: plant corn, beans and squash together, and each one helps the others grow.',
       p2note: 'The Three Sisters, a tradition of many Native nations.',
@@ -38,7 +38,7 @@
     },
     es: {
       eyebrow: "Feliz Acción de Gracias · 2026",
-      to: 'Una tarjeta de Acción de Gracias para ti', sub: 'Unos 30 segundos · sin sonido', open: '▶  Abrir la tarjeta',
+      to: 'Una tarjeta de Acción de Gracias para ti', sub: 'Unos 20 segundos · sin sonido', open: '▶  Abrir la tarjeta',
       h1: '¡Feliz Día de Acción de Gracias!', h1sub: "Con cariño de todos en Aaria's Blue Elephant.",
       p2: 'Los wampanoag compartieron lo que sabían: siembra maíz, frijol y calabaza juntos, y cada uno ayuda a crecer a los demás.',
       p2note: 'Las Tres Hermanas, una tradición de muchas naciones indígenas.',
@@ -113,7 +113,9 @@
       ${leaves(8, 3)}
       ${spr('mini_pumpkin', 46, 432, 64, 'pop', 'animation-delay:.9s')}
       ${spr('mini_pumpkin', 352, 438, 80, 'pop', 'animation-delay:1.1s')}
-      <g class="hop">${spr('nilu_wave', 200, 418, 250, 'bob')}</g>
+      ${[[-60, -70, 'leaf_maple_orange'], [-26, -96, 'leaf_oak_gold'], [30, -92, 'leaf_maple_red'], [64, -64, 'leaf_brown'], [4, -110, 'leaf_maple_orange']]
+        .map(([kx, ky, n], i) => `<g class="kick" style="--kx:${kx}px;--ky:${ky}px;animation-delay:${1.1 + i * .03}s">${spr(n, 200, 418, 22)}</g>`).join('')}
+      <g class="hop">${spr('nilu_wave', 200, 418, 250, 'dance')}</g>
       ${twinkle(96, 236, .8, 1.2)}${twinkle(318, 214, 1, 1.6)}${twinkle(286, 160, .6, 2)}`;
   }
 
@@ -173,8 +175,17 @@
       <defs><radialGradient id="glow5" cx=".5" cy=".42" r=".62"><stop offset="0" stop-color="#fffdf7"/><stop offset="1" stop-color="#fde4c2"/></radialGradient></defs>
       <rect width="400" height="440" fill="url(#glow5)"/>
       ${leaves(7, 11)}
-      <circle cx="200" cy="190" r="136" fill="#a9dcf5" opacity=".35"/>
-      <g class="pop" style="animation-delay:.2s"><image href="badge.webp" x="76" y="62" width="248" height="252"/></g>
+      <defs><linearGradient id="gold5" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".3" stop-color="#f2c14e"/>
+        <stop offset=".55" stop-color="#d99a1e"/><stop offset=".8" stop-color="#f8d66d"/><stop offset="1" stop-color="#b9780f"/></linearGradient>
+        <radialGradient id="halo5"><stop offset=".7" stop-color="#ffd76a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient></defs>
+      <g class="pop" style="animation-delay:.1s">
+        <circle cx="200" cy="188" r="160" fill="url(#halo5)"/>
+        <circle cx="200" cy="188" r="133" fill="#fff" stroke="url(#gold5)" stroke-width="11"/>
+        <circle cx="200" cy="188" r="141" fill="none" stroke="#e0a526" stroke-width="1.6" opacity=".7"/>
+        <circle cx="200" cy="188" r="125" fill="none" stroke="#b9780f" stroke-width="1.2" opacity=".5"/>
+        <g class="spin"><circle cx="200" cy="188" r="133" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="26 810" opacity=".85"/></g>
+        <image href="badge.webp" x="78" y="66" width="244" height="248"/>
+      </g>
       ${twinkle(64, 110, 1.1, 0)}${twinkle(338, 96, 1.3, .7)}${twinkle(48, 244, .8, 1.4)}${twinkle(356, 230, .9, .4)}${twinkle(112, 62, .7, 1.1)}${twinkle(300, 312, .75, 1.8)}
       <g class="pop" style="animation-delay:.9s"><g transform="translate(200,346)">
         <path d="M${-rw / 2 - 22},4 l18,-14 v28 z M${rw / 2 + 22},4 l-18,-14 v28 z" fill="#c25a2c" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>
@@ -200,6 +211,8 @@
         <p class="save line">${t('save')}</p>`,
     },
   ];
+  const SPEED = 1.35;   // the whole film plays this much faster than the timings written above
+  SCENES.forEach(s => { s.ms = Math.round(s.ms / SPEED); });
   const TIMED = SCENES.filter(s => s.ms).length;
 
   const $ = (id) => document.getElementById(id);
@@ -239,8 +252,14 @@
   function go(i) {
     cur = i; elapsed = 0;
     scenesEl.querySelectorAll('.scene').forEach((el, j) => {
-      if (j === i) { el.classList.remove('on'); void el.getBoundingClientRect(); el.classList.add('on'); }
-      else el.classList.remove('on');
+      if (j === i) {
+        el.classList.remove('on'); void el.getBoundingClientRect(); el.classList.add('on');
+        // speed up the scripted moments; leave the gentle loops (bobbing, falling leaves) at their own pace
+        if (el.getAnimations) el.getAnimations({ subtree: true }).forEach(a => {
+          const it = a.effect && a.effect.getTiming().iterations;
+          if (it !== Infinity) a.playbackRate = SPEED;
+        });
+      } else el.classList.remove('on');
     });
     cap.innerHTML = SCENES[i].cap();
     scenesEl.setAttribute('aria-label', t('alt')[i]);

@@ -94,7 +94,7 @@ body {
 
 /* ── scene animation (runs only on the scene that is showing) ─────────── */
 .fall, .sway, .wave, .bob, .grow, .pop, .stretch, .pull, .flap, .flapR, .peek, .faint, .seated,
-.heart, .bubble, .later, .stars, .blink, .hop, .twinkle, .kb, .wiggle, .plantsway, .note, .tn, .tf { transform-box: fill-box; }
+.heart, .bubble, .later, .stars, .blink, .hop, .twinkle, .kb, .wiggle, .plantsway, .note, .tn, .tf, .dance, .kick, .spin { transform-box: fill-box; }
 
 .on .fall { animation: fall linear infinite; }
 @keyframes fall { from { transform: translateY(-40px); } to { transform: translateY(500px); } }
@@ -170,12 +170,37 @@ body {
 @keyframes drop { from { opacity: 0; transform: translateY(-20px) scale(.9); } to { opacity: 1; transform: none; } }
 .on .hop { transform-origin: 50% 100%; animation: hop .9s cubic-bezier(.3, 1.6, .5, 1) .3s both; }
 
+/* Nilu's happy dance: two hops with a squash on each landing, then a wiggle */
+.on .dance { transform-origin: 50% 100%; animation: dance 2.2s ease-in-out 1s infinite; }
+@keyframes dance {
+  0% { transform: none; }
+  8% { transform: scale(1.06, .92); }
+  20% { transform: translateY(-30px) scale(.96, 1.06) rotate(-4deg); }
+  32% { transform: scale(1.08, .9); }
+  42% { transform: translateY(-16px) scale(.98, 1.03) rotate(4deg); }
+  52% { transform: scale(1.05, .94); }
+  62% { transform: rotate(-5deg); }
+  74% { transform: rotate(5deg); }
+  86% { transform: rotate(-3deg); }
+  100% { transform: none; }
+}
+.kick { opacity: 0; }
+.on .kick { transform-origin: 50% 100%; animation: kick 2.2s ease-out infinite; }
+@keyframes kick {
+  0%, 30% { opacity: 0; transform: none; }
+  34% { opacity: 1; transform: translate(calc(var(--kx) * .2), calc(var(--ky) * .2)) rotate(20deg); }
+  58% { opacity: 1; transform: translate(var(--kx), var(--ky)) rotate(160deg); }
+  70%, 100% { opacity: 0; transform: translate(calc(var(--kx) * 1.15), calc(var(--ky) * .6)) rotate(220deg); }
+}
+.on .spin { transform-origin: 50% 50%; animation: spin 4.5s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (prefers-reduced-motion: reduce) {
   .line, .on *, #cover button { animation: none !important; }
   .scene { transition-duration: .4s; }
   .pop, .seated, .b3, .later { opacity: 1 !important; }
   .vine { stroke-dashoffset: 0 !important; }
-  .fall, .heart, .stars, .b1, .b2, .faint, .tn, .tf, .note { display: none; }
+  .fall, .heart, .stars, .b1, .b2, .faint, .tn, .tf, .note, .kick, .spin { display: none; }
   .scene { transform: none !important; }
   #cover .bob, #cover .twinkle { animation: none !important; }
 }
