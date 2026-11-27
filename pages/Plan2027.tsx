@@ -44,6 +44,17 @@ const FUND_HOW: Partial<Record<FundingSource, L>> = {
 const Plan2027: React.FC = () => {
   const es = isEs();
   const [live, setLive] = useState<Live | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  // year-at-a-glance → scroll to the program's card and give it a quick glow
+  const jumpTo = (key: string) => {
+    const el = document.getElementById(`p-${key}`);
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    setFlash(key);
+    window.setTimeout(() => setFlash(f => (f === key ? null : f)), 1800);
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -70,12 +81,12 @@ const Plan2027: React.FC = () => {
   // year at a glance: which emojis land in each month (sports show by season)
   const byMonth = useMemo(() => MONTHS.map((_, i) => {
     const m = i + 1;
-    const out: { emoji: string; label: string }[] = [];
+    const out: { key: string; emoji: string; label: string }[] = [];
     for (const p of PROGRAMS) {
       if (p.seasons) {
-        for (const s of p.seasons) if (s.months.includes(m)) out.push({ emoji: s.emoji, label: t(s.name) });
+        for (const s of p.seasons) if (s.months.includes(m)) out.push({ key: p.key, emoji: s.emoji, label: t(s.name) });
       } else if (p.months.includes(m)) {
-        out.push({ emoji: p.emoji, label: t(p.title) });
+        out.push({ key: p.key, emoji: p.emoji, label: t(p.title) });
       }
     }
     return out;
@@ -130,7 +141,9 @@ const Plan2027: React.FC = () => {
                 <p className="text-[11px] font-black uppercase tracking-widest text-sky-700 dark:text-sky-400">{t(m)}</p>
                 <p className="mt-1.5 flex flex-wrap justify-center gap-0.5 text-xl leading-none min-h-[1.5rem]">
                   {byMonth[i].map((e, j) => (
-                    <span key={j} title={e.label} role="img" aria-label={e.label} className="inline-block hover:scale-125 transition-transform cursor-default">{e.emoji}</span>
+                    <button key={j} type="button" onClick={() => jumpTo(e.key)} title={e.label}
+                      aria-label={tr(`${e.label}: see details`, `${e.label}: ver detalles`)}
+                      className="inline-block rounded-lg p-0.5 hover:scale-125 hover:bg-sky-100 dark:hover:bg-sky-900/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition-transform cursor-pointer">{e.emoji}</button>
                   ))}
                 </p>
               </li>
@@ -138,7 +151,12 @@ const Plan2027: React.FC = () => {
           </ol>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-bold">{tr('Through the year:', 'Durante el año:')}</span>
-            {anytime.map(p => <span key={p.key}>{p.emoji} {t(p.title)}</span>)}
+            {anytime.map(p => (
+              <button key={p.key} type="button" onClick={() => jumpTo(p.key)}
+                className="rounded-md hover:text-sky-700 dark:hover:text-sky-300 underline decoration-dotted decoration-slate-300 dark:decoration-slate-600 underline-offset-4 hover:decoration-sky-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">
+                {p.emoji} {t(p.title)}
+              </button>
+            ))}
           </p>
         </section>
 
@@ -155,7 +173,7 @@ const Plan2027: React.FC = () => {
               </div>
               <div className={`grid gap-5 ${progs.length > 1 ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
                 {progs.map(p => (
-                  <ProgramCard key={p.key} p={p} est={estOf(p)} fund={fundOf(p)} money={money} />
+                  <ProgramCard key={p.key} p={p} est={estOf(p)} fund={fundOf(p)} money={money} flash={flash === p.key} />
                 ))}
               </div>
             </section>
@@ -201,8 +219,8 @@ const Plan2027: React.FC = () => {
   );
 };
 
-const ProgramCard: React.FC<{ p: PlanProgram; est: number; fund: FundingSource[]; money: (n: number) => string }> = ({ p, est, fund, money }) => (
-  <article className="group flex flex-col rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-6">
+const ProgramCard: React.FC<{ p: PlanProgram; est: number; fund: FundingSource[]; money: (n: number) => string; flash?: boolean }> = ({ p, est, fund, money, flash }) => (
+  <article id={`p-${p.key}`} className={`group flex flex-col rounded-3xl bg-white dark:bg-slate-800 border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 p-6 ${flash ? 'border-sky-400 ring-4 ring-sky-300/70 dark:ring-sky-500/50 shadow-xl' : 'border-slate-200 dark:border-slate-700'}`}>
     <div className="flex items-start gap-4">
       <span className="shrink-0 grid place-items-center h-16 w-16 rounded-2xl bg-gradient-to-br from-sky-100 to-amber-100 dark:from-sky-900/40 dark:to-amber-900/30 text-4xl group-hover:rotate-[-8deg] group-hover:scale-110 transition-transform" aria-hidden="true">
         {p.emoji}
