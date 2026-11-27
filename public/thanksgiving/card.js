@@ -261,8 +261,8 @@
     again.textContent = t('again');
     // quiet links under the card for anyone who doesn't open it; hidden on the last screen, which has the full block
     $('footlinks').innerHTML = `
+      <a class="web" href="/">🌐 aariasblueelephant.org <span aria-hidden="true">→</span></a>
       <div class="fl-row">
-        <a class="web" href="/">🌐 aariasblueelephant.org</a>
         <a href="/games">🎮 ${t('games')}</a><a href="/videos">🎓 ${t('learn')}</a><a href="/events">🗓️ ${t('events')}</a>
       </div>
       <div class="fl-row fl-soc">${SOCIAL.map(([n, u, c, d]) =>
