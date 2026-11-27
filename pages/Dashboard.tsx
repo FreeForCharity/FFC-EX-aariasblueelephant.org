@@ -117,6 +117,9 @@ const GAME_PLAY_LABELS: Record<string, string> = {
     'rhythm': "Aaria's Rhythm & Calm 🎵",
     'flying': "Aaria's Flying Elephant 🐘",
     'softball': "Aaria's Softball Stars 🥎",
+    'card-thanksgiving': 'Thanksgiving card: visits 🦃',
+    'card-thanksgiving-open': 'Thanksgiving card: opened ✉️',
+    'card-thanksgiving-end': 'Thanksgiving card: watched to the end ⭐',
 };
 
 interface GamePlayRow {
