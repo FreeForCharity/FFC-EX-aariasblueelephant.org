@@ -20,13 +20,15 @@ const t = (l: L) => tr(l[0], l[1]);
 
 type Live = Record<string, { est: number; fund: FundingSource[] }>;
 
-const FUND_ORDER: FundingSource[] = ['grant', 'sponsor', 'employee_giving', 'giving_tuesday', 'in_kind', 'donations', 'own_funds'];
+const FUND_ORDER: FundingSource[] = ['city_partner', 'grant', 'sponsor', 'employee_giving', 'giving_tuesday', 'in_kind', 'donations', 'own_funds'];
 
 const FUND_HOW: Partial<Record<FundingSource, L>> = {
+  city_partner: ['We’re planning our community celebrations with the City of Mountain House, which keeps our share to gifts and treats.',
+                 'Estamos planeando nuestras celebraciones comunitarias con la Ciudad de Mountain House, así que nuestra parte se limita a regalos y golosinas.'],
   grant: ['Foundation and government grants for uniforms, background checks, insurance and program costs.',
           'Subvenciones de fundaciones y del gobierno para uniformes, verificación de antecedentes, seguros y costos de programas.'],
-  sponsor: ['Local businesses sponsor a whole event: the picnic food, the bike helmets, the kites.',
-            'Negocios locales patrocinan un evento completo: la comida del picnic, los cascos, los papalotes.'],
+  sponsor: ['Local businesses sponsor a whole event: the picnic food, the beach shade, the camping meals.',
+            'Negocios locales patrocinan un evento completo: la comida del picnic, la sombra en la playa, las comidas del campamento.'],
   employee_giving: ['We’re approved on Benevity, so many employers match their employees’ gifts.',
                     'Estamos aprobados en Benevity, así que muchas empresas igualan las donaciones de sus empleados.'],
   giving_tuesday: ['Our GivingTuesday campaign funds the Christmas gifts for every child.',

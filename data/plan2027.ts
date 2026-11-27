@@ -15,7 +15,7 @@ export type L = [string, string]; // [English, Español]
 
 export type FundingSource =
   | 'grant' | 'sponsor' | 'in_kind' | 'giving_tuesday'
-  | 'employee_giving' | 'donations' | 'own_funds';
+  | 'employee_giving' | 'donations' | 'own_funds' | 'city_partner';
 
 export const FUNDING_LABEL: Record<FundingSource, { emoji: string; label: L }> = {
   grant:           { emoji: '📝', label: ['Grants', 'Subvenciones'] },
@@ -25,6 +25,7 @@ export const FUNDING_LABEL: Record<FundingSource, { emoji: string; label: L }> =
   employee_giving: { emoji: '🏢', label: ['Employee giving & matching', 'Donaciones de empleados y aportes de empresas'] },
   donations:       { emoji: '🪙', label: ['Community donations', 'Donaciones de la comunidad'] },
   own_funds:       { emoji: '🐘', label: ['Our own savings', 'Nuestros propios ahorros'] },
+  city_partner:    { emoji: '🏛️', label: ['City of Mountain House', 'Ciudad de Mountain House'] },
 };
 
 export type GroupKey = 'sports' | 'outdoors' | 'schools' | 'community' | 'operations';
@@ -235,53 +236,54 @@ export const PROGRAMS: PlanProgram[] = [
     key: 'bike-rodeo', group: 'community', emoji: '🚲',
     title: ['Bike Rodeo', 'Rodeo de bicicletas'],
     when: ['May', 'Mayo'], months: [5],
-    blurb: ['Bike safety, at every child’s pace, and a free helmet to take home.',
-            'Seguridad en bicicleta, al ritmo de cada niño, y un casco gratis para llevar a casa.'],
+    blurb: ['Bike safety at every child’s pace, planned with the City of Mountain House.',
+            'Seguridad en bicicleta al ritmo de cada niño, planeado con la Ciudad de Mountain House.'],
     needs: [
       ['Helmets for about 50 kids', 'Cascos para unos 50 niños'],
       ['Cones, chalk and signs', 'Conos, gis y letreros'],
       ['Snacks and small prizes', 'Refrigerios y pequeños premios'],
     ],
-    est: 1150, fund: ['sponsor', 'in_kind', 'donations'],
+    est: 200, fund: ['city_partner', 'donations'],
   },
   {
     key: 'kite-festival', group: 'community', emoji: '🪁',
     title: ['Kite Festival', 'Festival de papalotes'],
     when: ['August', 'Agosto'], months: [8],
-    blurb: ['Eighty kites in the sky, one for every child.', 'Ochenta papalotes en el cielo, uno para cada niño.'],
+    blurb: ['A sky full of kites, one for every child, planned with the City of Mountain House.',
+            'Un cielo lleno de papalotes, uno para cada niño, planeado con la Ciudad de Mountain House.'],
     needs: [
       ['Kites for about 80 kids', 'Papalotes para unos 80 niños'],
       ['A park permit', 'Un permiso del parque'],
       ['Snacks and water', 'Refrigerios y agua'],
     ],
-    est: 950, fund: ['sponsor', 'in_kind', 'donations'],
+    est: 200, fund: ['city_partner', 'donations'],
   },
   {
     key: 'halloween', group: 'community', emoji: '🎃',
     title: ['Halloween Celebration', 'Celebración de Halloween'],
     when: ['October', 'Octubre'], months: [10],
-    blurb: ['A sensory-friendly trunk-or-treat: no scary surprises, costumes optional.',
-            'Un “trunk-or-treat” sensorialmente amigable: sin sustos y con disfraz opcional.'],
+    blurb: ['A sensory-friendly trunk-or-treat with the City of Mountain House: no scary surprises, costumes optional.',
+            'Un “trunk-or-treat” sensorialmente amigable con la Ciudad de Mountain House: sin sustos y con disfraz opcional.'],
     needs: [
       ['Candy and non-food treats', 'Dulces y sorpresas que no son comida'],
       ['Gentle decorations', 'Decoraciones tranquilas'],
       ['A venue', 'Un lugar'],
     ],
-    est: 900, fund: ['in_kind', 'donations'],
+    est: 200, fund: ['city_partner', 'donations'],
   },
   {
     key: 'christmas', group: 'community', emoji: '🎄',
     title: ['Christmas Celebration', 'Celebración de Navidad'],
     when: ['December', 'Diciembre'], months: [12],
-    blurb: ['A gift for every child and a Santa who knows to wait.',
-            'Un regalo para cada niño y un Santa que sabe esperar.'],
+    blurb: ['A gift for every child and a Santa who knows to wait, with the City of Mountain House.',
+            'Un regalo para cada niño y un Santa que sabe esperar, con la Ciudad de Mountain House.'],
     needs: [
       ['A venue', 'Un lugar'],
       ['Gifts for about 80 children', 'Regalos para unos 80 niños'],
       ['Food', 'Comida'],
       ['A sensory-friendly Santa setup', 'Un espacio con Santa sensorialmente amigable'],
     ],
-    est: 2300, fund: ['sponsor', 'giving_tuesday', 'donations'],
+    est: 200, fund: ['city_partner', 'giving_tuesday'],
   },
   {
     key: 'library-art', group: 'community', emoji: '✂️',
