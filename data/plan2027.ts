@@ -283,7 +283,7 @@ export const PROGRAMS: PlanProgram[] = [
       ['Food', 'Comida'],
       ['A sensory-friendly Santa setup', 'Un espacio con Santa sensorialmente amigable'],
     ],
-    est: 200, fund: ['city_partner', 'giving_tuesday'],
+    est: 200, fund: ['city_partner', 'donations'],
   },
   {
     key: 'library-art', group: 'community', emoji: '✂️',
