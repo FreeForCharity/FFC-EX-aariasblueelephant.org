@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Happy Thanksgiving from Aaria's Blue Elephant</title>
+<meta name="description" content="Everyone gets a seat. Even the turkey. A Thanksgiving card from Aaria's Blue Elephant.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aariasblueelephant.org/thanksgiving/">
+<meta property="og:title" content="Happy Thanksgiving from Aaria's Blue Elephant 🦃💙">
+<meta property="og:description" content="Everyone gets a seat. Even the turkey. Tap to open your card.">
+<meta property="og:image" content="https://aariasblueelephant.org/thanksgiving/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aariasblueelephant.org/thanksgiving/og.png">
+<meta name="theme-color" content="#fdf1de">
+<!-- © 2026 Aaria's Blue Elephant · aariasblueelephant.org
+     A Thanksgiving card: a 30-second film in five scenes, drawn in SVG in the
+     badge's style, opened from an envelope and played in one stretch.
+     Sensory-friendly: no sound, nothing flashes, and with "reduce motion" on
+     the scenes simply fade from one still to the next.
+     Bilingual EN/ES via localStorage 'abe.lang' (shared with the site); the
+     Spanish is AI-translated (see the general disclosure).
+     Built by Aaria and her Friends 💙 -->
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="card.css">
+</head>
+<body>
+<main id="card">
+  <header id="top">
+    <img src="/abe-logo-badge.png" alt="">
+    <span id="eyebrow"></span>
+  </header>
+  <div id="frame">
+    <div id="scenes" role="img"></div>
+    <div id="cover"></div>
+  </div>
+  <div id="bar">
+    <button id="pp" type="button"></button>
+    <div id="prog"></div>
+    <button id="again" type="button"></button>
+    <button id="lang" type="button"></button>
+  </div>
+  <div id="cap" aria-live="polite"></div>
+</main>
+<footer id="foot">
+  <span>Built by Aaria and her Friends 💙</span>
+  <a href="/">aariasblueelephant.org</a>
+  <a href="/legal/disclosure.html" target="_blank" rel="noopener">General Disclosure / Aviso general</a>
+</footer>
+<script src="card.js"></script>
+</body>
+</html>
