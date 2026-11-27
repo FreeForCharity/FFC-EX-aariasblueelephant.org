@@ -53,7 +53,13 @@ body {
 .btn:active { transform: scale(.98); }
 .btn.primary { background: var(--ink); color: #ffd43b; box-shadow: 0 10px 22px -10px rgba(22, 37, 92, .7); }
 .btn.soft { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 2px rgba(22, 37, 92, .14); font-size: .98rem; padding: 12px 16px; }
-.save { margin-top: 10px !important; font-size: .88rem !important; font-weight: 800; color: var(--rust) !important; }
+.save { display: flex; flex-direction: column; align-items: center; gap: 3px; max-width: 360px; margin: 14px auto 2px; padding: 13px 16px;
+  border-radius: 18px; background: linear-gradient(135deg, #fff3c4 0%, #ffd56b 55%, #f6b93b 100%);
+  box-shadow: inset 0 0 0 2px #d99a1e, 0 12px 26px -12px rgba(180, 110, 10, .75); animation: saveglow 2.8s ease-in-out 1s infinite; }
+.save-k { font-size: .76rem; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: #8a4b08; }
+.save-v { font-size: clamp(1.15rem, 5vw, 1.35rem); font-weight: 900; color: var(--ink); line-height: 1.2; text-align: center; }
+@keyframes saveglow { 0%, 100% { box-shadow: inset 0 0 0 2px #d99a1e, 0 12px 26px -12px rgba(180, 110, 10, .75); }
+  50% { box-shadow: inset 0 0 0 2px #d99a1e, 0 0 0 6px rgba(246, 185, 59, .28), 0 12px 26px -12px rgba(180, 110, 10, .75); } }
 
 /* the last screen: stay connected */
 .connect { margin: 18px auto 0; max-width: 380px; padding-top: 16px; border-top: 1.5px dashed rgba(22, 37, 92, .18); }
@@ -247,7 +253,7 @@ body.atend #footlinks { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .line, .on *, #cover *, .env-btn span { animation: none !important; }
+  .line, .on *, #cover *, .env-btn span, .save { animation: none !important; }
   .scene { transition-duration: .4s; }
   .pop, .seated, .b3, .later { opacity: 1 !important; }
   .vine { stroke-dashoffset: 0 !important; }
@@ -292,6 +298,7 @@ body.og { width: 1200px; height: 630px; min-height: 0; overflow: hidden; display
   #cap p { font-size: 1.15rem; }
   #cap .big { font-size: 2.4rem; }
   .ctas { margin-left: 0; }
+  .save { margin-left: 0; }
 }
 
 /* narrow phones: keep Games · Learning Center · Events on one row */

@@ -30,7 +30,7 @@
       tagline: 'Building a New Inclusive World', visit: 'Visit our website',
       games: 'Games', learn: 'Learning Center', events: 'Events', follow: 'Follow along',
       plan: '🗓️  See our 2027 plan', give: '💙  Give thanks with a gift',
-      save: 'Save the date: GivingTuesday is Tuesday, Dec. 1',
+      saveK: 'Save the date', saveV: 'GivingTuesday · Tuesday, Dec. 1',
       pause: 'Pause', play: 'Play', again: '↺ Replay', langBtn: 'Español',
       alt: ['Nilu the baby blue elephant waving in an autumn field',
             'Corn, beans and squash growing together',
@@ -56,7 +56,7 @@
       tagline: 'Construyendo un Nuevo Mundo Inclusivo', visit: 'Visita nuestro sitio web',
       games: 'Juegos', learn: 'Centro de Aprendizaje', events: 'Eventos', follow: 'Síguenos',
       plan: '🗓️  Ver nuestro plan 2027', give: '💙  Da gracias con un donativo',
-      save: 'Aparta la fecha: GivingTuesday es el martes 1 de dic.',
+      saveK: 'Aparta la fecha', saveV: 'GivingTuesday · martes 1 de dic.',
       pause: 'Pausa', play: 'Reproducir', again: '↺ Repetir', langBtn: 'English',
       alt: ['Nilu, el elefantito azul, saluda en un campo de otoño',
             'Maíz, frijol y calabaza crecen juntos',
@@ -242,7 +242,7 @@
         <div class="ctas line">
           <a class="btn primary" href="/events/2027">${t('plan')}</a>
         </div>
-        <p class="save line">${t('save')}</p>
+        <div class="save line"><span class="save-k">📅 ${t('saveK')}</span><span class="save-v">${t('saveV')}</span></div>
         ${connect()}`,
     },
   ];
