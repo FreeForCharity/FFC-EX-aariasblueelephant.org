@@ -24,7 +24,7 @@ create table if not exists program_plan_items (
   item            text not null check (length(item) between 1 and 200),
   est_cost        numeric(10,2) not null default 0 check (est_cost >= 0 and est_cost <= 1000000),
   funding_source  text not null default 'donations'
-                  check (funding_source in ('grant','sponsor','in_kind','giving_tuesday','employee_giving','donations','own_funds')),
+                  check (funding_source in ('grant','sponsor','in_kind','giving_tuesday','employee_giving','donations','own_funds','city_partner')),
   status          text not null default 'planned'
                   check (status in ('planned','asked','committed','received')),
   owner           text check (owner is null or length(owner) <= 80),
@@ -33,6 +33,11 @@ create table if not exists program_plan_items (
   updated_at      timestamptz not null default now(),
   updated_by      text
 );
+-- tables created before city_partner existed: widen the check in place
+alter table program_plan_items drop constraint if exists program_plan_items_funding_source_check;
+alter table program_plan_items add constraint program_plan_items_funding_source_check
+  check (funding_source in ('grant','sponsor','in_kind','giving_tuesday','employee_giving','donations','own_funds','city_partner'));
+
 create index if not exists program_plan_items_prog_idx on program_plan_items (plan_year, program_key, sort);
 
 create or replace function program_plan_items_stamp() returns trigger
