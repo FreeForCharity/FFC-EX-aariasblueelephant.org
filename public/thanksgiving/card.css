@@ -278,14 +278,14 @@ body.og { width: 1200px; height: 630px; min-height: 0; overflow: hidden; display
     max-width: 1180px; padding: 20px 32px 0;
     display: grid; column-gap: 44px; align-items: center;
     grid-template-columns: auto minmax(300px, 420px); justify-content: center;
-    grid-template-areas: "top top" "frame ." "frame cap" "frame bar" "frame links" "frame .";
+    grid-template-areas: "top top" "frame ." "frame cap" "frame links" "frame bar" "frame .";
     grid-template-rows: auto 1fr auto auto auto 1fr;
   }
   #top { grid-area: top; margin-bottom: 16px; }
   #frame { grid-area: frame; width: min(720px, calc((100dvh - 120px) * 400 / 440)); }
   #cap { grid-area: cap; text-align: left; min-height: 0; padding: 0 0 18px; }
   #bar { grid-area: bar; align-self: start; padding-top: 0; }
-  #footlinks { grid-area: links; align-items: flex-start; margin-top: 14px; }
+  #footlinks { grid-area: links; align-items: flex-start; margin: 4px 0 18px; }
   #footlinks .fl-row { justify-content: flex-start; }
   #cap h1 { font-size: 2.6rem; }
   #cap h2 { font-size: 1.6rem; }

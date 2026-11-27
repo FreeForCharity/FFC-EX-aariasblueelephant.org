@@ -89,6 +89,9 @@
     return cls ? `<g class="${cls}" style="${style || ''}">${img}</g>` : img;
   };
 
+  // food resting on the tabletop, with a soft shadow so it sits rather than floats
+  const food = (name, cx, bottom, w) => `<ellipse cx="${cx}" cy="${bottom - 1.5}" rx="${(w * .44).toFixed(1)}" ry="${(w * .075).toFixed(1)}" fill="#7a3d12" opacity=".22"/>${spr(name, cx, bottom, w)}`;
+
   const LEAVES = ['leaf_maple_orange', 'leaf_maple_red', 'leaf_oak_gold', 'leaf_brown'];
   // tumbling leaves; `after` starts them at that second instead of mid-fall
   function leaves(n, seed, after) {
@@ -149,7 +152,7 @@
       ${spr('kid_tablet', 308, 306, 86, 'pop', 'animation-delay:3s')}
       <g class="stretch">${spr('table', 214, 394, 330)}</g>
       <g class="pop" style="animation-delay:1.9s">
-        ${spr('pie', 116, 300, 54)}${spr('rolls', 180, 298, 44)}${spr('plate', 242, 300, 38)}${spr('corn_cob', 296, 298, 30)}${spr('mini_pumpkin', 342, 298, 32)}
+        ${food('pie', 116, 311, 54)}${food('rolls', 180, 309, 44)}${food('plate', 242, 312, 38)}${food('corn_cob', 296, 310, 30)}${food('mini_pumpkin', 342, 310, 32)}
       </g>
       <g class="pull">${spr('nilu_reach', 386, 404, 148)}</g>
       ${spr('kid_wheelchair', 44, 434, 104, 'pop', 'animation-delay:3.3s')}`;
@@ -162,7 +165,7 @@
       ${aaria(296, 322, 72)}
       ${spr('kid_tablet', 362, 314, 80)}
       ${spr('table', 286, 398, 270)}
-      ${spr('rolls', 178, 306, 38)}${spr('plate', 222, 308, 34)}${spr('pie', 318, 308, 48)}
+      ${food('rolls', 180, 328, 38)}${food('plate', 224, 330, 34)}${food('pie', 318, 330, 48)}
       <g class="peek">${spr('turkey_nervous', 248, 438, 124, 'tn')}</g>
       ${spr('turkey_fainted', 236, 440, 138, 'tf')}
       <g class="bob">${spr('nilu_welcome', 84, 438, 168)}</g>
