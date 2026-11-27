@@ -92,7 +92,7 @@ body {
 
 /* ── scene animation (runs only on the scene that is showing) ─────────── */
 .fall, .sway, .wave, .bob, .grow, .pop, .stretch, .pull, .flap, .flapR, .peek, .faint, .seated,
-.heart, .bubble, .later, .stars, .blink, .hop { transform-box: fill-box; }
+.heart, .bubble, .later, .stars, .blink, .hop, .twinkle { transform-box: fill-box; }
 
 .on .fall { animation: fall linear infinite; }
 @keyframes fall { from { transform: translateY(-40px); } to { transform: translateY(500px); } }
@@ -145,6 +145,9 @@ body {
 
 .on .heart { animation: heart 3.4s ease-out infinite; opacity: 0; }
 @keyframes heart { 0% { opacity: 0; transform: translateY(0) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-130px) scale(1.1); } }
+
+.on .twinkle { transform-origin: 50% 50%; animation: twinkle 2.2s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { transform: scale(.55) rotate(0); opacity: .5; } 50% { transform: scale(1.1) rotate(20deg); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .line, .on *, #cover button { animation: none !important; }
