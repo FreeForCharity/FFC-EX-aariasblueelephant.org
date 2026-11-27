@@ -30,7 +30,9 @@ begin
   -- Supabase SQL editor (the allowlist lives in the DB, not just this file).
   if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
                'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings','rhythm','flying',
-               'softball') then
+               'softball',
+               -- cards (page views, envelope opened, watched to the end)
+               'card-thanksgiving','card-thanksgiving-open','card-thanksgiving-end') then
     return;
   end if;
   insert into public.game_play_counts (game, day, plays)
@@ -59,7 +61,8 @@ begin
   -- same allowlist as record_game_play — keep both in sync (and in the live DB)
   if g not in ('elly-tubbies','blockcraft','nilus-world','roadsafety',
                'doughlab','magnetblocks','helpinghands','grocery','dayplanner','feelings','rhythm','flying',
-               'softball') then
+               'softball',
+               'card-thanksgiving','card-thanksgiving-open','card-thanksgiving-end') then
     return;
   end if;
   insert into public.game_play_counts (game, day, plays, seconds)

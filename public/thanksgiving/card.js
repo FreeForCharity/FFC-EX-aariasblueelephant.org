@@ -246,6 +246,24 @@
         ${connect()}`,
     },
   ];
+  // anonymous counts (no identifiers): same counter the games use; once per visit per event,
+  // never from local testing or the ?s= / ?og check links
+  const COUNTING = /aariasblueelephant\.org$/.test(location.hostname) && !q.has('s') && !q.has('og');
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvY2xxeGdlZGhkZ3NseG5vdnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MzA3NzUsImV4cCI6MjA4NzQwNjc3NX0.824zjMOHfPyMXBm5WgvArI-ZzQJgYzddskm7-5y-PSM';
+  function count(slug) {
+    if (!COUNTING) return;
+    try {
+      if (sessionStorage.getItem('abe_' + slug)) return;
+      sessionStorage.setItem('abe_' + slug, '1');
+      fetch('https://joclqxgedhdgslxnovxz.supabase.co/rest/v1/rpc/record_game_play', {
+        method: 'POST', keepalive: true,
+        headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ g: slug }),
+      }).catch(() => {});
+    } catch (e) { /* private mode */ }
+  }
+  count('card-thanksgiving');
+
   const SPEED = 1.35;   // the whole film plays this much faster than the timings written above
   SCENES.forEach(s => { s.ms = Math.round(s.ms / SPEED); });
   const TIMED = SCENES.filter(s => s.ms).length;
@@ -329,7 +347,7 @@
     const s = SCENES[cur];
     if (s.ms && elapsed >= s.ms) {
       go(cur + 1);
-      if (!SCENES[cur].ms) { playing = false; setPP(); drawProgress(); return; }
+      if (!SCENES[cur].ms) { playing = false; setPP(); drawProgress(); count('card-thanksgiving-end'); return; }
     }
     drawProgress();
     raf = requestAnimationFrame(tick);
@@ -346,6 +364,7 @@
     if (opened) return;
     opened = true;
     cover.classList.add('open');
+    count('card-thanksgiving-open');
     setTimeout(() => { go(0); setTimeout(play, 500); }, 900);
   }
 
