@@ -30,8 +30,8 @@ body {
               0 24px 50px -24px rgba(22, 37, 92, .45), 0 8px 18px -12px rgba(180, 83, 42, .35);
 }
 #scenes { position: absolute; inset: 0; }
-.scene { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; }
-.scene.on { opacity: 1; }
+.scene { position: absolute; inset: 0; opacity: 0; transform: scale(1.04); transition: opacity .9s ease, transform 1.2s cubic-bezier(.2, .8, .2, 1); }
+.scene.on { opacity: 1; transform: none; }
 .scene svg { display: block; width: 100%; height: 100%; }
 
 /* caption under the card */
@@ -76,6 +76,8 @@ body {
   background: linear-gradient(170deg, #fff6e8, #fbe1bf); cursor: pointer; transition: opacity .6s ease .5s, visibility 0s linear 1.1s; }
 #cover.open { opacity: 0; visibility: hidden; }
 #cover svg { width: 78%; max-width: 320px; overflow: visible; }
+#cover .bob { transform-box: fill-box; transform-origin: 50% 100%; animation: bob 2.4s ease-in-out infinite; }
+#cover .twinkle { transform-box: fill-box; transform-origin: 50% 50%; animation: twinkle 2.6s ease-in-out infinite; }
 #cover .flap { transform-box: fill-box; transform-origin: 50% 0; transition: transform .55s cubic-bezier(.5, 0, .3, 1); }
 #cover.open .flap { transform: scaleY(-1); }
 #cover .seal { transform-box: fill-box; transform-origin: 50% 50%; transition: transform .3s ease, opacity .3s ease; }
@@ -92,7 +94,7 @@ body {
 
 /* ── scene animation (runs only on the scene that is showing) ─────────── */
 .fall, .sway, .wave, .bob, .grow, .pop, .stretch, .pull, .flap, .flapR, .peek, .faint, .seated,
-.heart, .bubble, .later, .stars, .blink, .hop, .twinkle { transform-box: fill-box; }
+.heart, .bubble, .later, .stars, .blink, .hop, .twinkle, .kb, .wiggle, .plantsway, .note, .tn, .tf { transform-box: fill-box; }
 
 .on .fall { animation: fall linear infinite; }
 @keyframes fall { from { transform: translateY(-40px); } to { transform: translateY(500px); } }
@@ -149,12 +151,33 @@ body {
 .on .twinkle { transform-origin: 50% 50%; animation: twinkle 2.2s ease-in-out infinite; }
 @keyframes twinkle { 0%, 100% { transform: scale(.55) rotate(0); opacity: .5; } 50% { transform: scale(1.1) rotate(20deg); opacity: 1; } }
 
+/* sticker-art motion */
+.on .kb { transform-origin: 50% 60%; animation: kb 11s ease-out both; }
+@keyframes kb { from { transform: scale(1); } to { transform: scale(1.07); } }
+.on .wiggle { transform-origin: 50% 100%; animation: wiggle .32s ease-in-out 3.2s infinite alternate; }
+@keyframes wiggle { from { transform: rotate(-3deg); } to { transform: rotate(3deg) translateY(-2px); } }
+.on .plantsway { transform-origin: 50% 100%; animation: plantsway 3.2s ease-in-out infinite alternate; }
+@keyframes plantsway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+.on .grow.slow { animation-duration: 2.4s; animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+.note { opacity: 0; }
+.on .note { animation: note 1.8s ease-out infinite; }
+@keyframes note { 0% { opacity: 0; transform: translate(0, 0) rotate(-10deg); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(14px, -40px) rotate(12deg); } }
+.on .tn { transform-origin: 50% 100%; animation: shiver .11s linear 1.2s 20 alternate, out .25s ease-in 3.6s forwards; }
+@keyframes shiver { from { transform: translateX(-1.5px) rotate(-1deg); } to { transform: translateX(1.5px) rotate(1deg); } }
+@keyframes out { to { opacity: 0; transform: rotate(-40deg) translateY(10px); } }
+.tf { opacity: 0; }
+.on .tf { transform-origin: 50% 100%; animation: drop .4s cubic-bezier(.3, 1.6, .5, 1) 3.75s forwards, gone .3s linear 4.8s forwards; }
+@keyframes drop { from { opacity: 0; transform: translateY(-20px) scale(.9); } to { opacity: 1; transform: none; } }
+.on .hop { transform-origin: 50% 100%; animation: hop .9s cubic-bezier(.3, 1.6, .5, 1) .3s both; }
+
 @media (prefers-reduced-motion: reduce) {
   .line, .on *, #cover button { animation: none !important; }
   .scene { transition-duration: .4s; }
   .pop, .seated, .b3, .later { opacity: 1 !important; }
   .vine { stroke-dashoffset: 0 !important; }
-  .fall, .heart, .stars, .b1, .b2, .faint { display: none; }
+  .fall, .heart, .stars, .b1, .b2, .faint, .tn, .tf, .note { display: none; }
+  .scene { transform: none !important; }
+  #cover .bob, #cover .twinkle { animation: none !important; }
 }
 
 /* share image (rendered from ?og at 1200×630 into og.png) */
@@ -165,7 +188,7 @@ body.og { width: 1200px; height: 630px; min-height: 0; overflow: hidden; display
   box-shadow: 0 24px 50px -24px rgba(22, 37, 92, .5); }
 #og .ogart svg { width: 100%; height: 100%; display: block; }
 #og .pop, #og .seated, #og .b3, #og .later { opacity: 1; }
-#og .peek, #og .stars, #og .b1, #og .b2 { display: none; }
+#og .peek, #og .stars, #og .b1, #og .b2, #og .tf, #og .fall { display: none; }
 #og .vine { stroke-dashoffset: 0; }
 #og .ogtxt img { width: 92px; height: 92px; }
 #og .ogtxt h1 { font-size: 58px; line-height: 1.05; margin: 14px 0 18px; font-weight: 900; color: var(--ink); }
